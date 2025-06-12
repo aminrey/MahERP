@@ -1,0 +1,172 @@
+﻿@{
+
+}
+
+
+<!-- Sidebar -->
+<!--
+  Sidebar Mini Mode - Display Helper classes
+
+  Adding 'smini-hide' class to an element will make it invisible (opacity: 0) when the sidebar is in mini mode
+  Adding 'smini-show' class to an element will make it visible (opacity: 1) when the sidebar is in mini mode
+    If you would like to disable the transition animation, make sure to also add the 'no-transition' class to your element
+
+  Adding 'smini-hidden' to an element will hide it when the sidebar is in mini mode
+  Adding 'smini-visible' to an element will show it (display: inline-block) only when the sidebar is in mini mode
+  Adding 'smini-visible-block' to an element will show it (display: block) only when the sidebar is in mini mode
+-->
+<nav aria-label="Main Navigation" id="sidebar">
+    <!-- Side Header -->
+    <div class="bg-header-dark">
+        <div class="content-header bg-white-5">
+            <!-- Logo -->
+            <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index" class="fw-semibold text-white tracking-wide">
+                <span class="smini-visible">
+                    <span class="opacity-75"></span>
+                </span>
+                <span class="smini-hidden">
+                    Mah<span class="opacity-75">ERP</span>
+                </span>
+            </a>
+            <!-- END Logo -->
+            <!-- Options -->
+            <div>
+                <!-- Toggle Sidebar Style -->
+                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
+                <!-- Class Toggle, functionality initialized in Helpers.dmToggleClass() -->
+                <button class="btn btn-sm btn-alt-secondary" data-class="fa-toggle-off fa-toggle-on" data-target="#sidebar-style-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('sidebar_style_toggle');Dashmix.layout('header_style_toggle');" type="button">
+                    <i class="fa fa-toggle-off" id="sidebar-style-toggler"></i>
+                </button>
+                <!-- END Toggle Sidebar Style -->
+                <!-- Dark Mode -->
+                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
+                <button class="btn btn-sm btn-alt-secondary" data-class="far fa" data-target="#dark-mode-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('dark_mode_toggle');" type="button">
+                    <i class="far fa-moon" id="dark-mode-toggler"></i>
+                </button>
+                <!-- END Dark Mode -->
+                <!-- Close Sidebar, Visible only on mobile screens -->
+                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
+                <button class="btn btn-sm btn-alt-secondary d-lg-none" data-action="sidebar_close" data-toggle="layout" type="button">
+                    <i class="fa fa-times-circle"></i>
+                </button>
+                <!-- END Close Sidebar -->
+            </div>
+            <!-- END Options -->
+        </div>
+    </div>
+    <!-- END Side Header -->
+    <!-- Sidebar Scrolling -->
+    <div class="js-sidebar-scroll">
+        <!-- Side Navigation -->
+        <div class="content-side">
+
+            <ul class="nav-main">
+
+                <li class="nav-main-heading">گزارشات</li>
+
+                <li class="nav-main-item">
+                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">
+                        <i class="nav-main-link-icon fa fa-list"></i>
+                        <span class="nav-main-link-name">داشبورد</span>
+
+                    </a>
+                </li>
+
+                <li class="nav-main-heading">اشخاص</li>
+
+                <li class="nav-main-item">
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fa fa-user"></i>
+                        <span class="nav-main-link-name">طرف حساب</span>
+                    </a>
+                    <ul class="nav-main-submenu">
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Customer" asp-action="AddCustomer">
+                                <span class="nav-main-link-name">طرف حساب جدید</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Customer" asp-action="CustomerIndex">
+                                <span class="nav-main-link-name">لیست طرف حساب</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Customer" asp-action="CustomerCategoryIndex">
+                                <span class="nav-main-link-name"> دسته بندی طرف حساب</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+
+                <li class="nav-main-item">
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fa fa-user-alt"></i>
+                        <span class="nav-main-link-name">کاربران</span>
+                    </a>
+                    <ul class="nav-main-submenu">
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="AddUser">
+                                <span class="nav-main-link-name">کاربر جدید</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
+                                <span class="nav-main-link-name">لیست کاربران</span>
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
+
+                <li class="nav-main-heading">عملیاتها</li>
+
+
+
+                <li class="nav-main-heading">دسترسی ها</li>
+
+                <li class="nav-main-item">
+                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="SystemPart" asp-action="SystemPartIndex">
+                        <i class="nav-main-link-icon fa fa-folder-tree"></i>
+
+                        <span class="nav-main-link-name">اجزاء سیستم</span>
+                    </a>
+                </li>
+
+                <li class="nav-main-item">
+                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="RolePattern" asp-action="RolePatternIndex">
+                        <i class="nav-main-link-icon fa fa-arrows-split-up-and-left"></i>
+
+                        <span class="nav-main-link-name">نقش های کاربری</span>
+                    </a>
+                </li>
+
+                <li class="nav-main-item">
+                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="AccessRight" asp-action="AccessRightIndex">
+                        <i class="nav-main-link-icon fa fa-book-open-reader"></i>
+
+                        <span class="nav-main-link-name">کنترل دسترسی کاربران</span>
+                    </a>
+                </li>
+
+                <li class="nav-main-heading">تنظیمات</li>
+
+
+                <li class="nav-main-item">
+                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="Settings" asp-action="AppSetting">
+                        <i class="nav-main-link-icon fa fa-gear"></i>
+                        <span class="nav-main-link-name ">تنظیمات </span>
+                    </a>
+                </li>
+
+
+            </ul>
+
+        </div>
+        <!-- END Side Navigation -->
+    </div>
+    <!-- END Sidebar Scrolling -->
+</nav>
+
+<!-- END Sidebar -->

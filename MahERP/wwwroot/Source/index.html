@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa"><head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+
+    <title>Dashmix - فریمورک داشبورد پریمیوم برای توسعه دهندگان</title>
+
+    <meta content="Dashmix - Bootstrap 5 Admin Template & UI Framework created by pixelcave and published on Themeforest" name="description"/>
+    <meta content="pixelcave" name="author"/>
+    <meta content="noindex, nofollow" name="robots"/>
+
+    <!-- Open Graph Meta -->
+    <meta content="Dashmix - Bootstrap 5 Admin Template & UI Framework" property="og:title"/>
+    <meta content="Dashmix" property="og:site_name"/>
+    <meta content="Dashmix - Bootstrap 5 Admin Template & UI Framework created by pixelcave and published on Themeforest" property="og:description"/>
+    <meta content="website" property="og:type"/>
+    <meta content="" property="og:url"/>
+    <meta content="" property="og:image"/>
+
+    <!-- Icons -->
+    <!-- The following icons can be replaced with your own, they are used by desktop and mobile browsers -->
+    <link href="assets/media/favicons/favicon.png" rel="shortcut icon"/>
+    <link href="assets/media/favicons/favicon-192x192.png" rel="icon" sizes="192x192" type="image/png"/>
+    <link href="assets/media/favicons/apple-touch-icon-180x180.png" rel="apple-touch-icon" sizes="180x180"/>
+    <!-- END Icons -->
+
+    <!-- Stylesheets -->
+    <!-- Dashmix framework -->
+    <link href="assets/css/dashmix.min.css" id="css-main" rel="stylesheet"/>
+
+    <!-- You can include a specific file from css/themes/ folder to alter the default color theme of the template. eg: -->
+    <!-- <link rel="stylesheet" id="css-theme" href="assets/css/themes/xwork.min.css"> -->
+    <!-- END Stylesheets -->
+  <!--===== Custom Font css =====-->
+<link href="assets/css/custom-fonts.css" rel="stylesheet"/>
+
+</head>
+  <body>
+    <!-- Page Container -->
+    <!--
+      Available classes for #page-container:
+    
+      GENERIC
+    
+        'remember-theme'                            Remembers active color theme and dark mode between pages using localStorage when set through
+                                                    - Theme helper buttons [data-toggle="theme"],
+                                                    - Layout helper buttons [data-toggle="layout" data-action="dark_mode_[on/off/toggle]"]
+                                                    - ..and/or Dashmix.layout('dark_mode_[on/off/toggle]')
+    
+      SIDEBAR & SIDE OVERLAY
+    
+        'sidebar-r'                                 Right Sidebar and left Side Overlay (default is left Sidebar and right Side Overlay)
+        'sidebar-mini'                              Mini hoverable Sidebar (screen width > 991px)
+        'sidebar-o'                                 Visible Sidebar by default (screen width > 991px)
+        'sidebar-o-xs'                              Visible Sidebar by default (screen width < 992px)
+        'sidebar-dark'                              Dark themed sidebar
+    
+        'side-overlay-hover'                        Hoverable Side Overlay (screen width > 991px)
+        'side-overlay-o'                            Visible Side Overlay by default
+    
+        'enable-page-overlay'                       Enables a visible clickable Page Overlay (closes Side Overlay on click) when Side Overlay opens
+    
+        'side-scroll'                               Enables custom scrolling on Sidebar and Side Overlay instead of native scrolling (screen width > 991px)
+    
+      HEADER
+    
+        ''                                          Static Header if no class is added
+        'page-header-fixed'                         Fixed Header
+    
+    
+      FOOTER
+    
+        ''                                          Static Footer if no class is added
+        'page-footer-fixed'                         Fixed Footer (please have in mind that the footer has a specific height when is fixed)
+    
+      HEADER STYLE
+    
+        ''                                          Classic Header style if no class is added
+        'page-header-dark'                          Dark themed Header
+        'page-header-glass'                         Light themed Header with transparency by default
+                                                    (absolute position, perfect for light images underneath - solid light background on scroll if the Header is also set as fixed)
+        'page-header-glass page-header-dark'         Dark themed Header with transparency by default
+                                                    (absolute position, perfect for dark images underneath - solid dark background on scroll if the Header is also set as fixed)
+    
+      MAIN CONTENT LAYOUT
+    
+        ''                                          Full width Main Content if no class is added
+        'main-content-boxed'                        Full width Main Content with a specific maximum width (screen width > 1200px)
+        'main-content-narrow'                       Full width Main Content with a percentage width (screen width > 1200px)
+        
+      DARK MODE
+    
+        'sidebar-dark page-header-dark dark-mode'   Enable dark mode (light sidebar/header is not supported with dark mode)
+    -->
+    <div class="page-header-fixed page-header-glass main-content-boxed" id="page-container">
+
+      <!-- Header -->
+      <header id="page-header">
+        <!-- Header Content -->
+        <div class="content-header justify-content-center justify-content-lg-between">
+          <!-- Left Section -->
+          <div class="d-flex align-items-center">
+            <!-- Logo -->
+            <a class="link-fx fs-lg fw-semibold text-dark" href="">Dash<span class="text-primary">mix</span>
+              <small class="fw-medium">5.4</small>
+            </a>
+            <!-- END Logo -->
+          </div>
+          <!-- END Left Section -->
+
+          <!-- Right Section -->
+          <div class="d-none d-lg-flex align-items-center">
+            <!-- Menu -->
+            <ul class="nav-main nav-main-horizontal nav-main-hover">
+              <li class="nav-main-item">
+                <a class="nav-main-link" href="#dm-package">
+                  <i class="nav-main-link-icon fa fa-box"></i>
+                  <span class="nav-main-link-name">بسته</span>
+                </a>
+              </li>
+              <li class="nav-main-item">
+                <a class="nav-main-link" href="#dm-dashboards">
+                  <i class="nav-main-link-icon fa fa-compass"></i>
+                  <span class="nav-main-link-name">داشبوردها</span>
+                </a>
+              </li>
+              <li class="nav-main-item">
+                <a class="nav-main-link" href="#dm-widgets">
+                  <i class="nav-main-link-icon fa fa-puzzle-piece"></i>
+                  <span class="nav-main-link-name">ابزارک ها</span>
+                </a>
+              </li>
+              <li class="nav-main-item">
+                <a class="nav-main-link" href="#dm-layout">
+                  <i class="nav-main-link-icon fa fa-fire"></i>
+                  <span class="nav-main-link-name">چیدمان</span>
+                </a>
+              </li>
+              <li class="nav-main-item">
+                <a class="nav-main-link" href="#dm-toolkit">
+                  <i class="nav-main-link-icon fab fa-node-js"></i>
+                  <span class="nav-main-link-name">ابزار</span>
+                </a>
+              </li>
+              <li class="nav-main-item">
+                <a class="nav-main-link" href="#dm-features">
+                  <i class="nav-main-link-icon fa fa-heartbeat"></i>
+                  <span class="nav-main-link-name">امکانات</span>
+                </a>
+              </li>
+            </ul>
+            <!-- END Menu -->
+          </div>
+          <!-- END Right Section -->
+        </div>
+        <!-- END Header Content -->
+
+        <!-- Header Search -->
+        <div class="overlay-header bg-sidebar-dark" id="page-header-search">
+          <div class="content-header">
+            <form action="be_pages_generic_search.html" class="w-100" method="POST">
+              <div class="input-group">
+                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
+                <button class="btn btn-primary" data-action="header_search_off" data-toggle="layout" type="button">
+                  <i class="fa fa-fw fa-times-circle"></i>
+                </button>
+                <input class="form-control border-0" id="page-header-search-input" name="page-header-search-input" placeholder="جستجو کنید یا ESC را بزنید.." type="text"/>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- END Header Search -->
+
+        <!-- Header Loader -->
+        <!-- Please check out the Loaders page under Components category to see examples of showing/hiding it -->
+        <div class="overlay-header bg-sidebar-dark" id="page-header-loader">
+          <div class="content-header">
+            <div class="w-100 text-center">
+              <i class="fa fa-fw fa-2x fa-sun fa-spin text-white"></i>
+            </div>
+          </div>
+        </div>
+        <!-- END Header Loader -->
+      </header>
+      <!-- END Header -->
+
+      <!-- Main Container -->
+      <main id="main-container">
+        <!-- Hero -->
+        <div class="bg-body-extra-light">
+          <div class="content content-top text-center">
+            <div class="pt-4 pt-lg-6">
+              <h1 class="h2 fw-bold mb-2"> فریمورک داشبورد پریمیوم برای توسعه دهندگان </h1>
+            </div>
+            <div class="row g-0 justify-content-center mb-6">
+              <div class="col-lg-8">
+                <p class="fs-5 mb-4"> تازه ترین و قدرتمندترین داشبوردها را برای برنامه های وب خود ایجاد کنید. ساخته شده با <span class="fw-semibold"> بوت استرپ 5</span>, <span class="fw-semibold">sass</span> و <span class="fw-semibold">es6</span>. <span class="fw-semibold">بدون جی کوئری</span> در هسته. اکنون با یک <a class="link-fx fw-semibold" data-action="dark_mode_toggle" data-toggle="layout" href="javascript:void(0)">حالت تاریک</a> کاملاً جدید.
+                </p>
+                <div>
+                  <a class="btn btn-alt-success px-4 py-2 m-1" href="https://www.rtl-theme.com/author/navidyaghoobi/products/">
+                    <i class="fa fa-fw fa-shopping-cart opacity-50 me-1"></i> خرید </a>
+                  <a class="btn btn-alt-primary px-4 py-2 m-1" href="be_pages_dashboard.html" target="_blank">
+                    <i class="fa fa-fw fa-rocket opacity-50 me-1"></i> پیش نمایش قالب </a>
+                </div>
+              </div>
+            </div>
+            <div style="margin-bottom: -170px;">
+              <img alt="عکس تبلیغاتی قهرمان Dashmix ورژن 5  " class="img-fluid" src="assets/media/various/promo_hero_v5.png" srcset="assets/media/various/promo_hero_v5@2x.png 2x"/>
+            </div>
+          </div>
+        </div>
+        <!-- END Hero -->
+
+        <!-- Package -->
+        <div class="bg-body-light" id="dm-package">
+          <div class="content content-full">
+            <div class="py-5 mt-3 mt-lg-5 mb-5 text-center">
+              <h2 class="fw-bold mb-3"> پکیج کامل </h2>
+              
+              <div class="row g-0 justify-content-center">
+                <div class="col-lg-8">
+                  <p class="fs-lg mb-0">
+                    <strong>dashmix </strong>همراه با مستندات دقیق. این شامل همه چیزهایی است که برای شروع ساختن رابط کاربری برنامه وب خود نیاز دارید. </p>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+        <!-- END Package -->
+
+        <!-- Dashboards -->
+        <div id="dm-dashboards">
+          <div class="content content-full">
+            <div class="py-5 mt-3 mt-lg-5 text-center mb-3">
+              <p class="fs-sm text-uppercase text-primary fw-bold mb-1"> چیدمان قدرتمند </p>
+              <h2 class="fw-bold mb-3">
+                20+ داشبورد برنامه های وب </h2>
+              <div class="row g-0 justify-content-center">
+                <div class="col-lg-8">
+                  <p class="fs-lg mb-0"> شما می توانید هر طرح داشبوردی را که می خواهید برای پروژه برنامه وب خود توسط <span class="fw-semibold">dashmix </span> ایجاد کنید . امکانات بی پایان هستند. ما طرح‌های مختلف زیادی ایجاد کرده‌ایم تا به شما ایده بدهیم و به شما کمک کنیم طرح خود را بسازید. </p>
+                </div>
+              </div>
+            </div>
+            <div class="row items-push">
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_file_hosting.html">
+                  <div class="block-content bg-gd-xdream">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد میزبانی فایل" class="img-fluid" src="assets/media/various/promo_dashboard_file_hosting.png" srcset="assets/media/various/promo_dashboard_file_hosting@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> میزبانی فایل </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> رابط کاربری میزبانی فایل ابری </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_wp_post.html">
+                  <div class="block-content bg-gd-xwork">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد WP Post" class="img-fluid" src="assets/media/various/promo_dashboard_wp_post.png" srcset="assets/media/various/promo_dashboard_wp_post@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> پست وردپرس </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> یک رابط کاربری الهام گرفته از وردپرس </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_corporate_slim.html">
+                  <div class="block-content bg-gd-xpro">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد باریک شرکتی" class="img-fluid" src="assets/media/various/promo_dashboard_corporate_slim.png" srcset="assets/media/various/promo_dashboard_corporate_slim@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> باریک شرکتی  </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> رابط مدرن و تمیز </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_analytics.html">
+                  <div class="block-content bg-xpro-dark">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد تجزیه و تحلیل" class="img-fluid" src="assets/media/various/promo_dashboard_analytics.png" srcset="assets/media/various/promo_dashboard_analytics@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> تجزیه و تحلیل </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> رابط تجزیه و تحلیل وب </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_chat.html">
+                  <div class="block-content bg-xdream-light">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد چت" class="img-fluid" src="assets/media/various/promo_dashboard_chat.png" srcset="assets/media/various/promo_dashboard_chat@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> چت </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> رابط ارتباطی </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_social_compact.html">
+                  <div class="block-content bg-xmodern-light">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد فشرده اجتماعی" class="img-fluid" src="assets/media/various/promo_dashboard_social_compact.png" srcset="assets/media/various/promo_dashboard_social_compact@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> قرارداد اجتماعی </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> رابط کاربری مشابه فیس بوک </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_travel.html">
+                  <div class="block-content bg-gd-sea">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد سفر" class="img-fluid" src="assets/media/various/promo_dashboard_travel.png" srcset="assets/media/various/promo_dashboard_travel@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> سفر </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> رابط اجاره آپارتمان </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_medical.html">
+                  <div class="block-content bg-gd-sublime">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد پزشکی" class="img-fluid" src="assets/media/various/promo_dashboard_medical.png" srcset="assets/media/various/promo_dashboard_medical@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> پزشکی </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> رابط مبتنی بر بیمارستان </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_tasks.html">
+                  <div class="block-content bg-gd-aqua">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد وظایف" class="img-fluid" src="assets/media/various/promo_dashboard_tasks.png" srcset="assets/media/various/promo_dashboard_tasks@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> وظایف </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> برنامه وب لیست وظایف </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_hosting.html">
+                  <div class="block-content bg-xmodern">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد میزبانی" class="img-fluid" src="assets/media/various/promo_dashboard_hosting.png" srcset="assets/media/various/promo_dashboard_hosting@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> میزبانی </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> ایده آل برای میزبانی وب سفارشی </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_booking.html">
+                  <div class="block-content bg-xinspire-darker">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد رزرو" class="img-fluid" src="assets/media/various/promo_dashboard_booking.png" srcset="assets/media/various/promo_dashboard_booking@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> رزرو </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> ایجاد یک تجارت مسافرتی </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_gaming.html">
+                  <div class="block-content bg-xeco-darker">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد بازی" class="img-fluid" src="assets/media/various/promo_dashboard_gaming.png" srcset="assets/media/various/promo_dashboard_gaming@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> بازی </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> سرور Minecraft </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_classic_boxed.html">
+                  <div class="block-content bg-default-lighter">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد جعبه دار کلاسیک" class="img-fluid" src="assets/media/various/promo_dashboard_classic_boxed.png" srcset="assets/media/various/promo_dashboard_classic_boxed@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> کلاسیک جعبه ای </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> داشبورد تجزیه و تحلیل شرکتی </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_crypto.html">
+                  <div class="block-content bg-dark">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد کریپتو" class="img-fluid" src="assets/media/various/promo_dashboard_crypto.png" srcset="assets/media/various/promo_dashboard_crypto@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> رمزنگاری </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> مدیریت پورتفولیو </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_banking.html">
+                  <div class="block-content bg-xwork-light">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد بانکی" class="img-fluid" src="assets/media/various/promo_dashboard_banking.png" srcset="assets/media/various/promo_dashboard_banking@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> بانکداری </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> داشبورد پول مدرن </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_social.html">
+                  <div class="block-content bg-xmodern-dark">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد اجتماعی" class="img-fluid" src="assets/media/various/promo_dashboard_social.png" srcset="assets/media/various/promo_dashboard_social@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> اجتماعی </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> برای شبکه اجتماعی جدید شما </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_dark.html">
+                  <div class="block-content bg-dark">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد تاریک" class="img-fluid" src="assets/media/various/promo_dashboard_dark.png" srcset="assets/media/various/promo_dashboard_dark@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> تاریک </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> داشبورد با حالت تاریک روشن </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_modern.html">
+                  <div class="block-content bg-gd-dusk">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد مدرن" class="img-fluid" src="assets/media/various/promo_dashboard_modern.png" srcset="assets/media/various/promo_dashboard_modern@2x.png 2x"/>                            </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> نوین </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> خلاق و رسانه گرا </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_minimal.html">
+                  <div class="block-content bg-xwork-lighter">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="حداقل داشبورد" class="img-fluid" src="assets/media/various/promo_dashboard_minimal.png" srcset="assets/media/various/promo_dashboard_minimal@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> مینیمال </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> برای برنامه های فوق العاده تمیز و هنری </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="db_messages.html">
+                  <div class="block-content bg-xsmooth">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد پیام ها" class="img-fluid" src="assets/media/various/promo_dashboard_messages.png" srcset="assets/media/various/promo_dashboard_messages@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> پیام  </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> برنامه وب Inbox </p>
+                  </div>
+                </a>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <a class="block block-rounded block-link-pop h-100 mb-0" href="be_pages_dashboard.html">
+                  <div class="block-content bg-default">
+                    <div class="pt-2 px-2 pull-b">
+                      <img alt="داشبورد پیش فرض" class="img-fluid" src="assets/media/various/promo_dashboard.png" srcset="assets/media/various/promo_dashboard@2x.png 2x"/>
+                    </div>
+                  </div>
+                  <div class="block-content block-content-full">
+                    <h4 class="h6 mb-1"> پیش فرض </h4>
+                    <p class="fs-sm fw-medium text-muted mb-0"> داشبورد فروش </p>
+                  </div>
+                </a>
+              </div>
+            </div>
+            <div class="py-3 py-sm-5 px-md-7">
+              <div class="block block-rounded block-transparent bg-body-light">
+                <div class="block-content block-content-full">
+                  <div class="row justify-content-sm-between align-items-center p-md-3">
+                    <div class="col-sm-6">
+                      <h4 class="mb-2"> Dashmix کاملاً ویژه است </h4>
+                      <p class="text-muted mb-sm-0"> این مجموعه مملو از عناصر، ویجت ها، اجزا و صفحات طراحی شده آماده است! </p>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                      <a class="btn btn-primary px-4 py-2" href="be_pages_dashboard.html"> آن را کاوش کنید! <i class="fa fa-fw fa-arrow-left opacity-50 ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END Dashboards -->
+
+        <!-- Widgets Collection -->
+        <div class="bg-body-light" id="dm-widgets">
+          <div class="content">
+            <div class="py-5 mt-3 mt-lg-5 text-center mb-3">
+              <p class="fs-sm text-uppercase text-primary fw-bold mb-1"> ارائه داده ها </p>
+              <h2 class="fw-bold mb-3"> مجموعه ابزارک ها </h2>
+              <div class="row g-0 justify-content-center">
+                <div class="col-lg-8">
+                  <p class="fs-lg mb-0"> داشبوردهای خود را با ویجت‌هایی که با دقت ساخته شده‌اند، تقویت کنید. از میان یک مجموعه عظیم و دسته‌های مختلف، از جمله کاشی‌ها، آمار، رسانه، کاربران و وبلاگ، انتخاب کنید. </p>
+                </div>
+              </div>
+            </div>
+            <div class="row py-3">
+              <div class="col-md-6 d-md-flex align-items-md-center">
+                <div class="w-100">
+                  <div class="row g-sm">
+                    <div class="col-sm-6">
+                      <a class="block text-center bg-image" href="javascript:void(0)" style="background-image: url('assets/media/photos/photo19.jpg');">
+                        <div class="block-content block-content-full bg-gd-fruit-op ratio ratio-4x3">
+                          <div class="d-flex justify-content-center align-items-center">
+                            <div>
+                              <i class="far fa-2x fa-user-circle text-white"></i>
+                              <div class="fw-semibold mt-3 text-uppercase text-white">حساب ها</div>
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                    <div class="col-sm-6">
+                      <a class="block text-center bg-image" href="javascript:void(0)" style="background-image: url('assets/media/photos/photo19.jpg');">
+                        <div class="block-content block-content-full bg-gd-dusk-op ratio ratio-4x3">
+                          <div class="d-flex justify-content-center align-items-center">
+                            <div>
+                              <i class="fa fa-2x fa-inbox text-white"></i>
+                              <div class="fw-semibold mt-3 text-uppercase text-white">صندوق ورودی (2)</div>
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-5 offset-md-1 d-md-flex align-items-md-center">
+                <div class="py-3">
+                  <h4 class="mb-2"> ویجت های کاشی </h4>
+                  <p class="mb-0 text-muted"> طراحی کاشی فوق العاده تمیز و موثر که می تواند به شما در ارائه آمار، ایجاد منوهای سفارشی یا نمایش اطلاعات حیاتی به کاربران کمک کند. </p>
+                </div>
+              </div>
+            </div>
+            <div class="row py-3">
+              <div class="col-md-6 d-md-flex align-items-md-center">
+                <a class="block block-rounded block-link-pop w-100 my-3 bg-image text-center" href="javascript:void(0)" style="background-image: url('assets/media/photos/photo18.jpg');">
+                  <div class="block-content block-content-full bg-white-90">
+                    <img alt="" class="img-avatar img-avatar96 img-avatar-thumb" src="assets/media/avatars/avatar15.jpg"/>
+                    <p class="fs-lg fw-semibold text-black mb-0 mt-2">آدام مک کوی</p>
+                    <p class="text-black-75 fw-medium mb-0">توسعه دهنده وب</p>
+                  </div>
+                  <div class="block-content block-content-full bg-body-extra-light">
+                    <div class="row g-sm my-2">
+                      <div class="col-4">
+                        <p class="mb-2">
+                          <i class="fa fa-fw fa-2x fa-boxes text-muted"></i>
+                        </p>
+                        <p class="fs-sm mb-0">
+                          7 پروژه  </p>
+                      </div>
+                      <div class="col-4">
+                        <p class="mb-2">
+                          <i class="fa fa-fw fa-2x fa-user-tie text-muted"></i>
+                        </p>
+                        <p class="fs-sm mb-0">
+                          98 مشتری </p>
+                      </div>
+                      <div class="col-4">
+                        <p class="mb-2">
+                          <i class="fa fa-fw fa-2x fa-money-bill-wave text-muted"></i>
+                        </p>
+                        <p class="fs-sm mb-0">
+                          1.6هزار فروش </p>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-md-5 offset-md-1 d-md-flex align-items-md-center">
+                <div class="py-3">
+                  <h4 class="mb-2"> ابزارک های کاربر </h4>
+                  <p class="mb-0 text-muted"> مجموعه گسترده ای از ویجت های مرتبط با کاربر را می توان برای ایجاد انواع کارت های حاوی اطلاعات مورد استفاده قرار داد که برای داشبوردهای کاربر محور و برنامه های کاربردی وب مناسب است. </p>
+                </div>
+              </div>
+            </div>
+            <div class="row py-3">
+              <div class="col-md-6 d-md-flex align-items-md-center">
+                <div class="block block-rounded w-100 text-center">
+                  <div class="block-content pb-8 text-end bg-image" style="background-image: url('assets/media/photos/photo21.jpg');">
+                    <span class="badge bg-warning fw-bold p-2 text-uppercase"> آموزش ها </span>
+                  </div>
+                  <div class="block-content">
+                    <a class="fw-semibold text-dark" href="javascript:void(0)"> کدنویسی را یاد بگیرید </a>
+                    <p class="fs-sm text-muted mt-1"> جک گرین · 9 دقیقه </p>
+                  </div>
+                  <div class="block-content block-content-full bg-body-light">
+                    <div class="row g-0 fs-sm text-center">
+                      <div class="col-4">
+                        <a class="text-muted fw-semibold" href="javascript:void(0)">
+                          <i class="fa fa-fw fa-eye me-1"></i> 456
+                        </a>
+                      </div>
+                      <div class="col-4">
+                        <a class="text-muted fw-semibold" href="javascript:void(0)">
+                          <i class="fa fa-fw fa-heart me-1"></i> 67
+                        </a>
+                      </div>
+                      <div class="col-4">
+                        <a class="text-muted fw-semibold" href="javascript:void(0)">
+                          <i class="fa fa-fw fa-comments me-1"></i> 56
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-5 offset-md-1 d-md-flex align-items-md-center">
+                <div class="py-3">
+                  <h4 class="mb-2"> ابزارک های وبلاگ </h4>
+                  <p class="mb-0 text-muted"> تعداد زیادی ویجت مبتنی بر وبلاگ و نویسنده برای وبلاگ برنامه وب شما. داستان های خود را با استایل و روش های مختلف فهرست کرده و ارائه دهید. </p>
+                </div>
+              </div>
+            </div>
+            <div class="py-3 py-sm-5 px-md-7">
+              <div class="block block-rounded block-transparent bg-body">
+                <div class="block-content block-content-full">
+                  <div class="row justify-content-sm-between align-items-center p-md-3">
+                    <div class="col-sm-6">
+                      <h4 class="mb-2"> مجموعه ویجت غنی </h4>
+                      <p class="text-muted mb-sm-0"> طراحی تمیز و تصمیمات متفکرانه به ما کمک کرد تا یک مجموعه ویجت عالی بسازیم. </p>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                      <a class="btn btn-primary px-4 py-2" href="be_widgets_tiles.html"> همه آنها را کاوش کنید <i class="fa fa-fw fa-arrow-left opacity-50 ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END Widgets Collection -->
+
+        <!-- Info -->
+        <div class="content">
+          <div class="py-5 py-md-7 text-center">
+            <h2 class="fw-bold mb-3"> ساخته شده با <i class="fa fa-fw fa-heart text-danger"></i> ارائه شده در <a class="link-fx" href="https://www.rtl-theme.com/author/navidyaghoobi/products/">راست‌چین</a>
+            </h2>
+            <p class="fs-lg mb-0"> سود بیش از حد با انتخاب <strong>dashmix </strong>. این با علاقه ساخته شده است تا شما را قادر سازد بهترین داشبوردها را بسازید. </p>
+          </div>
+        </div>
+        <!-- END Info -->
+
+        <!-- Sophisticated Layout -->
+        <div class="bg-body-light overflow-hidden" id="dm-layout">
+          <div class="content content-full">
+            <div class="py-5 mt-3 mt-lg-5 text-center mb-3">
+              <p class="fs-sm text-uppercase text-primary fw-bold mb-1"> انعطاف پذیر و قابل استفاده مجدد </p>
+              <h2 class="fw-bold mb-3"> چیدمان پیچیده </h2>
+              <div class="row g-0 justify-content-center">
+                <div class="col-lg-8">
+                  <p class="fs-lg mb-0"> چیدمان دست ساز با کدگذاری سریع، پاسخگو و قدرتمند. هر نوع داشبوردی را که نیاز دارید با چیدمانی که برای کار روان و بدون محدودیت ایجاد شده است بسازید. </p>
+                </div>
+              </div>
+            </div>
+            <div class="row items-push-2x">
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_page_default.html">
+                    <img alt="چیدمان پیش فرض" class="img-fluid" src="assets/media/various/promo_layout_default.png" srcset="assets/media/various/promo_layout_default@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">چیدمان پیش فرض</h4>
+                <p class="mb-0 text-muted"> نوار کناری سمت چپ، پوشش سمت راست و یک هدر ثابت. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_page_flipped.html">
+                    <img alt="چیدمان برگردانده شده" class="img-fluid" src="assets/media/various/promo_layout_flipped.png" srcset="assets/media/various/promo_layout_flipped@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">چیدمان برگردانده شده</h4>
+                <p class="mb-0 text-muted"> نوار کناری سمت راست، پوشش  سمت چپ و یک هدر ثابت. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_sidebar_hidden.html">
+                    <img alt="نوار کناری پنهان" class="img-fluid" src="assets/media/various/promo_layout_sidebar_hidden.png" srcset="assets/media/various/promo_layout_sidebar_hidden@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">نوار کناری پنهان</h4>
+                <p class="mb-0 text-muted"> شما می توانید نوار کناری اصلی را به طور پیش فرض مخفی کنید. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_content_side_left.html">
+                    <img alt="محتوای سمت چپ" class="img-fluid" src="assets/media/various/promo_layout_content_side_left.png" srcset="assets/media/various/promo_layout_content_side_left@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">محتوای سمت چپ</h4>
+                <p class="mb-0 text-muted"> شما می توانید یک محتوای سمت چپ داخلی داشته باشید. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_content_side_right.html">
+                    <img alt="محتوای سمت راست" class="img-fluid" src="assets/media/various/promo_layout_content_side_right.png" srcset="assets/media/various/promo_layout_content_side_right@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">محتوای سمت راست</h4>
+                <p class="mb-0 text-muted"> شما می توانید محتوای سمت راست درونی داشته باشید. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_page_native_scrolling.html">
+                    <img alt="پیمایش بومی" class="img-fluid" src="assets/media/various/promo_layout_native_scrolling.png" srcset="assets/media/various/promo_layout_native_scrolling@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">پیمایش بومی</h4>
+                <p class="mb-0 text-muted"> عملکرد پیمایش نوار کناری سفارشی و پوشش جانبی غیرفعال است. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_sidebar_dark.html">
+                    <img alt="نوار کناری تاریک" class="img-fluid" src="assets/media/various/promo_layout_sidebar_dark.png" srcset="assets/media/various/promo_layout_sidebar_dark@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">نوار کناری تاریک</h4>
+                <p class="mb-0 text-muted"> می توانید نوار کناری با تم تاریک داشته باشید. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_header_static_dark.html">
+                    <img alt="هدر استاتیک" class="img-fluid" src="assets/media/various/promo_layout_header_static.png" srcset="assets/media/various/promo_layout_header_static@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">هدر استاتیک</h4>
+                <p class="mb-0 text-muted"> شما می توانید یک هدر استاتیک نیز داشته باشید. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_side_overlay_visible.html">
+                    <img alt="پوشش جانبی قابل مشاهده" class="img-fluid" src="assets/media/various/promo_layout_side_overlay_visible.png" srcset="assets/media/various/promo_layout_side_overlay_visible@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">پوشش جانبی قابل مشاهده</h4>
+                <p class="mb-0 text-muted"> شما می توانید پوشش جانبی را به طور پیش فرض قابل مشاهده کنید. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_content_main_full_width.html">
+                    <img alt="محتوای اصلی با عرض کامل" class="img-fluid" src="assets/media/various/promo_layout_content_main_full_width.png" srcset="assets/media/various/promo_layout_content_main_full_width@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">محتوای اصلی با عرض کامل</h4>
+                <p class="mb-0 text-muted"> محتوا همیشه تمام عرض موجود ظرف اصلی را اشغال می کند. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_content_main_narrow.html">
+                    <img alt="محتوای اصلی باریک" class="img-fluid" src="assets/media/various/promo_layout_content_main_narrow.png" srcset="assets/media/various/promo_layout_content_main_narrow@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">محتوای اصلی باریک</h4>
+                <p class="mb-0 text-muted"> محتوا از درصد عرض استفاده می‌کند، بنابراین از محتوای موجود در صفحه‌های بزرگ‌تر کوچک‌تر است. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5 text-center">
+                <div class="mb-3">
+                  <a class="img-link" href="be_layout_content_main_boxed.html">
+                    <img alt="محتوای اصلی در جعبه" class="img-fluid" src="assets/media/various/promo_layout_content_main_boxed.png" srcset="assets/media/various/promo_layout_content_main_boxed@2x.png 2x"/>
+                  </a>
+                </div>
+                <h4 class="h5 mb-2">محتوای اصلی در جعبه</h4>
+                <p class="mb-0 text-muted"> محتوا دارای مجموعه حداکثر عرض است، بنابراین در صفحه نمایش های بزرگتر قرار می گیرد. </p>
+              </div>
+            </div>
+            <div class="py-3 py-sm-5 px-md-7">
+              <div class="block block-rounded block-transparent bg-body">
+                <div class="block-content block-content-full">
+                  <div class="row justify-content-sm-between align-items-center p-md-3">
+                    <div class="col-sm-6">
+                      <h4 class="mb-2"> چیدمان قدرتمند </h4>
+                      <p class="text-muted mb-sm-0"> این فقط یک نگاه اجمالی از تمام گزینه های چیدمان موجود است! حتما همه آنها را بررسی کنید! </p>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                      <a class="btn btn-alt-primary px-4 py-2" href="be_layout_api.html"> API چیدمان <i class="fa fa-fw fa-arrow-left opacity-50 ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END Sophisticated Layout -->
+
+        <!-- Smart Toolkit -->
+        <div class="bg-body-extra-light" id="dm-toolkit">
+          <div class="content content-full">
+            <div class="py-5 mt-3 mt-lg-5 text-center mb-3">
+              <p class="fs-sm text-uppercase text-primary fw-bold mb-1"> برنامه نویس دوستانه </p>
+              <h2 class="fw-bold mb-3"> جعبه ابزار هوشمند </h2>
+              <div class="row g-0 justify-content-center">
+                <div class="col-lg-8">
+                  <p class="fs-lg mb-0"> ابزارهای اتوماسیون که همه چیز را مدیریت می کند و به شما امکان می دهد روی توسعه تمرکز کنید. به راحتی می توانید از آنهایی که شامل یا خودتان هستند استفاده کنید، هر آنچه که برای شما بهترین است. </p>
+                </div>
+              </div>
+            </div>
+            <div class="mb-5">
+              <div class="row py-3">
+                <div class="col-md-5 d-md-flex align-items-md-center">
+                  <div>
+                    <h4 class="mb-2"> وب سرور با Browsersync </h4>
+                    <p class="mb-0 text-muted"> فقط یک دستور کنسول به دور از داشتن یک وب سرور آماده و سرویس دهی به پروژه Dashmix شما. به طور خودکار در تغییرات فایل بارگیری می شود و مرورگرهای شما را برای آزمایش آسان در چندین دستگاه در حین کار همگام سازی می کند. </p>
+                  </div>
+                </div>
+                <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                  <div class="block block-rounded block-fx-pop row g-sm w-100 py-4 my-3">
+                    <div class="col-6">
+                      <div class="item item-2x item-rounded ms-auto bg-xinspire-lighter">
+                        <i class="fa fa-2x fa-server text-xinspire-dark"></i>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="item item-2x item-rounded me-auto bg-xinspire-lighter">
+                        <i class="fa fa-2x fa-redo fa-spin text-xinspire-dark"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row py-3">
+                <div class="col-md-5 d-md-flex align-items-md-center">
+                  <div>
+                    <h4 class="mb-2"> Sass به CSS با Autoprefixer </h4>
+                    <p class="mb-0 text-muted"> کامپایل Sass به CSS کاملاً خودکار (در صورت تقاضا یا در حال پرواز) برای گردش کار روان و کارآمد. پیشوند خودکار هر پیشوند مورد نیاز مرورگر را اضافه می کند، بنابراین می توانید بر خلاقیت خود تمرکز کنید. </p>
+                  </div>
+                </div>
+                <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                  <div class="block block-rounded block-fx-pop row g-0 w-100 py-4 my-3">
+                    <div class="col-4">
+                      <div class="item item-2x item-rounded mx-auto bg-xsmooth-lighter">
+                        <i class="fab fa-2x fa-sass text-xsmooth-dark"></i>
+                      </div>
+                    </div>
+                    <div class="col-4 d-flex align-items-center justify-content-center">
+                      <div class="item item-circle bg-body-dark">
+                        <i class="fa fa-arrow-left"></i>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="item item-2x item-rounded mx-auto bg-xwork-lighter">
+                        <i class="fab fa-2x fa-css3 text-xwork-dark"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row py-3">
+                <div class="col-md-5 d-md-flex align-items-md-center">
+                  <div>
+                    <h4 class="mb-2"> es6 تا es5 با webpack و Babel </h4>
+                    <p class="mb-0 text-muted"> کد es6 JS را با رویکرد ماژولار بنویسید و اجازه دهید وب پک با Babel جادوی خود را انجام دهد. این برنامه همه چیز را به es5 که اکثر مرورگرهای فعلی پشتیبانی و اجرا می کنند، جمع و کامپایل می کند. </p>
+                  </div>
+                </div>
+                <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                  <div class="block block-rounded block-fx-pop row g-0 w-100 py-4 my-3">
+                    <div class="col-4">
+                      <div class="item item-2x item-rounded mx-auto bg-xplay-lighter">
+                        <span class="fs-lg fw-bold text-xplay-dark">es6</span>
+                      </div>
+                    </div>
+                    <div class="col-4 d-flex align-items-center justify-content-center">
+                      <div class="item item-circle bg-body-dark">
+                        <i class="fa fa-arrow-left"></i>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="item item-2x item-rounded mx-auto bg-xwork-lighter">
+                        <span class="fs-lg fw-bold text-xwork-dark">es5</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row py-3">
+                <div class="col-md-5 d-md-flex align-items-md-center">
+                  <div>
+                    <h4 class="mb-2"> آماده تولید </h4>
+                    <p class="mb-0 text-muted"> یک کار ساخت گنجانده شده است که تنها با گنجاندن فایل های حیاتی کمینه شده، یک پروژه تمیز و آماده برای تولید تولید می کند. </p>
+                  </div>
+                </div>
+                <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                  <div class="block block-rounded block-fx-pop row g-0 w-100 py-4 my-3">
+                    <div class="item item-2x item-rounded mx-auto bg-xeco-lighter">
+                      <i class="fa fa-2x fa-wrench text-xeco-dark"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END Smart Toolkit -->
+
+        <!-- Handcrafted Design -->
+        <div class="bg-body-light overflow-hidden" id="dm-design">
+          <div class="content content-full">
+            <div class="py-5 mt-3 mt-lg-5 text-center mb-3">
+              <p class="fs-sm text-uppercase text-primary fw-bold mb-1"> ساخته شده با عشق </p>
+              <h2 class="fw-bold mb-3"> طراحی دست ساز </h2>
+              <div class="row g-0 justify-content-center">
+                <div class="col-lg-8">
+                  <p class="fs-lg mb-0"> ارائه محصولی مفید، مفید و استفاده آسان در اولویت ماست. همیشه با دقت و توجه به جزئیات ساخته شده است تا شما را قادر سازد کارآمدتر و بدون زحمت کار کنید. </p>
+                </div>
+              </div>
+            </div>
+            <div class="mb-5">
+              <div class="row py-3">
+                <div class="col-md-5 d-md-flex align-items-md-center">
+                  <div>
+                    <h4 class="h5 mb-2"> اشتیاق </h4>
+                    <p class="text-muted mb-0"> ما مشتاق کاری هستیم که انجام می‌دهیم و عاشق تولید محصولاتی هستیم که می‌توانند زندگی شما را آسان‌تر کنند و به موفقیت شما کمک کنند. ما به جزئیات کوچک توجه می کنیم و همیشه به دنبال بهترین ها هستیم. </p>
+                  </div>
+                </div>
+                <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                  <div class="block block-rounded block-fx-pop row g-0 w-100 py-4 my-3 overflow-hidden">
+                    <div class="row g-0 text-center w-100 mb-2">
+                      <div class="col-4">
+                        <div class="item mx-auto">
+                          <i class="si fa-2x si-badge text-info"></i>
+                        </div>
+                        <strong>کیفیت</strong>
+                      </div>
+                      <div class="col-4">
+                        <div class="item mx-auto">
+                          <i class="si fa-2x si-chemistry text-xsmooth"></i>
+                        </div>
+                        <strong>خلاقیت</strong>
+                      </div>
+                      <div class="col-4">
+                        <div class="item mx-auto">
+                          <i class="si fa-2x si-heart text-danger"></i>
+                        </div>
+                        <strong> اشتیاق </strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row py-3">
+                <div class="col-md-5 d-md-flex align-items-md-center">
+                  <div>
+                    <h4 class="h5 mb-2"> تعهد </h4>
+                    <p class="mb-0 text-muted"> ما به کار خود متعهد هستیم و در کنار پروژه های خود هستیم. هدف ما بهبود آنها در هر به‌روزرسانی و ارائه کامل‌ترین بسته‌ها با کمترین میزان ممکن است. </p>
+                  </div>
+                </div>
+                <div class="col-md-6 offset-md-1 offset-md-1 d-md-flex align-items-md-center">
+                  <div class="block block-rounded block-fx-pop row g-0 w-100 py-4 my-3 overflow-hidden">
+                    <div class="row g-0 text-center w-100 mb-2">
+                      <div class="col-4">
+                        <div class="item mx-auto">
+                          <i class="si fa-2x si-compass text-success"></i>
+                        </div>
+                        <strong>انگیزه</strong>
+                      </div>
+                      <div class="col-4">
+                        <div class="item mx-auto">
+                          <i class="si fa-2x si-energy text-warning"></i>
+                        </div>
+                        <strong>سادگی</strong>
+                      </div>
+                      <div class="col-4">
+                        <div class="item mx-auto">
+                          <i class="si fa-2x si-vector text-xinspire"></i>
+                        </div>
+                        <strong>طرح</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END Handcrafted Design -->
+
+        <!-- Full Featured -->
+        <div class="bg-body-extra-light" id="dm-features">
+          <div class="content content-full">
+            <div class="py-5 mt-3 mt-lg-5 text-center mb-3">
+              <p class="fs-sm text-uppercase text-primary fw-bold mb-1"> بی حد و حصر </p>
+              <h2 class="fw-bold mb-3"> کاملاً ویژه </h2>
+              <div class="row g-0 justify-content-center">
+                <div class="col-lg-8">
+                  <p class="fs-lg mb-0"> تعداد زیادی از ویژگی های موجود در <strong>dashmix </strong> با حداقل هزینه عملکرد شما به راحتی می توانید فقط از مواردی که نیاز دارید استفاده کنید، بدون اینکه برنامه های وب خود را با چیزهایی که نیاز ندارید بیش از حد بارگیری کنید. رابط کاربری سبک و سریع همان چیزی است که به دست می آورید. </p>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-fire text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> بوت استرپ 5
+                </h4>
+                <p class="mb-0 text-muted"> Dashmix بر اساس محبوب ترین کتابخانه اجزای جلویی در جهان است. ویژگی ها و ابزارهای جدید شگفت انگیز برای استفاده شما آماده است. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fab fa-2x fa-sass text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2">sass</h4>
+                <p class="mb-0 text-muted"> Dashmix با Sass ساخته شد و بوت استرپ را به روشی هوشمندانه نادیده گرفت و گسترش داد تا گردش کار کامل و ماژولار را تضمین کند. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-file-code text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2">es6
+                </h4>
+                <p class="mb-0 text-muted"> Dashmix با es6 ساخته شده است، نسخه جدید جاوا اسکریپت که ما را قادر می سازد کدهای تمیزتر و بهتری. بنویسیم. بدون جی کوئری در هسته. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fab fa-2x fa-node-js text-primary"></i>
+                  <i class="fab fa-2x fa-npm text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> Node.js و npm </h4>
+                <p class="mb-0 text-muted"> تمام وابستگی های مربوط به توسعه و تولید را می توان از طریق npm نصب کرد و به هر شکلی که دوست دارید استفاده کرد. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-boxes text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> webpack </h4>
+                <p class="mb-0 text-muted"> بسته‌کننده ماژول از قبل برای کار با Dashmix تنظیم شده است. هر چقدر که می خواهید از آن استفاده کنید، این کاملا به شما بستگی دارد. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fab fa-2x fa-gulp text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2">Gulp</h4>
+                <p class="mb-0 text-muted"> وظایف کاملاً خودکار که به شما امکان می دهد پروژه خود را سریعتر بسازید. وب سرور با همگام سازی مرورگر، es6 به es5 و Sass به CSS کامپایل در حین کار. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-cubes text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> طراحی مدولار </h4>
+                <p class="mb-0 text-muted"> همه چیز با ماژولار بودن در ذهن ساخته شده بود. شما می توانید انتخاب کنید که فقط آنچه را که به طور خاص برای پروژه خود نیاز دارید، گنجانده و استفاده کنید. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-bolt text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> قابلیت گسترش </h4>
+                <p class="mb-0 text-muted"> شما به راحتی می توانید کد سفارشی JS و همچنین استایل های Sass را بدون دست زدن به فایل های اصلی گسترش دهید یا لغو کنید و اطمینان حاصل کنید که بروز رسانی آسان خواهد بود. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-trophy text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2">ابزارک ها</h4>
+                <p class="mb-0 text-muted"> هزاران ویجت و کاشی طراحی شده آماده برای کمک به شما در ساخت انواع صفحات داشبورد گنجانده شده است. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-pallet text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> طراحی مبتنی بر ابزار </h4>
+                <p class="mb-0 text-muted"> طراحی مبتنی بر ابزارهای درجه یک، قابلیت استفاده مجدد از استایل های موجود را برای ایجاد صفحات جدید و منحصر به فرد تضمین می کند. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fab fa-2x fa-html5 text-primary"></i>
+                  <i class="fab fa-2x fa-css3-alt text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> HTML5 و CSS3 </h4>
+                <p class="mb-0 text-muted"> با استفاده از آخرین فناوری ها، پیروی از بهترین شیوه ها. کد معتبر W3C </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-desktop text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> کاملا ریسپانسیو </h4>
+                <p class="mb-0 text-muted"> رابط کاربری به طور خودکار تنظیم می شود و برای هر اندازه صفحه نمایش عالی به نظر می رسد. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-globe text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> پشتیبانی از مرورگرهای مختلف </h4>
+                <p class="mb-0 text-muted"> با تمام مرورگرهای مدرن از جمله کروم، اج، فایرفاکس، اپرا و سافاری خوب بازی می کند. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-rocket text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> سریع و سبک </h4>
+                <p class="mb-0 text-muted"> این دست ساز ساخته شده بود تا تا حد امکان سریع و سبک باشد. </p>
+              </div>
+             
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fab fa-2x fa-html5 text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2">نسخه HTML</h4>
+                <p class="mb-0 text-muted"> نسخه عمومی و انتزاعی که می تواند با هر فریمورک یا زبانی استفاده شود. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-cog text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> APIهای JS سفارشی </h4>
+                <p class="mb-0 text-muted"> API های قدرتمند جاوا اسکریپت گنجانده شده است. دستکاری چیدمان یا بلوک‌ها فقط با یک تماس JS فاصله دارد. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-cogs text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> اجزاء </h4>
+                <p class="mb-0 text-muted"> با دقت انتخاب و یکپارچه شده است تا پروژه شما را با عملکرد عالی تقویت و غنی کند. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-eye-dropper text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> تم های رنگی خلاقانه </h4>
+                <p class="mb-0 text-muted">
+                  9 با دقت انتخاب و یکپارچه شده است تا ux کاربران خود را بر اساس پروژه شما تقویت و غنی کند. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-gamepad text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2">
+                  1900+ آیکون های مبتنی بر فونت </h4>
+                <p class="mb-0 text-muted"> تعداد زیادی آیکون برای انتخاب از جمله آخرین بسته نماد فونت عالی 6. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-fighter-jet text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> رابط کاربری فوق العاده سریع </h4>
+                <p class="mb-0 text-muted"> انیمیشن‌های نوار کناری مجهز به GPU و استایل های هوشمند CSS تجربه‌ای عالی را تضمین می‌کنند. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-columns text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> مناطق جانبی انعطاف پذیر </h4>
+                <p class="mb-0 text-muted"> چیدمان های متعدد موجود و کاملاً قابل تنظیم با استفاده از API چیدمان قدرتمند. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-file text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> صفحات طراحی شده </h4>
+                <p class="mb-0 text-muted"> انواع صفحات، با دقت طراحی شده، برای الهام گرفتن و ایجاد صفحه خود. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-file-alt text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> مستندات </h4>
+                <p class="mb-0 text-muted"> یک مستندات دقیق برای کمک به شما برای آشنایی با ساختار و ویژگی‌های الگو گنجانده شده است. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-check-square text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> بروز رسانی آسان </h4>
+                <p class="mb-0 text-muted"> بروز رسانی یک الگو می تواند سخت باشد، اما ما سفارشی سازی و بروز رسانی یک فرآیند ساده را انجام دادیم. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-code text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> کد تمییز </h4>
+                <p class="mb-0 text-muted"> سورس کد خوب نظر داده شده که خواندن، دستکاری و کار با آن آسان است. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="fa fa-2x fa-arrow-up text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> بروز رسانی رایگان </h4>
+                <p class="mb-0 text-muted"> دانلود تمامی بروز رسانی ها برای مشتریان فعلی رایگان است. ویژگی های جدید و بروز رسانی های عالی بدون هزینه اضافی. </p>
+              </div>
+              <div class="col-sm-6 col-md-4 mb-5">
+                <div class="my-3">
+                  <i class="far fa-2x fa-life-ring text-primary"></i>
+                </div>
+                <h4 class="h5 mb-2"> پشتیبانی </h4>
+                <p class="mb-0 text-muted"> با خرید مجوز، واجد شرایط پشتیبانی ایمیل هستید. ما اینجا هستیم تا به شما کمک کنیم. </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END Full Featured -->
+
+        <!-- Call To Action -->
+        <div class="bg-body-light">
+          <div class="content content-full">
+            <div class="py-5 py-md-8 text-center">
+              <h2 class="fw-bold mb-3">Dash<span class="text-primary">mix</span> ساخته شد با <i class="fa fa-fw fa-heart text-danger"></i> ارائه شده در <a class="text-primary link-fx" href="https://www.rtl-theme.com/author/navidyaghoobi/products/">راست‌چین</a>
+              </h2>
+              <p class="fs-lg mb-4"> طراحی و توسعه وب پرشور با بیش از 15000 مشتری در سراسر جهان. </p>
+              <a class="btn btn-alt-success px-4 py-2 m-1" href="https://www.rtl-theme.com/author/navidyaghoobi/products/">
+                <i class="fa fa-fw fa-shopping-cart opacity-50 me-1"></i> خرید </a>
+              <a class="btn btn-alt-primary px-4 py-2 m-1" href="be_pages_dashboard.html" target="_blank">
+                <i class="fa fa-fw fa-rocket opacity-50 me-1"></i> پیش نمایش زنده </a>
+            </div>
+          </div>
+        </div>
+        <!-- END Call To Action -->
+
+        <!-- Footer -->
+        <footer class="bg-body-extra-light" id="page-footer">
+          <div class="content py-5">
+            <div class="row fs-sm">
+              <div class="col-sm-6 order-sm-2 py-1 text-center text-sm-end"> ساخته شده با <i class="fa fa-heart text-danger"></i> ارائه شده در <a class="fw-semibold" href="https://www.rtl-theme.com/author/navidyaghoobi/products/" target="_blank">راست‌چین</a>
+              </div>
+              <div class="col-sm-6 order-sm-1 py-1 text-center text-sm-start">
+                <a class="fw-semibold" href="https://www.rtl-theme.com/author/navidyaghoobi/products/" target="_blank">dashmix 5.4</a> © <span data-toggle="year-copy"></span>
+              </div>
+            </div>
+          </div>
+        </footer>
+        <!-- END Footer -->
+      </main>
+      <!-- END Main Container -->
+    </div>
+    <!-- END Page Container -->
+
+    <!--
+      Dashmix JS
+    
+      Core libraries and functionality
+      webpack is putting everything together at assets/_js/main/app.js
+    -->
+    <script src="assets/js/dashmix.app.min.js"></script>
+  
+
+</body></html>

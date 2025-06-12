@@ -1,0 +1,131 @@
+﻿@model List<AppUsers>
+@{
+    ViewData["Title"] = "Index";
+    int Counter = 1;
+}
+
+<!-- Main Container -->
+<main id="main-container">
+    <!-- Hero -->
+    <div class="bg-body-light">
+        <div class="content content-full">
+            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+                <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                    لیست کاربران
+                </h1>
+                <nav aria-label="breadcrumb" class="flex-shrink-0 my-2 my-sm-0 ms-sm-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            کاربران
+                        </li>
+                        <li aria-current="page" class="breadcrumb-item active">
+                            لیست کاربران
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero -->
+    <!-- Page Content -->
+    <div class="content">
+        <!-- Dynamic Table Responsive -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <div class="add-button">
+                    <a asp-controller="UserManager" asp-action="AddUser" class="btn btn-success me-1 mb-3">
+                        <i class="fa fa-fw fa-plus me-1"></i>افزودن کاربر جدید
+                    </a>
+                </div>
+            </div>
+            <div class="block-content block-content-full">
+                <!-- DataTables init on table by adding .js-dataTable-responsive class, functionality is initialized in js/pages/be_tables_datatables.min.js which was auto compiled from _js/pages/be_tables_datatables.js -->
+                <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive">
+                    <thead>
+                        <tr>
+                            <th class="d-none d-sm-table-cell text-center" style="width: 80px;">#</th>
+                            <th class="text-center">نام</th>
+                            <th class="d-none d-sm-table-cell text-center" style="width: 30%;">نام کاربری</th>
+                            <th class="d-none d-sm-table-cell text-center" style="width: 15%;">تلفن</th>
+                            <th class="text-center" style="width: 15%;">وضعیت</th>
+                            <th class="text-center" style="width: 15%;">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-center d-none d-sm-table-cell">@Counter</td>
+                                <td class="text-center fw-semibold">
+                                    <a asp-controller="Customer" asp-action="CustomerDetails" asp-route-CustomerId="@item.Id">@item.FirstName @item.LastName</a>
+                                </td>
+                               <td class="text-center d-none d-sm-table-cell">@item.UserName</td>
+                                <td class="text-center d-none d-sm-table-cell">@item.PhoneNumber</td>
+
+                                @if (item.IsActive == true)
+                                {
+                                    <td class="text-center">
+                                        <button asp-controller="UserManager" asp-action="ActiveOrDeactiveUser" asp-route-UserId="@item.Id"
+                                                class="btn btn-sm rounded-pill btn-alt-success" data-bs-target="#modal-action" data-toggle="modal-ajax">
+                                            فعال
+                                        </button>
+                                    </td>
+
+                                }
+                                else
+                                {
+                                    <td class="text-center">
+                                        <button asp-controller="UserManager" asp-action="ActiveOrDeactiveUser" asp-route-UserId="@item.Id"
+                                                class="btn btn-sm rounded-pill btn-alt-danger" data-bs-target="#modal-action" data-toggle="modal-ajax">
+                                            غیر فعال
+                                        </button>
+                                    </td>
+                                }
+
+                                <td class="text-center">
+                                    <div class="btn-group">
+
+                                        <button asp-controller="UserManager" asp-action="ChangePasswordByAdmin" asp-route-UserId="@item.Id"
+                                                class="btn btn-sm btn-alt-secondary" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title=" تغییر رمز عبور " type="button">
+                                            <i class="fa fa-key"></i>
+                                        </button>
+
+                                        <a asp-controller="UserManager" asp-action="EditUser" asp-route-UserId="@item.Id" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title=" ویرایش " type="button">
+                                            <i class="fa fa-pencil-alt"></i>
+                                        </a>
+
+                                        <button asp-controller="UserManager" asp-action="RemoveUser" asp-route-UserId="@item.Id"
+                                                class="btn btn-sm btn-alt-secondary" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title=" حذف " type="button">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+
+                                    </div>
+                                </td>
+
+
+                            </tr>
+                            Counter++;
+                        }
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Dynamic Table Responsive -->
+    </div>
+    <!-- END Page Content -->
+</main>
+<!-- END Main Container -->
+@Html.Partial("_Modal")
+
+@section Scripts {
+
+}
+
+
+
+
+
+
+
+

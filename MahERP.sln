@@ -5,6 +5,10 @@ VisualStudioVersion = 17.14.36127.28 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MahERP", "MahERP\MahERP.csproj", "{34870367-CB96-4E4D-96D5-9CC55B39E316}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MahERP.CommonLayer", "MahERP.CommonLayer\MahERP.CommonLayer.csproj", "{AA10DF60-0B39-4B3D-8D45-4E15C5677712}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MahERP.DataModelLayer", "MahERP.DataModelLayer\MahERP.DataModelLayer.csproj", "{2B5B3D30-1ACB-4240-8AD2-6D2CCDF25AB0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{34870367-CB96-4E4D-96D5-9CC55B39E316}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34870367-CB96-4E4D-96D5-9CC55B39E316}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34870367-CB96-4E4D-96D5-9CC55B39E316}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA10DF60-0B39-4B3D-8D45-4E15C5677712}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA10DF60-0B39-4B3D-8D45-4E15C5677712}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA10DF60-0B39-4B3D-8D45-4E15C5677712}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA10DF60-0B39-4B3D-8D45-4E15C5677712}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B5B3D30-1ACB-4240-8AD2-6D2CCDF25AB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B5B3D30-1ACB-4240-8AD2-6D2CCDF25AB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B5B3D30-1ACB-4240-8AD2-6D2CCDF25AB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B5B3D30-1ACB-4240-8AD2-6D2CCDF25AB0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

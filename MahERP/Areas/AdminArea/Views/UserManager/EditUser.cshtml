@@ -1,0 +1,138 @@
+﻿@model EditUserViewModel
+@{
+    ViewData["Title"] = "EditUser";
+
+}
+
+
+<!-- Main Container -->
+<main id="main-container">
+
+    <!-- Hero -->
+    <div class="bg-body-light">
+        <div class="content content-full">
+            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+                <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                    ویرایش کاربر 
+                </h1>
+                <nav aria-label="breadcrumb" class="flex-shrink-0 my-2 my-sm-0 ms-sm-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">کاربران</li>
+                        <li aria-current="page" class="breadcrumb-item active">
+                            ویرایش کاربر 
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero -->
+    <!-- Page Content -->
+    <div class="content">
+        <!-- Form Submission in Options -->
+        <div class="row">
+            <div class="col-md-12">
+                <form id="myform" asp-controller="UserManager" asp-action="EditUser" method="post" enctype="multipart/form-data">
+                    <input asp-for="Id" type="text" hidden />
+                    <input asp-for="IsActive" type="text" hidden />
+                    <input asp-for="RegisterDate" type="text" hidden />
+
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                فرم ویرایش کاربر 
+                            </h3>
+
+                            <div class="block-options">
+                                <button class="btn btn-sm btn-hero btn-success" type="submit"><i class="fa fa-check opacity-50 me-1"></i>ثبت</button>
+                                <a class="btn btn-sm btn-hero btn-secondary" asp-controller="UserManager" asp-action="Index" type="button">بازگشت</a>
+                            </div>
+                        </div>
+                        <!-- Page Content -->
+                        <div class="block block-rounded">
+
+                            <div class="block-content">
+                                <div class="row justify-content-center">
+                                    <div class="row">
+
+                                        <div class="form-floating  mb-3 col-6">
+                                            <input asp-for="FirstName" class="form-control" id="example-text-input-floating" placeholder="نام" type="text">
+                                            <label asp-for="FirstName" class="form-label input-label " for="example-text-input-floating">نام</label>
+
+                                        </div>
+
+                                        <div class="form-floating  mb-3 col-6">
+                                            <input asp-for="LastName" class="form-control" id="example-text-input-floating" placeholder="نام خانوادگی" type="text">
+                                            <label asp-for="LastName" class="form-label input-label " for="example-text-input-floating">نام خانوادگی</label>
+
+                                        </div>
+                                        <div class="form-floating  mb-3 col-6">
+                                            <input asp-for="UserName" class="form-control" id="example-text-input-floating" placeholder="نام کاربری" type="text">
+                                            <label asp-for="UserName" class="form-label input-label " for="example-text-input-floating">نام کاربری</label>
+
+                                        </div>
+
+                                        <div class="form-floating  mb-3 col-6">
+                                            <input asp-for="PhoneNumber" class="form-control" id="example-text-input-floating" placeholder="شماره تماس" type="text">
+                                            <label asp-for="PhoneNumber" class="form-label input-label " for="example-text-input-floating">شماره تماس</label>
+
+                                        </div>
+
+                                        <div class="form-floating mb-3 col-6">
+                                            <div class="col-6">
+                                                <label class="form-label">جنسیت</label>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-check form-check-inline">
+                                                    <input asp-for="Gender" checked="" class="form-check-input" type="radio" value="1" />
+                                                    <label class="form-check-label" for="example-radios-inline1">آقا</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input asp-for="Gender" class="form-check-input" type="radio" value="2" />
+                                                    <label class="form-check-label" for="example-radios-inline2">خانم</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-floating  mb-3 col-6">
+                                            <input asp-for="Email" class="form-control" id="example-text-input-floating" placeholder="آدرس ایمیل" type="text">
+                                            <label asp-for="Email" class="form-label input-label " for="example-text-input-floating">آدرس ایمیل</label>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+</main>
+<!-- END Main Container -->
+@section Scripts{
+
+    <script>
+
+        $("#UserName").on('keyup', function (event) {
+            var pattern = /^[a-zA-Z0-9]*$/;
+            if (!pattern.test(event.key)) {
+                $('#UserName').val("");
+            }
+        });
+
+    </script>
+    <script>
+        var removecoin = function () {
+            $(".co-input").each(function (index, item) {
+                $(item).val("");
+            });
+        }
+
+
+    </script>
+}

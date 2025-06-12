@@ -1,0 +1,39 @@
+﻿@model AppUsers
+@{
+    Layout = null;
+}
+
+<!-- Fade In Block Modal -->
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content modal-contents">
+        <div class="block block-rounded block-themed block-transparent mb-0">
+
+            <div class="block-header bg-danger">
+                <h3 class="block-title" style="color:white;">حذف کاربر</h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <form asp-controller="UserManager" asp-action="RemoveUserPost" method="post">
+                <input asp-for="Id" type="hidden" />
+
+                <div class="block-content">
+                    <div class="row push">
+                        <span>آیا از حذف کاربر بنام <span style="font-weight:bold;">@Model.FirstName @Model.LastName</span> مطمئن هستین؟</span>
+                    </div>
+                </div>
+
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">بازگشت</button>
+                    <button class="btn btn-hero btn-danger" data-save="modal-ajax-save" type="button">حذف</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- END Fade In Block Modal -->

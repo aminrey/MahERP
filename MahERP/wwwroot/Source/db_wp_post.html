@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa"><head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+
+    <title>لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از</title>
+
+    <meta content="Dashmix - Bootstrap 5 Admin Template & UI Framework created by pixelcave and published on Themeforest" name="description"/>
+    <meta content="pixelcave" name="author"/>
+    <meta content="noindex, nofollow" name="robots"/>
+
+    <!-- Open Graph Meta -->
+    <meta content="Dashmix - Bootstrap 5 Admin Template & UI Framework" property="og:title"/>
+    <meta content="Dashmix" property="og:site_name"/>
+    <meta content="Dashmix - Bootstrap 5 Admin Template & UI Framework created by pixelcave and published on Themeforest" property="og:description"/>
+    <meta content="website" property="og:type"/>
+    <meta content="" property="og:url"/>
+    <meta content="" property="og:image"/>
+
+    <!-- Icons -->
+    <!-- The following icons can be replaced with your own, they are used by desktop and mobile browsers -->
+    <link href="assets/media/favicons/favicon.png" rel="shortcut icon"/>
+    <link href="assets/media/favicons/favicon-192x192.png" rel="icon" sizes="192x192" type="image/png"/>
+    <link href="assets/media/favicons/apple-touch-icon-180x180.png" rel="apple-touch-icon" sizes="180x180"/>
+    <!-- END Icons -->
+
+    <!-- Stylesheets -->
+    <!-- Page JS Plugins CSS -->
+    <link href="assets/js/plugins/select2/css/select2.min.css" rel="stylesheet"/>
+    <link href="assets/js/plugins/dropzone/min/dropzone.min.css" rel="stylesheet"/>
+
+    <!-- Dashmix framework -->
+    <link href="assets/css/dashmix.min.css" id="css-main" rel="stylesheet"/>
+
+    <!-- You can include a specific file from css/themes/ folder to alter the default color theme of the template. eg: -->
+    <!-- <link rel="stylesheet" id="css-theme" href="assets/css/themes/xwork.min.css"> -->
+    <link href="assets/css/themes/xwork.min.css" id="css-theme" rel="stylesheet"/>
+    <!-- END Stylesheets -->
+  <!--===== Custom Font css =====-->
+<link href="assets/css/custom-fonts.css" rel="stylesheet"/>
+
+</head>
+  <body>
+    <!-- Page Container -->
+    <!--
+      Available classes for #page-container:
+    
+      GENERIC
+    
+        'remember-theme'                            Remembers active color theme and dark mode between pages using localStorage when set through
+                                                    - Theme helper buttons [data-toggle="theme"],
+                                                    - Layout helper buttons [data-toggle="layout" data-action="dark_mode_[on/off/toggle]"]
+                                                    - ..and/or Dashmix.layout('dark_mode_[on/off/toggle]')
+    
+      SIDEBAR & SIDE OVERLAY
+    
+        'sidebar-r'                                 Right Sidebar and left Side Overlay (default is left Sidebar and right Side Overlay)
+        'sidebar-mini'                              Mini hoverable Sidebar (screen width > 991px)
+        'sidebar-o'                                 Visible Sidebar by default (screen width > 991px)
+        'sidebar-o-xs'                              Visible Sidebar by default (screen width < 992px)
+        'sidebar-dark'                              Dark themed sidebar
+    
+        'side-overlay-hover'                        Hoverable Side Overlay (screen width > 991px)
+        'side-overlay-o'                            Visible Side Overlay by default
+    
+        'enable-page-overlay'                       Enables a visible clickable Page Overlay (closes Side Overlay on click) when Side Overlay opens
+    
+        'side-scroll'                               Enables custom scrolling on Sidebar and Side Overlay instead of native scrolling (screen width > 991px)
+    
+      HEADER
+    
+        ''                                          Static Header if no class is added
+        'page-header-fixed'                         Fixed Header
+    
+    
+      FOOTER
+    
+        ''                                          Static Footer if no class is added
+        'page-footer-fixed'                         Fixed Footer (please have in mind that the footer has a specific height when is fixed)
+    
+      HEADER STYLE
+    
+        ''                                          Classic Header style if no class is added
+        'page-header-dark'                          Dark themed Header
+        'page-header-glass'                         Light themed Header with transparency by default
+                                                    (absolute position, perfect for light images underneath - solid light background on scroll if the Header is also set as fixed)
+        'page-header-glass page-header-dark'         Dark themed Header with transparency by default
+                                                    (absolute position, perfect for dark images underneath - solid dark background on scroll if the Header is also set as fixed)
+    
+      MAIN CONTENT LAYOUT
+    
+        ''                                          Full width Main Content if no class is added
+        'main-content-boxed'                        Full width Main Content with a specific maximum width (screen width > 1200px)
+        'main-content-narrow'                       Full width Main Content with a percentage width (screen width > 1200px)
+        
+      DARK MODE
+    
+        'sidebar-dark page-header-dark dark-mode'   Enable dark mode (light sidebar/header is not supported with dark mode)
+    -->
+    <div class="rtl-support sidebar-o sidebar-dark sidebar-mini side-scroll page-header-fixed page-header-dark" id="page-container">
+
+      <!-- Sidebar -->
+      <!--
+        Sidebar Mini Mode - Display Helper classes
+      
+        Adding 'smini-hide' class to an element will make it invisible (opacity: 0) when the sidebar is in mini mode
+        Adding 'smini-show' class to an element will make it visible (opacity: 1) when the sidebar is in mini mode
+          If you would like to disable the transition animation, make sure to also add the 'no-transition' class to your element
+      
+        Adding 'smini-hidden' to an element will hide it when the sidebar is in mini mode
+        Adding 'smini-visible' to an element will show it (display: inline-block) only when the sidebar is in mini mode
+        Adding 'smini-visible-block' to an element will show it (display: block) only when the sidebar is in mini mode
+      -->
+      <nav aria-label="Main Navigation" id="sidebar">
+        <!-- Side Header -->
+        <div class="bg-header-dark">
+          <div class="content-header bg-white-5">
+            <!-- Logo -->
+            <a class="fw-semibold text-white tracking-wide" href="index.html">
+              <span class="smini-visible"> D<span class="opacity-75">x</span>
+              </span>
+              <span class="smini-hidden">Dash<span class="opacity-75">mix</span>
+                <span class="fw-normal"> پست وردپرس </span>
+              </span>
+            </a>
+            <!-- END Logo -->
+
+            <!-- Options -->
+            <div>
+              <!-- Close Sidebar, Visible only on mobile screens -->
+              <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
+              <button class="btn btn-sm btn-alt-secondary d-lg-none" data-action="sidebar_close" data-toggle="layout" type="button">
+                <i class="fa fa-times-circle"></i>
+              </button>
+              <!-- END Close Sidebar -->
+            </div>
+            <!-- END Options -->
+          </div>
+        </div>
+        <!-- END Side Header -->
+
+        <!-- Sidebar Scrolling -->
+        <div class="js-sidebar-scroll">
+          <!-- Side Navigation -->
+          <div class="content-side">
+            <ul class="nav-main">
+              <li class="nav-main-item">
+                <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-tachometer-alt"></i>
+                  <span class="nav-main-link-name"> داشبورد </span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">مدیریت</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">بروز رسانی ها</span>
+                      <span class="nav-main-link-badge badge rounded-pill bg-success">3</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-heading"></li>
+              <li class="nav-main-item open">
+                <a aria-expanded="true" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-thumbtack"></i>
+                  <span class="nav-main-link-name">نوشته</span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">همه پست ها</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link active" href="db_wp_post.html">
+                      <span class="nav-main-link-name">افزودن مورد جدید</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">دسته بندی ها</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">برچسب ها</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-item">
+                <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-camera"></i>
+                  <span class="nav-main-link-name">رسانه ها</span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">کتابخانه</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">افزودن مورد جدید</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-item">
+                <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-file"></i>
+                  <span class="nav-main-link-name">صفحات</span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">تمام صفحات</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">افزودن مورد جدید</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-item">
+                <a class="nav-main-link" href="">
+                  <i class="nav-main-link-icon fa fa-comment"></i>
+                  <span class="nav-main-link-name">نظر </span>
+                  <span class="nav-main-link-badge badge rounded-pill bg-success">3</span>
+                </a>
+              </li>
+              <li class="nav-main-heading"></li>
+              <li class="nav-main-item">
+                <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-brush"></i>
+                  <span class="nav-main-link-name">ظاهر</span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">تم ها</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">شخصی سازی</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">ابزارک ها</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">منوها</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">ادیتور</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-item">
+                <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-plug"></i>
+                  <span class="nav-main-link-name">پلاگین ها</span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">پلاگین های نصب شده</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">افزودن مورد جدید</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">ادیتور</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-item">
+                <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-user"></i>
+                  <span class="nav-main-link-name">کاربر ها</span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">تمام کاربران</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">افزودن مورد جدید</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">پروفایل شما</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-item">
+                <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-wrench"></i>
+                  <span class="nav-main-link-name">ابزار</span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">ابزارهای موجود</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">وارد كردن</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">خروجی</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">صادرات داده های شخصی</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">پاک کردن داده های شخصی</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-item">
+                <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                  <i class="nav-main-link-icon fa fa-sliders-h"></i>
+                  <span class="nav-main-link-name"> تنظیمات </span>
+                </a>
+                <ul class="nav-main-submenu">
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">عمومی</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">نوشتن</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">خواندن</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">بحث</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">رسانه ها</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">پیوندهای ثابت</span>
+                    </a>
+                  </li>
+                  <li class="nav-main-item">
+                    <a class="nav-main-link" href="">
+                      <span class="nav-main-link-name">حریم خصوصی</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-main-heading"></li>
+              <li class="nav-main-item">
+                <a class="nav-main-link" data-action="sidebar_mini_toggle" data-toggle="layout" href="javascript:void(0)">
+                  <i class="nav-main-link-icon fa fa-arrows-alt-h"></i>
+                  <span class="nav-main-link-name">نوار کناری را تغییر دهید</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <!-- END Side Navigation -->
+        </div>
+        <!-- END Sidebar Scrolling -->
+
+      </nav>
+      <!-- END Sidebar -->
+
+      <!-- Header -->
+      <header id="page-header">
+        <!-- Header Content -->
+        <div class="content-header">
+          <!-- Left Section -->
+          <div>
+            <!-- Toggle Sidebar -->
+            <!-- Layout API, functionality initialized in Template._uiApiLayout()-->
+            <button class="btn btn-alt-secondary d-lg-none" data-action="sidebar_toggle" data-toggle="layout" type="button">
+              <i class="fa fa-fw fa-bars"></i>
+            </button>
+            <!-- END Toggle Sidebar -->
+
+            <!-- Website Dropdown -->
+            <div class="dropdown d-inline-block">
+              <button aria-expanded="false" aria-haspopup="true" class="btn btn-alt-secondary" data-bs-toggle="dropdown" id="page-header-website-dropdown" type="button">
+                <i class="fa fa-fw fa-home"></i>
+                <span class="d-none d-sm-inline ms-1">سایت اینترنتی</span>
+              </button>
+              <div aria-labelledby="page-header-website-dropdown" class="dropdown-menu p-0">
+                <div class="p-2">
+                  <a class="dropdown-item mb-0" href="index.html">
+                    <i class="fa fa-fw fa-globe me-1"></i> از سایت دیدن کنید </a>
+                </div>
+              </div>
+            </div>
+            <!-- END Website Dropdown -->
+
+            <!-- Comments -->
+            <a class="btn btn-alt-secondary d-none d-sm-inline-block" href="javascript:void(0)">
+              <i class="fa fa-fw fa-comment"></i>
+              <span class="badge bg-black-50">3</span>
+            </a>
+            <!-- END Comments -->
+
+            <!-- New Dropdown -->
+            <div class="dropdown d-inline-block">
+              <button aria-expanded="false" aria-haspopup="true" class="btn btn-alt-secondary" data-bs-toggle="dropdown" id="page-header-new-dropdown" type="button">
+                <i class="fa fa-fw fa-plus"></i>
+                <span class="d-none d-sm-inline ms-1">جدید</span>
+              </button>
+              <div aria-labelledby="page-header-new-dropdown" class="dropdown-menu p-0">
+                <div class="p-2">
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="fa fa-fw fa-thumbtack me-1"></i> پست </a>
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="fa fa-fw fa-camera me-1"></i>رسانه ها</a>
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="fa fa-fw fa-file me-1"></i> صفحه </a>
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="fa fa-fw fa-user me-1"></i> کاربر </a>
+                </div>
+              </div>
+            </div>
+            <!-- END New Dropdown -->
+          </div>
+          <!-- END Left Section -->
+
+          <!-- Right Section -->
+          <div>
+            <!-- User Dropdown -->
+            <div class="dropdown d-inline-block">
+              <button aria-expanded="false" aria-haspopup="true" class="btn btn-alt-secondary" data-bs-toggle="dropdown" id="page-header-user-dropdown" type="button">
+                <span class="d-none d-lg-inline me-2">سلام، جان دو</span>
+                <i class="fa fa-angle-down opacity-50"></i>
+              </button>
+              <div aria-labelledby="page-header-user-dropdown" class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 overflow-hidden">
+                <div class="row g-0">
+                  <div class="col-6 d-flex align-items-center justify-content-center bg-body-light p-2">
+                    <img alt="" class="img-avatar img-avatar96 img-avatar-thumb" src="assets/media/avatars/avatar10.jpg"/>
+                  </div>
+                  <div class="col-6 p-2 bg-body-extra-light">
+                    <a class="dropdown-item" href="be_pages_generic_profile.html"> جان دو <div class="fs-sm text-muted">جان دو</div>
+                    </a>
+                    <a class="dropdown-item" href="javascript:void(0)"> ویرایش مشخصات خودم </a>
+                    <div class="dropdown-divider" role="separator"></div>
+                    <a class="dropdown-item" href="op_auth_signin.html"> خروج </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- END User Dropdown -->
+          </div>
+          <!-- END Right Section -->
+        </div>
+        <!-- END Header Content -->
+
+        <!-- Header Search -->
+        <div class="overlay-header bg-sidebar-dark" id="page-header-search">
+          <div class="content-header">
+            <form action="be_pages_generic_search.html" class="w-100" method="POST">
+              <div class="input-group">
+                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
+                <button class="btn btn-danger" data-action="header_search_off" data-toggle="layout" type="button">
+                  <i class="fa fa-fw fa-times-circle"></i>
+                </button>
+                <input class="form-control border-0" id="page-header-search-input" name="page-header-search-input" placeholder="جستجوی پست WP" type="text"/>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- END Header Search -->
+
+        <!-- Header Loader -->
+        <!-- Please check out the Loaders page under Components category to see examples of showing/hiding it -->
+        <div class="overlay-header bg-primary-darker" id="page-header-loader">
+          <div class="content-header">
+            <div class="w-100 text-center">
+              <i class="fa fa-fw fa-2x fa-sun fa-spin text-white"></i>
+            </div>
+          </div>
+        </div>
+        <!-- END Header Loader -->
+      </header>
+      <!-- END Header -->
+
+      <!-- Main Container -->
+      <main id="main-container">
+        <!-- Page Content -->
+        <div class="row g-0 flex-md-grow-1">
+          <div class="col-md-4 col-lg-5 col-xl-3 order-md-1 bg-body-extra-light">
+            <div class="content p-0">
+              <!-- Toggle Settings -->
+              <div class="d-md-none p-3">
+                <!-- Class Toggle, functionality initialized in Helpers.dmToggleClass() -->
+                <button class="btn w-100 btn-alt-info" data-class="d-none" data-target="#side-content" data-toggle="class-toggle" type="button"> تنظیمات </button>
+              </div>
+              <!-- END Toggle Settings -->
+
+              <!-- Settings -->
+              <div class="d-none d-md-block push" id="side-content">
+                <div aria-multiselectable="true" id="settings-accordion" role="tablist">
+                  <div class="block mb-0">
+                    <div class="block-header bg-body p-0" id="settings-accordion_h1" role="tab">
+                      <a aria-controls="settings-accordion_s1" aria-expanded="true" class="fw-semibold d-block w-100 p-3" data-bs-parent="#settings-accordion" data-bs-toggle="collapse" href="#settings-accordion_s1">وضعیت و قابلیت مشاهده</a>
+                    </div>
+                    <div aria-labelledby="settings-accordion_h1" class="collapse show" data-bs-parent="#settings-accordion" id="settings-accordion_s1" role="tabpanel">
+                      <div class="block-content">
+                        <div class="row mb-4">
+                          <label class="col-sm-4 col-form-label" for="example-wp-visibility">دید</label>
+                          <div class="col-sm-8">
+                            <select class="form-select" id="example-wp-visibility" name="example-wp-visibility">
+                              <option selected="" value="1">عمومی</option>
+                              <option value="2">خصوصی</option>
+                              <option value="3">رمز عبور محافظت شده است</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="row mb-4">
+                          <label class="col-sm-4 col-form-label" for="example-wp-format">فرمت پست</label>
+                          <div class="col-sm-8">
+                            <select class="form-select" id="example-wp-format" name="example-wp-format">
+                              <option value="1">گالری</option>
+                              <option value="2"> ارتباط دادن </option>
+                              <option value="3">تصویر</option>
+                              <option value="4">نقل قول</option>
+                              <option selected="" value="5">استاندارد</option>
+                              <option value="6">ویدئو</option>
+                              <option value="7">صوت</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="mb-4">
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-stick-front" name="example-wp-stick-front" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-stick-front">به صفحه اول بچسبید</label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-pending-review" name="example-wp-pending-review" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-pending-review">بررسی در انتظار</label>
+                          </div>
+                        </div>
+                        <div class="row mb-4">
+                          <label class="col-sm-4 col-form-label" for="example-wp-author">نویسنده </label>
+                          <div class="col-sm-8">
+                            <select class="form-select" id="example-wp-author" name="example-wp-author">
+                              <option selected="" value="1">مدیر</option>
+                              <option value="2">نویسنده #1</option>
+                              <option value="3">نویسنده #2</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="block mb-0">
+                    <div class="block-header bg-body border-top p-0" id="settings-accordion_h2" role="tab">
+                      <a aria-controls="settings-accordion_s2" aria-expanded="true" class="fw-semibold d-block w-100 p-3" data-bs-parent="#settings-accordion" data-bs-toggle="collapse" href="#settings-accordion_s2">دسته بندی ها</a>
+                    </div>
+                    <div aria-labelledby="settings-accordion_h2" class="collapse" data-bs-parent="#settings-accordion" id="settings-accordion_s2" role="tabpanel">
+                      <div class="block-content block-content-full">
+                        <div class="mb-4">
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-cat-1" name="example-wp-cat-1" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-cat-1">پروژه  </label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-cat-2" name="example-wp-cat-2" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-cat-2">کار</label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-cat-3" name="example-wp-cat-3" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-cat-3"> آموزش ها </label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-cat-4" name="example-wp-cat-4" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-cat-4">طرح</label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-cat-5" name="example-wp-cat-5" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-cat-5">توسعه وب</label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-cat-6" name="example-wp-cat-6" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-cat-6">الهام گرفتن</label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-cat-7" name="example-wp-cat-7" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-cat-7">دسته بندی نشده</label>
+                          </div>
+                        </div>
+                        <a class="link-fx fs-sm" href="javascript:void(0)">اضافه کردن دسته جدید</a>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="block mb-0">
+                    <div class="block-header bg-body border-top p-0" id="settings-accordion_h3" role="tab">
+                      <a aria-controls="settings-accordion_s3" aria-expanded="true" class="fw-semibold d-block w-100 p-3" data-bs-parent="#settings-accordion" data-bs-toggle="collapse" href="#settings-accordion_s3">برچسب ها</a>
+                    </div>
+                    <div aria-labelledby="settings-accordion_h3" class="collapse" data-bs-parent="#settings-accordion" id="settings-accordion_s3" role="tabpanel">
+                      <div class="block-content">
+                        <div class="mb-4">
+                          <!-- Select2 (.js-select2 class is initialized in Helpers.jqSelect2()) -->
+                          <!-- For more info and examples you can check out https://github.com/select2/select2 -->
+                          <label class="form-label" for="example-wp-tags">برچسب های جدید اضافه کنید</label>
+                          <select class="js-select2 form-select" id="example-wp-tags" multiple="" name="example-wp-tags" style="width: 100%;">
+                            <option selected="" value="1">آموزش</option>
+                            <option value="2">CSS</option>
+                            <option value="3">جاوا اسکریپت</option>
+                            <option value="4">php</option>
+                            <option value="5">پایتون</option>
+                            <option value="6">روبی</option>
+                            <option value="7">انگولار</option>
+                            <option value="8">ریکت</option>
+                            <option value="9">vuejs</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="block mb-0">
+                    <div class="block-header bg-body border-top p-0" id="settings-accordion_h4" role="tab">
+                      <a aria-controls="settings-accordion_s4" aria-expanded="true" class="fw-semibold d-block w-100 p-3" data-bs-parent="#settings-accordion" data-bs-toggle="collapse" href="#settings-accordion_s4">تصویر شاخص</a>
+                    </div>
+                    <div aria-labelledby="settings-accordion_h4" class="collapse" data-bs-parent="#settings-accordion" id="settings-accordion_s4" role="tabpanel">
+                      <div class="block-content block-content-full">
+                        <!-- Dropzone (functionality is auto initialized by the plugin itself in js/plugins/dropzone/dropzone.min.js) -->
+                        <!-- For more info and examples you can check out http://www.dropzonejs.com/#usage -->
+                        <form action="be_forms_plugins.html" class="dropzone"></form>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="block mb-0">
+                    <div class="block-header bg-body border-top p-0" id="settings-accordion_h5" role="tab">
+                      <a aria-controls="settings-accordion_s5" aria-expanded="true" class="fw-semibold d-block w-100 p-3" data-bs-parent="#settings-accordion" data-bs-toggle="collapse" href="#settings-accordion_s5">خلاصه</a>
+                    </div>
+                    <div aria-labelledby="settings-accordion_h5" class="collapse" data-bs-parent="#settings-accordion" id="settings-accordion_s5" role="tabpanel">
+                      <div class="block-content">
+                        <div class="mb-4">
+                          <label class="form-label" for="example-wp-excerpt">خلاصه ای بنویسید (اختیاری)</label>
+                          <textarea class="form-control" id="example-wp-excerpt" name="example-wp-excerpt" rows="4"></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="block mb-0">
+                    <div class="block-header bg-body border-top p-0" id="settings-accordion_h6" role="tab">
+                      <a aria-controls="settings-accordion_s6" aria-expanded="true" class="fw-semibold d-block w-100 p-3" data-bs-parent="#settings-accordion" data-bs-toggle="collapse" href="#settings-accordion_s6">بحث</a>
+                    </div>
+                    <div aria-labelledby="settings-accordion_h6" class="collapse" data-bs-parent="#settings-accordion" id="settings-accordion_s6" role="tabpanel">
+                      <div class="block-content">
+                        <div class="mb-4">
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-comments" name="example-wp-comments" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-comments">اجازه ارسال نظر</label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" id="example-wp-pingbacks" name="example-wp-pingbacks" type="checkbox"/>
+                            <label class="form-check-label" for="example-wp-pingbacks">پینگ بک و ردیابی را مجاز کنید</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="block mb-0">
+                    <div class="block-header bg-body border-top p-0" id="settings-accordion_h7" role="tab">
+                      <a aria-controls="settings-accordion_s7" aria-expanded="true" class="fw-semibold d-block w-100 p-3" data-bs-parent="#settings-accordion" data-bs-toggle="collapse" href="#settings-accordion_s7">چیدمان</a>
+                    </div>
+                    <div aria-labelledby="settings-accordion_h7" class="collapse" data-bs-parent="#settings-accordion" id="settings-accordion_s7" role="tabpanel">
+                      <div class="block-content">
+                        <div class="mb-4">
+                          <label class="form-label" for="example-wp-layout-sidebar">تنظیمات نوار کناری</label>
+                          <div class="fs-sm text-muted mb-2">چیدمان صفحه مورد نظر را انتخاب کنید</div>
+                          <select class="form-select" id="example-wp-layout-sidebar" name="example-wp-layout-sidebar">
+                            <option selected="" value="1">چیدمان پیش فرض</option>
+                            <option value="2">بدون نوار کناری</option>
+                            <option value="3">نوار کناری سمت چپ</option>
+                            <option value="4">نوار کناری سمت راست</option>
+                          </select>
+                        </div>
+                        <div class="mb-4">
+                          <label class="form-label" for="example-wp-layout-header">تنظیمات هدر</label>
+                          <div class="fs-sm text-muted mb-2">چندین گزینه برای تغییر استایل هدر در این صفحه وجود دارد</div>
+                          <select class="form-select" id="example-wp-layout-header" name="example-wp-layout-header">
+                            <option selected="" value="1">هدر پیش فرض</option>
+                            <option value="2">هدر استاتیک</option>
+                            <option value="3">هدر شفاف</option>
+                            <option value="4">هدر چسبنده شیشه ای</option>
+                          </select>
+                        </div>
+                        <div class="mb-4">
+                          <label class="form-label" for="example-wp-layout-footer">تنظیمات فوتر </label>
+                          <div class="fs-sm text-muted mb-2">ویجت های فوتر نمایش داده شود؟</div>
+                          <select class="form-select" id="example-wp-layout-footer" name="example-wp-layout-footer">
+                            <option selected="" value="1">فوتر پیش فرض</option>
+                            <option value="2">نمایش ویجت ها (بدون سوکت)</option>
+                            <option value="3">سوکت های نمایش (بدون ابزارک)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- END Settings -->
+            </div>
+          </div>
+          <div class="col-md-8 col-lg-7 col-xl-9 order-md-0 bg-body-dark">
+            <!-- Main Content -->
+            <div class="content">
+              <div class="block block-rounded">
+                <div class="block-content block-content-full d-flex justify-content-between border-bottom">
+                  <div>
+                    <button class="btn btn-sm btn-alt-secondary" type="button">
+                      <i class="fa fa-plus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-alt-secondary" type="button">
+                      <i class="fa fa-undo"></i>
+                    </button>
+                    <button class="btn btn-sm btn-alt-secondary" type="button">
+                      <i class="fa fa-redo"></i>
+                    </button>
+                  </div>
+                  <div>
+                    <a class="btn btn-sm btn-alt-info" href="javascript:void(0)">پیش نمایش</a>
+                    <a class="btn btn-sm btn-info" href="javascript:void(0)">انتشار</a>
+                  </div>
+                </div>
+                <div class="block-content">
+                  <form action="db_wp_post.html" method="POST" onsubmit="return false;">
+                    <div class="mb-4">
+                      <input class="form-control py-4" id="post-title" name="post-title" placeholder="عنوان اضافه کن" type="text"/>
+                    </div>
+                    <div class="mb-4">
+                      <!-- CKEditor (js-ckeditor id is initialized in Helpers.jsCkeditor()) -->
+                      <!-- For more info and examples you can check out http://ckeditor.com -->
+                      <textarea id="js-ckeditor" name="ckeditor">...</textarea>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <!-- END Main Content -->
+          </div>
+        </div>
+        <!-- END Page Content -->
+      </main>
+      <!-- END Main Container -->
+
+      <!-- Footer -->
+      <footer id="page-footer">
+        <div class="content py-0">
+          <div class="row fs-sm">
+            <div class="col-sm-6 order-sm-2 mb-1 mb-sm-0 text-center text-sm-end"> ساخته شده با <i class="fa fa-heart text-danger"></i> ارائه شده در <a class="fw-semibold" href="https://www.rtl-theme.com/author/navidyaghoobi/products/" target="_blank">راست‌چین</a>
+            </div>
+            <div class="col-sm-6 order-sm-1 text-center text-sm-start">
+              <a class="fw-semibold" href="https://www.rtl-theme.com/author/navidyaghoobi/products/" target="_blank">dashmix 5.4</a> © <span data-toggle="year-copy"></span>
+            </div>
+          </div>
+        </div>
+      </footer>
+      <!-- END Footer -->
+    </div>
+    <!-- END Page Container -->
+
+    <!--
+      Dashmix JS
+    
+      Core libraries and functionality
+      webpack is putting everything together at assets/_js/main/app.js
+    -->
+    <script src="assets/js/dashmix.app.min.js"></script>
+
+    <!-- jQuery (required for Select2 Plugin) -->
+    <script src="assets/js/lib/jquery.min.js"></script>
+
+    <!-- Page JS Plugins -->
+    <script src="assets/js/plugins/ckeditor/ckeditor.js"></script>
+    <script src="assets/js/plugins/select2/js/select2.full.min.js"></script>
+    <script src="assets/js/plugins/dropzone/min/dropzone.min.js"></script>
+
+    <!-- Page JS Helpers (CKEditor + Select2 plugins) -->
+    <script>
+      Dashmix.onLoad(function () {
+        CKEDITOR.config.height = '460';
+        Dashmix.helpers(['js-ckeditor', 'jq-select2']);
+      });
+    </script>
+  
+
+</body></html>
