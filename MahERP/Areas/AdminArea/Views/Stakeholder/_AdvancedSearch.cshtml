@@ -1,0 +1,84 @@
+﻿@model StakeholderSearchViewModel
+@{
+    Layout = null;
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">جستجوی پیشرفته طرف حساب</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <form id="searchForm" method="POST" action="@Url.Action("Search", "Stakeholder")">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="Name">نام یا نام خانوادگی</label>
+                    <input asp-for="Name" class="form-control" placeholder="جستجو در نام و نام خانوادگی">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="CompanyName">نام شرکت</label>
+                    <input asp-for="CompanyName" class="form-control" placeholder="جستجو در نام شرکت">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="Phone">تلفن یا موبایل</label>
+                    <input asp-for="Phone" class="form-control" placeholder="جستجو در شماره تلفن یا موبایل">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="Email">ایمیل</label>
+                    <input asp-for="Email" class="form-control" placeholder="جستجو در ایمیل">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="StakeholderType">نوع طرف حساب</label>
+                    <select asp-for="StakeholderType" asp-items="@(new SelectList(StaticSelectLists.StakeholderTypes, "Value", "Text", ""))" class="form-select">
+                        <option value="">همه</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="NationalCode">کد ملی</label>
+                    <input asp-for="NationalCode" class="form-control" placeholder="جستجو با کد ملی">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="IsActive">وضعیت</label>
+                    <select asp-for="IsActive" asp-items="StaticSelectLists.ActiveStatusOptions" class="form-select"></select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="IncludeDeleted">نمایش موارد حذف شده</label>
+                    <select asp-for="IncludeDeleted" asp-items="StaticSelectLists.DeletedStatusOptions" class="form-select"></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- سایر فیلدها... -->
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
+    <button type="button" class="btn btn-primary" onclick="$('#searchForm').submit();">
+        <i class="fa fa-search me-1"></i> جستجو
+    </button>
+</div>

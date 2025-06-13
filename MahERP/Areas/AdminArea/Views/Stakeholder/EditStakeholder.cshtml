@@ -1,0 +1,242 @@
+﻿@model StakeholderViewModel
+@{
+    ViewData["Title"] = $"ویرایش طرف حساب - {Model.FullName}";
+    Layout = "_Layout";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">ویرایش طرف حساب</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Stakeholder")">طرف حساب‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Details", "Stakeholder", new { id = Model.Id })">@Model.FullName</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">ویرایش</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <!-- Edit Stakeholder Form -->
+    <form method="POST" action="@Url.Action("EditStakeholder", "Stakeholder")" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">اطلاعات اصلی</h3>
+                <div class="block-options">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fa fa-check me-1"></i> ذخیره تغییرات
+                    </button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div class="mb-4">
+                            <label class="form-label" for="StakeholderType">نوع طرف حساب <span class="text-danger">*</span></label>
+                            <select class="form-select" id="StakeholderType" name="StakeholderType">
+@*                                 <option value="0" @(Model.StakeholderType == 0 ? "selected" : "")>مشتری</option>
+                                <option value="1" @(Model.StakeholderType == 1 ? "selected" : "")>تامین کننده</option>
+                                <option value="2" @(Model.StakeholderType == 2 ? "selected" : "")>همکار</option>
+                                <option value="3" @(Model.StakeholderType == 3 ? "selected" : "")>سایر</option> *@
+                            </select>
+                            <span asp-validation-for="StakeholderType" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="FirstName">نام <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="FirstName" name="FirstName" value="@Model.FirstName" placeholder="نام کوچک طرف حساب را وارد کنید">
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="LastName">نام خانوادگی <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="LastName" name="LastName" value="@Model.LastName" placeholder="نام خانوادگی طرف حساب را وارد کنید">
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CompanyName">نام شرکت</label>
+                            <input type="text" class="form-control" id="CompanyName" name="CompanyName" value="@Model.CompanyName" placeholder="نام شرکت را وارد کنید">
+                            <span asp-validation-for="CompanyName" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Phone">تلفن ثابت</label>
+                            <input type="text" class="form-control" id="Phone" name="Phone" value="@Model.Phone" placeholder="تلفن ثابت را وارد کنید">
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Mobile">تلفن همراه</label>
+                            <input type="text" class="form-control" id="Mobile" name="Mobile" value="@Model.Mobile" placeholder="تلفن همراه را وارد کنید">
+                            <span asp-validation-for="Mobile" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Email">ایمیل</label>
+                            <input type="email" class="form-control" id="Email" name="Email" value="@Model.Email" placeholder="ایمیل را وارد کنید">
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="NationalCode">کد ملی</label>
+                            <input type="text" class="form-control" id="NationalCode" name="NationalCode" value="@Model.NationalCode" placeholder="کد ملی را وارد کنید">
+                            <span asp-validation-for="NationalCode" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="PostalCode">کد پستی</label>
+                            <input type="text" class="form-control" id="PostalCode" name="PostalCode" value="@Model.PostalCode" placeholder="کد پستی را وارد کنید">
+                            <span asp-validation-for="PostalCode" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Address">آدرس</label>
+                            <textarea class="form-control" id="Address" name="Address" rows="4" placeholder="آدرس را وارد کنید">@Model.Address</textarea>
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Description">توضیحات</label>
+                            <textarea class="form-control" id="Description" name="Description" rows="4" placeholder="توضیحات اضافی را وارد کنید">@Model.Description</textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-check">
+                                <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" @(Model.IsActive ? "checked" : "")>
+                                <span class="form-check-label">وضعیت فعال</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CRM Information -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">اطلاعات CRM</h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-toggle="block-option" data-action="content_toggle"></button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_LeadSource">منبع آشنایی</label>
+                            <select class="form-select" id="CRMInfo_LeadSource" name="CRMInfo.LeadSource">
+@*                                 <option value="0" @(Model.CRMInfo?.LeadSource == 0 ? "selected" : "")>وب سایت</option>
+                                <option value="1" @(Model.CRMInfo?.LeadSource == 1 ? "selected" : "")>تبلیغات</option>
+                                <option value="2" @(Model.CRMInfo?.LeadSource == 2 ? "selected" : "")>معرفی</option>
+                                <option value="3" @(Model.CRMInfo?.LeadSource == 3 ? "selected" : "")>نمایشگاه</option>
+                                <option value="4" @(Model.CRMInfo?.LeadSource == 4 ? "selected" : "")>تماس مستقیم</option>
+                                <option value="5" @(Model.CRMInfo?.LeadSource == 5 ? "selected" : "")>سایر</option> *@
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_SalesStage">مرحله فروش</label>
+                            <select class="form-select" id="CRMInfo_SalesStage" name="CRMInfo.SalesStage">
+@*                                 <option value="0" @(Model.CRMInfo?.SalesStage == 0 ? "selected" : "")>سرنخ اولیه</option>
+                                <option value="1" @(Model.CRMInfo?.SalesStage == 1 ? "selected" : "")>مذاکره</option>
+                                <option value="2" @(Model.CRMInfo?.SalesStage == 2 ? "selected" : "")>پیشنهاد قیمت</option>
+                                <option value="3" @(Model.CRMInfo?.SalesStage == 3 ? "selected" : "")>در حال قرارداد</option>
+                                <option value="4" @(Model.CRMInfo?.SalesStage == 4 ? "selected" : "")>مشتری فعال</option>
+                                <option value="5" @(Model.CRMInfo?.SalesStage == 5 ? "selected" : "")>مشتری غیرفعال</option> *@
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="CRMInfo_PotentialValue">ارزش بالقوه (میلیون تومان)</label>
+                                    <input type="number" class="form-control" id="CRMInfo_PotentialValue" name="CRMInfo.PotentialValue" value="@Model.CRMInfo?.PotentialValue" placeholder="ارزش بالقوه مشتری">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="CRMInfo_CreditRating">رتبه اعتباری</label>
+                                    <select class="form-select" id="CRMInfo_CreditRating" name="CRMInfo.CreditRating">
+                                        <option value="">انتخاب کنید</option>
+@*                                         <option value="A" @(Model.CRMInfo?.CreditRating == "A" ? "selected" : "")>A</option>
+                                        <option value="B" @(Model.CRMInfo?.CreditRating == "B" ? "selected" : "")>B</option>
+                                        <option value="C" @(Model.CRMInfo?.CreditRating == "C" ? "selected" : "")>C</option>
+                                        <option value="D" @(Model.CRMInfo?.CreditRating == "D" ? "selected" : "")>D</option> *@
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_Industry">صنعت / حوزه فعالیت</label>
+                            <input type="text" class="form-control" id="CRMInfo_Industry" name="CRMInfo.Industry" value="@Model.CRMInfo?.Industry" placeholder="صنعت یا حوزه فعالیت مشتری">
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="CRMInfo_EmployeeCount">تعداد کارمندان</label>
+                                    <input type="number" class="form-control" id="CRMInfo_EmployeeCount" name="CRMInfo.EmployeeCount" value="@Model.CRMInfo?.EmployeeCount" placeholder="تعداد کارمندان">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="CRMInfo_AnnualRevenue">گردش مالی سالانه (میلیون تومان)</label>
+                                    <input type="number" class="form-control" id="CRMInfo_AnnualRevenue" name="CRMInfo.AnnualRevenue" value="@Model.CRMInfo?.AnnualRevenue" placeholder="گردش مالی سالانه">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_SalesRepUserId">کارشناس فروش اختصاصی</label>
+                            <select class="form-select" id="CRMInfo_SalesRepUserId" name="CRMInfo.SalesRepUserId">
+                                <option value="">انتخاب کنید</option>
+                                @foreach (var user in ViewBag.SalesReps)
+                                {
+@*                                     <option value="@user.Id" @(Model.CRMInfo?.SalesRepUserId == user.Id ? "selected" : "")>@user.FullName</option>
+ *@                                }
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_Preferences">علاقه‌مندی‌ها و ترجیحات</label>
+                            <textarea class="form-control" id="CRMInfo_Preferences" name="CRMInfo.Preferences" rows="4" placeholder="علاقه‌مندی‌ها و ترجیحات مشتری">@Model.CRMInfo?.Preferences</textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_InternalNotes">یادداشت‌های داخلی</label>
+                            <textarea class="form-control" id="CRMInfo_InternalNotes" name="CRMInfo.InternalNotes" rows="4" placeholder="یادداشت‌های داخلی (فقط برای استفاده داخلی)">@Model.CRMInfo?.InternalNotes</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="block-content block-content-full block-content-sm bg-body-light text-end">
+                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                    <i class="fa fa-arrow-right me-1"></i> انصراف
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check me-1"></i> ذخیره تغییرات
+                </button>
+            </div>
+        </div>
+    </form>
+    <!-- END Edit Stakeholder Form -->
+</div>
+<!-- END Page Content -->
+
+@section scripts {
+    <script>
+        $(document).ready(function() {
+            // بررسی نوع طرف حساب و نمایش/عدم نمایش بخش های مرتبط
+            $('#StakeholderType').change(function() {
+                // اگر مشتری باشد، بخش CRM را نمایش بده
+                if ($(this).val() == "0") {
+                    $('.crm-section').show();
+                } else {
+                    $('.crm-section').hide();
+                }
+            });
+            
+            // اعمال تغییرات بر اساس مقدار اولیه
+            $('#StakeholderType').trigger('change');
+        });
+    </script>
+}

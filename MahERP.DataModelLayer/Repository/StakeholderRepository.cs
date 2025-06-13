@@ -103,5 +103,31 @@ namespace MahERP.DataModelLayer.Repository
 
             return !query.Any();
         }
+
+        public List<StakeholderContact> GetStakeholderContacts(int stakeholderId, bool includeInactive = false)
+        {
+            var query = _context.StakeholderContact_Tbl
+                .Where(c => c.StakeholderId == stakeholderId);
+            
+            if (!includeInactive)
+                query = query.Where(c => c.IsActive);
+            
+            return query.OrderByDescending(c => c.IsPrimary).ThenBy(c => c.FirstName).ToList();
+        }
+
+        public StakeholderContact GetStakeholderContactById(int id)
+        {
+            return _context.StakeholderContact_Tbl.FirstOrDefault(c => c.Id == id);
+        }
+
+        public List<Stakeholder> SearchAdvanced(StakeholderSearchViewModel model)
+        {
+            // پیاده‌سازی جستجوی پیشرفته
+            var query = _context.Stakeholder_Tbl.AsQueryable();
+            
+            // اضافه کردن فیلترها مشابه متد Search در کنترلر...
+            
+            return query.OrderByDescending(s => s.CreateDate).ToList();
+        }
     }
 }

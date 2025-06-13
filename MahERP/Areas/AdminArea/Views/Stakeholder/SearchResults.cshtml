@@ -1,0 +1,205 @@
+﻿@model List<Stakeholder>
+@{
+    ViewData["Title"] = "نتایج جستجوی طرف حساب‌ها";
+    Layout = "_Layout";
+    ViewData["Title"] = "SearchResults";
+
+    int Counter = 1;
+    var searchModel = ViewBag.SearchModel as StakeholderSearchViewModel;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">نتایج جستجوی طرف حساب‌ها</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Stakeholder")">طرف حساب‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">نتایج جستجو</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content">
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle me-1"></i> <strong>@Model.Count</strong> طرف حساب یافت شد.
+        <button type="button" class="btn btn-sm btn-alt-info float-end" onclick="openAdvancedSearch()">
+            <i class="fa fa-search me-1"></i> جستجوی مجدد
+        </button>
+    </div>
+
+    <!-- Stakeholders Table -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">لیست طرف حساب‌های یافت شده</h3>
+            <div class="block-options">
+                <a href="@Url.Action("Index", "Stakeholder")" class="btn btn-sm btn-alt-secondary">
+                    <i class="fa fa-arrow-right me-1"></i> بازگشت به لیست کامل
+                </a>
+                <a href="@Url.Action("ExportToExcel", "Stakeholder", searchModel)" class="btn btn-sm btn-alt-success">
+                    <i class="fa fa-file-excel me-1"></i> خروجی اکسل
+                </a>
+            </div>
+        </div>
+        <div class="block-content block-content-full">
+            <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 50px;">#</th>
+                        <th>نام</th>
+                        <th class="d-none d-sm-table-cell">شرکت</th>
+                        <th class="d-none d-lg-table-cell">تلفن</th>
+                        <th class="d-none d-lg-table-cell">ایمیل</th>
+                        <th class="d-none d-sm-table-cell">نوع</th>
+                        <th class="text-center" style="width: 100px;">وضعیت</th>
+                        <th class="text-center" style="width: 100px;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count > 0)
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-center">@Counter</td>
+                                <td class="fw-semibold">
+                                    <a href="@Url.Action("Details", "Stakeholder", new { id = item.Id })">
+                                        @item.FirstName @item.LastName
+                                    </a>
+                                </td>
+                                <td class="d-none d-sm-table-cell">
+                                    @(string.IsNullOrEmpty(item.CompanyName) ? "-" : item.CompanyName)
+                                </td>
+                                <td class="d-none d-lg-table-cell">
+                                    @(!string.IsNullOrEmpty(item.Mobile) ? item.Mobile : (!string.IsNullOrEmpty(item.Phone) ? item.Phone : "-"))
+                                </td>
+                                <td class="d-none d-lg-table-cell">
+                                    @(string.IsNullOrEmpty(item.Email) ? "-" : item.Email)
+                                </td>
+                                <td class="d-none d-sm-table-cell">
+                                    @switch (item.StakeholderType)
+                                    {
+                                        case 0:
+                                            <span class="badge bg-info">مشتری</span>
+                                            break;
+                                        case 1:
+                                            <span class="badge bg-primary">تامین کننده</span>
+                                            break;
+                                        case 2:
+                                            <span class="badge bg-success">همکار</span>
+                                            break;
+                                        case 3:
+                                            <span class="badge bg-warning">سایر</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (item.IsDeleted)
+                                    {
+                                        <span class="badge bg-danger">حذف شده</span>
+                                    }
+                                    else if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">فعال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">غیرفعال</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Details", "Stakeholder", new { id = item.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="مشاهده">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("EditStakeholder", "Stakeholder", new { id = item.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش">
+                                            <i class="fa fa-pencil-alt"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fa fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openModal('@Url.Action("ActiveOrDeactiveStakeholder", "Stakeholder", new { id = item.Id })')">
+                                                @(item.IsActive ? "غیرفعال کردن" : "فعال کردن")
+                                            </a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="openModal('@Url.Action("DeleteStakeholder", "Stakeholder", new { id = item.Id })')">
+                                                <i class="fa fa-trash me-1"></i> حذف
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            Counter++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fa fa-search fa-2x mb-2"></i>
+                                    <p>هیچ طرف حسابی با معیارهای جستجوی شما یافت نشد!</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- END Stakeholders Table -->
+</div>
+<!-- END Page Content -->
+<!-- Modal Container for dynamic content -->
+<div class="modal fade" id="modal-stakeholder" tabindex="-1" role="dialog" aria-labelledby="modal-stakeholder" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // Function to open modal and load content
+        function openModal(url) {
+            $('#modal-stakeholder .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
+            $('#modal-stakeholder').modal('show');
+
+            // Load content via AJAX
+            $.get(url, function(data) {
+                $('#modal-stakeholder .modal-content').html(data);
+            });
+        }
+
+        function openAdvancedSearch() {
+            openModal('@Url.Action("AdvancedSearch", "Stakeholder")');
+        }
+
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('.js-dataTable-responsive').DataTable({
+                language: {
+                    url: '/assets/js/plugins/datatables/i18n/fa.json'
+                },
+                responsive: true,
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true,
+                autoWidth: false
+            });
+
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

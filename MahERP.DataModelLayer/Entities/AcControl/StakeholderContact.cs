@@ -40,5 +40,7 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public bool IsActive { get; set; } = true;
         
         public DateTime CreateDate { get; set; }
+        public string? CreatorUserId { get; set; }
+        public bool IsPrimary { get; set; }
     }
 }

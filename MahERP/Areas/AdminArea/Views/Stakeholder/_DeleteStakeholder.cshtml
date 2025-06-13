@@ -1,0 +1,38 @@
+﻿@model Stakeholder
+@{
+    Layout = null;
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">حذف طرف حساب</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <div class="py-3 text-center">
+        <i class="fa fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+        <h4>آیا از حذف این طرف حساب اطمینان دارید؟</h4>
+        <p class="text-muted mb-0">
+            با حذف طرف حساب "<strong>@Model.FirstName @Model.LastName</strong>"، تمامی اطلاعات مرتبط با آن از سیستم حذف خواهد شد.
+            <br><span class="text-danger">این عملیات قابل بازگشت نیست!</span>
+        </p>
+
+        @if (ViewBag.HasRelatedData != null && ViewBag.HasRelatedData)
+        {
+            <div class="alert alert-danger mt-3">
+                <i class="fa fa-exclamation-circle me-1"></i> <strong>هشدار!</strong>
+                این طرف حساب دارای اطلاعات وابسته است (قرارداد، تسک، تعاملات CRM و غیره). حذف آن باعث حذف تمامی این اطلاعات نیز خواهد شد.
+            </div>
+        }
+    </div>
+</div>
+<div class="modal-footer">
+    <form method="post" action="@Url.Action("DeleteStakeholderPost", "Stakeholder")">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="submit" class="btn btn-danger">
+            <i class="fa fa-trash me-1"></i> حذف
+        </button>
+    </form>
+</div>

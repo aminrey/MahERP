@@ -1,0 +1,112 @@
+﻿@model StakeholderViewModel
+@{
+    ViewData["Title"] = "افزودن طرف حساب جدید";
+    Layout = "_Layout";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">افزودن طرف حساب جدید</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Stakeholder")">طرف حساب‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">افزودن جدید</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <!-- New Stakeholder Form -->
+    <form method="POST" action="@Url.Action("AddStakeholder", "Stakeholder")" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">اطلاعات اصلی</h3>
+                <div class="block-options">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fa fa-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div class="mb-4">
+                            <label class="form-label" for="StakeholderType">نوع طرف حساب <span class="text-danger">*</span></label>
+                            <select asp-for="StakeholderType" asp-items="StaticSelectLists.StakeholderTypes" class="form-select"></select>
+                            <span asp-validation-for="StakeholderType" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="FirstName">نام <span class="text-danger">*</span></label>
+                            <input asp-for="FirstName" class="form-control" placeholder="نام کوچک طرف حساب را وارد کنید">
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="LastName">نام خانوادگی <span class="text-danger">*</span></label>
+                            <input asp-for="LastName" class="form-control" placeholder="نام خانوادگی طرف حساب را وارد کنید">
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+                        <!-- سایر فیلدها... -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CRM Information -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">اطلاعات CRM</h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-toggle="block-option" data-action="content_toggle"></button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_LeadSource">منبع آشنایی</label>
+                            <select asp-for="CRMInfo.LeadSource" asp-items="StaticSelectLists.LeadSources" class="form-select"></select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_SalesStage">مرحله فروش</label>
+                            <select asp-for="CRMInfo.SalesStage" asp-items="StaticSelectLists.SalesStages" class="form-select"></select>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="CRMInfo_PotentialValue">ارزش بالقوه (میلیون تومان)</label>
+                                    <input asp-for="CRMInfo.PotentialValue" class="form-control" placeholder="ارزش بالقوه مشتری">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="CRMInfo_CreditRating">رتبه اعتباری</label>
+                                    <select asp-for="CRMInfo.CreditRating" asp-items="StaticSelectLists.CreditRatings" class="form-select"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- سایر فیلدها... -->
+                    </div>
+                </div>
+            </div>
+            <div class="block-content block-content-full block-content-sm bg-body-light text-end">
+                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                    <i class="fa fa-arrow-right me-1"></i> انصراف
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check me-1"></i> ذخیره
+                </button>
+            </div>
+        </div>
+    </form>
+    <!-- END New Stakeholder Form -->
+</div>
+<!-- END Page Content -->

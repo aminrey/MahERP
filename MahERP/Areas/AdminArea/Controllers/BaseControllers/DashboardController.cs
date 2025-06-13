@@ -18,7 +18,7 @@ namespace MahERP.Areas.AdminArea.Controllers.BaseControllers
         private readonly IMapper _Mapper;
         private readonly IWebHostEnvironment _env;
         private readonly UserManager<AppUsers> _UserManager;
-        private readonly PersianDateHelper _persianDateHelper; // Add this field
+        private new readonly PersianDateHelper _persianDateHelper; // Add this field
         private readonly IMemoryCache _memoryCache; // Add this field
 
         public DashboardController(

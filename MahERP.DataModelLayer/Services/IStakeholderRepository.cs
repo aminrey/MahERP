@@ -12,5 +12,9 @@ namespace MahERP.DataModelLayer.Repository
         bool IsNationalCodeUnique(string nationalCode, int? excludeId = null);
         bool IsEmailUnique(string email, int? excludeId = null);
         StakeholderCRM GetStakeholderCRMById(int stakeholderId);
+        
+        List<StakeholderContact> GetStakeholderContacts(int stakeholderId, bool includeInactive = false);
+        StakeholderContact GetStakeholderContactById(int id);
+        List<Stakeholder> SearchAdvanced(StakeholderSearchViewModel model);
     }
 }

@@ -2,19 +2,7 @@
 
 }
 
-
 <!-- Sidebar -->
-<!--
-  Sidebar Mini Mode - Display Helper classes
-
-  Adding 'smini-hide' class to an element will make it invisible (opacity: 0) when the sidebar is in mini mode
-  Adding 'smini-show' class to an element will make it visible (opacity: 1) when the sidebar is in mini mode
-    If you would like to disable the transition animation, make sure to also add the 'no-transition' class to your element
-
-  Adding 'smini-hidden' to an element will hide it when the sidebar is in mini mode
-  Adding 'smini-visible' to an element will show it (display: inline-block) only when the sidebar is in mini mode
-  Adding 'smini-visible-block' to an element will show it (display: block) only when the sidebar is in mini mode
--->
 <nav aria-label="Main Navigation" id="sidebar">
     <!-- Side Header -->
     <div class="bg-header-dark">
@@ -32,20 +20,16 @@
             <!-- Options -->
             <div>
                 <!-- Toggle Sidebar Style -->
-                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
-                <!-- Class Toggle, functionality initialized in Helpers.dmToggleClass() -->
                 <button class="btn btn-sm btn-alt-secondary" data-class="fa-toggle-off fa-toggle-on" data-target="#sidebar-style-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('sidebar_style_toggle');Dashmix.layout('header_style_toggle');" type="button">
                     <i class="fa fa-toggle-off" id="sidebar-style-toggler"></i>
                 </button>
                 <!-- END Toggle Sidebar Style -->
                 <!-- Dark Mode -->
-                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
                 <button class="btn btn-sm btn-alt-secondary" data-class="far fa" data-target="#dark-mode-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('dark_mode_toggle');" type="button">
                     <i class="far fa-moon" id="dark-mode-toggler"></i>
                 </button>
                 <!-- END Dark Mode -->
                 <!-- Close Sidebar, Visible only on mobile screens -->
-                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
                 <button class="btn btn-sm btn-alt-secondary d-lg-none" data-action="sidebar_close" data-toggle="layout" type="button">
                     <i class="fa fa-times-circle"></i>
                 </button>
@@ -66,9 +50,8 @@
 
                 <li class="nav-main-item">
                     <a class="nav-main-link" asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">
-                        <i class="nav-main-link-icon fa fa-list"></i>
+                        <i class="nav-main-link-icon fa fa-tachometer-alt"></i>
                         <span class="nav-main-link-name">داشبورد</span>
-
                     </a>
                 </li>
 
@@ -76,23 +59,26 @@
 
                 <li class="nav-main-item">
                     <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                        <i class="nav-main-link-icon fa fa-user"></i>
+                        <i class="nav-main-link-icon fa fa-handshake"></i>
                         <span class="nav-main-link-name">طرف حساب</span>
                     </a>
                     <ul class="nav-main-submenu">
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Customer" asp-action="AddCustomer">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Stakeholder" asp-action="AddStakeholder">
+                                <i class="nav-main-link-icon fa fa-plus-circle"></i>
                                 <span class="nav-main-link-name">طرف حساب جدید</span>
                             </a>
                         </li>
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Customer" asp-action="CustomerIndex">
-                                <span class="nav-main-link-name">لیست طرف حساب</span>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Stakeholder" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-list"></i>
+                                <span class="nav-main-link-name">لیست طرف حساب‌ها</span>
                             </a>
                         </li>
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Customer" asp-action="CustomerCategoryIndex">
-                                <span class="nav-main-link-name"> دسته بندی طرف حساب</span>
+                            <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search" onclick="loadAdvancedSearchModal()">
+                                <i class="nav-main-link-icon fa fa-search"></i>
+                                <span class="nav-main-link-name">جستجوی پیشرفته</span>
                             </a>
                         </li>
                     </ul>
@@ -101,21 +87,22 @@
 
                 <li class="nav-main-item">
                     <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                        <i class="nav-main-link-icon fa fa-user-alt"></i>
+                        <i class="nav-main-link-icon fa fa-user-circle"></i>
                         <span class="nav-main-link-name">کاربران</span>
                     </a>
                     <ul class="nav-main-submenu">
                         <li class="nav-main-item">
                             <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="AddUser">
+                                <i class="nav-main-link-icon fa fa-user-plus"></i>
                                 <span class="nav-main-link-name">کاربر جدید</span>
                             </a>
                         </li>
                         <li class="nav-main-item">
                             <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-users"></i>
                                 <span class="nav-main-link-name">لیست کاربران</span>
                             </a>
                         </li>
-
                     </ul>
                 </li>
 
@@ -128,24 +115,21 @@
 
                 <li class="nav-main-item">
                     <a class="nav-main-link" asp-area="AdminArea" asp-controller="SystemPart" asp-action="SystemPartIndex">
-                        <i class="nav-main-link-icon fa fa-folder-tree"></i>
-
+                        <i class="nav-main-link-icon fa fa-sitemap"></i>
                         <span class="nav-main-link-name">اجزاء سیستم</span>
                     </a>
                 </li>
 
                 <li class="nav-main-item">
                     <a class="nav-main-link" asp-area="AdminArea" asp-controller="RolePattern" asp-action="RolePatternIndex">
-                        <i class="nav-main-link-icon fa fa-arrows-split-up-and-left"></i>
-
-                        <span class="nav-main-link-name">نقش های کاربری</span>
+                        <i class="nav-main-link-icon fa fa-user-tag"></i>
+                        <span class="nav-main-link-name">نقش‌های کاربری</span>
                     </a>
                 </li>
 
                 <li class="nav-main-item">
                     <a class="nav-main-link" asp-area="AdminArea" asp-controller="AccessRight" asp-action="AccessRightIndex">
-                        <i class="nav-main-link-icon fa fa-book-open-reader"></i>
-
+                        <i class="nav-main-link-icon fa fa-lock"></i>
                         <span class="nav-main-link-name">کنترل دسترسی کاربران</span>
                     </a>
                 </li>
@@ -155,11 +139,17 @@
 
                 <li class="nav-main-item">
                     <a class="nav-main-link" asp-area="AdminArea" asp-controller="Settings" asp-action="AppSetting">
-                        <i class="nav-main-link-icon fa fa-gear"></i>
-                        <span class="nav-main-link-name ">تنظیمات </span>
+                        <i class="nav-main-link-icon fa fa-cogs"></i>
+                        <span class="nav-main-link-name">تنظیمات سیستم</span>
                     </a>
                 </li>
 
+                <li class="nav-main-item">
+                    <a class="nav-main-link" href="javascript:void(0)" onclick="document.getElementById('logoutForm').submit();">
+                        <i class="nav-main-link-icon fa fa-sign-out-alt"></i>
+                        <span class="nav-main-link-name">خروج</span>
+                    </a>
+                </li>
 
             </ul>
 
@@ -168,5 +158,37 @@
     </div>
     <!-- END Sidebar Scrolling -->
 </nav>
-
 <!-- END Sidebar -->
+
+<!-- Hidden Logout Form -->
+<form id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+
+<!-- Modal Advanced Search -->
+<div class="modal fade" id="modal-advanced-search" tabindex="-1" role="dialog" aria-labelledby="modal-advanced-search" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" id="advanced-search-content">
+            <!-- Content will be loaded here via AJAX -->
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Advanced Search Modal -->
+<script>
+    function loadAdvancedSearchModal() {
+        $("#advanced-search-content").html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin fa-3x"></i><p class="mt-2">در حال بارگذاری...</p></div>');
+
+        $.ajax({
+            url: '@Url.Action("AdvancedSearch", "Stakeholder", new { area = "AdminArea" })',
+            type: 'GET',
+            success: function (result) {
+                $("#advanced-search-content").html(result);
+            },
+            error: function () {
+                $("#advanced-search-content").html('<div class="text-center p-3 text-danger"><i class="fa fa-exclamation-triangle fa-3x"></i><p class="mt-2">خطا در بارگذاری فرم جستجو</p></div>');
+            }
+        });
+    }
+</script>
