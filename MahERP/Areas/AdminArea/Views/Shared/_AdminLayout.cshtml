@@ -125,6 +125,17 @@
         }
     </script>
 
+    <script>
+        // جلوگیری از راه‌اندازی مجدد دیتاتیبل‌ها
+        $.fn.dataTable.ext.errMode = 'throw';
+        window.reinitDataTable = function(tableId, options) {
+            if ($.fn.DataTable.isDataTable('#' + tableId)) {
+                $('#' + tableId).DataTable().destroy();
+            }
+            $('#' + tableId).DataTable(options);
+        };
+    </script>
+
     @RenderSection("Scripts", required: false)
 </body>
 </html>

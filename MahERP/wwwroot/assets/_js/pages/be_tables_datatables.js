@@ -43,45 +43,59 @@ class pageTablesDatatables {
       }
     });
 
+    // Helper function to safely initialize DataTable
+    const safelyInitDataTable = (selector, options) => {
+      const table = jQuery(selector);
+      if (table.length) {
+        // Check if DataTable is already initialized on this element
+        if (jQuery.fn.DataTable.isDataTable(table)) {
+          // If already initialized, destroy it first
+          table.DataTable().destroy();
+        }
+        // Then initialize with options
+        table.DataTable(options);
+      }
+    };
+
     // Init full DataTable
-    jQuery('.js-dataTable-full').DataTable({
-      pageLength: 5,
+    safelyInitDataTable('.js-dataTable-full', {
+      pageLength: 20,
       lengthMenu: [[5, 10, 20], [5, 10, 20]],
       autoWidth: false
     });
 
     // Init DataTable with Buttons
-    jQuery('.js-dataTable-buttons').DataTable({
-      pageLength: 5,
+    safelyInitDataTable('.js-dataTable-buttons', {
+      pageLength: 20,
       lengthMenu: [[5, 10, 20], [5, 10, 20]],
       autoWidth: false,
       buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
       dom: "<'row'<'col-sm-12'<'text-center bg-body-light py-2 mb-2'B>>>" +
-              "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+           "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
     });
 
     // Init full extra DataTable
-    jQuery('.js-dataTable-full-pagination').DataTable({
+    safelyInitDataTable('.js-dataTable-full-pagination', {
       pagingType: "full_numbers",
-      pageLength: 5,
+      pageLength: 20,
       lengthMenu: [[5, 10, 20], [5, 10, 20]],
       autoWidth: false
     });
 
     // Init simple DataTable
-    jQuery('.js-dataTable-simple').DataTable({
-      pageLength: 5,
+    safelyInitDataTable('.js-dataTable-simple', {
+      pageLength: 20,
       lengthMenu: false,
       searching: false,
       autoWidth: false,
       dom: "<'row'<'col-sm-12'tr>>" +
-              "<'row'<'col-sm-6'i><'col-sm-6'p>>"
+           "<'row'<'col-sm-6'i><'col-sm-6'p>>"
     });
 
     // Init responsive DataTable
-    jQuery('.js-dataTable-responsive').DataTable({
+    safelyInitDataTable('.js-dataTable-responsive', {
       pagingType: "full_numbers",
-      pageLength: 5,
+      pageLength: 20,
       lengthMenu: [[5, 10, 20], [5, 10, 20]],
       autoWidth: false,
       responsive: true

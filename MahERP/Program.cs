@@ -1,4 +1,4 @@
-using MahERP.DataModelLayer;
+﻿using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
@@ -14,7 +14,6 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppDbContext>(
     option => option.UseSqlServer(builder.Configuration.GetConnectionString("MahERPConnectionString"),
     datamodel => datamodel.MigrationsAssembly("MahERP.DataModelLayer")));
-
 
 //Identity Service
 builder.Services.AddIdentity<AppUsers, AppRoles>()
@@ -59,6 +58,9 @@ builder.Services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.Ap
     //configure your other properties
 });
 
+builder.Services.AddHttpClient(); // اگر قبلاً ثبت نشده است
+builder.Services.AddMemoryCache(); // اگر قبلاً ثبت نشده است
+builder.Services.AddScoped<PersianDateHelper>();
 
 var app = builder.Build();
 
