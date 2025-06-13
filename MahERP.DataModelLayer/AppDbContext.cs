@@ -61,6 +61,8 @@ namespace MahERP.DataModelLayer
         public DbSet<CRMComment> CRMComment_Tbl { get; set; }
         public DbSet<CRMParticipant> CRMParticipant_Tbl { get; set; }
         public DbSet<CRMTeam> CRMTeam_Tbl { get; set; }
+        public DbSet<StakeholderCRM> StakeholderCRM_Tbl { get; set; }
+        public DbSet<TaskCRMDetails> TaskCRMDetails_Tbl { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -99,6 +101,32 @@ namespace MahERP.DataModelLayer
                 .HasOne(c => c.LastUpdater)
                 .WithMany()
                 .HasForeignKey(c => c.LastUpdaterUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // StakeholderCRM relationships
+            modelBuilder.Entity<StakeholderCRM>()
+                .HasOne(c => c.Stakeholder)
+                .WithMany()
+                .HasForeignKey(c => c.StakeholderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StakeholderCRM>()
+                .HasOne(c => c.SalesRep)
+                .WithMany()
+                .HasForeignKey(c => c.SalesRepUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // TaskCRMDetails relationships
+            modelBuilder.Entity<TaskCRMDetails>()
+                .HasOne(t => t.Task)
+                .WithMany()
+                .HasForeignKey(t => t.TaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskCRMDetails>()
+                .HasOne(t => t.StakeholderContact)
+                .WithMany()
+                .HasForeignKey(t => t.StakeholderContactId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Activity relationships

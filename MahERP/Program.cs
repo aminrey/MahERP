@@ -1,6 +1,7 @@
 using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -21,7 +22,8 @@ builder.Services.AddIdentity<AppUsers, AppRoles>()
                 .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
 
 builder.Services.Configure<IdentityOptions>(options =>
 {

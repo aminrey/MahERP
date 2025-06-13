@@ -1,15 +1,16 @@
 ﻿using AutoMapper;
-using MahERP.Areas.AdminArea.Controllers.BaseController;
+using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 
 
-namespace Accounting.Areas.AdminArea.Controllers
+namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
     [Area("AdminArea")]
     [Authorize]
@@ -19,12 +20,14 @@ namespace Accounting.Areas.AdminArea.Controllers
         private readonly UserManager<AppUsers> _UserManager;
         private readonly IMapper _Mapper;
 
-        public UserManagerController(IUnitOfWork context, UserManager<AppUsers> userManager, IMapper Mapper) : base(context, userManager)
-        {
-            _Context = context;
-            _UserManager = userManager;
-            _Mapper = Mapper;
-        }
+
+public UserManagerController(IUnitOfWork context, UserManager<AppUsers> userManager, IMapper Mapper, PersianDateHelper persianDateHelper, IMemoryCache memoryCache)
+    : base(context, userManager, persianDateHelper, memoryCache)
+    {
+        _Context = context;
+        _UserManager = userManager;
+        _Mapper = Mapper;
+    }
 
 
         public IActionResult Index()
