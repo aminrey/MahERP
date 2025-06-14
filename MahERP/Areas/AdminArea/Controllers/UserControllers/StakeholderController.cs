@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
@@ -13,6 +12,8 @@ using System.Collections.Generic;
 using System.Linq;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using ClosedXML.Excel;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
@@ -54,7 +55,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return RedirectToAction("ErrorView", "Home");
 
             var stakeholderCRM = _stakeholderRepository.GetStakeholderCRMById(id);
-            
+
             var viewModel = _mapper.Map<StakeholderViewModel>(stakeholder);
             if (stakeholderCRM != null)
             {
@@ -68,6 +69,11 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         [HttpGet]
         public IActionResult AddStakeholder()
         {
+            ViewBag.SalesReps = new SelectList(_userManager.Users
+                .Where(u => u.IsActive && !u.IsRemoveUser)
+                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                "Id", "FullName");
+
             return View(new StakeholderViewModel { IsActive = true });
         }
 
@@ -115,7 +121,10 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
                 return RedirectToAction(nameof(Index));
             }
-
+            ViewBag.SalesReps = new SelectList(_userManager.Users
+                .Where(u => u.IsActive && !u.IsRemoveUser)
+                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                "Id", "FullName");
             return View(model);
         }
 
@@ -128,13 +137,18 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return RedirectToAction("ErrorView", "Home");
 
             var viewModel = _mapper.Map<StakeholderViewModel>(stakeholder);
-            
+
             // دریافت اطلاعات CRM اگر وجود داشته باشد
             var stakeholderCRM = _stakeholderRepository.GetStakeholderCRMById(id);
             if (stakeholderCRM != null)
             {
                 viewModel.CRMInfo = _mapper.Map<StakeholderCRMViewModel>(stakeholderCRM);
             }
+
+            ViewBag.SalesReps = new SelectList(_userManager.Users
+                .Where(u => u.IsActive && !u.IsRemoveUser)
+                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                "Id", "FullName");
 
             return View(viewModel);
         }
@@ -147,14 +161,14 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             if (ModelState.IsValid)
             {
                 // بررسی یکتا بودن کد ملی و ایمیل
-                if (!string.IsNullOrEmpty(model.NationalCode) && 
+                if (!string.IsNullOrEmpty(model.NationalCode) &&
                     !_stakeholderRepository.IsNationalCodeUnique(model.NationalCode, model.Id))
                 {
                     ModelState.AddModelError("NationalCode", "کد ملی وارد شده قبلاً ثبت شده است");
                     return View(model);
                 }
 
-                if (!string.IsNullOrEmpty(model.Email) && 
+                if (!string.IsNullOrEmpty(model.Email) &&
                     !_stakeholderRepository.IsEmailUnique(model.Email, model.Id))
                 {
                     ModelState.AddModelError("Email", "ایمیل وارد شده قبلاً ثبت شده است");
@@ -175,7 +189,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 if (model.CRMInfo != null)
                 {
                     var stakeholderCRM = _uow.StakeholderCRMUW.Get(c => c.StakeholderId == model.Id).FirstOrDefault();
-                    
+
                     if (stakeholderCRM == null)
                     {
                         // ایجاد رکورد جدید اگر وجود نداشته باشد
@@ -194,13 +208,16 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                         stakeholderCRM.LastUpdateDate = DateTime.Now;
                         _uow.StakeholderCRMUW.Update(stakeholderCRM);
                     }
-                    
+
                     _uow.Save();
                 }
 
                 return RedirectToAction(nameof(Index));
             }
-
+            ViewBag.SalesReps = new SelectList(_userManager.Users
+                .Where(u => u.IsActive && !u.IsRemoveUser)
+                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                "Id", "FullName");
             return View(model);
         }
 
@@ -282,29 +299,29 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         {
             // اجرای دوباره جستجو برای بدست آوردن نتایج
             var query = _uow.StakeholderUW.Get().AsQueryable();
-            
+
             // فیلتر وضعیت حذف شده
             if (!model.IncludeDeleted)
             {
                 query = query.Where(s => !s.IsDeleted);
             }
-            
+
             // فیلتر وضعیت فعال
             if (model.IsActive.HasValue)
             {
                 query = query.Where(s => s.IsActive == model.IsActive.Value);
             }
-            
+
             // سایر فیلترها مشابه متد Search
             // ...
-            
+
             var stakeholders = query.OrderByDescending(s => s.CreateDate).ToList();
-            
+
             // ایجاد فایل اکسل
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add("طرف حساب‌ها");
-                
+
                 // سرستون‌ها
                 worksheet.Cell(1, 1).Value = "ردیف";
                 worksheet.Cell(1, 2).Value = "نام";
@@ -318,13 +335,13 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 worksheet.Cell(1, 10).Value = "وضعیت";
                 worksheet.Cell(1, 11).Value = "آدرس";
                 worksheet.Cell(1, 12).Value = "تاریخ ثبت";
-                
+
                 // استایل هدر
                 var headerRow = worksheet.Row(1);
                 headerRow.Style.Font.Bold = true;
                 headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
                 headerRow.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                
+
                 // ترتیب ردیف
                 int row = 2;
                 foreach (var item in stakeholders)
@@ -337,7 +354,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     worksheet.Cell(row, 6).Value = item.Mobile;
                     worksheet.Cell(row, 7).Value = item.Email;
                     worksheet.Cell(row, 8).Value = item.NationalCode;
-                    
+
                     // نوع طرف حساب
                     string stakeholderType = item.StakeholderType switch
                     {
@@ -348,26 +365,26 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                         _ => "نامشخص"
                     };
                     worksheet.Cell(row, 9).Value = stakeholderType;
-                    
+
                     // وضعیت
                     string status = item.IsDeleted ? "حذف شده" : (item.IsActive ? "فعال" : "غیرفعال");
                     worksheet.Cell(row, 10).Value = status;
-                    
+
                     worksheet.Cell(row, 11).Value = item.Address;
                     worksheet.Cell(row, 12).Value = _persianDateHelper.GetPersianDate(item.CreateDate);
-                    
+
                     row++;
                 }
-                
+
                 // تنظیم عرض ستون‌ها
                 worksheet.Columns().AdjustToContents();
-                
+
                 // ذخیره به حافظه
                 using (var stream = new MemoryStream())
                 {
                     workbook.SaveAs(stream);
                     stream.Flush();
-                    
+
                     return new FileContentResult(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     {
                         FileDownloadName = $"Stakeholders_{DateTime.Now:yyyy_MM_dd}.xlsx"
@@ -385,7 +402,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 .Where(u => u.IsActive && !u.IsRemoveUser)
                 .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
                 .ToList();
-            
+
             return PartialView("_AdvancedSearch", new StakeholderSearchViewModel());
         }
 
@@ -394,68 +411,68 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         public IActionResult Search(StakeholderSearchViewModel model)
         {
             var query = _uow.StakeholderUW.Get().AsQueryable();
-            
+
             // فیلتر وضعیت حذف شده
             if (!model.IncludeDeleted)
             {
                 query = query.Where(s => !s.IsDeleted);
             }
-            
+
             // فیلتر وضعیت فعال
             if (model.IsActive.HasValue)
             {
                 query = query.Where(s => s.IsActive == model.IsActive.Value);
             }
-            
+
             // فیلتر نوع طرف حساب
             if (model.StakeholderType.HasValue)
             {
                 query = query.Where(s => s.StakeholderType == model.StakeholderType.Value);
             }
-            
+
             // جستجو در نام و نام خانوادگی
             if (!string.IsNullOrWhiteSpace(model.Name))
             {
                 query = query.Where(s => s.FirstName.Contains(model.Name) || s.LastName.Contains(model.Name));
             }
-            
+
             // جستجو در نام شرکت
             if (!string.IsNullOrWhiteSpace(model.CompanyName))
             {
                 query = query.Where(s => s.CompanyName.Contains(model.CompanyName));
             }
-            
+
             // جستجو در تلفن
             if (!string.IsNullOrWhiteSpace(model.Phone))
             {
                 query = query.Where(s => s.Phone.Contains(model.Phone) || s.Mobile.Contains(model.Phone));
             }
-            
+
             // جستجو در ایمیل
             if (!string.IsNullOrWhiteSpace(model.Email))
             {
                 query = query.Where(s => s.Email.Contains(model.Email));
             }
-            
+
             // جستجو در کد ملی
             if (!string.IsNullOrWhiteSpace(model.NationalCode))
             {
                 query = query.Where(s => s.NationalCode.Contains(model.NationalCode));
             }
-            
+
             // فیلتر تاریخ ایجاد
             if (!string.IsNullOrWhiteSpace(model.FromDate))
             {
                 DateTime fromDate = PersianDateHelper.ConvertToGregorianDate(model.FromDate);
                 query = query.Where(s => s.CreateDate >= fromDate);
             }
-            
+
             if (!string.IsNullOrWhiteSpace(model.ToDate))
             {
                 DateTime toDate = PersianDateHelper.ConvertToGregorianDate(model.ToDate).AddDays(1);
                 query = query.Where(s => s.CreateDate <= toDate);
             }
-            
+
             //// فیلترهای CRM
             //if (model.SalesStage.HasValue || model.LeadSource.HasValue || !string.IsNullOrWhiteSpace(model.Industry) ||
             //    !string.IsNullOrWhiteSpace(model.CreditRating) || model.MinPotentialValue.HasValue || model.MaxPotentialValue.HasValue ||
@@ -467,52 +484,52 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             //        crm => crm.StakeholderId,
             //        (stakeholder, crm) => new { Stakeholder = stakeholder, CRM = crm })
             //        .AsQueryable();
-                
+
             //    if (model.SalesStage.HasValue)
             //    {
             //        query = query.Where(x => x.CRM.SalesStage == model.SalesStage.Value);
             //    }
-                
+
             //    if (model.LeadSource.HasValue)
             //    {
             //        query = query.Where(x => x.CRM.LeadSource == model.LeadSource.Value);
             //    }
-                
+
             //    if (!string.IsNullOrWhiteSpace(model.Industry))
             //    {
             //        query = query.Where(x => x.CRM.Industry.Contains(model.Industry));
             //    }
-                
+
             //    if (!string.IsNullOrWhiteSpace(model.CreditRating))
             //    {
             //        query = query.Where(x => x.CRM.CreditRating == model.CreditRating);
             //    }
-                
+
             //    if (model.MinPotentialValue.HasValue)
             //    {
             //        query = query.Where(x => x.CRM.PotentialValue >= model.MinPotentialValue.Value);
             //    }
-                
+
             //    if (model.MaxPotentialValue.HasValue)
             //    {
             //        query = query.Where(x => x.CRM.PotentialValue <= model.MaxPotentialValue.Value);
             //    }
-                
+
             //    if (!string.IsNullOrWhiteSpace(model.SalesRepUserId))
             //    {
             //        query = query.Where(x => x.CRM.SalesRepUserId == model.SalesRepUserId);
             //    }
-                
+
             //    // استخراج دوباره فقط اطلاعات Stakeholder
             //    query = query.Select(x => x.Stakeholder);
             //}
-            
+
             // مرتب‌سازی بر اساس تاریخ ایجاد (نزولی)
             var stakeholders = query.OrderByDescending(s => s.CreateDate).ToList();
-            
+
             // ذخیره پارامترهای جستجو در ViewBag برای استفاده در صفحه نتایج
             ViewBag.SearchModel = model;
-            
+
             return View("SearchResults", stakeholders);
         }
 
@@ -523,14 +540,14 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             var stakeholder = _uow.StakeholderUW.GetById(stakeholderId);
             if (stakeholder == null)
                 return RedirectToAction("ErrorView", "Home");
-            
+
             ViewBag.StakeholderId = stakeholderId;
             ViewBag.StakeholderName = $"{stakeholder.FirstName} {stakeholder.LastName}";
-            
-            return View(new StakeholderContactViewModel 
-            { 
+
+            return View(new StakeholderContactViewModel
+            {
                 StakeholderId = stakeholderId,
-                IsActive = true 
+                IsActive = true
             });
         }
 
@@ -544,12 +561,12 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 var Stakeholder = _uow.StakeholderUW.GetById(model.StakeholderId);
                 if (Stakeholder == null)
                     return RedirectToAction("ErrorView", "Home");
-                
+
                 // ایجاد تماس جدید
                 var contact = _mapper.Map<StakeholderContact>(model);
                 contact.CreateDate = DateTime.Now;
                 contact.CreatorUserId = _userManager.GetUserId(User);
-                
+
                 // اگر این تماس به عنوان اصلی انتخاب شده، سایر تماس‌ها را از حالت اصلی خارج کنیم
                 if (model.IsPrimary)
                 {
@@ -560,19 +577,19 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                         _uow.StakeholderContactUW.Update(primaryContact);
                     }
                 }
-                
+
                 // ذخیره در دیتابیس
                 _uow.StakeholderContactUW.Create(contact);
                 _uow.Save();
-                
+
                 return RedirectToAction("Details", new { id = model.StakeholderId });
             }
-            
+
             // در صورت وجود خطا، اطلاعات را دوباره به ویو برگردانیم
             var stakeholder = _uow.StakeholderUW.GetById(model.StakeholderId);
             ViewBag.StakeholderId = model.StakeholderId;
             ViewBag.StakeholderName = $"{stakeholder.FirstName} {stakeholder.LastName}";
-            
+
             return View(model);
         }
 
@@ -583,12 +600,12 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             var contact = _uow.StakeholderContactUW.GetById(id);
             if (contact == null)
                 return RedirectToAction("ErrorView", "Home");
-            
+
             var stakeholder = _uow.StakeholderUW.GetById(contact.StakeholderId);
             ViewBag.StakeholderName = $"{stakeholder.FirstName} {stakeholder.LastName}";
-            
+
             var viewModel = _mapper.Map<StakeholderContactViewModel>(contact);
-            
+
             return View(viewModel);
         }
 
@@ -602,10 +619,10 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 var contact = _uow.StakeholderContactUW.GetById(model.Id);
                 if (contact == null)
                     return RedirectToAction("ErrorView", "Home");
-                
+
                 // به‌روزرسانی اطلاعات
                 _mapper.Map(model, contact);
-                
+
                 // اگر این تماس به عنوان اصلی انتخاب شده، سایر تماس‌ها را از حالت اصلی خارج کنیم
                 if (model.IsPrimary)
                 {
@@ -616,17 +633,17 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                         _uow.StakeholderContactUW.Update(primaryContact);
                     }
                 }
-                
+
                 _uow.StakeholderContactUW.Update(contact);
                 _uow.Save();
-                
+
                 return RedirectToAction("Details", new { id = model.StakeholderId });
             }
-            
+
             // در صورت وجود خطا، اطلاعات را دوباره به ویو برگردانیم
             var stakeholder = _uow.StakeholderUW.GetById(model.StakeholderId);
             ViewBag.StakeholderName = $"{stakeholder.FirstName} {stakeholder.LastName}";
-            
+
             return View(model);
         }
 
@@ -637,7 +654,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             var contact = _uow.StakeholderContactUW.GetById(id);
             if (contact == null)
                 return RedirectToAction("ErrorView", "Home");
-            
+
             return PartialView("_DeleteContact", contact);
         }
 
@@ -649,12 +666,12 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             var contact = _uow.StakeholderContactUW.GetById(id);
             if (contact == null)
                 return RedirectToAction("ErrorView", "Home");
-            
+
             int stakeholderId = contact.StakeholderId;
-            
+
             _uow.StakeholderContactUW.Delete(contact);
             _uow.Save();
-            
+
             return RedirectToAction("Details", new { id = stakeholderId });
         }
 
@@ -665,11 +682,11 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             var contact = _uow.StakeholderContactUW.GetById(id);
             if (contact == null)
                 return RedirectToAction("ErrorView", "Home");
-            
+
             ViewBag.ModalTitle = contact.IsActive ? "غیرفعال کردن فرد مرتبط" : "فعال کردن فرد مرتبط";
             ViewBag.ButtonClass = contact.IsActive ? "btn btn-danger" : "btn btn-success";
             ViewBag.ActionText = contact.IsActive ? "غیرفعال کردن" : "فعال کردن";
-            
+
             return PartialView("_ToggleContactStatus", contact);
         }
 
@@ -681,11 +698,11 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             var contact = _uow.StakeholderContactUW.GetById(id);
             if (contact == null)
                 return RedirectToAction("ErrorView", "Home");
-            
+
             contact.IsActive = !contact.IsActive;
             _uow.StakeholderContactUW.Update(contact);
             _uow.Save();
-            
+
             return RedirectToAction("Details", new { id = contact.StakeholderId });
         }
     }

@@ -16,7 +16,9 @@ namespace MahERP.AutoMapper
             CreateMap<AppUsers, EditUserViewModel>().ReverseMap();           
 
             //Stakeholder
-            CreateMap<Stakeholder, StakeholderViewModel>().ReverseMap();
+            CreateMap<Stakeholder, StakeholderViewModel>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
+                .ReverseMap();
             CreateMap<StakeholderCRM, StakeholderCRMViewModel>().ReverseMap();
         }
     }

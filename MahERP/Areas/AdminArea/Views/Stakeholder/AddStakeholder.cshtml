@@ -43,17 +43,86 @@
                             <select asp-for="StakeholderType" asp-items="StaticSelectLists.StakeholderTypes" class="form-select"></select>
                             <span asp-validation-for="StakeholderType" class="text-danger"></span>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="FirstName">نام <span class="text-danger">*</span></label>
-                            <input asp-for="FirstName" class="form-control" placeholder="نام کوچک طرف حساب را وارد کنید">
-                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="FirstName">نام <span class="text-danger">*</span></label>
+                                    <input asp-for="FirstName" class="form-control" placeholder="نام کوچک طرف حساب را وارد کنید">
+                                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="LastName">نام خانوادگی <span class="text-danger">*</span></label>
+                                    <input asp-for="LastName" class="form-control" placeholder="نام خانوادگی طرف حساب را وارد کنید">
+                                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                </div>
+                            </div>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label" for="LastName">نام خانوادگی <span class="text-danger">*</span></label>
-                            <input asp-for="LastName" class="form-control" placeholder="نام خانوادگی طرف حساب را وارد کنید">
-                            <span asp-validation-for="LastName" class="text-danger"></span>
+                            <label class="form-label" for="CompanyName">نام شرکت</label>
+                            <input asp-for="CompanyName" class="form-control" placeholder="نام شرکت را وارد کنید">
+                            <span asp-validation-for="CompanyName" class="text-danger"></span>
                         </div>
-                        <!-- سایر فیلدها... -->
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Phone">تلفن ثابت</label>
+                                    <input asp-for="Phone" class="form-control" placeholder="تلفن ثابت را وارد کنید">
+                                    <span asp-validation-for="Phone" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Mobile">تلفن همراه</label>
+                                    <input asp-for="Mobile" class="form-control" placeholder="تلفن همراه را وارد کنید">
+                                    <span asp-validation-for="Mobile" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label asp-for="Email" class="form-label"></label>
+                                    <input asp-for="Email" class="form-control" placeholder="ایمیل را وارد کنید">
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label asp-for="NationalCode" class="form-label"></label>
+                                    <input asp-for="NationalCode" class="form-control" placeholder="کد ملی را وارد کنید">
+                                    <span asp-validation-for="NationalCode" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label asp-for="PostalCode" class="form-label"></label>
+                                    <input asp-for="PostalCode" class="form-control" placeholder="کد پستی را وارد کنید">
+                                    <span asp-validation-for="PostalCode" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-check">
+                                        <input asp-for="IsActive" class="form-check-input">
+                                        <span class="form-check-label">وضعیت فعال</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="Address" class="form-label"></label>
+                            <textarea asp-for="Address" class="form-control" rows="3" placeholder="آدرس را وارد کنید"></textarea>
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="توضیحات اضافی را وارد کنید"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -92,7 +161,38 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- سایر فیلدها... -->
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_Industry">صنعت / حوزه فعالیت</label>
+                            <input asp-for="CRMInfo.Industry" class="form-control" placeholder="صنعت یا حوزه فعالیت مشتری">
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="CRMInfo_EmployeeCount">تعداد کارمندان</label>
+                                    <input asp-for="CRMInfo.EmployeeCount" class="form-control" placeholder="تعداد کارمندان">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="CRMInfo_AnnualRevenue">گردش مالی سالانه (میلیون تومان)</label>
+                                    <input asp-for="CRMInfo.AnnualRevenue" class="form-control" placeholder="گردش مالی سالانه">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_SalesRepUserId">کارشناس فروش اختصاصی</label>
+                            <select asp-for="CRMInfo.SalesRepUserId" asp-items="ViewBag.SalesReps" class="form-select">
+                                <option value="">انتخاب کنید</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_Preferences">علاقه‌مندی‌ها و ترجیحات</label>
+                            <textarea asp-for="CRMInfo.Preferences" class="form-control" rows="4" placeholder="علاقه‌مندی‌ها و ترجیحات مشتری"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="CRMInfo_InternalNotes">یادداشت‌های داخلی</label>
+                            <textarea asp-for="CRMInfo.InternalNotes" class="form-control" rows="4" placeholder="یادداشت‌های داخلی (فقط برای استفاده داخلی)"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -109,3 +209,21 @@
     <!-- END New Stakeholder Form -->
 </div>
 <!-- END Page Content -->
+@section scripts {
+    <script>
+        $(document).ready(function() {
+            // بررسی نوع طرف حساب و نمایش/عدم نمایش بخش های مرتبط
+            $('#StakeholderType').change(function() {
+                // اگر مشتری باشد، بخش CRM را نمایش بده
+                if ($(this).val() == "0") {
+                    $('.block-rounded:eq(1)').show();
+                } else {
+                    $('.block-rounded:eq(1)').hide();
+                }
+            });
+
+            // اعمال تغییرات بر اساس مقدار اولیه
+            $('#StakeholderType').trigger('change');
+        });
+    </script>
+}

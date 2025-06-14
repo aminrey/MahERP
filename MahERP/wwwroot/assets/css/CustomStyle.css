@@ -250,3 +250,27 @@ button.block {
 .modal-header .btn-close {
     margin: calc(var(--bs-modal-header-padding-y) * -.5) calc(var(--bs-modal-header-padding-x) * .5) calc(var(--bs-modal-header-padding-y) * -.5);
 }
+
+/* اصلاح فاصله بین هدر و محتوای اصلی */
+.content-top-padding {
+    padding-top: 4.5rem; /* فاصله مناسب از بالا برای هدر ثابت */
+    position: relative;
+    z-index: 1; /* اطمینان از نمایش محتوا روی دیگر عناصر */
+}
+
+/* برای صفحاتی که هدر شیشه‌ای دارند */
+.page-header-glass ~ #main-container {
+    padding-top: 5.5rem; /* فاصله بیشتر برای هدر شیشه‌ای */
+}
+
+/* اصلاح z-index برای هدر */
+#page-header {
+    position: relative;
+    z-index: 10; /* اطمینان از نمایش هدر در بالای سایر عناصر */
+}
+
+/* بهبود نمایش عناصر Hero در زیر هدر شیشه‌ای */
+.bg-image {
+    position: relative;
+    z-index: 1;
+}
