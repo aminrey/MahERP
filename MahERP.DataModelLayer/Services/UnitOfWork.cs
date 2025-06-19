@@ -26,9 +26,14 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<StakeholderCRM> _stakeholderCRM;
         private GenereicClass<StakeholderContact> _stakeholderContact;
 
+        //Branch and Contract
+        private GenereicClass<Branch> _branch;
+        private GenereicClass<BranchUser> _branchUser;
+        private GenereicClass<Contract> _contract;
+        private GenereicClass<StakeholderBranch> _stakeholderBranch;
+
         public GenereicClass<RolePatternDetails> rolePatternDetailsUW
         {
-            //فقط خواندنی    
             get
             {
                 if (_rolePatterDetails == null)
@@ -40,7 +45,6 @@ namespace MahERP.DataModelLayer.Services
         }
         public GenereicClass<RolePattern> rolePatternUW
         {
-            //فقط خواندنی    
             get
             {
                 if (_rolePattern == null)
@@ -106,6 +110,54 @@ namespace MahERP.DataModelLayer.Services
                     _stakeholderContact = new GenereicClass<StakeholderContact>(_Context);
                 }
                 return _stakeholderContact;
+            }
+        }
+
+        public GenereicClass<Branch> BranchUW
+        {
+            get
+            {
+                if (_branch == null)
+                {
+                    _branch = new GenereicClass<Branch>(_Context);
+                }
+                return _branch;
+            }
+        }
+
+        public GenereicClass<BranchUser> BranchUserUW
+        {
+            get
+            {
+                if (_branchUser == null)
+                {
+                    _branchUser = new GenereicClass<BranchUser>(_Context);
+                }
+                return _branchUser;
+            }
+        }
+
+        public GenereicClass<Contract> ContractUW
+        {
+            get
+            {
+                if (_contract == null)
+                {
+                    _contract = new GenereicClass<Contract>(_Context);
+                }
+                return _contract;
+            }
+        }
+
+        public GenereicClass<StakeholderBranch> StakeholderBranchUW
+        {
+            get
+            {
+                if (_stakeholderBranch == null)
+                {
+                    _stakeholderBranch = new GenereicClass<StakeholderBranch>(_Context);
+                }
+                return _stakeholderBranch;
             }
         }
 

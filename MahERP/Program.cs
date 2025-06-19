@@ -23,6 +23,8 @@ builder.Services.AddIdentity<AppUsers, AppRoles>()
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
+builder.Services.AddScoped<IBranchRepository, BranchRepository>();
+builder.Services.AddScoped<IContractRepository, ContractRepository>();
 
 builder.Services.Configure<IdentityOptions>(options =>
 {

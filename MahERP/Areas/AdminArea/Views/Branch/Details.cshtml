@@ -1,0 +1,469 @@
+﻿@model BranchViewModel
+@{
+    ViewData["Title"] = $"جزئیات شعبه - {Model.Name}";
+}
+
+<!-- Hero -->
+<div class="bg-image" style="background-image: url('/assets/media/photos/photo12.jpg');">
+    <div class="bg-primary-dark-op">
+        <div class="content content-full text-center py-6">
+            <h1 class="h2 text-white mb-2">@Model.Name</h1>
+            <h2 class="h4 fw-normal text-white-75 mb-0">@(Model.IsMainBranch ? "شعبه اصلی" : "شعبه فرعی")</h2>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <!-- Quick Actions -->
+    <div class="row items-push">
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("EditBranch", "Branch", new { id = Model.Id })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-pencil-alt text-primary"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        ویرایش
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="openModal('@Url.Action("ToggleActivation", "Branch", new { id = Model.Id })')">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-@(Model.IsActive ? "ban text-danger" : "check text-success")"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        @(Model.IsActive ? "غیرفعال کردن" : "فعال کردن")
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddUser", "Branch", new { branchId = Model.Id })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-user-plus text-info"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        افزودن کاربر
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddStakeholder", "Branch", new { branchId = Model.Id })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-user-tie text-success"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        افزودن طرف حساب
+                    </p>
+                </div>
+            </a>
+        </div>
+    </div>
+    <!-- END Quick Actions -->
+    <!-- Branch Information -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-building text-muted me-1"></i> اطلاعات شعبه
+            </h3>
+            <div class="block-options">
+                <a href="@Url.Action("EditBranch", "Branch", new { id = Model.Id })" class="btn btn-sm btn-alt-primary">
+                    <i class="fa fa-pencil-alt me-1"></i> ویرایش
+                </a>
+            </div>
+        </div>
+        <div class="block-content">
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">نام شعبه</label>
+                        <div class="form-control-plaintext">@Model.Name</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">نوع شعبه</label>
+                        <div class="form-control-plaintext">
+                            @if (Model.IsMainBranch)
+                            {
+                                <span class="badge bg-success">شعبه اصلی</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info">شعبه فرعی</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">مدیر شعبه</label>
+                        <div class="form-control-plaintext">@(string.IsNullOrEmpty(Model.ManagerName) ? "-" : Model.ManagerName)</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">وضعیت</label>
+                        <div class="form-control-plaintext">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">فعال</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">غیرفعال</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">تلفن</label>
+                        <div class="form-control-plaintext">@(string.IsNullOrEmpty(Model.Phone) ? "-" : Model.Phone)</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">ایمیل</label>
+                        <div class="form-control-plaintext">
+                            @if (!string.IsNullOrEmpty(Model.Email))
+                            {
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">شعبه مادر</label>
+                        <div class="form-control-plaintext">
+                            @if (Model.ParentId.HasValue)
+                            {
+                                <a href="@Url.Action("Details", "Branch", new { id = Model.ParentId })">@ViewBag.ParentBranchName</a>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">تاریخ ایجاد</label>
+                        <div class="form-control-plaintext">
+                            @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd")
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">آدرس</label>
+                <div class="form-control-plaintext">@(string.IsNullOrEmpty(Model.Address) ? "-" : Model.Address)</div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">توضیحات</label>
+                <div class="form-control-plaintext">@(string.IsNullOrEmpty(Model.Description) ? "-" : Model.Description)</div>
+            </div>
+        </div>
+    </div>
+    <!-- END Branch Information -->
+    <!-- Branch Users -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-users text-muted me-1"></i> کاربران شعبه
+            </h3>
+            <div class="block-options">
+                <a href="@Url.Action("AddUser", "Branch", new { branchId = Model.Id })" class="btn btn-sm btn-alt-primary">
+                    <i class="fa fa-plus me-1"></i> افزودن کاربر
+                </a>
+            </div>
+        </div>
+        <div class="block-content">
+            @if (ViewBag.BranchUsers != null && ((List<BranchUser>)ViewBag.BranchUsers).Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th class="text-center">نام کاربر</th>
+                                <th class="text-center">نقش</th>
+                                <th class="text-center">تاریخ انتساب</th>
+                                <th class="text-center">وضعیت</th>
+                                <th class="text-center" style="width: 100px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in (List<BranchUser>)ViewBag.BranchUsers)
+                            {
+                                <tr>
+                                    <td class="text-center fw-semibold">@user.User.FirstName @user.User.LastName</td>
+                                    <td class="text-center">
+                                        @switch (user.Role)
+                                        {
+                                            case 0:
+                                                <span class="badge bg-info">کارشناس</span>
+                                                break;
+                                            case 1:
+                                                <span class="badge bg-warning">ناظر</span>
+                                                break;
+                                            case 2:
+                                                <span class="badge bg-success">مدیر</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-center">@ConvertDateTime.ConvertMiladiToShamsi(user.AssignDate, "yyyy/MM/dd")</td>
+                                    <td class="text-center">
+                                        @if (user.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <a href="@Url.Action("EditUser", "Branch", new { id = user.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش">
+                                                <i class="fa fa-fw fa-pencil-alt"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <i class="fa fa-fw fa-ellipsis-v"></i>
+                                            </button>
+                                            <div class="dropdown-menu dropdown-menu-end fs-sm">
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="openModal('@Url.Action("RemoveUser", "Branch", new { id = user.Id })')">
+                                                    <i class="fa fa-fw fa-trash-alt me-1"></i> حذف
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="fa fa-users fa-3x text-muted mb-3"></i>
+                    <p class="mb-3">هیچ کاربری برای این شعبه ثبت نشده است.</p>
+                    <a href="@Url.Action("AddUser", "Branch", new { branchId = Model.Id })" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i> افزودن کاربر
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+    <!-- END Branch Users -->
+    <!-- Stakeholders -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-user-tie text-muted me-1"></i> طرف حساب‌های شعبه
+            </h3>
+            <div class="block-options">
+                <a href="@Url.Action("AddStakeholder", "Branch", new { branchId = Model.Id })" class="btn btn-sm btn-alt-primary">
+                    <i class="fa fa-plus me-1"></i> افزودن طرف حساب
+                </a>
+            </div>
+        </div>
+        <div class="block-content">
+            @if (ViewBag.Stakeholders != null && ((List<Stakeholder>)ViewBag.Stakeholders).Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th class="text-center">نام</th>
+                                <th class="text-center">شرکت</th>
+                                <th class="text-center">تلفن</th>
+                                <th class="text-center">نوع</th>
+                                <th class="text-center">وضعیت</th>
+                                <th class="text-center" style="width: 100px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var stakeholder in (List<Stakeholder>)ViewBag.Stakeholders)
+                            {
+                                <tr>
+                                    <td class="text-center fw-semibold">
+                                        <a href="@Url.Action("Details", "Stakeholder", new { id = stakeholder.Id })">
+                                            @stakeholder.FirstName @stakeholder.LastName
+                                        </a>
+                                    </td>
+                                    <td class="text-center">@(string.IsNullOrEmpty(stakeholder.CompanyName) ? "-" : stakeholder.CompanyName)</td>
+                                    <td class="text-center">
+                                        @(!string.IsNullOrEmpty(stakeholder.Mobile) ? stakeholder.Mobile :
+                                                                        (!string.IsNullOrEmpty(stakeholder.Phone) ? stakeholder.Phone : "-"))
+                            </td>
+                            <td class="text-center">
+                                @switch (stakeholder.StakeholderType)
+                                        {
+                                            case 0:
+                                                <span class="badge bg-info">مشتری</span>
+                                                break;
+                                            case 1:
+                                                <span class="badge bg-primary">تامین کننده</span>
+                                                break;
+                                            case 2:
+                                                <span class="badge bg-success">همکار</span>
+                                                break;
+                                            case 3:
+                                                <span class="badge bg-warning">سایر</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (stakeholder.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <a href="@Url.Action("Details", "Stakeholder", new { id = stakeholder.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="مشاهده">
+                                                <i class="fa fa-fw fa-eye"></i>
+                                            </a>
+                                            <form method="post" action="@Url.Action("RemoveStakeholder", "Branch")" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="branchId" value="@Model.Id" />
+                                                <input type="hidden" name="stakeholderId" value="@stakeholder.Id" />
+                                                <button type="submit" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="حذف">
+                                                    <i class="fa fa-fw fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="fa fa-user-tie fa-3x text-muted mb-3"></i>
+                    <p class="mb-3">هیچ طرف حسابی برای این شعبه ثبت نشده است.</p>
+                    <a href="@Url.Action("AddStakeholder", "Branch", new { branchId = Model.Id })" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i> افزودن طرف حساب
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+    <!-- END Stakeholders -->
+    <!-- Child Branches -->
+    @if (ViewBag.ChildBranches != null && ((List<Branch>)ViewBag.ChildBranches).Count > 0)
+    {
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-sitemap text-muted me-1"></i> شعبه‌های زیرمجموعه
+                </h3>
+            </div>
+            <div class="block-content">
+                <div class="table-responsive">
+                    <table class="table table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th class="text-center">نام شعبه</th>
+                                <th class="text-center">مدیر</th>
+                                <th class="text-center">تلفن</th>
+                                <th class="text-center">وضعیت</th>
+                                <th class="text-center" style="width: 100px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var childBranch in (List<Branch>)ViewBag.ChildBranches)
+                            {
+                                <tr>
+                                    <td class="text-center fw-semibold">
+                                        <a href="@Url.Action("Details", "Branch", new { id = childBranch.Id })">@childBranch.Name</a>
+                                    </td>
+                                    <td class="text-center">@(string.IsNullOrEmpty(childBranch.ManagerName) ? "-" : childBranch.ManagerName)</td>
+                                    <td class="text-center">@(string.IsNullOrEmpty(childBranch.Phone) ? "-" : childBranch.Phone)</td>
+                                    <td class="text-center">
+                                        @if (childBranch.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Details", "Branch", new { id = childBranch.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="مشاهده">
+                                            <i class="fa fa-fw fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    <!-- END Child Branches -->
+</div>
+<!-- END Page Content -->
+<!-- Modal Container for dynamic content -->
+<div class="modal fade" id="modal-branch" tabindex="-1" role="dialog" aria-labelledby="modal-branch" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <!-- Dynamic content will be loaded here -->
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
+                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // Function to open modal and load content
+        function openModal(url) {
+            $('#modal-branch .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
+            $('#modal-branch').modal('show');
+
+            // Load content via AJAX
+            $.get(url, function(data) {
+                $('#modal-branch .modal-content').html(data);
+            });
+        }
+
+        // Initialize tooltips
+        $(document).ready(function() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

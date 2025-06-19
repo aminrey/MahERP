@@ -1,0 +1,85 @@
+﻿@model BranchUserViewModel
+@{
+    ViewData["Title"] = "افزودن کاربر به شعبه";
+    var branchId = ViewBag.BranchId;
+    var branchName = ViewBag.BranchName;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">افزودن کاربر به شعبه</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Branch")">شعب</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Details", "Branch", new { id = branchId })">@branchName</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">افزودن کاربر</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <!-- New User Form -->
+    <form method="POST" action="@Url.Action("AddUser", "Branch")" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="BranchId" value="@branchId" />
+
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">افزودن کاربر به شعبه @branchName</h3>
+                <div class="block-options">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fa fa-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div class="mb-4">
+                            <label class="form-label" for="UserId">انتخاب کاربر <span class="text-danger">*</span></label>
+                            <select asp-for="UserId" asp-items="ViewBag.Users" class="form-select">
+                                <option value="">انتخاب کنید</option>
+                            </select>
+                            <span asp-validation-for="UserId" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Role">نقش در شعبه <span class="text-danger">*</span></label>
+                            <select asp-for="Role" class="form-select">
+                                <option value="0">کارشناس</option>
+                                <option value="1">ناظر</option>
+                                <option value="2">مدیر</option>
+                            </select>
+                            <span asp-validation-for="Role" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-check">
+                                <input asp-for="IsActive" class="form-check-input">
+                                <span class="form-check-label">وضعیت فعال</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="block-content block-content-full block-content-sm bg-body-light text-end">
+                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                    <i class="fa fa-arrow-right me-1"></i> انصراف
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check me-1"></i> ذخیره
+                </button>
+            </div>
+        </div>
+    </form>
+    <!-- END New User Form -->
+</div>
+<!-- END Page Content -->

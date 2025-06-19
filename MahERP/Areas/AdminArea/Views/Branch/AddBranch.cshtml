@@ -1,0 +1,135 @@
+﻿@model BranchViewModel
+@{
+    ViewData["Title"] = "افزودن شعبه جدید";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">افزودن شعبه جدید</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Branch")">شعب</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">افزودن جدید</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <!-- New Branch Form -->
+    <form method="POST" action="@Url.Action("AddBranch", "Branch")" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">اطلاعات شعبه</h3>
+                <div class="block-options">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fa fa-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div class="mb-4">
+                            <label class="form-label" for="Name">نام شعبه <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" placeholder="نام شعبه را وارد کنید">
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="ParentId">شعبه مادر</label>
+                            <select asp-for="ParentId" asp-items="ViewBag.ParentBranches" class="form-select">
+                                <option value="">بدون شعبه مادر</option>
+                            </select>
+                            <span asp-validation-for="ParentId" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="ManagerName">نام مدیر</label>
+                            <input asp-for="ManagerName" class="form-control" placeholder="نام مدیر شعبه را وارد کنید">
+                            <span asp-validation-for="ManagerName" class="text-danger"></span>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Phone">تلفن</label>
+                                    <input asp-for="Phone" class="form-control" placeholder="تلفن شعبه را وارد کنید">
+                                    <span asp-validation-for="Phone" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Email">ایمیل</label>
+                                    <input asp-for="Email" class="form-control" placeholder="ایمیل شعبه را وارد کنید">
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Address">آدرس</label>
+                            <textarea asp-for="Address" class="form-control" rows="3" placeholder="آدرس شعبه را وارد کنید"></textarea>
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Description">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="توضیحات اضافی را وارد کنید"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-check">
+                                        <input asp-for="IsMainBranch" class="form-check-input">
+                                        <span class="form-check-label">شعبه اصلی</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-check">
+                                        <input asp-for="IsActive" class="form-check-input">
+                                        <span class="form-check-label">وضعیت فعال</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="block-content block-content-full block-content-sm bg-body-light text-end">
+                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                    <i class="fa fa-arrow-right me-1"></i> انصراف
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check me-1"></i> ذخیره
+                </button>
+            </div>
+        </div>
+    </form>
+    <!-- END New Branch Form -->
+</div>
+<!-- END Page Content -->
+@section scripts {
+    <script>
+        $(document).ready(function() {
+            // هنگام تغییر وضعیت شعبه اصلی، فیلد شعبه مادر را غیرفعال کنیم
+            $('#IsMainBranch').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#ParentId').prop('disabled', true);
+                    $('#ParentId').val('');
+                } else {
+                    $('#ParentId').prop('disabled', false);
+                }
+            });
+
+            // اعمال تغییرات بر اساس مقدار اولیه
+            $('#IsMainBranch').trigger('change');
+        });
+    </script>
+}

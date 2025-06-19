@@ -1,0 +1,50 @@
+﻿@model ContractViewModel
+@{
+    Layout = null;
+}
+
+<div class="modal-header @ViewBag.themeclass">
+    <h5 class="modal-title text-white">@ViewBag.ModalTitle</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <div class="py-3 text-center">
+        @if (Model.IsActive)
+        {
+            <i class="fa fa-ban fa-3x text-danger mb-3"></i>
+            <h4>آیا از غیرفعال کردن این قرارداد اطمینان دارید؟</h4>
+            <p class="text-muted mb-0">
+                با غیرفعال کردن قرارداد "<strong>@Model.Title</strong>"، این قرارداد در لیست‌های انتخاب نمایش داده نخواهد شد.
+                <br>این عملیات قابل بازگشت است.
+            </p>
+        }
+        else
+        {
+            <i class="fa fa-check fa-3x text-success mb-3"></i>
+            <h4>آیا از فعال کردن این قرارداد اطمینان دارید؟</h4>
+            <p class="text-muted mb-0">
+                با فعال کردن قرارداد "<strong>@Model.Title</strong>"، این قرارداد مجدداً در لیست‌های انتخاب نمایش داده خواهد شد.
+            </p>
+        }
+    </div>
+</div>
+<div class="modal-footer">
+    <form method="post" action="@Url.Action("ToggleActivationPost", "Contract")">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
+        @if (Model.IsActive)
+        {
+            <button type="submit" class="@ViewBag.ButonClass">
+                <i class="fa fa-ban me-1"></i> غیرفعال کردن
+            </button>
+        }
+        else
+        {
+            <button type="submit" class="@ViewBag.ButonClass">
+                <i class="fa fa-check me-1"></i> فعال کردن
+            </button>
+        }
+    </form>
+</div>

@@ -1,0 +1,50 @@
+﻿@model Branch
+@{
+    Layout = null;
+}
+
+<div class="modal-header @ViewBag.themeclass">
+    <h5 class="modal-title text-white">@ViewBag.ModalTitle</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <div class="py-3 text-center">
+        @if (Model.IsActive)
+        {
+            <i class="fa fa-ban fa-3x text-danger mb-3"></i>
+            <h4>آیا از غیرفعال کردن این شعبه اطمینان دارید؟</h4>
+            <p class="text-muted mb-0">
+                با غیرفعال کردن شعبه "<strong>@Model.Name</strong>"، دسترسی به آن محدود می‌شود اما اطلاعات آن حذف نمی‌شود.
+                <br>این عملیات قابل بازگشت است.
+            </p>
+        }
+        else
+        {
+            <i class="fa fa-check fa-3x text-success mb-3"></i>
+            <h4>آیا از فعال کردن این شعبه اطمینان دارید؟</h4>
+            <p class="text-muted mb-0">
+                با فعال کردن شعبه "<strong>@Model.Name</strong>"، می‌توانید مجدداً از امکانات مربوط به آن استفاده کنید.
+            </p>
+        }
+    </div>
+</div>
+<div class="modal-footer">
+    <form method="post" action="@Url.Action("ToggleActivationPost", "Branch")">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
+        @if (Model.IsActive)
+        {
+            <button type="submit" class="@ViewBag.ButonClass">
+                <i class="fa fa-ban me-1"></i> غیرفعال کردن
+            </button>
+        }
+        else
+        {
+            <button type="submit" class="@ViewBag.ButonClass">
+                <i class="fa fa-check me-1"></i> فعال کردن
+            </button>
+        }
+    </form>
+</div>

@@ -18,6 +18,12 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<Stakeholder> StakeholderUW { get; }
         GenereicClass<StakeholderCRM> StakeholderCRMUW { get; }
         GenereicClass<StakeholderContact> StakeholderContactUW { get; }
+        
+        //Branches
+        GenereicClass<Branch> BranchUW { get; }
+        GenereicClass<BranchUser> BranchUserUW { get; }
+        GenereicClass<Contract> ContractUW { get; }
+        GenereicClass<StakeholderBranch> StakeholderBranchUW { get; }
        
         IEntityDataBaseTransaction BeginTransaction();
         void Save();

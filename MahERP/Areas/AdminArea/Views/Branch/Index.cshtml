@@ -1,0 +1,245 @@
+﻿@model List<Branch>
+@{
+    ViewData["Title"] = "مدیریت شعب";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">مدیریت شعب</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item active" aria-current="page">شعب</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <!-- Quick Actions -->
+    <div class="row items-push">
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddBranch", "Branch")">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-plus text-success"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        افزودن شعبه جدید
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="#" data-bs-toggle="modal" data-bs-target="#modal-search">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-search text-primary"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        جستجوی شعبه
+                    </p>
+                </div>
+            </a>
+        </div>
+    </div>
+    <!-- END Quick Actions -->
+
+    <!-- Branches List -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">لیست شعب</h3>
+            <div class="block-options">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm btn-alt-secondary" id="dropdown-ecom-filters" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-fw fa-filter"></i> فیلترها
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-ecom-filters">
+                        <a class="dropdown-item d-flex align-items-center justify-content-between" href="@Url.Action("Index", "Branch")">
+                            همه شعب
+                            <span class="badge bg-primary">@Model.Count()</span>
+                        </a>
+                        <a class="dropdown-item d-flex align-items-center justify-content-between" href="@Url.Action("Index", "Branch", new { isMainBranch = true })">
+                            شعب اصلی
+                            <span class="badge bg-success">@Model.Count(b => b.IsMainBranch)</span>
+                        </a>
+                        <a class="dropdown-item d-flex align-items-center justify-content-between" href="@Url.Action("Index", "Branch", new { includeInactive = true })">
+                            همه شعب (شامل غیرفعال)
+                            <span class="badge bg-warning">@(ViewBag.TotalCount ?? Model.Count())</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="block-content">
+            <!-- Branches Table -->
+            <div class="table-responsive">
+                <table class="table table-borderless table-striped table-vcenter">
+                    <thead>
+                        <tr>
+                            <th class="text-center">نام شعبه</th>
+                            <th class="text-center">مدیر</th>
+                            <th class="text-center">تلفن</th>
+                            <th class="text-center">ایمیل</th>
+                            <th class="text-center d-none d-md-table-cell">شعبه مادر</th>
+                            <th class="text-center">وضعیت</th>
+                            <th class="text-center" style="width: 100px;">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var branch in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="@Url.Action("Details", "Branch", new { id = branch.Id })">@branch.Name</a>
+                                    @if (branch.IsMainBranch)
+                                    {
+                                        <span class="badge bg-success ms-1">شعبه اصلی</span>
+                                    }
+                                </td>
+                                <td class="text-center">@(string.IsNullOrEmpty(branch.ManagerName) ? "-" : branch.ManagerName)</td>
+                                <td class="text-center">@(string.IsNullOrEmpty(branch.Phone) ? "-" : branch.Phone)</td>
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(branch.Email))
+                                    {
+                                        <a href="mailto:@branch.Email">@branch.Email</a>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td class="text-center d-none d-md-table-cell">
+                                    @if (branch.ParentId.HasValue && branch.ParentBranch != null)
+                                    {
+                                        <a href="@Url.Action("Details", "Branch", new { id = branch.ParentId })">@branch.ParentBranch.Name</a>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (branch.IsActive)
+                                    {
+                                        <span class="badge bg-success">فعال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">غیرفعال</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Details", "Branch", new { id = branch.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="جزئیات">
+                                            <i class="fa fa-fw fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("EditBranch", "Branch", new { id = branch.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش">
+                                            <i class="fa fa-fw fa-pencil-alt"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fa fa-fw fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end fs-sm">
+                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openModal('@Url.Action("ToggleActivation", "Branch", new { id = branch.Id })')">
+                                                @(branch.IsActive ? "غیرفعال کردن" : "فعال کردن")
+                                            </a>
+                                            <a class="dropdown-item" href="@Url.Action("AddUser", "Branch", new { branchId = branch.Id })">
+                                                افزودن کاربر
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <!-- END Branches Table -->
+
+            @if (!Model.Any())
+            {
+                <div class="text-center py-4">
+                    <i class="fa fa-building fa-3x text-muted mb-3"></i>
+                    <p class="mb-3">هیچ شعبه‌ای یافت نشد.</p>
+                    <a href="@Url.Action("AddBranch", "Branch")" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i> افزودن شعبه جدید
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+    <!-- END Branches List -->
+</div>
+<!-- END Page Content -->
+
+<!-- Search Modal -->
+<div class="modal fade" id="modal-search" tabindex="-1" role="dialog" aria-labelledby="modal-search" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="block block-rounded block-transparent mb-0">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">جستجوی شعبه</h3>
+                    <div class="block-options">
+                        <button type="button" class="btn-block-option" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="fa fa-fw fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content fs-sm">
+                    <form action="@Url.Action("Search", "Branch")" method="get">
+                        <div class="mb-4">
+                            <label class="form-label" for="searchTerm">جستجو</label>
+                            <input type="text" class="form-control" id="searchTerm" name="searchTerm" placeholder="نام شعبه، مدیر، تلفن یا ایمیل">
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-alt-secondary me-1" data-bs-dismiss="modal">انصراف</button>
+                            <button type="submit" class="btn btn-primary">جستجو</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END Search Modal -->
+
+<!-- Modal Container for dynamic content -->
+<div class="modal fade" id="modal-branch" tabindex="-1" role="dialog" aria-labelledby="modal-branch" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <!-- Dynamic content will be loaded here -->
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
+                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // Function to open modal and load content
+        function openModal(url) {
+            $('#modal-branch .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
+            $('#modal-branch').modal('show');
+
+            // Load content via AJAX
+            $.get(url, function(data) {
+                $('#modal-branch .modal-content').html(data);
+            });
+        }
+
+        // Initialize tooltips
+        $(document).ready(function() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

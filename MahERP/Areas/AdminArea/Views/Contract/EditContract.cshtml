@@ -1,0 +1,134 @@
+﻿@model ContractViewModel
+@{
+    ViewData["Title"] = $"ویرایش قرارداد - {Model.Title}";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">ویرایش قرارداد</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Contract")">قراردادها</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Details", "Contract", new { id = Model.Id })">@Model.Title</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">ویرایش</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <!-- Edit Contract Form -->
+    <form method="POST" action="@Url.Action("EditContract", "Contract")" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <input type="hidden" name="CreateDate" value="@Model.CreateDate.ToString("yyyy-MM-ddTHH:mm:ss")" />
+        <input type="hidden" name="CreatorUserId" value="@Model.CreatorUserId" />
+
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">اطلاعات قرارداد</h3>
+                <div class="block-options">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fa fa-check me-1"></i> ذخیره تغییرات
+                    </button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div class="mb-4">
+                            <label class="form-label" for="StakeholderId">طرف حساب <span class="text-danger">*</span></label>
+                            <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="form-select">
+                                <option value="">انتخاب کنید</option>
+                            </select>
+                            <span asp-validation-for="StakeholderId" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Title">عنوان قرارداد <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" placeholder="عنوان قرارداد را وارد کنید">
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="ContractNumber">شماره قرارداد <span class="text-danger">*</span></label>
+                            <input asp-for="ContractNumber" class="form-control" placeholder="شماره قرارداد را وارد کنید">
+                            <span asp-validation-for="ContractNumber" class="text-danger"></span>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="StartDatePersian">تاریخ شروع <span class="text-danger">*</span></label>
+                                    <input asp-for="StartDatePersian" class="form-control date-picker-shamsi" placeholder="تاریخ شروع را وارد کنید">
+                                    <span asp-validation-for="StartDatePersian" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="EndDatePersian">تاریخ پایان</label>
+                                    <input asp-for="EndDatePersian" class="form-control date-picker-shamsi" placeholder="تاریخ پایان را وارد کنید">
+                                    <span asp-validation-for="EndDatePersian" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="ContractValue">مبلغ قرارداد (تومان)</label>
+                            <input asp-for="ContractValue" class="form-control number-format" placeholder="مبلغ قرارداد را وارد کنید">
+                            <span asp-validation-for="ContractValue" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Status">وضعیت قرارداد</label>
+                            <select asp-for="Status" class="form-select">
+                                <option value="0">پیش‌نویس</option>
+                                <option value="1">فعال</option>
+                                <option value="2">تمام شده</option>
+                                <option value="3">لغو شده</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="Description">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="توضیحات اضافی را وارد کنید"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-check">
+                                <input asp-for="IsActive" class="form-check-input">
+                                <span class="form-check-label">وضعیت فعال</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="block-content block-content-full block-content-sm bg-body-light text-end">
+                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                    <i class="fa fa-arrow-right me-1"></i> انصراف
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check me-1"></i> ذخیره تغییرات
+                </button>
+            </div>
+        </div>
+    </form>
+    <!-- END Edit Contract Form -->
+</div>
+<!-- END Page Content -->
+@section scripts {
+    <script>
+        $(document).ready(function() {
+            // تنظیمات تاریخ شمسی
+            $('.date-picker-shamsi').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValueType: 'persian',
+                autoClose: true
+            });
+        });
+    </script>
+}
