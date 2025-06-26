@@ -32,7 +32,7 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// <summary>
         /// توضیحات تعامل - شرح کامل تعامل با مشتری
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// نوع تعامل CRM
@@ -67,17 +67,20 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// <summary>
         /// شماره تماس - شماره تلفنی که مکالمه با آن انجام شده
         /// </summary>
-        public string PhoneNumber { get; set; }
+        [MaxLength(20)]
+        public string? PhoneNumber { get; set; }
 
         /// <summary>
         /// آدرس ایمیل (برای تماس‌های ایمیلی)
         /// </summary>
-        public string EmailAddress { get; set; }
+        [MaxLength(100)]
+        public string? EmailAddress { get; set; }
 
         /// <summary>
         /// محل جلسه (برای جلسات حضوری)
         /// </summary>
-        public string MeetingLocation { get; set; }
+        [MaxLength(200)]
+        public string? MeetingLocation { get; set; }
 
         /// <summary>
         /// زمان شروع جلسه یا تماس
@@ -95,14 +98,14 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// </summary>
         public int? StakeholderId { get; set; }
         [ForeignKey("StakeholderId")]
-        public virtual Stakeholder Stakeholder { get; set; }
+        public virtual Stakeholder? Stakeholder { get; set; }
 
         /// <summary>
         /// شخص مرتبط با طرف حساب (مانند کارمند یا نماینده شرکت مشتری)
         /// </summary>
         public int? StakeholderContactId { get; set; }
         [ForeignKey("StakeholderContactId")]
-        public virtual StakeholderContact StakeholderContact { get; set; }
+        public virtual StakeholderContact? StakeholderContact { get; set; }
 
         /// <summary>
         /// شعبه مربوط به تعامل
@@ -116,7 +119,7 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// </summary>
         public int? ContractId { get; set; }
         [ForeignKey("ContractId")]
-        public virtual Contract Contract { get; set; }
+        public virtual Contract? Contract { get; set; }
 
         // اطلاعات زمانی
         /// <summary>
@@ -140,7 +143,7 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// <summary>
         /// یادداشت پیگیری بعدی
         /// </summary>
-        public string NextFollowUpNote { get; set; }
+        public string? NextFollowUpNote { get; set; }
         
         /// <summary>
         /// تاریخ آخرین بروزرسانی
@@ -150,9 +153,9 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// <summary>
         /// کاربر آخرین بروزرسانی کننده
         /// </summary>
-        public string LastUpdaterUserId { get; set; }
+        public string? LastUpdaterUserId { get; set; }
         [ForeignKey("LastUpdaterUserId")]
-        public virtual AppUsers LastUpdater { get; set; }
+        public virtual AppUsers? LastUpdater { get; set; }
 
         /// <summary>
         /// وضعیت فعال بودن
@@ -168,26 +171,26 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// <summary>
         /// پیوست‌های مربوط به تعامل CRM
         /// </summary>
-        public virtual ICollection<CRMAttachment> CRMAttachments { get; set; }
+        public virtual ICollection<CRMAttachment> CRMAttachments { get; set; } = new HashSet<CRMAttachment>();
         
         /// <summary>
         /// شرکت‌کنندگان در تعامل
         /// </summary>
-        public virtual ICollection<CRMParticipant> CRMParticipants { get; set; }
+        public virtual ICollection<CRMParticipant> CRMParticipants { get; set; } = new HashSet<CRMParticipant>();
         
         /// <summary>
         /// کامنت‌های تعامل
         /// </summary>
-        public virtual ICollection<CRMComment> CRMComments { get; set; }
+        public virtual ICollection<CRMComment> CRMComments { get; set; } = new HashSet<CRMComment>();
         
         /// <summary>
         /// ارتباط با فعالیت‌های مرکزی
         /// </summary>
-        public virtual ICollection<ActivityCRM> ActivityCRMs { get; set; }
+        public virtual ICollection<ActivityCRM> ActivityCRMs { get; set; } = new HashSet<ActivityCRM>();
         
         /// <summary>
         /// تیم‌های مرتبط با تعامل
         /// </summary>
-        public virtual ICollection<CRMTeam> CRMTeams { get; set; }
+        public virtual ICollection<CRMTeam> CRMTeams { get; set; } = new HashSet<CRMTeam>();
     }
 }

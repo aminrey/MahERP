@@ -1,0 +1,100 @@
+﻿@model CRMParticipantViewModel
+
+<div class="modal-header block-header-default">
+    <h3 class="modal-title">افزودن شرکت کننده</h3>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+</div>
+<form asp-action="AddParticipant" method="post">
+    <div class="modal-body">
+        <input type="hidden" asp-for="CRMInteractionId" />
+
+        <div class="form-group mb-3">
+            <label asp-for="ParticipantType" class="form-label">نوع شرکت کننده</label>
+            <select asp-for="ParticipantType" class="form-select" id="participant-type">
+                <option value="0">کارمند شرکت</option>
+                <option value="1">مشتری/نماینده</option>
+                <option value="2">سایر</option>
+            </select>
+            <span asp-validation-for="ParticipantType" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3" id="user-group">
+            <label asp-for="UserId" class="form-label">کاربر</label>
+            <select asp-for="UserId" asp-items="ViewBag.Users" class="form-select">
+                <option value="">-- انتخاب کاربر --</option>
+            </select>
+            <span asp-validation-for="UserId" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3" id="contact-group" style="display: none;">
+            <label asp-for="StakeholderContactId" class="form-label">شخص مرتبط</label>
+            <select asp-for="StakeholderContactId" asp-items="ViewBag.StakeholderContacts" class="form-select">
+                <option value="">-- انتخاب شخص مرتبط --</option>
+            </select>
+            <span asp-validation-for="StakeholderContactId" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3" id="name-group" style="display: none;">
+            <label asp-for="Name" class="form-label">نام</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Title" class="form-label">سمت</label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3" id="contact-info-group" style="display: none;">
+            <label asp-for="ContactInfo" class="form-label">اطلاعات تماس</label>
+            <input asp-for="ContactInfo" class="form-control" />
+            <span asp-validation-for="ContactInfo" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Notes" class="form-label">یادداشت</label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Notes" class="text-danger"></span>
+        </div>
+
+        <div class="alert alert-info">
+            <div class="d-flex">
+                <div class="flex-shrink-0">
+                    <i class="fa fa-info-circle fa-2x text-info"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <p class="mb-0">این شرکت کننده به تعامل <strong>@ViewBag.CRMTitle</strong> اضافه خواهد شد.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">بستن</button>
+        <button type="submit" class="btn btn-alt-primary">
+            <i class="fa fa-user-plus opacity-50 me-1"></i> افزودن شرکت کننده
+        </button>
+    </div>
+</form>
+
+<script>
+    $(function() {
+        $('#participant-type').change(function() {
+            var type = $(this).val();
+
+            // Hide all groups first
+            $('#user-group, #contact-group, #name-group, #contact-info-group').hide();
+
+            if (type == '0') { // کارمند شرکت
+                $('#user-group').show();
+            } else if (type == '1') { // مشتری/نماینده
+                $('#contact-group').show();
+            } else if (type == '2') { // سایر
+                $('#name-group, #contact-info-group').show();
+            }
+        });
+
+        // Initialize based on current value
+        $('#participant-type').trigger('change');
+    });
+</script>

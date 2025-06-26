@@ -57,18 +57,18 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// رتبه‌بندی اعتباری مشتری (A, B, C, D)
         /// </summary>
         [MaxLength(1)]
-        public string CreditRating { get; set; }
+        public string? CreditRating { get; set; }
 
         /// <summary>
         /// علاقه‌مندی‌ها و ترجیحات مشتری
         /// </summary>
-        public string Preferences { get; set; }
+        public string? Preferences { get; set; }
 
         /// <summary>
         /// صنعت یا حوزه فعالیت مشتری
         /// </summary>
         [MaxLength(100)]
-        public string Industry { get; set; }
+        public string? Industry { get; set; }
 
         /// <summary>
         /// تعداد کارمندان شرکت مشتری
@@ -84,14 +84,14 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// <summary>
         /// کارشناس فروش اختصاصی - کارمندی که مسئول ارتباط با این مشتری است
         /// </summary>
-        public string SalesRepUserId { get; set; }
+        public string? SalesRepUserId { get; set; }
         [ForeignKey("SalesRepUserId")]
-        public virtual AppUsers SalesRep { get; set; }
+        public virtual AppUsers? SalesRep { get; set; }
         
         /// <summary>
         /// یادداشت‌های داخلی درباره مشتری - اطلاعاتی که فقط برای استفاده داخلی است
         /// </summary>
-        public string InternalNotes { get; set; }
+        public string? InternalNotes { get; set; }
 
         /// <summary>
         /// تاریخ ایجاد رکورد

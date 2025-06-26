@@ -1,0 +1,138 @@
+﻿@model List<PermissionLog>
+@{
+    ViewData["Title"] = "لاگ دسترسی‌ها";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">لاگ دسترسی‌ها</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Home" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">دسترسی کاربران</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">لاگ دسترسی‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-clipboard-list text-muted me-1"></i> گزارش فعالیت‌های دسترسی (30 روز اخیر)
+            </h3>
+        </div>
+        <div class="block-content block-content-full">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-vcenter js-dataTable-responsive">
+                        <thead>
+                            <tr>
+                                <th class="text-center">کاربر</th>
+                                <th class="text-center">کنترلر</th>
+                                <th class="text-center">عملیات</th>
+                                <th class="text-center">نوع</th>
+                                <th class="text-center">نتیجه</th>
+                                <th class="text-center">تاریخ</th>
+                                <th class="text-center">IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        <span class="fw-semibold">@($"{log.User.FirstName} {log.User.LastName}")</span>
+                                        <div class="fs-sm text-muted">@log.User.UserName</div>
+                                    </td>
+                                    <td class="text-center">@log.Controller</td>
+                                    <td class="text-center">@log.Action</td>
+                                    <td class="text-center">
+                                        @{
+                                            var actionTypeText = log.ActionType switch {
+                                                0 => "مشاهده",
+                                                1 => "ایجاد", 
+                                                2 => "ویرایش",
+                                                3 => "حذف",
+                                                4 => "تایید",
+                                                5 => "رد",
+                                                _ => "نامشخص"
+                                            };
+                                            var badgeClass = log.ActionType switch {
+                                                0 => "bg-info",
+                                                1 => "bg-success",
+                                                2 => "bg-warning", 
+                                                3 => "bg-danger",
+                                                4 => "bg-primary",
+                                                5 => "bg-secondary",
+                                                _ => "bg-secondary"
+                                            };
+                                        }
+                                        <span class="badge @badgeClass">@actionTypeText</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (log.AccessGranted)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fa fa-check me-1"></i> موفق
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger" data-bs-toggle="tooltip" title="@log.DenialReason">
+                                                <i class="fa fa-times me-1"></i> رد شده
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div>@ConvertDateTime.ConvertMiladiToShamsi(log.ActionDate, "yyyy/MM/dd")</div>
+                                        <div class="fs-sm text-muted">@log.ActionDate.ToString("HH:mm:ss")</div>
+                                    </td>
+                                    <td class="text-center fs-sm">
+                                        @log.IpAddress
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i> هیچ لاگ دسترسی در 30 روز اخیر یافت نشد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.js-dataTable-responsive').DataTable({
+                language: {
+                    url: '/assets/js/plugins/datatables/i18n/fa.json'
+                },
+                autoWidth: false,
+                responsive: true,
+                pageLength: 50,
+                order: [[5, "desc"]] // Order by date descending
+            });
+
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

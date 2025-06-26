@@ -1,21 +1,17 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.Extensions.Caching.Memory;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.DataModelLayer.Attributes;
+using MahERP.DataModelLayer.Extensions; // اضافه شده
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.TaskViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.IO;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
@@ -24,11 +20,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
     public class TaskController : BaseController
     {
         private readonly IUnitOfWork _uow;
-        private readonly ITaskRepository _taskRepository;
+        private readonly ITaskRepository _taskRepository;           
         private readonly IStakeholderRepository _stakeholderRepository;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IRoleRepository _roleRepository;
 
         public TaskController(
             IUnitOfWork uow,
@@ -38,7 +35,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            IWebHostEnvironment webHostEnvironment) : base(uow, userManager, persianDateHelper, memoryCache)
+            IWebHostEnvironment webHostEnvironment,
+            IRoleRepository roleRepository) : base(uow, userManager, persianDateHelper, memoryCache)
         {
             _uow = uow;
             _taskRepository = taskRepository;
@@ -46,12 +44,34 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _userManager = userManager;
             _mapper = mapper;
             _webHostEnvironment = webHostEnvironment;
+            _roleRepository = roleRepository;
         }
 
-        // لیست تسک‌ها
+        // لیست تسک‌ها - با کنترل سطح دسترسی داده
+        [Permission("Task", "Index", 0)] // Read permission
         public IActionResult Index()
         {
-            var tasks = _taskRepository.GetTasks();
+            var dataAccessLevel = this.GetUserDataAccessLevel("Task", "Index");
+            var userId = _userManager.GetUserId(User);
+            
+            List<Tasks> tasks;
+            
+            switch (dataAccessLevel)
+            {
+                case 0: // Personal - فقط تسک‌های خود کاربر
+                    tasks = _taskRepository.GetTasksByUser(userId, includeAssigned: true, includeCreated: true);
+                    break;
+                case 1: // Branch - تسک‌های شعبه
+                    tasks = _taskRepository.GetTasksByBranch(GetUserBranchId(userId));
+                    break;
+                case 2: // All - همه تسک‌ها
+                    tasks = _taskRepository.GetTasks();
+                    break;
+                default:
+                    tasks = new List<Tasks>();
+                    break;
+            }
+
             var viewModels = _mapper.Map<List<TaskViewModel>>(tasks);
             
             // تکمیل اطلاعات اضافی
@@ -65,6 +85,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         // نمایش تسک‌های اختصاص داده شده به کاربر جاری
+        [Permission("Task", "MyTasks", 0)] // Read permission
         public IActionResult MyTasks()
         {
             var userId = _userManager.GetUserId(User);
@@ -85,6 +106,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         // جزئیات تسک
+        [Permission("Task", "Details", 0)] // Read permission
         public IActionResult Details(int id)
         {
             var task = _taskRepository.GetTaskById(id, includeOperations: true, includeAssignments: true, includeAttachments: true, includeComments: true);
@@ -104,6 +126,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         // افزودن تسک جدید - نمایش فرم
         [HttpGet]
+        [Permission("Task", "Create", 1)] // Create permission
         public IActionResult Create()
         {
             PopulateDropdowns();
@@ -127,6 +150,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         // افزودن تسک جدید - پردازش فرم
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permission("Task", "Create", 1)] // Create permission
         public IActionResult Create(TaskViewModel model)
         {
             if (ModelState.IsValid)
@@ -178,6 +202,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         // ویرایش تسک - نمایش فرم
         [HttpGet]
+        [Permission("Task", "Edit", 2)] // Edit permission
         public IActionResult Edit(int id)
         {
             var task = _taskRepository.GetTaskById(id, includeOperations: true);
@@ -195,6 +220,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         // ویرایش تسک - پردازش فرم
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permission("Task", "Edit", 2)] // Edit permission
         public IActionResult Edit(TaskViewModel model)
         {
             if (ModelState.IsValid)
@@ -278,6 +304,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         // حذف تسک - نمایش مودال تأیید
         [HttpGet]
+        [Permission("Task", "Delete", 3)] // Delete permission
         public IActionResult Delete(int id)
         {
             var task = _uow.TaskUW.GetById(id);
@@ -294,6 +321,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         // حذف تسک - پردازش درخواست
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permission("Task", "Delete", 3)] // Delete permission
         public IActionResult DeletePost(int id)
         {
             var task = _uow.TaskUW.GetById(id);
@@ -685,6 +713,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         // تایید تسک توسط سرپرست - اکشن AJAX
         [HttpPost]
         [Authorize(Roles = "Admin,Manager,Supervisor")]
+        [Permission("Task", "ApproveTaskBySupervisor", 4)] // Approve permission
         public IActionResult ApproveTaskBySupervisor(int id)
         {
             var task = _uow.TaskUW.GetById(id);
@@ -709,6 +738,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         // تایید تسک توسط مدیر - اکشن AJAX
         [HttpPost]
         [Authorize(Roles = "Admin,Manager")]
+        [Permission("Task", "ApproveTaskByManager", 4)] // Approve permission
         public IActionResult ApproveTaskByManager(int id)
         {
             var task = _uow.TaskUW.GetById(id);
@@ -874,6 +904,13 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 _uow.TaskUW.Update(task);
                 _uow.Save();
             }
+        }
+
+        // متد کمکی برای دریافت شعبه کاربر
+        private int GetUserBranchId(string userId)
+        {
+            var branchUser = _uow.BranchUserUW.Get(bu => bu.UserId == userId && bu.IsActive).FirstOrDefault();
+            return branchUser?.BranchId ?? 1; // پیش‌فرض شعبه اصلی
         }
     }
 }

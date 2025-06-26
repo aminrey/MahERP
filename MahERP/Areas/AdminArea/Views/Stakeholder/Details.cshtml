@@ -531,7 +531,7 @@
                                                 }
                                             </td>
                                             <td class="text-end fw-semibold">
-                                                @contract.ContractValue.ToString("N0") ریال
+                                                @contract.ContractValue?.ToString("N0") ریال
                                             </td>
                                             <td class="text-center">
                                                 <a href="@Url.Action("Details", "Contract", new { id = contract.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="مشاهده">

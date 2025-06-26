@@ -1,0 +1,124 @@
+﻿@model CRMSearchViewModel
+
+<div class="modal-header block-header-default">
+    <h3 class="modal-title">جستجوی پیشرفته</h3>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+</div>
+<form asp-action="Search" method="post">
+    <div class="modal-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="SearchTerm" class="form-label">جستجو در عنوان و توضیحات</label>
+                    <input asp-for="SearchTerm" class="form-control" placeholder="کلمه کلیدی..." />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="CRMType" class="form-label">نوع تعامل</label>
+                    <select asp-for="CRMType" class="form-select">
+                        <option value="">همه انواع</option>
+                        <option value="0">تماس تلفنی</option>
+                        <option value="1">جلسه حضوری</option>
+                        <option value="2">ایمیل</option>
+                        <option value="3">پیامک</option>
+                        <option value="4">سایر</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Direction" class="form-label">جهت تماس</label>
+                    <select asp-for="Direction" class="form-select">
+                        <option value="">همه</option>
+                        <option value="0">ورودی</option>
+                        <option value="1">خروجی</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Result" class="form-label">نتیجه تعامل</label>
+                    <select asp-for="Result" class="form-select">
+                        <option value="">همه نتایج</option>
+                        <option value="0">بی نتیجه</option>
+                        <option value="1">موفق</option>
+                        <option value="2">نیاز به پیگیری</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="StakeholderId" class="form-label">طرف حساب</label>
+                    <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="form-select">
+                        <option value="">همه طرف حساب‌ها</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="BranchId" class="form-label">شعبه</label>
+                    <select asp-for="BranchId" asp-items="ViewBag.Branches" class="form-select">
+                        <option value="">همه شعب</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="FromDate" class="form-label">از تاریخ</label>
+                    <input asp-for="FromDate" class="form-control js-datepicker" placeholder="1400/01/01" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="ToDate" class="form-label">تا تاریخ</label>
+                    <input asp-for="ToDate" class="form-control js-datepicker" placeholder="1400/12/29" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-check form-switch">
+                    <input asp-for="OnlyActive" class="form-check-input" />
+                    <label asp-for="OnlyActive" class="form-check-label">فقط تعاملات فعال</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-check form-switch">
+                    <input asp-for="OnlyPendingFollowUp" class="form-check-input" />
+                    <label asp-for="OnlyPendingFollowUp" class="form-check-label">فقط در انتظار پیگیری</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">بستن</button>
+        <button type="submit" class="btn btn-alt-primary">
+            <i class="fa fa-search opacity-50 me-1"></i> جستجو
+        </button>
+    </div>
+</form>
+
+<script>
+    $(function() {
+        // Initialize Persian datepickers
+        $('.js-datepicker').each(function() {
+            new mds.MdsPersianDateTimePicker(this, {
+                targetTextSelector: this,
+                enableTimePicker: false,
+                textFormat: 'yyyy/MM/dd',
+                targetDateFormat: 'yyyy-MM-dd',
+            });
+        });
+    });
+</script>

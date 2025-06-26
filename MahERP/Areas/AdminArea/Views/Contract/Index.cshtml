@@ -189,7 +189,7 @@
                                     @(contract.EndDate.HasValue ? contract.EndDate.Value.ToString("yyyy/MM/dd") : "-")
                                 </td>
                                 <td class="text-center fw-semibold">
-                                    @contract.ContractValue.ToString("N0")
+                                    @contract.ContractValue?.ToString("N0")
                                 </td>
                                 <td class="text-center">
                                     @switch (contract.Status)

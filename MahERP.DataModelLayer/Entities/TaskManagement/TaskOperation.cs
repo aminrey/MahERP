@@ -17,32 +17,63 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         [ForeignKey("TaskId")]
         public virtual Tasks Task { get; set; }
 
-        [Required(ErrorMessage = "عنوان عملیات را وارد کنید")]
+        /// <summary>
+        /// عنوان عملیات
+        /// </summary>
+        [Required(ErrorMessage = "عنوان عملیات الزامی است")]
         public string Title { get; set; }
 
-        public string Description { get; set; }
+        /// <summary>
+        /// توضیحات عملیات
+        /// </summary>
+        public string? Description { get; set; }
 
         /// <summary>
-        /// ترتیب انجام عملیات
+        /// ترتیب عملیات
         /// </summary>
         public int OperationOrder { get; set; }
 
         /// <summary>
-        /// وضعیت تکمیل
+        /// آیا عملیات تکمیل شده است؟
         /// </summary>
         public bool IsCompleted { get; set; }
 
         /// <summary>
-        /// تاریخ تکمیل
+        /// تاریخ تکمیل عملیات
         /// </summary>
         public DateTime? CompletionDate { get; set; }
 
         /// <summary>
-        /// کاربر تکمیل کننده
+        /// کاربری که عملیات را تکمیل کرده
         /// </summary>
-        public string CompletedByUserId { get; set; }
+        public string? CompletedByUserId { get; set; }
         [ForeignKey("CompletedByUserId")]
-        public virtual AppUsers CompletedByUser { get; set; }
+        public virtual AppUsers? CompletedByUser { get; set; }
+
+        /// <summary>
+        /// یادداشت تکمیل
+        /// </summary>
+        public string? CompletionNote { get; set; }
+
+        /// <summary>
+        /// مدت زمان تخمینی انجام (به ساعت)
+        /// </summary>
+        public decimal? EstimatedHours { get; set; }
+
+        /// <summary>
+        /// مدت زمان واقعی انجام (به ساعت)
+        /// </summary>
+        public decimal? ActualHours { get; set; }
+
+        /// <summary>
+        /// آیا این عملیات الزامی است؟
+        /// </summary>
+        public bool IsRequired { get; set; } = true;
+
+        /// <summary>
+        /// تاریخ ایجاد
+        /// </summary>
+        public DateTime CreateDate { get; set; }
 
         /// <summary>
         /// کاربر ایجاد کننده
@@ -50,7 +81,5 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public string CreatorUserId { get; set; }
         [ForeignKey("CreatorUserId")]
         public virtual AppUsers Creator { get; set; }
-
-        public DateTime CreateDate { get; set; }
     }
 }

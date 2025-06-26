@@ -42,12 +42,12 @@ namespace MahERP.DataModelLayer.Entities.Core
         /// <summary>
         /// مقدار قدیمی (در صورت نیاز) - برای ثبت تاریخچه تغییرات
         /// </summary>
-        public string OldValue { get; set; }
+        public string? OldValue { get; set; }
 
         /// <summary>
         /// مقدار جدید (در صورت نیاز) - برای ثبت تاریخچه تغییرات
         /// </summary>
-        public string NewValue { get; set; }
+        public string? NewValue { get; set; }
 
         /// <summary>
         /// تاریخ انجام تغییر

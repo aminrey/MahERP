@@ -2,8 +2,8 @@
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Repository;
-using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace MahERP.DataModelLayer.Services
@@ -17,31 +17,251 @@ namespace MahERP.DataModelLayer.Services
             _Context = Db;
         }
 
-        //User
+        #region User and Role Management
         private GenereicClass<AppUsers> _userManager;
         private GenereicClass<AppRoles> _RoleManager;
         private GenereicClass<RolePattern> _rolePattern;
         private GenereicClass<RolePatternDetails> _rolePatterDetails;
+        private GenereicClass<UserRolePattern> _userRolePattern;
+        private GenereicClass<PermissionLog> _permissionLog;
+        #endregion
 
-        //Stakeholder
+        #region Organization
+        private GenereicClass<Branch> _branch;
+        private GenereicClass<BranchUser> _branchUser;
+        private GenereicClass<Team> _team;
+        private GenereicClass<TeamMember> _teamMember;
+        #endregion
+
+        #region Stakeholder Management
         private GenereicClass<Stakeholder> _stakeholder;
         private GenereicClass<StakeholderCRM> _stakeholderCRM;
         private GenereicClass<StakeholderContact> _stakeholderContact;
-
-        //Branch and Contract
-        private GenereicClass<Branch> _branch;
-        private GenereicClass<BranchUser> _branchUser;
-        private GenereicClass<Contract> _contract;
         private GenereicClass<StakeholderBranch> _stakeholderBranch;
+        private GenereicClass<Contract> _contract;
+        #endregion
 
-
-        // Task Management repositories
+        #region Task Management
         private GenereicClass<Tasks> _taskRepository;
         private GenereicClass<TaskOperation> _taskOperationRepository;
         private GenereicClass<TaskCategory> _taskCategoryRepository;
         private GenereicClass<TaskAssignment> _taskAssignmentRepository;
         private GenereicClass<TaskAttachment> _taskAttachmentRepository;
         private GenereicClass<TaskComment> _taskCommentRepository;
+        private GenereicClass<TaskCommentAttachment> _taskCommentAttachmentRepository;
+        private GenereicClass<TaskCommentMention> _taskCommentMentionRepository;
+        private GenereicClass<TaskNotification> _taskNotificationRepository;
+        private GenereicClass<TaskSchedule> _taskScheduleRepository;
+        private GenereicClass<TaskScheduleAssignment> _taskScheduleAssignmentRepository;
+        private GenereicClass<TaskScheduleViewer> _taskScheduleViewerRepository;
+        private GenereicClass<TaskTemplate> _taskTemplateRepository;
+        private GenereicClass<TaskTemplateOperation> _taskTemplateOperationRepository;
+        private GenereicClass<TaskViewer> _taskViewerRepository;
+        private GenereicClass<PredefinedCopyDescription> _predefinedCopyDescriptionRepository;
+        #endregion
+
+        #region CRM Management
+        private GenereicClass<CRMInteraction> _crmInteractionRepository;
+        private GenereicClass<CRMAttachment> _crmAttachmentRepository;
+        private GenereicClass<CRMComment> _crmCommentRepository;
+        private GenereicClass<CRMParticipant> _crmParticipantRepository;
+        private GenereicClass<CRMTeam> _crmTeamRepository;
+        private GenereicClass<TaskCRMDetails> _taskCRMDetailsRepository;
+        #endregion
+
+        #region User and Role Management Properties
+
+        public GenereicClass<AppUsers> UserManagerUW
+        {
+            get
+            {
+                if (_userManager == null)
+                {
+                    _userManager = new GenereicClass<AppUsers>(_Context);
+                }
+                return _userManager;
+            }
+        }
+
+        public GenereicClass<AppRoles> RoleUW
+        {
+            get
+            {
+                if (_RoleManager == null)
+                {
+                    _RoleManager = new GenereicClass<AppRoles>(_Context);
+                }
+                return _RoleManager;
+            }
+        }
+
+        public GenereicClass<RolePattern> RolePatternUW
+        {
+            get
+            {
+                if (_rolePattern == null)
+                {
+                    _rolePattern = new GenereicClass<RolePattern>(_Context);
+                }
+                return _rolePattern;
+            }
+        }
+
+        public GenereicClass<RolePatternDetails> RolePatternDetailsUW
+        {
+            get
+            {
+                if (_rolePatterDetails == null)
+                {
+                    _rolePatterDetails = new GenereicClass<RolePatternDetails>(_Context);
+                }
+                return _rolePatterDetails;
+            }
+        }
+
+        public GenereicClass<UserRolePattern> UserRolePatternUW
+        {
+            get
+            {
+                if (_userRolePattern == null)
+                {
+                    _userRolePattern = new GenereicClass<UserRolePattern>(_Context);
+                }
+                return _userRolePattern;
+            }
+        }
+
+        public GenereicClass<PermissionLog> PermissionLogUW
+        {
+            get
+            {
+                if (_permissionLog == null)
+                {
+                    _permissionLog = new GenereicClass<PermissionLog>(_Context);
+                }
+                return _permissionLog;
+            }
+        }
+
+        #endregion
+
+        #region Organization Properties
+
+        public GenereicClass<Branch> BranchUW
+        {
+            get
+            {
+                if (_branch == null)
+                {
+                    _branch = new GenereicClass<Branch>(_Context);
+                }
+                return _branch;
+            }
+        }
+
+        public GenereicClass<BranchUser> BranchUserUW
+        {
+            get
+            {
+                if (_branchUser == null)
+                {
+                    _branchUser = new GenereicClass<BranchUser>(_Context);
+                }
+                return _branchUser;
+            }
+        }
+
+        public GenereicClass<Team> TeamUW
+        {
+            get
+            {
+                if (_team == null)
+                {
+                    _team = new GenereicClass<Team>(_Context);
+                }
+                return _team;
+            }
+        }
+
+        public GenereicClass<TeamMember> TeamMemberUW
+        {
+            get
+            {
+                if (_teamMember == null)
+                {
+                    _teamMember = new GenereicClass<TeamMember>(_Context);
+                }
+                return _teamMember;
+            }
+        }
+
+        #endregion
+
+        #region Stakeholder Management Properties
+
+        public GenereicClass<Stakeholder> StakeholderUW
+        {
+            get
+            {
+                if (_stakeholder == null)
+                {
+                    _stakeholder = new GenereicClass<Stakeholder>(_Context);
+                }
+                return _stakeholder;
+            }
+        }
+
+        public GenereicClass<StakeholderCRM> StakeholderCRMUW
+        {
+            get
+            {
+                if (_stakeholderCRM == null)
+                {
+                    _stakeholderCRM = new GenereicClass<StakeholderCRM>(_Context);
+                }
+                return _stakeholderCRM;
+            }
+        }
+
+        public GenereicClass<StakeholderContact> StakeholderContactUW
+        {
+            get
+            {
+                if (_stakeholderContact == null)
+                {
+                    _stakeholderContact = new GenereicClass<StakeholderContact>(_Context);
+                }
+                return _stakeholderContact;
+            }
+        }
+
+        public GenereicClass<StakeholderBranch> StakeholderBranchUW
+        {
+            get
+            {
+                if (_stakeholderBranch == null)
+                {
+                    _stakeholderBranch = new GenereicClass<StakeholderBranch>(_Context);
+                }
+                return _stakeholderBranch;
+            }
+        }
+
+        public GenereicClass<Contract> ContractUW
+        {
+            get
+            {
+                if (_contract == null)
+                {
+                    _contract = new GenereicClass<Contract>(_Context);
+                }
+                return _contract;
+            }
+        }
+
+        #endregion
+
+        #region Task Management Properties
 
         public GenereicClass<Tasks> TaskUW
         {
@@ -115,145 +335,207 @@ namespace MahERP.DataModelLayer.Services
             }
         }
 
-
-
-        public GenereicClass<RolePatternDetails> rolePatternDetailsUW
+        public GenereicClass<TaskCommentAttachment> TaskCommentAttachmentUW
         {
             get
             {
-                if (_rolePatterDetails == null)
+                if (_taskCommentAttachmentRepository == null)
                 {
-                    _rolePatterDetails = new GenereicClass<RolePatternDetails>(_Context);
+                    _taskCommentAttachmentRepository = new GenereicClass<TaskCommentAttachment>(_Context);
                 }
-                return _rolePatterDetails;
-            }
-        }
-        public GenereicClass<RolePattern> rolePatternUW
-        {
-            get
-            {
-                if (_rolePattern == null)
-                {
-                    _rolePattern = new GenereicClass<RolePattern>(_Context);
-                }
-                return _rolePattern;
-            }
-        }
-        public GenereicClass<AppUsers> UserManagerUW
-        {
-            get
-            {
-                if (_userManager == null)
-                {
-                    _userManager = new GenereicClass<AppUsers>(_Context);
-                }
-                return _userManager;
-            }
-        }
-        public GenereicClass<AppRoles> RoleManagerUW
-        {
-            get
-            {
-                if (_RoleManager == null)
-                {
-                    _RoleManager = new GenereicClass<AppRoles>(_Context);
-                }
-                return _RoleManager;
+                return _taskCommentAttachmentRepository;
             }
         }
 
-        public GenereicClass<Stakeholder> StakeholderUW
+        public GenereicClass<TaskCommentMention> TaskCommentMentionUW
         {
             get
             {
-                if (_stakeholder == null)
+                if (_taskCommentMentionRepository == null)
                 {
-                    _stakeholder = new GenereicClass<Stakeholder>(_Context);
+                    _taskCommentMentionRepository = new GenereicClass<TaskCommentMention>(_Context);
                 }
-                return _stakeholder;
+                return _taskCommentMentionRepository;
             }
         }
 
-        public GenereicClass<StakeholderCRM> StakeholderCRMUW
+        public GenereicClass<TaskNotification> TaskNotificationUW
         {
             get
             {
-                if (_stakeholderCRM == null)
+                if (_taskNotificationRepository == null)
                 {
-                    _stakeholderCRM = new GenereicClass<StakeholderCRM>(_Context);
+                    _taskNotificationRepository = new GenereicClass<TaskNotification>(_Context);
                 }
-                return _stakeholderCRM;
+                return _taskNotificationRepository;
             }
         }
 
-        public GenereicClass<StakeholderContact> StakeholderContactUW
+        public GenereicClass<TaskSchedule> TaskScheduleUW
         {
             get
             {
-                if (_stakeholderContact == null)
+                if (_taskScheduleRepository == null)
                 {
-                    _stakeholderContact = new GenereicClass<StakeholderContact>(_Context);
+                    _taskScheduleRepository = new GenereicClass<TaskSchedule>(_Context);
                 }
-                return _stakeholderContact;
+                return _taskScheduleRepository;
             }
         }
 
-        public GenereicClass<Branch> BranchUW
+        public GenereicClass<TaskScheduleAssignment> TaskScheduleAssignmentUW
         {
             get
             {
-                if (_branch == null)
+                if (_taskScheduleAssignmentRepository == null)
                 {
-                    _branch = new GenereicClass<Branch>(_Context);
+                    _taskScheduleAssignmentRepository = new GenereicClass<TaskScheduleAssignment>(_Context);
                 }
-                return _branch;
+                return _taskScheduleAssignmentRepository;
             }
         }
 
-        public GenereicClass<BranchUser> BranchUserUW
+        public GenereicClass<TaskScheduleViewer> TaskScheduleViewerUW
         {
             get
             {
-                if (_branchUser == null)
+                if (_taskScheduleViewerRepository == null)
                 {
-                    _branchUser = new GenereicClass<BranchUser>(_Context);
+                    _taskScheduleViewerRepository = new GenereicClass<TaskScheduleViewer>(_Context);
                 }
-                return _branchUser;
+                return _taskScheduleViewerRepository;
             }
         }
 
-        public GenereicClass<Contract> ContractUW
+        public GenereicClass<TaskTemplate> TaskTemplateUW
         {
             get
             {
-                if (_contract == null)
+                if (_taskTemplateRepository == null)
                 {
-                    _contract = new GenereicClass<Contract>(_Context);
+                    _taskTemplateRepository = new GenereicClass<TaskTemplate>(_Context);
                 }
-                return _contract;
+                return _taskTemplateRepository;
             }
         }
 
-        public GenereicClass<StakeholderBranch> StakeholderBranchUW
+        public GenereicClass<TaskTemplateOperation> TaskTemplateOperationUW
         {
             get
             {
-                if (_stakeholderBranch == null)
+                if (_taskTemplateOperationRepository == null)
                 {
-                    _stakeholderBranch = new GenereicClass<StakeholderBranch>(_Context);
+                    _taskTemplateOperationRepository = new GenereicClass<TaskTemplateOperation>(_Context);
                 }
-                return _stakeholderBranch;
+                return _taskTemplateOperationRepository;
             }
         }
 
-        public IEntityDataBaseTransaction BeginTransaction()
+        public GenereicClass<TaskViewer> TaskViewerUW
         {
-            return new EntityDataBaseTransaction(_Context);
+            get
+            {
+                if (_taskViewerRepository == null)
+                {
+                    _taskViewerRepository = new GenereicClass<TaskViewer>(_Context);
+                }
+                return _taskViewerRepository;
+            }
         }
 
-        public void Save()
+        public GenereicClass<PredefinedCopyDescription> PredefinedCopyDescriptionUW
         {
-            _Context.SaveChanges();
+            get
+            {
+                if (_predefinedCopyDescriptionRepository == null)
+                {
+                    _predefinedCopyDescriptionRepository = new GenereicClass<PredefinedCopyDescription>(_Context);
+                }
+                return _predefinedCopyDescriptionRepository;
+            }
+        }
+
+        #endregion
+
+        #region CRM Management Properties
+
+        public GenereicClass<CRMInteraction> CRMInteractionUW
+        {
+            get
+            {
+                if (_crmInteractionRepository == null)
+                {
+                    _crmInteractionRepository = new GenereicClass<CRMInteraction>(_Context);
+                }
+                return _crmInteractionRepository;
+            }
+        }
+
+        public GenereicClass<CRMAttachment> CRMAttachmentUW
+        {
+            get
+            {
+                if (_crmAttachmentRepository == null)
+                {
+                    _crmAttachmentRepository = new GenereicClass<CRMAttachment>(_Context);
+                }
+                return _crmAttachmentRepository;
+            }
+        }
+
+        public GenereicClass<CRMComment> CRMCommentUW
+        {
+            get
+            {
+                if (_crmCommentRepository == null)
+                {
+                    _crmCommentRepository = new GenereicClass<CRMComment>(_Context);
+                }
+                return _crmCommentRepository;
+            }
+        }
+
+        public GenereicClass<CRMParticipant> CRMParticipantUW
+        {
+            get
+            {
+                if (_crmParticipantRepository == null)
+                {
+                    _crmParticipantRepository = new GenereicClass<CRMParticipant>(_Context);
+                }
+                return _crmParticipantRepository;
+            }
+        }
+
+        public GenereicClass<CRMTeam> CRMTeamUW
+        {
+            get
+            {
+                if (_crmTeamRepository == null)
+                {
+                    _crmTeamRepository = new GenereicClass<CRMTeam>(_Context);
+                }
+                return _crmTeamRepository;
+            }
+        }
+
+        public GenereicClass<TaskCRMDetails> TaskCRMDetailsUW
+        {
+            get
+            {
+                if (_taskCRMDetailsRepository == null)
+                {
+                    _taskCRMDetailsRepository = new GenereicClass<TaskCRMDetails>(_Context);
+                }
+                return _taskCRMDetailsRepository;
+            }
+        }
+
+        #endregion
+
+        public int Save()
+        {
+            return _Context.SaveChanges();
         }
 
         public void Dispose()

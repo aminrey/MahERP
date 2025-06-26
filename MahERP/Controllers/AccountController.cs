@@ -42,7 +42,7 @@ namespace MahERP.Controllers
 
                 };
                 IdentityResult result = await _UserManager.CreateAsync(User, "Admin1234@");
-                var Roles = _Context.RoleManagerUW.Get().ToList();
+                var Roles = _Context.RoleUW.Get().ToList();
 
                 foreach (var item in Roles)
                 {

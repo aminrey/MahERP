@@ -18,6 +18,8 @@ namespace MahERP.DataModelLayer
         // Identity/Users
         public DbSet<RolePattern> RolePattern_Tbl { get; set; }
         public DbSet<RolePatternDetails> RolePatternDetails_Tbl { get; set; }
+        public DbSet<UserRolePattern> UserRolePattern_Tbl { get; set; }
+        public DbSet<PermissionLog> PermissionLog_Tbl { get; set; }
 
         // Organization
         public DbSet<Branch> Branch_Tbl { get; set; }
@@ -50,6 +52,8 @@ namespace MahERP.DataModelLayer
         public DbSet<TaskNotification> TaskNotification_Tbl { get; set; }
         public DbSet<TaskOperation> TaskOperation_Tbl { get; set; }
         public DbSet<TaskSchedule> TaskSchedule_Tbl { get; set; }
+        public DbSet<TaskScheduleAssignment> TaskScheduleAssignment_Tbl { get; set; }
+        public DbSet<TaskScheduleViewer> TaskScheduleViewer_Tbl { get; set; }
         public DbSet<TaskTemplate> TaskTemplate_Tbl { get; set; }
         public DbSet<TaskTemplateOperation> TaskTemplateOperation_Tbl { get; set; }
         public DbSet<TaskViewer> TaskViewer_Tbl { get; set; }
@@ -68,8 +72,62 @@ namespace MahERP.DataModelLayer
         {
             base.OnModelCreating(modelBuilder);
 
+            // ======================== SEED DEFAULT DATA ========================
+            SeedDefaultBranches(modelBuilder);
+            SeedDefaultRoles(modelBuilder);
+            SeedDefaultTaskCategories(modelBuilder);
+            SeedDefaultPredefinedCopyDescriptions(modelBuilder);
+            SeedDefaultRolePatterns(modelBuilder);
+
+            // ======================== ROLE PATTERN RELATIONSHIPS ========================
+            // RolePattern relationships
+            modelBuilder.Entity<RolePattern>()
+                .HasOne(rp => rp.Creator)
+                .WithMany()
+                .HasForeignKey(rp => rp.CreatorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RolePattern>()
+                .HasOne(rp => rp.LastUpdater)
+                .WithMany()
+                .HasForeignKey(rp => rp.LastUpdaterUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // RolePatternDetails relationships
+            modelBuilder.Entity<RolePatternDetails>()
+                .HasOne(rpd => rpd.RolePattern)
+                .WithMany(rp => rp.RolePatternDetails)
+                .HasForeignKey(rpd => rpd.RolePatternId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // UserRolePattern relationships
+            modelBuilder.Entity<UserRolePattern>()
+                .HasOne(urp => urp.User)
+                .WithMany()
+                .HasForeignKey(urp => urp.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<UserRolePattern>()
+                .HasOne(urp => urp.RolePattern)
+                .WithMany(rp => rp.UserRolePatterns)
+                .HasForeignKey(urp => urp.RolePatternId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserRolePattern>()
+                .HasOne(urp => urp.AssignedByUser)
+                .WithMany()
+                .HasForeignKey(urp => urp.AssignedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // PermissionLog relationships
+            modelBuilder.Entity<PermissionLog>()
+                .HasOne(pl => pl.User)
+                .WithMany()
+                .HasForeignKey(pl => pl.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ======================== USER RELATED RELATIONSHIPS ========================
-            
+
             // Contract-specific relationships
             modelBuilder.Entity<Contract>()
                 .HasOne(c => c.Creator)
@@ -200,7 +258,7 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(ts => ts.ModifierUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // اصلاح خطای مسیرهای چندگانه در TaskScheduleAssignment
+            // TaskScheduleAssignment relationships
             modelBuilder.Entity<TaskScheduleAssignment>()
                 .HasOne(tsa => tsa.User)
                 .WithMany()
@@ -219,14 +277,33 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(tsa => tsa.ScheduleId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // اصلاح خطای مسیرهای چندگانه در CRMParticipant
+            // TaskScheduleViewer relationships
+            modelBuilder.Entity<TaskScheduleViewer>()
+                .HasOne(tsv => tsv.User)
+                .WithMany()
+                .HasForeignKey(tsv => tsv.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskScheduleViewer>()
+                .HasOne(tsv => tsv.AddedByUser)
+                .WithMany()
+                .HasForeignKey(tsv => tsv.AddedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskScheduleViewer>()
+                .HasOne(tsv => tsv.Schedule)
+                .WithMany()
+                .HasForeignKey(tsv => tsv.ScheduleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // CRMParticipant relationships
             modelBuilder.Entity<CRMParticipant>()
                 .HasOne(cp => cp.User)
                 .WithMany()
                 .HasForeignKey(cp => cp.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // اصلاح خطای مسیرهای چندگانه در TaskViewer
+            // TaskViewer relationships
             modelBuilder.Entity<TaskViewer>()
                 .HasOne(tv => tv.User)
                 .WithMany()
@@ -278,7 +355,7 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(tc => tc.ParentCommentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // TaskCommentMention - اصلاح روابط با کاربران
+            // TaskCommentMention relationships
             modelBuilder.Entity<TaskCommentMention>()
                 .HasOne(tcm => tcm.MentionedUser)
                 .WithMany()
@@ -418,6 +495,190 @@ namespace MahERP.DataModelLayer
                 .WithMany()
                 .HasForeignKey(tn => tn.RecipientUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ======================== UNIQUE CONSTRAINTS ========================
+            // یکتا بودن نام کاربری در هر الگوی نقش
+            modelBuilder.Entity<UserRolePattern>()
+                .HasIndex(urp => new { urp.UserId, urp.RolePatternId })
+                .IsUnique()
+                .HasDatabaseName("IX_UserRolePattern_User_Pattern");
+
+            // یکتا بودن نام الگوی نقش
+            modelBuilder.Entity<RolePattern>()
+                .HasIndex(rp => rp.PatternName)
+                .IsUnique()
+                .HasDatabaseName("IX_RolePattern_PatternName");
+        }
+
+        // ======================== PRIVATE SEED METHODS ========================
+
+        private static void SeedDefaultBranches(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Branch>().HasData(
+                new Branch
+                {
+                    Id = 1,
+                    Name = "دفتر مرکزی",
+                    Description = "شعبه اصلی سازمان",
+                    IsActive = true,
+                    IsMainBranch = true,
+                    CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                }
+            );
+        }
+
+        private static void SeedDefaultRoles(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<AppRoles>().HasData(
+                new AppRoles
+                {
+                    Id = "1",
+                    Name = "Admin",
+                    NormalizedName = "ADMIN",
+                    Description = "مدیر سیستم",
+                    RoleLevel = "1",
+                    ConcurrencyStamp = "8e446cc7-743a-4133-8241-0f374fcbbc0d"
+                },
+                new AppRoles
+                {
+                    Id = "2",
+                    Name = "Manager",
+                    NormalizedName = "MANAGER",
+                    Description = "مدیر",
+                    RoleLevel = "2",
+                    ConcurrencyStamp = "5b6877d1-6fe6-4f8c-92a4-33fdf65a391f"
+                },
+                new AppRoles
+                {
+                    Id = "3",
+                    Name = "Supervisor",
+                    NormalizedName = "SUPERVISOR",
+                    Description = "سرپرست",
+                    RoleLevel = "3",
+                    ConcurrencyStamp = "8f4cee96-4bf9-4019-b589-4de5c0230e2c"
+                },
+                new AppRoles
+                {
+                    Id = "4",
+                    Name = "Employee",
+                    NormalizedName = "EMPLOYEE",
+                    Description = "کارمند",
+                    RoleLevel = "4",
+                    ConcurrencyStamp = "523c9ab5-4b4c-43e2-84be-12c4b6f74eed"
+                },
+                new AppRoles
+                {
+                    Id = "5",
+                    Name = "User",
+                    NormalizedName = "USER",
+                    Description = "کاربر عادی",
+                    RoleLevel = "5",
+                    ConcurrencyStamp = "aa5d01a0-a905-44ef-9e53-9c694828dbff"
+                }
+            );
+        }
+
+        private static void SeedDefaultTaskCategories(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TaskCategory>().HasData(
+                new TaskCategory { Id = 1, Title = "عمومی", Description = "دسته‌بندی عمومی برای تسک‌ها", DisplayOrder = 1, IsActive = true },
+                new TaskCategory { Id = 2, Title = "اداری", Description = "تسک‌های مربوط به امور اداری", DisplayOrder = 2, IsActive = true },
+                new TaskCategory { Id = 3, Title = "فنی", Description = "تسک‌های فنی و تخصصی", DisplayOrder = 3, IsActive = true },
+                new TaskCategory { Id = 4, Title = "فروش", Description = "تسک‌های مربوط به فروش", DisplayOrder = 4, IsActive = true },
+                new TaskCategory { Id = 5, Title = "خدمات", Description = "تسک‌های مربوط به خدمات مشتریان", DisplayOrder = 5, IsActive = true },
+                new TaskCategory { Id = 6, Title = "بازاریابی", Description = "تسک‌های بازاریابی و تبلیغات", DisplayOrder = 6, IsActive = true },
+                new TaskCategory { Id = 7, Title = "مالی", Description = "تسک‌های مربوط به امور مالی", DisplayOrder = 7, IsActive = true },
+                new TaskCategory { Id = 8, Title = "منابع انسانی", Description = "تسک‌های مربوط به HR", DisplayOrder = 8, IsActive = true },
+                new TaskCategory { Id = 9, Title = "پروژه", Description = "تسک‌های پروژه‌ای", DisplayOrder = 9, IsActive = true },
+                new TaskCategory { Id = 10, Title = "فوری", Description = "تسک‌های فوری و اضطراری", DisplayOrder = 10, IsActive = true }
+            );
+        }
+
+        private static void SeedDefaultPredefinedCopyDescriptions(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<PredefinedCopyDescription>().HasData(
+                new PredefinedCopyDescription { Id = 1, Title = "جهت اطلاع", Description = "جهت اطلاع و پیگیری", IsActive = true },
+                new PredefinedCopyDescription { Id = 2, Title = "جهت اقدام", Description = "جهت انجام اقدامات لازم", IsActive = true },
+                new PredefinedCopyDescription { Id = 3, Title = "جهت بررسی", Description = "جهت بررسی و اعلام نظر", IsActive = true },
+                new PredefinedCopyDescription { Id = 4, Title = "جهت تایید", Description = "جهت تایید و ابلاغ", IsActive = true },
+                new PredefinedCopyDescription { Id = 5, Title = "جهت نظارت", Description = "جهت نظارت و کنترل", IsActive = true },
+                new PredefinedCopyDescription { Id = 6, Title = "جهت هماهنگی", Description = "جهت هماهنگی‌های لازم", IsActive = true },
+                new PredefinedCopyDescription { Id = 7, Title = "جهت پیگیری", Description = "جهت پیگیری و گزارش", IsActive = true },
+                new PredefinedCopyDescription { Id = 8, Title = "جهت اجرا", Description = "جهت اجرای دستورات", IsActive = true }
+            );
+        }
+
+        private static void SeedDefaultRolePatterns(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<RolePattern>().HasData(
+                new RolePattern
+                {
+                    Id = 1,
+                    PatternName = "مدیریت کامل",
+                    Description = "دسترسی کامل به تمام بخش‌ها",
+                    AccessLevel = 1,
+                    IsActive = true,
+                    IsSystemPattern = true,
+                    CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                    CreatorUserId = "system"
+                },
+                new RolePattern
+                {
+                    Id = 2,
+                    PatternName = "مدیر عملیات",
+                    Description = "مدیریت عملیات و تسک‌ها",
+                    AccessLevel = 2,
+                    IsActive = true,
+                    IsSystemPattern = true,
+                    CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                    CreatorUserId = "system"
+                },
+                new RolePattern
+                {
+                    Id = 3,
+                    PatternName = "کارشناس فروش",
+                    Description = "دسترسی به ماژول فروش و CRM",
+                    AccessLevel = 4,
+                    IsActive = true,
+                    IsSystemPattern = true,
+                    CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                    CreatorUserId = "system"
+                },
+                new RolePattern
+                {
+                    Id = 4,
+                    PatternName = "کاربر عادی",
+                    Description = "دسترسی محدود به تسک‌های شخصی",
+                    AccessLevel = 5,
+                    IsActive = true,
+                    IsSystemPattern = true,
+                    CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                    CreatorUserId = "system"
+                }
+            );
+
+            modelBuilder.Entity<RolePatternDetails>().HasData(
+                // الگوی مدیریت کامل
+                new RolePatternDetails { Id = 1, RolePatternId = 1, ControllerName = "Task", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
+                new RolePatternDetails { Id = 2, RolePatternId = 1, ControllerName = "CRM", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
+                new RolePatternDetails { Id = 3, RolePatternId = 1, ControllerName = "Stakeholder", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
+                new RolePatternDetails { Id = 4, RolePatternId = 1, ControllerName = "Contract", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
+                new RolePatternDetails { Id = 5, RolePatternId = 1, ControllerName = "User", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
+                new RolePatternDetails { Id = 6, RolePatternId = 1, ControllerName = "RolePattern", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
+
+                // الگوی مدیر عملیات
+                new RolePatternDetails { Id = 7, RolePatternId = 2, ControllerName = "Task", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 1, IsActive = true },
+                new RolePatternDetails { Id = 8, RolePatternId = 2, ControllerName = "CRM", ActionName = "Index,Details,Create,Edit", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 1, IsActive = true },
+                new RolePatternDetails { Id = 9, RolePatternId = 2, ControllerName = "Stakeholder", ActionName = "Index,Details", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 1, IsActive = true },
+
+                // الگوی کارشناس فروش
+                new RolePatternDetails { Id = 10, RolePatternId = 3, ControllerName = "CRM", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
+                new RolePatternDetails { Id = 11, RolePatternId = 3, ControllerName = "Stakeholder", ActionName = "Index,Details,Create,Edit", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
+                new RolePatternDetails { Id = 12, RolePatternId = 3, ControllerName = "Task", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
+
+                // الگوی کاربر عادی
+                new RolePatternDetails { Id = 13, RolePatternId = 4, ControllerName = "Task", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true }
+            );
         }
     }
 }

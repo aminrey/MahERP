@@ -1,4 +1,4 @@
-using MahERP.DataModelLayer.AcControl;
+﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Services;
 using Microsoft.EntityFrameworkCore;
@@ -76,13 +76,13 @@ namespace MahERP.DataModelLayer.Repository
 
             if (includeAssigned && includeCreated)
             {
-                query = query.Where(t => 
+                query = query.Where(t =>
                     _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId) ||
                     t.CreatorUserId == userId);
             }
             else if (includeAssigned)
             {
-                query = query.Where(t => 
+                query = query.Where(t =>
                     _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId));
             }
             else if (includeCreated)
@@ -91,6 +91,29 @@ namespace MahERP.DataModelLayer.Repository
             }
 
             return query.OrderByDescending(t => t.CreateDate).ToList();
+        }
+
+        // متدهای جدید مورد نیاز
+        public List<Tasks> GetTasksByBranch(int branchId, bool includeDeleted = false)
+        {
+            var query = _context.Tasks_Tbl.Where(t => t.BranchId == branchId);
+
+            if (!includeDeleted)
+                query = query.Where(t => !t.IsDeleted);
+
+            return query.OrderByDescending(t => t.CreateDate).ToList();
+        }
+
+        public bool IsUserRelatedToTask(string userId, int taskId)
+        {
+            return _context.Tasks_Tbl.Any(t => t.Id == taskId &&
+                (t.CreatorUserId == userId ||
+                 _context.TaskAssignment_Tbl.Any(a => a.TaskId == taskId && a.AssignedUserId == userId)));
+        }
+
+        public bool IsTaskInBranch(int taskId, int branchId)
+        {
+            return _context.Tasks_Tbl.Any(t => t.Id == taskId && t.BranchId == branchId);
         }
 
         public List<TaskOperation> GetTaskOperations(int taskId, bool includeCompleted = true)
@@ -133,9 +156,9 @@ namespace MahERP.DataModelLayer.Repository
             // Search in title and description
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(t => 
-                    t.Title.Contains(searchTerm) || 
-                    t.Description.Contains(searchTerm) ||
+                query = query.Where(t =>
+                    t.Title.Contains(searchTerm) ||
+                    (t.Description != null && t.Description.Contains(searchTerm)) ||
                     t.TaskCode.Contains(searchTerm));
             }
 
@@ -155,7 +178,7 @@ namespace MahERP.DataModelLayer.Repository
             // Filter by completion status
             if (isCompleted.HasValue)
             {
-                query = query.Where(t => t.CompletionDate != null == isCompleted.Value);
+                query = query.Where(t => (t.CompletionDate != null) == isCompleted.Value);
             }
 
             return query.OrderByDescending(t => t.CreateDate).ToList();

@@ -11,57 +11,105 @@ namespace MahERP.DataModelLayer.Entities.Core
     /// </summary>
     public class ActivityBase
     {
+        public ActivityBase()
+        {
+            ActivityTasks = new HashSet<ActivityTask>();
+            ActivityCRMs = new HashSet<ActivityCRM>();
+            ActivityAttachments = new HashSet<ActivityAttachment>();
+            ActivityComments = new HashSet<ActivityComment>();
+            ActivityHistories = new HashSet<ActivityHistory>();
+        }
+
         [Key]
         public int Id { get; set; }
 
         /// <summary>
-        /// کد یکتای فعالیت - شناسه قابل نمایش برای کاربر
-        /// </summary>
-        [Required]
-        [MaxLength(20)]
-        public string ActivityCode { get; set; }
-
-        /// <summary>
         /// عنوان فعالیت
         /// </summary>
-        [Required]
+        [Required(ErrorMessage = "عنوان فعالیت الزامی است")]
         [MaxLength(200)]
         public string Title { get; set; }
 
         /// <summary>
-        /// توضیحات فعالیت - شرح کامل فعالیت
+        /// توضیحات کامل فعالیت
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
-        /// ماژول مربوطه
-        /// 0- هیچکدام (فعالیت مستقل)
-        /// 1- تسکینگ (مرتبط با وظایف)
-        /// 2- CRM (مرتبط با مشتریان)
-        /// 3- قراردادها (مرتبط با قراردادها)
-        /// 4- سایر
+        /// نوع فعالیت
+        /// 0- عمومی
+        /// 1- تسکینگ
+        /// 2- CRM
+        /// 3- مالی
+        /// 4- منابع انسانی
+        /// 5- پروژه
         /// </summary>
-        public byte ModuleType { get; set; }
+        public byte ActivityType { get; set; }
 
         /// <summary>
         /// اولویت فعالیت
         /// 0- عادی
-        /// 1- مهم
-        /// 2- فوری
+        /// 1- متوسط
+        /// 2- مهم
+        /// 3- بحرانی
         /// </summary>
         public byte Priority { get; set; }
 
         /// <summary>
-        /// وضعیت فعلی فعالیت
+        /// وضعیت فعالیت
         /// 0- ایجاد شده
         /// 1- در حال انجام
         /// 2- تکمیل شده
-        /// 3- لغو شده
+        /// 3- تایید شده
+        /// 4- رد شده
+        /// 5- لغو شده
         /// </summary>
         public byte Status { get; set; }
 
         /// <summary>
-        /// تاریخ ایجاد فعالیت
+        /// طرف حساب مرتبط (اختیاری)
+        /// </summary>
+        public int? StakeholderId { get; set; }
+        [ForeignKey("StakeholderId")]
+        public virtual Stakeholder? Stakeholder { get; set; }
+
+        /// <summary>
+        /// قرارداد مرتبط (اختیاری)
+        /// </summary>
+        public int? ContractId { get; set; }
+        [ForeignKey("ContractId")]
+        public virtual Contract? Contract { get; set; }
+
+        /// <summary>
+        /// شعبه مرتبط
+        /// </summary>
+        public int BranchId { get; set; }
+        [ForeignKey("BranchId")]
+        public virtual Branch Branch { get; set; }
+
+        /// <summary>
+        /// تاریخ شروع فعالیت
+        /// </summary>
+        public DateTime? StartDate { get; set; }
+
+        /// <summary>
+        /// تاریخ پایان فعالیت
+        /// </summary>
+        public DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// مهلت انجام فعالیت
+        /// </summary>
+        public DateTime? DueDate { get; set; }
+
+        /// <summary>
+        /// درصد پیشرفت فعالیت
+        /// </summary>
+        [Range(0, 100)]
+        public int ProgressPercentage { get; set; } = 0;
+
+        /// <summary>
+        /// تاریخ ایجاد
         /// </summary>
         public DateTime CreateDate { get; set; }
 
@@ -73,47 +121,6 @@ namespace MahERP.DataModelLayer.Entities.Core
         public virtual AppUsers Creator { get; set; }
 
         /// <summary>
-        /// مهلت انجام فعالیت
-        /// </summary>
-        public DateTime? DueDate { get; set; }
-
-        /// <summary>
-        /// تاریخ تکمیل فعالیت
-        /// </summary>
-        public DateTime? CompletionDate { get; set; }
-
-        /// <summary>
-        /// طرف حساب مرتبط با فعالیت
-        /// </summary>
-        public int? StakeholderId { get; set; }
-        [ForeignKey("StakeholderId")]
-        public virtual Stakeholder Stakeholder { get; set; }
-
-        /// <summary>
-        /// قرارداد مرتبط با فعالیت
-        /// </summary>
-        public int? ContractId { get; set; }
-        [ForeignKey("ContractId")]
-        public virtual Contract Contract { get; set; }
-
-        /// <summary>
-        /// شعبه مربوط به فعالیت
-        /// </summary>
-        public int BranchId { get; set; }
-        [ForeignKey("BranchId")]
-        public virtual Branch Branch { get; set; }
-
-        /// <summary>
-        /// وضعیت فعال بودن
-        /// </summary>
-        public bool IsActive { get; set; } = true;
-        
-        /// <summary>
-        /// آیا فعالیت حذف شده است (حذف منطقی)
-        /// </summary>
-        public bool IsDeleted { get; set; } = false;
-        
-        /// <summary>
         /// تاریخ آخرین بروزرسانی
         /// </summary>
         public DateTime? LastUpdateDate { get; set; }
@@ -124,6 +131,16 @@ namespace MahERP.DataModelLayer.Entities.Core
         public string? LastUpdaterUserId { get; set; }
         [ForeignKey("LastUpdaterUserId")]
         public virtual AppUsers? LastUpdater { get; set; }
+
+        /// <summary>
+        /// وضعیت فعال بودن
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// آیا رکورد حذف شده است (حذف منطقی)
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
 
         // Navigation properties
         /// <summary>
@@ -150,14 +167,5 @@ namespace MahERP.DataModelLayer.Entities.Core
         /// تاریخچه تغییرات فعالیت
         /// </summary>
         public virtual ICollection<ActivityHistory> ActivityHistories { get; set; }
-
-        public ActivityBase()
-        {
-            ActivityTasks = new HashSet<ActivityTask>();
-            ActivityCRMs = new HashSet<ActivityCRM>();
-            ActivityAttachments = new HashSet<ActivityAttachment>();
-            ActivityComments = new HashSet<ActivityComment>();
-            ActivityHistories = new HashSet<ActivityHistory>();
-        }
     }
 }

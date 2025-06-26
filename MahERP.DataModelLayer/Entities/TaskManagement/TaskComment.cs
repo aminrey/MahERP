@@ -1,4 +1,4 @@
-﻿using MahERP.DataModelLayer.Entities.AcControl;
+﻿        using MahERP.DataModelLayer.Entities.AcControl;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,9 +10,9 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
     {
         public TaskComment()
         {
+            MentionedUsers = new HashSet<TaskCommentMention>();
             Notifications = new HashSet<TaskNotification>();
             Attachments = new HashSet<TaskCommentAttachment>();
-            MentionedUsers = new HashSet<TaskCommentMention>();
         }
 
         [Key]
@@ -22,8 +22,29 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         [ForeignKey("TaskId")]
         public virtual Tasks Task { get; set; }
 
-        [Required(ErrorMessage = "متن کامنت را وارد کنید")]
-        public string Content { get; set; }
+        [Required(ErrorMessage = "متن کامنت الزامی است")]
+        public string CommentText { get; set; }
+
+        /// <summary>
+        /// آیا این کامنت خصوصی است؟ (فقط برای سازنده قابل مشاهده)
+        /// </summary>
+        public bool IsPrivate { get; set; }
+
+        /// <summary>
+        /// آیا این کامنت مهم است؟
+        /// </summary>
+        public bool IsImportant { get; set; }
+
+        /// <summary>
+        /// نوع کامنت
+        /// 0- کامنت عادی
+        /// 1- بازخورد
+        /// 2- سوال
+        /// 3- درخواست تغییر
+        /// 4- تأیید
+        /// 5- رد
+        /// </summary>
+        public byte CommentType { get; set; }
 
         public DateTime CreateDate { get; set; }
 
@@ -32,21 +53,26 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public virtual AppUsers Creator { get; set; }
 
         /// <summary>
-        /// کاربران منشن شده در کامنت
-        /// </summary>
-        public virtual ICollection<TaskCommentMention> MentionedUsers { get; set; }
-
-        /// <summary>
-        /// آیا کامنت خصوصی است (فقط برای تیم داخلی قابل مشاهده)
-        /// </summary>
-        public bool IsPrivate { get; set; }
-
-        /// <summary>
-        /// کامنت‌های پاسخ داده شده
+        /// کامنت والد (برای پاسخ به کامنت‌ها)
         /// </summary>
         public int? ParentCommentId { get; set; }
         [ForeignKey("ParentCommentId")]
-        public virtual TaskComment ParentComment { get; set; }
+        public virtual TaskComment? ParentComment { get; set; }
+
+        /// <summary>
+        /// تاریخ ویرایش کامنت
+        /// </summary>
+        public DateTime? EditDate { get; set; }
+
+        /// <summary>
+        /// آیا کامنت ویرایش شده است؟
+        /// </summary>
+        public bool IsEdited { get; set; }
+
+        /// <summary>
+        /// کاربران منشن شده در کامنت
+        /// </summary>
+        public virtual ICollection<TaskCommentMention> MentionedUsers { get; set; }
 
         // Navigation properties
         public virtual ICollection<TaskNotification> Notifications { get; set; }

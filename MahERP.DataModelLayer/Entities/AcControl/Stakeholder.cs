@@ -17,21 +17,21 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         [Required(ErrorMessage = "نام خانوادگی طرف حساب را وارد کنید")]
         public string LastName { get; set; }
 
-        public string CompanyName { get; set; }
+        public string? CompanyName { get; set; }
 
-        public string Phone { get; set; }
+        public string? Phone { get; set; }
         
-        public string Mobile { get; set; }
+        public string? Mobile { get; set; }
 
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
-        public string Address { get; set; }
+        public string? Address { get; set; }
 
-        public string PostalCode { get; set; }
+        public string? PostalCode { get; set; }
 
-        public string NationalCode { get; set; }
+        public string? NationalCode { get; set; }
         
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public DateTime CreateDate { get; set; }
 
@@ -59,9 +59,9 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public bool IsDeleted { get; set; } = false;
 
         // Navigation properties
-        public virtual ICollection<StakeholderBranch> StakeholderBranches { get; set; }
-        public virtual ICollection<Contract> Contracts { get; set; }
-        public virtual ICollection<Tasks> TaskList { get; set; }
-        public virtual ICollection<StakeholderContact> StakeholderContacts { get; set; }
+        public virtual ICollection<StakeholderBranch> StakeholderBranches { get; set; } = new HashSet<StakeholderBranch>();
+        public virtual ICollection<Contract> Contracts { get; set; } = new HashSet<Contract>();
+        public virtual ICollection<Tasks> TaskList { get; set; } = new HashSet<Tasks>();
+        public virtual ICollection<StakeholderContact> StakeholderContacts { get; set; } = new HashSet<StakeholderContact>();
     }
 }

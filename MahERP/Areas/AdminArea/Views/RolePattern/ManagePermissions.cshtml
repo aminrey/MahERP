@@ -1,0 +1,198 @@
+﻿@model RolePatternPermissionViewModel
+@{
+    ViewData["Title"] = "مدیریت دسترسی‌ها";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">مدیریت دسترسی‌ها</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Home" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">الگوهای نقش</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Details" asp-route-id="@Model.RolePatternId">@Model.PatternName</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">مدیریت دسترسی‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-key text-muted me-1"></i> مدیریت دسترسی‌های الگوی نقش: @Model.PatternName
+            </h3>
+        </div>
+        <div class="block-content block-content-full">
+            <form asp-action="UpdatePermissions" method="post">
+                <input asp-for="RolePatternId" type="hidden" />
+                <input asp-for="PatternName" type="hidden" />
+
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    برای هر کنترلر و عملیات، می‌توانید سطح دسترسی مورد نظر را تعیین کنید.
+                </div>
+
+                @for (int i = 0; i < Model.Controllers.Count; i++)
+                {
+                    var controller = Model.Controllers[i];
+                    <div class="block block-rounded mb-4">
+                        <div class="block-header block-header-default">
+                            <h4 class="block-title">
+                                <i class="fa fa-cog me-1"></i> @controller.DisplayName
+                            </h4>
+                            <div class="block-options">
+                                <button type="button" class="btn btn-sm btn-alt-secondary" onclick="toggleController('@controller.Name')">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="block-content" id="controller-@controller.Name">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-vcenter">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width: 200px;">عملیات</th>
+                                            <th class="text-center" style="width: 80px;">مشاهده</th>
+                                            <th class="text-center" style="width: 80px;">ایجاد</th>
+                                            <th class="text-center" style="width: 80px;">ویرایش</th>
+                                            <th class="text-center" style="width: 80px;">حذف</th>
+                                            <th class="text-center" style="width: 80px;">تایید</th>
+                                            <th class="text-center" style="width: 120px;">سطح داده</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (int j = 0; j < controller.Actions.Length; j++)
+                                        {
+                                            var action = controller.Actions[j];
+                                            var existingPermission = Model.CurrentPermissions.FirstOrDefault(p => 
+                                                p.ControllerName == controller.Name && p.ActionName == action.Name);
+                                            var permissionIndex = Model.Permissions.Count;
+                                            
+                                            // Add to Permissions list
+                                            Model.Permissions.Add(new RolePatternDetailsViewModel
+                                            {
+                                                ControllerName = controller.Name,
+                                                ActionName = action.Name,
+                                                CanRead = existingPermission?.CanRead ?? false,
+                                                CanCreate = existingPermission?.CanCreate ?? false,
+                                                CanEdit = existingPermission?.CanEdit ?? false,
+                                                CanDelete = existingPermission?.CanDelete ?? false,
+                                                CanApprove = existingPermission?.CanApprove ?? false,
+                                                DataAccessLevel = existingPermission?.DataAccessLevel ?? 0,
+                                                IsActive = true
+                                            });
+
+                                            <tr>
+                                                <td class="fw-semibold">
+                                                    @action.DisplayName
+                                                    <input asp-for="Permissions[permissionIndex].ControllerName" type="hidden" value="@controller.Name" />
+                                                    <input asp-for="Permissions[permissionIndex].ActionName" type="hidden" value="@action.Name" />
+                                                    <input asp-for="Permissions[permissionIndex].IsActive" type="hidden" value="true" />
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="form-check form-switch">
+                                                        <input asp-for="Permissions[permissionIndex].CanRead" class="form-check-input" type="checkbox" />
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="form-check form-switch">
+                                                        <input asp-for="Permissions[permissionIndex].CanCreate" class="form-check-input" type="checkbox" />
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="form-check form-switch">
+                                                        <input asp-for="Permissions[permissionIndex].CanEdit" class="form-check-input" type="checkbox" />
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="form-check form-switch">
+                                                        <input asp-for="Permissions[permissionIndex].CanDelete" class="form-check-input" type="checkbox" />
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="form-check form-switch">
+                                                        <input asp-for="Permissions[permissionIndex].CanApprove" class="form-check-input" type="checkbox" />
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <select asp-for="Permissions[permissionIndex].DataAccessLevel" class="form-control form-control-sm">
+                                                        <option value="0">شخصی</option>
+                                                        <option value="1">شعبه</option>
+                                                        <option value="2">همه</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="block-content bg-body-light">
+                    <div class="row">
+                        <div class="col-6">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-check opacity-50 me-1"></i> ذخیره دسترسی‌ها
+                            </button>
+                        </div>
+                        <div class="col-6 text-end">
+                            <a asp-action="Details" asp-route-id="@Model.RolePatternId" class="btn btn-alt-secondary">
+                                <i class="fa fa-arrow-right opacity-50 me-1"></i> بازگشت
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+
+@section Scripts {
+    <script>
+        function toggleController(controllerName) {
+            const content = document.getElementById('controller-' + controllerName);
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+            } else {
+                content.style.display = 'none';
+            }
+        }
+
+        // Select all functionality
+        $(document).ready(function() {
+            // Add select all buttons for each permission type
+            $('.table thead th').each(function(index) {
+                if (index > 0 && index < 6) { // Skip first and last columns
+                    const permissionType = $(this).text().trim();
+                    $(this).append('<br><button type="button" class="btn btn-xs btn-outline-primary mt-1 select-all-btn" data-column="' + index + '">همه</button>');
+                }
+            });
+
+            // Handle select all buttons
+            $('.select-all-btn').click(function() {
+                const column = $(this).data('column');
+                const table = $(this).closest('table');
+                const checkboxes = table.find('tbody tr td:nth-child(' + (column + 1) + ') input[type="checkbox"]');
+                const allChecked = checkboxes.filter(':checked').length === checkboxes.length;
+                
+                checkboxes.prop('checked', !allChecked);
+            });
+        });
+    </script>
+}

@@ -25,19 +25,19 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public string Name { get; set; }
 
         [MaxLength(500)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [MaxLength(200)]
-        public string Address { get; set; }
+        public string? Address { get; set; }
 
         [MaxLength(20)]
-        public string Phone { get; set; }
+        public string? Phone { get; set; }
 
         [MaxLength(50)]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [MaxLength(100)]
-        public string ManagerName { get; set; }
+        public string? ManagerName { get; set; }
 
         public bool IsActive { get; set; } = true;
 
@@ -45,7 +45,7 @@ namespace MahERP.DataModelLayer.Entities.AcControl
 
         public int? ParentId { get; set; }
         [ForeignKey("ParentId")]
-        public virtual Branch ParentBranch { get; set; }
+        public virtual Branch? ParentBranch { get; set; }
 
         public DateTime CreateDate { get; set; }
 

@@ -1,5 +1,4 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Entities.Organization;
 using System;
 using System.Collections.Generic;
@@ -50,12 +49,12 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// </summary>
         public int? TeamId { get; set; }
         [ForeignKey("TeamId")]
-        public virtual Team Team { get; set; }
+        public virtual Team? Team { get; set; }
 
         [Required(ErrorMessage = "عنوان تسک را وارد کنید")]
         public string Title { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// 0- عادی
@@ -80,7 +79,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         
         public DateTime? ManagerApprovedDate { get; set; }
 
-        public string Location { get; set; }
+        public string? Location { get; set; }
 
         /// <summary>
         /// وضعیت کلی تسک
@@ -107,11 +106,11 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
   
         public int? ParentTaskId { get; set; }
         [ForeignKey("ParentTaskId")]
-        public virtual Tasks ParentTask { get; set; }
+        public virtual Tasks? ParentTask { get; set; }
 
         public int? BranchId { get; set; }
         [ForeignKey("BranchId")]
-        public virtual Branch Branch { get; set; }
+        public virtual Branch? Branch { get; set; }
 
         public string? CreatorUserId { get; set; }
         [ForeignKey("CreatorUserId")]
@@ -119,15 +118,15 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 
         public int? StakeholderId { get; set; }
         [ForeignKey("StakeholderId")]
-        public virtual Stakeholder Stakeholder { get; set; }
+        public virtual Stakeholder? Stakeholder { get; set; }
 
         public int? ContractId { get; set; }
         [ForeignKey("ContractId")]
-        public virtual Contract Contract { get; set; }
+        public virtual Contract? Contract { get; set; }
 
         public int? TaskCategoryId { get; set; }
         [ForeignKey("TaskCategoryId")]
-        public virtual TaskCategory TaskCategory { get; set; }
+        public virtual TaskCategory? TaskCategory { get; set; }
 
         public bool IsActive { get; set; }
 
@@ -143,12 +142,12 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public DateTime? LastUpdateDate { get; set; }
 
         // Navigation properties
-        public virtual ICollection<TaskAssignment> TaskAssignments { get; set; }
-        public virtual ICollection<TaskComment> TaskComments { get; set; }
-        public virtual ICollection<TaskAttachment> TaskAttachments { get; set; }
-        public virtual ICollection<TaskNotification> TaskNotifications { get; set; }
-        public virtual ICollection<TaskOperation> TaskOperations { get; set; }
-        public virtual ICollection<TaskViewer> TaskViewers { get; set; }
+        public virtual ICollection<TaskAssignment> TaskAssignments { get; set; } = new HashSet<TaskAssignment>();
+        public virtual ICollection<TaskComment> TaskComments { get; set; } = new HashSet<TaskComment>();
+        public virtual ICollection<TaskAttachment> TaskAttachments { get; set; } = new HashSet<TaskAttachment>();
+        public virtual ICollection<TaskNotification> TaskNotifications { get; set; } = new HashSet<TaskNotification>();
+        public virtual ICollection<TaskOperation> TaskOperations { get; set; } = new HashSet<TaskOperation>();
+        public virtual ICollection<TaskViewer> TaskViewers { get; set; } = new HashSet<TaskViewer>();
     }
 }
 

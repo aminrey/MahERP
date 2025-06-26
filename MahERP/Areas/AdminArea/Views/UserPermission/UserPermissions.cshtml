@@ -1,0 +1,187 @@
+﻿@model UserPermissionDetailViewModel
+@{
+    ViewData["Title"] = $"دسترسی‌های کاربر: {Model.FullName}";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">دسترسی‌های کاربر</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Home" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">دسترسی کاربران</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.FullName</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- User Permissions -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-key text-muted me-1"></i> دسترسی‌های فعلی
+                    </h3>
+                </div>
+                <div class="block-content block-content-full">
+                    @if (Model.Permissions.Any())
+                    {
+                        @foreach (var controllerGroup in Model.Permissions)
+                        {
+                            <div class="block block-rounded mb-4">
+                                <div class="block-header block-header-default">
+                                    <h4 class="block-title">@controllerGroup.Key</h4>
+                                </div>
+                                <div class="block-content">
+                                    <div class="row">
+                                        @foreach (var permission in controllerGroup.Value)
+                                        {
+                                            var parts = permission.Split('.');
+                                            var actionType = parts.Length > 2 ? parts[2] : "";
+                                            var badgeClass = actionType switch {
+                                                "Read" => "bg-info",
+                                                "Create" => "bg-success", 
+                                                "Edit" => "bg-warning",
+                                                "Delete" => "bg-danger",
+                                                "Approve" => "bg-primary",
+                                                _ => "bg-secondary"
+                                            };
+                                            
+                                            <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                                                <span class="badge @badgeClass">@permission</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fa fa-exclamation-triangle me-1"></i>
+                            این کاربر هیچ دسترسی خاصی ندارد.
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- END User Permissions -->
+        </div>
+
+        <div class="col-md-4">
+            <!-- User Info -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-user text-muted me-1"></i> اطلاعات کاربر
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th class="text-end">نام کامل:</th>
+                            <td>@Model.FullName</td>
+                        </tr>
+                        <tr>
+                            <th class="text-end">نام کاربری:</th>
+                            <td>@Model.UserName</td>
+                        </tr>
+                        <tr>
+                            <th class="text-end">نقش‌های سیستم:</th>
+                            <td>
+                                @if (Model.SystemRoles.Any())
+                                {
+                                    @foreach (var role in Model.SystemRoles)
+                                    {
+                                        <span class="badge bg-secondary me-1">@role</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <!-- END User Info -->
+
+            <!-- Role Patterns -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-shield-alt text-muted me-1"></i> الگوهای نقش
+                    </h3>
+                </div>
+                <div class="block-content">
+                    @if (Model.RolePatterns.Any())
+                    {
+                        <div class="list-group push">
+                            @foreach (var pattern in Model.RolePatterns.Where(rp => rp.IsActive))
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">@pattern.PatternName</h6>
+                                            @if (!string.IsNullOrEmpty(pattern.Description))
+                                            {
+                                                <p class="mb-1 text-muted">@pattern.Description</p>
+                                            }
+                                            <small class="text-muted">
+                                                تخصیص: @ConvertDateTime.ConvertMiladiToShamsi(pattern.AssignDate, "yyyy/MM/dd")
+                                                توسط @pattern.AssignedByName
+                                            </small>
+                                            @if (pattern.StartDate.HasValue)
+                                            {
+                                                <br />
+                                                <small class="text-muted">
+                                                    شروع: @ConvertDateTime.ConvertMiladiToShamsi(pattern.StartDate.Value, "yyyy/MM/dd")
+                                                </small>
+                                            }
+                                            @if (pattern.EndDate.HasValue)
+                                            {
+                                                <br />
+                                                <small class="text-muted">
+                                                    پایان: @ConvertDateTime.ConvertMiladiToShamsi(pattern.EndDate.Value, "yyyy/MM/dd")
+                                                </small>
+                                            }
+                                        </div>
+                                        <span class="badge bg-success">فعال</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-1"></i>
+                            هیچ الگوی نقشی تخصیص نیافته است.
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- END Role Patterns -->
+        </div>
+    </div>
+
+    <div class="text-center">
+        <a asp-action="Index" class="btn btn-alt-secondary">
+            <i class="fa fa-arrow-right me-1"></i> بازگشت به لیست کاربران
+        </a>
+    </div>
+</div>
+<!-- END Page Content -->

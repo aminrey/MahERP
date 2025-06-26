@@ -1,0 +1,57 @@
+﻿@model UserRolePatternInfo
+
+<div class="modal-header @ViewBag.themeclass">
+    <h5 class="modal-title text-white">
+        <i class="fa fa-exclamation-triangle me-1"></i> @ViewBag.ViewTitle
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+</div>
+<div class="modal-body">
+    <div class="text-center py-3">
+        <div class="display-4 text-danger mb-3">
+            <i class="fa fa-user-times"></i>
+        </div>
+        <h4 class="mb-3">آیا از حذف این تخصیص اطمینان دارید؟</h4>
+        <div class="row">
+            <div class="col-12">
+                <table class="table table-borderless">
+                    <tr>
+                        <th class="text-end">الگوی نقش:</th>
+                        <td class="text-start"><strong>@Model.PatternName</strong></td>
+                    </tr>
+                    <tr>
+                        <th class="text-end">تخصیص دهنده:</th>
+                        <td class="text-start">@Model.AssignedByName</td>
+                    </tr>
+                    <tr>
+                        <th class="text-end">تاریخ تخصیص:</th>
+                        <td class="text-start">@ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <p class="text-muted">
+            با حذف این تخصیص، کاربر دیگر دسترسی‌های مربوط به این الگوی نقش را نخواهد داشت.
+        </p>
+    </div>
+</div>
+<div class="modal-footer">
+    <form asp-action="RemoveRolePatternPost" method="post" data-ajax="true" data-ajax-success="onRemoveSuccess" class="d-inline">
+        <input asp-for="Id" type="hidden" />
+        <button type="submit" class="@ViewBag.ButonClass">
+            <i class="fa fa-user-times me-1"></i> حذف تخصیص
+        </button>
+    </form>
+    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+        <i class="fa fa-times me-1"></i> انصراف
+    </button>
+</div>
+
+<script>
+    function onRemoveSuccess(response) {
+        if (response.success) {
+            $('#modal-userpermission').modal('hide');
+            location.reload();
+        }
+    }
+</script>

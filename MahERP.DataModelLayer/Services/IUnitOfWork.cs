@@ -2,42 +2,66 @@
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Repository;
+using System;
 
 namespace MahERP.DataModelLayer.Services
 {
-
-    public interface IUnitOfWork
+    public interface IUnitOfWork : IDisposable
     {
-        //Users
+        #region User and Role Management
         GenereicClass<AppUsers> UserManagerUW { get; }
-        GenereicClass<AppRoles> RoleManagerUW { get; }
-        GenereicClass<RolePattern> rolePatternUW { get; }
-        GenereicClass<RolePatternDetails> rolePatternDetailsUW { get; }
-        
-        //Stakeholders
+        GenereicClass<AppRoles> RoleUW { get; }
+        GenereicClass<RolePattern> RolePatternUW { get; }
+        GenereicClass<RolePatternDetails> RolePatternDetailsUW { get; }
+        GenereicClass<UserRolePattern> UserRolePatternUW { get; }
+        GenereicClass<PermissionLog> PermissionLogUW { get; }
+        #endregion
+
+        #region Organization
+        GenereicClass<Branch> BranchUW { get; }
+        GenereicClass<BranchUser> BranchUserUW { get; }
+        GenereicClass<Team> TeamUW { get; }
+        GenereicClass<TeamMember> TeamMemberUW { get; }
+        #endregion
+
+        #region Stakeholder Management
         GenereicClass<Stakeholder> StakeholderUW { get; }
         GenereicClass<StakeholderCRM> StakeholderCRMUW { get; }
         GenereicClass<StakeholderContact> StakeholderContactUW { get; }
-        
-        //Branches
-        GenereicClass<Branch> BranchUW { get; }
-        GenereicClass<BranchUser> BranchUserUW { get; }
-        GenereicClass<Contract> ContractUW { get; }
         GenereicClass<StakeholderBranch> StakeholderBranchUW { get; }
+        GenereicClass<Contract> ContractUW { get; }
+        #endregion
 
-        // Task Management repositories
+        #region Task Management
         GenereicClass<Tasks> TaskUW { get; }
         GenereicClass<TaskOperation> TaskOperationUW { get; }
         GenereicClass<TaskCategory> TaskCategoryUW { get; }
         GenereicClass<TaskAssignment> TaskAssignmentUW { get; }
         GenereicClass<TaskAttachment> TaskAttachmentUW { get; }
         GenereicClass<TaskComment> TaskCommentUW { get; }
+        GenereicClass<TaskCommentAttachment> TaskCommentAttachmentUW { get; }
+        GenereicClass<TaskCommentMention> TaskCommentMentionUW { get; }
+        GenereicClass<TaskNotification> TaskNotificationUW { get; }
+        GenereicClass<TaskSchedule> TaskScheduleUW { get; }
+        GenereicClass<TaskScheduleAssignment> TaskScheduleAssignmentUW { get; }
+        GenereicClass<TaskScheduleViewer> TaskScheduleViewerUW { get; }
+        GenereicClass<TaskTemplate> TaskTemplateUW { get; }
+        GenereicClass<TaskTemplateOperation> TaskTemplateOperationUW { get; }
+        GenereicClass<TaskViewer> TaskViewerUW { get; }
+        GenereicClass<PredefinedCopyDescription> PredefinedCopyDescriptionUW { get; }
+        #endregion
 
-        IEntityDataBaseTransaction BeginTransaction();
-        void Save();
-        void Dispose();
+        #region CRM Management
+        GenereicClass<CRMInteraction> CRMInteractionUW { get; }
+        GenereicClass<CRMAttachment> CRMAttachmentUW { get; }
+        GenereicClass<CRMComment> CRMCommentUW { get; }
+        GenereicClass<CRMParticipant> CRMParticipantUW { get; }
+        GenereicClass<CRMTeam> CRMTeamUW { get; }
+        GenereicClass<TaskCRMDetails> TaskCRMDetailsUW { get; }
+        #endregion
+
+        int Save();
     }
-
-
 }

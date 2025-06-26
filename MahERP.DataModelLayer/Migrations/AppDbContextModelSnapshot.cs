@@ -53,29 +53,53 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
-                });
 
-            modelBuilder.Entity("MahERP.DataModelLayer.AcControl.RolePatternDetails", b =>
-                {
-                    b.Property<int>("RolePatternDetailsID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RolePatternDetailsID"));
-
-                    b.Property<string>("RoleID")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("RolePatternID")
-                        .HasColumnType("int");
-
-                    b.HasKey("RolePatternDetailsID");
-
-                    b.HasIndex("RoleID");
-
-                    b.HasIndex("RolePatternID");
-
-                    b.ToTable("RolePatternDetails_Tbl");
+                    b.HasData(
+                        new
+                        {
+                            Id = "1",
+                            ConcurrencyStamp = "8e446cc7-743a-4133-8241-0f374fcbbc0d",
+                            Description = "مدیر سیستم",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN",
+                            RoleLevel = "1"
+                        },
+                        new
+                        {
+                            Id = "2",
+                            ConcurrencyStamp = "5b6877d1-6fe6-4f8c-92a4-33fdf65a391f",
+                            Description = "مدیر",
+                            Name = "Manager",
+                            NormalizedName = "MANAGER",
+                            RoleLevel = "2"
+                        },
+                        new
+                        {
+                            Id = "3",
+                            ConcurrencyStamp = "8f4cee96-4bf9-4019-b589-4de5c0230e2c",
+                            Description = "سرپرست",
+                            Name = "Supervisor",
+                            NormalizedName = "SUPERVISOR",
+                            RoleLevel = "3"
+                        },
+                        new
+                        {
+                            Id = "4",
+                            ConcurrencyStamp = "523c9ab5-4b4c-43e2-84be-12c4b6f74eed",
+                            Description = "کارمند",
+                            Name = "Employee",
+                            NormalizedName = "EMPLOYEE",
+                            RoleLevel = "4"
+                        },
+                        new
+                        {
+                            Id = "5",
+                            ConcurrencyStamp = "aa5d01a0-a905-44ef-9e53-9c694828dbff",
+                            Description = "کاربر عادی",
+                            Name = "User",
+                            NormalizedName = "USER",
+                            RoleLevel = "5"
+                        });
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.AppUsers", b =>
@@ -226,7 +250,6 @@ namespace MahERP.DataModelLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
@@ -237,12 +260,10 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -256,7 +277,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ManagerName")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -269,7 +289,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
@@ -280,6 +299,17 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("ParentId");
 
                     b.ToTable("Branch_Tbl");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "شعبه اصلی سازمان",
+                            IsActive = true,
+                            IsMainBranch = true,
+                            Name = "دفتر مرکزی"
+                        });
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchUser", b =>
@@ -330,11 +360,12 @@ namespace MahERP.DataModelLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ContractNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("ContractValue")
+                    b.Property<byte>("ContractType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<decimal?>("ContractValue")
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<DateTime>("CreateDate")
@@ -345,9 +376,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
@@ -359,7 +388,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("LastUpdaterUserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("StakeholderId")
@@ -371,10 +399,12 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
 
+                    b.Property<string>("Terms")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -387,23 +417,385 @@ namespace MahERP.DataModelLayer.Migrations
                     b.ToTable("Contract_Tbl");
                 });
 
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.RolePattern", b =>
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.PermissionLog", b =>
                 {
-                    b.Property<int>("RolePatternID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RolePatternID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("RolePatternDescription")
+                    b.Property<bool>("AccessGranted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RolePatternName")
+                    b.Property<DateTime>("ActionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte>("ActionType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Controller")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("RolePatternID");
+                    b.Property<string>("DenialReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RequestData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PermissionLog_Tbl");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.RolePattern", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte>("AccessLevel")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystemPattern")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PatternName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("PatternName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RolePattern_PatternName");
 
                     b.ToTable("RolePattern_Tbl");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AccessLevel = (byte)1,
+                            CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatorUserId = "system",
+                            Description = "دسترسی کامل به تمام بخش‌ها",
+                            IsActive = true,
+                            IsSystemPattern = true,
+                            PatternName = "مدیریت کامل"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AccessLevel = (byte)2,
+                            CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatorUserId = "system",
+                            Description = "مدیریت عملیات و تسک‌ها",
+                            IsActive = true,
+                            IsSystemPattern = true,
+                            PatternName = "مدیر عملیات"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            AccessLevel = (byte)4,
+                            CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatorUserId = "system",
+                            Description = "دسترسی به ماژول فروش و CRM",
+                            IsActive = true,
+                            IsSystemPattern = true,
+                            PatternName = "کارشناس فروش"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            AccessLevel = (byte)5,
+                            CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatorUserId = "system",
+                            Description = "دسترسی محدود به تسک‌های شخصی",
+                            IsActive = true,
+                            IsSystemPattern = true,
+                            PatternName = "کاربر عادی"
+                        });
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.RolePatternDetails", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("CanApprove")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanCreate")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanDelete")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanEdit")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ControllerName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<byte>("DataAccessLevel")
+                        .HasColumnType("tinyint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RolePatternId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RolePatternId");
+
+                    b.ToTable("RolePatternDetails_Tbl");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "Task",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "CRM",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "Stakeholder",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 4,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "Contract",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 5,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "User",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 6,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "RolePattern",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 7,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "Task",
+                            DataAccessLevel = (byte)1,
+                            IsActive = true,
+                            RolePatternId = 2
+                        },
+                        new
+                        {
+                            Id = 8,
+                            ActionName = "Index,Details,Create,Edit",
+                            CanApprove = false,
+                            CanCreate = true,
+                            CanDelete = false,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "CRM",
+                            DataAccessLevel = (byte)1,
+                            IsActive = true,
+                            RolePatternId = 2
+                        },
+                        new
+                        {
+                            Id = 9,
+                            ActionName = "Index,Details",
+                            CanApprove = false,
+                            CanCreate = false,
+                            CanDelete = false,
+                            CanEdit = false,
+                            CanRead = true,
+                            ControllerName = "Stakeholder",
+                            DataAccessLevel = (byte)1,
+                            IsActive = true,
+                            RolePatternId = 2
+                        },
+                        new
+                        {
+                            Id = 10,
+                            ActionName = "*",
+                            CanApprove = false,
+                            CanCreate = true,
+                            CanDelete = false,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "CRM",
+                            DataAccessLevel = (byte)0,
+                            IsActive = true,
+                            RolePatternId = 3
+                        },
+                        new
+                        {
+                            Id = 11,
+                            ActionName = "Index,Details,Create,Edit",
+                            CanApprove = false,
+                            CanCreate = true,
+                            CanDelete = false,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "Stakeholder",
+                            DataAccessLevel = (byte)0,
+                            IsActive = true,
+                            RolePatternId = 3
+                        },
+                        new
+                        {
+                            Id = 12,
+                            ActionName = "Index,Details,MyTasks",
+                            CanApprove = false,
+                            CanCreate = false,
+                            CanDelete = false,
+                            CanEdit = false,
+                            CanRead = true,
+                            ControllerName = "Task",
+                            DataAccessLevel = (byte)0,
+                            IsActive = true,
+                            RolePatternId = 3
+                        },
+                        new
+                        {
+                            Id = 13,
+                            ActionName = "Index,Details,MyTasks",
+                            CanApprove = false,
+                            CanCreate = false,
+                            CanDelete = false,
+                            CanEdit = false,
+                            CanRead = true,
+                            ControllerName = "Task",
+                            DataAccessLevel = (byte)0,
+                            IsActive = true,
+                            RolePatternId = 4
+                        });
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", b =>
@@ -415,14 +807,12 @@ namespace MahERP.DataModelLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("BranchId")
                         .HasColumnType("int");
 
                     b.Property<string>("CompanyName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreateDate")
@@ -433,11 +823,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FirstName")
@@ -455,19 +843,15 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Mobile")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NationalCode")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PostalCode")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte>("StakeholderType")
@@ -535,7 +919,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FirstName")
@@ -553,15 +936,12 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Mobile")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Position")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("StakeholderId")
@@ -572,6 +952,53 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("StakeholderId");
 
                     b.ToTable("StakeholderContact_Tbl");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserRolePattern", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AssignDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RolePatternId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedByUserId");
+
+                    b.HasIndex("RolePatternId");
+
+                    b.HasIndex("UserId", "RolePatternId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserRolePattern_User_Pattern");
+
+                    b.ToTable("UserRolePattern_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityAttachment", b =>
@@ -631,16 +1058,11 @@ namespace MahERP.DataModelLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ActivityCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<byte>("ActivityType")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("BranchId")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("CompletionDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<int?>("ContractId")
                         .HasColumnType("int");
@@ -653,10 +1075,12 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
@@ -671,14 +1095,17 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<string>("LastUpdaterUserId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<byte>("ModuleType")
-                        .HasColumnType("tinyint");
-
                     b.Property<byte>("Priority")
                         .HasColumnType("tinyint");
 
+                    b.Property<int>("ProgressPercentage")
+                        .HasColumnType("int");
+
                     b.Property<int?>("StakeholderId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
@@ -812,11 +1239,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NewValue")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OldValue")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -990,7 +1415,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte>("Direction")
@@ -1000,8 +1424,8 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("EmailAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("EndTime")
                         .HasColumnType("datetime2");
@@ -1016,23 +1440,21 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("LastUpdaterUserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("MeetingLocation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime?>("NextFollowUpDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NextFollowUpNote")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<byte>("Result")
                         .HasColumnType("tinyint");
@@ -1173,7 +1595,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreditRating")
-                        .IsRequired()
                         .HasMaxLength(1)
                         .HasColumnType("nvarchar(1)");
 
@@ -1181,12 +1602,10 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Industry")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("InternalNotes")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LastContactDate")
@@ -1202,11 +1621,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("Preferences")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SalesRepUserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<byte>("SalesStage")
@@ -1239,18 +1656,15 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("EmailAddress")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("NextFollowUpDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NextFollowUpNote")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte>("Result")
@@ -1417,6 +1831,64 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PredefinedCopyDescription_Tbl");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "جهت اطلاع و پیگیری",
+                            IsActive = true,
+                            Title = "جهت اطلاع"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "جهت انجام اقدامات لازم",
+                            IsActive = true,
+                            Title = "جهت اقدام"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "جهت بررسی و اعلام نظر",
+                            IsActive = true,
+                            Title = "جهت بررسی"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Description = "جهت تایید و ابلاغ",
+                            IsActive = true,
+                            Title = "جهت تایید"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Description = "جهت نظارت و کنترل",
+                            IsActive = true,
+                            Title = "جهت نظارت"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Description = "جهت هماهنگی‌های لازم",
+                            IsActive = true,
+                            Title = "جهت هماهنگی"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Description = "جهت پیگیری و گزارش",
+                            IsActive = true,
+                            Title = "جهت پیگیری"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Description = "جهت اجرای دستورات",
+                            IsActive = true,
+                            Title = "جهت اجرا"
+                        });
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskAssignment", b =>
@@ -1576,6 +2048,88 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("ParentCategoryId");
 
                     b.ToTable("TaskCategory_Tbl");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "دسته‌بندی عمومی برای تسک‌ها",
+                            DisplayOrder = (byte)1,
+                            IsActive = true,
+                            Title = "عمومی"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "تسک‌های مربوط به امور اداری",
+                            DisplayOrder = (byte)2,
+                            IsActive = true,
+                            Title = "اداری"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "تسک‌های فنی و تخصصی",
+                            DisplayOrder = (byte)3,
+                            IsActive = true,
+                            Title = "فنی"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Description = "تسک‌های مربوط به فروش",
+                            DisplayOrder = (byte)4,
+                            IsActive = true,
+                            Title = "فروش"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Description = "تسک‌های مربوط به خدمات مشتریان",
+                            DisplayOrder = (byte)5,
+                            IsActive = true,
+                            Title = "خدمات"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Description = "تسک‌های بازاریابی و تبلیغات",
+                            DisplayOrder = (byte)6,
+                            IsActive = true,
+                            Title = "بازاریابی"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Description = "تسک‌های مربوط به امور مالی",
+                            DisplayOrder = (byte)7,
+                            IsActive = true,
+                            Title = "مالی"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Description = "تسک‌های مربوط به HR",
+                            DisplayOrder = (byte)8,
+                            IsActive = true,
+                            Title = "منابع انسانی"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Description = "تسک‌های پروژه‌ای",
+                            DisplayOrder = (byte)9,
+                            IsActive = true,
+                            Title = "پروژه"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Description = "تسک‌های فوری و اضطراری",
+                            DisplayOrder = (byte)10,
+                            IsActive = true,
+                            Title = "فوری"
+                        });
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskComment", b =>
@@ -1586,9 +2140,12 @@ namespace MahERP.DataModelLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Content")
+                    b.Property<string>("CommentText")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte>("CommentType")
+                        .HasColumnType("tinyint");
 
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("datetime2");
@@ -1596,6 +2153,15 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<string>("CreatorUserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("EditDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsImportant")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsPrivate")
                         .HasColumnType("bit");
@@ -1768,12 +2334,17 @@ namespace MahERP.DataModelLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("ActualHours")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("CompletedByUserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("CompletionDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("CompletionNote")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("datetime2");
@@ -1783,10 +2354,15 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("EstimatedHours")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
                         .HasColumnType("bit");
 
                     b.Property<int>("OperationOrder")
@@ -1941,7 +2517,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskScheduleAssignment");
+                    b.ToTable("TaskScheduleAssignment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleExecution", b =>
@@ -1982,6 +2558,42 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("ScheduleId");
 
                     b.ToTable("TaskScheduleExecution");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleViewer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("AddedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AddedByUserId");
+
+                    b.HasIndex("ScheduleId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TaskScheduleViewer_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplate", b =>
@@ -2142,7 +2754,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("DueDate")
@@ -2167,7 +2778,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Location")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool?>("ManagerApproved")
@@ -2350,23 +2960,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("MahERP.DataModelLayer.AcControl.RolePatternDetails", b =>
-                {
-                    b.HasOne("MahERP.DataModelLayer.AcControl.AppRoles", "Roles")
-                        .WithMany()
-                        .HasForeignKey("RoleID");
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.RolePattern", "RP")
-                        .WithMany()
-                        .HasForeignKey("RolePatternID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RP");
-
-                    b.Navigation("Roles");
-                });
-
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.AppUsers", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "DirectManager")
@@ -2429,8 +3022,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
                         .HasForeignKey("LastUpdaterUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
                         .WithMany("Contracts")
@@ -2443,6 +3035,46 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("LastUpdater");
 
                     b.Navigation("Stakeholder");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.PermissionLog", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.RolePattern", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
+                        .WithMany()
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("LastUpdater");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.RolePatternDetails", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.RolePattern", "RolePattern")
+                        .WithMany("RolePatternDetails")
+                        .HasForeignKey("RolePatternId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RolePattern");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", b =>
@@ -2496,6 +3128,33 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsRequired();
 
                     b.Navigation("Stakeholder");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserRolePattern", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedByUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.RolePattern", "RolePattern")
+                        .WithMany("UserRolePatterns")
+                        .HasForeignKey("RolePatternId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedByUser");
+
+                    b.Navigation("RolePattern");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityAttachment", b =>
@@ -2728,8 +3387,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
                         .HasForeignKey("LastUpdaterUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.StakeholderContact", "StakeholderContact")
                         .WithMany()
@@ -2809,8 +3467,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "SalesRep")
                         .WithMany()
                         .HasForeignKey("SalesRepUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
                         .WithMany()
@@ -3068,8 +3725,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "CompletedByUser")
                         .WithMany()
                         .HasForeignKey("CompletedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
@@ -3169,6 +3825,33 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("CreatedTask");
 
                     b.Navigation("Schedule");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleViewer", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AddedByUser")
+                        .WithMany()
+                        .HasForeignKey("AddedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskSchedule", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AddedByUser");
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplate", b =>
@@ -3357,6 +4040,13 @@ namespace MahERP.DataModelLayer.Migrations
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Contract", b =>
                 {
                     b.Navigation("TaskList");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.RolePattern", b =>
+                {
+                    b.Navigation("RolePatternDetails");
+
+                    b.Navigation("UserRolePatterns");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", b =>
