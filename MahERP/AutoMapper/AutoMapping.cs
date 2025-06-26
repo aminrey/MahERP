@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
+using MahERP.DataModelLayer.ViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 
 namespace MahERP.AutoMapper
@@ -62,6 +64,53 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
                 .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskList, opt => opt.Ignore());
+            // Tasks mapping
+            CreateMap<Tasks, TaskViewModel>()
+                .ForMember(dest => dest.CategoryTitle, opt => opt.MapFrom(src => src.TaskCategory != null ? src.TaskCategory.Title : null))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
+                .ForMember(dest => dest.StakeholderName, opt => opt.MapFrom(src => src.Stakeholder != null ? $"{src.Stakeholder.FirstName} {src.Stakeholder.LastName}" : null))
+                .ForMember(dest => dest.ContractTitle, opt => opt.MapFrom(src => src.Contract != null ? src.Contract.Title : null))
+                .ForMember(dest => dest.Operations, opt => opt.Ignore())
+                .ForMember(dest => dest.Assignments, opt => opt.Ignore())
+                .ForMember(dest => dest.Attachments, opt => opt.Ignore());
+
+            CreateMap<TaskViewModel, Tasks>()
+                .ForMember(dest => dest.TaskCategory, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.Stakeholder, opt => opt.Ignore())
+                .ForMember(dest => dest.Contract, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskOperations, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskAssignments, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskAttachments, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskComments, opt => opt.Ignore());
+
+            // Task operations mapping
+            CreateMap<TaskOperation, TaskOperationViewModel>()
+                .ForMember(dest => dest.CompletedByUserName, opt => opt.MapFrom(src => src.CompletedByUser != null ? $"{src.CompletedByUser.FirstName} {src.CompletedByUser.LastName}" : null));
+
+            CreateMap<TaskOperationViewModel, TaskOperation>()
+                .ForMember(dest => dest.Task, opt => opt.Ignore())
+                .ForMember(dest => dest.CompletedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore());
+
+            // Task assignments mapping
+            CreateMap<TaskAssignment, TaskAssignmentViewModel>()
+                .ForMember(dest => dest.AssignedUserName, opt => opt.MapFrom(src => src.AssignedUser != null ? $"{src.AssignedUser.FirstName} {src.AssignedUser.LastName}" : null))
+                .ForMember(dest => dest.AssignerUserName, opt => opt.MapFrom(src => src.AssignerUser != null ? $"{src.AssignerUser.FirstName} {src.AssignerUser.LastName}" : null));
+
+            CreateMap<TaskAssignmentViewModel, TaskAssignment>()
+                .ForMember(dest => dest.Task, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignedUser, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignerUser, opt => opt.Ignore());
+
+            // Task categories mapping
+            CreateMap<TaskCategory, TaskCategoryViewModel>()
+                .ForMember(dest => dest.ParentCategoryTitle, opt => opt.MapFrom(src => src.ParentCategory != null ? src.ParentCategory.Title : null));
+
+            CreateMap<TaskCategoryViewModel, TaskCategory>()
+                .ForMember(dest => dest.ParentCategory, opt => opt.Ignore());
+
+
         }
     }
 }

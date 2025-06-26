@@ -1,0 +1,639 @@
+﻿@model TaskViewModel
+@{
+    ViewData["Title"] = "جزئیات تسک";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isAssignedToCurrentUser = Model.Assignments?.Any(a => a.AssignedUserId == currentUserId) ?? false;
+    var isManager = User.IsInRole("Admin") || User.IsInRole("Manager");
+    var isSupervisor = User.IsInRole("Supervisor") || isManager;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">جزئیات تسک</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">تسک‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">جزئیات</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content">
+    <!-- Quick Actions -->
+    <div class="row push">
+        <div class="col-sm-6 col-xl-3">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" asp-action="Edit" asp-route-id="@Model.Id">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold text-primary mb-1">
+                        <i class="fa fa-pencil-alt"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-primary text-uppercase mb-0">
+                        ویرایش تسک
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="loadModal('@Url.Action("CompleteTask", new { id = Model.Id })')">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold text-@(Model.CompletionDate.HasValue ? "warning" : "success") mb-1">
+                        <i class="fa fa-@(Model.CompletionDate.HasValue ? "redo" : "check")"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-@(Model.CompletionDate.HasValue ? "warning" : "success") text-uppercase mb-0">
+                        @(Model.CompletionDate.HasValue ? "بازگشایی" : "تکمیل")
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="loadModal('@Url.Action("AddOperation", new { taskId = Model.Id })')">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold text-info mb-1">
+                        <i class="fa fa-plus-circle"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-info text-uppercase mb-0">
+                        افزودن عملیات
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="loadModal('@Url.Action("AssignTask", new { taskId = Model.Id })')">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold text-dark mb-1">
+                        <i class="fa fa-user-plus"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-dark text-uppercase mb-0">
+                        اختصاص کاربر
+                    </p>
+                </div>
+            </a>
+        </div>
+    </div>
+    <!-- END Quick Actions -->
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Task Details -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-tasks text-muted me-1"></i> جزئیات تسک
+                    </h3>
+                    <div class="block-options">
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-alt-secondary" id="dropdown-default-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-fw fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-default-alt-secondary">
+                                <a class="dropdown-item" href="javascript:void(0)" onclick="loadModal('@Url.Action("ToggleActiveStatus", new { id = Model.Id })')">
+                                    <i class="fa fa-fw @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-1"></i> @(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="loadModal('@Url.Action("Delete", new { id = Model.Id })')">
+                                    <i class="fa fa-fw fa-trash-alt me-1"></i> حذف
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h2 class="mb-1">@Model.Title</h2>
+                            <div class="fs-sm text-muted">
+                                <span class="badge bg-primary">@Model.TaskCode</span> |
+                                <span>ایجاد: @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd")</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="mb-2">
+                                @if (Model.IsDeleted)
+                                {
+                                    <span class="badge bg-danger p-2">حذف شده</span>
+                                }
+                                else if (!Model.IsActive)
+                                {
+                                    <span class="badge bg-warning p-2">غیرفعال</span>
+                                }
+                                else if (Model.CompletionDate.HasValue && Model.ManagerApprovedDate.HasValue)
+                                {
+                                    <span class="badge bg-success p-2">تکمیل و تایید شده</span>
+                                }
+                                else if (Model.CompletionDate.HasValue && Model.SupervisorApprovedDate.HasValue)
+                                {
+                                    <span class="badge bg-info p-2">تایید سرپرست</span>
+                                }
+                                else if (Model.CompletionDate.HasValue)
+                                {
+                                    <span class="badge bg-primary p-2">تکمیل شده</span>
+                                }
+                                else if (Model.DueDate.HasValue && DateTime.Now > Model.DueDate.Value)
+                                {
+                                    <span class="badge bg-danger p-2">تاخیر</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info p-2">در حال انجام</span>
+                                }
+                            </div>
+                            @if (Model.DueDate.HasValue)
+                            {
+                                <div class="fs-sm">
+                                    <span class="fw-bold">مهلت انجام:</span>
+                                    <span class="@(Model.DueDate.Value < DateTime.Now && !Model.CompletionDate.HasValue ? "text-danger" : "")">
+                                        @ConvertDateTime.ConvertMiladiToShamsi(Model.DueDate.Value, "yyyy/MM/dd")
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4>توضیحات</h4>
+                            <div class="p-2 bg-body-light rounded">
+                                @if (string.IsNullOrEmpty(Model.Description))
+                                {
+                                    <p class="text-muted">توضیحاتی ثبت نشده است.</p>
+                                }
+                                else
+                                {
+                                    <p>@Html.Raw(Model.Description.Replace("\n", "<br/>"))</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Task Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h4>اطلاعات تسک</h4>
+                            <table class="table table-bordered table-striped table-vcenter">
+                                <tbody>
+                                    <tr>
+                                        <th class="text-center" style="width: 40%;">دسته‌بندی</th>
+                                        <td class="text-center">@(string.IsNullOrEmpty(Model.CategoryTitle) ? "بدون دسته‌بندی" : Model.CategoryTitle)</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-center">طرف حساب</th>
+                                        <td class="text-center">@(string.IsNullOrEmpty(Model.StakeholderName) ? "ندارد" : Model.StakeholderName)</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-center">ایجاد کننده</th>
+                                        <td class="text-center">@(string.IsNullOrEmpty(Model.CreatorName) ? "نامشخص" : Model.CreatorName)</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-center">نوع تسک</th>
+                                        <td class="text-center">
+                                            @switch (Model.TaskType)
+                                            {
+                                                case 0:
+                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-info-light text-info">عادی</span>
+                                                    break;
+                                                case 1:
+                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-warning-light text-warning">مهم</span>
+                                                    break;
+                                                case 2:
+                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-danger-light text-danger">اضطراری</span>
+                                                    break;
+                                                default:
+                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-info-light text-info">عادی</span>
+                                                    break;
+                                            }
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>وضعیت تکمیل</h4>
+                            <table class="table table-bordered table-striped table-vcenter">
+                                <tbody>
+                                    <tr>
+                                        <th class="text-center" style="width: 40%;">تکمیل شده</th>
+                                        <td class="text-center">
+                                            @if (Model.CompletionDate.HasValue)
+                                            {
+                                                <span class="text-success">بله - @ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate.Value, "yyyy/MM/dd")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-danger">خیر</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-center">تایید سرپرست</th>
+                                        <td class="text-center">
+                                            @if (Model.SupervisorApprovedDate.HasValue)
+                                            {
+                                                <span class="text-success">بله - @ConvertDateTime.ConvertMiladiToShamsi(Model.SupervisorApprovedDate.Value, "yyyy/MM/dd")</span>
+                                            }
+                                            else if (Model.CompletionDate.HasValue && isSupervisor)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-alt-success" onclick="approveBySupervisor(@Model.Id)">
+                                                    <i class="fa fa-check opacity-50 me-1"></i> تایید
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-danger">خیر</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-center">تایید مدیر</th>
+                                        <td class="text-center">
+                                            @if (Model.ManagerApprovedDate.HasValue)
+                                            {
+                                                <span class="text-success">بله - @ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate.Value, "yyyy/MM/dd")</span>
+                                            }
+                                            else if (Model.SupervisorApprovedDate.HasValue && isManager)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-alt-success" onclick="approveByManager(@Model.Id)">
+                                                    <i class="fa fa-check opacity-50 me-1"></i> تایید
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-danger">خیر</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-center">درصد پیشرفت</th>
+                                        <td class="text-center">
+                                            <div class="progress push mb-0">
+                                                <div class="progress-bar progress-bar-striped @(Model.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" role="progressbar"
+                                                     style="width: @Model.ProgressPercentage%" aria-valuenow="@Model.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
+                                                    <span class="fs-sm fw-semibold">@Model.ProgressPercentage%</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END Task Details -->
+            <!-- Task Operations -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-cogs text-muted me-1"></i> عملیات‌های تسک
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn btn-sm btn-alt-primary" onclick="loadModal('@Url.Action("AddOperation", new { taskId = Model.Id })')">
+                            <i class="fa fa-plus opacity-50 me-1"></i> افزودن عملیات
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content block-content-full">
+                    @if (Model.Operations == null || !Model.Operations.Any())
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-1"></i> هیچ عملیاتی برای این تسک تعریف نشده است.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-vcenter js-dataTable-responsive">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width: 80px;">ردیف</th>
+                                        <th class="text-center">عنوان عملیات</th>
+                                        <th class="text-center d-none d-md-table-cell">توضیحات</th>
+                                        <th class="text-center" style="width: 120px;">وضعیت</th>
+                                        <th class="text-center d-none d-lg-table-cell" style="width: 150px;">تاریخ تکمیل</th>
+                                        <th class="text-center" style="width: 120px;">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var operation in Model.Operations.OrderBy(o => o.OperationOrder))
+                                    {
+                                        <tr>
+                                            <td class="text-center fs-sm">
+                                                <strong>@operation.OperationOrder</strong>
+                                            </td>
+                                            <td class="text-center fw-semibold fs-sm">
+                                                @operation.Title
+                                            </td>
+                                            <td class="text-center d-none d-md-table-cell fs-sm">
+                                                @(string.IsNullOrEmpty(operation.Description) ? "-" : (operation.Description.Length > 100 ? operation.Description.Substring(0, 97) + "..." : operation.Description))
+                                            </td>
+                                            <td class="text-center">
+                                                @if (operation.IsCompleted)
+                                                {
+                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-success-light text-success">تکمیل شده</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-warning-light text-warning">در انتظار</span>
+                                                }
+                                            </td>
+                                            <td class="text-center d-none d-lg-table-cell fs-sm">
+                                                @(operation.CompletionDate.HasValue ? ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate, "yyyy/MM/dd") : "-")
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-alt-secondary" onclick="toggleOperationCompletion(@operation.Id)" data-bs-toggle="tooltip" title="@(operation.IsCompleted ? "بازگشت به حالت در انتظار" : "تکمیل عملیات")">
+                                                        <i class="fa fa-fw @(operation.IsCompleted ? "fa-undo text-warning" : "fa-check text-success")"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-alt-secondary" onclick="loadModal('@Url.Action("EditOperation", new { id = operation.Id })')" data-bs-toggle="tooltip" title="ویرایش">
+                                                        <i class="fa fa-fw fa-pencil-alt"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        <i class="fa fa-fw fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-end fs-sm">
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="loadModal('@Url.Action("DeleteOperation", new { id = operation.Id })')">
+                                                            <i class="fa fa-fw fa-trash-alt me-1"></i> حذف
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- END Task Operations -->
+        </div>
+        <div class="col-md-4">
+            <!-- Task Assignments -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-users text-muted me-1"></i> کاربران اختصاص داده شده
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn btn-sm btn-alt-primary" onclick="loadModal('@Url.Action("AssignTask", new { taskId = Model.Id })')">
+                            <i class="fa fa-user-plus opacity-50 me-1"></i> اختصاص
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content">
+                    @if (Model.Assignments == null || !Model.Assignments.Any())
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-1"></i> هیچ کاربری به این تسک اختصاص داده نشده است.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group push">
+                            @foreach (var assignment in Model.Assignments)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-semibold">@assignment.AssignedUserName</span>
+                                        @if (!string.IsNullOrEmpty(assignment.Description))
+                                        {
+                                            <div class="fs-sm text-muted">@assignment.Description</div>
+                                        }
+                                        <div class="fs-sm text-muted">
+                                            <i class="fa fa-calendar-check"></i> تاریخ تخصیص: @(ConvertDateTime.ConvertMiladiToShamsi(assignment.AssignDate, "yyyy/MM/dd"))
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-alt-danger" onclick="loadModal('@Url.Action("RemoveAssignment", new { id = assignment.Id })')" data-bs-toggle="tooltip" title="حذف تخصیص">
+                                        <i class="fa fa-user-minus"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- END Task Assignments -->
+            <!-- Task Info -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-chart-pie text-muted me-1"></i> اطلاعات تکمیلی
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <!-- Completion -->
+                    <div class="mb-4">
+                        <h5>درصد تکمیل</h5>
+                        <div class="progress push">
+                            <div class="progress-bar progress-bar-striped @(Model.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" role="progressbar"
+                                 style="width: @Model.ProgressPercentage%" aria-valuenow="@Model.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
+                                <span class="fs-sm fw-semibold">@Model.ProgressPercentage%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Timeline -->
+                    <h5>تاریخچه فعالیت</h5>
+                    <ul class="timeline timeline-alt">
+                        <li class="timeline-event">
+                            <div class="timeline-event-icon bg-primary">
+                                <i class="fa fa-plus"></i>
+                            </div>
+                            <div class="timeline-event-block block block-rounded">
+                                <div class="block-header block-header-default">
+                                    <h3 class="block-title">ایجاد تسک</h3>
+                                    <div class="block-options">
+                                        <div class="timeline-event-time block-options-item fs-sm">
+                                            @(ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd"))
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="block-content">
+                                    <p class="fw-semibold mb-2">
+                                        تسک توسط @Model.CreatorName ایجاد شد.
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                        @if (Model.CompletionDate.HasValue)
+                        {
+                            <li class="timeline-event">
+                                <div class="timeline-event-icon bg-success">
+                                    <i class="fa fa-check"></i>
+                                </div>
+                                <div class="timeline-event-block block block-rounded">
+                                    <div class="block-header block-header-default">
+                                        <h3 class="block-title">تکمیل تسک</h3>
+                                        <div class="block-options">
+                                            <div class="timeline-event-time block-options-item fs-sm">
+                                                @(ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate, "yyyy/MM/dd"))
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="block-content">
+                                        <p class="fw-semibold mb-2">
+                                            تسک تکمیل شد.
+                                        </p>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                        @if (Model.SupervisorApprovedDate.HasValue)
+                        {
+                            <li class="timeline-event">
+                                <div class="timeline-event-icon bg-info">
+                                    <i class="fa fa-check-double"></i>
+                                </div>
+                                <div class="timeline-event-block block block-rounded">
+                                    <div class="block-header block-header-default">
+                                        <h3 class="block-title">تایید سرپرست</h3>
+                                        <div class="block-options">
+                                            <div class="timeline-event-time block-options-item fs-sm">
+                                                @(ConvertDateTime.ConvertMiladiToShamsi(Model.SupervisorApprovedDate, "yyyy/MM/dd"))
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="block-content">
+                                        <p class="fw-semibold mb-2">
+                                            تسک توسط سرپرست تایید شد.
+                                        </p>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                        @if (Model.ManagerApprovedDate.HasValue)
+                        {
+                            <li class="timeline-event">
+                                <div class="timeline-event-icon bg-modern">
+                                    <i class="fa fa-award"></i>
+                                </div>
+                                <div class="timeline-event-block block block-rounded">
+                                    <div class="block-header block-header-default">
+                                        <h3 class="block-title">تایید مدیر</h3>
+                                        <div class="block-options">
+                                            <div class="timeline-event-time block-options-item fs-sm">
+                                                @(ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate, "yyyy/MM/dd"))
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="block-content">
+                                        <p class="fw-semibold mb-2">
+                                            تسک توسط مدیر تایید شد.
+                                        </p>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+            <!-- END Task Info -->
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+<!-- Modal Container for dynamic content -->
+<div class="modal fade" id="modal-task" tabindex="-1" role="dialog" aria-labelledby="modal-task" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <!-- Dynamic content will be loaded here -->
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
+                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Function to open modal and load content
+        function loadModal(url) {
+            $('#modal-task .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
+            $('#modal-task').modal('show');
+
+            // Load content via AJAX
+            $.get(url, function(data) {
+                $('#modal-task .modal-content').html(data);
+            });
+        }
+
+        function toggleOperationCompletion(operationId) {
+            $.ajax({
+                url: '@Url.Action("ToggleOperationCompletion")',
+                type: 'POST',
+                data: { id: operationId },
+                success: function (result) {
+                    if (result.success) {
+                        // Reload the page to show updated state
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + result.message);
+                    }
+                },
+                error: function () {
+                    alert('خطا در ارتباط با سرور');
+                }
+            });
+        }
+
+        function approveBySupervisor(taskId) {
+            $.ajax({
+                url: '@Url.Action("ApproveTaskBySupervisor")',
+                type: 'POST',
+                data: { id: taskId },
+                success: function (result) {
+                    if (result.success) {
+                        // Reload the page to show updated state
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + result.message);
+                    }
+                },
+                error: function () {
+                    alert('خطا در ارتباط با سرور');
+                }
+            });
+        }
+
+        function approveByManager(taskId) {
+            $.ajax({
+                url: '@Url.Action("ApproveTaskByManager")',
+                type: 'POST',
+                data: { id = taskId },
+                success: function (result) {
+                    if (result.success) {
+                        // Reload the page to show updated state
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + result.message);
+                    }
+                },
+                error: function () {
+                    alert('خطا در ارتباط با سرور');
+                }
+            });
+        }
+
+        // Initialize DataTable and tooltips
+        $(document).ready(function() {
+            $('.js-dataTable-responsive').DataTable({
+                language: {
+                    url: '/assets/js/plugins/datatables/i18n/fa.json'
+                },
+                autoWidth: false,
+                responsive: true
+            });
+
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

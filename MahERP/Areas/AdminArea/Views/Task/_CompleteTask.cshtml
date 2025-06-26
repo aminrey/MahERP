@@ -1,0 +1,47 @@
+﻿@model TaskViewModel
+
+<div class="modal-header block-header-default @ViewBag.themeclass">
+    <h3 class="modal-title text-white">@ViewBag.ModalTitle</h3>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+</div>
+<form asp-action="CompleteTaskPost" method="post">
+    <div class="modal-body">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="isReopening" value="@ViewBag.IsReopening.ToString().ToLower()" />
+        
+        @if (ViewBag.IsReopening)
+        {
+            <div class="alert alert-warning">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa fa-exclamation-circle fa-2x text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="mb-0">آیا از بازگشایی تسک <strong>@Model.Title</strong> اطمینان دارید؟</p>
+                        <p class="mb-0">با این کار، وضعیت تسک به حالت در حال انجام برمی‌گردد و تمام تاییدیه‌های قبلی حذف می‌شوند.</p>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="mb-0">آیا از تکمیل تسک <strong>@Model.Title</strong> اطمینان دارید؟</p>
+                        <p class="mb-0">با این کار، وضعیت تسک به حالت تکمیل شده تغییر می‌کند و تمام عملیات‌های تسک نیز تکمیل شده در نظر گرفته می‌شوند.</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="submit" class="@ViewBag.ButonClass">
+            <i class="fa @(ViewBag.IsReopening ? "fa-redo" : "fa-check") opacity-50 me-1"></i> @ViewBag.ButtonText
+        </button>
+    </div>
+</form>

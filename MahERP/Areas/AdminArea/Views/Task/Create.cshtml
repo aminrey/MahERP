@@ -1,0 +1,128 @@
+﻿@model TaskViewModel
+@{
+    ViewData["Title"] = "افزودن تسک جدید";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">@ViewData["Title"]</h3>
+        <div class="block-options">
+            <a asp-action="Index" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-left opacity-50 me-1"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+    <div class="block-content">
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="TaskCode" class="form-label">کد تسک</label>
+                        <input asp-for="TaskCode" class="form-control" readonly />
+                        <span asp-validation-for="TaskCode" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="TaskType" class="form-label">نوع تسک</label>
+                        <select asp-for="TaskType" class="form-select">
+                            <option value="0">عادی</option>
+                            <option value="1">مهم</option>
+                            <option value="2">اضطراری</option>
+                        </select>
+                        <span asp-validation-for="TaskType" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mb-4">
+                <label asp-for="Title" class="form-label">عنوان تسک</label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-4">
+                <label asp-for="Description" class="form-label">توضیحات</label>
+                <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="TaskCategoryId" class="form-label">دسته‌بندی</label>
+                        <select asp-for="TaskCategoryId" asp-items="ViewBag.Categories" class="form-select">
+                            <option value="">-- انتخاب دسته‌بندی --</option>
+                        </select>
+                        <span asp-validation-for="TaskCategoryId" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="StakeholderId" class="form-label">طرف حساب</label>
+                        <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="form-select">
+                            <option value="">-- انتخاب طرف حساب --</option>
+                        </select>
+                        <span asp-validation-for="StakeholderId" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="DueDate" class="form-label">مهلت انجام</label>
+                        <input asp-for="DueDate" class="form-control js-datepicker" data-week="false" />
+                        <span asp-validation-for="DueDate" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="Attachments" class="form-label">فایل‌های پیوست</label>
+                        <input type="file" name="Attachments" multiple class="form-control" />
+                        <span asp-validation-for="Attachments" class="text-danger"></span>
+                        <div class="fs-sm text-muted mt-1">می‌توانید چند فایل را همزمان انتخاب کنید.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mb-4">
+                <div class="form-check form-switch">
+                    <input asp-for="IsActive" class="form-check-input" />
+                    <label asp-for="IsActive" class="form-check-label">فعال</label>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-alt-primary">
+                        <i class="fa fa-check opacity-50 me-1"></i> ثبت تسک
+                    </button>
+                    <a asp-action="Index" class="btn btn-alt-secondary">
+                        <i class="fa fa-times opacity-50 me-1"></i> انصراف
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        // Initialize the datepicker if using one
+        $(function() {
+            $('.js-datepicker').each(function() {
+                new mds.MdsPersianDateTimePicker(this, {
+                    targetTextSelector: this,
+                    enableTimePicker: true,
+                    textFormat: 'yyyy/MM/dd HH:mm',
+                    targetDateFormat: 'yyyy-MM-dd HH:mm:ss',
+                });
+            });
+        });
+    </script>
+}

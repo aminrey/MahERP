@@ -1,0 +1,41 @@
+﻿@model TaskOperationViewModel
+
+<div class="modal-header block-header-default">
+    <h3 class="modal-title">افزودن عملیات جدید</h3>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+</div>
+<form asp-action="AddOperation" method="post">
+    <div class="modal-body">
+        <input type="hidden" asp-for="TaskId" />
+        <input type="hidden" asp-for="OperationOrder" />
+        
+        <div class="form-group mb-3">
+            <label asp-for="Title" class="form-label">عنوان عملیات</label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        
+        <div class="form-group mb-3">
+            <label asp-for="Description" class="form-label">توضیحات</label>
+            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        
+        <div class="alert alert-info">
+            <div class="d-flex">
+                <div class="flex-shrink-0">
+                    <i class="fa fa-info-circle fa-2x text-info"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <p class="mb-0">این عملیات به عنوان گام <strong>@ViewBag.OperationOrder</strong> در تسک <strong>@ViewBag.TaskTitle</strong> اضافه خواهد شد.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">بستن</button>
+        <button type="submit" class="btn btn-alt-primary">
+            <i class="fa fa-check opacity-50 me-1"></i> افزودن عملیات
+        </button>
+    </div>
+</form>

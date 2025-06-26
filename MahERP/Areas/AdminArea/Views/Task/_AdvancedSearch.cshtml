@@ -1,0 +1,109 @@
+﻿@model TaskSearchViewModel
+
+<div class="modal-header block-header-default">
+    <h3 class="modal-title">جستجوی پیشرفته تسک‌ها</h3>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+</div>
+<form asp-action="Search" method="post">
+    <div class="modal-body">
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label asp-for="SearchTerm" class="form-label">عبارت جستجو</label>
+                    <input asp-for="SearchTerm" class="form-control" placeholder="جستجو در عنوان، توضیحات یا کد تسک" />
+                    <span asp-validation-for="SearchTerm" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="CategoryId" class="form-label">دسته‌بندی</label>
+                    <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-select">
+                        <option value="">-- همه دسته‌بندی‌ها --</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="AssignedUserId" class="form-label">اختصاص داده شده به</label>
+                    <select asp-for="AssignedUserId" asp-items="ViewBag.Users" class="form-select">
+                        <option value="">-- همه کاربران --</option>
+                    </select>
+                    <span asp-validation-for="AssignedUserId" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="StakeholderId" class="form-label">طرف حساب</label>
+                    <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="form-select">
+                        <option value="">-- همه طرف حساب‌ها --</option>
+                    </select>
+                    <span asp-validation-for="StakeholderId" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="IsCompleted" class="form-label">وضعیت تکمیل</label>
+                    <select asp-for="IsCompleted" class="form-select">
+                        <option value="">-- همه وضعیت‌ها --</option>
+                        <option value="true">تکمیل شده</option>
+                        <option value="false">در حال انجام</option>
+                    </select>
+                    <span asp-validation-for="IsCompleted" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="FromDate" class="form-label">از تاریخ</label>
+                    <input asp-for="FromDate" class="form-control js-datepicker" placeholder="1402/01/01" />
+                    <span asp-validation-for="FromDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="ToDate" class="form-label">تا تاریخ</label>
+                    <input asp-for="ToDate" class="form-control js-datepicker" placeholder="1402/12/29" />
+                    <span asp-validation-for="ToDate" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="form-check form-switch">
+                    <input asp-for="IncludeDeleted" class="form-check-input" />
+                    <label asp-for="IncludeDeleted" class="form-check-label">نمایش موارد حذف شده</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">بستن</button>
+        <button type="submit" class="btn btn-alt-primary">
+            <i class="fa fa-search opacity-50 me-1"></i> جستجو
+        </button>
+    </div>
+</form>
+
+<script>
+    // Initialize the datepicker if using one
+    $(function() {
+        $('.js-datepicker').each(function() {
+            new mds.MdsPersianDateTimePicker(this, {
+                targetTextSelector: this,
+                enableTimePicker: false,
+                textFormat: 'yyyy/MM/dd',
+                targetDateFormat: 'yyyy-MM-dd',
+            });
+        });
+    });
+</script>

@@ -1,0 +1,46 @@
+﻿@model TaskCategoryViewModel
+
+<div class="modal-header block-header-default @ViewBag.themeclass">
+    <h3 class="modal-title text-white">@ViewBag.ModalTitle</h3>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+</div>
+<form asp-action="ToggleActiveStatusPost" method="post">
+    <div class="modal-body">
+        <input type="hidden" asp-for="Id" />
+        
+        @if (Model.IsActive)
+        {
+            <div class="alert alert-warning">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa fa-exclamation-circle fa-2x text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="mb-0">آیا از غیرفعال کردن دسته‌بندی <strong>@Model.Title</strong> اطمینان دارید؟</p>
+                        <p class="mb-0">با این کار، دسته‌بندی در لیست‌های انتخاب نمایش داده نخواهد شد.</p>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="mb-0">آیا از فعال کردن دسته‌بندی <strong>@Model.Title</strong> اطمینان دارید؟</p>
+                        <p class="mb-0">با این کار، دسته‌بندی در لیست‌های انتخاب نمایش داده خواهد شد.</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="submit" class="@ViewBag.ButonClass">
+            <i class="fa @(Model.IsActive ? "fa-ban" : "fa-check") opacity-50 me-1"></i> @(Model.IsActive ? "غیرفعال کردن" : "فعال کردن")
+        </button>
+    </div>
+</form>

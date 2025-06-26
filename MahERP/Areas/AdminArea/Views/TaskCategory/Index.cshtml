@@ -1,0 +1,135 @@
+﻿@model List<TaskCategoryViewModel>
+@{
+    ViewData["Title"] = "مدیریت دسته‌بندی‌های تسک";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">@ViewData["Title"]</h3>
+        <div class="block-options">
+            <a asp-action="Create" class="btn btn-sm btn-alt-primary">
+                <i class="fa fa-plus opacity-50 me-1"></i> دسته‌بندی جدید
+            </a>
+        </div>
+    </div>
+    <div class="block-content">
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle me-1"></i> هیچ دسته‌بندی تسکی تعریف نشده است.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-vcenter">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 50px;">آیکون</th>
+                            <th class="text-center">عنوان</th>
+                            <th class="text-center">توضیحات</th>
+                            <th class="text-center">دسته‌بندی والد</th>
+                            <th class="text-center" style="width: 80px;">وضعیت</th>
+                            <th class="text-center" style="width: 120px;">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(item.IconClass))
+                                    {
+                                        <i class="@item.IconClass @item.ColorClass fa-2x"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa fa-tag fa-2x @item.ColorClass"></i>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <span class="@item.ColorClass">@item.Title</span>
+                                </td>
+                                <td class="text-center">
+                                    @if (string.IsNullOrEmpty(item.Description))
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@item.Description</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (string.IsNullOrEmpty(item.ParentCategoryTitle))
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@item.ParentCategoryTitle</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">فعال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">غیرفعال</span>
+                                    }
+                                </td class="text-center">
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="ویرایش">
+                                            <i class="fa fa-pencil-alt"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="@(item.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")"
+                                                onclick="loadModal('@Url.Action("ToggleActiveStatus", new { id = item.Id })')">
+                                            <i class="fa @(item.IsActive ? "fa-ban" : "fa-check")"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Generic Modal Container -->
+<div class="modal fade" id="modal-block-normal" tabindex="-1" role="dialog" aria-labelledby="modal-block-normal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content" id="modal-content">
+            <!-- Content will be loaded here via AJAX -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function loadModal(url) {
+            $("#modal-content").html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin fa-3x"></i><p class="mt-2">در حال بارگذاری...</p></div>');
+            $("#modal-block-normal").modal("show");
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (result) {
+                    $("#modal-content").html(result);
+                },
+                error: function () {
+                    $("#modal-content").html('<div class="text-center p-3 text-danger"><i class="fa fa-exclamation-triangle fa-3x"></i><p class="mt-2">خطا در بارگذاری</p></div>');
+                }
+            });
+        }
+
+        // Initialize tooltips
+        $(function() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

@@ -109,7 +109,46 @@
 
                 <li class="nav-main-heading">عملیاتها</li>
 
-
+                <!-- Task Management Section -->
+                <li class="nav-main-item">
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fa fa-tasks"></i>
+                        <span class="nav-main-link-name">مدیریت تسک‌ها</span>
+                    </a>
+                    <ul class="nav-main-submenu">
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Task" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-list"></i>
+                                <span class="nav-main-link-name">لیست تسک‌ها</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Task" asp-action="MyTasks">
+                                <i class="nav-main-link-icon fa fa-clipboard-check"></i>
+                                <span class="nav-main-link-name">تسک‌های من</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Task" asp-action="Create">
+                                <i class="nav-main-link-icon fa fa-plus-circle"></i>
+                                <span class="nav-main-link-name">تسک جدید</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="TaskCategory" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-tag"></i>
+                                <span class="nav-main-link-name">دسته‌بندی‌ها</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
+                                <i class="nav-main-link-icon fa fa-search"></i>
+                                <span class="nav-main-link-name">جستجوی پیشرفته</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- END Task Management Section -->
 
                 <li class="nav-main-heading">دسترسی ها</li>
 
@@ -175,6 +214,15 @@
     </div>
 </div>
 
+<!-- Modal Advanced Search for Tasks -->
+<div class="modal fade" id="modal-advanced-search-task" tabindex="-1" role="dialog" aria-labelledby="modal-advanced-search-task" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" id="advanced-search-task-content">
+            <!-- Content will be loaded here via AJAX -->
+        </div>
+    </div>
+</div>
+
 <!-- JavaScript for Advanced Search Modal -->
 <script>
     function loadAdvancedSearchModal() {
@@ -188,6 +236,21 @@
             },
             error: function () {
                 $("#advanced-search-content").html('<div class="text-center p-3 text-danger"><i class="fa fa-exclamation-triangle fa-3x"></i><p class="mt-2">خطا در بارگذاری فرم جستجو</p></div>');
+            }
+        });
+    }
+
+    function loadTaskAdvancedSearchModal() {
+        $("#advanced-search-task-content").html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin fa-3x"></i><p class="mt-2">در حال بارگذاری...</p></div>');
+
+        $.ajax({
+            url: '@Url.Action("AdvancedSearch", "Task", new { area = "AdminArea" })',
+            type: 'GET',
+            success: function (result) {
+                $("#advanced-search-task-content").html(result);
+            },
+            error: function () {
+                $("#advanced-search-task-content").html('<div class="text-center p-3 text-danger"><i class="fa fa-exclamation-triangle fa-3x"></i><p class="mt-2">خطا در بارگذاری فرم جستجو</p></div>');
             }
         });
     }

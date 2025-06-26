@@ -1,6 +1,7 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
 
 namespace MahERP.DataModelLayer.Services
@@ -24,7 +25,15 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<BranchUser> BranchUserUW { get; }
         GenereicClass<Contract> ContractUW { get; }
         GenereicClass<StakeholderBranch> StakeholderBranchUW { get; }
-       
+
+        // Task Management repositories
+        GenereicClass<Tasks> TaskUW { get; }
+        GenereicClass<TaskOperation> TaskOperationUW { get; }
+        GenereicClass<TaskCategory> TaskCategoryUW { get; }
+        GenereicClass<TaskAssignment> TaskAssignmentUW { get; }
+        GenereicClass<TaskAttachment> TaskAttachmentUW { get; }
+        GenereicClass<TaskComment> TaskCommentUW { get; }
+
         IEntityDataBaseTransaction BeginTransaction();
         void Save();
         void Dispose();

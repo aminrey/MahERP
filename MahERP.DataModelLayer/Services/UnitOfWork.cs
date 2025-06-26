@@ -1,7 +1,9 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
+using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace MahERP.DataModelLayer.Services
@@ -31,6 +33,89 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<BranchUser> _branchUser;
         private GenereicClass<Contract> _contract;
         private GenereicClass<StakeholderBranch> _stakeholderBranch;
+
+
+        // Task Management repositories
+        private GenereicClass<Tasks> _taskRepository;
+        private GenereicClass<TaskOperation> _taskOperationRepository;
+        private GenereicClass<TaskCategory> _taskCategoryRepository;
+        private GenereicClass<TaskAssignment> _taskAssignmentRepository;
+        private GenereicClass<TaskAttachment> _taskAttachmentRepository;
+        private GenereicClass<TaskComment> _taskCommentRepository;
+
+        public GenereicClass<Tasks> TaskUW
+        {
+            get
+            {
+                if (_taskRepository == null)
+                {
+                    _taskRepository = new GenereicClass<Tasks>(_Context);
+                }
+                return _taskRepository;
+            }
+        }
+
+        public GenereicClass<TaskOperation> TaskOperationUW
+        {
+            get
+            {
+                if (_taskOperationRepository == null)
+                {
+                    _taskOperationRepository = new GenereicClass<TaskOperation>(_Context);
+                }
+                return _taskOperationRepository;
+            }
+        }
+
+        public GenereicClass<TaskCategory> TaskCategoryUW
+        {
+            get
+            {
+                if (_taskCategoryRepository == null)
+                {
+                    _taskCategoryRepository = new GenereicClass<TaskCategory>(_Context);
+                }
+                return _taskCategoryRepository;
+            }
+        }
+
+        public GenereicClass<TaskAssignment> TaskAssignmentUW
+        {
+            get
+            {
+                if (_taskAssignmentRepository == null)
+                {
+                    _taskAssignmentRepository = new GenereicClass<TaskAssignment>(_Context);
+                }
+                return _taskAssignmentRepository;
+            }
+        }
+
+        public GenereicClass<TaskAttachment> TaskAttachmentUW
+        {
+            get
+            {
+                if (_taskAttachmentRepository == null)
+                {
+                    _taskAttachmentRepository = new GenereicClass<TaskAttachment>(_Context);
+                }
+                return _taskAttachmentRepository;
+            }
+        }
+
+        public GenereicClass<TaskComment> TaskCommentUW
+        {
+            get
+            {
+                if (_taskCommentRepository == null)
+                {
+                    _taskCommentRepository = new GenereicClass<TaskComment>(_Context);
+                }
+                return _taskCommentRepository;
+            }
+        }
+
+
 
         public GenereicClass<RolePatternDetails> rolePatternDetailsUW
         {

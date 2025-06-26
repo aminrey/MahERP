@@ -1,4 +1,5 @@
-﻿using MahERP.DataModelLayer;
+﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
@@ -25,7 +26,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
 builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
-
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.Configure<IdentityOptions>(options =>
 {
     // Default Password settings.

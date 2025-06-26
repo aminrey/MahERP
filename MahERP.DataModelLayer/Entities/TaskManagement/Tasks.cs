@@ -129,6 +129,8 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         [ForeignKey("TaskCategoryId")]
         public virtual TaskCategory TaskCategory { get; set; }
 
+        public bool IsActive { get; set; }
+
         public bool IsFavorite { get; set; }
         
         public bool IsArchived { get; set; }

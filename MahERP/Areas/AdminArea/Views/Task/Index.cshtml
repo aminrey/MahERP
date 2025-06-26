@@ -1,0 +1,212 @@
+﻿@model List<TaskViewModel>
+@{
+    ViewData["Title"] = ViewBag.Title ?? "مدیریت تسک‌ها";
+    bool isMyTasks = ViewBag.IsMyTasks ?? false;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">@ViewData["Title"]</h3>
+        <div class="block-options">
+            <a asp-action="Create" class="btn btn-sm btn-alt-primary">
+                <i class="fa fa-plus opacity-50 me-1"></i> تسک جدید
+            </a>
+            <button type="button" class="btn btn-sm btn-alt-primary" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
+                <i class="fa fa-search opacity-50 me-1"></i> جستجوی پیشرفته
+            </button>
+        </div>
+    </div>
+    <div class="block-content">
+        <!-- Task Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="block block-rounded bg-primary-light">
+                    <div class="block-content py-3">
+                        <div class="fs-4 fw-semibold text-primary text-center">
+                            @Model.Count
+                        </div>
+                        <div class="text-center">تعداد کل تسک‌ها</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-success-light">
+                    <div class="block-content py-3">
+                        <div class="fs-4 fw-semibold text-success text-center">
+                            @Model.Count(t => t.CompletionDate.HasValue)
+                        </div>
+                        <div class="text-center">تسک‌های تکمیل شده</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-warning-light">
+                    <div class="block-content py-3">
+                        <div class="fs-4 fw-semibold text-warning text-center">
+                            @Model.Count(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && DateTime.Now > t.DueDate.Value)
+                        </div>
+                        <div class="text-center">تسک‌های با تاخیر</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-info-light">
+                    <div class="block-content py-3">
+                        <div class="fs-4 fw-semibold text-info text-center">
+                            @Model.Count(t => !t.CompletionDate.HasValue && t.IsActive)
+                        </div>
+                        <div class="text-center">تسک‌های در حال انجام</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END Task Statistics -->
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 100px;">کد تسک</th>
+                        <th class="text-center">عنوان</th>
+                        <th class="text-center">دسته‌بندی</th>
+                        <th class="text-center" style="width: 120px;">مهلت انجام</th>
+                        <th class="text-center" style="width: 120px;">وضعیت</th>
+                        <th class="text-center" style="width: 120px;">پیشرفت</th>
+                        <th class="text-center" style="width: 150px;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="text-center">
+                                <span class="badge bg-primary">@item.TaskCode</span>
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="Details" asp-route-id="@item.Id">@item.Title</a>
+                            </td>
+                            <td class="text-center">
+                                @if (!string.IsNullOrEmpty(item.CategoryTitle))
+                                {
+                                    <span>@item.CategoryTitle</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">بدون دسته‌بندی</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (item.DueDate.HasValue)
+                                {
+                                    var persianDate = ConvertDateTime.ConvertMiladiToShamsi(item.DueDate, "yyyy/MM/dd");
+                                    if (item.DueDate.Value < DateTime.Now && !item.CompletionDate.HasValue)
+                                    {
+                                        <span class="text-danger">@persianDate</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@persianDate</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">تعیین نشده</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (item.IsDeleted)
+                                {
+                                    <span class="badge bg-danger">حذف شده</span>
+                                }
+                                else if (!item.IsActive)
+                                {
+                                    <span class="badge bg-warning">غیرفعال</span>
+                                }
+                                else if (item.CompletionDate.HasValue && item.ManagerApprovedDate.HasValue)
+                                {
+                                    <span class="badge bg-success">تکمیل و تایید شده</span>
+                                }
+                                else if (item.CompletionDate.HasValue && item.SupervisorApprovedDate.HasValue)
+                                {
+                                    <span class="badge bg-info">تایید سرپرست</span>
+                                }
+                                else if (item.CompletionDate.HasValue)
+                                {
+                                    <span class="badge bg-primary">تکمیل شده</span>
+                                }
+                                else if (item.DueDate.HasValue && DateTime.Now > item.DueDate.Value)
+                                {
+                                    <span class="badge bg-danger">تاخیر</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info">در حال انجام</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <div class="progress push mb-0">
+                                    <div class="progress-bar progress-bar-striped @(item.ProgressPercentage == 100 ? " bg-success" : "bg-primary")" role="progressbar"
+                                         style="width: @item.ProgressPercentage%" aria-valuenow="@item.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
+                                        <span class="fs-sm fw-semibold">@item.ProgressPercentage%</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="جزئیات">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="ویرایش">
+                                        <i class="fa fa-pencil-alt"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="@(item.IsActive ? " غیرفعال‌سازی" : "فعال‌سازی")"
+                                            onclick="loadModal('@Url.Action(" ToggleActiveStatus", new { id = item.Id })')">
+                                        <i class="fa @(item.IsActive ? " fa-ban" : "fa-check")"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف"
+                                            onclick="loadModal('@Url.Action(" Delete", new { id = item.Id })')">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Generic Modal Container -->
+<div class="modal fade" id="modal-block-normal" tabindex="-1" role="dialog" aria-labelledby="modal-block-normal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content" id="modal-content">
+            <!-- Content will be loaded here via AJAX -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function loadModal(url) {
+            $("#modal-content").html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin fa-3x"></i><p class="mt-2">در حال بارگذاری...</p></div>');
+            $("#modal-block-normal").modal("show");
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (result) {
+                    $("#modal-content").html(result);
+                },
+                error: function () {
+                    $("#modal-content").html('<div class="text-center p-3 text-danger"><i class="fa fa-exclamation-triangle fa-3x"></i><p class="mt-2">خطا در بارگذاری</p></div>');
+                }
+            });
+        }
+
+        // Initialize tooltips
+        $(function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

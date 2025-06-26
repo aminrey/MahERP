@@ -1,0 +1,122 @@
+﻿@model TaskCategoryViewModel
+@{
+    ViewData["Title"] = "افزودن دسته‌بندی جدید";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">@ViewData["Title"]</h3>
+        <div class="block-options">
+            <a asp-action="Index" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-left opacity-50 me-1"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+    <div class="block-content">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="form-group mb-4">
+                <label asp-for="Title" class="form-label">عنوان دسته‌بندی</label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-4">
+                <label asp-for="Description" class="form-label">توضیحات</label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="ParentCategoryId" class="form-label">دسته‌بندی والد</label>
+                        <select asp-for="ParentCategoryId" asp-items="ViewBag.ParentCategories" class="form-select">
+                            <option value="">-- بدون والد --</option>
+                        </select>
+                        <span asp-validation-for="ParentCategoryId" class="text-danger"></span>
+                        <div class="fs-sm text-muted mt-1">در صورت انتخاب، این دسته‌بندی زیرمجموعه دسته‌بندی انتخاب شده قرار می‌گیرد.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="ColorClass" class="form-label">رنگ</label>
+                        <select asp-for="ColorClass" asp-items="ViewBag.ColorClasses" class="form-select">
+                            <option value="">-- انتخاب رنگ --</option>
+                        </select>
+                        <span asp-validation-for="ColorClass" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="IconClass" class="form-label">آیکون</label>
+                        <select asp-for="IconClass" asp-items="ViewBag.IconClasses" class="form-select">
+                            <option value="">-- انتخاب آیکون --</option>
+                        </select>
+                        <span asp-validation-for="IconClass" class="text-danger"></span>
+                        <div class="fs-sm text-muted mt-1">آیکون نمایشی برای این دسته‌بندی در لیست‌ها و منوها.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label class="form-label">پیش‌نمایش</label>
+                        <div class="border p-3 text-center rounded">
+                            <i id="preview-icon" class="fa fa-tag fa-2x text-primary"></i>
+                            <div class="mt-2" id="preview-title">عنوان دسته‌بندی</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mb-4">
+                <div class="form-check form-switch">
+                    <input asp-for="IsActive" class="form-check-input" />
+                    <label asp-for="IsActive" class="form-check-label">فعال</label>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-alt-primary">
+                        <i class="fa fa-check opacity-50 me-1"></i> ثبت دسته‌بندی
+                    </button>
+                    <a asp-action="Index" class="btn btn-alt-secondary">
+                        <i class="fa fa-times opacity-50 me-1"></i> انصراف
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(function() {
+            // Update preview when title changes
+            $('#Title').on('input', function() {
+                $('#preview-title').text($(this).val() || 'عنوان دسته‌بندی');
+            });
+
+            // Update preview when icon changes
+            $('#IconClass').on('change', function() {
+                var iconClass = $(this).val() || 'fa fa-tag';
+                $('#preview-icon').attr('class', iconClass + ' fa-2x ' + ($('#ColorClass').val() || 'text-primary'));
+            });
+
+            // Update preview when color changes
+            $('#ColorClass').on('change', function() {
+                var colorClass = $(this).val() || 'text-primary';
+                $('#preview-icon').attr('class', $('#IconClass').val() + ' fa-2x ' + colorClass);
+                $('#preview-title').attr('class', colorClass);
+            });
+        });
+    </script>
+}

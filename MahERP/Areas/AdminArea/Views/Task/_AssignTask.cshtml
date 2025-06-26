@@ -1,0 +1,42 @@
+﻿@model TaskAssignmentViewModel
+
+<div class="modal-header block-header-default">
+    <h3 class="modal-title">اختصاص تسک به کاربر</h3>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+</div>
+<form asp-action="AssignTask" method="post">
+    <div class="modal-body">
+        <input type="hidden" asp-for="TaskId" />
+        
+        <div class="form-group mb-3">
+            <label asp-for="AssignedUserId" class="form-label">کاربر</label>
+            <select asp-for="AssignedUserId" asp-items="ViewBag.Users" class="form-select">
+                <option value="">-- انتخاب کاربر --</option>
+            </select>
+            <span asp-validation-for="AssignedUserId" class="text-danger"></span>
+        </div>
+        
+        <div class="form-group mb-3">
+            <label asp-for="Description" class="form-label">توضیحات</label>
+            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        
+        <div class="alert alert-info">
+            <div class="d-flex">
+                <div class="flex-shrink-0">
+                    <i class="fa fa-info-circle fa-2x text-info"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <p class="mb-0">تسک <strong>@ViewBag.TaskTitle</strong> به کاربر انتخاب شده اختصاص داده خواهد شد.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">بستن</button>
+        <button type="submit" class="btn btn-alt-primary">
+            <i class="fa fa-user-plus opacity-50 me-1"></i> اختصاص تسک
+        </button>
+    </div>
+</form>

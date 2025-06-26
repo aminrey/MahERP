@@ -19,9 +19,11 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 
         public string FilePath { get; set; }
 
+        public string FileType { get; set; }
+
         public string FileExtension { get; set; }
 
-        public string FileSize { get; set; }
+        public long FileSize { get; set; }
 
         public string FileUUID { get; set; }
 
