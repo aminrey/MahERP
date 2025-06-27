@@ -39,7 +39,7 @@ namespace MahERP.DataModelLayer.Entities.AcControl
 
         public DateTime CreateDate { get; set; }
 
-        public string CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; } // اضافه کردن ? برای nullable
         [ForeignKey("CreatorUserId")]
         public virtual AppUsers Creator { get; set; }
 

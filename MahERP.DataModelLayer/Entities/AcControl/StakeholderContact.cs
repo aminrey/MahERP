@@ -38,9 +38,12 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public byte ContactPriority { get; set; }
 
         public bool IsActive { get; set; } = true;
-        
-        public DateTime CreateDate { get; set; }
-        public string? CreatorUserId { get; set; }
         public bool IsPrimary { get; set; }
+        public DateTime CreateDate { get; set; }
+
+        public string? CreatorUserId { get; set; }
+        [ForeignKey("CreatorUserId")]
+        public virtual AppUsers? Creator { get; set; }
+
     }
 }

@@ -141,6 +141,12 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(c => c.LastUpdaterUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Contract>()
+                .HasOne(c => c.Stakeholder)
+                .WithMany(s => s.Contracts)
+                .HasForeignKey(c => c.StakeholderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Stakeholder relationships
             modelBuilder.Entity<Stakeholder>()
                 .HasOne(s => s.Creator)
@@ -148,7 +154,39 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(s => s.CreatorUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // CRMInteraction relationships
+            // StakeholderBranch relationship
+            modelBuilder.Entity<StakeholderBranch>()
+                .HasOne(sb => sb.Stakeholder)
+                .WithMany()
+                .HasForeignKey(sb => sb.StakeholderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StakeholderBranch>()
+                .HasOne(sb => sb.Branch)
+                .WithMany()
+                .HasForeignKey(sb => sb.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StakeholderBranch>()
+                .HasOne(sb => sb.Creator)
+                .WithMany()
+                .HasForeignKey(sb => sb.CreatorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // StakeholderContact relationship
+            modelBuilder.Entity<StakeholderContact>()
+                .HasOne(sc => sc.Stakeholder)
+                .WithMany(s => s.StakeholderContacts)
+                .HasForeignKey(sc => sc.StakeholderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StakeholderContact>()
+                .HasOne(sc => sc.Creator)  // تصحیح شده
+                .WithMany()
+                .HasForeignKey(sc => sc.CreatorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // CRMInteraction relationships - اصلاح شده
             modelBuilder.Entity<CRMInteraction>()
                 .HasOne(c => c.Creator)
                 .WithMany()
@@ -159,6 +197,30 @@ namespace MahERP.DataModelLayer
                 .HasOne(c => c.LastUpdater)
                 .WithMany()
                 .HasForeignKey(c => c.LastUpdaterUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMInteraction>()
+                .HasOne(c => c.Stakeholder)
+                .WithMany()
+                .HasForeignKey(c => c.StakeholderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMInteraction>()
+                .HasOne(c => c.StakeholderContact)
+                .WithMany()
+                .HasForeignKey(c => c.StakeholderContactId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMInteraction>()
+                .HasOne(c => c.Branch)
+                .WithMany()
+                .HasForeignKey(c => c.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMInteraction>()
+                .HasOne(c => c.Contract)
+                .WithMany()
+                .HasForeignKey(c => c.ContractId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // StakeholderCRM relationships
@@ -187,7 +249,7 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(t => t.StakeholderContactId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Activity relationships
+            // Activity relationships - اصلاح شده
             modelBuilder.Entity<ActivityBase>()
                 .HasOne(a => a.Creator)
                 .WithMany()
@@ -198,6 +260,107 @@ namespace MahERP.DataModelLayer
                 .HasOne(a => a.LastUpdater)
                 .WithMany()
                 .HasForeignKey(a => a.LastUpdaterUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityBase>()
+                .HasOne(a => a.Stakeholder)
+                .WithMany()
+                .HasForeignKey(a => a.StakeholderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityBase>()
+                .HasOne(a => a.Contract)
+                .WithMany()
+                .HasForeignKey(a => a.ContractId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityBase>()
+                .HasOne(a => a.Branch)
+                .WithMany()
+                .HasForeignKey(a => a.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ActivityCRM relationships - اصلاح شده
+            modelBuilder.Entity<ActivityCRM>()
+                .HasOne(ac => ac.Activity)
+                .WithMany(a => a.ActivityCRMs)
+                .HasForeignKey(ac => ac.ActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityCRM>()
+                .HasOne(ac => ac.CRMInteraction)
+                .WithMany(c => c.ActivityCRMs)
+                .HasForeignKey(ac => ac.CRMId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityCRM>()
+                .HasOne(ac => ac.Creator)
+                .WithMany()
+                .HasForeignKey(ac => ac.CreatorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ActivityTask relationships - اصلاح شده
+            modelBuilder.Entity<ActivityTask>()
+                .HasOne(at => at.Activity)
+                .WithMany(a => a.ActivityTasks)
+                .HasForeignKey(at => at.ActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityTask>()
+                .HasOne(at => at.Task)
+                .WithMany()
+                .HasForeignKey(at => at.TaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityTask>()
+                .HasOne(at => at.Creator)
+                .WithMany()
+                .HasForeignKey(at => at.CreatorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ActivityComment relationships
+            modelBuilder.Entity<ActivityComment>()
+                .HasOne(ac => ac.Activity)
+                .WithMany(a => a.ActivityComments)
+                .HasForeignKey(ac => ac.ActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityComment>()
+                .HasOne(ac => ac.Creator)
+                .WithMany()
+                .HasForeignKey(ac => ac.CreatorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityComment>()
+                .HasOne(ac => ac.ParentComment)
+                .WithMany()
+                .HasForeignKey(ac => ac.ParentCommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ActivityAttachment relationships
+            modelBuilder.Entity<ActivityAttachment>()
+                .HasOne(aa => aa.Activity)
+                .WithMany(a => a.ActivityAttachments)
+                .HasForeignKey(aa => aa.ActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityAttachment>()
+                .HasOne(aa => aa.Uploader)
+                .WithMany()
+                .HasForeignKey(aa => aa.UploaderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ActivityHistory relationships
+            modelBuilder.Entity<ActivityHistory>()
+                .HasOne(ah => ah.Activity)
+                .WithMany(a => a.ActivityHistories)
+                .HasForeignKey(ah => ah.ActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ActivityHistory>()
+                .HasOne(ah => ah.Creator)
+                .WithMany()
+                .HasForeignKey(ah => ah.CreatorUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Team relationships
@@ -219,7 +382,25 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(t => t.LastUpdaterUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Team>()
+                .HasOne(t => t.ParentTeam)
+                .WithMany()
+                .HasForeignKey(t => t.ParentTeamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Team>()
+                .HasOne(t => t.Branch)
+                .WithMany()
+                .HasForeignKey(t => t.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // TeamMember relationships
+            modelBuilder.Entity<TeamMember>()
+                .HasOne(tm => tm.Team)
+                .WithMany(t => t.TeamMembers)
+                .HasForeignKey(tm => tm.TeamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<TeamMember>()
                 .HasOne(tm => tm.User)
                 .WithMany(u => u.TeamMemberships)
@@ -233,6 +414,12 @@ namespace MahERP.DataModelLayer
                 .OnDelete(DeleteBehavior.Restrict);
 
             // BranchUser relationships
+            modelBuilder.Entity<BranchUser>()
+                .HasOne(bu => bu.Branch)
+                .WithMany()
+                .HasForeignKey(bu => bu.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<BranchUser>()
                 .HasOne(bu => bu.User)
                 .WithMany()
@@ -258,6 +445,12 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(ts => ts.ModifierUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<TaskSchedule>()
+                .HasOne(ts => ts.TaskTemplate)
+                .WithMany()
+                .HasForeignKey(ts => ts.TaskTemplateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // TaskScheduleAssignment relationships
             modelBuilder.Entity<TaskScheduleAssignment>()
                 .HasOne(tsa => tsa.User)
@@ -276,6 +469,12 @@ namespace MahERP.DataModelLayer
                 .WithMany()
                 .HasForeignKey(tsa => tsa.ScheduleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TaskScheduleAssignment>()
+                .HasOne(tsa => tsa.PredefinedCopyDescription)
+                .WithMany()
+                .HasForeignKey(tsa => tsa.PredefinedCopyDescriptionId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // TaskScheduleViewer relationships
             modelBuilder.Entity<TaskScheduleViewer>()
@@ -296,11 +495,75 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(tsv => tsv.ScheduleId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // CRM related relationships - اصلاح شده
+            // CRMAttachment relationships
+            modelBuilder.Entity<CRMAttachment>()
+                .HasOne(ca => ca.CRMInteraction)
+                .WithMany(c => c.CRMAttachments)
+                .HasForeignKey(ca => ca.CRMInteractionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMAttachment>()
+                .HasOne(ca => ca.Uploader)
+                .WithMany()
+                .HasForeignKey(ca => ca.UploaderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // CRMComment relationships
+            modelBuilder.Entity<CRMComment>()
+                .HasOne(cc => cc.CRMInteraction)
+                .WithMany(c => c.CRMComments)
+                .HasForeignKey(cc => cc.CRMInteractionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMComment>()
+                .HasOne(cc => cc.Creator)
+                .WithMany()
+                .HasForeignKey(cc => cc.CreatorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMComment>()
+                .HasOne(cc => cc.ParentComment)
+                .WithMany()
+                .HasForeignKey(cc => cc.ParentCommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // CRMParticipant relationships
+            modelBuilder.Entity<CRMParticipant>()
+                .HasOne(cp => cp.CRMInteraction)
+                .WithMany(c => c.CRMParticipants)
+                .HasForeignKey(cp => cp.CRMInteractionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<CRMParticipant>()
                 .HasOne(cp => cp.User)
                 .WithMany()
                 .HasForeignKey(cp => cp.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMParticipant>()
+                .HasOne(cp => cp.StakeholderContact)
+                .WithMany()
+                .HasForeignKey(cp => cp.StakeholderContactId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // CRMTeam relationships
+            modelBuilder.Entity<CRMTeam>()
+                .HasOne(ct => ct.CRMInteraction)
+                .WithMany(c => c.CRMTeams)
+                .HasForeignKey(ct => ct.CRMInteractionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMTeam>()
+                .HasOne(ct => ct.Team)
+                .WithMany()
+                .HasForeignKey(ct => ct.TeamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CRMTeam>()
+                .HasOne(ct => ct.Creator)
+                .WithMany()
+                .HasForeignKey(ct => ct.CreatorUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // TaskViewer relationships
@@ -314,6 +577,12 @@ namespace MahERP.DataModelLayer
                 .HasOne(tv => tv.AddedByUser)
                 .WithMany()
                 .HasForeignKey(tv => tv.AddedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskViewer>()
+                .HasOne(tv => tv.Task)
+                .WithMany()
+                .HasForeignKey(tv => tv.TaskId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ======================== TASK RELATED RELATIONSHIPS ========================
@@ -336,6 +605,12 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(ta => ta.TaskId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<TaskAssignment>()
+                .HasOne(ta => ta.PredefinedCopyDescription)
+                .WithMany()
+                .HasForeignKey(ta => ta.PredefinedCopyDescriptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // TaskComment relationships
             modelBuilder.Entity<TaskComment>()
                 .HasOne(tc => tc.Creator)
@@ -355,11 +630,43 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(tc => tc.ParentCommentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // TaskCommentAttachment relationships
+            modelBuilder.Entity<TaskCommentAttachment>()
+                .HasOne(tca => tca.Comment)
+                .WithMany()
+                .HasForeignKey(tca => tca.CommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskCommentAttachment>()
+                .HasOne(tca => tca.Uploader)
+                .WithMany()
+                .HasForeignKey(tca => tca.UploaderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // TaskCommentMention relationships
+            modelBuilder.Entity<TaskCommentMention>()
+                .HasOne(tcm => tcm.Comment)
+                .WithMany()
+                .HasForeignKey(tcm => tcm.CommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<TaskCommentMention>()
                 .HasOne(tcm => tcm.MentionedUser)
                 .WithMany()
                 .HasForeignKey(tcm => tcm.MentionedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // TaskAttachment relationships
+            modelBuilder.Entity<TaskAttachment>()
+                .HasOne(ta => ta.Task)
+                .WithMany()
+                .HasForeignKey(ta => ta.TaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskAttachment>()
+                .HasOne(ta => ta.Uploader)
+                .WithMany()
+                .HasForeignKey(ta => ta.UploaderUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // TaskOperation relationships
@@ -379,6 +686,31 @@ namespace MahERP.DataModelLayer
                 .HasOne(to => to.Task)
                 .WithMany(t => t.TaskOperations)
                 .HasForeignKey(to => to.TaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // TaskNotification relationships
+            modelBuilder.Entity<TaskNotification>()
+                .HasOne(tn => tn.Task)
+                .WithMany()
+                .HasForeignKey(tn => tn.TaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskNotification>()
+                .HasOne(tn => tn.Comment)
+                .WithMany()
+                .HasForeignKey(tn => tn.CommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskNotification>()
+                .HasOne(tn => tn.Operation)
+                .WithMany()
+                .HasForeignKey(tn => tn.OperationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskNotification>()
+                .HasOne(tn => tn.Recipient)
+                .WithMany()
+                .HasForeignKey(tn => tn.RecipientUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Task relationships
@@ -406,39 +738,49 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(t => t.ScheduleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ======================== ACTIVITY RELATED RELATIONSHIPS ========================
-            // ActivityComment relationships
-            modelBuilder.Entity<ActivityComment>()
-                .HasOne(ac => ac.Creator)
+            modelBuilder.Entity<Tasks>()
+                .HasOne(t => t.Team)
                 .WithMany()
-                .HasForeignKey(ac => ac.CreatorUserId)
+                .HasForeignKey(t => t.TeamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<ActivityComment>()
-                .HasOne(ac => ac.ParentComment)
+            modelBuilder.Entity<Tasks>()
+                .HasOne(t => t.Stakeholder)
                 .WithMany()
-                .HasForeignKey(ac => ac.ParentCommentId)
+                .HasForeignKey(t => t.StakeholderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ActivityTask relationships
-            modelBuilder.Entity<ActivityTask>()
-                .HasOne(at => at.Creator)
+            modelBuilder.Entity<Tasks>()
+                .HasOne(t => t.Contract)
                 .WithMany()
-                .HasForeignKey(at => at.CreatorUserId)
+                .HasForeignKey(t => t.ContractId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<ActivityTask>()
-                .HasOne(at => at.Task)
+            modelBuilder.Entity<Tasks>()
+                .HasOne(t => t.TaskCategory)
                 .WithMany()
-                .HasForeignKey(at => at.TaskId)
+                .HasForeignKey(t => t.TaskCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ActivityAttachment
-            modelBuilder.Entity<ActivityAttachment>()
-                .HasOne(aa => aa.Uploader)
+            // TaskTemplate relationships
+            modelBuilder.Entity<TaskTemplate>()
+                .HasOne(tt => tt.Category)
                 .WithMany()
-                .HasForeignKey(aa => aa.UploaderUserId)
+                .HasForeignKey(tt => tt.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskTemplate>()
+                .HasOne(tt => tt.Creator)
+                .WithMany()
+                .HasForeignKey(tt => tt.CreatorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // TaskTemplateOperation relationships
+            modelBuilder.Entity<TaskTemplateOperation>()
+                .HasOne(tto => tto.Template)
+                .WithMany()
+                .HasForeignKey(tto => tto.TemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ======================== OTHER RELATIONSHIPS ========================
             // Branch self-referencing relationship
@@ -448,11 +790,11 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(b => b.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Stakeholder-Contract relationship
-            modelBuilder.Entity<Contract>()
-                .HasOne(c => c.Stakeholder)
-                .WithMany(s => s.Contracts)
-                .HasForeignKey(c => c.StakeholderId)
+            // TaskCategory self-referencing relationship
+            modelBuilder.Entity<TaskCategory>()
+                .HasOne(tc => tc.ParentCategory)
+                .WithMany()
+                .HasForeignKey(tc => tc.ParentCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // AppUsers self-referencing relationship
@@ -460,40 +802,6 @@ namespace MahERP.DataModelLayer
                 .HasMany(u => u.ManagedUsers)
                 .WithOne(u => u.DirectManager)
                 .HasForeignKey(u => u.DirectManagerUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // StakeholderContact relationship
-            modelBuilder.Entity<StakeholderContact>()
-                .HasOne(sc => sc.Stakeholder)
-                .WithMany(s => s.StakeholderContacts)
-                .HasForeignKey(sc => sc.StakeholderId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // CRMComment relationship
-            modelBuilder.Entity<CRMComment>()
-                .HasOne(cc => cc.Creator)
-                .WithMany()
-                .HasForeignKey(cc => cc.CreatorUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<CRMComment>()
-                .HasOne(cc => cc.ParentComment)
-                .WithMany()
-                .HasForeignKey(cc => cc.ParentCommentId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // CRMTeam
-            modelBuilder.Entity<CRMTeam>()
-                .HasOne(ct => ct.Creator)
-                .WithMany()
-                .HasForeignKey(ct => ct.CreatorUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // TaskNotification
-            modelBuilder.Entity<TaskNotification>()
-                .HasOne(tn => tn.Recipient)
-                .WithMany()
-                .HasForeignKey(tn => tn.RecipientUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ======================== UNIQUE CONSTRAINTS ========================
@@ -620,7 +928,7 @@ namespace MahERP.DataModelLayer
                     IsActive = true,
                     IsSystemPattern = true,
                     CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                    CreatorUserId = "system"
+                    CreatorUserId = null // تغییر از "system" به null
                 },
                 new RolePattern
                 {
@@ -631,7 +939,7 @@ namespace MahERP.DataModelLayer
                     IsActive = true,
                     IsSystemPattern = true,
                     CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                    CreatorUserId = "system"
+                    CreatorUserId = null // تغییر از "system" به null
                 },
                 new RolePattern
                 {
@@ -642,7 +950,7 @@ namespace MahERP.DataModelLayer
                     IsActive = true,
                     IsSystemPattern = true,
                     CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                    CreatorUserId = "system"
+                    CreatorUserId = null // تغییر از "system" به null
                 },
                 new RolePattern
                 {
@@ -653,7 +961,7 @@ namespace MahERP.DataModelLayer
                     IsActive = true,
                     IsSystemPattern = true,
                     CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                    CreatorUserId = "system"
+                    CreatorUserId = null // تغییر از "system" به null
                 }
             );
 
