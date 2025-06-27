@@ -159,12 +159,13 @@
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="ویرایش">
                                         <i class="fa fa-pencil-alt"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="@(item.IsActive ? " غیرفعال‌سازی" : "فعال‌سازی")"
-                                            onclick="loadModal('@Url.Action(" ToggleActiveStatus", new { id = item.Id })')">
-                                        <i class="fa @(item.IsActive ? " fa-ban" : "fa-check")"></i>
+                                    <button type="button" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" 
+                                            title="@(item.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")"
+                                            href="@Url.Action("ToggleActiveStatus", new { id = item.Id })" data-toggle="modal-ajax">
+                                        <i class="fa @(item.IsActive ? "fa-ban" : "fa-check")"></i>
                                     </button>
                                     <button type="button" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف"
-                                            onclick="loadModal('@Url.Action(" Delete", new { id = item.Id })')">
+                                            href="@Url.Action("Delete", new { id = item.Id })" data-toggle="modal-ajax">
                                         <i class="fa fa-times"></i>
                                     </button>
                                 </div>
@@ -177,33 +178,8 @@
     </div>
 </div>
 
-<!-- Generic Modal Container -->
-<div class="modal fade" id="modal-block-normal" tabindex="-1" role="dialog" aria-labelledby="modal-block-normal" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content" id="modal-content">
-            <!-- Content will be loaded here via AJAX -->
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
-        function loadModal(url) {
-            $("#modal-content").html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin fa-3x"></i><p class="mt-2">در حال بارگذاری...</p></div>');
-            $("#modal-block-normal").modal("show");
-
-            $.ajax({
-                url: url,
-                type: 'GET',
-                success: function (result) {
-                    $("#modal-content").html(result);
-                },
-                error: function () {
-                    $("#modal-content").html('<div class="text-center p-3 text-danger"><i class="fa fa-exclamation-triangle fa-3x"></i><p class="mt-2">خطا در بارگذاری</p></div>');
-                }
-            });
-        }
-
         // Initialize tooltips
         $(function () {
             $('[data-bs-toggle="tooltip"]').tooltip();

@@ -23,14 +23,14 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
 
         [Display(Name = "رتبه اعتباری")]
         [MaxLength(1)]
-        public string CreditRating { get; set; }
+        public string? CreditRating { get; set; }
 
         [Display(Name = "علاقه‌مندی‌ها و ترجیحات")]
-        public string Preferences { get; set; }
+        public string? Preferences { get; set; }
 
         [Display(Name = "صنعت/حوزه فعالیت")]
         [MaxLength(100)]
-        public string Industry { get; set; }
+        public string? Industry { get; set; }
 
         [Display(Name = "تعداد کارمندان")]
         public int? EmployeeCount { get; set; }
@@ -39,10 +39,10 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
         public decimal? AnnualRevenue { get; set; }
 
         [Display(Name = "کارشناس فروش اختصاصی")]
-        public string SalesRepUserId { get; set; }
+        public string? SalesRepUserId { get; set; }
         
         [Display(Name = "یادداشت‌های داخلی")]
-        public string InternalNotes { get; set; }
+        public string? InternalNotes { get; set; }
         
         // نمایش منبع آشنایی به صورت متنی
         public string LeadSourceText

@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
 {
@@ -25,29 +24,29 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
 
         [Display(Name = "سمت")]
         [MaxLength(150, ErrorMessage = "سمت نمی‌تواند بیش از 150 کاراکتر باشد")]
-        public string Position { get; set; }
+        public string? Position { get; set; }
 
         [Display(Name = "تلفن ثابت")]
         [MaxLength(20, ErrorMessage = "تلفن ثابت نمی‌تواند بیش از 20 کاراکتر باشد")]
         [RegularExpression(@"^[0-9\-\+\(\)]*$", ErrorMessage = "فرمت تلفن نامعتبر است")]
-        public string Phone { get; set; }
+        public string? Phone { get; set; }
 
         [Display(Name = "تلفن همراه")]
         [MaxLength(20, ErrorMessage = "تلفن همراه نمی‌تواند بیش از 20 کاراکتر باشد")]
         [RegularExpression(@"^[0-9\-\+\(\)]*$", ErrorMessage = "فرمت موبایل نامعتبر است")]
-        public string Mobile { get; set; }
+        public string? Mobile { get; set; }
 
         [Display(Name = "ایمیل")]
         [MaxLength(100, ErrorMessage = "ایمیل نمی‌تواند بیش از 100 کاراکتر باشد")]
         [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Display(Name = "نوع ارتباط")]
         public byte ContactType { get; set; }
 
         [Display(Name = "یادداشت")]
         [MaxLength(500, ErrorMessage = "یادداشت نمی‌تواند بیش از 500 کاراکتر باشد")]
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
 
         [Display(Name = "مخاطب اصلی")]
         public bool IsPrimary { get; set; }
@@ -58,7 +57,7 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
         [Display(Name = "تاریخ ثبت")]
         public DateTime CreateDate { get; set; }
 
-        public string CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; }
 
         /// <summary>
         /// نمایش نام کامل فرد مرتبط

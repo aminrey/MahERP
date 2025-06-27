@@ -91,7 +91,7 @@ namespace MahERP.DataModelLayer.ViewModels.CRMViewModels
         public string CRMTypeText => CRMType switch
         {
             0 => "تماس تلفنی",
-            1 => "جلسه حضوری", 
+            1 => "جلسه حضوری",
             2 => "ایمیل",
             3 => "پیامک",
             4 => "سایر",

@@ -90,13 +90,15 @@
                                 <i class="fa fa-fw fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-default-alt-secondary">
-                                <a class="dropdown-item" href="javascript:void(0)" onclick="openModal('@Url.Action("ToggleActiveStatus", new { id = Model.Id })')">
+                                <!-- Replace openModal function calls with data-toggle="modal-ajax" -->
+                                <a class="dropdown-item" href="@Url.Action("ToggleActiveStatus", new { id = Model.Id })" data-toggle="modal-ajax">
                                     <i class="fa fa-fw @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-1"></i> @(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")
                                 </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="openModal('@Url.Action("Delete", new { id = Model.Id })')">
+                                <a class="dropdown-item text-danger" href="@Url.Action("Delete", new { id = Model.Id })" data-toggle="modal-ajax">
                                     <i class="fa fa-fw fa-trash-alt me-1"></i> حذف
                                 </a>
+
+                                <!-- Remove the old openModal function -->
                             </div>
                         </div>
                     </div>
@@ -443,4 +445,5 @@
             $('[data-bs-toggle="tooltip"]').tooltip();
         });
     </script>
+
 }

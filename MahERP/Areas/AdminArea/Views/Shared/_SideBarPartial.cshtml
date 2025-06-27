@@ -259,32 +259,10 @@
 <!-- JavaScript for Advanced Search Modal -->
 <script>
     function loadAdvancedSearchModal() {
-        $("#advanced-search-content").html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin fa-3x"></i><p class="mt-2">در حال بارگذاری...</p></div>');
-
-        $.ajax({
-            url: '@Url.Action("AdvancedSearch", "Stakeholder", new { area = "AdminArea" })',
-            type: 'GET',
-            success: function (result) {
-                $("#advanced-search-content").html(result);
-            },
-            error: function () {
-                $("#advanced-search-content").html('<div class="text-center p-3 text-danger"><i class="fa fa-exclamation-triangle fa-3x"></i><p class="mt-2">خطا در بارگذاری فرم جستجو</p></div>');
-            }
-        });
+        createAndShowModal('@Url.Action("AdvancedSearch", "Stakeholder", new { area = "AdminArea" })');
     }
 
     function loadTaskAdvancedSearchModal() {
-        $("#advanced-search-task-content").html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin fa-3x"></i><p class="mt-2">در حال بارگذاری...</p></div>');
-
-        $.ajax({
-            url: '@Url.Action("AdvancedSearch", "Task", new { area = "AdminArea" })',
-            type: 'GET',
-            success: function (result) {
-                $("#advanced-search-task-content").html(result);
-            },
-            error: function () {
-                $("#advanced-search-task-content").html('<div class="text-center p-3 text-danger"><i class="fa fa-exclamation-triangle fa-3x"></i><p class="mt-2">خطا در بارگذاری فرم جستجو</p></div>');
-            }
-        });
+        createAndShowModal('@Url.Action("AdvancedSearch", "Task", new { area = "AdminArea" })');
     }
 </script>

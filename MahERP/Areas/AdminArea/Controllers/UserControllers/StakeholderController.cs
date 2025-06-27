@@ -260,6 +260,16 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             _uow.StakeholderUW.Update(stakeholder);
             _uow.Save();
 
+            // بررسی اینکه درخواست AJAX است یا نه
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new
+                {
+                    status = "redirect",
+                    redirectUrl = Url.Action("Index")
+                });
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -290,6 +300,16 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             stakeholder.IsDeleted = true;
             _uow.StakeholderUW.Update(stakeholder);
             _uow.Save();
+
+            // بررسی اینکه درخواست AJAX است یا نه
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new
+                {
+                    status = "redirect",
+                    redirectUrl = Url.Action("Index")
+                });
+            }
 
             return RedirectToAction(nameof(Index));
         }
@@ -473,63 +493,20 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 query = query.Where(s => s.CreateDate <= toDate);
             }
 
-            //// فیلترهای CRM
-            //if (model.SalesStage.HasValue || model.LeadSource.HasValue || !string.IsNullOrWhiteSpace(model.Industry) ||
-            //    !string.IsNullOrWhiteSpace(model.CreditRating) || model.MinPotentialValue.HasValue || model.MaxPotentialValue.HasValue ||
-            //    !string.IsNullOrWhiteSpace(model.SalesRepUserId))
-            //{
-            //    // در صورتی که فیلترهای CRM وجود داشته باشند، باید ارتباط با جدول CRM را اضافه کنیم
-            //    query = query.Join(_uow.StakeholderCRMUW.Get(),
-            //        stakeholder => stakeholder.Id,
-            //        crm => crm.StakeholderId,
-            //        (stakeholder, crm) => new { Stakeholder = stakeholder, CRM = crm })
-            //        .AsQueryable();
-
-            //    if (model.SalesStage.HasValue)
-            //    {
-            //        query = query.Where(x => x.CRM.SalesStage == model.SalesStage.Value);
-            //    }
-
-            //    if (model.LeadSource.HasValue)
-            //    {
-            //        query = query.Where(x => x.CRM.LeadSource == model.LeadSource.Value);
-            //    }
-
-            //    if (!string.IsNullOrWhiteSpace(model.Industry))
-            //    {
-            //        query = query.Where(x => x.CRM.Industry.Contains(model.Industry));
-            //    }
-
-            //    if (!string.IsNullOrWhiteSpace(model.CreditRating))
-            //    {
-            //        query = query.Where(x => x.CRM.CreditRating == model.CreditRating);
-            //    }
-
-            //    if (model.MinPotentialValue.HasValue)
-            //    {
-            //        query = query.Where(x => x.CRM.PotentialValue >= model.MinPotentialValue.Value);
-            //    }
-
-            //    if (model.MaxPotentialValue.HasValue)
-            //    {
-            //        query = query.Where(x => x.CRM.PotentialValue <= model.MaxPotentialValue.Value);
-            //    }
-
-            //    if (!string.IsNullOrWhiteSpace(model.SalesRepUserId))
-            //    {
-            //        query = query.Where(x => x.CRM.SalesRepUserId == model.SalesRepUserId);
-            //    }
-
-            //    // استخراج دوباره فقط اطلاعات Stakeholder
-            //    query = query.Select(x => x.Stakeholder);
-            //}
-
             // مرتب‌سازی بر اساس تاریخ ایجاد (نزولی)
             var stakeholders = query.OrderByDescending(s => s.CreateDate).ToList();
 
-            // ذخیره پارامترهای جستجو در ViewBag برای استفاده در صفحه نتایج
-            ViewBag.SearchModel = model;
+            // بررسی اینکه درخواست AJAX است یا نه
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new
+                {
+                    status = "redirect",
+                    redirectUrl = Url.Action("SearchResults", "Stakeholder", model)
+                });
+            }
 
+            ViewBag.SearchModel = model;
             return View("SearchResults", stakeholders);
         }
 

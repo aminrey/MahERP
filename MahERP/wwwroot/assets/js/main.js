@@ -22,8 +22,11 @@ $(document).on('click', '[data-toggle="modal-old"]', function (event) {
 
     $.get(url).done(function (data) {
         modalElement.html(data);
-        modalElement.modal("show");
+        // استفاده از Bootstrap 5 Modal API
+        var bootstrapModal = new bootstrap.Modal(modalElement[0]);
+        bootstrapModal.show();
     }).fail(function (jqXHR, textStatus, errorThrown) {
+        console.error('Error loading modal content:', errorThrown);
     });
 });
 
@@ -35,33 +38,54 @@ $(document).on('click', '[data-toggle="modal-ajax"]', function (event) {
     var url = trigger.attr("href");
     if (url == undefined) {
         url = trigger.attr("formaction");
-
     }
     createAndShowModal(url);
 });
 
 
 function createAndShowModal(url) {
-    // Create a unique modal container var modalHtml = `<div aria-labelledby="${uniqueModalId}" class="modal fade" data-bs-focus="false" role="dialog" id="${uniqueModalId}" tabindex="-1" aria-hidden="true"></div>`;
-    $('body').append(modalHtml);
     var uniqueModalId = 'modal-' + Date.now();
-    var modalHtml = `<div aria-labelledby="${uniqueModalId}" class="modal fade" data-bs-focus="false" role="dialog" id="${uniqueModalId}" tabindex="-1" aria-hidden="true"></div>`;
-    $('body').append(modalHtml);
+    var modalHtml = `<div aria-labelledby="${uniqueModalId}" class="modal fade" data-bs-focus="false" role="dialog" id="${uniqueModalId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
+                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
+                </div>
+            </div>
+        </div>
+    </div>`;
 
-    var modalElement = $('#' + uniqueModalId);
+    $('body').append(modalHtml);
+    var modalElement = document.getElementById(uniqueModalId);
+    var bootstrapModal = new bootstrap.Modal(modalElement);
 
     // Load content into the modal via AJAX
-    $.get(url).done(function (data) {
-        modalElement.html(data);
+    $.get(url)
+        .done(function (data) {
+            $(modalElement).find('.modal-content').html(data);
 
-        modalElement.find('.js-select2').attr('data-container', '#' + uniqueModalId);
+            // تنظیم select2 اگر وجود داشته باشد
+            $(modalElement).find('.js-select2').attr('data-container', '#' + uniqueModalId);
 
-        modalElement.modal('show');
-    });
+            bootstrapModal.show();
+        })
+        .fail(function (xhr, status, error) {
+            console.error('Error loading modal content:', error);
+            $(modalElement).find('.modal-content').html(`
+                <div class="modal-body text-center">
+                    <i class="fa fa-3x fa-exclamation-triangle text-danger my-3"></i>
+                    <h3 class="mt-2 mb-3">خطا در بارگذاری</h3>
+                    <p>لطفا دوباره تلاش کنید.</p>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                </div>
+            `);
+            bootstrapModal.show();
+        });
 
     // Handle modal hidden event to remove it from the DOM
-    modalElement.on('hidden.bs.modal', function (e) {
-        $(this).remove();
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        modalElement.remove();
     });
 }
 
@@ -69,7 +93,7 @@ function createAndShowModal(url) {
 function ModalTrigger(input) {
     event.preventDefault();
     var url = $(input).attr('href');
-    createAndShowModal('modal-action', url);
+    createAndShowModal(url);
 }
 
 
@@ -119,9 +143,16 @@ $(document).on('click', ' [data-save="modal-ajax-save"]', function (event) {
                         $("#" + item.elementId).html(item.view.result);
                     });
                 }
-               
-                $button.closest('.modal').find('[data-bs-dismiss="modal"]').click();
-                $modal.remove();
+
+                // استفاده از Bootstrap 5 API برای بستن مودال
+                var modalElement = $button.closest('.modal')[0];
+                var bootstrapModal = bootstrap.Modal.getInstance(modalElement);
+                if (bootstrapModal) {
+                    bootstrapModal.hide();
+                }
+                setTimeout(() => {
+                    $modal.remove();
+                }, 300);
 
             }
 
@@ -348,7 +379,7 @@ $(document).on('click', 'button[data-toggle="submitformmultiple"]', function (ev
 
         tinymce.triggerSave();
 
-    } 
+    }
     $('input[type="checkbox"]').each(function () {
         var checkbox = $(this);
         var isChecked = checkbox.prop('checked');
@@ -384,7 +415,7 @@ $(document).on('click', 'button[data-toggle="submitformmultiple"]', function (ev
         processData: false
 
     }).done(function (response) {
-      
+
 
         $.each(response.viewList, function (index, item) {
             // Code to be executed for each element
@@ -426,9 +457,9 @@ function debounce(func, wait) {
 // تابع اصلی برای ارسال فرم
 function submitForm($target) {
     var viewId = $target.data('target');
-  
+
     var form = $target.closest('form');
-   
+
 
     Dashmix.block('state_loading', viewId);
 
@@ -530,8 +561,8 @@ $(document).on('click', '[data-toggle="swal-asp"]', function (event) {
 
             $(location).prop('href', href)
 
-            
-        } 
+
+        }
     });
 
 });
@@ -607,8 +638,14 @@ $(document).on('click', '[data-toggle="swal-ajax"]', function (event) {
                                 $("#" + item.elementId).html(item.view.result);
                             });
                         }
-                        $button.closest('.modal').find('[data-bs-dismiss="modal"]').click();
-                        $modal.remove();
+                        // اصلاح برای Bootstrap 5
+                        var modalElement = document.querySelector('.modal.show');
+                        if (modalElement) {
+                            var bootstrapModal = bootstrap.Modal.getInstance(modalElement);
+                            if (bootstrapModal) {
+                                bootstrapModal.hide();
+                            }
+                        }
 
                     }
 
@@ -637,7 +674,8 @@ $(document).on('click', '[data-toggle="swal-ajax"]', function (event) {
                     }
                 },
                 error: function (xhr) {
-                    $button.prop('disabled', false); // Disable the button immediately
+                    // حذف اشاره به $button که تعریف نشده بود
+                    console.error('AJAX Error:', xhr);
 
                     // Error: Display the error message in the modal
                     var errors = xhr.responseJSON; // The ModelState object returned as JSON
@@ -647,13 +685,7 @@ $(document).on('click', '[data-toggle="swal-ajax"]', function (event) {
 
                 }
             });
-
-
-
-
-
-            
-        } 
+        }
     });
 
 });
@@ -695,29 +727,29 @@ function SendResposeMessageInView(response) {
 function SendResposeMessage(messages) {
     $.each(messages, function (index, messagerow) {
 
-            var icons = {
-                "success": 'fa fa-check',
-                "warning": 'fa fa-exclamation-triangle',
-                "info": 'fa fa-info',
-                "error": 'fa fa-times'
-            }; var notificationTypes = {
-                "success": 'success',
-                "warning": 'warning',
-                "info": 'info',
-                "error": 'error'
-            };
-            // Determine notification type based on status or default to 'info'
-            var notificationType = notificationTypes[messagerow.status] || 'info';
+        var icons = {
+            "success": 'fa fa-check',
+            "warning": 'fa fa-exclamation-triangle',
+            "info": 'fa fa-info',
+            "error": 'fa fa-times'
+        }; var notificationTypes = {
+            "success": 'success',
+            "warning": 'warning',
+            "info": 'info',
+            "error": 'error'
+        };
+        // Determine notification type based on status or default to 'info'
+        var notificationType = notificationTypes[messagerow.status] || 'info';
 
-            // Determine icon based on status
-            var icon = icons[messagerow.status] || 'fa fa-info';
+        // Determine icon based on status
+        var icon = icons[messagerow.status] || 'fa fa-info';
 
-            Dashmix.helpers('jq-notify', {
-                type: notificationType,
-                icon: icon + ' me-1', // Add space to separate icon classes
-                message: messagerow.text
-            });
+        Dashmix.helpers('jq-notify', {
+            type: notificationType,
+            icon: icon + ' me-1', // Add space to separate icon classes
+            message: messagerow.text
         });
+    });
 
 }
 

@@ -8,7 +8,7 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 <div class="modal-body">
-    <form id="searchForm" method="POST" action="@Url.Action("Search", "Stakeholder")">
+    <form id="stakeholderAdvancedSearchForm" method="POST" action="@Url.Action("Search", "Stakeholder")">
         @Html.AntiForgeryToken()
 
         <div class="row">
@@ -78,7 +78,7 @@
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
-    <button type="button" class="btn btn-primary" onclick="$('#searchForm').submit();">
+    <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
         <i class="fa fa-search me-1"></i> جستجو
     </button>
 </div>

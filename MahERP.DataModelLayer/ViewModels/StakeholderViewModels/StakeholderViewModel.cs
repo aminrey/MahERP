@@ -19,40 +19,40 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
 
         [Display(Name = "نام شرکت")]
         [MaxLength(200, ErrorMessage = "نام شرکت نمی‌تواند بیش از 200 کاراکتر باشد")]
-        public string CompanyName { get; set; }
+        public string? CompanyName { get; set; }
 
         [Display(Name = "تلفن ثابت")]
         [MaxLength(20, ErrorMessage = "تلفن ثابت نمی‌تواند بیش از 20 کاراکتر باشد")]
         [RegularExpression(@"^[0-9\-\+\(\)]*$", ErrorMessage = "فرمت تلفن نامعتبر است")]
-        public string Phone { get; set; }
-        
+        public string? Phone { get; set; }
+
         [Display(Name = "تلفن همراه")]
         [MaxLength(20, ErrorMessage = "تلفن همراه نمی‌تواند بیش از 20 کاراکتر باشد")]
         [RegularExpression(@"^[0-9\-\+\(\)]*$", ErrorMessage = "فرمت موبایل نامعتبر است")]
-        public string Mobile { get; set; }
+        public string? Mobile { get; set; }
 
         [Display(Name = "ایمیل")]
         [MaxLength(100, ErrorMessage = "ایمیل نمی‌تواند بیش از 100 کاراکتر باشد")]
         [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Display(Name = "آدرس")]
         [MaxLength(500, ErrorMessage = "آدرس نمی‌تواند بیش از 500 کاراکتر باشد")]
-        public string Address { get; set; }
+        public string? Address { get; set; }
 
         [Display(Name = "کد پستی")]
         [MaxLength(20, ErrorMessage = "کد پستی نمی‌تواند بیش از 20 کاراکتر باشد")]
         [RegularExpression(@"^[0-9]*$", ErrorMessage = "کد پستی فقط شامل اعداد می‌باشد")]
-        public string PostalCode { get; set; }
+        public string? PostalCode { get; set; }
 
         [Display(Name = "کد ملی")]
         [MaxLength(20, ErrorMessage = "کد ملی نمی‌تواند بیش از 20 کاراکتر باشد")]
         [RegularExpression(@"^[0-9]*$", ErrorMessage = "کد ملی فقط شامل اعداد می‌باشد")]
-        public string NationalCode { get; set; }
-        
+        public string? NationalCode { get; set; }
+
         [Display(Name = "توضیحات")]
         [MaxLength(1000, ErrorMessage = "توضیحات نمی‌تواند بیش از 1000 کاراکتر باشد")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreateDate { get; set; }
@@ -64,7 +64,7 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
         public bool IsActive { get; set; } = true;
 
         // اطلاعات CRM
-        public StakeholderCRMViewModel CRMInfo { get; set; }
+        public StakeholderCRMViewModel? CRMInfo { get; set; }
 
         // نمایش نام کامل
         public string FullName => $"{FirstName} {LastName}";

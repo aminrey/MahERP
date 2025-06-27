@@ -4,48 +4,22 @@
 }
 
 <div class="modal-header">
-    <h5 class="modal-title">@(Model.IsActive ? "غیرفعال کردن" : "فعال کردن") طرف حساب</h5>
+    <h5 class="modal-title">@ViewBag.ModalTitle</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 <div class="modal-body">
-    <div class="py-3 text-center">
-        @if (Model.IsActive)
-        {
-            <i class="fa fa-ban fa-3x text-danger mb-3"></i>
-            <h4>آیا از غیرفعال کردن این طرف حساب اطمینان دارید؟</h4>
-            <p class="text-muted mb-0">
-                با غیرفعال کردن طرف حساب "<strong>@Model.FirstName @Model.LastName</strong>"، دسترسی به آن محدود می‌شود اما اطلاعات آن حذف نمی‌شود.
-                <br>این عملیات قابل بازگشت است.
-            </p>
-        }
-        else
-        {
-            <i class="fa fa-check fa-3x text-success mb-3"></i>
-            <h4>آیا از فعال کردن این طرف حساب اطمینان دارید؟</h4>
-            <p class="text-muted mb-0">
-                با فعال کردن طرف حساب "<strong>@Model.FirstName @Model.LastName</strong>"، می‌توانید مجدداً از امکانات مربوط به آن استفاده کنید.
-            </p>
-        }
-    </div>
-</div>
-<div class="modal-footer">
-    <form method="post" action="@Url.Action("ActiveOrDeactiveStakeholderPost", "Stakeholder")">
+    <form method="POST" action="@Url.Action("ActiveOrDeactiveStakeholderPost", "Stakeholder")">
         @Html.AntiForgeryToken()
         <input type="hidden" name="id" value="@Model.Id" />
-        <input type="hidden" name="isActive" value="@(!Model.IsActive)" />
-
-        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
-        @if (Model.IsActive)
-        {
-            <button type="submit" class="btn btn-danger">
-                <i class="fa fa-ban me-1"></i> غیرفعال کردن
-            </button>
-        }
-        else
-        {
-            <button type="submit" class="btn btn-success">
-                <i class="fa fa-check me-1"></i> فعال کردن
-            </button>
-        }
+        <input type="hidden" name="isActive" value="@Model.IsActive" />
+        
+        <div class="text-center">
+            <i class="fa fa-3x @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") mb-3"></i>
+            <p>آیا از @(Model.IsActive ? "غیرفعال کردن" : "فعال کردن") طرف حساب <strong>@Model.FirstName @Model.LastName</strong> مطمئن هستید؟</p>
+        </div>
     </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
+    <button type="button" class="btn @ViewBag.ButonClass" data-save="modal-ajax-save">تایید</button>
 </div>

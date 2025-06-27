@@ -59,7 +59,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="openAdvancedSearch()">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AdvancedSearch", "Stakeholder")" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold text-dark mb-1">
                         <i class="fa fa-search"></i>
@@ -216,15 +216,15 @@
                                     <a href="@Url.Action("EditStakeholder", "Stakeholder", new { id = item.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش">
                                         <i class="fa fa-fw fa-pencil-alt"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="عملیات بیشتر" id="dropdown-ecom-item-@item.Id" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-bs-original-title="عملیات بیشتر">
                                         <i class="fa fa-fw fa-ellipsis-v"></i>
                                     </button>
-                                    <div class="dropdown-menu dropdown-menu-end fs-sm" aria-labelledby="dropdown-ecom-item-@item.Id">
-                                        <a class="dropdown-item" href="javascript:void(0)" onclick="openModal('@Url.Action("ActiveOrDeactiveStakeholder", "Stakeholder", new { id = item.Id })')">
+                                    <div class="dropdown-menu dropdown-menu-end fs-sm">
+                                        <a class="dropdown-item" href="@Url.Action("ActiveOrDeactiveStakeholder", "Stakeholder", new { id = item.Id })" data-toggle="modal-ajax">
                                             @(item.IsActive ? "غیرفعال کردن" : "فعال کردن")
                                         </a>
                                         <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="openModal('@Url.Action("DeleteStakeholder", "Stakeholder", new { id = item.Id })')">
+                                        <a class="dropdown-item text-danger" href="@Url.Action("DeleteStakeholder", "Stakeholder", new { id = item.Id })" data-toggle="modal-ajax">
                                             <i class="fa fa-fw fa-trash-alt me-1"></i> حذف
                                         </a>
                                     </div>
@@ -240,40 +240,9 @@
     <!-- END Stakeholders -->
 </div>
 <!-- END Page Content -->
-<!-- Modal Container for dynamic content -->
-<div class="modal fade" id="modal-stakeholder" tabindex="-1" role="dialog" aria-labelledby="modal-stakeholder" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <!-- Dynamic content will be loaded here -->
-            <div class="modal-body">
-                <div class="text-center">
-                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
-                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section scripts {
     <script>
-        // Function to open modal and load content
-        function openModal(url) {
-            $('#modal-stakeholder .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
-            $('#modal-stakeholder').modal('show');
-
-            // Load content via AJAX
-            $.get(url, function(data) {
-                $('#modal-stakeholder .modal-content').html(data);
-            });
-        }
-
-        // Function to open advanced search modal
-        function openAdvancedSearch() {
-            openModal('@Url.Action("AdvancedSearch", "Stakeholder")');
-        }
-
-        // Initialize DataTable
         $(document).ready(function() {
             $('.js-dataTable-full').DataTable({
                 language: {
@@ -283,7 +252,6 @@
                 responsive: true
             });
 
-            // Initialize tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
         });
     </script>
