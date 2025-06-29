@@ -20,7 +20,6 @@
     </div>
 </div>
 <!-- END Hero -->
-
 <!-- Page Content -->
 <div class="content">
     <!-- Quick Actions -->
@@ -164,7 +163,7 @@
                                             <a class="btn btn-sm btn-alt-secondary" asp-action="UserPermissions" asp-route-userId="@Model[i].UserId" data-bs-toggle="tooltip" title="مشاهده دسترسی‌ها">
                                                 <i class="fa fa-fw fa-eye"></i>
                                             </a>
-                                            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="loadModal('@Url.Action("AssignRolePattern", new { userId = Model[i].UserId })')" data-bs-toggle="tooltip" title="تخصیص الگوی نقش">
+                                            <button type="button" class="btn btn-sm btn-alt-secondary" href="@Url.Action("AssignRolePattern", "UserPermission", new { userId = Model[i].UserId })" data-bs-toggle="tooltip" title="تخصیص الگوی نقش">
                                                 <i class="fa fa-fw fa-plus"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-alt-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -175,7 +174,7 @@
                                                 {
                                                     @foreach (var pattern in Model[i].RolePatterns.Where(rp => rp.IsActive))
                                                     {
-                                                        <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="loadModal('@Url.Action("RemoveRolePattern", new { id = pattern.Id })')">
+                                                        <a class="dropdown-item text-danger" href="@Url.Action("RemoveRolePattern", "UserPermission", new { id = pattern.Id })">
                                                             <i class="fa fa-fw fa-times me-1"></i> حذف "@pattern.PatternName"
                                                         </a>
                                                     }
@@ -203,7 +202,6 @@
     </div>
 </div>
 <!-- END Page Content -->
-
 <!-- Modal Container -->
 <div class="modal fade" id="modal-userpermission" tabindex="-1" role="dialog" aria-labelledby="modal-userpermission" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">

@@ -39,17 +39,46 @@ namespace MahERP.Controllers
                     IsAdmin = true,
                     IsActive = true,
                     RegisterDate = DateTime.Now,
-
                 };
+
                 IdentityResult result = await _UserManager.CreateAsync(User, "Admin1234@");
-                var Roles = _Context.RoleUW.Get().ToList();
 
-                foreach (var item in Roles)
+                if (result.Succeeded)
                 {
-                    await _UserManager.AddToRoleAsync(User, item.Name);
+                    // تخصیص همه نقش‌ها
+                    var Roles = _Context.RoleUW.Get().ToList();
+                    foreach (var item in Roles)
+                    {
+                        await _UserManager.AddToRoleAsync(User, item.Name);
+                    }
 
+                    // تخصیص الگوی نقش "مدیریت کامل" 
+                    var adminRolePattern = new UserRolePattern
+                    {
+                        UserId = User.Id,
+                        RolePatternId = 1, // الگوی مدیریت کامل
+                        AssignDate = DateTime.Now,
+                        AssignedByUserId = User.Id, // خود کاربر
+                        IsActive = true,
+                        StartDate = DateTime.Now,
+                        Notes = "تخصیص خودکار هنگام ایجاد کاربر Admin"
+                    };
+
+                    _Context.UserRolePatternUW.Create(adminRolePattern);
+
+                    // تخصیص کاربر به شعبه اصلی
+                    var branchUser = new BranchUser
+                    {
+                        UserId = User.Id,
+                        BranchId = 1, // شعبه اصلی
+                        AssignedByUserId = User.Id,
+                        AssignDate = DateTime.Now,
+                        IsActive = true
+                    };
+
+                    _Context.BranchUserUW.Create(branchUser);
+                    _Context.Save();
                 }
-
             }
             else
             {

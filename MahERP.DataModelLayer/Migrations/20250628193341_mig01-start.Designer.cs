@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250627095705_mig01-start")]
+    [Migration("20250628193341_mig01-start")]
     partial class mig01start
     {
         /// <inheritdoc />
@@ -710,6 +710,62 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = true,
                             CanEdit = true,
                             CanRead = true,
+                            ControllerName = "UserPermission",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 8,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "Branch",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 9,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "Team",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 10,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
+                            ControllerName = "TaskCategory",
+                            DataAccessLevel = (byte)2,
+                            IsActive = true,
+                            RolePatternId = 1
+                        },
+                        new
+                        {
+                            Id = 11,
+                            ActionName = "*",
+                            CanApprove = true,
+                            CanCreate = true,
+                            CanDelete = true,
+                            CanEdit = true,
+                            CanRead = true,
                             ControllerName = "Task",
                             DataAccessLevel = (byte)1,
                             IsActive = true,
@@ -717,7 +773,7 @@ namespace MahERP.DataModelLayer.Migrations
                         },
                         new
                         {
-                            Id = 8,
+                            Id = 12,
                             ActionName = "Index,Details,Create,Edit",
                             CanApprove = false,
                             CanCreate = true,
@@ -731,7 +787,7 @@ namespace MahERP.DataModelLayer.Migrations
                         },
                         new
                         {
-                            Id = 9,
+                            Id = 13,
                             ActionName = "Index,Details",
                             CanApprove = false,
                             CanCreate = false,
@@ -745,7 +801,7 @@ namespace MahERP.DataModelLayer.Migrations
                         },
                         new
                         {
-                            Id = 10,
+                            Id = 14,
                             ActionName = "*",
                             CanApprove = false,
                             CanCreate = true,
@@ -759,7 +815,7 @@ namespace MahERP.DataModelLayer.Migrations
                         },
                         new
                         {
-                            Id = 11,
+                            Id = 15,
                             ActionName = "Index,Details,Create,Edit",
                             CanApprove = false,
                             CanCreate = true,
@@ -773,7 +829,7 @@ namespace MahERP.DataModelLayer.Migrations
                         },
                         new
                         {
-                            Id = 12,
+                            Id = 16,
                             ActionName = "Index,Details,MyTasks",
                             CanApprove = false,
                             CanCreate = false,
@@ -787,7 +843,7 @@ namespace MahERP.DataModelLayer.Migrations
                         },
                         new
                         {
-                            Id = 13,
+                            Id = 17,
                             ActionName = "Index,Details,MyTasks",
                             CanApprove = false,
                             CanCreate = false,

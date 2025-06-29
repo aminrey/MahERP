@@ -220,6 +220,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         {
             var users = _userManager.Users
                 .Where(u => u.IsActive && !u.IsRemoveUser)
+                .AsEnumerable() // Switch to client-side evaluation
                 .Select(u => new { 
                     Id = u.Id, 
                     Name = $"{u.FirstName} {u.LastName} ({u.UserName})" 

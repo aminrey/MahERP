@@ -2006,13 +2006,17 @@ namespace MahERP.DataModelLayer.Migrations
                     { 4, "*", true, true, true, true, true, "Contract", (byte)2, true, 1 },
                     { 5, "*", true, true, true, true, true, "User", (byte)2, true, 1 },
                     { 6, "*", true, true, true, true, true, "RolePattern", (byte)2, true, 1 },
-                    { 7, "*", true, true, true, true, true, "Task", (byte)1, true, 2 },
-                    { 8, "Index,Details,Create,Edit", false, true, false, true, true, "CRM", (byte)1, true, 2 },
-                    { 9, "Index,Details", false, false, false, false, true, "Stakeholder", (byte)1, true, 2 },
-                    { 10, "*", false, true, false, true, true, "CRM", (byte)0, true, 3 },
-                    { 11, "Index,Details,Create,Edit", false, true, false, true, true, "Stakeholder", (byte)0, true, 3 },
-                    { 12, "Index,Details,MyTasks", false, false, false, false, true, "Task", (byte)0, true, 3 },
-                    { 13, "Index,Details,MyTasks", false, false, false, false, true, "Task", (byte)0, true, 4 }
+                    { 7, "*", true, true, true, true, true, "UserPermission", (byte)2, true, 1 },
+                    { 8, "*", true, true, true, true, true, "Branch", (byte)2, true, 1 },
+                    { 9, "*", true, true, true, true, true, "Team", (byte)2, true, 1 },
+                    { 10, "*", true, true, true, true, true, "TaskCategory", (byte)2, true, 1 },
+                    { 11, "*", true, true, true, true, true, "Task", (byte)1, true, 2 },
+                    { 12, "Index,Details,Create,Edit", false, true, false, true, true, "CRM", (byte)1, true, 2 },
+                    { 13, "Index,Details", false, false, false, false, true, "Stakeholder", (byte)1, true, 2 },
+                    { 14, "*", false, true, false, true, true, "CRM", (byte)0, true, 3 },
+                    { 15, "Index,Details,Create,Edit", false, true, false, true, true, "Stakeholder", (byte)0, true, 3 },
+                    { 16, "Index,Details,MyTasks", false, false, false, false, true, "Task", (byte)0, true, 3 },
+                    { 17, "Index,Details,MyTasks", false, false, false, false, true, "Task", (byte)0, true, 4 }
                 });
 
             migrationBuilder.CreateIndex(
