@@ -63,5 +63,6 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public virtual ICollection<Contract> Contracts { get; set; } = new HashSet<Contract>();
         public virtual ICollection<Tasks> TaskList { get; set; } = new HashSet<Tasks>();
         public virtual ICollection<StakeholderContact> StakeholderContacts { get; set; } = new HashSet<StakeholderContact>();
+        public DateTime LastUpdateDate { get; set; }
     }
 }

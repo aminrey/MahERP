@@ -8,18 +8,34 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 <div class="modal-body">
-    <form method="POST" action="@Url.Action("ActiveOrDeactiveStakeholderPost", "Stakeholder")">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="id" value="@Model.Id" />
-        <input type="hidden" name="isActive" value="@Model.IsActive" />
-        
+    <form asp-controller="Stakeholder" asp-action="ActiveOrDeactiveStakeholderPost" method="post">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="IsActive" />
+
         <div class="text-center">
-            <i class="fa fa-3x @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") mb-3"></i>
-            <p>آیا از @(Model.IsActive ? "غیرفعال کردن" : "فعال کردن") طرف حساب <strong>@Model.FirstName @Model.LastName</strong> مطمئن هستید؟</p>
+            @if (Model.IsActive == true)
+            {
+                <i class="fa fa-3x fa-ban text-warning mb-3"></i>
+                <p>آیا از غیرفعال کردن طرف حساب <strong>@Model.FirstName @Model.LastName</strong> مطمئن هستید؟</p>
+                <p class="text-muted">طرف حساب قابل فعال‌سازی مجدد خواهد بود.</p>
+            }
+            else
+            {
+                <i class="fa fa-3x fa-check-circle text-success mb-3"></i>
+                <p>آیا از فعال کردن طرف حساب <strong>@Model.FirstName @Model.LastName</strong> مطمئن هستید؟</p>
+                <p class="text-muted">طرف حساب دوباره قابل استفاده خواهد بود.</p>
+            }
         </div>
     </form>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
-    <button type="button" class="btn @ViewBag.ButonClass" data-save="modal-ajax-save">تایید</button>
+    @if (Model.IsActive == true)
+    {
+        <button type="button" class="btn btn-warning" data-save="modal">غیرفعال کردن</button>
+    }
+    else
+    {
+        <button type="button" class="btn btn-success" data-save="modal">فعال کردن</button>
+    }
 </div>

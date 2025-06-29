@@ -29,7 +29,8 @@
     <!-- Edit Stakeholder Form -->
     <form method="POST" action="@Url.Action("EditStakeholder", "Stakeholder")" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="Id" value="@Model.Id" />
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="CRMInfo.Id" type="hidden" />
 
         <div class="block block-rounded">
             <div class="block-header block-header-default">

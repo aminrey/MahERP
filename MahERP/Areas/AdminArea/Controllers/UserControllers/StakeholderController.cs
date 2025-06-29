@@ -14,6 +14,7 @@ using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.StaticClasses; // این خط را اضافه کنید
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
@@ -165,6 +166,10 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     !_stakeholderRepository.IsNationalCodeUnique(model.NationalCode, model.Id))
                 {
                     ModelState.AddModelError("NationalCode", "کد ملی وارد شده قبلاً ثبت شده است");
+                    ViewBag.SalesReps = new SelectList(_userManager.Users
+                        .Where(u => u.IsActive && !u.IsRemoveUser)
+                        .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                        "Id", "FullName");
                     return View(model);
                 }
 
@@ -172,48 +177,86 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     !_stakeholderRepository.IsEmailUnique(model.Email, model.Id))
                 {
                     ModelState.AddModelError("Email", "ایمیل وارد شده قبلاً ثبت شده است");
+                    ViewBag.SalesReps = new SelectList(_userManager.Users
+                        .Where(u => u.IsActive && !u.IsRemoveUser)
+                        .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                        "Id", "FullName");
                     return View(model);
                 }
 
-                // دریافت طرف حساب از دیتابیس
-                var stakeholder = _uow.StakeholderUW.GetById(model.Id);
-                if (stakeholder == null)
-                    return RedirectToAction("ErrorView", "Home");
-
-                // به‌روزرسانی اطلاعات
-                _mapper.Map(model, stakeholder);
-                _uow.StakeholderUW.Update(stakeholder);
-                _uow.Save();
-
-                // به‌روزرسانی اطلاعات CRM
-                if (model.CRMInfo != null)
+                try
                 {
-                    var stakeholderCRM = _uow.StakeholderCRMUW.Get(c => c.StakeholderId == model.Id).FirstOrDefault();
+                    // دریافت طرف حساب از دیتابیس
+                    var stakeholder = _uow.StakeholderUW.GetById(model.Id);
+                    if (stakeholder == null)
+                        return RedirectToAction("ErrorView", "Home");
 
-                    if (stakeholderCRM == null)
-                    {
-                        // ایجاد رکورد جدید اگر وجود نداشته باشد
-                        stakeholderCRM = new StakeholderCRM
-                        {
-                            StakeholderId = model.Id,
-                            CreateDate = DateTime.Now
-                        };
-                        _mapper.Map(model.CRMInfo, stakeholderCRM);
-                        _uow.StakeholderCRMUW.Create(stakeholderCRM);
-                    }
-                    else
-                    {
-                        // بروزرسانی رکورد موجود
-                        _mapper.Map(model.CRMInfo, stakeholderCRM);
-                        stakeholderCRM.LastUpdateDate = DateTime.Now;
-                        _uow.StakeholderCRMUW.Update(stakeholderCRM);
-                    }
+                    // حفظ مقادیر اصلی که نباید تغییر کنند
+                    var originalCreateDate = stakeholder.CreateDate;
+                    var originalCreatorUserId = stakeholder.CreatorUserId;
 
+                    // به‌روزرسانی اطلاعات
+                    _mapper.Map(model, stakeholder);
+
+                    // بازگردانی مقادیر اصلی
+                    stakeholder.CreateDate = originalCreateDate;
+                    stakeholder.CreatorUserId = originalCreatorUserId;
+
+                    _uow.StakeholderUW.Update(stakeholder);
                     _uow.Save();
-                }
 
-                return RedirectToAction(nameof(Index));
+                    // به‌روزرسانی اطلاعات CRM
+                    if (model.CRMInfo != null)
+                    {
+                        var stakeholderCRM = _uow.StakeholderCRMUW.Get(c => c.StakeholderId == model.Id).FirstOrDefault();
+
+                        if (stakeholderCRM == null)
+                        {
+                            // ایجاد رکورد جدید اگر وجود نداشته باشد
+                            stakeholderCRM = new StakeholderCRM
+                            {
+                                StakeholderId = model.Id,
+                                CreateDate = DateTime.Now
+                            };
+                            _mapper.Map(model.CRMInfo, stakeholderCRM);
+                            _uow.StakeholderCRMUW.Create(stakeholderCRM);
+                        }
+                        else
+                        {
+                            // حفظ مقادیر اصلی CRM
+                            var originalCRMCreateDate = stakeholderCRM.CreateDate;
+                            var originalStakeholderId = stakeholderCRM.StakeholderId;
+
+                            // بروزرسانی رکورد موجود
+                            _mapper.Map(model.CRMInfo, stakeholderCRM);
+
+                            // بازگردانی مقادیر اصلی
+                            stakeholderCRM.CreateDate = originalCRMCreateDate;
+                            stakeholderCRM.StakeholderId = originalStakeholderId;
+                            stakeholderCRM.LastUpdateDate = DateTime.Now;
+
+                            _uow.StakeholderCRMUW.Update(stakeholderCRM);
+                        }
+
+                        _uow.Save();
+                    }
+
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    // لاگ کردن خطای دقیق‌تر
+                    ModelState.AddModelError("", $"خطا در ذخیره اطلاعات: {ex.Message}");
+
+                    // اگر خطای Inner Exception وجود دارد
+                    if (ex.InnerException != null)
+                    {
+                        ModelState.AddModelError("", $"جزئیات خطا: {ex.InnerException.Message}");
+                    }
+                }
             }
+
+            // در صورت وجود خطا، ViewBag را دوباره تنظیم کنید
             ViewBag.SalesReps = new SelectList(_userManager.Users
                 .Where(u => u.IsActive && !u.IsRemoveUser)
                 .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
@@ -229,48 +272,42 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             if (stakeholder == null)
                 return RedirectToAction("ErrorView", "Home");
 
-            if (stakeholder.IsActive)
+            if (stakeholder.IsActive == true)
             {
-                // غیرفعال کردن
-                ViewBag.themeclass = "bg-gd-fruit";
+                ViewBag.themeclass = "bg-danger";
                 ViewBag.ModalTitle = "غیرفعال کردن طرف حساب";
-                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
+                return PartialView("_ActiveOrDeactiveStakeholder", stakeholder);
             }
             else
             {
-                // فعال کردن
-                ViewBag.themeclass = "bg-gd-lake";
+                ViewBag.themeclass = "bg-success";
                 ViewBag.ModalTitle = "فعال کردن طرف حساب";
-                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-success";
+                return PartialView("_ActiveOrDeactiveStakeholder", stakeholder);
             }
-
-            return PartialView("_ActiveOrDeactiveStakeholder", stakeholder);
         }
 
         // فعال/غیرفعال کردن طرف حساب - پردازش درخواست
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ActiveOrDeactiveStakeholderPost(int id, bool isActive)
+        public IActionResult ActiveOrDeactiveStakeholderPost(int Id, bool IsActive)
         {
-            var stakeholder = _uow.StakeholderUW.GetById(id);
+            var stakeholder = _uow.StakeholderUW.GetById(Id);
             if (stakeholder == null)
                 return RedirectToAction("ErrorView", "Home");
 
-            stakeholder.IsActive = !isActive;
-            _uow.StakeholderUW.Update(stakeholder);
-            _uow.Save();
-
-            // بررسی اینکه درخواست AJAX است یا نه
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (IsActive == true)
             {
-                return Json(new
-                {
-                    status = "redirect",
-                    redirectUrl = Url.Action("Index")
-                });
+                stakeholder.IsActive = false;
+            }
+            else
+            {
+                stakeholder.IsActive = true;
             }
 
-            return RedirectToAction(nameof(Index));
+            _uow.StakeholderUW.Update(stakeholder);
+            _uow.Save();
+            
+            return RedirectToAction("Index");
         }
 
         // حذف طرف حساب - نمایش مودال تأیید
