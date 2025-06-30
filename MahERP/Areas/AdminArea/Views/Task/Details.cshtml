@@ -345,22 +345,16 @@
                                                 @(operation.CompletionDate.HasValue ? ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate, "yyyy/MM/dd") : "-")
                                             </td>
                                             <td class="text-center">
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-sm btn-alt-secondary" onclick="toggleOperationCompletion(@operation.Id)" data-bs-toggle="tooltip" title="@(operation.IsCompleted ? "بازگشت به حالت در انتظار" : "تکمیل عملیات")">
-                                                        <i class="fa fa-fw @(operation.IsCompleted ? "fa-undo text-warning" : "fa-check text-success")"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-alt-secondary" onclick="loadModal('@Url.Action("EditOperation", new { id = operation.Id })')" data-bs-toggle="tooltip" title="ویرایش">
-                                                        <i class="fa fa-fw fa-pencil-alt"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                        <i class="fa fa-fw fa-ellipsis-v"></i>
-                                                    </button>
-                                                    <div class="dropdown-menu dropdown-menu-end fs-sm">
-                                                        <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="loadModal('@Url.Action("DeleteOperation", new { id = operation.Id })')">
-                                                            <i class="fa fa-fw fa-trash-alt me-1"></i> حذف
-                                                        </a>
-                                                    </div>
-                                                </div>
+                                                <button type="button" class="btn btn-sm btn-alt-secondary me-1" onclick="toggleOperationCompletion(@operation.Id)" data-bs-toggle="tooltip" title="@(operation.IsCompleted ? "بازگشت به حالت در انتظار" : "تکمیل عملیات")">
+                                                    <i class="fa fa-fw @(operation.IsCompleted ? "fa-undo text-warning" : "fa-check text-success")"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-alt-secondary me-1" onclick="loadModal('@Url.Action("EditOperation", new { id = operation.Id })')" data-bs-toggle="tooltip" title="ویرایش">
+                                                    <i class="fa fa-fw fa-pencil-alt"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف"
+                                                        onclick="loadModal('@Url.Action("DeleteOperation", new { id = operation.Id })')">
+                                                    <i class="fa fa-fw fa-trash-alt"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     }

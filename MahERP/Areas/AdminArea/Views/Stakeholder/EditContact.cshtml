@@ -1,7 +1,6 @@
 ﻿@model StakeholderContactViewModel
 @{
     ViewData["Title"] = "ویرایش فرد مرتبط";
-
     var stakeholderName = ViewBag.StakeholderName;
 }
 
@@ -29,10 +28,10 @@
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <!-- Edit Contact Form -->
-    <form method="POST" action="@Url.Action("EditContact", "Stakeholder")" enctype="multipart/form-data">
+    <form method="POST" action="@Url.Action("EditContact", "Stakeholder")">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="Id" value="@Model.Id" />
-        <input type="hidden" name="StakeholderId" value="@Model.StakeholderId" />
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="StakeholderId" type="hidden" />
 
         <div class="block block-rounded">
             <div class="block-header block-header-default">
@@ -73,12 +72,14 @@
                         </div>
                         <div class="mb-4">
                             <label class="form-label" for="Email">ایمیل</label>
-                            <input asp-for="Email" class="form-control" placeholder="ایمیل را وارد کنید">
+                            <input asp-for="Email" type="email" class="form-control" placeholder="ایمیل را وارد کنید">
                             <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
                         <div class="mb-4">
                             <label class="form-label" for="ContactType">نوع ارتباط</label>
-                            <select asp-for="ContactType" asp-items="StaticSelectLists.ContactTypes" class="form-select"></select>
+                            <select asp-for="ContactType" asp-items="StaticSelectLists.ContactTypes" class="form-select">
+                                <option value="">انتخاب کنید</option>
+                            </select>
                             <span asp-validation-for="ContactType" class="text-danger"></span>
                         </div>
                         <div class="mb-4">
@@ -88,14 +89,14 @@
                         </div>
                         <div class="mb-4">
                             <label class="form-check">
-                                <input asp-for="IsPrimary" class="form-check-input">
+                                <input asp-for="IsPrimary" type="checkbox" class="form-check-input">
                                 <span class="form-check-label">مخاطب اصلی</span>
                             </label>
                             <div class="form-text">مخاطب اصلی به عنوان فرد ارتباطی پیش‌فرض برای این طرف حساب در نظر گرفته می‌شود</div>
                         </div>
                         <div class="mb-4">
                             <label class="form-check">
-                                <input asp-for="IsActive" class="form-check-input">
+                                <input asp-for="IsActive" type="checkbox" class="form-check-input">
                                 <span class="form-check-label">وضعیت فعال</span>
                             </label>
                         </div>
@@ -103,9 +104,9 @@
                 </div>
             </div>
             <div class="block-content block-content-full block-content-sm bg-body-light text-end">
-                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                <a href="@Url.Action("Details", "Stakeholder", new { id = Model.StakeholderId })" class="btn btn-alt-secondary">
                     <i class="fa fa-arrow-right me-1"></i> انصراف
-                </button>
+                </a>
                 <button type="submit" class="btn btn-primary">
                     <i class="fa fa-check me-1"></i> ذخیره تغییرات
                 </button>
@@ -115,3 +116,8 @@
     <!-- END Edit Contact Form -->
 </div>
 <!-- END Page Content -->
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

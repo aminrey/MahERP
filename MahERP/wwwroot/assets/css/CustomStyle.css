@@ -274,3 +274,194 @@ button.block {
     position: relative;
     z-index: 1;
 }
+
+/* ==============================================
+   راه‌حل جامع برای مشکل Dropdown ها در تمام صفحات
+   ============================================== */
+
+/* فیکس اصلی برای تمام dropdown ها */
+.dropdown-menu {
+    position: absolute !important;
+    z-index: 9999 !important;
+    transform: none !important;
+    will-change: auto !important;
+    transition: opacity 0.15s linear, visibility 0.15s linear !important;
+}
+
+/* فیکس برای DataTables */
+.dataTables_wrapper {
+    overflow: visible !important;
+}
+
+.dataTables_scrollBody {
+    overflow: visible !important;
+}
+
+.dataTables_scrollHead {
+    overflow: visible !important;
+}
+
+.dataTables_scrollFoot {
+    overflow: visible !important;
+}
+
+/* فیکس برای جداول معمولی */
+.table-responsive {
+    overflow: visible !important;
+}
+
+/* فیکس برای کانتینرهای block */
+.block {
+    overflow: visible !important;
+}
+
+.block-content {
+    overflow: visible !important;
+}
+
+.block-content-full {
+    overflow: visible !important;
+}
+
+/* فیکس برای btn-group ها */
+.btn-group {
+    position: relative;
+    z-index: 1000;
+}
+
+.btn-group .dropdown-menu {
+    position: absolute !important;
+    z-index: 9999 !important;
+    top: 100% !important;
+    left: auto !important;
+    right: 0 !important;
+    margin-top: 0.125rem !important;
+    transform: none !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    background-color: #ffffff !important;
+    border-radius: 0.375rem !important;
+}
+
+/* فیکس برای dropdown در سمت راست صفحه */
+.btn-group.dropstart .dropdown-menu,
+.dropdown.dropstart .dropdown-menu {
+    right: 100% !important;
+    left: auto !important;
+    top: 0 !important;
+    margin-right: 0.125rem !important;
+    margin-top: 0 !important;
+}
+
+/* فیکس برای dropdown در هدر */
+#page-header .dropdown-menu {
+    position: absolute !important;
+    z-index: 9999 !important;
+    transform: none !important;
+}
+
+/* فیکس برای نوار کناری */
+#sidebar .dropdown-menu {
+    position: absolute !important;
+    z-index: 9999 !important;
+    transform: none !important;
+}
+
+/* فیکس برای موبایل */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        position: fixed !important;
+        z-index: 9999 !important;
+        transform: none !important;
+    }
+    
+    .btn-group .dropdown-menu {
+        position: fixed !important;
+        z-index: 9999 !important;
+    }
+}
+
+/* فیکس برای Bootstrap 5 popper.js conflicts */
+.dropdown-menu[data-bs-popper] {
+    transform: none !important;
+    position: absolute !important;
+    z-index: 9999 !important;
+}
+
+/* فیکس برای dropdown در محیط RTL */
+[dir="rtl"] .dropdown-menu-end {
+    left: 0 !important;
+    right: auto !important;
+}
+
+[dir="rtl"] .btn-group .dropdown-menu {
+    left: 0 !important;
+    right: auto !important;
+}
+
+/* اطمینان از نمایش صحیح dropdown items */
+.dropdown-item {
+    display: block !important;
+    clear: both !important;
+    font-weight: 400 !important;
+    color: #212529 !important;
+    text-align: inherit !important;
+    white-space: nowrap !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    padding: 0.25rem 1rem !important;
+    text-decoration: none !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    color: #1e2125 !important;
+    background-color: #e9ecef !important;
+}
+
+/* فیکس برای dropdown divider */
+.dropdown-divider {
+    height: 0 !important;
+    margin: 0.5rem 0 !important;
+    overflow: hidden !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+/* فیکس نهایی برای overflow در سطح body */
+body {
+    overflow-x: auto !important;
+}
+
+/* فیکس برای container های content */
+.content {
+    overflow: visible !important;
+}
+
+.content-full {
+    overflow: visible !important;
+}
+
+/* فیکس خاص برای DataTables در حالت responsive */
+.dt-responsive .dropdown-menu {
+    position: absolute !important;
+    z-index: 9999 !important;
+}
+
+/* فیکس برای card ها */
+.card {
+    overflow: visible !important;
+}
+
+.card-body {
+    overflow: visible !important;
+}
+
+/* فیکس برای modal ها */
+.modal .dropdown-menu {
+    z-index: 10050 !important; /* بالاتر از z-index مودال */
+}
+
+/* فیکس برای offcanvas */
+.offcanvas .dropdown-menu {
+    z-index: 9999 !important;
+}

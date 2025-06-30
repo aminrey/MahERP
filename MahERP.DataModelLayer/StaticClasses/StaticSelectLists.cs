@@ -6,11 +6,13 @@ namespace MahERP.DataModelLayer.StaticClasses
     {
         public static List<SelectListItem> ContactTypes => new()
             {
-                new() { Value = "0", Text = "اصلی" },
-                new() { Value = "1", Text = "مدیر" },
-                new() { Value = "2", Text = "کارمند" },
-                new() { Value = "3", Text = "نماینده" },
-                new() { Value = "4", Text = "سایر" }
+                 new() { Value = "0", Text = "مدیر عامل" },
+                 new() { Value = "1", Text = "مدیر فروش" },
+                 new() { Value = "2", Text = "کارشناس فروش" },
+                 new() { Value = "3", Text = "کارشناس فنی" },
+                 new() { Value = "4", Text = "حسابدار" },
+                 new() { Value = "5", Text = "منشی" },
+                 new() { Value = "6", Text = "سایر" }
             };
 
         public static List<SelectListItem> StakeholderTypes => new()

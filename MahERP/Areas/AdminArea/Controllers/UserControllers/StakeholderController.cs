@@ -14,7 +14,8 @@ using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MahERP.DataModelLayer.Services;
-using MahERP.DataModelLayer.StaticClasses; // این خط را اضافه کنید
+using MahERP.DataModelLayer.StaticClasses;
+using MahERP.DataModelLayer.Entities.TaskManagement; // این خط را اضافه کنید
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
@@ -42,9 +43,14 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         }
 
         // لیست طرف حساب‌ها
-        public IActionResult Index(int? type = null)
+        public IActionResult Index(int? type = null, bool includeDeleted = false)
         {
-            var stakeholders = _stakeholderRepository.GetStakeholders(false, type);
+            var stakeholders = _stakeholderRepository.GetStakeholders(includeDeleted, type);
+
+            // اضافه کردن اطلاعات به ViewBag برای نمایش در View
+            ViewBag.IncludeDeleted = includeDeleted;
+            ViewBag.CurrentType = type;
+
             return View(stakeholders);
         }
 
@@ -62,6 +68,14 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             {
                 viewModel.CRMInfo = _mapper.Map<StakeholderCRMViewModel>(stakeholderCRM);
             }
+
+            // اضافه کردن اطلاعات کانتکت‌ها به ViewBag - همه کانتکت‌ها (فعال و غیرفعال)
+            ViewBag.Contacts = _stakeholderRepository.GetStakeholderContacts(id, true); // true برای شامل شدن غیرفعال‌ها
+
+            // اضافه کردن سایر اطلاعات مرتبط
+            ViewBag.Contracts = stakeholder.Contracts?.ToList() ?? new List<Contract>();
+            ViewBag.Tasks = stakeholder.TaskList?.ToList() ?? new List<Tasks>();
+            ViewBag.CRMInteractions = new List<CRMInteraction>(); // نیاز به پیاده‌سازی در repository
 
             return View(viewModel);
         }
@@ -261,6 +275,110 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 .Where(u => u.IsActive && !u.IsRemoveUser)
                 .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
                 "Id", "FullName");
+            return View(model);
+        }
+
+        // ویرایش اطلاعات CRM طرف حساب - نمایش فرم
+        [HttpGet]
+        public IActionResult EditCRM(int id)
+        {
+            var stakeholder = _stakeholderRepository.GetStakeholderById(id);
+            if (stakeholder == null)
+                return RedirectToAction("ErrorView", "Home");
+
+            var viewModel = _mapper.Map<StakeholderViewModel>(stakeholder);
+
+            // دریافت اطلاعات CRM اگر وجود داشته باشد
+            var stakeholderCRM = _stakeholderRepository.GetStakeholderCRMById(id);
+            if (stakeholderCRM != null)
+            {
+                viewModel.CRMInfo = _mapper.Map<StakeholderCRMViewModel>(stakeholderCRM);
+            }
+            else
+            {
+                // اگر اطلاعات CRM وجود نداشته باشد، یک نمونه جدید ایجاد می‌کنیم
+                viewModel.CRMInfo = new StakeholderCRMViewModel();
+            }
+
+            ViewBag.SalesReps = new SelectList(_userManager.Users
+                .Where(u => u.IsActive && !u.IsRemoveUser)
+                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                "Id", "FullName", viewModel.CRMInfo.SalesRepUserId);
+
+            return View(viewModel);
+        }
+
+        // ویرایش اطلاعات CRM طرف حساب - پردازش فرم
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditCRM(StakeholderViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // دریافت طرف حساب از دیتابیس
+                    var stakeholder = _uow.StakeholderUW.GetById(model.Id);
+                    if (stakeholder == null)
+                        return RedirectToAction("ErrorView", "Home");
+
+                    // به‌روزرسانی اطلاعات CRM
+                    if (model.CRMInfo != null)
+                    {
+                        var stakeholderCRM = _uow.StakeholderCRMUW.Get(c => c.StakeholderId == model.Id).FirstOrDefault();
+
+                        if (stakeholderCRM == null)
+                        {
+                            // ایجاد رکورد جدید اگر وجود نداشته باشد
+                            stakeholderCRM = new StakeholderCRM
+                            {
+                                StakeholderId = model.Id,
+                                CreateDate = DateTime.Now
+                            };
+                            _mapper.Map(model.CRMInfo, stakeholderCRM);
+                            _uow.StakeholderCRMUW.Create(stakeholderCRM);
+                        }
+                        else
+                        {
+                            // حفظ مقادیر اصلی CRM
+                            var originalCRMCreateDate = stakeholderCRM.CreateDate;
+                            var originalStakeholderId = stakeholderCRM.StakeholderId;
+
+                            // بروزرسانی رکورد موجود
+                            _mapper.Map(model.CRMInfo, stakeholderCRM);
+
+                            // بازگردانی مقادیر اصلی
+                            stakeholderCRM.CreateDate = originalCRMCreateDate;
+                            stakeholderCRM.StakeholderId = originalStakeholderId;
+                            stakeholderCRM.LastUpdateDate = DateTime.Now;
+
+                            _uow.StakeholderCRMUW.Update(stakeholderCRM);
+                        }
+
+                        _uow.Save();
+                    }
+
+                    return RedirectToAction("Details", new { id = model.Id });
+                }
+                catch (Exception ex)
+                {
+                    // لاگ کردن خطای دقیق‌تر
+                    ModelState.AddModelError("", $"خطا در ذخیره اطلاعات CRM: {ex.Message}");
+
+                    // اگر خطای Inner Exception وجود دارد
+                    if (ex.InnerException != null)
+                    {
+                        ModelState.AddModelError("", $"جزئیات خطا: {ex.InnerException.Message}");
+                    }
+                }
+            }
+
+            // در صورت وجود خطا، ViewBag را دوباره تنظیم کنید
+            ViewBag.SalesReps = new SelectList(_userManager.Users
+                .Where(u => u.IsActive && !u.IsRemoveUser)
+                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                "Id", "FullName", model.CRMInfo?.SalesRepUserId);
+            
             return View(model);
         }
 
@@ -570,11 +688,38 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         [ValidateAntiForgeryToken]
         public IActionResult AddContact(StakeholderContactViewModel model)
         {
-            if (ModelState.IsValid)
+            try
             {
-                var Stakeholder = _uow.StakeholderUW.GetById(model.StakeholderId);
-                if (Stakeholder == null)
-                    return RedirectToAction("ErrorView", "Home");
+                // بررسی ModelState
+                if (!ModelState.IsValid)
+                {
+                    // لاگ کردن خطاهای ModelState
+                    foreach (var error in ModelState)
+                    {
+                        foreach (var subError in error.Value.Errors)
+                        {
+                            // می‌توانید اینجا لاگ کنید
+                            Console.WriteLine($"Field: {error.Key}, Error: {subError.ErrorMessage}");
+                        }
+                    }
+
+                    // بازگشت اطلاعات برای نمایش خطاها
+                    var stakeholder = _uow.StakeholderUW.GetById(model.StakeholderId);
+                    if (stakeholder != null)
+                    {
+                        ViewBag.StakeholderId = model.StakeholderId;
+                        ViewBag.StakeholderName = $"{stakeholder.FirstName} {stakeholder.LastName}";
+                    }
+                    return View(model);
+                }
+
+                // بررسی وجود طرف حساب
+                var stakeholderEntity = _uow.StakeholderUW.GetById(model.StakeholderId);
+                if (stakeholderEntity == null)
+                {
+                    ModelState.AddModelError("", "طرف حساب مورد نظر یافت نشد");
+                    return View(model);
+                }
 
                 // ایجاد تماس جدید
                 var contact = _mapper.Map<StakeholderContact>(model);
@@ -598,13 +743,27 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
                 return RedirectToAction("Details", new { id = model.StakeholderId });
             }
+            catch (Exception ex)
+            {
+                // لاگ کردن خطای دقیق
+                Console.WriteLine($"Error in AddContact: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
 
-            // در صورت وجود خطا، اطلاعات را دوباره به ویو برگردانیم
-            var stakeholder = _uow.StakeholderUW.GetById(model.StakeholderId);
-            ViewBag.StakeholderId = model.StakeholderId;
-            ViewBag.StakeholderName = $"{stakeholder.FirstName} {stakeholder.LastName}";
+                ModelState.AddModelError("", $"خطا در ذخیره اطلاعات: {ex.Message}");
 
-            return View(model);
+                // بازگشت اطلاعات
+                var stakeholder = _uow.StakeholderUW.GetById(model.StakeholderId);
+                if (stakeholder != null)
+                {
+                    ViewBag.StakeholderId = model.StakeholderId;
+                    ViewBag.StakeholderName = $"{stakeholder.FirstName} {stakeholder.LastName}";
+                }
+
+                return View(model);
+            }
         }
 
         // ویرایش تماس مرتبط - نمایش فرم

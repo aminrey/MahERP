@@ -23,6 +23,14 @@ namespace MahERP.AutoMapper
                 .ReverseMap();
             CreateMap<StakeholderCRM, StakeholderCRMViewModel>().ReverseMap();
 
+            // StakeholderContact mappings
+            CreateMap<StakeholderContactViewModel, StakeholderContact>()
+                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore());
+
+            CreateMap<StakeholderContact, StakeholderContactViewModel>();
+
             // Branch -> BranchViewModel
             CreateMap<Branch, BranchViewModel>();
 

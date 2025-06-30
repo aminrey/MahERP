@@ -41,12 +41,13 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
         [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
         public string? Email { get; set; }
 
-        [Display(Name = "نوع ارتباط")]
-        public byte ContactType { get; set; }
-
         [Display(Name = "یادداشت")]
         [MaxLength(500, ErrorMessage = "یادداشت نمی‌تواند بیش از 500 کاراکتر باشد")]
         public string? Notes { get; set; }
+
+        // فیلدهای اضافه شده
+        [Display(Name = "نوع ارتباط")]
+        public byte? ContactType { get; set; }
 
         [Display(Name = "مخاطب اصلی")]
         public bool IsPrimary { get; set; }
@@ -54,27 +55,8 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
         [Display(Name = "وضعیت فعال")]
         public bool IsActive { get; set; } = true;
 
-        [Display(Name = "تاریخ ثبت")]
+        // فیلدهای سیستمی
         public DateTime CreateDate { get; set; }
-
         public string? CreatorUserId { get; set; }
-
-        /// <summary>
-        /// نمایش نام کامل فرد مرتبط
-        /// </summary>
-        public string FullName => $"{FirstName} {LastName}";
-
-        /// <summary>
-        /// نمایش نوع ارتباط به صورت متنی
-        /// </summary>
-        public string ContactTypeText => ContactType switch
-        {
-            0 => "اصلی",
-            1 => "مدیر",
-            2 => "کارمند",
-            3 => "نماینده",
-            4 => "سایر",
-            _ => "نامشخص"
-        };
     }
 }

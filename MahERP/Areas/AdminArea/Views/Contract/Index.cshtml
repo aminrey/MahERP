@@ -216,25 +216,20 @@
                                     }
                                 </td>
                                 <td class="text-center">
-                                    <div class="btn-group">
-                                        <a href="@Url.Action("Details", "Contract", new { id = contract.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="جزئیات">
-                                            <i class="fa fa-fw fa-eye"></i>
-                                        </a>
-                                        <a href="@Url.Action("EditContract", "Contract", new { id = contract.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش">
-                                            <i class="fa fa-fw fa-pencil-alt"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            <i class="fa fa-fw fa-ellipsis-v"></i>
-                                        </button>
-                                        <div class="dropdown-menu dropdown-menu-end fs-sm">
-                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openModal('@Url.Action("ChangeStatus", "Contract", new { id = contract.Id })')">
-                                                تغییر وضعیت
-                                            </a>
-                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openModal('@Url.Action("ToggleActivation", "Contract", new { id = contract.Id })')">
-                                                @(contract.IsActive ? "غیرفعال کردن" : "فعال کردن")
-                                            </a>
-                                        </div>
-                                    </div>
+                                    <a href="@Url.Action("Details", "Contract", new { id = contract.Id })" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="جزئیات">
+                                        <i class="fa fa-fw fa-eye"></i>
+                                    </a>
+                                    <a href="@Url.Action("EditContract", "Contract", new { id = contract.Id })" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="ویرایش">
+                                        <i class="fa fa-fw fa-pencil-alt"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="تغییر وضعیت"
+                                            onclick="openModal('@Url.Action("ChangeStatus", "Contract", new { id = contract.Id })')">
+                                        <i class="fa fa-fw fa-sync-alt"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="@(contract.IsActive ? "غیرفعال کردن" : "فعال کردن")"
+                                            onclick="openModal('@Url.Action("ToggleActivation", "Contract", new { id = contract.Id })')">
+                                        <i class="fa fa-fw @(contract.IsActive ? "fa-ban" : "fa-check")"></i>
+                                    </button>
                                 </td>
                             </tr>
                         }

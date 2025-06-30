@@ -79,17 +79,15 @@
                                     {
                                         <span class="badge bg-warning">غیرفعال</span>
                                     }
-                                </td class="text-center">
+                                </td>
                                 <td class="text-center">
-                                    <div class="btn-group">
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="ویرایش">
-                                            <i class="fa fa-pencil-alt"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-alt-primary" data-bs-toggle="tooltip" title="@(item.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")"
-                                                onclick="loadModal('@Url.Action("ToggleActiveStatus", new { id = item.Id })')">
-                                            <i class="fa @(item.IsActive ? "fa-ban" : "fa-check")"></i>
-                                        </button>
-                                    </div>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="ویرایش">
+                                        <i class="fa fa-pencil-alt"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="@(item.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")"
+                                            onclick="loadModal('@Url.Action("ToggleActiveStatus", new { id = item.Id })')">
+                                        <i class="fa @(item.IsActive ? "fa-ban" : "fa-check")"></i>
+                                    </button>
                                 </td>
                             </tr>
                         }
