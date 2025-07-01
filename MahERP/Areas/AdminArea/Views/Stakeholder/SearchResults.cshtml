@@ -1,8 +1,6 @@
 ﻿@model List<Stakeholder>
 @{
     ViewData["Title"] = "نتایج جستجوی طرف حساب‌ها";
-
-    int Counter = 1;
     var searchModel = ViewBag.SearchModel as StakeholderSearchViewModel;
 }
 
@@ -24,143 +22,279 @@
     </div>
 </div>
 <!-- END Hero -->
+
 <!-- Page Content -->
 <div class="content">
-    <div class="alert alert-info">
-        <i class="fa fa-info-circle me-1"></i> <strong>@Model.Count</strong> طرف حساب یافت شد.
-        <button type="button" class="btn btn-sm btn-alt-info float-end" onclick="openAdvancedSearch()">
-            <i class="fa fa-search me-1"></i> جستجوی مجدد
-        </button>
-    </div>
-
-    <!-- Stakeholders Table -->
+    <!-- Search Summary -->
     <div class="block block-rounded">
-        <div class="block-header block-header-default">
-            <h3 class="block-title">لیست طرف حساب‌های یافت شده</h3>
-            <div class="block-options">
-                <a href="@Url.Action("Index", "Stakeholder")" class="btn btn-sm btn-alt-secondary">
-                    <i class="fa fa-arrow-right me-1"></i> بازگشت به لیست کامل
-                </a>
-                <a href="@Url.Action("ExportToExcel", "Stakeholder", searchModel)" class="btn btn-sm btn-alt-success">
-                    <i class="fa fa-file-excel me-1"></i> خروجی اکسل
-                </a>
+        <div class="block-content block-content-full bg-body-light">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 class="mb-1">نتایج جستجو</h4>
+                    <p class="text-muted mb-0">
+                        <strong>@Model.Count</strong> طرف حساب یافت شد
+                        @if (searchModel != null)
+                        {
+                            @if (!string.IsNullOrEmpty(searchModel.Name))
+                            {
+                                <span class="badge bg-primary me-1">نام: @searchModel.Name</span>
+                            }
+                            @if (!string.IsNullOrEmpty(searchModel.CompanyName))
+                            {
+                                <span class="badge bg-primary me-1">شرکت: @searchModel.CompanyName</span>
+                            }
+                            @if (!string.IsNullOrEmpty(searchModel.Phone))
+                            {
+                                <span class="badge bg-primary me-1">تلفن: @searchModel.Phone</span>
+                            }
+                            @if (!string.IsNullOrEmpty(searchModel.Email))
+                            {
+                                <span class="badge bg-primary me-1">ایمیل: @searchModel.Email</span>
+                            }
+                            @if (searchModel.StakeholderType.HasValue)
+                            {
+                                <span class="badge bg-primary me-1">نوع: @(searchModel.StakeholderType switch {
+                                    0 => "مشتری",
+                                    1 => "تامین کننده",
+                                    2 => "همکار",
+                                    3 => "سایر",
+                                    _ => "نامشخص"
+                                })</span>
+                            }
+                            @if (searchModel.IsActive.HasValue)
+                            {
+                                <span class="badge bg-primary me-1">وضعیت: @(searchModel.IsActive.Value ? "فعال" : "غیرفعال")</span>
+                            }
+                            @if (searchModel.IncludeDeleted)
+                            {
+                                <span class="badge bg-warning me-1">شامل حذف شده‌ها</span>
+                            }
+                        }
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="@Url.Action("Index", "Stakeholder")" class="btn btn-alt-secondary me-1">
+                        <i class="fa fa-arrow-left me-1"></i> بازگشت به لیست اصلی
+                    </a>
+                    <a href="@Url.Action("AdvancedSearch", "Stakeholder")" class="btn btn-primary" data-toggle="modal-ajax">
+                        <i class="fa fa-search me-1"></i> جستجوی جدید
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="block-content block-content-full">
-            <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive">
-                <thead>
-                    <tr>
-                        <th class="text-center" style="width: 50px;">#</th>
-                        <th>نام</th>
-                        <th class="d-none d-sm-table-cell">شرکت</th>
-                        <th class="d-none d-lg-table-cell">تلفن</th>
-                        <th class="d-none d-lg-table-cell">ایمیل</th>
-                        <th class="d-none d-sm-table-cell">نوع</th>
-                        <th class="text-center" style="width: 100px;">وضعیت</th>
-                        <th class="text-center" style="width: 100px;">عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model.Count > 0)
-                    {
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="text-center">@Counter</td>
-                                <td class="fw-semibold">
-                                    <a href="@Url.Action("Details", "Stakeholder", new { id = item.Id })">
-                                        @item.FirstName @item.LastName
-                                    </a>
-                                </td>
-                                <td class="d-none d-sm-table-cell">
-                                    @(string.IsNullOrEmpty(item.CompanyName) ? "-" : item.CompanyName)
-                                </td>
-                                <td class="d-none d-lg-table-cell">
-                                    @(!string.IsNullOrEmpty(item.Mobile) ? item.Mobile : (!string.IsNullOrEmpty(item.Phone) ? item.Phone : "-"))
-                                </td>
-                                <td class="d-none d-lg-table-cell">
-                                    @(string.IsNullOrEmpty(item.Email) ? "-" : item.Email)
-                                </td>
-                                <td class="d-none d-sm-table-cell">
-                                    @switch (item.StakeholderType)
-                                    {
-                                        case 0:
-                                            <span class="badge bg-info">مشتری</span>
-                                            break;
-                                        case 1:
-                                            <span class="badge bg-primary">تامین کننده</span>
-                                            break;
-                                        case 2:
-                                            <span class="badge bg-success">همکار</span>
-                                            break;
-                                        case 3:
-                                            <span class="badge bg-warning">سایر</span>
-                                            break;
-                                    }
-                                </td>
-                                <td class="text-center">
-                                    @if (item.IsDeleted)
-                                    {
-                                        <span class="badge bg-danger">حذف شده</span>
-                                    }
-                                    else if (item.IsActive)
-                                    {
-                                        <span class="badge bg-success">فعال</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-warning">غیرفعال</span>
-                                    }
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group">
-                                        <a href="@Url.Action("Details", "Stakeholder", new { id = item.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="مشاهده">
-                                            <i class="fa fa-eye"></i>
-                                        </a>
-                                        <a href="@Url.Action("EditStakeholder", "Stakeholder", new { id = item.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش">
-                                            <i class="fa fa-pencil-alt"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            <i class="fa fa-ellipsis-v"></i>
-                                        </button>
-                                        <div class="dropdown-menu dropdown-menu-end">
-                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openModal('@Url.Action("ActiveOrDeactiveStakeholder", "Stakeholder", new { id = item.Id })')">
-                                                @(item.IsActive ? "غیرفعال کردن" : "فعال کردن")
-                                            </a>
-                                            <div class="dropdown-divider"></div>
-                                            <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="openModal('@Url.Action("DeleteStakeholder", "Stakeholder", new { id = item.Id })')">
-                                                <i class="fa fa-trash me-1"></i> حذف
-                                            </a>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            Counter++;
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="8" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="fa fa-search fa-2x mb-2"></i>
-                                    <p>هیچ طرف حسابی با معیارهای جستجوی شما یافت نشد!</p>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
     </div>
-    <!-- END Stakeholders Table -->
+    <!-- END Search Summary -->
+
+    @if (Model.Any())
+    {
+        <!-- Results -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">نتایج جستجو</h3>
+                <div class="block-options">
+                    <span class="badge bg-primary">@Model.Count طرف حساب</span>
+                    <a href="@Url.Action("ExportToExcel", "Stakeholder", searchModel)" class="btn btn-sm btn-alt-success ms-2">
+                        <i class="fa fa-file-excel me-1"></i> خروجی اکسل
+                    </a>
+                </div>
+            </div>
+            <div class="block-content">
+                <!-- Stakeholders Table -->
+                <div class="table-responsive">
+                    <table class="table table-borderless table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 80px;">شناسه</th>
+                                <th class="text-center">نام</th>
+                                <th class="text-center d-none d-sm-table-cell">شرکت</th>
+                                <th class="text-center d-none d-lg-table-cell">تلفن</th>
+                                <th class="text-center d-none d-lg-table-cell">ایمیل</th>
+                                <th class="text-center d-none d-sm-table-cell">نوع</th>
+                                <th class="text-center d-none d-xl-table-cell">تاریخ ثبت</th>
+                                <th class="text-center" style="width: 100px;">وضعیت</th>
+                                <th class="text-center" style="width: 180px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="@(item.IsDeleted ? "table-danger" : "")">
+                                    <td class="text-center fs-sm">
+                                        <a href="@Url.Action("Details", "Stakeholder", new { id = item.Id })">
+                                            <strong>@item.Id</strong>
+                                        </a>
+                                    </td>
+                                    <td class="text-center fw-semibold fs-sm">
+                                        <a href="@Url.Action("Details", "Stakeholder", new { id = item.Id })">
+                                            @item.FirstName @item.LastName
+                                            @if (item.IsDeleted)
+                                            {
+                                                <span class="badge bg-danger ms-1">حذف شده</span>
+                                            }
+                                        </a>
+                                    </td>
+                                    <td class="text-center d-none d-sm-table-cell fs-sm">
+                                        @(string.IsNullOrEmpty(item.CompanyName) ? "-" : item.CompanyName)
+                                    </td>
+                                    <td class="text-center d-none d-lg-table-cell fs-sm">
+                                        @(!string.IsNullOrEmpty(item.Mobile) ? item.Mobile : (!string.IsNullOrEmpty(item.Phone) ? item.Phone : "-"))
+                                    </td>
+                                    <td class="text-center d-none d-lg-table-cell fs-sm">
+                                        @(string.IsNullOrEmpty(item.Email) ? "-" : item.Email)
+                                    </td>
+                                    <td class="text-center d-none d-sm-table-cell">
+                                        @switch (item.StakeholderType)
+                                        {
+                                            case 0:
+                                                <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-info-light text-info">مشتری</span>
+                                                break;
+                                            case 1:
+                                                <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-primary-light text-primary">تامین کننده</span>
+                                                break;
+                                            case 2:
+                                                <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-success-light text-success">همکار</span>
+                                                break;
+                                            case 3:
+                                                <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-warning-light text-warning">سایر</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-center d-none d-xl-table-cell fs-sm">
+                                        @ConvertDateTime.ConvertMiladiToShamsi(item.CreateDate, "yyyy/MM/dd")
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IsDeleted)
+                                        {
+                                            <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-danger-light text-danger">حذف شده</span>
+                                        }
+                                        else if (item.IsActive)
+                                        {
+                                            <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-success-light text-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-danger-light text-danger">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Details", "Stakeholder", new { id = item.Id })" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="مشاهده">
+                                            <i class="fa fa-fw fa-eye"></i>
+                                        </a>
+
+                                        @if (!item.IsDeleted)
+                                        {
+                                            <a href="@Url.Action("EditStakeholder", "Stakeholder", new { id = item.Id })" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="ویرایش">
+                                                <i class="fa fa-fw fa-pencil-alt"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="@(item.IsActive ? "غیرفعال کردن" : "فعال کردن")"
+                                                href="@Url.Action("ActiveOrDeactiveStakeholder", "Stakeholder", new { id = item.Id })" data-toggle="modal-ajax">
+                                                <i class="fa fa-fw @(item.IsActive ? "fa-ban" : "fa-check")"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف"
+                                                 href="@Url.Action("DeleteStakeholder", "Stakeholder", new { id = item.Id })" data-toggle="modal-ajax">
+                                                <i class="fa fa-fw fa-trash-alt"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fs-sm">حذف شده</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <!-- END Stakeholders Table -->
+            </div>
+        </div>
+        <!-- END Results -->
+    }
+    else
+    {
+        <!-- No Results -->
+        <div class="block block-rounded">
+            <div class="block-content text-center py-5">
+                <i class="fa fa-search fa-3x text-muted mb-3"></i>
+                <h3 class="mb-3">هیچ طرف حسابی یافت نشد</h3>
+                <p class="text-muted mb-4">با معیارهای جستجوی انتخابی، هیچ طرف حسابی پیدا نشد. لطفاً معیارهای جستجو را تغییر دهید و دوباره تلاش کنید.</p>
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2 d-md-block">
+                            <a href="@Url.Action("AdvancedSearch", "Stakeholder")" class="btn btn-primary" data-toggle="modal-ajax">
+                                <i class="fa fa-search me-1"></i> جستجوی جدید
+                            </a>
+                            <a href="@Url.Action("AddStakeholder", "Stakeholder")" class="btn btn-success">
+                                <i class="fa fa-plus me-1"></i> افزودن طرف حساب جدید
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END No Results -->
+    }
+
+    <!-- Quick Actions for Results -->
+    @if (Model.Any())
+    {
+        <div class="block block-rounded">
+            <div class="block-content block-content-full bg-body-light">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-2">عملیات سریع:</h6>
+                        <div class="btn-group" role="group">
+                            <a href="@Url.Action("AddStakeholder", "Stakeholder")" class="btn btn-sm btn-success">
+                                <i class="fa fa-plus me-1"></i> افزودن جدید
+                            </a>
+                            <a href="@Url.Action("ExportToExcel", "Stakeholder", searchModel)" class="btn btn-sm btn-alt-success">
+                                <i class="fa fa-file-excel me-1"></i> خروجی اکسل
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="mb-2">آمار نتایج:</h6>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <span class="badge bg-info p-2">
+                                    @Model.Count(s => s.StakeholderType == 0) مشتری
+                                </span>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-primary p-2">
+                                    @Model.Count(s => s.StakeholderType == 1) تامین کننده
+                                </span>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-success p-2">
+                                    @Model.Count(s => s.IsActive && !s.IsDeleted) فعال
+                                </span>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-danger p-2">
+                                    @Model.Count(s => s.IsDeleted) حذف شده
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 <!-- END Page Content -->
+
 <!-- Modal Container for dynamic content -->
 <div class="modal fade" id="modal-stakeholder" tabindex="-1" role="dialog" aria-labelledby="modal-stakeholder" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content">
             <!-- Dynamic content will be loaded here -->
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
+                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -178,25 +312,8 @@
             });
         }
 
-        function openAdvancedSearch() {
-            openModal('@Url.Action("AdvancedSearch", "Stakeholder")');
-        }
-
+        // Initialize tooltips
         $(document).ready(function() {
-            // Initialize DataTable
-            $('.js-dataTable-responsive').DataTable({
-                language: {
-                    url: '/assets/js/plugins/datatables/i18n/fa.json'
-                },
-                responsive: true,
-                paging: true,
-                searching: true,
-                ordering: true,
-                info: true,
-                autoWidth: false
-            });
-
-            // Initialize tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
         });
     </script>

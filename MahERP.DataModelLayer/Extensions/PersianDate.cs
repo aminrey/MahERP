@@ -16,43 +16,6 @@ public class PersianDateHelper
         _memoryCache = memoryCache;
     }
 
-    // Converts a Gregorian date to a Persian date string
-    public string GetPersianDate(DateTime date)
-    {
-        var persianCalendar = new System.Globalization.PersianCalendar();
-        return $"{persianCalendar.GetYear(date)}/{persianCalendar.GetMonth(date):00}/{persianCalendar.GetDayOfMonth(date):00}";
-    }
-    // Add the following extension method to handle the conversion from Persian date to Gregorian date.
-    // This method should be placed in a separate static class to ensure it can be used as an extension method.
-
-
-    public static DateTime ConvertToGregorianDate(string persianDate)
-    {
-        if (string.IsNullOrWhiteSpace(persianDate))
-        {
-            throw new ArgumentException("Persian date cannot be null or empty.", nameof(persianDate));
-        }
-
-        var parts = persianDate.Split('/');
-        if (parts.Length != 3 ||
-            !int.TryParse(parts[0], out int year) ||
-            !int.TryParse(parts[1], out int month) ||
-            !int.TryParse(parts[2], out int day))
-        {
-            throw new ArgumentException("Invalid Persian date format.", nameof(persianDate));
-        }
-
-        var persianCalendar = new PersianCalendar();
-        try
-        {
-            return persianCalendar.ToDateTime(year, month, day, 0, 0, 0, 0);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException("Error converting Persian date to Gregorian date.", ex);
-        }
-    }
-
     public async Task<string> GetNextWorkingDayDeliveryAsync()
     {
         PersianCalendar persianCalendar = new PersianCalendar();

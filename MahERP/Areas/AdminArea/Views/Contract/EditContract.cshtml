@@ -66,14 +66,14 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="StartDatePersian">تاریخ شروع <span class="text-danger">*</span></label>
-                                    <input asp-for="StartDatePersian" class="form-control date-picker-shamsi" placeholder="تاریخ شروع را وارد کنید">
+                                    <input asp-for="StartDatePersian" class="form-control js-flatpickr" placeholder="تاریخ شروع را وارد کنید">
                                     <span asp-validation-for="StartDatePersian" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="EndDatePersian">تاریخ پایان</label>
-                                    <input asp-for="EndDatePersian" class="form-control date-picker-shamsi" placeholder="تاریخ پایان را وارد کنید">
+                                    <input asp-for="EndDatePersian" class="form-control js-flatpickr" placeholder="تاریخ پایان را وارد کنید">
                                     <span asp-validation-for="EndDatePersian" class="text-danger"></span>
                                 </div>
                             </div>
@@ -121,14 +121,5 @@
 </div>
 <!-- END Page Content -->
 @section scripts {
-    <script>
-        $(document).ready(function() {
-            // تنظیمات تاریخ شمسی
-            $('.date-picker-shamsi').persianDatepicker({
-                format: 'YYYY/MM/DD',
-                initialValueType: 'persian',
-                autoClose: true
-            });
-        });
-    </script>
+
 }

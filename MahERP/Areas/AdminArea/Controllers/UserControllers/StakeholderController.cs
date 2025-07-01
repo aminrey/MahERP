@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.StaticClasses;
-using MahERP.DataModelLayer.Entities.TaskManagement; // این خط را اضافه کنید
+using MahERP.DataModelLayer.Entities.TaskManagement;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
@@ -578,6 +578,11 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
                 .ToList();
 
+            ViewBag.Users = _userManager.Users
+                .Where(u => u.IsActive && !u.IsRemoveUser)
+                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
+                .ToList();
+
             return PartialView("_AdvancedSearch", new StakeholderSearchViewModel());
         }
 
@@ -879,5 +884,4 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             return RedirectToAction("Details", new { id = contact.StakeholderId });
         }
     }
-
 }

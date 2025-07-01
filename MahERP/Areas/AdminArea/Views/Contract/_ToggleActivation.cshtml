@@ -36,13 +36,13 @@
         <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
         @if (Model.IsActive)
         {
-            <button type="submit" class="@ViewBag.ButonClass">
+            <button type="submit" data-save="modal" class="@ViewBag.ButonClass">
                 <i class="fa fa-ban me-1"></i> غیرفعال کردن
             </button>
         }
         else
         {
-            <button type="submit" class="@ViewBag.ButonClass">
+            <button type="submit" data-save="modal" class="@ViewBag.ButonClass">
                 <i class="fa fa-check me-1"></i> فعال کردن
             </button>
         }

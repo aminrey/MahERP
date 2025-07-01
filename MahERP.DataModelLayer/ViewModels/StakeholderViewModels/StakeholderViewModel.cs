@@ -85,4 +85,71 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
             }
         }
     }
+
+    public class StakeholderSearchViewModel
+    {
+        [Display(Name = "نام یا نام خانوادگی")]
+        public string? Name { get; set; }
+
+        [Display(Name = "نام شرکت")]
+        public string? CompanyName { get; set; }
+
+        [Display(Name = "تلفن یا موبایل")]
+        public string? Phone { get; set; }
+
+        [Display(Name = "ایمیل")]
+        public string? Email { get; set; }
+
+        [Display(Name = "کد ملی")]
+        public string? NationalCode { get; set; }
+
+        [Display(Name = "نوع طرف حساب")]
+        public byte? StakeholderType { get; set; }
+
+        [Display(Name = "وضعیت فعال")]
+        public bool? IsActive { get; set; }
+
+        [Display(Name = "شامل موارد حذف شده")]
+        public bool IncludeDeleted { get; set; } = false;
+
+        [Display(Name = "تاریخ ایجاد از")]
+        public string? FromDate { get; set; }
+
+        [Display(Name = "تاریخ ایجاد تا")]
+        public string? ToDate { get; set; }
+
+        [Display(Name = "آدرس")]
+        public string? Address { get; set; }
+
+        [Display(Name = "شهر")]
+        public string? City { get; set; }
+
+        [Display(Name = "استان")]
+        public string? Province { get; set; }
+
+        // CRM Fields
+        [Display(Name = "مرحله فروش")]
+        public byte? SalesStage { get; set; }
+
+        [Display(Name = "منبع مشتری")]
+        public byte? LeadSource { get; set; }
+
+        [Display(Name = "صنعت")]
+        public string? Industry { get; set; }
+
+        [Display(Name = "امتیاز اعتباری")]
+        public string? CreditRating { get; set; }
+
+        [Display(Name = "حداقل ارزش بالقوه")]
+        public decimal? MinPotentialValue { get; set; }
+
+        [Display(Name = "حداکثر ارزش بالقوه")]
+        public decimal? MaxPotentialValue { get; set; }
+
+        [Display(Name = "کارشناس فروش")]
+        public string? SalesRepUserId { get; set; }
+
+        [Display(Name = "ایجاد کننده")]
+        public string? CreatorUserId { get; set; }
+    }
 }

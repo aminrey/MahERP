@@ -44,16 +44,20 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="mb-4">
-                    <label class="form-label" for="StakeholderType">نوع طرف حساب</label>
-                    <select asp-for="StakeholderType" asp-items="@(new SelectList(StaticSelectLists.StakeholderTypes, "Value", "Text", ""))" class="form-select">
-                        <option value="">همه</option>
-                    </select>
+                    <label class="form-label" for="NationalCode">کد ملی</label>
+                    <input asp-for="NationalCode" class="form-control" placeholder="جستجو با کد ملی">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="mb-4">
-                    <label class="form-label" for="NationalCode">کد ملی</label>
-                    <input asp-for="NationalCode" class="form-control" placeholder="جستجو با کد ملی">
+                    <label class="form-label" for="StakeholderType">نوع طرف حساب</label>
+                    <select asp-for="StakeholderType" class="form-select">
+                        <option value="">همه</option>
+                        <option value="0">مشتری</option>
+                        <option value="1">تامین کننده</option>
+                        <option value="2">همکار</option>
+                        <option value="3">سایر</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -61,19 +65,140 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="mb-4">
+                    <label class="form-label" for="Address">آدرس</label>
+                    <input asp-for="Address" class="form-control" placeholder="جستجو در آدرس">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="City">شهر</label>
+                    <input asp-for="City" class="form-control" placeholder="جستجو در شهر">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="Province">استان</label>
+                    <input asp-for="Province" class="form-control" placeholder="جستجو در استان">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
                     <label class="form-label" for="IsActive">وضعیت</label>
-                    <select asp-for="IsActive" asp-items="StaticSelectLists.ActiveStatusOptions" class="form-select"></select>
+                    <select asp-for="IsActive" class="form-select">
+                        <option value="">همه</option>
+                        <option value="true">فعال</option>
+                        <option value="false">غیرفعال</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="FromDate">تاریخ ایجاد از</label>
+                    <input asp-for="FromDate" class="form-control date-picker-shamsi" placeholder="YYYY/MM/DD">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="ToDate">تاریخ ایجاد تا</label>
+                    <input asp-for="ToDate" class="form-control date-picker-shamsi" placeholder="YYYY/MM/DD">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="CreatorUserId">ایجاد کننده</label>
+                    <select asp-for="CreatorUserId" asp-items="@(new SelectList(ViewBag.Users, "Id", "FullName", ""))" class="form-select">
+                        <option value="">همه</option>
+                    </select>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="mb-4">
                     <label class="form-label" for="IncludeDeleted">نمایش موارد حذف شده</label>
-                    <select asp-for="IncludeDeleted" asp-items="StaticSelectLists.DeletedStatusOptions" class="form-select"></select>
+                    <select asp-for="IncludeDeleted" class="form-select">
+                        <option value="false">خیر</option>
+                        <option value="true">بله</option>
+                    </select>
                 </div>
             </div>
         </div>
 
-        <!-- سایر فیلدها... -->
+        <!-- فیلدهای CRM -->
+        <hr>
+        <h6 class="text-muted mb-3">اطلاعات CRM</h6>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="SalesStage">مرحله فروش</label>
+                    <select asp-for="SalesStage" class="form-select">
+                        <option value="">همه</option>
+                        <option value="0">سرنخ</option>
+                        <option value="1">مشتری بالقوه</option>
+                        <option value="2">فرصت</option>
+                        <option value="3">پیشنهاد</option>
+                        <option value="4">مذاکره</option>
+                        <option value="5">بسته شده - برنده</option>
+                        <option value="6">بسته شده - بازنده</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="LeadSource">منبع مشتری</label>
+                    <select asp-for="LeadSource" class="form-select">
+                        <option value="">همه</option>
+                        <option value="0">وب سایت</option>
+                        <option value="1">تماس تلفنی</option>
+                        <option value="2">ایمیل</option>
+                        <option value="3">شبکه اجتماعی</option>
+                        <option value="4">معرفی</option>
+                        <option value="5">نمایشگاه</option>
+                        <option value="6">سایر</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="Industry">صنعت</label>
+                    <input asp-for="Industry" class="form-control" placeholder="جستجو در صنعت">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="SalesRepUserId">کارشناس فروش</label>
+                    <select asp-for="SalesRepUserId" asp-items="@(new SelectList(ViewBag.SalesReps, "Id", "FullName", ""))" class="form-select">
+                        <option value="">همه</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="MinPotentialValue">حداقل ارزش بالقوه (تومان)</label>
+                    <input asp-for="MinPotentialValue" class="form-control number-format" placeholder="مثال: 1000000">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label" for="MaxPotentialValue">حداکثر ارزش بالقوه (تومان)</label>
+                    <input asp-for="MaxPotentialValue" class="form-control number-format" placeholder="مثال: 50000000">
+                </div>
+            </div>
+        </div>
     </form>
 </div>
 <div class="modal-footer">
@@ -82,3 +207,24 @@
         <i class="fa fa-search me-1"></i> جستجو
     </button>
 </div>
+
+<script>
+    $(document).ready(function() {
+        // تنظیمات تاریخ شمسی
+        $('.date-picker-shamsi').persianDatepicker({
+            format: 'YYYY/MM/DD',
+            initialValueType: 'persian',
+            autoClose: true
+        });
+
+        // پردازش فرم جستجو
+        $('[data-save="modal-ajax-save"]').click(function() {
+            var form = $('#stakeholderAdvancedSearchForm');
+            $.post(form.attr('action'), form.serialize(), function(response) {
+                if (response.status === 'redirect') {
+                    window.location.href = response.redirectUrl;
+                }
+            });
+        });
+    });
+</script>

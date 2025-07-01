@@ -30,7 +30,7 @@
             </a>
         </div>
         <div class="col-6 col-md-4 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="openModal('@Url.Action("ChangeStatus", "Contract", new { id = Model.Id })')">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("ChangeStatus", "Contract", new { id = Model.Id })" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
                         <i class="fa fa-sync-alt text-info"></i>
@@ -42,7 +42,7 @@
             </a>
         </div>
         <div class="col-6 col-md-4 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="openModal('@Url.Action("ToggleActivation", "Contract", new { id = Model.Id })')">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("ToggleActivation", "Contract", new { id = Model.Id })" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
                         <i class="fa fa-@(Model.IsActive ? "ban text-danger" : "check text-success")"></i>
@@ -153,7 +153,7 @@
                 <div class="col-sm-6">
                     <div class="mb-4">
                         <label class="form-label">مبلغ قرارداد</label>
-                        <div class="form-control-plaintext">@Model.ContractValue.ToString("N0") تومان</div>
+                        <div class="form-control-plaintext">@Model.ContractValue?.ToString("N0") تومان</div>
                     </div>
                 </div>
                 <div class="col-sm-6">

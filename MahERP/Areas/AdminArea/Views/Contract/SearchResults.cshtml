@@ -1,0 +1,196 @@
+﻿@model List<Contract>
+@{
+    ViewData["Title"] = "نتایج جستجوی قراردادها";
+    var searchModel = ViewBag.SearchModel as ContractSearchViewModel;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">نتایج جستجوی قراردادها</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Contract")">قراردادها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">نتایج جستجو</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <!-- Search Summary -->
+    <div class="block block-rounded">
+        <div class="block-content block-content-full bg-body-light">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 class="mb-1">نتایج جستجو</h4>
+                    <p class="text-muted mb-0">
+                        <strong>@Model.Count</strong> قرارداد یافت شد
+                        @if (searchModel != null)
+                        {
+                            @if (!string.IsNullOrEmpty(searchModel.Title))
+                            {
+                                <span class="badge bg-primary me-1">عنوان: @searchModel.Title</span>
+                            }
+                            @if (!string.IsNullOrEmpty(searchModel.ContractNumber))
+                            {
+                                <span class="badge bg-primary me-1">شماره: @searchModel.ContractNumber</span>
+                            }
+                            @if (searchModel.StakeholderId.HasValue)
+                            {
+                                <span class="badge bg-primary me-1">طرف حساب انتخاب شده</span>
+                            }
+                            @if (searchModel.Status.HasValue)
+                            {
+                                <span class="badge bg-primary me-1">وضعیت: @(searchModel.Status switch {
+                                    0 => "پیش‌نویس",
+                                    1 => "فعال", 
+                                    2 => "تمام شده",
+                                    3 => "لغو شده",
+                                    4 => "منقضی شده",
+                                    _ => "نامشخص"
+                                })</span>
+                            }
+                        }
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="@Url.Action("Index", "Contract")" class="btn btn-alt-secondary me-1">
+                        <i class="fa fa-arrow-left me-1"></i> بازگشت به لیست اصلی
+                    </a>
+                    <a href="@Url.Action("AdvancedSearch", "Contract")" class="btn btn-primary" data-toggle="modal-ajax">
+                        <i class="fa fa-search me-1"></i> جستجوی جدید
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Search Summary -->
+
+    @if (Model.Any())
+    {
+        <!-- Results -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">نتایج جستجو</h3>
+                <div class="block-options">
+                    <span class="badge bg-primary">@Model.Count قرارداد</span>
+                </div>
+            </div>
+            <div class="block-content">
+                <!-- Contracts Table -->
+                <div class="table-responsive">
+                    <table class="table table-borderless table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th class="text-center">شماره قرارداد</th>
+                                <th class="text-center">عنوان</th>
+                                <th class="text-center">طرف حساب</th>
+                                <th class="text-center">تاریخ شروع</th>
+                                <th class="text-center">تاریخ پایان</th>
+                                <th class="text-center">مبلغ (تومان)</th>
+                                <th class="text-center">وضعیت</th>
+                                <th class="text-center" style="width: 100px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var contract in Model)
+                            {
+                                <tr>
+                                    <td class="text-center fw-semibold">@contract.ContractNumber</td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Details", "Contract", new { id = contract.Id })">@contract.Title</a>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (contract.Stakeholder != null)
+                                        {
+                                            <a href="@Url.Action("Details", "Stakeholder", new { id = contract.StakeholderId })">
+                                                @contract.Stakeholder.FirstName @contract.Stakeholder.LastName
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">@ConvertDateTime.ConvertMiladiToShamsi(contract.StartDate, "yyyy/MM/dd")</td>
+                                    <td class="text-center">
+                                        @(contract.EndDate.HasValue ? ConvertDateTime.ConvertMiladiToShamsi(contract.EndDate, "yyyy/MM/dd") : "-")                                                                       
+                                    </td>
+                                    <td class="text-center fw-semibold">
+                                        @contract.ContractValue?.ToString("N0")
+                                    </td>
+                                    <td class="text-center">
+                                        @switch (contract.Status)
+                                        {
+                                            case 0:
+                                                <span class="badge bg-info">پیش‌نویس</span>
+                                                break;
+                                            case 1:
+                                                <span class="badge bg-success">فعال</span>
+                                                break;
+                                            case 2:
+                                                <span class="badge bg-warning">تمام شده</span>
+                                                break;
+                                            case 3:
+                                                <span class="badge bg-danger">لغو شده</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary">نامشخص</span>
+                                                break;
+                                        }
+                                        @if (!contract.IsActive)
+                                        {
+                                            <span class="badge bg-danger ms-1">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Details", "Contract", new { id = contract.Id })" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="جزئیات">
+                                            <i class="fa fa-fw fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("EditContract", "Contract", new { id = contract.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش">
+                                            <i class="fa fa-fw fa-pencil-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <!-- END Contracts Table -->
+            </div>
+        </div>
+        <!-- END Results -->
+    }
+    else
+    {
+        <!-- No Results -->
+        <div class="block block-rounded">
+            <div class="block-content text-center py-5">
+                <i class="fa fa-search fa-3x text-muted mb-3"></i>
+                <h3 class="mb-3">هیچ قراردادی یافت نشد</h3>
+                <p class="text-muted mb-4">با معیارهای جستجوی انتخابی، هیچ قراردادی پیدا نشد. لطفاً معیارهای جستجو را تغییر دهید و دوباره تلاش کنید.</p>
+                <a href="@Url.Action("AdvancedSearch", "Contract")" class="btn btn-primary" data-toggle="modal-ajax">
+                    <i class="fa fa-search me-1"></i> جستجوی جدید
+                </a>
+            </div>
+        </div>
+        <!-- END No Results -->
+    }
+</div>
+<!-- END Page Content -->
+
+@section scripts {
+    <script>
+        $(document).ready(function() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

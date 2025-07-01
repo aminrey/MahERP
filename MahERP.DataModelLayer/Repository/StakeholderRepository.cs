@@ -1,6 +1,7 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

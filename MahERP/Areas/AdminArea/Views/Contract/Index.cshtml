@@ -36,13 +36,13 @@
             </a>
         </div>
         <div class="col-6 col-md-4 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="#" data-bs-toggle="modal" data-bs-target="#modal-search">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AdvancedSearch", "Contract")" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
                         <i class="fa fa-search text-primary"></i>
                     </div>
                     <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
-                        جستجوی قرارداد
+                        جستجوی پیشرفته
                     </p>
                 </div>
             </a>
@@ -184,9 +184,9 @@
                                         <span>-</span>
                                     }
                                 </td>
-                                <td class="text-center">@contract.StartDate.ToString("yyyy/MM/dd")</td>
+                                <td class="text-center">@ConvertDateTime.ConvertMiladiToShamsi(contract.StartDate, "yyyy/MM/dd")</td>
                                 <td class="text-center">
-                                    @(contract.EndDate.HasValue ? contract.EndDate.Value.ToString("yyyy/MM/dd") : "-")
+                                    @(contract.EndDate.HasValue? ConvertDateTime.ConvertMiladiToShamsi(contract.EndDate, "yyyy/MM/dd") : "-")
                                 </td>
                                 <td class="text-center fw-semibold">
                                     @contract.ContractValue?.ToString("N0")
@@ -222,12 +222,12 @@
                                     <a href="@Url.Action("EditContract", "Contract", new { id = contract.Id })" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="ویرایش">
                                         <i class="fa fa-fw fa-pencil-alt"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="تغییر وضعیت"
-                                            onclick="openModal('@Url.Action("ChangeStatus", "Contract", new { id = contract.Id })')">
+                                    <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="تغییر وضعیت"                                           
+                                            href="@Url.Action("ChangeStatus", "Contract", new { id = contract.Id })" data-toggle="modal-ajax">
                                         <i class="fa fa-fw fa-sync-alt"></i>
                                     </button>
                                     <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="@(contract.IsActive ? "غیرفعال کردن" : "فعال کردن")"
-                                            onclick="openModal('@Url.Action("ToggleActivation", "Contract", new { id = contract.Id })')">
+                                            href="@Url.Action("ToggleActivation", "Contract", new { id = contract.Id })" data-toggle="modal-ajax">                                        
                                         <i class="fa fa-fw @(contract.IsActive ? "fa-ban" : "fa-check")"></i>
                                     </button>
                                 </td>
@@ -254,64 +254,9 @@
 </div>
 <!-- END Page Content -->
 
-<!-- Search Modal -->
-<div class="modal fade" id="modal-search" tabindex="-1" role="dialog" aria-labelledby="modal-search" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="block block-rounded block-transparent mb-0">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">جستجوی قرارداد</h3>
-                    <div class="block-options">
-                        <button type="button" class="btn-block-option" data-bs-dismiss="modal" aria-label="Close">
-                            <i class="fa fa-fw fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="block-content fs-sm">
-                    <form action="@Url.Action("Search", "Contract")" method="get">
-                        <div class="mb-4">
-                            <label class="form-label" for="searchTerm">جستجو</label>
-                            <input type="text" class="form-control" id="searchTerm" name="searchTerm" placeholder="عنوان، شماره قرارداد یا نام طرف حساب">
-                        </div>
-                        <div class="text-end">
-                            <button type="button" class="btn btn-alt-secondary me-1" data-bs-dismiss="modal">انصراف</button>
-                            <button type="submit" class="btn btn-primary">جستجو</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- END Search Modal -->
-
-<!-- Modal Container for dynamic content -->
-<div class="modal fade" id="modal-contract" tabindex="-1" role="dialog" aria-labelledby="modal-contract" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <!-- Dynamic content will be loaded here -->
-            <div class="modal-body">
-                <div class="text-center">
-                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
-                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section scripts {
     <script>
-        // Function to open modal and load content
-        function openModal(url) {
-            $('#modal-contract .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
-            $('#modal-contract').modal('show');
-
-            // Load content via AJAX
-            $.get(url, function(data) {
-                $('#modal-contract .modal-content').html(data);
-            });
-        }
 
         // Initialize tooltips
         $(document).ready(function() {

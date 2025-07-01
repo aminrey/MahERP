@@ -11,6 +11,7 @@ using MahERP.DataModelLayer.Services;
 using System;
 using System.Linq;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using MahERP.CommonLayer.PublicClasses;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
@@ -55,10 +56,10 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return RedirectToAction("ErrorView", "Home");
 
             var viewModel = _mapper.Map<ContractViewModel>(contract);
-            viewModel.StartDatePersian = _persianDateHelper.GetPersianDate(contract.StartDate);
+            viewModel.StartDatePersian = ConvertDateTime.ConvertMiladiToShamsi(contract.StartDate, "yyyy/MM/dd");
             
             if (contract.EndDate.HasValue)
-                viewModel.EndDatePersian = _persianDateHelper.GetPersianDate(contract.EndDate.Value);
+                viewModel.EndDatePersian = ConvertDateTime.ConvertMiladiToShamsi(contract.EndDate, "yyyy/MM/dd");
 
             viewModel.StakeholderFullName = $"{contract.Stakeholder.FirstName} {contract.Stakeholder.LastName}";
             
@@ -90,7 +91,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             {
                 IsActive = true,
                 Status = 1, // فعال به عنوان پیش‌فرض
-                StartDatePersian = _persianDateHelper.GetPersianDate(DateTime.Now)
+                StartDatePersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd")
             };
 
             if (stakeholderId.HasValue)
@@ -134,11 +135,11 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 }
 
                 // تبدیل تاریخ‌های شمسی به میلادی
-                DateTime startDate = PersianDateHelper.ConvertToGregorianDate(model.StartDatePersian);
+                DateTime startDate = ConvertDateTime.ConvertShamsiToMiladi(model.StartDatePersian);
                 DateTime? endDate = null;
 
                 if (!string.IsNullOrEmpty(model.EndDatePersian))
-                    endDate = PersianDateHelper.ConvertToGregorianDate(model.EndDatePersian);
+                    endDate = ConvertDateTime.ConvertShamsiToMiladi(model.EndDatePersian);
 
                 // ایجاد قرارداد جدید
                 var contract = _mapper.Map<Contract>(model);
@@ -176,10 +177,10 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return RedirectToAction("ErrorView", "Home");
 
             var viewModel = _mapper.Map<ContractViewModel>(contract);
-            viewModel.StartDatePersian = _persianDateHelper.GetPersianDate(contract.StartDate);
+            viewModel.StartDatePersian = ConvertDateTime.ConvertMiladiToShamsi(contract.StartDate,"yyyy/MM/dd");
             
             if (contract.EndDate.HasValue)
-                viewModel.EndDatePersian = _persianDateHelper.GetPersianDate(contract.EndDate.Value);
+                viewModel.EndDatePersian = ConvertDateTime.ConvertMiladiToShamsi(contract.EndDate, "yyyy/MM/dd");
 
             // دریافت لیست طرف حساب‌های فعال
             var stakeholders = _stakeholderRepository.GetStakeholders(false)
@@ -226,11 +227,11 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     return RedirectToAction("ErrorView", "Home");
 
                 // تبدیل تاریخ‌های شمسی به میلادی
-                DateTime startDate = PersianDateHelper.ConvertToGregorianDate(model.StartDatePersian);
+                DateTime startDate = ConvertDateTime.ConvertShamsiToMiladi(model.StartDatePersian);
                 DateTime? endDate = null;
 
                 if (!string.IsNullOrEmpty(model.EndDatePersian))
-                    endDate = PersianDateHelper.ConvertToGregorianDate(model.EndDatePersian);
+                    endDate = ConvertDateTime.ConvertShamsiToMiladi(model.EndDatePersian);
 
                 // به‌روزرسانی اطلاعات
                 _mapper.Map(model, contract);
@@ -256,6 +257,149 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             ViewBag.Stakeholders = new SelectList(activeStakeholders, "Id", "FullName");
 
             return View(model);
+        }
+
+        // جستجوی پیشرفته - نمایش فرم
+        [HttpGet]
+        public IActionResult AdvancedSearch()
+        {
+            // دریافت لیست طرف حساب‌ها برای dropdown
+            ViewBag.Stakeholders = _stakeholderRepository.GetStakeholders(false)
+                .Select(s => new { 
+                    Id = s.Id, 
+                    FullName = string.IsNullOrEmpty(s.CompanyName) ? $"{s.FirstName} {s.LastName}" : $"{s.FirstName} {s.LastName} ({s.CompanyName})" 
+                })
+                .ToList();
+
+            // دریافت لیست کاربران برای dropdown ایجاد کننده
+            ViewBag.Users = _userManager.Users
+                .Where(u => u.IsActive && !u.IsRemoveUser)
+                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
+                .ToList();
+
+            return PartialView("_AdvancedSearch", new ContractSearchViewModel());
+        }
+
+        // جستجوی پیشرفته - پردازش جستجو
+        [HttpPost]
+        public IActionResult Search(ContractSearchViewModel model)
+        {
+            var query = _uow.ContractUW.Get().AsQueryable();
+
+            // جستجو در عنوان
+            if (!string.IsNullOrWhiteSpace(model.Title))
+            {
+                query = query.Where(c => c.Title.Contains(model.Title));
+            }
+
+            // جستجو در شماره قرارداد
+            if (!string.IsNullOrWhiteSpace(model.ContractNumber))
+            {
+                query = query.Where(c => c.ContractNumber.Contains(model.ContractNumber));
+            }
+
+            // فیلتر طرف حساب
+            if (model.StakeholderId.HasValue)
+            {
+                query = query.Where(c => c.StakeholderId == model.StakeholderId.Value);
+            }
+
+            // فیلتر نوع قرارداد
+            if (model.ContractType.HasValue)
+            {
+                query = query.Where(c => c.ContractType == model.ContractType.Value);
+            }
+
+            // فیلتر وضعیت
+            if (model.Status.HasValue)
+            {
+                query = query.Where(c => c.Status == model.Status.Value);
+            }
+
+            // فیلتر وضعیت فعال
+            if (model.IsActive.HasValue)
+            {
+                query = query.Where(c => c.IsActive == model.IsActive.Value);
+            }
+
+            // فیلتر مبلغ قرارداد
+            if (model.MinContractValue.HasValue)
+            {
+                query = query.Where(c => c.ContractValue >= model.MinContractValue.Value);
+            }
+
+            if (model.MaxContractValue.HasValue)
+            {
+                query = query.Where(c => c.ContractValue <= model.MaxContractValue.Value);
+            }
+
+            // فیلتر تاریخ شروع
+            if (!string.IsNullOrWhiteSpace(model.StartDateFrom))
+            {
+                DateTime startDateFrom = ConvertDateTime.ConvertShamsiToMiladi(model.StartDateFrom);
+                query = query.Where(c => c.StartDate >= startDateFrom);
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.StartDateTo))
+            {
+                DateTime startDateTo = ConvertDateTime.ConvertShamsiToMiladi(model.StartDateTo).AddDays(1);
+                query = query.Where(c => c.StartDate <= startDateTo);
+            }
+
+            // فیلتر تاریخ پایان
+            if (!string.IsNullOrWhiteSpace(model.EndDateFrom))
+            {
+                DateTime endDateFrom = ConvertDateTime.ConvertShamsiToMiladi(model.EndDateFrom);
+                query = query.Where(c => c.EndDate >= endDateFrom);
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.EndDateTo))
+            {
+                DateTime endDateTo = ConvertDateTime.ConvertShamsiToMiladi(model.EndDateTo).AddDays(1);
+                query = query.Where(c => c.EndDate <= endDateTo);
+            }
+
+            // فیلتر تاریخ ایجاد
+            if (!string.IsNullOrWhiteSpace(model.CreateDateFrom))
+            {
+                DateTime createDateFrom = ConvertDateTime.ConvertShamsiToMiladi(model.CreateDateFrom);
+                query = query.Where(c => c.CreateDate >= createDateFrom);
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.CreateDateTo))
+            {
+                DateTime createDateTo = ConvertDateTime.ConvertShamsiToMiladi(model.CreateDateTo).AddDays(1);
+                query = query.Where(c => c.CreateDate <= createDateTo);
+            }
+
+            // فیلتر ایجاد کننده
+            if (!string.IsNullOrWhiteSpace(model.CreatorUserId))
+            {
+                query = query.Where(c => c.CreatorUserId == model.CreatorUserId);
+            }
+
+            // مرتب‌سازی بر اساس تاریخ ایجاد (نزولی)
+            var contracts = query.OrderByDescending(c => c.CreateDate).ToList();
+
+            // بررسی اینکه درخواست AJAX است یا نه
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new
+                {
+                    status = "redirect",
+                    redirectUrl = Url.Action("SearchResults", "Contract", model)
+                });
+            }
+
+            ViewBag.SearchModel = model;
+            return View("SearchResults", contracts);
+        }
+
+        // نمایش نتایج جستجو
+        public IActionResult SearchResults(ContractSearchViewModel model)
+        {
+            // اجرای دوباره جستجو برای نمایش نتایج
+            return Search(model);
         }
 
         // تغییر وضعیت قرارداد - نمایش مودال تأیید
