@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
+using MahERP.CommonLayer.PublicClasses;
 
 namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
@@ -521,7 +522,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             return Json(new { 
                 success = true, 
                 isCompleted = operation.IsCompleted,
-                completionDate = operation.CompletionDate != null ? _persianDateHelper.GetPersianDate(operation.CompletionDate.Value) : null
+                completionDate = operation.CompletionDate != null ? ConvertDateTime.ConvertMiladiToShamsi(operation.CompletionDate, "yyyy/MM/dd") : null
             });
         }
 
@@ -731,7 +732,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
             return Json(new { 
                 success = true, 
-                approvalDate = _persianDateHelper.GetPersianDate(task.SupervisorApprovedDate.Value)
+                approvalDate = ConvertDateTime.ConvertMiladiToShamsi(task.SupervisorApprovedDate,"yyyy/MM/dd")
             });
         }
 
@@ -759,7 +760,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
             return Json(new { 
                 success = true, 
-                approvalDate = _persianDateHelper.GetPersianDate(task.ManagerApprovedDate.Value)
+                approvalDate = ConvertDateTime.ConvertMiladiToShamsi(task.ManagerApprovedDate, "yyyy/MM/dd")
             });
         }
 

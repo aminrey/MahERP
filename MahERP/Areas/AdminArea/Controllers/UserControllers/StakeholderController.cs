@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.StaticClasses;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.CommonLayer.PublicClasses;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
@@ -546,7 +547,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     worksheet.Cell(row, 10).Value = status;
 
                     worksheet.Cell(row, 11).Value = item.Address;
-                    worksheet.Cell(row, 12).Value = _persianDateHelper.GetPersianDate(item.CreateDate);
+                    worksheet.Cell(row, 12).Value = ConvertDateTime.ConvertMiladiToShamsi(item.CreateDate,"yyyy/MM/dd");
 
                     row++;
                 }
@@ -643,13 +644,13 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             // فیلتر تاریخ ایجاد
             if (!string.IsNullOrWhiteSpace(model.FromDate))
             {
-                DateTime fromDate = PersianDateHelper.ConvertToGregorianDate(model.FromDate);
+                DateTime fromDate = ConvertDateTime.ConvertShamsiToMiladi(model.FromDate);
                 query = query.Where(s => s.CreateDate >= fromDate);
             }
 
             if (!string.IsNullOrWhiteSpace(model.ToDate))
             {
-                DateTime toDate = PersianDateHelper.ConvertToGregorianDate(model.ToDate).AddDays(1);
+                DateTime toDate = ConvertDateTime.ConvertShamsiToMiladi(model.ToDate).AddDays(1);
                 query = query.Where(s => s.CreateDate <= toDate);
             }
 
