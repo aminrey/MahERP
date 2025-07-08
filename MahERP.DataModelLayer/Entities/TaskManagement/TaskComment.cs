@@ -97,9 +97,9 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <summary>
         /// شناسه کاربر منشن شده
         /// </summary>
-        public string MentionedUserId { get; set; }
+        public string? MentionedUserId { get; set; }
         [ForeignKey("MentionedUserId")]
-        public virtual AppUsers MentionedUser { get; set; }
+        public virtual AppUsers? MentionedUser { get; set; }
 
         /// <summary>
         /// تاریخ منشن کردن

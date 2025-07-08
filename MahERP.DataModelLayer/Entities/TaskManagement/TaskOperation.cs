@@ -20,8 +20,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <summary>
         /// عنوان عملیات
         /// </summary>
-        [Required(ErrorMessage = "عنوان عملیات الزامی است")]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         /// <summary>
         /// توضیحات عملیات
@@ -78,8 +77,8 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <summary>
         /// کاربر ایجاد کننده
         /// </summary>
-        public string CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; }
         [ForeignKey("CreatorUserId")]
-        public virtual AppUsers Creator { get; set; }
+        public virtual AppUsers? Creator { get; set; }
     }
 }

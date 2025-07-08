@@ -12,19 +12,19 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 
         public int? TaskId { get; set; }
         [ForeignKey("TaskId")]
-        public virtual Tasks Task { get; set; }
+        public virtual Tasks? Task { get; set; }
 
         public int? CommentId { get; set; }
         [ForeignKey("CommentId")]
-        public virtual TaskComment Comment { get; set; }
+        public virtual TaskComment? Comment { get; set; }
 
         public int? OperationId { get; set; }
         [ForeignKey("OperationId")]
-        public virtual TaskOperation Operation { get; set; }
+        public virtual TaskOperation? Operation { get; set; }
 
-        public string RecipientUserId { get; set; }
+        public string? RecipientUserId { get; set; }
         [ForeignKey("RecipientUserId")]
-        public virtual AppUsers Recipient { get; set; }
+        public virtual AppUsers? Recipient { get; set; }
 
         /// <summary>
         /// 0- تسک جدید
@@ -39,9 +39,9 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// </summary>
         public byte NotificationType { get; set; }
 
-        public string Title { get; set; }
+        public string? Title { get; set; }
         
-        public string Message { get; set; }
+        public string? Message { get; set; }
 
         public DateTime CreateDate { get; set; }
 

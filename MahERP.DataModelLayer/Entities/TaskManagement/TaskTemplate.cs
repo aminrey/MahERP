@@ -15,32 +15,30 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public int? CategoryId { get; set; }
         [ForeignKey("CategoryId")]
-        public virtual TaskCategory Category { get; set; }
+        public virtual TaskCategory? Category { get; set; }
 
         public byte TaskType { get; set; }
 
         public byte Priority { get; set; }
 
-        public string CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; }
         [ForeignKey("CreatorUserId")]
-        public virtual AppUsers Creator { get; set; }
+        public virtual AppUsers? Creator { get; set; }
 
         public DateTime CreateDate { get; set; }
 
         public bool IsActive { get; set; } = true;
 
         // Navigation properties
-        public virtual ICollection<TaskTemplateOperation> Operations { get; set; }
+        public virtual ICollection<TaskTemplateOperation> Operations { get; set; } = new HashSet<TaskTemplateOperation>();
 
-        // اضافه کردن این خط به داخل کلاس TaskTemplate
-        public virtual ICollection<TaskSchedule> TaskSchedule { get; set; }
+        public virtual ICollection<TaskSchedule> TaskSchedule { get; set; } = new HashSet<TaskSchedule>();
 
         /// <summary>
         /// استفاده در زمان‌بندی
@@ -53,6 +51,5 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// مدت زمان پیش‌فرض برای انجام تسک (روز)
         /// </summary>
         public int DefaultDurationDays { get; set; }
-
     }
 }

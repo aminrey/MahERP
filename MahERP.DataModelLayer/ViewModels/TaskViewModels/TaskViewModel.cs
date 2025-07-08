@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
 {
@@ -20,7 +21,7 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         public string Title { get; set; }
 
         [Display(Name = "توضیحات")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [Display(Name = "نوع تسک")]
         public byte TaskType { get; set; }
@@ -56,7 +57,7 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         public DateTime CreateDate { get; set; }
         
         [Display(Name = "ایجاد کننده")]
-        public string CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; }
         
         [Display(Name = "وضعیت فعال")]
         public bool IsActive { get; set; } = true;
@@ -66,26 +67,26 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         
         // Navigation properties for display
         [Display(Name = "عنوان دسته‌بندی")]
-        public string CategoryTitle { get; set; }
+        public string? CategoryTitle { get; set; }
         
         [Display(Name = "نام ایجاد کننده")]
-        public string CreatorName { get; set; }
+        public string? CreatorName { get; set; }
         
         [Display(Name = "نام طرف حساب")]
-        public string StakeholderName { get; set; }
+        public string? StakeholderName { get; set; }
         
         [Display(Name = "عنوان قرارداد")]
-        public string ContractTitle { get; set; }
+        public string? ContractTitle { get; set; }
         
         // Attachments
         [Display(Name = "فایل‌های پیوست")]
-        public List<IFormFile> Attachments { get; set; }
+        public List<IFormFile>? Attachments { get; set; }
         
         // Operations
-        public List<TaskOperationViewModel> Operations { get; set; }
+        public List<TaskOperationViewModel>? Operations { get; set; }
         
         // Assignments
-        public List<TaskAssignmentViewModel> Assignments { get; set; }
+        public List<TaskAssignmentViewModel>? Assignments { get; set; }
         
         // Status display
         [Display(Name = "وضعیت")]
@@ -132,7 +133,7 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         public string Title { get; set; }
         
         [Display(Name = "توضیحات")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
         
         [Display(Name = "ترتیب انجام")]
         public int OperationOrder { get; set; }
@@ -144,10 +145,10 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         public DateTime? CompletionDate { get; set; }
         
         [Display(Name = "تکمیل کننده")]
-        public string CompletedByUserId { get; set; }
+        public string? CompletedByUserId { get; set; }
         
         [Display(Name = "نام تکمیل کننده")]
-        public string CompletedByUserName { get; set; }
+        public string? CompletedByUserName { get; set; }
         
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreateDate { get; set; }
@@ -164,16 +165,16 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         public string AssignedUserId { get; set; }
         
         [Display(Name = "نام کاربر")]
-        public string AssignedUserName { get; set; }
+        public string? AssignedUserName { get; set; }
         
         [Display(Name = "تخصیص دهنده")]
-        public string AssignerUserId { get; set; }
+        public string? AssignerUserId { get; set; }
         
         [Display(Name = "نام تخصیص دهنده")]
-        public string AssignerUserName { get; set; }
+        public string? AssignerUserName { get; set; }
         
         [Display(Name = "توضیحات")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
         
         [Display(Name = "تاریخ تکمیل")]
         public DateTime? CompletionDate { get; set; }
@@ -192,19 +193,19 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         public string Title { get; set; }
         
         [Display(Name = "توضیحات")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
         
         [Display(Name = "دسته‌بندی والد")]
         public int? ParentCategoryId { get; set; }
         
         [Display(Name = "عنوان دسته‌بندی والد")]
-        public string ParentCategoryTitle { get; set; }
+        public string? ParentCategoryTitle { get; set; }
         
         [Display(Name = "رنگ (کلاس CSS)")]
-        public string ColorClass { get; set; }
+        public string? ColorClass { get; set; }
         
         [Display(Name = "آیکون")]
-        public string IconClass { get; set; }
+        public string? IconClass { get; set; }
         
         [Display(Name = "وضعیت فعال")]
         public bool IsActive { get; set; } = true;
@@ -213,22 +214,22 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
     public class TaskSearchViewModel
     {
         [Display(Name = "عبارت جستجو")]
-        public string SearchTerm { get; set; }
+        public string? SearchTerm { get; set; }
         
         [Display(Name = "دسته‌بندی")]
         public int? CategoryId { get; set; }
         
         [Display(Name = "اختصاص داده شده به")]
-        public string AssignedUserId { get; set; }
+        public string? AssignedUserId { get; set; }
         
         [Display(Name = "وضعیت تکمیل")]
         public bool? IsCompleted { get; set; }
         
         [Display(Name = "تاریخ شروع")]
-        public string FromDate { get; set; }
+        public string? FromDate { get; set; }
         
         [Display(Name = "تاریخ پایان")]
-        public string ToDate { get; set; }
+        public string? ToDate { get; set; }
         
         [Display(Name = "طرف حساب")]
         public int? StakeholderId { get; set; }

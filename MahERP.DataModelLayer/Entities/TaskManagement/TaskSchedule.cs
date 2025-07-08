@@ -14,10 +14,9 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         [Key]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "عنوان زمان‌بندی را وارد کنید")]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// شناسه قالب تسک مرتبط
@@ -96,22 +95,22 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <summary>
         /// پیام خطای آخرین اجرا (در صورت وجود)
         /// </summary>
-        public string LastRunErrorMessage { get; set; }
+        public string? LastRunErrorMessage { get; set; }
 
-        public string CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; }
         [ForeignKey("CreatorUserId")]
-        public virtual AppUsers Creator { get; set; }
+        public virtual AppUsers? Creator { get; set; }
 
         public DateTime CreateDate { get; set; }
 
         public DateTime? ModifyDate { get; set; }
 
-        public string ModifierUserId { get; set; }
+        public string? ModifierUserId { get; set; }
         [ForeignKey("ModifierUserId")]
-        public virtual AppUsers Modifier { get; set; }
+        public virtual AppUsers? Modifier { get; set; }
 
         // Navigation properties
-        public virtual ICollection<TaskScheduleAssignment> Assignments { get; set; }
-        public virtual ICollection<TaskScheduleExecution> Executions { get; set; }
+        public virtual ICollection<TaskScheduleAssignment> Assignments { get; set; } = new HashSet<TaskScheduleAssignment>();
+        public virtual ICollection<TaskScheduleExecution> Executions { get; set; } = new HashSet<TaskScheduleExecution>();
     }
 }
