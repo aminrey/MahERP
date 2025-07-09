@@ -84,14 +84,16 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.Attachments, opt => opt.Ignore());
 
             CreateMap<TaskViewModel, Tasks>()
-                .ForMember(dest => dest.TaskCategory, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Stakeholder, opt => opt.Ignore())
-                .ForMember(dest => dest.Contract, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskOperations, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskAssignments, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskComments, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskAttachments, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskComments, opt => opt.Ignore());
+                .ForMember(dest => dest.TaskNotifications, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskOperations, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskViewers, opt => opt.Ignore());
 
             // Task operations mapping
             CreateMap<TaskOperation, TaskOperationViewModel>()

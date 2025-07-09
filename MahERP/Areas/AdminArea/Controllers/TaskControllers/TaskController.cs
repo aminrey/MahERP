@@ -148,55 +148,70 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             });
         }
 
-        // افزودن تسک جدید - پردازش فرم
+        // در متد Create (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Permission("Task", "Create", 1)] // Create permission
+        [Permission("Task", "Create", 1)]
         public IActionResult Create(TaskViewModel model)
         {
-            if (ModelState.IsValid)
+            try
             {
-                // بررسی یکتا بودن کد تسک
-                if (!_taskRepository.IsTaskCodeUnique(model.TaskCode))
+                if (ModelState.IsValid)
                 {
-                    ModelState.AddModelError("TaskCode", "کد تسک وارد شده قبلاً ثبت شده است");
-                    PopulateDropdowns();
-                    return View(model);
+                    // بررسی یکتا بودن کد تسک
+                    if (!_taskRepository.IsTaskCodeUnique(model.TaskCode))
+                    {
+                        ModelState.AddModelError("TaskCode", "کد تسک وارد شده قبلاً ثبت شده است");
+                        PopulateDropdowns();
+                        return View(model);
+                    }
+
+                    // ایجاد تسک جدید
+                    var task = _mapper.Map<Tasks>(model);
+                    task.CreateDate = DateTime.Now;
+                    task.CreatorUserId = _userManager.GetUserId(User);
+                    task.IsActive = model.IsActive;
+                    task.IsDeleted = false;
+                    task.TaskTypeInput = 1; // کاربر عادی نرم افزار ساخته
+                    task.VisibilityLevel = 0; // محرمانه به طور پیش‌فرض
+                    task.Priority = 0; // عادی به طور پیش‌فرض
+                    task.Important = false;
+                    task.Status = 0; // ایجاد شده
+                    task.CreationMode = 0; // دستی
+
+                    // ذخیره در دیتابیس
+                    _uow.TaskUW.Create(task);
+                    _uow.Save();
+
+                    // ذخیره فایل‌های پیوست
+                    if (model.Attachments != null && model.Attachments.Count > 0)
+                    {
+                        SaveTaskAttachments(task.Id, model.Attachments);
+                    }
+
+                    // اختصاص به کاربر جاری (خود کاربر ایجاد کننده)
+                    var assignment = new TaskAssignment
+                    {
+                        TaskId = task.Id,
+                        AssignedUserId = _userManager.GetUserId(User),
+                        AssignerUserId = _userManager.GetUserId(User),
+                        Description = "اختصاص خودکار به ایجاد کننده",
+                        AssignmentDate = DateTime.Now
+                    };
+
+                    _uow.TaskAssignmentUW.Create(assignment);
+                    _uow.Save();
+
+                    TempData["SuccessMessage"] = "تسک با موفقیت ایجاد شد";
+                    return RedirectToAction(nameof(Index));
                 }
-
-                // ایجاد تسک جدید
-                var task = _mapper.Map<Tasks>(model);
-                task.CreateDate = DateTime.Now;
-                task.CreatorUserId = _userManager.GetUserId(User);
-                task.IsActive = true;
-                task.IsDeleted = false;
-
-                // ذخیره در دیتابیس
-                _uow.TaskUW.Create(task);
-                _uow.Save();
-                
-                // ذخیره فایل‌های پیوست
-                if (model.Attachments != null && model.Attachments.Count > 0)
-                {
-                    SaveTaskAttachments(task.Id, model.Attachments);
-                }
-                
-                // اختصاص به کاربر جاری (خود کاربر ایجاد کننده)
-                var assignment = new TaskAssignment
-                {
-                    TaskId = task.Id,
-                    AssignedUserId = _userManager.GetUserId(User),
-                    AssignerUserId = _userManager.GetUserId(User),
-                    Description = "اختصاص خودکار به ایجاد کننده",
-                    AssignmentDate = DateTime.Now
-                };
-                
-                _uow.TaskAssignmentUW.Create(assignment);
-                _uow.Save();
-
-                return RedirectToAction(nameof(Index));
             }
-            
+            catch (Exception ex)
+            {
+                // لاگ کردن خطا
+                ModelState.AddModelError("", "خطایی در ثبت تسک رخ داد: " + ex.Message);
+            }
+
             PopulateDropdowns();
             return View(model);
         }
