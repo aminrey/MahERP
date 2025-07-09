@@ -126,6 +126,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         // افزودن تسک جدید - نمایش فرم
+        // در متد Create (GET)
         [HttpGet]
         [Permission("Task", "Create", 1)] // Create permission
         public IActionResult Create()
@@ -179,6 +180,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     task.Status = 0; // ایجاد شده
                     task.CreationMode = 0; // دستی
 
+                    // تبدیل تاریخ شمسی به میلادی
+                    if (!string.IsNullOrEmpty(model.DueDatePersian))
+                    {
+                        task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.DueDatePersian);
+                    }
+
                     // ذخیره در دیتابیس
                     _uow.TaskUW.Create(task);
                     _uow.Save();
@@ -228,6 +235,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             var viewModel = _mapper.Map<TaskViewModel>(task);
             viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
             
+            // تبدیل تاریخ میلادی به شمسی
+            if (task.DueDate.HasValue)
+            {
+                viewModel.DueDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd HH:mm");
+            }
+            
             PopulateDropdowns();
             
             return View(viewModel);
@@ -257,6 +270,16 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 // به‌روزرسانی اطلاعات
                 _mapper.Map(model, task);
                 task.LastUpdateDate = DateTime.Now;
+                
+                // تبدیل تاریخ شمسی به میلادی
+                if (!string.IsNullOrEmpty(model.DueDatePersian))
+                {
+                    task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.DueDatePersian);
+                }
+                else
+                {
+                    task.DueDate = null;
+                }
                 
                 _uow.TaskUW.Update(task);
                 _uow.Save();

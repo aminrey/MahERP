@@ -43,8 +43,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// توضیحات رونوشت (برای حالت رونوشت)
         /// <para>در صورت انتخاب حالت رونوشت، توضیحات مربوطه در این ویژگی ذخیره می‌شود.</para>
         /// </summary>
-        public string CopyDescription { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// شناسه توضیح رونوشت پیش‌فرض (در صورت استفاده از توضیحات آماده)
