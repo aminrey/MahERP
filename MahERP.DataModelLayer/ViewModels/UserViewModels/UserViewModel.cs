@@ -115,4 +115,10 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         public string Token { get; set; }
     }
 
+
+    public class UserViewModelFull : EditUserViewModel
+    {
+
+    } 
+
 }

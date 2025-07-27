@@ -18,7 +18,6 @@ namespace MahERP.DataModelLayer.Repository
         List<TaskCategory> GetAllCategories(bool activeOnly = true);
         TaskCategory GetCategoryById(int id);
         List<Tasks> SearchTasks(string searchTerm, int? categoryId = null, string assignedUserId = null, bool? isCompleted = null);
-        bool IsTaskCodeUnique(string taskCode, int? excludeId = null);
         List<TaskAssignment> GetTaskAssignments(int taskId);
         TaskAssignment GetTaskAssignmentById(int id);
         TaskAssignment GetTaskAssignmentByUserAndTask(string userId, int taskId);

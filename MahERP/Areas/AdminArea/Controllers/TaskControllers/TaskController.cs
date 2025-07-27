@@ -129,22 +129,20 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         // در متد Create (GET)
         [HttpGet]
         [Permission("Task", "Create", 1)] // Create permission
-        public IActionResult Create()
+        /// <summary>
+        /// AddressRoute=از مسیری که وارد این  url شدی 
+        /// taskUserId چه کاربری این تسک را می سازد 
+        public IActionResult CreateNewTask(string AddressRouteInComingUrl, int TaskTeamMember = 0)
         {
+            string LogingUser = _UserManager.GetUserId(HttpContext.User);
+
+
             PopulateDropdowns();
             
-            // ایجاد کد تسک جدید - یک عدد 7 رقمی تصادفی
-            Random random = new Random();
-            string taskCode;
-            do
-            {
-                taskCode = random.Next(1000000, 9999999).ToString();
-            } while (!_taskRepository.IsTaskCodeUnique(taskCode));
-            
+           
             return View(new TaskViewModel 
             { 
                 IsActive = true,
-                TaskCode = taskCode,
                 CreateDate = DateTime.Now
             });
         }
@@ -153,7 +151,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Permission("Task", "Create", 1)]
-        public IActionResult Create(TaskViewModel model)
+        public IActionResult CreateNewTask(TaskViewModel model)
         {
             try
             {

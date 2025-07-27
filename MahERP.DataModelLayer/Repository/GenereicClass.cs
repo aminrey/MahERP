@@ -97,6 +97,11 @@ namespace MahERP.DataModelLayer.Repository
 
 
         }
+        public virtual int GetNextPrimaryKey()
+        {
+            var maxId = _table.Max(e => EF.Property<int>(e, "Id"));
+            return maxId + 1;
+        }
     }
 
 }

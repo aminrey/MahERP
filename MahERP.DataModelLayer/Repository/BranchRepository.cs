@@ -1,6 +1,7 @@
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -128,5 +129,14 @@ namespace MahERP.DataModelLayer.Repository
 
             return query.OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ToList();
         }
+
+
+        public BranchViewModel GetBrnachListByUserId(string UserLoginingid)
+            
+        {
+
+            return null;
+        }
+
     }
 }

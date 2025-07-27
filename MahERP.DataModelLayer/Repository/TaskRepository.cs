@@ -1,6 +1,7 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.TaskViewModels;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -11,11 +12,41 @@ namespace MahERP.DataModelLayer.Repository
     public class TaskRepository : ITaskRepository
     {
         private readonly AppDbContext _context;
+        private readonly IBranchRepository _BranchRipository;
+        private readonly TaskRepository _TaskRepository;
+        private readonly UnitOfWork _unitOfWork;
+        private readonly UserManagerRepository _userManagerRepository;
 
-        public TaskRepository(AppDbContext context)
+        public TaskRepository(AppDbContext context, BranchRepository branchRipository, UnitOfWork unitOfWork, UserManagerRepository userManagerRepository)
         {
             _context = context;
+            _BranchRipository = branchRipository;
+            _unitOfWork = unitOfWork;
+            _userManagerRepository = userManagerRepository;
         }
+
+        public TaskViewModelFull CreateTaskAndCollectData(string UserId)
+        {
+            ///پیدا کردن شماره تسک بعدی
+            var NewTaskId = _unitOfWork.TaskUW.GetNextPrimaryKey();
+
+            var Tasks = new TaskViewModelFull();
+            Tasks.branchListInitial = _BranchRipository.GetBrnachListByUserId("0");
+            int BranchFirst = Tasks.Branchs.FirstOrDefault().Id;
+            Tasks.Customers = _Cusrepo.CustomerListByBranchId(BranchFirst);
+            int CustomersFirst = Tasks.Customers.First().Id;
+            Tasks.Users = _UserManager.GetUserListBybranchId(BranchFirst);
+            Tasks.DutyList = _DutyCustorepo.GetListDutyByCustomer_ByBranch(CustomersFirst, BranchFirst);
+            Tasks.ContractList = _Cusrepo.GetContractList(CustomersFirst);
+            Tasks.NextTaskId = NewTaskId;
+
+            return Tasks;
+        }
+
+
+
+
+
 
         public List<Tasks> GetTasks(bool includeDeleted = false, int? categoryId = null, string assignedUserId = null)
         {
@@ -184,18 +215,7 @@ namespace MahERP.DataModelLayer.Repository
             return query.OrderByDescending(t => t.CreateDate).ToList();
         }
 
-        public bool IsTaskCodeUnique(string taskCode, int? excludeId = null)
-        {
-            if (string.IsNullOrWhiteSpace(taskCode))
-                return true;
-
-            var query = _context.Tasks_Tbl.Where(t => t.TaskCode == taskCode);
-
-            if (excludeId.HasValue)
-                query = query.Where(t => t.Id != excludeId.Value);
-
-            return !query.Any();
-        }
+      
 
         public List<TaskAssignment> GetTaskAssignments(int taskId)
         {

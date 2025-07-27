@@ -22,8 +22,6 @@ namespace MahERP.Controllers
             _UserManager = usermanager;
             _Context = Context;
         }
-
-
         [HttpGet]
         public async Task<IActionResult> Login(string? ReturnUrl)
         {
