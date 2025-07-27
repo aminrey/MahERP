@@ -14,15 +14,17 @@ namespace MahERP.DataModelLayer.Repository
         private readonly AppDbContext _context;
         private readonly IBranchRepository _BranchRipository;
         private readonly TaskRepository _TaskRepository;
-        private readonly UnitOfWork _unitOfWork;
-        private readonly UserManagerRepository _userManagerRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IStakeholderRepository _StakeholderRepo;
+        private readonly IUserManagerRepository _userManagerRepository;
 
-        public TaskRepository(AppDbContext context, BranchRepository branchRipository, UnitOfWork unitOfWork, UserManagerRepository userManagerRepository)
+        public TaskRepository(AppDbContext context, IBranchRepository branchRipository, IUnitOfWork unitOfWork, IUserManagerRepository userManagerRepository, IStakeholderRepository stakeholderRepo)
         {
             _context = context;
             _BranchRipository = branchRipository;
             _unitOfWork = unitOfWork;
             _userManagerRepository = userManagerRepository;
+            _StakeholderRepo = stakeholderRepo;
         }
 
         public TaskViewModelFull CreateTaskAndCollectData(string UserId)
@@ -32,13 +34,13 @@ namespace MahERP.DataModelLayer.Repository
 
             var Tasks = new TaskViewModelFull();
             Tasks.branchListInitial = _BranchRipository.GetBrnachListByUserId("0");
-            int BranchFirst = Tasks.Branchs.FirstOrDefault().Id;
-            Tasks.Customers = _Cusrepo.CustomerListByBranchId(BranchFirst);
-            int CustomersFirst = Tasks.Customers.First().Id;
-            Tasks.Users = _UserManager.GetUserListBybranchId(BranchFirst);
-            Tasks.DutyList = _DutyCustorepo.GetListDutyByCustomer_ByBranch(CustomersFirst, BranchFirst);
-            Tasks.ContractList = _Cusrepo.GetContractList(CustomersFirst);
-            Tasks.NextTaskId = NewTaskId;
+            //int BranchFirst = Tasks.Branchs.FirstOrDefault().Id;
+            Tasks.StakeholderId = 0;
+            //int CustomersFirst = Tasks.Customers.First().Id;
+            Tasks.UsersInitial = _userManagerRepository.GetUserListBybranchId(0);
+            //Tasks.DutyList = _DutyCustorepo.GetListDutyByCustomer_ByBranch(CustomersFirst, BranchFirst);
+            //Tasks.ContractList = _Cusrepo.GetContractList(CustomersFirst);
+            //Tasks.NextTaskId = NewTaskId;
 
             return Tasks;
         }

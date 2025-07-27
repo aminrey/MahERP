@@ -1,4 +1,5 @@
-﻿using MahERP.DataModelLayer.ViewModels.UserViewModels;
+﻿using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MahERP.DataModelLayer.Repository
 {
-    public class UserManagerRepository
+    public class UserManagerRepository :IUserManagerRepository
     {
 
         private readonly AppDbContext _Context;

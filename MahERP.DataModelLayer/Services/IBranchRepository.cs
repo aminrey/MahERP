@@ -6,6 +6,6 @@ namespace MahERP.DataModelLayer.Services
 {
     public interface IBranchRepository
     {
-        public BranchViewModel GetBrnachListByUserId(string UserLoginingid);
+        public List<BranchViewModel> GetBrnachListByUserId(string UserLoginingid);
     }
 }

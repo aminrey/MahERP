@@ -1,4 +1,6 @@
-﻿using MahERP.DataModelLayer.ViewModels.UserViewModels;
+﻿using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +14,12 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         /// <summary>
         /// هر جا initial هست یک لیست  جهت انتخاب هستد
         /// </summary>
-        public BranchViewModel branchListInitial {  get; set; }
+        public List<BranchViewModel> branchListInitial {  get; set; }
+        public List<UserViewModelFull> UsersInitial {  get; set; }
+        public List<StakeholderViewModel> StakeholdersInitial { get; set; }
+
+
+
 
 
 
