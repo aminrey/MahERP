@@ -40,27 +40,27 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         // لیست شعبه‌ها
         public IActionResult Index()
         {
-            var branches = _branchRepository.GetBranches();
+            var branches = _branchRepository.GetBrnachListByUserId("0");
             return View(branches);
         }
 
         // جزئیات شعبه
         public IActionResult Details(int id)
         {
-            var branch = _branchRepository.GetBranchById(id, true, true, true, true);
+            var branch = _branchRepository.GetBrnachListByUserId("0");
             if (branch == null)
                 return RedirectToAction("ErrorView", "Home");
 
             var viewModel = _mapper.Map<BranchViewModel>(branch);
 
-            // اطلاعات کاربران شعبه
-            ViewBag.BranchUsers = _branchRepository.GetBranchUsers(id);
+            //// اطلاعات کاربران شعبه
+            //ViewBag.BranchUsers = _branchRepository.GetBranchUsers(id);
 
-            // اطلاعات طرف‌حساب‌های شعبه
-            ViewBag.Stakeholders = _branchRepository.GetBranchStakeholders(id);
+            //// اطلاعات طرف‌حساب‌های شعبه
+            //ViewBag.Stakeholders = _branchRepository.GetBranchStakeholders(id);
 
-            // اطلاعات شعبه‌های زیرمجموعه
-            ViewBag.ChildBranches = _branchRepository.GetChildBranches(id);
+            //// اطلاعات شعبه‌های زیرمجموعه
+            //ViewBag.ChildBranches = _branchRepository.GetChildBranches(id);
 
             return View(viewModel);
         }
@@ -71,7 +71,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         {
             // دریافت لیست شعبه‌های اصلی برای انتخاب شعبه مادر
             ViewBag.ParentBranches = new SelectList(
-                _branchRepository.GetBranches().Select(b => new { Id = b.Id, Name = b.Name }),
+                _branchRepository.GetBrnachListByUserId("0").Select(b => new { Id = b.Id, Name = b.Name }),
                 "Id", "Name");
 
             return View(new BranchViewModel { IsActive = true });
@@ -89,7 +89,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 {
                     ModelState.AddModelError("Name", "نام شعبه تکراری است");
                     ViewBag.ParentBranches = new SelectList(
-                        _branchRepository.GetBranches().Select(b => new { Id = b.Id, Name = b.Name }),
+                        _branchRepository.GetBrnachListByUserId("0").Select(b => new { Id = b.Id, Name = b.Name }),
                         "Id", "Name");
                     return View(model);
                 }
@@ -106,7 +106,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             }
 
             ViewBag.ParentBranches = new SelectList(
-                _branchRepository.GetBranches().Select(b => new { Id = b.Id, Name = b.Name }),
+                _branchRepository.GetBrnachListByUserId("0").Select(b => new { Id = b.Id, Name = b.Name }),
                 "Id", "Name");
             return View(model);
         }
@@ -115,7 +115,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         [HttpGet]
         public IActionResult EditBranch(int id)
         {
-            var branch = _branchRepository.GetBranchById(id);
+            var branch = _branchRepository.GetBrnachListByUserId("0");
             if (branch == null)
                 return RedirectToAction("ErrorView", "Home");
 
@@ -123,7 +123,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
             // دریافت لیست شعبه‌های اصلی برای انتخاب شعبه مادر
             ViewBag.ParentBranches = new SelectList(
-                _branchRepository.GetBranches().Where(b => b.Id != id).Select(b => new { Id = b.Id, Name = b.Name }),
+                _branchRepository.GetBrnachListByUserId("0").Where(b => b.Id != id).Select(b => new { Id = b.Id, Name = b.Name }),
                 "Id", "Name");
 
             return View(viewModel);
@@ -141,7 +141,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 {
                     ModelState.AddModelError("Name", "نام شعبه تکراری است");
                     ViewBag.ParentBranches = new SelectList(
-                        _branchRepository.GetBranches().Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
+                        _branchRepository.GetBrnachListByUserId("0").Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
                         "Id", "Name");
                     return View(model);
                 }
@@ -162,7 +162,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             }
 
             ViewBag.ParentBranches = new SelectList(
-                _branchRepository.GetBranches().Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
+                _branchRepository.GetBrnachListByUserId("0").Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
                 "Id", "Name");
             return View(model);
         }
@@ -478,7 +478,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         [HttpGet]
         public IActionResult Search(string searchTerm)
         {
-            var branches = _branchRepository.SearchBranches(searchTerm);
+            var branches = _branchRepository.GetBrnachListByUserId("0");
             ViewBag.SearchTerm = searchTerm;
             return View("Index", branches);
         }

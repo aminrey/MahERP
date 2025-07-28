@@ -134,7 +134,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// taskUserId چه کاربری این تسک را می سازد 
         public IActionResult CreateNewTask(string AddressRouteInComingUrl, int TaskTeamMember = 0)
         {
-            string LogingUser = _UserManager.GetUserId(HttpContext.User);
+            string LogingUser = _userManager.GetUserId(HttpContext.User);
 
 
             PopulateDropdowns();
@@ -157,13 +157,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             {
                 if (ModelState.IsValid)
                 {
-                    // بررسی یکتا بودن کد تسک
-                    if (!_taskRepository.IsTaskCodeUnique(model.TaskCode))
-                    {
-                        ModelState.AddModelError("TaskCode", "کد تسک وارد شده قبلاً ثبت شده است");
-                        PopulateDropdowns();
-                        return View(model);
-                    }
+                   
 
                     // ایجاد تسک جدید
                     var task = _mapper.Map<Tasks>(model);
@@ -252,13 +246,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             if (ModelState.IsValid)
             {
-                // بررسی یکتا بودن کد تسک
-                if (!_taskRepository.IsTaskCodeUnique(model.TaskCode, model.Id))
-                {
-                    ModelState.AddModelError("TaskCode", "کد تسک وارد شده قبلاً ثبت شده است");
-                    PopulateDropdowns();
-                    return View(model);
-                }
+               
 
                 // دریافت تسک از دیتابیس
                 var task = _uow.TaskUW.GetById(model.Id);

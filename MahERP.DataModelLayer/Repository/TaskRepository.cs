@@ -13,7 +13,6 @@ namespace MahERP.DataModelLayer.Repository
     {
         private readonly AppDbContext _context;
         private readonly IBranchRepository _BranchRipository;
-        private readonly TaskRepository _TaskRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IStakeholderRepository _StakeholderRepo;
         private readonly IUserManagerRepository _userManagerRepository;

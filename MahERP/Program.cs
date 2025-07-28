@@ -30,6 +30,8 @@ builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ICRMRepository, CRMRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>(); // اضافه شده
+builder.Services.AddScoped<IUserManagerRepository,UserManagerRepository>(); 
+
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
@@ -76,8 +78,11 @@ builder.Services.AddScoped<PersianDateHelper>();
 
 var app = builder.Build();
 
+
+
+
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
