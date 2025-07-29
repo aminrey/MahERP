@@ -25,6 +25,19 @@ namespace MahERP.DataModelLayer.Repository
             _userManagerRepository = userManagerRepository;
             _StakeholderRepo = stakeholderRepo;
         }
+        public bool IsTaskCodeUnique(string taskCode, int? excludeId = null)
+        {
+            if (string.IsNullOrWhiteSpace(taskCode))
+                return true;
+
+            var query = _context.Tasks_Tbl.Where(t => t.TaskCode == taskCode);
+
+            if (excludeId.HasValue)
+                query = query.Where(t => t.Id != excludeId.Value);
+
+            return !query.Any();
+        }
+
 
         public TaskViewModelFull CreateTaskAndCollectData(string UserId)
         {

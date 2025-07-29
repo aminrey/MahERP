@@ -10,10 +10,10 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "کد تسک الزامی است")]
-        [Display(Name = "کد تسک")]
-        [MaxLength(7, ErrorMessage = "کد تسک حداکثر 7 کاراکتر باشد")]
-        public string TaskCode { get; set; }
+        //[Required(ErrorMessage = "کد تسک الزامی است")]
+        //[Display(Name = "کد تسک")]
+        //[MaxLength(7, ErrorMessage = "کد تسک حداکثر 7 کاراکتر باشد")]
+        public string? TaskCode { get; set; }
 
         [Required(ErrorMessage = "عنوان تسک الزامی است")]
         [Display(Name = "عنوان تسک")]
@@ -88,8 +88,12 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         // Operations
         public List<TaskOperationViewModel>? Operations { get; set; }
 
-        // Assignments
-        public List<TaskAssignmentViewModel>? Assignments { get; set; }
+        // AssignmentsTask
+        public List<TaskAssignmentViewModel>? AssignmentsTaskUsers { get; set; }
+
+        // AssignmentsCopyCarbon
+        public List<TaskAssignmentViewModel>? AssignmentsCopyCarbonUsers { get; set; }
+
 
         // Status display
         [Display(Name = "وضعیت")]

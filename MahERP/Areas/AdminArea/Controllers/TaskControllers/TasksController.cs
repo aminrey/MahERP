@@ -120,7 +120,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
             
             // تکمیل اطلاعات اختصاص‌ها
-            viewModel.Assignments = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
+            viewModel.AssignmentsTaskUsers = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
             
             return View(viewModel);
         }
@@ -153,12 +153,15 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         [Permission("Tasks", "CreateNewTask", 1)]
         public IActionResult CreateNewTask(TaskViewModel model)
         {
+           if (model.TaskCode == null)
+            {
+                model.TaskCode = "0";
+            }
+
             try
             {
                 if (ModelState.IsValid)
                 {
-                   
-
                     // ایجاد تسک جدید
                     var task = _mapper.Map<Tasks>(model);
                     task.CreateDate = DateTime.Now;

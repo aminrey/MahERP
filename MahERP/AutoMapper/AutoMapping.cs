@@ -80,7 +80,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.StakeholderName, opt => opt.MapFrom(src => src.Stakeholder != null ? $"{src.Stakeholder.FirstName} {src.Stakeholder.LastName}" : null))
                 .ForMember(dest => dest.ContractTitle, opt => opt.MapFrom(src => src.Contract != null ? src.Contract.Title : null))
                 .ForMember(dest => dest.Operations, opt => opt.Ignore())
-                .ForMember(dest => dest.Assignments, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignmentsTaskUsers, opt => opt.Ignore())
                 .ForMember(dest => dest.Attachments, opt => opt.Ignore());
 
             CreateMap<TaskViewModel, Tasks>()

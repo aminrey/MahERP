@@ -16,7 +16,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// کد یکتای تسک (عدد 7 رقمی)
         /// </summary>
         [Required(ErrorMessage = "کد تسک الزامی است")]
-        [MaxLength(7)]
+        //[MaxLength(7)]
         public string TaskCode { get; set; }
 
         /// <summary>

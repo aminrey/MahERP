@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "جزئیات تسک";
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var isAssignedToCurrentUser = Model.Assignments?.Any(a => a.AssignedUserId == currentUserId) ?? false;
+    var isAssignedToCurrentUser = Model.AssignmentsTaskUsers?.Any(a => a.AssignedUserId == currentUserId) ?? false;
     var isManager = User.IsInRole("Admin") || User.IsInRole("Manager");
     var isSupervisor = User.IsInRole("Supervisor") || isManager;
 }
@@ -380,7 +380,7 @@
                     </div>
                 </div>
                 <div class="block-content">
-                    @if (Model.Assignments == null || !Model.Assignments.Any())
+                    @if (Model.AssignmentsTaskUsers == null || !Model.AssignmentsTaskUsers.Any())
                     {
                         <div class="alert alert-info">
                             <i class="fa fa-info-circle me-1"></i> هیچ کاربری به این تسک اختصاص داده نشده است.
@@ -389,7 +389,7 @@
                     else
                     {
                         <div class="list-group push">
-                            @foreach (var assignment in Model.Assignments)
+                            @foreach (var assignment in Model.AssignmentsTaskUsers)
                             {
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
