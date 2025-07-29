@@ -12,7 +12,7 @@
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">مدیریت</li>
                     <li class="breadcrumb-item">
-                        <a href="@Url.Action("Index", "Task")">تسک‌ها</a>
+                        <a href="@Url.Action("Index", "Tasks")">تسک‌ها</a>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">افزودن جدید</li>
                 </ol>
@@ -24,7 +24,7 @@
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <!-- New Task Form -->
-    <form method="POST" action="@Url.Action("Create", "Task")" enctype="multipart/form-data">
+    <form method="POST" action="@Url.Action("CreateNewTask", "Tasks")" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
         <div class="block block-rounded">
             <div class="block-header block-header-default">

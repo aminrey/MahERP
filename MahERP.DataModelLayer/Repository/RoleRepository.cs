@@ -349,13 +349,13 @@ namespace MahERP.DataModelLayer.Repository
             // می‌توان از Reflection استفاده کرد یا لیست ثابتی تعریف کرد
             return new Dictionary<string, string>
             {
-                {"Task", "تسک‌ها"},
-                {"Task.Index", "لیست تسک‌ها"},
-                {"Task.Create", "ایجاد تسک"},
-                {"Task.Edit", "ویرایش تسک"},
-                {"Task.Delete", "حذف تسک"},
-                {"Task.Details", "جزئیات تسک"},
-                {"Task.MyTasks", "تسک‌های من"},
+                {"Tasks", "تسک‌ها"},
+                {"Tasks.Index", "لیست تسک‌ها"},
+                {"Tasks.CreateNewTask", "ایجاد تسک"},
+                {"Tasks.Edit", "ویرایش تسک"},
+                {"Tasks.Delete", "حذف تسک"},
+                {"Tasks.Details", "جزئیات تسک"},
+                {"Tasks.MyTasks", "تسک‌های من"},
                 {"CRM", "مدیریت ارتباط با مشتری"},
                 {"CRM.Index", "لیست تعاملات CRM"},
                 {"CRM.Create", "ایجاد تعامل CRM"},
