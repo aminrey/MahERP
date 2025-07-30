@@ -60,21 +60,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-lg-4">
-                                <p class="text-muted">این وظیفه به چه کربر هایی   متصل شود؟</p>
-                            </div>
-                            <div class="col-lg-8 col-xl-5">
-                                @*start select 2*@
-                                <div class="mb-4">
-                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.AssignmentsTaskUsers, "Id", "AssignerUserName"))" id="prj01" data-placeholder="بسیاری را انتخاب کنید  " multiple="multiple" name="UserViewModel" style="width: 100%;">                                                            </select>
-                                </div>
-                                <span asp-validation-for="AssignmentsTaskUsers" class="text-danger"></span>
-
-                                @*finishselect2*@
-
-                            </div>
-                        </div>
+                      
                         <div class="mb-4">
                             <label class="form-label" for="Title">عنوان تسک <span class="text-danger">*</span></label>
                             <input asp-for="Title" class="form-control" placeholder="عنوان تسک را وارد کنید">
@@ -91,10 +77,29 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="TaskCategoryId">دسته‌بندی</label>
-                                    <select asp-for="TaskCategoryId" asp-items="ViewBag.Categories" class="form-select">
+                                    <select asp-for="TaskCategoryIdSelected" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" class="form-select">
                                         <option value="">انتخاب کنید</option>
                                     </select>
-                                    <span asp-validation-for="TaskCategoryId" class="text-danger"></span>
+                                    <span asp-validation-for="TaskCategoryIdSelected" class="text-danger"></span>
+                                </div>
+                            </div>
+
+
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="TaskCategoryId">کاربر های منتصب</label>
+                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.UsersInitial, "Id", "FullNamesString"))" id="AssignmentsSelectedTaskUserArraysString" data-placeholder="بسیاری را انتخاب کنید  " multiple="multiple" name="AssignmentsSelectedTaskUserArraysString" style="width: 100%;">                                                            </select>
+                                    <option value="">انتخاب کنید</option>
+                                    <span asp-validation-for="UsersInitial" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="BranchViewModelId">انتخاب شعبه‌</label>
+                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" id="BranchIdSelected" data-placeholder="بسیاری را انتخاب کنید  " name="" style="width: 100%;">                                                            </select>
+                                    <span asp-validation-for="branchListInitial" class="text-danger"></span>
+                                    <option value="">انتخاب کنید</option>
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -148,9 +153,8 @@
 </div>
 <!-- END Page Content -->
 @section scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+   
+    <script>Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-maxlength', 'jq-select2', 'jq-rangeslider', 'jq-masked-inputs', 'jq-pw-strength']);</script>
 
     <script>
         $(document).ready(function() {

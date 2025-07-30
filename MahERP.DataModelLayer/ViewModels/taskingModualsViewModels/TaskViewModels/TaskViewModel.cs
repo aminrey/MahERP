@@ -1,15 +1,17 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
-namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
-{
+namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
+
     public class TaskViewModel
     {
         public int Id { get; set; }
-
         //[Required(ErrorMessage = "کد تسک الزامی است")]
         //[Display(Name = "کد تسک")]
         //[MaxLength(7, ErrorMessage = "کد تسک حداکثر 7 کاراکتر باشد")]
@@ -26,8 +28,6 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         [Display(Name = "نوع تسک")]
         public byte TaskType { get; set; }
 
-        [Display(Name = "دسته‌بندی")]
-        public int? TaskCategoryId { get; set; }
 
         [Display(Name = "طرف حساب")]
         public int? StakeholderId { get; set; }
@@ -85,18 +85,30 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         [Display(Name = "فایل‌های پیوست")]
         public List<IFormFile>? Attachments { get; set; }
 
-        // Operations
-        public List<TaskOperationViewModel>? Operations { get; set; }
 
-        // AssignmentsTask
-        public List<TaskAssignmentViewModel>? AssignmentsTaskUsers { get; set; }
+    // Operations
+    public List<TaskOperationViewModel>? Operations { get; set; }
 
-        // AssignmentsCopyCarbon
-        public List<TaskAssignmentViewModel>? AssignmentsCopyCarbonUsers { get; set; }
+    // Progress calculation
+    [Display(Name = "درصد پیشرفت")]
+    public int ProgressPercentage
+    {
+        get
+        {
+            if (Operations == null || !Operations.Any()) return 0;
+
+            int totalOperations = Operations.Count;
+            int completedOperations = Operations.Count(o => o.IsCompleted);
+
+            if (totalOperations == 0) return 0;
+            return completedOperations * 100 / totalOperations;
+        }
+    }
 
 
-        // Status display
-        [Display(Name = "وضعیت")]
+
+    // Status display
+    [Display(Name = "وضعیت")]
         public string StatusText
         {
             get
@@ -111,24 +123,50 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
             }
         }
 
-        // Progress calculation
-        [Display(Name = "درصد پیشرفت")]
-        public int ProgressPercentage
-        {
-            get
-            {
-                if (Operations == null || !Operations.Any()) return 0;
 
-                int totalOperations = Operations.Count;
-                int completedOperations = Operations.Count(o => o.IsCompleted);
 
-                if (totalOperations == 0) return 0;
-                return (completedOperations * 100) / totalOperations;
-            }
-        }
-    }
+    
+    /// <summary>
+    /// هر جا initial هست یک لیست  جهت انتخاب هستد
+    /// intial یعنی همه لیست و لود میکنه و برای نمایش تمام کاربر ها هست . 
+    /// </summary>
+    public List<BranchViewModel>? branchListInitial { get; set; }
+    public List<UserViewModelFull>? UsersInitial { get; set; }
+    public List<StakeholderViewModel>? StakeholdersInitial { get; set; }
+    public List<TaskCategory>? TaskCategoryInitial { get; set; }
 
-    public class TaskOperationViewModel
+
+    // AssignmentsTask
+    /// <summary>
+    /// لیستی که کاربر انهارو انتخاب کرده 
+    /// </summary>
+    public List<TaskAssignmentViewModel>? AssignmentsTaskUser { get; set; }
+
+    // AssignmentsCopyCarbon
+    /// <summary>
+    /// لیستی که کاربر انهارو انتخاب کرده 
+    /// </summary>
+    public List<TaskAssignmentViewModel>? AssignmentsCopyCarbonUsers { get; set; }
+
+
+    /// <summary>
+    /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
+    /// </summary>
+    public List<string>? AssignmentsSelectedTaskUserArraysString { get; set; }
+    /// <summary>
+    /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
+    /// </summary>
+    public List<string>? AssignmentsSelectedCopyCarbonUsersArraysString { get; set; }
+    [Display(Name = "شعبه")]
+
+    public int BranchIdSelected { get; set; }
+    [Display(Name = "دسته‌بندی")]
+    public int TaskCategoryIdSelected { get; set; } 
+
+}
+
+
+public class TaskOperationViewModel
     {
         public int Id { get; set; }
 
@@ -244,4 +282,3 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
         [Display(Name = "نمایش حذف شده‌ها")]
         public bool IncludeDeleted { get; set; } = false;
     }
-}

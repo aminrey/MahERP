@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using System;
 using System.Collections.Generic;
 
@@ -21,5 +22,7 @@ namespace MahERP.DataModelLayer.Repository
         List<TaskAssignment> GetTaskAssignments(int taskId);
         TaskAssignment GetTaskAssignmentById(int id);
         TaskAssignment GetTaskAssignmentByUserAndTask(string userId, int taskId);
+        public TaskViewModel CreateTaskAndCollectData(string UserId);
+
     }
 }

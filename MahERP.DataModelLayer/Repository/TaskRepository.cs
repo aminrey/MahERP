@@ -1,7 +1,7 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Services;
-using MahERP.DataModelLayer.ViewModels.TaskViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -37,17 +37,16 @@ namespace MahERP.DataModelLayer.Repository
 
             return !query.Any();
         }
-
-
-        public TaskViewModelFull CreateTaskAndCollectData(string UserId)
+        public TaskViewModel CreateTaskAndCollectData(string UserId)
         {
             ///پیدا کردن شماره تسک بعدی
             var NewTaskId = _unitOfWork.TaskUW.GetNextPrimaryKey();
+            var Tasks = new TaskViewModel();
+            Tasks.branchListInitial = _BranchRipository.GetBrnachListByUserId(UserId);
+            Tasks.TaskCategoryInitial = GetAllCategories();
 
-            var Tasks = new TaskViewModelFull();
-            Tasks.branchListInitial = _BranchRipository.GetBrnachListByUserId("0");
             //int BranchFirst = Tasks.Branchs.FirstOrDefault().Id;
-            Tasks.StakeholderId = 0;
+            //Tasks.StakeholderId = 0;
             //int CustomersFirst = Tasks.Customers.First().Id;
             Tasks.UsersInitial = _userManagerRepository.GetUserListBybranchId(0);
             //Tasks.DutyList = _DutyCustorepo.GetListDutyByCustomer_ByBranch(CustomersFirst, BranchFirst);

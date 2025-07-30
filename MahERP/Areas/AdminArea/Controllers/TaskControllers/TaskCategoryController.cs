@@ -9,10 +9,10 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
-using MahERP.DataModelLayer.ViewModels.TaskViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 
 namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {

@@ -1,4 +1,5 @@
-﻿@model TaskViewModel
+﻿@using MahERP.DataModelLayer.ViewModels
+@model TaskViewModel
 @{
     ViewData["Title"] = "ویرایش تسک";
 }
@@ -87,10 +88,10 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="TaskCategoryId">دسته‌بندی</label>
-                                    <select asp-for="TaskCategoryId" asp-items="ViewBag.Categories" class="form-select">
+                                    <select asp-for="TaskCategoryIdSelected" asp-items="ViewBag.Categories" class="form-select">
                                         <option value="">انتخاب کنید</option>
                                     </select>
-                                    <span asp-validation-for="TaskCategoryId" class="text-danger"></span>
+                                    <span asp-validation-for="TaskCategoryIdSelected" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-sm-6">

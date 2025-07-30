@@ -118,7 +118,7 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
 
     public class UserViewModelFull : EditUserViewModel
     {
-
+        public string FullNamesString { get; set; }
     } 
 
 }

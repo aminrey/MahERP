@@ -48,6 +48,11 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
 
         [Display(Name = "تاریخ آخرین بروزرسانی")]
         public DateTime? LastUpdateDate { get; set; }
+      
+        
+        [Display(Name = "شعبه ")]
+
+        public BranchViewModel? ParentBranch { get; set; }
     }
 
 

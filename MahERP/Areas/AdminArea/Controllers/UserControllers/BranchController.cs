@@ -40,7 +40,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         // لیست شعبه‌ها
         public IActionResult Index()
         {
-            var branches = _branchRepository.GetBrnachListByUserId("0");
+            List<BranchViewModel> branches = _branchRepository.GetBrnachListByUserId("0");
             return View(branches);
         }
 

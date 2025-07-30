@@ -6,13 +6,13 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
-using MahERP.DataModelLayer.ViewModels.TaskViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
 using MahERP.CommonLayer.PublicClasses;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 
 namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
@@ -120,7 +120,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
             
             // تکمیل اطلاعات اختصاص‌ها
-            viewModel.AssignmentsTaskUsers = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
+            viewModel.AssignmentsTaskUser = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
             
             return View(viewModel);
         }
@@ -138,13 +138,15 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
 
             PopulateDropdowns();
-            
-           
-            return View(new TaskViewModel 
-            { 
-                IsActive = true,
-                CreateDate = DateTime.Now
-            });
+
+            TaskViewModel Model  =  _taskRepository.CreateTaskAndCollectData(LogingUser);   
+            //return View(new TaskViewModel
+            //{ 
+            //    IsActive = true,
+            //    CreateDate = DateTime.Now
+            //});
+            return View(Model);
+
         }
 
         // در متد Create (POST)
@@ -153,6 +155,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         [Permission("Tasks", "CreateNewTask", 1)]
         public IActionResult CreateNewTask(TaskViewModel model)
         {
+
+            List<string>      AssimentUserTask= model.AssignmentsSelectedTaskUserArraysString;
            if (model.TaskCode == null)
             {
                 model.TaskCode = "0";
@@ -160,6 +164,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
             try
             {
+
                 if (ModelState.IsValid)
                 {
                     // ایجاد تسک جدید
@@ -191,18 +196,44 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         SaveTaskAttachments(task.Id, model.Attachments);
                     }
 
+
+
+
+
+                   foreach (var userId in AssimentUserTask)
+                    {
+
+                        // اختصاص تسک به کاربر
+                        var assignment = new TaskAssignment
+                        {
+                            TaskId = task.Id,
+                            AssignedUserId = userId,
+                            AssignerUserId = _userManager.GetUserId(User),
+                            AssignmentType = 0, // اصلی
+                            AssignmentDate = DateTime.Now
+                        };
+                        _uow.TaskAssignmentUW.Create(assignment);
+                        _uow.Save();    
+                    }
                     // اختصاص به کاربر جاری (خود کاربر ایجاد کننده)
-                    var assignment = new TaskAssignment
+                    var Selfassignment = new TaskAssignment
                     {
                         TaskId = task.Id,
                         AssignedUserId = _userManager.GetUserId(User),
                         AssignerUserId = _userManager.GetUserId(User),
-                        Description = "اختصاص خودکار به ایجاد کننده",
+                        AssignmentType = 0,
                         AssignmentDate = DateTime.Now
-                    };
-
-                    _uow.TaskAssignmentUW.Create(assignment);
+                        }; 
+                    _uow.TaskAssignmentUW.Create(Selfassignment);
                     _uow.Save();
+
+
+
+
+
+
+
+
 
                     TempData["SuccessMessage"] = "تسک با موفقیت ایجاد شد";
                     return RedirectToAction(nameof(Index));

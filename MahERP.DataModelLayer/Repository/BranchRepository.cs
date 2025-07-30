@@ -1,4 +1,4 @@
-using MahERP.DataModelLayer.AcControl;
+﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
@@ -130,12 +130,24 @@ namespace MahERP.DataModelLayer.Repository
             return query.OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ToList();
         }
 
-
+        /// <summary>
+        /// لیستی از شبعبه های که ان کاربر در ان تعریف شده است 
+        /// </summary>
+        /// <param name="UserLoginingid">نام کاربر لاگین شده را میگیرد و در خروجی شعبه های  که مجوز اتصال دارد را میدهد</param>
+        /// <returns></returns>
         public List<BranchViewModel> GetBrnachListByUserId(string UserLoginingid)
-            
         {
-
-            return null;
+            List<BranchViewModel> branchList = (from branchUser in _context.BranchUser_Tbl
+                                              join bu in _context.Branch_Tbl on branchUser.BranchId equals bu.Id
+                                              where branchUser.UserId == UserLoginingid && branchUser.IsActive
+                                              select new BranchViewModel
+                                              {
+                                                  Id = bu.Id,
+                                                  Name = bu.Name,
+                                                  IsMainBranch = bu.IsMainBranch,
+                                                  IsActive = branchUser.IsActive
+                                              }).ToList();
+            return branchList;
         }
 
     }

@@ -22,8 +22,23 @@ namespace MahERP.DataModelLayer.Repository
 
         public List<UserViewModelFull> GetUserListBybranchId(int branchId)
         {
+            List<UserViewModelFull> user = _Context.Users
 
-            return null;
+                .Select(u => new UserViewModelFull
+                {
+                    Id = u.Id,
+           FullNamesString= u.FirstName + " " + u.LastName,
+                    Email = u.Email,
+                    PhoneNumber = u.PhoneNumber,
+                    IsActive = u.IsActive
+                })
+                .ToList();  
+
+
+
+
+
+            return user;
 
         }
 
