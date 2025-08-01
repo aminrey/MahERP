@@ -623,7 +623,7 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = true,
                             CanEdit = true,
                             CanRead = true,
-                            ControllerName = "Task",
+                            ControllerName = "Tasks",
                             DataAccessLevel = (byte)2,
                             IsActive = true,
                             RolePatternId = 1
@@ -763,7 +763,7 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = true,
                             CanEdit = true,
                             CanRead = true,
-                            ControllerName = "Task",
+                            ControllerName = "Tasks",
                             DataAccessLevel = (byte)1,
                             IsActive = true,
                             RolePatternId = 2
@@ -833,7 +833,7 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = false,
                             CanEdit = false,
                             CanRead = true,
-                            ControllerName = "Task",
+                            ControllerName = "Tasks",
                             DataAccessLevel = (byte)0,
                             IsActive = true,
                             RolePatternId = 3
@@ -847,7 +847,7 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = false,
                             CanEdit = false,
                             CanRead = true,
-                            ControllerName = "Task",
+                            ControllerName = "Tasks",
                             DataAccessLevel = (byte)0,
                             IsActive = true,
                             RolePatternId = 4

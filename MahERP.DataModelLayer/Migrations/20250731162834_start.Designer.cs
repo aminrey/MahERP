@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250709202826_mig04")]
-    partial class mig04
+    [Migration("20250731162834_start")]
+    partial class start
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -626,7 +626,7 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = true,
                             CanEdit = true,
                             CanRead = true,
-                            ControllerName = "Task",
+                            ControllerName = "Tasks",
                             DataAccessLevel = (byte)2,
                             IsActive = true,
                             RolePatternId = 1
@@ -766,7 +766,7 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = true,
                             CanEdit = true,
                             CanRead = true,
-                            ControllerName = "Task",
+                            ControllerName = "Tasks",
                             DataAccessLevel = (byte)1,
                             IsActive = true,
                             RolePatternId = 2
@@ -836,7 +836,7 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = false,
                             CanEdit = false,
                             CanRead = true,
-                            ControllerName = "Task",
+                            ControllerName = "Tasks",
                             DataAccessLevel = (byte)0,
                             IsActive = true,
                             RolePatternId = 3
@@ -850,7 +850,7 @@ namespace MahERP.DataModelLayer.Migrations
                             CanDelete = false,
                             CanEdit = false,
                             CanRead = true,
-                            ControllerName = "Task",
+                            ControllerName = "Tasks",
                             DataAccessLevel = (byte)0,
                             IsActive = true,
                             RolePatternId = 4
@@ -2924,8 +2924,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("TaskCode")
                         .IsRequired()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<byte>("TaskType")
                         .HasColumnType("tinyint");

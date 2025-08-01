@@ -967,7 +967,7 @@ namespace MahERP.DataModelLayer
 
             modelBuilder.Entity<RolePatternDetails>().HasData(
                 // الگوی مدیریت کامل - دسترسی کامل به همه چیز
-                new RolePatternDetails { Id = 1, RolePatternId = 1, ControllerName = "Task", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
+                new RolePatternDetails { Id = 1, RolePatternId = 1, ControllerName = "Tasks", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
                 new RolePatternDetails { Id = 2, RolePatternId = 1, ControllerName = "CRM", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
                 new RolePatternDetails { Id = 3, RolePatternId = 1, ControllerName = "Stakeholder", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
                 new RolePatternDetails { Id = 4, RolePatternId = 1, ControllerName = "Contract", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
@@ -979,17 +979,17 @@ namespace MahERP.DataModelLayer
                 new RolePatternDetails { Id = 10, RolePatternId = 1, ControllerName = "TaskCategory", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 2, IsActive = true },
 
                 // الگوی مدیر عملیات
-                new RolePatternDetails { Id = 11, RolePatternId = 2, ControllerName = "Task", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 1, IsActive = true },
+                new RolePatternDetails { Id = 11, RolePatternId = 2, ControllerName = "Tasks", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = true, CanApprove = true, DataAccessLevel = 1, IsActive = true },
                 new RolePatternDetails { Id = 12, RolePatternId = 2, ControllerName = "CRM", ActionName = "Index,Details,Create,Edit", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 1, IsActive = true },
                 new RolePatternDetails { Id = 13, RolePatternId = 2, ControllerName = "Stakeholder", ActionName = "Index,Details", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 1, IsActive = true },
 
                 // الگوی کارشناس فروش
                 new RolePatternDetails { Id = 14, RolePatternId = 3, ControllerName = "CRM", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
                 new RolePatternDetails { Id = 15, RolePatternId = 3, ControllerName = "Stakeholder", ActionName = "Index,Details,Create,Edit", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
-                new RolePatternDetails { Id = 16, RolePatternId = 3, ControllerName = "Task", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
+                new RolePatternDetails { Id = 16, RolePatternId = 3, ControllerName = "Tasks", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
 
                 // الگوی کاربر عادی
-                new RolePatternDetails { Id = 17, RolePatternId = 4, ControllerName = "Task", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true }
+                new RolePatternDetails { Id = 17, RolePatternId = 4, ControllerName = "Tasks", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true }
             );
         }
     }

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MahERP.DataModelLayer.Migrations
 {
     /// <inheritdoc />
-    public partial class mig01start : Migration
+    public partial class start : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -393,6 +393,7 @@ namespace MahERP.DataModelLayer.Migrations
                     StakeholderType = table.Column<byte>(type: "tinyint", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     BranchId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -477,12 +478,12 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CategoryId = table.Column<int>(type: "int", nullable: true),
                     TaskType = table.Column<byte>(type: "tinyint", nullable: false),
                     Priority = table.Column<byte>(type: "tinyint", nullable: false),
-                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     AddBranchManagerAsSupervisor = table.Column<bool>(type: "bit", nullable: false),
@@ -778,8 +779,8 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TaskTemplateId = table.Column<int>(type: "int", nullable: false),
                     RecurrenceType = table.Column<byte>(type: "tinyint", nullable: false),
                     StartDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -792,11 +793,11 @@ namespace MahERP.DataModelLayer.Migrations
                     LastRunTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     NextRunTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastRunStatus = table.Column<byte>(type: "tinyint", nullable: false),
-                    LastRunErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LastRunErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifyDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ModifierUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ModifierUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     TaskTemplateId1 = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -834,8 +835,8 @@ namespace MahERP.DataModelLayer.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     TemplateId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     OperationOrder = table.Column<int>(type: "int", nullable: false),
                     TaskTemplateId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -993,7 +994,7 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    TaskCode = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: false),
+                    TaskCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TaskType = table.Column<byte>(type: "tinyint", nullable: false),
                     TaskTypeInput = table.Column<byte>(type: "tinyint", nullable: false),
                     VisibilityLevel = table.Column<byte>(type: "tinyint", nullable: false),
@@ -1522,8 +1523,7 @@ namespace MahERP.DataModelLayer.Migrations
                     AssignedUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     AssignerUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     AssignmentType = table.Column<byte>(type: "tinyint", nullable: false),
-                    CopyDescription = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PredefinedCopyDescriptionId = table.Column<int>(type: "int", nullable: true),
                     AssignmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1690,7 +1690,7 @@ namespace MahERP.DataModelLayer.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     TaskId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     OperationOrder = table.Column<int>(type: "int", nullable: false),
                     IsCompleted = table.Column<bool>(type: "bit", nullable: false),
@@ -1701,7 +1701,7 @@ namespace MahERP.DataModelLayer.Migrations
                     ActualHours = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     IsRequired = table.Column<bool>(type: "bit", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1846,7 +1846,7 @@ namespace MahERP.DataModelLayer.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CommentId = table.Column<int>(type: "int", nullable: false),
-                    MentionedUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    MentionedUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     MentionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsRead = table.Column<bool>(type: "bit", nullable: false),
                     ReadDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1883,10 +1883,10 @@ namespace MahERP.DataModelLayer.Migrations
                     TaskId = table.Column<int>(type: "int", nullable: true),
                     CommentId = table.Column<int>(type: "int", nullable: true),
                     OperationId = table.Column<int>(type: "int", nullable: true),
-                    RecipientUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RecipientUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     NotificationType = table.Column<byte>(type: "tinyint", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsRead = table.Column<bool>(type: "bit", nullable: false),
                     ReadDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -2000,7 +2000,7 @@ namespace MahERP.DataModelLayer.Migrations
                 columns: new[] { "Id", "ActionName", "CanApprove", "CanCreate", "CanDelete", "CanEdit", "CanRead", "ControllerName", "DataAccessLevel", "IsActive", "RolePatternId" },
                 values: new object[,]
                 {
-                    { 1, "*", true, true, true, true, true, "Task", (byte)2, true, 1 },
+                    { 1, "*", true, true, true, true, true, "Tasks", (byte)2, true, 1 },
                     { 2, "*", true, true, true, true, true, "CRM", (byte)2, true, 1 },
                     { 3, "*", true, true, true, true, true, "Stakeholder", (byte)2, true, 1 },
                     { 4, "*", true, true, true, true, true, "Contract", (byte)2, true, 1 },
@@ -2010,13 +2010,13 @@ namespace MahERP.DataModelLayer.Migrations
                     { 8, "*", true, true, true, true, true, "Branch", (byte)2, true, 1 },
                     { 9, "*", true, true, true, true, true, "Team", (byte)2, true, 1 },
                     { 10, "*", true, true, true, true, true, "TaskCategory", (byte)2, true, 1 },
-                    { 11, "*", true, true, true, true, true, "Task", (byte)1, true, 2 },
+                    { 11, "*", true, true, true, true, true, "Tasks", (byte)1, true, 2 },
                     { 12, "Index,Details,Create,Edit", false, true, false, true, true, "CRM", (byte)1, true, 2 },
                     { 13, "Index,Details", false, false, false, false, true, "Stakeholder", (byte)1, true, 2 },
                     { 14, "*", false, true, false, true, true, "CRM", (byte)0, true, 3 },
                     { 15, "Index,Details,Create,Edit", false, true, false, true, true, "Stakeholder", (byte)0, true, 3 },
-                    { 16, "Index,Details,MyTasks", false, false, false, false, true, "Task", (byte)0, true, 3 },
-                    { 17, "Index,Details,MyTasks", false, false, false, false, true, "Task", (byte)0, true, 4 }
+                    { 16, "Index,Details,MyTasks", false, false, false, false, true, "Tasks", (byte)0, true, 3 },
+                    { 17, "Index,Details,MyTasks", false, false, false, false, true, "Tasks", (byte)0, true, 4 }
                 });
 
             migrationBuilder.CreateIndex(
