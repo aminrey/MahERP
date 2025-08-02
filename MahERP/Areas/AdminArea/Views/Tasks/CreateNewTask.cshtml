@@ -97,7 +97,7 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="BranchViewModelId">انتخاب شعبه‌</label>
-                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" id="BranchIdSelected" data-placeholder="بسیاری را انتخاب کنید  " name="" style="width: 100%;">                                                            </select>
+                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" id="BranchIdSelected" data-placeholder="بسیاری را انتخاب کنید  " name="BranchIdSelected" style="width: 100%;">                                                            </select>
                                     <span asp-validation-for="branchListInitial" class="text-danger"></span>
                                     <option value="">انتخاب کنید</option>
                                 </div>

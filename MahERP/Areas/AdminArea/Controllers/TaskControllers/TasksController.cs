@@ -179,6 +179,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     task.Important = false;
                     task.Status = 0; // ایجاد شده
                     task.CreationMode = 0; // دستی
+                    task.TaskCategoryId= model.TaskCategoryIdSelected;
 
                     // تبدیل تاریخ شمسی به میلادی
                     if (!string.IsNullOrEmpty(model.DueDatePersian))
