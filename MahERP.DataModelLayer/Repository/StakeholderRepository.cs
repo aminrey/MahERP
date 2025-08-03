@@ -30,7 +30,7 @@ namespace MahERP.DataModelLayer.Repository
 
             return query.OrderByDescending(s => s.CreateDate).ToList();
         }
-        public List<Stakeholder> GetStakeholdersByBranchId(int BranchId)
+        public List<StakeholderViewModel> GetStakeholdersByBranchId(int BranchId)
         {
             return null;
         }

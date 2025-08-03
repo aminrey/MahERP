@@ -2,6 +2,7 @@
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,27 @@ namespace MahERP.DataModelLayer.Repository
             _userManagerRepository = userManagerRepository;
             _StakeholderRepo = stakeholderRepo;
         }
+
+        public TaskForIndexViewModel GetTaskForIndexByUser(string UserIdLogin)
+        {
+            var taskForIndexViewModel = new TaskForIndexViewModel
+            {
+                branchListInitial = _BranchRipository.GetBrnachListByUserId(UserIdLogin),
+                TaskCategoryInitial = GetAllCategories(),
+                UsersInitial = _userManagerRepository.GetUserListBybranchId(0),
+                StakeholdersInitial = _StakeholderRepo.GetStakeholdersByBranchId(0)
+            };
+
+           
+
+
+
+
+
+
+            return taskForIndexViewModel;
+        }
+
         public bool IsTaskCodeUnique(string taskCode, int? excludeId = null)
         {
             if (string.IsNullOrWhiteSpace(taskCode))
