@@ -17,7 +17,7 @@ namespace MahERP.DataModelLayer.Repository
         List<StakeholderContact> GetStakeholderContacts(int stakeholderId, bool includeInactive = false);
         StakeholderContact GetStakeholderContactById(int id);
         List<Stakeholder> SearchAdvanced(StakeholderSearchViewModel model);
-        public List<StakeholderViewModel> GetStakeholdersByBranchId(int BranchId)
+        public List<StakeholderViewModel> GetStakeholdersByBranchId(int BranchId);
 
     }
 }

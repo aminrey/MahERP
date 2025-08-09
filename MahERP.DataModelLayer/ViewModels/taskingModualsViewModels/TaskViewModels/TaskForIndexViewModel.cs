@@ -9,8 +9,11 @@ using System.Threading.Tasks;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
 {
-    public class TaskForIndexViewModel
+    public class TaskListForIndexViewModel
     {
+        public string UserLoginid { get; set; } = string.Empty;
+
+
         public List<TaskViewModel> Tasks { get; set; } = new List<TaskViewModel>();
         public int TotalCount { get; set; }
 

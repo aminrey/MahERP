@@ -27,9 +27,11 @@ namespace MahERP.DataModelLayer.Repository
             _StakeholderRepo = stakeholderRepo;
         }
 
-        public TaskForIndexViewModel GetTaskForIndexByUser(string UserIdLogin)
+        public TaskListForIndexViewModel GetTaskForIndexByUser(TaskListForIndexViewModel FilterModel )
         {
-            var taskForIndexViewModel = new TaskForIndexViewModel
+            string UserIdLogin = FilterModel.UserLoginid;
+
+            var taskForIndexViewModel = new TaskListForIndexViewModel
             {
                 branchListInitial = _BranchRipository.GetBrnachListByUserId(UserIdLogin),
                 TaskCategoryInitial = GetAllCategories(),
@@ -37,10 +39,29 @@ namespace MahERP.DataModelLayer.Repository
                 StakeholdersInitial = _StakeholderRepo.GetStakeholdersByBranchId(0)
             };
 
-           
+            var query = _context.Tasks_Tbl.AsQueryable();
 
 
+            if (!includeDeleted)
+                query = query.Where(t => !t.IsDeleted);
 
+            if (includeAssigned && includeCreated)
+            {
+                query = query.Where(t =>
+                    _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId) ||
+                    t.CreatorUserId == userId);
+            }
+            else if (includeAssigned)
+            {
+                query = query.Where(t =>
+                    _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId));
+            }
+            else if (includeCreated)
+            {
+                query = query.Where(t => t.CreatorUserId == userId);
+            }
+
+            return query.OrderByDescending(t => t.CreateDate).ToList();
 
 
 

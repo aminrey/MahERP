@@ -1,18 +1,19 @@
 ﻿using AutoMapper;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Attributes;
-using MahERP.DataModelLayer.Extensions; // اضافه شده
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Extensions; // اضافه شده
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
-using MahERP.CommonLayer.PublicClasses;
-using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 
 namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
@@ -54,13 +55,20 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
             var userId = _userManager.GetUserId(User);
-            
+            TaskListForIndexViewModel ModelForFilters = new TaskListForIndexViewModel
+            {
+               
+
+
+
+            };
             List<Tasks> tasks;
             
             switch (dataAccessLevel)
             {
                 case 0: // Personal - فقط تسک‌های خود کاربر
-                    tasks = _taskRepository.GetTasksByUser(userId, includeAssigned: true, includeCreated: true);
+                    //tasks = _taskRepository.GetTasksByUser(userId, includeAssigned: true, includeCreated: true);
+                    tasks = _taskRepository.GetTaskForIndexByUser(userId, includeAssigned: true, includeCreated: true);
                     break;
                 case 1: // Branch - تسک‌های شعبه
                     tasks = _taskRepository.GetTasksByBranch(GetUserBranchId(userId));
@@ -198,12 +206,25 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     }
 
 
-
-
-
-                   foreach (var userId in AssimentUserTask)
+                    // اختصاص به کاربر جاری (خود کاربر ایجاد کننده)
+                    if (!AssimentUserTask.Contains(_userManager.GetUserId(User)))
                     {
+                        // اگر کاربر جاری در لیست اختصاص‌ها نیست، آن را اضافه می‌کنیم
+                        var Selfassignment = new TaskAssignment
+                        {
+                            TaskId = task.Id,
+                            AssignedUserId = _userManager.GetUserId(User),
+                            AssignerUserId = _userManager.GetUserId(User),
+                            AssignmentType = 1,
+                            AssignmentDate = DateTime.Now,
+                            Description = "سازنده تسک" // اگر توضیحات رونوشت وجود دارد
+                        };
+                        _uow.TaskAssignmentUW.Create(Selfassignment);
+                        _uow.Save();
+                    }
 
+                    foreach (var userId in AssimentUserTask)
+                    {
                         // اختصاص تسک به کاربر
                         var assignment = new TaskAssignment
                         {
@@ -211,30 +232,13 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                             AssignedUserId = userId,
                             AssignerUserId = _userManager.GetUserId(User),
                             AssignmentType = 0, // اصلی
-                            AssignmentDate = DateTime.Now
+                            AssignmentDate = DateTime.Now,
+                            Description ="انتصاب تسک به کاربر", // اگر توضیحات رونوشت وجود دارد
+
                         };
                         _uow.TaskAssignmentUW.Create(assignment);
                         _uow.Save();    
                     }
-                    // اختصاص به کاربر جاری (خود کاربر ایجاد کننده)
-                    var Selfassignment = new TaskAssignment
-                    {
-                        TaskId = task.Id,
-                        AssignedUserId = _userManager.GetUserId(User),
-                        AssignerUserId = _userManager.GetUserId(User),
-                        AssignmentType = 0,
-                        AssignmentDate = DateTime.Now
-                        }; 
-                    _uow.TaskAssignmentUW.Create(Selfassignment);
-                    _uow.Save();
-
-
-
-
-
-
-
-
 
                     TempData["SuccessMessage"] = "تسک با موفقیت ایجاد شد";
                     return RedirectToAction(nameof(Index));
