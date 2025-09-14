@@ -40,7 +40,9 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.TaskList, opt => opt.Ignore())
                 .ForMember(dest => dest.Stakeholders, opt => opt.Ignore())
                 .ForMember(dest => dest.ChildBranches, opt => opt.Ignore())
-                .ForMember(dest => dest.ParentBranch, opt => opt.Ignore());
+                .ForMember(dest => dest.ParentBranch, opt => opt.Ignore())
+                                .ReverseMap();
+
 
             // BranchUser -> BranchUserViewModel
             CreateMap<BranchUser, BranchUserViewModel>()

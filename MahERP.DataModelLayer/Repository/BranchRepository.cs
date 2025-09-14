@@ -29,9 +29,9 @@ namespace MahERP.DataModelLayer.Repository
             return query.OrderBy(b => b.Name).ToList();
         }
 
-        public Branch GetBranchById(int id, bool includeUsers = false, bool includeStakeholders = false, bool includeTasks = false, bool includeChildBranches = false)
+        public BranchViewModel GetBranchById(int id, bool includeUsers = false, bool includeStakeholders = false, bool includeTasks = false, bool includeChildBranches = false)
         {
-            var query = _context.Branch_Tbl.AsQueryable();
+            IQueryable<Branch> query = _context.Branch_Tbl.AsQueryable();
 
             if (includeUsers)
                 query = query.Include(b => b.BranchUsers)
@@ -46,7 +46,39 @@ namespace MahERP.DataModelLayer.Repository
             if (includeChildBranches)
                 query = query.Include(b => b.ChildBranches);
 
-            return query.FirstOrDefault(b => b.Id == id);
+            // Include parent branch information
+            query = query.Include(b => b.ParentBranch);
+
+            var branch = query.FirstOrDefault(b => b.Id == id);
+
+            if (branch == null)
+                return null;
+
+            // Map Branch entity to BranchViewModel
+            BranchViewModel? branchViewModel = new BranchViewModel
+            {
+                Id = branch.Id,
+                Name = branch.Name,
+                Description = branch.Description,
+                Address = branch.Address,
+                Phone = branch.Phone,
+                Email = branch.Email,
+                ManagerName = branch.ManagerName,
+                IsActive = branch.IsActive,
+                IsMainBranch = branch.IsMainBranch,
+                ParentId = branch.ParentId,
+                CreateDate = branch.CreateDate,
+                LastUpdateDate = branch.LastUpdateDate,
+                ParentBranch = branch.ParentBranch != null ? new BranchViewModel
+                {
+                    Id = branch.ParentBranch.Id,
+                    Name = branch.ParentBranch.Name,
+                    IsMainBranch = branch.ParentBranch.IsMainBranch,
+                    IsActive = branch.ParentBranch.IsActive
+                } : null
+            };
+
+            return branchViewModel;
         }
 
         public List<Branch> GetMainBranches(bool includeInactive = false)
@@ -191,7 +223,7 @@ namespace MahERP.DataModelLayer.Repository
         /// دریافت تعداد کاربران فعال یک شعبه
         /// </summary>
         /// <param name="branchId">شناسه شعبه</param>
-        /// <returns>تعداد کاربران فعال</returns>
+        /// <returns>تعداد کاربران active</returns>
         public int GetActiveUsersCountByBranch(int branchId)
         {
             return _context.BranchUser_Tbl
@@ -200,6 +232,117 @@ namespace MahERP.DataModelLayer.Repository
                             bu.IsActive && 
                             bu.User.IsActive && 
                             !bu.User.IsRemoveUser);
+        }
+
+        /// <summary>
+        /// دریافت جزئیات کامل یک شعبه شامل کاربران، طرف حساب‌ها و شعبه‌های زیرمجموعه
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="userId">شناسه کاربر جهت بررسی دسترسی</param>
+        /// <param name="includeInactiveUsers">شامل کاربران غیرفعال</param>
+        /// <param name="includeInactiveStakeholders">شامل طرف حساب‌های غیرفعال</param>
+        /// <param name="includeInactiveChildBranches">شامل شعبه‌های زیرمجموعه غیرفعال</param>
+        /// <returns>جزئیات کامل شعبه</returns>
+        public BranchDetailsViewModel GetBranchDetailsById(int branchId, string userId = null,
+            bool includeInactiveUsers = false, bool includeInactiveStakeholders = false,
+            bool includeInactiveChildBranches = false)
+        {
+            // دریافت شعبه اصلی با شعبه مادر
+            var branch = _context.Branch_Tbl
+                .Include(b => b.ParentBranch)
+                .FirstOrDefault(b => b.Id == branchId);
+
+            if (branch == null)
+                return null;
+
+            // بررسی دسترسی کاربر به شعبه (در صورت ارسال userId)
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var userHasAccess = _context.BranchUser_Tbl
+                    .Any(bu => bu.BranchId == branchId && bu.UserId == userId && bu.IsActive);
+                
+                // اگر کاربر ادمین نیست و دسترسی به شعبه ندارد
+                bool isAdmin = _userManagerRepository.GetUserInfoData(userId) != null;
+                if (!isAdmin && !userHasAccess)
+                    return null;
+            }
+
+            var result = new BranchDetailsViewModel
+            {
+                Id = branch.Id,
+                Name = branch.Name,
+                Description = branch.Description,
+                Address = branch.Address,
+                Phone = branch.Phone,
+                Email = branch.Email,
+                ManagerName = branch.ManagerName,
+                IsActive = branch.IsActive,
+                IsMainBranch = branch.IsMainBranch,
+                ParentId = branch.ParentId,
+                CreateDate = branch.CreateDate,
+                LastUpdateDate = branch.LastUpdateDate
+            };
+
+            // اطلاعات شعبه مادر
+            if (branch.ParentBranch != null)
+            {
+                result.ParentBranch = new BranchViewModel
+                {
+                    Id = branch.ParentBranch.Id,
+                    Name = branch.ParentBranch.Name,
+                    IsMainBranch = branch.ParentBranch.IsMainBranch,
+                    IsActive = branch.ParentBranch.IsActive
+                };
+            }
+
+            // دریافت کاربران شعبه
+            var usersQuery = _context.BranchUser_Tbl
+                .Include(bu => bu.User)
+                .Include(bu => bu.AssignedByUser)
+                .Where(bu => bu.BranchId == branchId);
+
+            if (!includeInactiveUsers)
+                usersQuery = usersQuery.Where(bu => bu.IsActive && bu.User.IsActive && !bu.User.IsRemoveUser);
+
+            result.BranchUsers = usersQuery
+                .OrderBy(bu => bu.User.LastName)
+                .ThenBy(bu => bu.User.FirstName)
+                .ToList();
+
+            // دریافت طرف حساب‌های شعبه
+            var stakeholderIds = _context.StakeholderBranch_Tbl
+                .Where(sb => sb.BranchId == branchId && sb.IsActive)
+                .Select(sb => sb.StakeholderId);
+
+            var stakeholdersQuery = _context.Stakeholder_Tbl
+                .Where(s => stakeholderIds.Contains(s.Id) && !s.IsDeleted);
+
+            if (!includeInactiveStakeholders)
+                stakeholdersQuery = stakeholdersQuery.Where(s => s.IsActive);
+
+            result.Stakeholders = stakeholdersQuery
+                .OrderBy(s => s.LastName)
+                .ThenBy(s => s.FirstName)
+                .ToList();
+
+            // دریافت شعبه‌های زیرمجموعه
+            var childBranchesQuery = _context.Branch_Tbl
+                .Where(b => b.ParentId == branchId);
+
+            if (!includeInactiveChildBranches)
+                childBranchesQuery = childBranchesQuery.Where(b => b.IsActive);
+
+            result.ChildBranches = childBranchesQuery
+                .OrderBy(b => b.Name)
+                .ToList();
+
+            // محاسبه آمار
+            result.ActiveUsersCount = result.BranchUsers.Count(bu => bu.IsActive && bu.User.IsActive && !bu.User.IsRemoveUser);
+            result.ActiveStakeholdersCount = result.Stakeholders.Count(s => s.IsActive);
+            result.ChildBranchesCount = result.ChildBranches.Count;
+            result.ActiveChildBranchesCount = result.ChildBranches.Count(cb => cb.IsActive);
+
+            return result;
         }
     }
 }

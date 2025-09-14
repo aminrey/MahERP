@@ -1,4 +1,4 @@
-﻿@model BranchViewModel
+﻿@model BranchDetailsViewModel
 @{
     ViewData["Title"] = $"جزئیات شعبه - {Model.Name}";
 }
@@ -156,7 +156,7 @@
                         <div class="form-control-plaintext">
                             @if (Model.ParentId.HasValue)
                             {
-                                <a href="@Url.Action("Details", "Branch", new { id = Model.ParentId })">@ViewBag.ParentBranchName</a>
+                                <a href="@Url.Action("Details", "Branch", new { id = Model.ParentId })">@Model.ParentBranchName</a>
                             }
                             else
                             {
@@ -198,7 +198,7 @@
             </div>
         </div>
         <div class="block-content">
-            @if (ViewBag.BranchUsers != null && ((List<BranchUser>)ViewBag.BranchUsers).Count > 0)
+            @if (Model.BranchUsers != null && Model.BranchUsers.Count > 0)
             {
                 <div class="table-responsive">
                     <table class="table table-striped table-vcenter">
@@ -212,7 +212,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var user in (List<BranchUser>)ViewBag.BranchUsers)
+                            @foreach (var user in Model.BranchUsers)
                             {
                                 <tr>
                                     <td class="text-center fw-semibold">@user.User.FirstName @user.User.LastName</td>
@@ -282,7 +282,7 @@
             </div>
         </div>
         <div class="block-content">
-            @if (ViewBag.Stakeholders != null && ((List<Stakeholder>)ViewBag.Stakeholders).Count > 0)
+            @if (Model.Stakeholders != null && Model.Stakeholders.Count > 0)
             {
                 <div class="table-responsive">
                     <table class="table table-striped table-vcenter">
@@ -297,7 +297,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var stakeholder in (List<Stakeholder>)ViewBag.Stakeholders)
+                            @foreach (var stakeholder in Model.Stakeholders)
                             {
                                 <tr>
                                     <td class="text-center fw-semibold">
@@ -372,7 +372,7 @@
     </div>
     <!-- END Stakeholders -->
     <!-- Child Branches -->
-    @if (ViewBag.ChildBranches != null && ((List<Branch>)ViewBag.ChildBranches).Count > 0)
+    @if (Model.ChildBranches != null && Model.ChildBranches.Count > 0)
     {
         <div class="block block-rounded">
             <div class="block-header block-header-default">
@@ -393,7 +393,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var childBranch in (List<Branch>)ViewBag.ChildBranches)
+                            @foreach (var childBranch in Model.ChildBranches)
                             {
                                 <tr>
                                     <td class="text-center fw-semibold">

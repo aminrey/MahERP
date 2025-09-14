@@ -51,22 +51,12 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         {
             var UserLogin = _userManager.GetUserId(HttpContext.User);
 
-            var branch = _branchRepository.GetBrnachListByUserId(UserLogin);
-            if (branch == null)
+            // دریافت جزئیات کامل شعبه
+            var branchDetails = _branchRepository.GetBranchDetailsById(id, UserLogin);
+            if (branchDetails == null)
                 return RedirectToAction("ErrorView", "Home");
 
-            var viewModel = _mapper.Map<BranchViewModel>(branch);
-
-            //// اطلاعات کاربران شعبه
-            //ViewBag.BranchUsers = _branchRepository.GetBranchUsers(id);
-
-            //// اطلاعات طرف‌حساب‌های شعبه
-            //ViewBag.Stakeholders = _branchRepository.GetBranchStakeholders(id);
-
-            //// اطلاعات شعبه‌های زیرمجموعه
-            //ViewBag.ChildBranches = _branchRepository.GetChildBranches(id);
-
-            return View(viewModel);
+            return View(branchDetails);
         }
 
         // افزودن شعبه جدید - نمایش فرم
@@ -106,6 +96,21 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 _uow.BranchUW.Create(branch);
                 _uow.Save();
 
+                // افزودن کاربر ایجاد کننده به جدول BranchUser_Tbl
+                var currentUserId = _userManager.GetUserId(User);
+                var branchUser = new BranchUser
+                {
+                    BranchId = branch.Id,
+                    UserId = currentUserId,
+                    AssignedByUserId = currentUserId,
+                    Role = 1, // مدیر شعبه
+                    IsActive = true,
+                    AssignDate = DateTime.Now
+                };
+
+                _uow.BranchUserUW.Create(branchUser);
+                _uow.Save();
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -121,16 +126,22 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         {
             var UserLogin = _userManager.GetUserId(HttpContext.User);
 
-            var branch = _branchRepository.GetBrnachListByUserId(UserLogin);
+            // دریافت شعبه مشخص بر اساس id
+            var branch = _uow.BranchUW.GetById(id);
             if (branch == null)
+                return RedirectToAction("ErrorView", "Home");
+
+            // بررسی دسترسی کاربر به این شعبه
+            var userBranches = _branchRepository.GetBrnachListByUserId(UserLogin);
+            if (!userBranches.Any(b => b.Id == id))
                 return RedirectToAction("ErrorView", "Home");
 
             var viewModel = _mapper.Map<BranchViewModel>(branch);
 
             // دریافت لیست شعبه‌های اصلی برای انتخاب شعبه مادر
             ViewBag.ParentBranches = new SelectList(
-                _branchRepository.GetBrnachListByUserId(UserLogin).Where(b => b.Id != id).Select(b => new { Id = b.Id, Name = b.Name }),
-                "Id", "Name");
+                userBranches.Where(b => b.Id != id).Select(b => new { Id = b.Id, Name = b.Name }),
+                "Id", "Name", viewModel.ParentId);
 
             return View(viewModel);
         }
@@ -144,20 +155,26 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
             if (ModelState.IsValid)
             {
-
                 // بررسی یکتا بودن نام شعبه
                 if (!_branchRepository.IsBranchNameUnique(model.Name, model.Id))
                 {
                     ModelState.AddModelError("Name", "نام شعبه تکراری است");
+                    
+                    var userBranches = _branchRepository.GetBrnachListByUserId(UserLogin);
                     ViewBag.ParentBranches = new SelectList(
-                        _branchRepository.GetBrnachListByUserId("0").Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
-                        "Id", "Name");
+                        userBranches.Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
+                        "Id", "Name", model.ParentId);
                     return View(model);
                 }
 
                 // دریافت شعبه از دیتابیس
                 var branch = _uow.BranchUW.GetById(model.Id);
                 if (branch == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                // بررسی دسترسی کاربر به این شعبه
+                var userBranches2 = _branchRepository.GetBrnachListByUserId(UserLogin);
+                if (!userBranches2.Any(b => b.Id == model.Id))
                     return RedirectToAction("ErrorView", "Home");
 
                 // به‌روزرسانی اطلاعات
@@ -170,9 +187,10 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var userBranchesForError = _branchRepository.GetBrnachListByUserId(UserLogin);
             ViewBag.ParentBranches = new SelectList(
-                _branchRepository.GetBrnachListByUserId(UserLogin).Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
-                "Id", "Name");
+                userBranchesForError.Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
+                "Id", "Name", model.ParentId);
             return View(model);
         }
 

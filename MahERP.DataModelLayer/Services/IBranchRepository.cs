@@ -50,5 +50,18 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="branchId">شناسه شعبه</param>
         /// <returns>تعداد کاربران فعال</returns>
         public int GetActiveUsersCountByBranch(int branchId);
+
+        /// <summary>
+        /// دریافت جزئیات کامل یک شعبه شامل کاربران، طرف حساب‌ها و شعبه‌های زیرمجموعه
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="userId">شناسه کاربر جهت بررسی دسترسی</param>
+        /// <param name="includeInactiveUsers">شامل کاربران غیرفعال</param>
+        /// <param name="includeInactiveStakeholders">شامل طرف حساب‌های غیرفعال</param>
+        /// <param name="includeInactiveChildBranches">شامل شعبه‌های زیرمجموعه غیرفعال</param>
+        /// <returns>جزئیات کامل شعبه</returns>
+        public BranchDetailsViewModel GetBranchDetailsById(int branchId, string userId = null, 
+            bool includeInactiveUsers = false, bool includeInactiveStakeholders = false, 
+            bool includeInactiveChildBranches = false);
     }
 }
