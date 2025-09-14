@@ -88,7 +88,7 @@
                             <th class="text-center">ایمیل</th>
                             <th class="text-center d-none d-md-table-cell">شعبه مادر</th>
                             <th class="text-center">وضعیت</th>
-                            <th class="text-center" style="width: 100px;">عملیات</th>
+                            <th class="text-center" style="width: 180px;">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -145,8 +145,8 @@
                                             onclick="openModal('@Url.Action("ToggleActivation", "Branch", new { id = branch.Id })')">
                                         <i class="fa fa-fw @(branch.IsActive ? "fa-ban" : "fa-check")"></i>
                                     </button>
-                                    <a href="@Url.Action("AddUser", "Branch", new { branchId = branch.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="افزودن کاربر">
-                                        <i class="fa fa-fw fa-user-plus"></i>
+                                    <a href="@Url.Action("UsersIndex", "Branch", new { branchId = branch.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="مدیریت کاربران شعبه">
+                                        <i class="fa fa-fw fa-users"></i>
                                     </a>
                                 </td>
                             </tr>

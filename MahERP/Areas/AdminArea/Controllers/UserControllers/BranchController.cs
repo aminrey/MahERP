@@ -40,14 +40,18 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         // لیست شعبه‌ها
         public IActionResult Index()
         {
-            List<BranchViewModel> branches = _branchRepository.GetBrnachListByUserId("0");
+            var UserLogin = _userManager.GetUserId(HttpContext.User);
+
+            List<BranchViewModel> branches = _branchRepository.GetBrnachListByUserId(UserLogin);
             return View(branches);
         }
 
         // جزئیات شعبه
         public IActionResult Details(int id)
         {
-            var branch = _branchRepository.GetBrnachListByUserId("0");
+            var UserLogin = _userManager.GetUserId(HttpContext.User);
+
+            var branch = _branchRepository.GetBrnachListByUserId(UserLogin);
             if (branch == null)
                 return RedirectToAction("ErrorView", "Home");
 
@@ -115,7 +119,9 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         [HttpGet]
         public IActionResult EditBranch(int id)
         {
-            var branch = _branchRepository.GetBrnachListByUserId("0");
+            var UserLogin = _userManager.GetUserId(HttpContext.User);
+
+            var branch = _branchRepository.GetBrnachListByUserId(UserLogin);
             if (branch == null)
                 return RedirectToAction("ErrorView", "Home");
 
@@ -123,7 +129,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
             // دریافت لیست شعبه‌های اصلی برای انتخاب شعبه مادر
             ViewBag.ParentBranches = new SelectList(
-                _branchRepository.GetBrnachListByUserId("0").Where(b => b.Id != id).Select(b => new { Id = b.Id, Name = b.Name }),
+                _branchRepository.GetBrnachListByUserId(UserLogin).Where(b => b.Id != id).Select(b => new { Id = b.Id, Name = b.Name }),
                 "Id", "Name");
 
             return View(viewModel);
@@ -134,8 +140,11 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         [ValidateAntiForgeryToken]
         public IActionResult EditBranch(BranchViewModel model)
         {
+            var UserLogin = _userManager.GetUserId(HttpContext.User);
+
             if (ModelState.IsValid)
             {
+
                 // بررسی یکتا بودن نام شعبه
                 if (!_branchRepository.IsBranchNameUnique(model.Name, model.Id))
                 {
@@ -162,7 +171,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             }
 
             ViewBag.ParentBranches = new SelectList(
-                _branchRepository.GetBrnachListByUserId("0").Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
+                _branchRepository.GetBrnachListByUserId(UserLogin).Where(b => b.Id != model.Id).Select(b => new { Id = b.Id, Name = b.Name }),
                 "Id", "Name");
             return View(model);
         }

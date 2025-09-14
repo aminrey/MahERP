@@ -131,12 +131,16 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// لیستی از شبعبه های که ان کاربر در ان تعریف شده است 
+        /// لیستی از شعبه‌هایی که آن کاربر در آن تعریف شده است 
         /// </summary>
-        /// <param name="UserLoginingid">نام کاربر لاگین شده را میگیرد و در خروجی شعبه های  که مجوز اتصال دارد را میدهد</param>
+        /// <param name="UserLoginingid">نام کاربر لاگین شده را می‌گیرد و در خروجی شعبه‌هایی که مجوز اتصال دارد را می‌دهد</param>
         /// <returns></returns>
         public List<BranchViewModel> GetBrnachListByUserId(string UserLoginingid)
         {
+
+
+
+
             List<BranchViewModel> branchList = (from branchUser in _context.BranchUser_Tbl
                                               join bu in _context.Branch_Tbl on branchUser.BranchId equals bu.Id
                                               where branchUser.UserId == UserLoginingid && branchUser.IsActive
@@ -150,5 +154,31 @@ namespace MahERP.DataModelLayer.Repository
             return branchList;
         }
 
+        /// <summary>
+        /// بررسی اینکه آیا کاربر مشخص قبلاً به شعبه اختصاص داده شده است
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>true اگر کاربر قبلاً اختصاص داده شده باشد</returns>
+        public bool IsUserAssignedToBranch(string userId, int branchId)
+        {
+            return _context.BranchUser_Tbl
+                .Any(bu => bu.UserId == userId && bu.BranchId == branchId && bu.IsActive);
+        }
+
+        /// <summary>
+        /// دریافت تعداد کاربران فعال یک شعبه
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>تعداد کاربران فعال</returns>
+        public int GetActiveUsersCountByBranch(int branchId)
+        {
+            return _context.BranchUser_Tbl
+                .Include(bu => bu.User)
+                .Count(bu => bu.BranchId == branchId && 
+                            bu.IsActive && 
+                            bu.User.IsActive && 
+                            !bu.User.IsRemoveUser);
+        }
     }
 }

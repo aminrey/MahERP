@@ -1,6 +1,6 @@
 ﻿@model BranchUserViewModel
 @{
-    ViewData["Title"] = $"ویرایش کاربر شعبه - {Model.UserFullName}";
+    ViewData["Title"] = "ویرایش کاربر شعبه";
 }
 
 <!-- Hero -->
@@ -10,12 +10,11 @@
             <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">ویرایش کاربر شعبه</h1>
             <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item">مدیریت</li>
                     <li class="breadcrumb-item">
                         <a href="@Url.Action("Index", "Branch")">شعب</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="@Url.Action("Details", "Branch", new { id = Model.BranchId })">@Model.BranchName</a>
+                        <a href="@Url.Action("UsersIndex", "Branch", new { branchId = Model.BranchId })">کاربران @Model.BranchName</a>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">ویرایش کاربر</li>
                 </ol>
@@ -24,20 +23,20 @@
     </div>
 </div>
 <!-- END Hero -->
+
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <!-- Edit User Form -->
-    <form method="POST" action="@Url.Action("EditUser", "Branch")" enctype="multipart/form-data">
+    <form method="POST" action="@Url.Action("EditUser", "Branch")">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="Id" value="@Model.Id" />
-        <input type="hidden" name="BranchId" value="@Model.BranchId" />
-        <input type="hidden" name="UserId" value="@Model.UserId" />
-        <input type="hidden" name="AssignDate" value="@Model.AssignDate.ToString("yyyy-MM-ddTHH:mm:ss")" />
-        <input type="hidden" name="AssignedByUserId" value="@Model.AssignedByUserId" />
-
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="BranchId" />
+        <input type="hidden" asp-for="UserId" />
+        <input type="hidden" asp-for="AssignDate" />
+        
         <div class="block block-rounded">
             <div class="block-header block-header-default">
-                <h3 class="block-title">ویرایش کاربر @Model.UserFullName در شعبه @Model.BranchName</h3>
+                <h3 class="block-title">ویرایش اطلاعات کاربر شعبه</h3>
                 <div class="block-options">
                     <button type="submit" class="btn btn-sm btn-primary">
                         <i class="fa fa-check me-1"></i> ذخیره تغییرات
@@ -47,36 +46,77 @@
             <div class="block-content">
                 <div class="row justify-content-center">
                     <div class="col-md-10 col-lg-8">
-                        <div class="mb-4">
-                            <label class="form-label">نام کاربر</label>
-                            <div class="form-control-plaintext">@Model.UserFullName</div>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <!-- User Information (Read-only) -->
+                        <div class="block block-rounded bg-body-light mb-4">
+                            <div class="block-content">
+                                <h4 class="block-title">اطلاعات کاربر</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>نام کاربر:</strong> @Model.UserFullName</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>شعبه:</strong> @Model.BranchName</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>تاریخ اختصاص:</strong> @ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label">نام شعبه</label>
-                            <div class="form-control-plaintext">@Model.BranchName</div>
+
+                        <!-- Editable Fields -->
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Role">نقش کاربر <span class="text-danger">*</span></label>
+                                    <select asp-for="Role" class="js-select2 form-select" data-placeholder="انتخاب نقش">
+                                        <option value="0" selected="@(Model.Role == 0 ? "selected" : null)">کارشناس</option>
+                                        <option value="1" selected="@(Model.Role == 1 ? "selected" : null)">ناظر</option>
+                                        <option value="2" selected="@(Model.Role == 2 ? "selected" : null)">مدیر</option>
+                                    </select>
+                                    <span asp-validation-for="Role" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <strong>کارشناس:</strong> دسترسی محدود به عملیات اساسی<br>
+                                        <strong>ناظر:</strong> دسترسی به مشاهده و کنترل عملیات<br>
+                                        <strong>مدیر:</strong> دسترسی کامل به تمام عملیات شعبه
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-4">
+                                    <label class="form-label">وضعیت کاربر</label>
+                                    <div class="space-y-2">
+                                        <label class="form-check">
+                                            <input asp-for="IsActive" class="form-check-input">
+                                            <span class="form-check-label">کاربر فعال در شعبه</span>
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        اگر غیرفعال شود، کاربر دیگر دسترسی به عملیات این شعبه نخواهد داشت
+                                    </small>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="Role">نقش در شعبه <span class="text-danger">*</span></label>
-                            <select asp-for="Role" class="form-select">
-                                <option value="0">کارشناس</option>
-                                <option value="1">ناظر</option>
-                                <option value="2">مدیر</option>
-                            </select>
-                            <span asp-validation-for="Role" class="text-danger"></span>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-check">
-                                <input asp-for="IsActive" class="form-check-input">
-                                <span class="form-check-label">وضعیت فعال</span>
-                            </label>
+
+                        <!-- Role Permissions Info -->
+                        <div class="alert alert-info">
+                            <h5><i class="fa fa-info-circle me-1"></i> راهنما</h5>
+                            <p class="mb-2"><strong>تغییر نقش کاربر:</strong></p>
+                            <ul class="mb-0">
+                                <li><strong>کارشناس:</strong> می‌تواند تسک‌های اختصاص داده شده را مشاهده و اجرا کند</li>
+                                <li><strong>ناظر:</strong> علاوه بر امکانات کارشناس، می‌تواند تسک‌ها را نظارت و تایید کند</li>
+                                <li><strong>مدیر:</strong> دسترسی کامل به مدیریت تمام تسک‌ها و کاربران شعبه</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="block-content block-content-full block-content-sm bg-body-light text-end">
-                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                <a href="@Url.Action("UsersIndex", "Branch", new { branchId = Model.BranchId })" class="btn btn-alt-secondary">
                     <i class="fa fa-arrow-right me-1"></i> انصراف
-                </button>
+                </a>
                 <button type="submit" class="btn btn-primary">
                     <i class="fa fa-check me-1"></i> ذخیره تغییرات
                 </button>
@@ -86,3 +126,39 @@
     <!-- END Edit User Form -->
 </div>
 <!-- END Page Content -->
+
+@section scripts {
+    <script>Dashmix.helpersOnLoad(['jq-select2']);</script>
+
+    <script>
+        $(document).ready(function() {
+            // Display current role info
+            function updateRoleInfo() {
+                var roleValue = $('#Role').val();
+                var roleText = '';
+                var roleClass = '';
+                
+                switch(roleValue) {
+                    case '0':
+                        roleText = 'کارشناس - دسترسی محدود';
+                        roleClass = 'info';
+                        break;
+                    case '1':
+                        roleText = 'ناظر - دسترسی نظارتی';
+                        roleClass = 'warning';
+                        break;
+                    case '2':
+                        roleText = 'مدیر - دسترسی کامل';
+                        roleClass = 'danger';
+                        break;
+                }
+                
+                $('.current-role-info').remove();
+                $('#Role').after('<small class="form-text text-' + roleClass + ' current-role-info mt-1"><strong>نقش فعلی:</strong> ' + roleText + '</small>');
+            }
+            
+            updateRoleInfo();
+            $('#Role').change(updateRoleInfo);
+        });
+    </script>
+}
