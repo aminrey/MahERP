@@ -51,7 +51,8 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="TaskType">نوع تسک</label>
-                                    <select asp-for="TaskType" class="form-select">
+                                    <select asp-for="TaskType" class="js-select2 form-select" data-placeholder="انتخاب کنید">
+                                        <option value="">انتخاب کنید</option>
                                         <option value="0">عادی</option>
                                         <option value="1">مهم</option>
                                         <option value="2">اضطراری</option>
@@ -76,36 +77,38 @@
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="mb-4">
-                                    <label class="form-label" for="TaskCategoryId">دسته‌بندی</label>
-                                    <select asp-for="TaskCategoryIdSelected" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" id="TaskCategoryIdSelected" name="TaskCategoryIdSelected" class="form-select">
+                                    <label class="form-label" for="TaskCategoryIdSelected">دسته‌بندی</label>
+                                    <select asp-for="TaskCategoryIdSelected" asp-items="@(new SelectList(Model.TaskCategoryInitial, "Id", "Title"))" id="TaskCategoryIdSelected" name="TaskCategoryIdSelected" class="js-select2 form-select" data-placeholder="انتخاب کنید" style="width: 100%;">
                                         <option value="">انتخاب کنید</option>
                                     </select>
                                     <span asp-validation-for="TaskCategoryIdSelected" class="text-danger"></span>
                                 </div>
                             </div>
 
-
                             <div class="col-sm-6">
                                 <div class="mb-4">
-                                    <label class="form-label" for="TaskCategoryId">کاربر های منتصب</label>
-                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.UsersInitial, "Id", "FullNamesString"))" id="AssignmentsSelectedTaskUserArraysString" data-placeholder="بسیاری را انتخاب کنید  " multiple="multiple" name="AssignmentsSelectedTaskUserArraysString" style="width: 100%;">                                                            </select>
-                                    <option value="">انتخاب کنید</option>
+                                    <label class="form-label" for="AssignmentsSelectedTaskUserArraysString">کاربر های منتصب</label>
+                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.UsersInitial, "Id", "FullNamesString"))" id="AssignmentsSelectedTaskUserArraysString" data-placeholder="بسیاری را انتخاب کنید" multiple="multiple" name="AssignmentsSelectedTaskUserArraysString" style="width: 100%;">
+                                    </select>
                                     <span asp-validation-for="UsersInitial" class="text-danger"></span>
                                 </div>
                             </div>
+                        </div>
 
+                        <div class="row">
                             <div class="col-sm-6">
                                 <div class="mb-4">
-                                    <label class="form-label" for="BranchViewModelId">انتخاب شعبه‌</label>
-                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" id="BranchIdSelected" data-placeholder="بسیاری را انتخاب کنید  " name="BranchIdSelected" style="width: 100%;">                                                            </select>
+                                    <label class="form-label" for="BranchIdSelected">انتخاب شعبه‌</label>
+                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" id="BranchIdSelected" data-placeholder="شعبه را انتخاب کنید" name="BranchIdSelected" style="width: 100%;">
+                                        <option value="">انتخاب کنید</option>
+                                    </select>
                                     <span asp-validation-for="branchListInitial" class="text-danger"></span>
-                                    <option value="">انتخاب کنید</option>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="StakeholderId">طرف حساب</label>
-                                    <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="form-select">
+                                    <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="js-select2 form-select" data-placeholder="انتخاب کنید" style="width: 100%;">
                                         <option value="">انتخاب کنید</option>
                                     </select>
                                     <span asp-validation-for="StakeholderId" class="text-danger"></span>

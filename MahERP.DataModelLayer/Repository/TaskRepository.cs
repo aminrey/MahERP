@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace MahERP.DataModelLayer.Repository
 {
@@ -27,47 +28,51 @@ namespace MahERP.DataModelLayer.Repository
             _StakeholderRepo = stakeholderRepo;
         }
 
-        public TaskListForIndexViewModel GetTaskForIndexByUser(TaskListForIndexViewModel FilterModel )
+        public TaskListForIndexViewModel GetTaskForIndexByUser(TaskListForIndexViewModel filterModel)
         {
-            string UserIdLogin = FilterModel.UserLoginid;
+            string userId = filterModel.UserLoginid;
 
             var taskForIndexViewModel = new TaskListForIndexViewModel
             {
-                branchListInitial = _BranchRipository.GetBrnachListByUserId(UserIdLogin),
+                branchListInitial = _BranchRipository.GetBrnachListByUserId(userId),
                 TaskCategoryInitial = GetAllCategories(),
                 UsersInitial = _userManagerRepository.GetUserListBybranchId(0),
-                StakeholdersInitial = _StakeholderRepo.GetStakeholdersByBranchId(0)
+                StakeholdersInitial = _StakeholderRepo.GetStakeholdersByBranchId(0),
+                Tasks = new List<TaskViewModel>()
             };
 
-            var query = _context.Tasks_Tbl.AsQueryable();
+            List< TaskViewModel> tasks = (from ts in _context.TaskAssignment_Tbl 
+                                                  join t in _context.Tasks_Tbl on ts.TaskId equals t.Id
+                                                  join cate in _context.TaskCategory_Tbl on t.TaskCategoryId equals cate .Id
+                                               where ts.AssignedUserId == userId && !t.IsDeleted
+                                                    select new TaskViewModel
+                                                    {
+                                                        Id = t.Id,
+                                                        Title = t.Title,
+                                                        Description = t.Description,
+                                                        TaskCode = t.TaskCode,
+                                                        CreateDate = t.CreateDate,
+                                                        DueDate = t.DueDate,
+                                                        CompletionDate = t.CompletionDate,
+                                                        ManagerApprovedDate = t.ManagerApprovedDate,
+                                                        SupervisorApprovedDate = t.SupervisorApprovedDate,
+                                                        IsActive = t.IsActive,
+                                                        IsDeleted = t.IsDeleted,
+                                                        BranchId = t.BranchId,
+                                                        CategoryId = cate.Id,
+                                                        CategoryTitle = cate.Title,
+                                                        CreatorUserId = t.CreatorUserId,
+                                                        StakeholderId = t.StakeholderId
+
+                                                    }
 
 
-            if (!includeDeleted)
-                query = query.Where(t => !t.IsDeleted);
+                                                ).ToList();
 
-            if (includeAssigned && includeCreated)
-            {
-                query = query.Where(t =>
-                    _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId) ||
-                    t.CreatorUserId == userId);
-            }
-            else if (includeAssigned)
-            {
-                query = query.Where(t =>
-                    _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId));
-            }
-            else if (includeCreated)
-            {
-                query = query.Where(t => t.CreatorUserId == userId);
-            }
-
-            return query.OrderByDescending(t => t.CreateDate).ToList();
-
-
+            taskForIndexViewModel.Tasks = tasks;
 
             return taskForIndexViewModel;
         }
-
         public bool IsTaskCodeUnique(string taskCode, int? excludeId = null)
         {
             if (string.IsNullOrWhiteSpace(taskCode))

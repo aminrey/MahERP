@@ -55,42 +55,39 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
             var userId = _userManager.GetUserId(User);
-            TaskListForIndexViewModel ModelForFilters = new TaskListForIndexViewModel
+            TaskListForIndexViewModel Filters = new TaskListForIndexViewModel
             {
-               
-
-
+                UserLoginid = userId,
 
             };
-            List<Tasks> tasks;
+
+
+
+
+            TaskListForIndexViewModel Model = new TaskListForIndexViewModel();
+           
             
             switch (dataAccessLevel)
             {
                 case 0: // Personal - فقط تسک‌های خود کاربر
                     //tasks = _taskRepository.GetTasksByUser(userId, includeAssigned: true, includeCreated: true);
-                    tasks = _taskRepository.GetTaskForIndexByUser(userId, includeAssigned: true, includeCreated: true);
+                    Model = _taskRepository.GetTaskForIndexByUser(Filters);
                     break;
                 case 1: // Branch - تسک‌های شعبه
-                    tasks = _taskRepository.GetTasksByBranch(GetUserBranchId(userId));
+                    //tasks = _taskRepository.GetTasksByBranch(GetUserBranchId(userId));
                     break;
                 case 2: // All - همه تسک‌ها
-                    tasks = _taskRepository.GetTasks();
+                    //tasks = _taskRepository.GetTasks();
                     break;
                 default:
-                    tasks = new List<Tasks>();
+                    //tasks = new List<Tasks>();
                     break;
             }
 
-            var viewModels = _mapper.Map<List<TaskViewModel>>(tasks);
             
-            // تکمیل اطلاعات اضافی
-            foreach (var viewModel in viewModels)
-            {
-                var operations = _taskRepository.GetTaskOperations(viewModel.Id);
-                viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(operations);
-            }
+          
             
-            return View(viewModels);
+            return View(Model);
         }
 
         // نمایش تسک‌های اختصاص داده شده به کاربر جاری
@@ -142,8 +139,10 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// taskUserId چه کاربری این تسک را می سازد 
         public IActionResult CreateNewTask(string AddressRouteInComingUrl, int TaskTeamMember = 0)
         {
+            if (AddressRouteInComingUrl == null)
+                AddressRouteInComingUrl = "nolink";
             string LogingUser = _userManager.GetUserId(HttpContext.User);
-
+           
 
             PopulateDropdowns();
 
@@ -153,6 +152,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             //    IsActive = true,
             //    CreateDate = DateTime.Now
             //});
+            
             return View(Model);
 
         }

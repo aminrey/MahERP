@@ -71,8 +71,11 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
         // Navigation properties for display
         [Display(Name = "عنوان دسته‌بندی")]
         public string? CategoryTitle { get; set; }
+    [Display(Name = "ای دی  دسته‌بندی")]
 
-        [Display(Name = "نام ایجاد کننده")]
+    public int? CategoryId { get; set; } =null;
+
+    [Display(Name = "نام ایجاد کننده")]
         public string? CreatorName { get; set; }
 
         [Display(Name = "نام طرف حساب")]

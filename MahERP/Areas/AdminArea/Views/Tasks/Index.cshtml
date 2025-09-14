@@ -1,5 +1,5 @@
-﻿@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
-@model List<TaskViewModel>
+﻿@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
+@model TaskListForIndexViewModel
 @{
     ViewData["Title"] = ViewBag.Title ?? "مدیریت تسک‌ها";
     bool isMyTasks = ViewBag.IsMyTasks ?? false;
@@ -24,7 +24,7 @@
                 <div class="block block-rounded bg-primary-light">
                     <div class="block-content py-3">
                         <div class="fs-4 fw-semibold text-primary text-center">
-                            @Model.Count
+                            @Model.Tasks.Count  
                         </div>
                         <div class="text-center">تعداد کل تسک‌ها</div>
                     </div>
@@ -34,8 +34,8 @@
                 <div class="block block-rounded bg-success-light">
                     <div class="block-content py-3">
                         <div class="fs-4 fw-semibold text-success text-center">
-                            @Model.Count(t => t.CompletionDate.HasValue)
-                        </div>
+@*                             @Model.Count(t => t.CompletionDate.HasValue)
+ *@                        </div>
                         <div class="text-center">تسک‌های تکمیل شده</div>
                     </div>
                 </div>
@@ -44,8 +44,8 @@
                 <div class="block block-rounded bg-warning-light">
                     <div class="block-content py-3">
                         <div class="fs-4 fw-semibold text-warning text-center">
-                            @Model.Count(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && DateTime.Now > t.DueDate.Value)
-                        </div>
+@*                             @Model.Count(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && DateTime.Now > t.DueDate.Value)
+ *@                        </div>
                         <div class="text-center">تسک‌های با تاخیر</div>
                     </div>
                 </div>
@@ -54,8 +54,8 @@
                 <div class="block block-rounded bg-info-light">
                     <div class="block-content py-3">
                         <div class="fs-4 fw-semibold text-info text-center">
-                            @Model.Count(t => !t.CompletionDate.HasValue && t.IsActive)
-                        </div>
+@*                             @Model.Count(t => !t.CompletionDate.HasValue && t.IsActive)
+ *@                        </div>
                         <div class="text-center">تسک‌های در حال انجام</div>
                     </div>
                 </div>
@@ -77,7 +77,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @foreach (var item in Model.Tasks)
                     {
                         <tr>
                             <td class="text-center">
@@ -182,6 +182,36 @@
         // Initialize tooltips
         $(function () {
             $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+        
+        // Override DataTable settings to disable pagination
+        $(document).ready(function() {
+            // Wait for DataTable to be initialized by Dashmix
+            setTimeout(function() {
+                $('.js-dataTable-responsive').each(function() {
+                    if ($.fn.DataTable.isDataTable(this)) {
+                        // Destroy existing DataTable
+                        $(this).DataTable().destroy();
+                    }
+                    
+                    // Reinitialize with custom settings
+                    $(this).DataTable({
+                        responsive: true,
+                        paging: false,           // Disable pagination
+                        info: false,            // Hide info text
+                        lengthChange: false,    // Hide length change dropdown
+                        searching: true,        // Keep search
+                        ordering: true,         // Keep sorting
+                        autoWidth: false,
+                        language: {
+                            search: "جستجو:",
+                            searchPlaceholder: "جستجو در تسک‌ها...",
+                            emptyTable: "هیچ تسکی یافت نشد",
+                            zeroRecords: "هیچ نتیجه‌ای یافت نشد"
+                        }
+                    });
+                });
+            }, 100);
         });
     </script>
 }
