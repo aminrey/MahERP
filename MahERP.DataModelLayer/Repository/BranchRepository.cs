@@ -11,10 +11,12 @@ namespace MahERP.DataModelLayer.Repository
     public class BranchRepository : IBranchRepository
     {
         private readonly AppDbContext _context;
+        private readonly IUserManagerRepository _userManagerRepository;
 
-        public BranchRepository(AppDbContext context)
+        public BranchRepository(AppDbContext context, IUserManagerRepository userManagerRepository)
         {
             _context = context;
+            _userManagerRepository = userManagerRepository;
         }
 
         public List<Branch> GetBranches(bool includeInactive = false)
@@ -137,20 +139,39 @@ namespace MahERP.DataModelLayer.Repository
         /// <returns></returns>
         public List<BranchViewModel> GetBrnachListByUserId(string UserLoginingid)
         {
+            //این باید درست بشه 
+            List<BranchViewModel> branchList = new List<BranchViewModel>();
+            bool IsAdmin = _userManagerRepository.GetUserInfoData(UserLoginingid) != null;
+            IsAdmin = true;
+            if (IsAdmin)
+            {
+                branchList = (from branchUser in _context.BranchUser_Tbl
+                              join bu in _context.Branch_Tbl on branchUser.BranchId equals bu.Id
+                              select new BranchViewModel
+                              {
+                                  Id = bu.Id,
+                                  Name = bu.Name,
+                                  IsMainBranch = bu.IsMainBranch,
+                                  IsActive = branchUser.IsActive
+                              }).ToList();
 
 
+            }
+            else
+            {
+            
+            }
 
-
-            List<BranchViewModel> branchList = (from branchUser in _context.BranchUser_Tbl
-                                              join bu in _context.Branch_Tbl on branchUser.BranchId equals bu.Id
-                                              where branchUser.UserId == UserLoginingid && branchUser.IsActive
-                                              select new BranchViewModel
-                                              {
-                                                  Id = bu.Id,
-                                                  Name = bu.Name,
-                                                  IsMainBranch = bu.IsMainBranch,
-                                                  IsActive = branchUser.IsActive
-                                              }).ToList();
+               branchList = (from branchUser in _context.BranchUser_Tbl
+                                                    join bu in _context.Branch_Tbl on branchUser.BranchId equals bu.Id
+                                                    where branchUser.UserId == UserLoginingid && branchUser.IsActive
+                                                    select new BranchViewModel
+                                                    {
+                                                        Id = bu.Id,
+                                                        Name = bu.Name,
+                                                        IsMainBranch = bu.IsMainBranch,
+                                                        IsActive = branchUser.IsActive
+                                                    }).ToList();
             return branchList;
         }
 

@@ -23,5 +23,12 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="includeInactive">شامل کاربران غیرفعال</param>
         /// <returns>لیست کاربران اختصاص داده شده به شعبه</returns>
         public List<UserViewModelFull> GetAssignedUsersByBranchId(int branchId, bool includeInactive = false);
+        /// <summary>
+        /// ای دی کاربر بده و بهت مشخصات کامل کاربر و میده
+        /// </summary>
+        /// <param name="UserId"></param>
+        /// <returns></returns>
+        public UserViewModelFull GetUserInfoData(string UserId);
+
     }
 }

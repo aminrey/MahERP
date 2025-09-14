@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MahERP.DataModelLayer.Repository
 {
-    public class UserManagerRepository :IUserManagerRepository
+    public class UserManagerRepository : IUserManagerRepository
     {
 
         private readonly AppDbContext _Context;
@@ -28,7 +28,7 @@ namespace MahERP.DataModelLayer.Repository
         public List<UserViewModelFull> GetUserListBybranchId(int branchId)
         {
             List<UserViewModelFull> user;
-            
+
             if (branchId == 0)
             {
                 // اگر branchId برابر 0 باشد، همه کاربران فعال را برگردان
@@ -83,9 +83,9 @@ namespace MahERP.DataModelLayer.Repository
         public List<UserViewModelFull> GetAssignedUsersByBranchId(int branchId, bool includeInactive = false)
         {
             var query = from bu in _Context.BranchUser_Tbl
-                       join u in _Context.Users on bu.UserId equals u.Id
-                       where bu.BranchId == branchId && u.IsActive && !u.IsRemoveUser
-                       select new { BranchUser = bu, User = u };
+                        join u in _Context.Users on bu.UserId equals u.Id
+                        where bu.BranchId == branchId && u.IsActive && !u.IsRemoveUser
+                        select new { BranchUser = bu, User = u };
 
             if (!includeInactive)
             {
@@ -105,6 +105,42 @@ namespace MahERP.DataModelLayer.Repository
             }).ToList();
 
             return result;
+        }
+
+        /// <summary>
+        /// ای دی کاربر بده و اطلاعات کامل بگیر
+        /// </summary>
+        /// <param name="UserId"></param>
+        /// <returns></returns>
+        public UserViewModelFull GetUserInfoData(string UserId)
+        {
+            UserViewModelFull? User = (from us in _Context.Users
+                                       select new UserViewModelFull
+                                       {
+                                           Id = us.Id,
+                                           CompanyName = us.CompanyName,
+
+                                           Address = us.Address,
+                                           City = us.City,
+                                           MelliCode = us.MelliCode,
+                                           FirstName = us.FirstName,
+                                           Email = us.Email,
+                                           IsActive = us.IsActive,
+                                           FullNamesString = us.FirstName + " " + us.LastName,
+                                           PhoneNumber = us.PhoneNumber,
+                                           LastName = us.LastName,
+                                           UserName = us.UserName,
+                                           Gender = us.Gender,
+                                           Province = us.Province,
+                                           RegisterDate = us.RegisterDate
+
+                                       }).FirstOrDefault();
+            return User;
+
+
+
+
+
         }
     }
 }
