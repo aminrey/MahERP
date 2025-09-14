@@ -1,0 +1,92 @@
+@model BranchUserViewModel
+@{
+    ViewData["Title"] = "??? ????? ?? ????";
+}
+
+<!-- Hero -->
+<div class="bg-image" style="background-image: url('/assets/media/photos/photo12.jpg');">
+    <div class="bg-primary-dark-op">
+        <div class="content content-full text-center py-6">
+            <h1 class="h2 text-white mb-2">??? ????? ?? ????</h1>
+            <h2 class="h4 fw-normal text-white-75 mb-0">@Model.UserFullName</h2>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default bg-danger">
+            <h3 class="block-title text-white">
+                <i class="fa fa-exclamation-triangle text-white me-1"></i> ????? ???
+            </h3>
+        </div>
+        <div class="block-content">
+            <div class="alert alert-danger">
+                <h4 class="alert-heading">?????!</h4>
+                <p class="mb-3">??? ?? ??? ????? ??? ?? ???? ??????? ??????</p>
+                <hr>
+                <p class="mb-0">??? ?????? ???? ?????? ???? ? ???? ?????????? ????? ?? ??? ???? ??? ????? ??.</p>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">??? ?????:</label>
+                        <div class="form-control-plaintext">@Model.UserFullName</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">????:</label>
+                        <div class="form-control-plaintext">@Model.BranchName</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">???:</label>
+                        <div class="form-control-plaintext">
+                            @switch (Model.Role)
+                            {
+                                case 0:
+                                    <span class="badge bg-info">???????</span>
+                                    break;
+                                case 1:
+                                    <span class="badge bg-warning">????</span>
+                                    break;
+                                case 2:
+                                    <span class="badge bg-success">????</span>
+                                    break;
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">????? ??????:</label>
+                        <div class="form-control-plaintext">@ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    @using (Html.BeginForm("DeleteConfirmed", "BranchUser", FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("id", Model.Id)
+                        
+                        <button type="submit" class="btn btn-danger me-2">
+                            <i class="fa fa-trash-alt me-1"></i> ????? ???
+                        </button>
+                    }
+                    <a href="@Url.Action("Index", new { branchId = Model.BranchId })" class="btn btn-secondary">
+                        <i class="fa fa-times me-1"></i> ??????
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->

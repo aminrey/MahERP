@@ -1,0 +1,85 @@
+@model List<BranchViewModel>
+@{
+    ViewData["Title"] = "?????? ???? ???? ?????? ?????";
+}
+
+<!-- Hero -->
+<div class="bg-image" style="background-image: url('/assets/media/photos/photo12.jpg');">
+    <div class="bg-primary-dark-op">
+        <div class="content content-full text-center py-6">
+            <h1 class="h2 text-white mb-2">?????? ????</h1>
+            <h2 class="h4 fw-normal text-white-75 mb-0">???? ?????? ????? ????</h2>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-building text-muted me-1"></i> ?????? ???? ???? ???
+            </h3>
+            <div class="block-options">
+                <a href="@Url.Action("Index")" class="btn btn-sm btn-alt-secondary">
+                    <i class="fa fa-arrow-left me-1"></i> ??????
+                </a>
+            </div>
+        </div>
+        <div class="block-content">
+            @if (Model.Any())
+            {
+                <div class="row">
+                    @foreach (var branch in Model)
+                    {
+                        <div class="col-md-6 col-xl-4">
+                            <a class="block block-rounded block-link-shadow text-center h-100 mb-4" href="@Url.Action("Create", new { branchId = branch.Id })">
+                                <div class="block-content py-5">
+                                    <div class="fs-1 fw-semibold mb-3">
+                                        <i class="fa fa-user-plus text-success"></i>
+                                    </div>
+                                    <h4 class="fw-semibold mb-2">@branch.Name</h4>
+                                    <p class="fs-sm text-muted mb-3">
+                                        @if (branch.IsMainBranch)
+                                        {
+                                            <span class="badge bg-success">???? ????</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info">???? ????</span>
+                                        }
+                                        
+                                        @if (branch.IsActive)
+                                        {
+                                            <span class="badge bg-success">????</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">???????</span>
+                                        }
+                                    </p>
+                                    <div class="btn btn-success">
+                                        <i class="fa fa-plus me-1"></i> ?????? ?????
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fa fa-building fa-3x text-muted mb-3"></i>
+                    <h4 class="fw-normal text-muted">??? ??????? ???? ???</h4>
+                    <p class="text-muted">??? ?? ??? ??????? ?????? ?????? ?? ??? ??????? ?? ????? ????? ???? ???.</p>
+                    <a href="@Url.Action("Create", "Branch")" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i> ????? ???? ????
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->

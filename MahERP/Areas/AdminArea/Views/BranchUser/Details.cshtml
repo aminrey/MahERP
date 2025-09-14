@@ -1,0 +1,202 @@
+@model BranchUserViewModel
+@{
+    ViewData["Title"] = "?????? ????? ????";
+}
+
+<!-- Hero -->
+<div class="bg-image" style="background-image: url('/assets/media/photos/photo12.jpg');">
+    <div class="bg-primary-dark-op">
+        <div class="content content-full text-center py-6">
+            <h1 class="h2 text-white mb-2">?????? ????? ????</h1>
+            <h2 class="h4 fw-normal text-white-75 mb-0">@Model.UserFullName</h2>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <!-- Quick Actions -->
+    <div class="row items-push">
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("Edit", new { id = Model.Id })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-pencil-alt text-primary"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        ??????
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("Delete", new { id = Model.Id })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-trash-alt text-danger"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        ???
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("Index", new { branchId = Model.BranchId })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-list text-info"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        ???? ???????
+                    </p>
+                </div>
+            </a>
+        </div>
+    </div>
+    <!-- END Quick Actions -->
+
+    <!-- User Information -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-user text-muted me-1"></i> ??????? ?????
+            </h3>
+            <div class="block-options">
+                <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-sm btn-alt-primary">
+                    <i class="fa fa-pencil-alt me-1"></i> ??????
+                </a>
+            </div>
+        </div>
+        <div class="block-content">
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">??? ?????</label>
+                        <div class="form-control-plaintext fw-semibold">@Model.UserFullName</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">????</label>
+                        <div class="form-control-plaintext">
+                            <a href="@Url.Action("Details", "Branch", new { id = Model.BranchId })">@Model.BranchName</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">???</label>
+                        <div class="form-control-plaintext">
+                            @switch (Model.Role)
+                            {
+                                case 0:
+                                    <span class="badge bg-info fs-6">???????</span>
+                                    break;
+                                case 1:
+                                    <span class="badge bg-warning fs-6">????</span>
+                                    break;
+                                case 2:
+                                    <span class="badge bg-success fs-6">????</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary fs-6">??????</span>
+                                    break;
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">?????</label>
+                        <div class="form-control-plaintext">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success fs-6">????</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger fs-6">???????</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">????? ??????</label>
+                        <div class="form-control-plaintext">
+                            @ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd HH:mm")
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb-4">
+                        <label class="form-label">?????? ?????</label>
+                        <div class="form-control-plaintext">
+                            @if (!string.IsNullOrEmpty(Model.AssignedByUserId))
+                            {
+                                <span>????? ?????</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">??????</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END User Information -->
+
+    <!-- Role Description -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-info-circle text-muted me-1"></i> ??????? ???
+            </h3>
+        </div>
+        <div class="block-content">
+            @switch (Model.Role)
+            {
+                case 0:
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading">???????</h5>
+                        <p class="mb-0">
+                            ????? ?? ??? ??????? ?????? ????? ?? ?????? ???? ???? ???? ? ???????? ?????? ?? ?????? ? ?????? ???.
+                        </p>
+                    </div>
+                    break;
+                case 1:
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">????</h5>
+                        <p class="mb-0">
+                            ????? ?? ??? ???? ?????? ?? ????? ?? ?????? ???? ???? ? ???????? ???????? ?? ?????? ???.
+                        </p>
+                    </div>
+                    break;
+                case 2:
+                    <div class="alert alert-success">
+                        <h5 class="alert-heading">????</h5>
+                        <p class="mb-0">
+                            ????? ?? ??? ???? ?????? ???? ?? ?????? ???? ???? ? ???????? ??????? ?? ?????? ???.
+                        </p>
+                    </div>
+                    break;
+                default:
+                    <div class="alert alert-secondary">
+                        <h5 class="alert-heading">??? ??????</h5>
+                        <p class="mb-0">??? ??? ????? ?? ????? ????? ???? ???.</p>
+                    </div>
+                    break;
+            }
+        </div>
+    </div>
+    <!-- END Role Description -->
+</div>
+<!-- END Page Content -->
