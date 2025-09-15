@@ -1,718 +1,710 @@
-﻿function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        console.log('Debouncing with args:', args);
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            func(...args);
-        }, wait);
-    };
-}
-$(document).on('click', '[data-toggle="modal-old"]', function (event) {
-    event.preventDefault();
+﻿/**
+ * Bootstrap5Modal.js
+ * Enhanced modal functionality for Bootstrap 5 with language parameter support
+ */
 
-    var trigger = $(this);
-    var targetModalId = trigger.data('bs-target');
+// Utility functions for URL and language handling
+const ModalUtils = {
+    /**
+     * Get the current language code from the hidden input
+     * @returns {string} - The language code or 'fa' as default
+     */
+    getLanguageCode: function () {
+        const languageElement = document.getElementById("languageCode");
+        return languageElement ? languageElement.value : 'fa';
+    },
 
-    var modalHtml = `<div aria-labelledby="modal-action" class="modal fade" data-bs-focus="false" role="dialog" id="modal-action" tabindex="-1" aria-hidden="true"></div>`;
-    $('body').append(modalHtml);
+    /**
+     * Add language parameter to URL if it doesn't already exist
+     * @param {string} urlString - URL to process
+     * @param {string} languageCode - Language code to add
+     * @returns {string} - URL with language parameter
+     */
+    addLanguageToUrl: function (urlString, languageCode) {
+        if (!urlString || urlString === '#' || urlString.startsWith('javascript:')) {
+            return urlString;
+        }
 
-    var modalElement = $(targetModalId);
-    var url = trigger.attr("formaction");
+        try {
+            const url = new URL(urlString, window.location.origin);
+            if (!url.searchParams.has("languageCode")) {
+                url.searchParams.set("languageCode", languageCode);
+                return url.toString();
+            }
+            return urlString;
+        } catch (e) {
+            console.warn("Invalid URL:", urlString);
+            return urlString;
+        }
+    },
 
-    $.get(url).done(function (data) {
-        modalElement.html(data);
-        // استفاده از Bootstrap 5 Modal API
-        var bootstrapModal = new bootstrap.Modal(modalElement[0]);
-        bootstrapModal.show();
-    }).fail(function (jqXHR, textStatus, errorThrown) {
-        console.error('Error loading modal content:', errorThrown);
-    });
-});
+    /**
+     * Process all URLs in a container to add language parameters
+     * @param {HTMLElement|jQuery} container - Container element to process
+     */
+    processUrlsInContainer: function (container) {
+        const languageCode = this.getLanguageCode();
+        const $container = $(container);
 
-
-$(document).on('click', '[data-toggle="modal-ajax"]', function (event) {
-    event.preventDefault();
-
-    var trigger = $(this);
-    var url = trigger.attr("href");
-    if (url == undefined) {
-        url = trigger.attr("formaction");
-    }
-    createAndShowModal(url);
-});
-
-
-function createAndShowModal(url) {
-    var uniqueModalId = 'modal-' + Date.now();
-    var modalHtml = `<div aria-labelledby="${uniqueModalId}" class="modal fade" data-bs-focus="false" role="dialog" id="${uniqueModalId}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-body text-center">
-                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
-                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
-                </div>
-            </div>
-        </div>
-    </div>`;
-
-    $('body').append(modalHtml);
-    var modalElement = document.getElementById(uniqueModalId);
-    var bootstrapModal = new bootstrap.Modal(modalElement);
-
-    // Load content into the modal via AJAX
-    $.get(url)
-        .done(function (data) {
-            $(modalElement).find('.modal-content').html(data);
-
-            // تنظیم select2 اگر وجود داشته باشد
-            $(modalElement).find('.js-select2').attr('data-container', '#' + uniqueModalId);
-
-            bootstrapModal.show();
-        })
-        .fail(function (xhr, status, error) {
-            console.error('Error loading modal content:', error);
-            $(modalElement).find('.modal-content').html(`
-                <div class="modal-body text-center">
-                    <i class="fa fa-3x fa-exclamation-triangle text-danger my-3"></i>
-                    <h3 class="mt-2 mb-3">خطا در بارگذاری</h3>
-                    <p>لطفا دوباره تلاش کنید.</p>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
-                </div>
-            `);
-            bootstrapModal.show();
+        // Process buttons with formaction
+        $container.find("button[formaction]").each((i, button) => {
+            const formaction = $(button).attr("formaction");
+            if (formaction) {
+                const newUrl = this.addLanguageToUrl(formaction, languageCode);
+                $(button).attr("formaction", newUrl);
+            }
         });
 
-    // Handle modal hidden event to remove it from the DOM
-    modalElement.addEventListener('hidden.bs.modal', function () {
-        modalElement.remove();
-    });
-}
+        // Process links with href
+        $container.find("a[href]").each((i, link) => {
+            const href = $(link).attr("href");
+            if (href && href !== '#' && !href.startsWith('javascript:')) {
+                const newUrl = this.addLanguageToUrl(href, languageCode);
+                $(link).attr("href", newUrl);
+            }
+        });
 
+        // Add language code to forms
+        $container.find("form").each((i, form) => {
+            if (!$(form).find("input[name='languageCode']").length) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'languageCode',
+                    value: languageCode
+                }).appendTo($(form));
+            }
+        });
+    },
 
-function ModalTrigger(input) {
-    event.preventDefault();
-    var url = $(input).attr('href');
-    createAndShowModal(url);
-}
+    /**
+     * Get URL from various possible sources on an element
+     * @param {jQuery} element - Element to get URL from
+     * @returns {string} - The URL
+     */
+    getUrlFromElement: function ($element) {
+        const targetUrl = $element.data('url');
+        const href = $element.attr('href');
+        const formaction = $element.attr('formaction');
+        const formUrl = $element.closest('form').attr('action');
 
-
-$(document).on('hidden.bs.modal', '.modal', function () {
-    $(this).remove();
-});
-
-
-$(document).on('click', ' [data-save="modal-ajax-save"]', function (event) {
-    event.preventDefault();
-    var $button = $(this); // Cache the button element
-    $button.prop('disabled', true); // Disable the button immediately
-    var $modal = $button.closest('.modal');
-
-
-    if (typeof tinymce != 'undefined') {
-
-        tinymce.triggerSave();
-
+        return targetUrl || href || formaction || formUrl;
     }
-    var form = $button.closest('.modal').find('form');
-    var formData = new FormData(form[0]);
-    $('input[type="checkbox"]').each(function () {
-        var checkbox = $(this);
-        var isChecked = checkbox.prop('checked');
-        var checkboxName = checkbox.attr('id');
-        // اضافه کردن وضعیت چک باکس به داده‌های ارسالی
-        formData.append(checkboxName, isChecked);
-    });
+};
 
-
-    $.ajax({
-        url: form.attr("action"),
-        type: "POST",
-        data: formData,
-        //contentType: false,
-        contentType: false,  // تعیین نوع محتوا به false برای استفاده از FormData
-        processData: false,
-        success: function (response) {
-            if (response.status == "redirect") {
-                $(location).prop('href', response.redirectUrl)
-            }
-            else if (response.status == "update-view") {
-                if (response.viewList && response.viewList.length) {
-                    $.each(response.viewList, function (index, item) {
-                        // Code to be executed for each element
-                        $("#" + item.elementId).html(item.view.result);
-                    });
-                }
-
-                // استفاده از Bootstrap 5 API برای بستن مودال
-                var modalElement = $button.closest('.modal')[0];
-                var bootstrapModal = bootstrap.Modal.getInstance(modalElement);
-                if (bootstrapModal) {
-                    bootstrapModal.hide();
-                }
-                setTimeout(() => {
-                    $modal.remove();
-                }, 300);
-
-            }
-
-            else if (response.status == "temp-save") {
-                if (response.viewList && response.viewList.length) {
-
-                    $.each(response.viewList, function (index, item) {
-                        // Code to be executed for each element
-                        $("#" + item.elementId).html(item.view.result);
-                        SendResposeMessageInView(response);
-
-                    });
-                }
-            }
-            if (response.message != undefined) {
-                SendResposeMessage(response.message);
-
-            }
-
-        },
-        error: function (xhr) {
-            $button.prop('disabled', false); // Disable the button immediately
-
-            // Error: Display the error message in the modal
-            var errors = xhr.responseJSON; // The ModelState object returned as JSON
-            for (var key in errors) {
-                Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: errors[key] });
-            }
-
+/**
+ * Dynamic Select2 Handler
+ * سیستم پویا برای مدیریت Select2 ها با قابلیت بروزرسانی خودکار
+ */
+const DynamicSelect2Manager = {
+    // تنظیمات پیش‌فرض
+    defaultSettings: {
+        ajaxMethod: 'POST',
+        loadingText: '<div class="text-center p-3"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>',
+        errorText: '<div class="alert alert-danger">خطا در بارگذاری اطلاعات</div>',
+        emptyText: 'ابتدا گزینه مناسب را انتخاب کنید',
+        select2Config: {
+            allowClear: true,
+            width: '100%'
         }
-    });
-    $button.prop('disabled', false); // Enable the button 
+    },
 
-});
+    // متغیرهای سیستم
+    customConfigs: {},
+    isInitialized: false,
 
+    /**
+     * راه‌اندازی سیستم
+     */
+    init: function() {
+        if (this.isInitialized) return;
+        
+        this.initializeSelect2Elements();
+        this.setupEventListeners();
+        this.isInitialized = true;
+        
+        console.log('Dynamic Select2 Manager initialized');
+    },
 
-$(document).on('click', ' [data-save="modal"]', function (event) {
-    var $button = $(this); // Cache the button element
-    $button.prop('disabled', true); // Disable the button immediately
-    var form = $button.closest('.modal').find('form');
+    /**
+     * راه‌اندازی اولیه Select2 برای تمام عناصر
+     */
+    initializeSelect2Elements: function() {
+        const self = this;
+        
+        $('.js-select2').each(function() {
+            const $element = $(this);
+            
+            if (!$element.hasClass('select2-hidden-accessible')) {
+                const container = $element.data('container') || 'body';
+                const config = $.extend({}, self.defaultSettings.select2Config);
+                
+                if (container !== 'body') {
+                    config.dropdownParent = $(container);
+                }
+                
+                $element.select2(config);
+            }
+        });
+    },
 
-    $(form).submit();
-    //var actionUrl = form.attr('action');
-    //var sendData = form.serialize();
-    //$.post(actionUrl, sendData).done(function (data) {
-    //})
+    /**
+     * نصب event listener ها
+     */
+    setupEventListeners: function() {
+        const self = this;
+        
+        // Event delegation برای عناصر select با data-toggle="multiplepartialview"
+        $(document).off('change.dynamicSelect2').on('change.dynamicSelect2', 'select[data-toggle="multiplepartialview"]', function(e) {
+            self.handleSelectChange($(this));
+        });
+    },
 
+    /**
+     * مدیریت تغییر select
+     */
+    handleSelectChange: function($select) {
+        const self = this;
+        const url = $select.data('url');
+        const targetDivs = $select.data('target-divs');
+        const selectedValue = $select.val();
+        
+        if (!url) {
+            console.warn('No URL specified for dynamic select:', $select);
+            return;
+        }
 
-})
-
-
-//Modalelement.on('click', '[data-bs-dismiss="modal"]', function (event) {
-
-//    $(".modal-contents").empty();
-
-
-//})
-// تابع اصلی برای لود partial view
-function loadPartialView($target, isInput = false) {
-    var viewId = $target.data('target');
-    Dashmix.block('state_loading', viewId);
-
-    var targetUr = $target.data('url');
-    var href = $target.attr('href');
-    var formaction = $target.attr('formaction');
-    var formUrl = $target.closest('form').attr('action');
-
-    var url = targetUr != undefined ? targetUr : href != undefined ? href : formaction != undefined ? formaction : formUrl;
-
-    // اگر از input باشد، داده‌های فرم را جمع‌آوری و با POST ارسال کنیم
-    if (isInput) {
-        var formData = new FormData();
-
-        // اضافه کردن مقادیر select‌ها اگر data-sclass وجود داشته باشد
-        var selects = $target.data('sclass');
-        if (typeof selects !== 'undefined') {
-            const selectElements = document.querySelectorAll('.' + selects);
-            selectElements.forEach(select => {
-                var name = select.name;
-                var value = select.value;
-                formData.append(name, value);
+        // تعیین target divs
+        let targets = [];
+        if (targetDivs) {
+            targets = targetDivs.split(',').map(function(div) {
+                return div.trim();
             });
+        } else {
+            targets = this.detectTargetDivs($select);
         }
 
-        // اضافه کردن مقدار input
-        var name = $target.attr('name');
-        var value = $target.val();
-        formData.append(name, value);
+        console.log('Select changed:', {
+            value: selectedValue,
+            url: url,
+            targets: targets
+        });
 
-        // تنظیم page به 1 برای فیلترهای جدید
-        formData.append('page', '1');
+        // اگر مقدار خالی است، target ها را خالی کن
+        if (!selectedValue || selectedValue === '') {
+            this.clearTargetDivs(targets);
+            return;
+        }
 
-        // ارسال درخواست با POST
+        // ارسال درخواست AJAX
+        this.sendAjaxRequest($select, url, selectedValue, targets);
+    },
+
+    /**
+     * تشخیص خودکار target div ها
+     */
+    detectTargetDivs: function($select) {
+        const commonTargets = ['UsersDiv', 'CarbonCopyUsersDiv', 'CustomersDiv'];
+        const detectedTargets = [];
+        
+        commonTargets.forEach(function(target) {
+            if ($('#' + target).length > 0) {
+                detectedTargets.push(target);
+            }
+        });
+        
+        return detectedTargets;
+    },
+
+    /**
+     * خالی کردن target div ها
+     */
+    clearTargetDivs: function(targets) {
+        const self = this;
+        
+        targets.forEach(function(targetId) {
+            const $target = $('#' + targetId);
+            if ($target.length) {
+                const emptySelect = self.createEmptySelect(targetId);
+                $target.html(emptySelect);
+                self.reinitializeSelect2InDiv($target);
+            }
+        });
+    },
+
+    /**
+     * ایجاد select خالی
+     */
+    createEmptySelect: function(targetId) {
+        const selectConfig = this.getSelectConfigByTargetId(targetId);
+        
+        return `<select class="js-select2 form-select" 
+                        id="${selectConfig.id}" 
+                        name="${selectConfig.name}" 
+                        data-placeholder="${this.defaultSettings.emptyText}" 
+                        ${selectConfig.multiple ? 'multiple="multiple"' : ''}
+                        style="width: 100%;">
+                </select>`;
+    },
+
+    /**
+     * دریافت کانفیگ select بر اساس target id
+     */
+    getSelectConfigByTargetId: function(targetId) {
+        const configs = {
+            'UsersDiv': {
+                id: 'UserId',
+                name: 'AppointmentUsers',
+                multiple: true
+            },
+            'CarbonCopyUsersDiv': {
+                id: 'CarbonCopyUsersIdForcc',
+                name: 'CarbonCopyUsers',
+                multiple: true
+            },
+            'CustomersDiv': {
+                id: 'StakeholderId',
+                name: 'StakeholderId',
+                multiple: false
+            }
+        };
+        
+        // بررسی کانفیگ‌های سفارشی
+        if (this.customConfigs[targetId]) {
+            return this.customConfigs[targetId];
+        }
+        
+        return configs[targetId] || {
+            id: targetId.replace('Div', ''),
+            name: targetId.replace('Div', ''),
+            multiple: false
+        };
+    },
+
+    /**
+     * ارسال درخواست AJAX
+     */
+    sendAjaxRequest: function($select, url, selectedValue, targets) {
+        const self = this;
+        
+        // نمایش loading
+        this.showLoadingInTargets(targets);
+        
+        // تعیین نام پارامتر
+        const paramName = this.getParamNameFromSelect($select);
+        const ajaxData = {};
+        ajaxData[paramName] = selectedValue;
+        
+        // اضافه کردن CSRF token
+        const token = $('input[name="__RequestVerificationToken"]').val();
+        if (token) {
+            ajaxData.__RequestVerificationToken = token;
+        }
+
+        // اضافه کردن language code
+        ajaxData.languageCode = ModalUtils.getLanguageCode();
+
         $.ajax({
             url: url,
-            type: 'post',
-            data: formData,
-            processData: false,
-            contentType: false
-        }).done(function (response) {
-            $(viewId).html(response);
-            Dashmix.block('state_normal', viewId);
-        }).fail(function (xhr) {
-            Dashmix.block('state_normal', viewId);
-            var errors = xhr.responseJSON;
-            if (errors) {
-                for (var key in errors) {
-                    Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: errors[key] });
-                }
-            } else {
-                Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: 'خطایی در بارگذاری محتوا رخ داد.' });
+            type: this.defaultSettings.ajaxMethod,
+            data: ajaxData,
+            beforeSend: function() {
+                console.log('Sending AJAX request to:', url, 'with data:', ajaxData);
+            },
+            success: function(response) {
+                console.log('AJAX response received:', response);
+                self.handleAjaxSuccess(response, targets);
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX request failed:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+                self.handleAjaxError(error, targets);
             }
         });
-    } else {
-        // برای کلیک روی لینک‌ها یا دکمه‌ها، از GET استفاده کنیم
-        $.get(url).done(function (response) {
-            $(viewId).html(response);
+    },
 
-            var functionName = $target.data('callback');
-            if (functionName && typeof window[functionName] === 'function') {
-                window[functionName]();
-            }
-            Dashmix.block('state_normal', viewId);
-        }).fail(function (xhr) {
-            Dashmix.block('state_normal', viewId);
-            var errors = xhr.responseJSON;
-            if (errors) {
-                for (var key in errors) {
-                    Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: errors[key] });
-                }
-            } else {
-                Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: 'خطایی در بارگذاری محتوا رخ داد.' });
-            }
-        });
-    }
-}
-// شنونده برای کلیک روی دکمه‌های partialview
-$(document).on('click', '[data-toggle="partialview"]', function (event) {
-    event.preventDefault();
-    loadPartialView($(this));
-});
-$(document).on('keyup', 'input[type="text"][data-toggle="partialview"]', function (event) {
-    var $target = $(this);
-    debounce(function () {
-        loadPartialView($target, true);
-    }, 300)();
-});
-
-$(document).on('change', 'select[data-toggle="partialview"]', function (event) {
-
-    var $target = $(this);
-    var viewId = $target.data('target');
-    Dashmix.block('state_loading', viewId);
-
-
-    var data = $target.find(":selected").val();
-    var url = $target.data('url');
-    $.get(url, { selectedId: data }).done(function (data) {
-        $("#" + viewId).html(data);
-        Dashmix.block('state_normal', viewId);
-
-    })
-});
-
-
-$(document).on('change', 'select[data-toggle="partialviewmultiple"]', function (event) {
-
-    var $target = $(this);
-    var viewId = $target.data('target');
-    Dashmix.block('state_loading', viewId.replace(/^#/, ''));
-
-    var targetUrl = $target.data('url');
-
-    var data = $target.find(":selected").val();
-
-    var url = targetUrl != undefined ? targetUrl : href != undefined ? href : formaction != undefined ? formaction : formUrl;
-
-    $.get(url, { selected: data }).done(function (data) {
-        $.each(data.viewList, function (index, item) {
-            // Code to be executed for each element
-            $("#" + item.elementId).html(item.view.result);
-
-        });
-        SendResposeMessage(response);
-        Dashmix.block('state_normal', viewId.replace(/^#/, ''));
-
-    })
-
-
-});
-
-
-$(document).on('change', 'input[type="checkbox"][data-toggle="partialview"]', function (event) {
-    $(viewId).addClass("block  block-mode-loading-refresh block-mode-loading");
-
-    var $target = $(this);
-    var viewId = $target.data('target');
-    Dashmix.block('state_loading', viewId.replace(/^#/, ''));
-
-    var data = $target.prop('checked');
-    var url = $target.data('url');
-    $.get(url, { boolval: data }).done(function (data) {
-        $("#" + viewId).html(data);
-
-        Dashmix.block('state_normal', viewId.replace(/^#/, ''));
-
-    })
-});
-
-
-$(document).on('click', 'button[data-toggle="submitformmultiple"]', function (event) {
-    event.preventDefault();
-
-
-    var $target = $(this);
-    var viewClass = $target.data('targetc');
-    var url = $target.data('url');
-    $("." + viewClass).addClass("block-mode-loading");
-
-    var form = $target.closest('form');
-    var dataform = new FormData(form[0]); // Use FormData directly
-
-    if (typeof tinymce != 'undefined') {
-
-        tinymce.triggerSave();
-
-    }
-    $('input[type="checkbox"]').each(function () {
-        var checkbox = $(this);
-        var isChecked = checkbox.prop('checked');
-        var checkboxName = checkbox.attr('id');
-        // اضافه کردن وضعیت چک باکس به داده‌های ارسالی
-        dataform.append(checkboxName, isChecked);
-    });
-
-    // Select all <select> elements inside the form
-    form.find('select').each(function () {
-        var selectName = $(this).attr('name'); // Get the name attribute of the select
-        var selectValue = $(this).val(); // Get the value of the select
-
-        // Append the select name and value to the FormData object
-        dataform.append(selectName, selectValue);
-    });
-
-    $("." + viewClass).addClass("block-mode-loading");
-
-
-    var targetUr = $target.data('url');
-    var href = $(this).attr('href');
-    var formaction = $(this).attr("formaction");
-
-    var formUrl = $(this).closest('form').attr("action");
-
-    var url = targetUr != undefined ? targetUr : href != undefined ? href : formaction != undefined ? formaction : formUrl;
-    $.ajax({
-        type: "post",
-        url: url,
-        data: dataform,
-        contentType: false,
-        processData: false
-
-    }).done(function (response) {
-
-
-        $.each(response.viewList, function (index, item) {
-            // Code to be executed for each element
-            $("#" + item.elementId).html(item.view.result);
-
-        });
-        convertprices();
-        $("." + viewClass).removeClass("block-mode-loading");
-        SendResposeMessage(response);
-
-    }).fail(function (xhr) {
-        $("." + viewClass).removeClass("block-mode-loading");
-
-
-        // Error: Display the error message in the modal
-        var errors = xhr.responseJSON; // The ModelState object returned as JSON
-        for (var key in errors) {
-            Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: errors[key] });
+    /**
+     * تشخیص نام پارامتر از روی select
+     */
+    getParamNameFromSelect: function($select) {
+        // بررسی data attribute مخصوص
+        const customParam = $select.data('param-name');
+        if (customParam) {
+            return customParam;
         }
 
-    });
-
-
-})
-
-// تابع Debounce برای جلوگیری از ارسال درخواست‌های مکرر
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// تابع اصلی برای ارسال فرم
-function submitForm($target) {
-    var viewId = $target.data('target');
-
-    var form = $target.closest('form');
-
-
-    Dashmix.block('state_loading', viewId);
-
-    if (typeof tinymce != 'undefined') {
-        tinymce.triggerSave();
-    }
-
-    var dataform = new FormData(form[0]); // Use FormData directly
-
-    // اضافه کردن وضعیت چک‌باکس‌ها
-    $('input[type="checkbox"]').each(function () {
-        var checkbox = $(this);
-        var isChecked = checkbox.prop('checked');
-        var checkboxName = checkbox.attr('id');
-        if (checkboxName) { // اطمینان از وجود id
-            dataform.append(checkboxName, isChecked);
+        // بر اساس کلاس‌های select
+        if ($select.hasClass('branch')) {
+            return 'branchId';
         }
-    });
+        if ($select.hasClass('category')) {
+            return 'categoryId';
+        }
+        if ($select.hasClass('stakeholder')) {
+            return 'stakeholderId';
+        }
+        
+        // پیش‌فرض
+        return 'id';
+    },
 
-    // تنظیم page به 1 برای فیلترهای جدید
-
-    var targetUr = $target.data('url');
-    var href = $target.attr('href');
-    var formaction = $target.attr('formaction');
-    var formUrl = form.attr('action');
-
-    var url = targetUr != undefined ? targetUr : href != undefined ? href : formaction != undefined ? formaction : formUrl;
-
-    if (!url) {
-        console.error('URL is undefined');
-        Dashmix.block('state_normal', viewId);
-        return;
-    }
-
-    $.ajax({
-        type: "post",
-        url: url,
-        data: dataform,
-        contentType: false,
-        processData: false
-    }).done(function (data) {
-        $(viewId).html(data);
-        convertprices();
-        Dashmix.block('state_normal', viewId);
-    }).fail(function (xhr) {
-        Dashmix.block('state_normal', viewId);
-        var errors = xhr.responseJSON;
-        if (errors) {
-            for (var key in errors) {
-                Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: errors[key] });
+    /**
+     * نمایش loading در target ها
+     */
+    showLoadingInTargets: function(targets) {
+        const self = this;
+        
+        targets.forEach(function(targetId) {
+            const $target = $('#' + targetId);
+            if ($target.length) {
+                $target.html(self.defaultSettings.loadingText);
             }
+        });
+    },
+
+    /**
+     * مدیریت پاسخ موفق AJAX
+     */
+    handleAjaxSuccess: function(response, targets) {
+        const self = this;
+        
+        if (response.status === "update-view" && response.viewList) {
+            response.viewList.forEach(function(item) {
+                if (targets.includes(item.elementId)) {
+                    const $target = $('#' + item.elementId);
+                    if ($target.length && item.view && item.view.result) {
+                        $target.html(item.view.result);
+                        self.reinitializeSelect2InDiv($target);
+                        
+                        // Process URLs in updated content
+                        ModalUtils.processUrlsInContainer($target);
+                    }
+                }
+            });
         } else {
-            Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: 'خطایی در ارسال درخواست رخ داد.' });
+            console.warn('Unexpected response format:', response);
+            this.handleAjaxError('فرمت پاسخ نامعتبر', targets);
         }
+    },
+
+    /**
+     * مدیریت خطای AJAX
+     */
+    handleAjaxError: function(error, targets) {
+        const self = this;
+        
+        targets.forEach(function(targetId) {
+            const $target = $('#' + targetId);
+            if ($target.length) {
+                $target.html(self.defaultSettings.errorText + ': ' + error);
+            }
+        });
+    },
+
+    /**
+     * راه‌اندازی مجدد Select2 در container
+     */
+    reinitializeSelect2InDiv: function($container) {
+        const self = this;
+        
+        setTimeout(function() {
+            $container.find('.js-select2').each(function() {
+                const $element = $(this);
+                
+                // destroy قبلی اگر وجود دارد
+                if ($element.hasClass('select2-hidden-accessible')) {
+                    $element.select2('destroy');
+                }
+                
+                // راه‌اندازی مجدد
+                const containerAttr = $element.data('container') || 'body';
+                const config = $.extend({}, self.defaultSettings.select2Config);
+                
+                if (containerAttr !== 'body') {
+                    config.dropdownParent = $(containerAttr);
+                }
+                
+                $element.select2(config);
+            });
+            
+            console.log('Select2 reinitialized in container');
+        }, 100);
+    },
+
+    /**
+     * اضافه کردن کانفیگ سفارشی
+     */
+    addSelectConfig: function(targetId, config) {
+        this.customConfigs[targetId] = config;
+    },
+
+    /**
+     * بروزرسانی تنظیمات
+     */
+    updateSettings: function(newSettings) {
+        $.extend(this.defaultSettings, newSettings);
+    },
+
+    /**
+     * راه‌اندازی مجدد کل سیستم
+     */
+    reinitialize: function() {
+        this.initializeSelect2Elements();
+    }
+};
+
+// Modal handling functions
+/**
+ * Create and show a modal without removing it on close
+ * @param {string} url - URL to load content from
+ */
+function createAndShowModalWithoutRemove(url) {
+    const uniqueModalId = 'modal-' + Date.now();
+    const modalHtml = `<div aria-labelledby="${uniqueModalId}" class="modal fade" data-bs-focus="false" role="dialog" id="${uniqueModalId}" tabindex="-1" aria-hidden="true"></div>`;
+
+    $('body').append(modalHtml);
+    const $modal = $('#' + uniqueModalId);
+
+    // Add language parameter to URL
+    const urlWithLanguage = ModalUtils.addLanguageToUrl(url, ModalUtils.getLanguageCode());
+
+    // Load content into the modal via AJAX
+    $.get(urlWithLanguage).done(function (data) {
+        $modal.html(data);
+        $modal.find('.js-select2').attr('data-container', '#' + uniqueModalId);
+
+        // Process URLs in loaded modal content
+        ModalUtils.processUrlsInContainer($modal);
+
+        // راه‌اندازی Dynamic Select2 در modal
+        DynamicSelect2Manager.reinitializeSelect2InDiv($modal);
+
+        $modal.modal('show');
+    }).fail(function (jqXHR) {
+        console.error("Failed to load modal content:", jqXHR.statusText);
+        handleAjaxError(jqXHR);
     });
 }
 
-// شنونده برای کلیک روی دکمه‌های submitform
-$(document).on('click', '[data-toggle="submitform"]', function (event) {
-    event.preventDefault();
-    submitForm($(this));
-});
+/**
+ * Create and show a modal that removes itself on close
+ * @param {string} url - URL to load content from
+ */
+function createAndShowModal(url) {
+    const uniqueModalId = 'modal-' + Date.now();
+    const modalHtml = `<div aria-labelledby="${uniqueModalId}" class="modal fade" data-bs-focus="false" role="dialog" id="${uniqueModalId}" tabindex="-1" aria-hidden="true"></div>`;
 
-// شنونده برای keyup روی input‌های با data-toggle="submitform"
-$(document).on('keyup', 'input[type="text"][data-toggle="submitform"]', function (event) {
-    var $target = $(this); // صراحتاً $target را تعریف می‌کنیم
-    debounce(function () {
-        submitForm($target);
-    }, 500)();
-});
-$(document).on('click', '[data-toggle="swal-asp"]', function (event) {
-    event.preventDefault();
-    var $target = $(this);
-    var viewId = $target.data('target');
-    var title = $target.data('title');
-    var description = $target.data('desc');
-    var href = $target.attr('href');
+    $('body').append(modalHtml);
+    const $modal = $('#' + uniqueModalId);
 
-    Dashmix.block('state_loading', viewId.replace(/^#/, ''));
+    // Add language parameter to URL
+    const urlWithLanguage = ModalUtils.addLanguageToUrl(url, ModalUtils.getLanguageCode());
 
-
-    var swalWithBootstrapButtons = Swal.mixin({
-        customClass: {
-            confirmButton: "btn btn-success",
-            cancelButton: "btn btn-danger"
-        },
-        buttonsStyling: false
-    });
-    swalWithBootstrapButtons.fire({
-        title: title,
-        text: description,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "تایید",
-        cancelButtonText: "لغو",
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-
-            $(location).prop('href', href)
-
-
-        }
-    });
-
-});
-
-
-$(document).on('click', '[data-toggle="swal-ajax"]', function (event) {
-    event.preventDefault();
-    var $target = $(this);
-    var viewId = $target.data('target');
-    var title = $target.data('title');
-    var description = $target.data('desc');
-
-
-
-    var swalWithBootstrapButtons = Swal.mixin({
-        customClass: {
-            confirmButton: "btn btn-success",
-            cancelButton: "btn btn-danger"
-        },
-        buttonsStyling: false
-    });
-    swalWithBootstrapButtons.fire({
-        title: title,
-        text: description,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "تایید",
-        cancelButtonText: "لغو",
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-
-
-
-            if (typeof tinymce != 'undefined') {
-
-                tinymce.triggerSave();
-
+    // Load content into the modal via AJAX
+    $.get(urlWithLanguage).done(function (data) {
+        try {
+            // Check if data is valid
+            if (!data) {
+                throw new Error('محتوای مودال خالی است');
             }
-            var form = $(this).closest('form');
-            var formData = new FormData(form[0]);
-            $('input[type="checkbox"]').each(function () {
-                var checkbox = $(this);
-                var isChecked = checkbox.prop('checked');
-                var checkboxName = checkbox.attr('id');
-                // اضافه کردن وضعیت چک باکس به داده‌های ارسالی
-                formData.append(checkboxName, isChecked);
-            });
 
-            var targetUr = $target.data('url');
-            var href = $(this).attr('href');
-            var formaction = $(this).attr("formaction");
-
-            var formUrl = $(this).closest('form').attr("action");
-
-            var url = targetUr != undefined ? targetUr : href != undefined ? href : formaction != undefined ? formaction : formUrl;
-            $.ajax({
-                url: url,
-                type: "POST",
-                data: formData,
-                //contentType: false,
-                contentType: false,  // تعیین نوع محتوا به false برای استفاده از FormData
-                processData: false,
-                success: function (response) {
-                    if (response.status == "redirect") {
-                        $(location).prop('href', response.redirectUrl)
-                    }
-                    else if (response.status == "update-view") {
-                        if (response.viewList && response.viewList.length) {
-
-                            $.each(response.viewList, function (index, item) {
-                                // Code to be executed for each element
-                                $("#" + item.elementId).html(item.view.result);
-                            });
-                        }
-                        // اصلاح برای Bootstrap 5
-                        var modalElement = document.querySelector('.modal.show');
-                        if (modalElement) {
-                            var bootstrapModal = bootstrap.Modal.getInstance(modalElement);
-                            if (bootstrapModal) {
-                                bootstrapModal.hide();
-                            }
-                        }
-
-                    }
-
-                    else if (response.status == "temp-save") {
-                        if (response.viewList && response.viewList.length) {
-
-                            $.each(response.viewList, function (index, item) {
-                                // Code to be executed for each element
-                                $("#" + item.elementId).html(item.view.result);
-                                SendResposeMessageInView(response);
-
-                            });
-                        }
-                    }
-                    else if (response.status == "download") {
-                        // ایجاد لینک مخفی برای دانلود
-                        var link = document.createElement('a');
-                        link.href = response.downloadUrl;
-                        link.download = ''; // نام فایل توسط سرور تعیین می‌شود
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    }
-                    if (response.message != undefined) {
-                        SendResposeMessage(response.message);
-                    }
-                },
-                error: function (xhr) {
-                    // حذف اشاره به $button که تعریف نشده بود
-                    console.error('AJAX Error:', xhr);
-
-                    // Error: Display the error message in the modal
-                    var errors = xhr.responseJSON; // The ModelState object returned as JSON
-                    for (var key in errors) {
-                        Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: errors[key] });
-                    }
-
+            // Handle different response types
+            let modalContent = '';
+            if (typeof data === 'object' && data.status === 'error') {
+                // Server returned JSON error
+                throw new Error(data.message || 'خطا در بارگذاری محتوا');
+            } else if (typeof data === 'string') {
+                modalContent = data;
+            } else if (typeof data === 'object') {
+                // Check if it's JSON response with error
+                if (data.status && data.status === 'error') {
+                    throw new Error(data.message || 'خطا در سرور');
                 }
+                modalContent = JSON.stringify(data);
+            } else {
+                modalContent = String(data);
+            }
+
+            // Validate content is not empty
+            if (!modalContent || modalContent.trim() === '' || modalContent === '{}') {
+                throw new Error('محتوای مودال خالی یا نامعتبر است');
+            }
+
+            $modal.html(modalContent);
+            $modal.find('.js-select2').attr('data-container', '#' + uniqueModalId);
+
+            // Process URLs in loaded modal content
+            ModalUtils.processUrlsInContainer($modal);
+
+            // راه‌اندازی Dynamic Select2 در modal
+            DynamicSelect2Manager.reinitializeSelect2InDiv($modal);
+
+            // Show modal with error handling
+            try {
+                $modal.modal('show');
+            } catch (modalError) {
+                throw new Error('خطا در نمایش مودال: ' + modalError.message);
+            }
+
+        } catch (processError) {
+            console.error("Error processing modal content:", processError);
+
+            // Remove the modal element
+            $modal.remove();
+
+            // Show user-friendly error
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'خطا در بارگذاری محتوا',
+                    text: processError.message || 'خطای نامشخص در بارگذاری محتوای مودال',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+            } else {
+                alert('خطا در بارگذاری محتوا: ' + (processError.message || 'خطای نامشخص'));
+            }
+        }
+
+    }).fail(function (jqXHR, textStatus, errorThrown) {
+        console.error("Failed to load modal content:", {
+            status: jqXHR.status,
+            statusText: jqXHR.statusText,
+            textStatus: textStatus,
+            errorThrown: errorThrown,
+            responseText: jqXHR.responseText
+        });
+
+        // Remove the modal element
+        $modal.remove();
+
+        // Determine error message
+        let errorMessage = 'خطا در بارگذاری محتوای مودال';
+
+        if (jqXHR.status === 404) {
+            errorMessage = 'صفحه مورد نظر یافت نشد (404)';
+        } else if (jqXHR.status === 500) {
+            errorMessage = 'خطای داخلی سرور (500)';
+        } else if (jqXHR.status === 403) {
+            errorMessage = 'دسترسی مجاز نیست (403)';
+        } else if (jqXHR.status === 401) {
+            errorMessage = 'نیاز به احراز هویت (401)';
+        } else if (jqXHR.status === 0) {
+            errorMessage = 'خطا در ارتباط با سرور (شبکه قطع است)';
+        } else if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+            errorMessage = jqXHR.responseJSON.message;
+        } else if (jqXHR.responseText) {
+            // Try to extract meaningful error from HTML response
+            const htmlError = $(jqXHR.responseText).find('title').text() ||
+                $(jqXHR.responseText).find('h1').first().text() ||
+                jqXHR.statusText;
+            if (htmlError && htmlError.trim() !== '') {
+                errorMessage = htmlError;
+            }
+        }
+
+        // Show user-friendly error
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'خطا در بارگذاری',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'باشه',
+                footer: `کد خطا: ${jqXHR.status || 'نامشخص'}`
             });
+        } else {
+            alert(`خطا در بارگذاری: ${errorMessage}\nکد خطا: ${jqXHR.status || 'نامشخص'}`);
+        }
+
+        // Call the global error handler if it exists
+        if (typeof handleAjaxError === 'function') {
+            handleAjaxError(jqXHR);
         }
     });
 
-});
+    // Handle modal hidden event to remove it from the DOM
+    $modal.on('hidden.bs.modal', function () {
+        $(this).remove();
+    });
 
+    // Handle modal show errors
+    $modal.on('show.bs.modal', function (e) {
+        console.log('Modal about to show:', uniqueModalId);
+    });
 
+    $modal.on('shown.bs.modal', function (e) {
+        console.log('Modal successfully shown:', uniqueModalId);
+    });
 
+    // Handle modal show failure
+    $modal.on('show.bs.modal', function (e) {
+        if (!$(this).find('.modal-dialog').length) {
+            console.error('Modal content is not properly structured');
+            e.preventDefault();
+            $(this).remove();
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'خطا در ساختار مودال',
+                    text: 'محتوای مودال به درستی بارگذاری نشده است',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+            }
+        }
+    });
+}
+/**
+ * Helper function to trigger a modal
+ * @param {HTMLElement} input - Element with href attribute
+ */
+function ModalTrigger(input) {
+    event.preventDefault();
+    const url = $(input).attr('href');
+    createAndShowModal(url);
+}
+
+/**
+ * Format prices with commas
+ */
+function convertprices() {
+    const prices = document.getElementsByClassName("cprices");
+
+    for (let i = 0; i < prices.length; i++) {
+        prices[i].textContent = prices[i].textContent.replace(/,/g, '');
+        const price = parseInt(prices[i].textContent).toLocaleString('en');
+        prices[i].textContent = price;
+    }
+}
+
+/**
+ * Display response messages in views
+ * @param {Object} response - Response object with viewList containing messages
+ */
 function SendResposeMessageInView(response) {
-
     $.each(response.viewList, function (index, viewdata) {
         $.each(viewdata.messages, function (index, messagerow) {
-
-            var icons = {
+            const icons = {
                 "success": 'fa fa-check',
                 "warning": 'fa fa-exclamation-triangle',
                 "info": 'fa fa-info',
                 "error": 'fa fa-times'
-            }; var notificationTypes = {
+            };
+
+            const notificationTypes = {
                 "success": 'success',
                 "warning": 'warning',
                 "info": 'info',
                 "error": 'error'
             };
+
             // Determine notification type based on status or default to 'info'
-            var notificationType = notificationTypes[messagerow.status] || 'info';
+            const notificationType = notificationTypes[messagerow.status] || 'info';
 
             // Determine icon based on status
-            var icon = icons[messagerow.status] || 'fa fa-info';
+            const icon = icons[messagerow.status] || 'fa fa-info';
 
             Dashmix.helpers('jq-notify', {
                 type: notificationType,
@@ -721,28 +713,35 @@ function SendResposeMessageInView(response) {
             });
         });
     });
-
 }
 
+/**
+ * Display response messages
+ * @param {Object} messages - Array of message objects
+ */
 function SendResposeMessage(messages) {
-    $.each(messages, function (index, messagerow) {
+    if (!messages) return;
 
-        var icons = {
+    $.each(messages, function (index, messagerow) {
+        const icons = {
             "success": 'fa fa-check',
             "warning": 'fa fa-exclamation-triangle',
             "info": 'fa fa-info',
             "error": 'fa fa-times'
-        }; var notificationTypes = {
+        };
+
+        const notificationTypes = {
             "success": 'success',
             "warning": 'warning',
             "info": 'info',
             "error": 'error'
         };
+
         // Determine notification type based on status or default to 'info'
-        var notificationType = notificationTypes[messagerow.status] || 'info';
+        const notificationType = notificationTypes[messagerow.status] || 'info';
 
         // Determine icon based on status
-        var icon = icons[messagerow.status] || 'fa fa-info';
+        const icon = icons[messagerow.status] || 'fa fa-info';
 
         Dashmix.helpers('jq-notify', {
             type: notificationType,
@@ -750,74 +749,30 @@ function SendResposeMessage(messages) {
             message: messagerow.text
         });
     });
-
 }
 
-
-function jstreeChanged(url, data) {
-    var dataform = new FormData(); // Use FormData directly
-    dataform.append("jstreeData", data);
-
-    $.ajax({
-        type: "post",
-        url: url,
-        data: dataform,
-        contentType: false,
-        processData: false
-
-    }).done(function (response) {
-
-        $.each(response.viewList, function (index, item) {
-            // Code to be executed for each element
-            $("#" + item.elementId).html(item.view.result);
-
-
-        });
-
-
-    }).fail(function (response) {
-
-    });
-
-}
-
-
-var convertprices = function () {
-    var prices = document.getElementsByClassName("cprices");
-
-    for (var i = 0; i < prices.length; i++) {
-
-        prices[i].textContent = prices[i].textContent.replace(/,/g, '');
-        var price = parseInt(prices[i].textContent).toLocaleString('en');
-        prices[i].textContent = price;
-    }
-}
-
-
-$(document).on('focus', '.select2-selection.select2-selection--single', function (e) {
-    $(this).closest(".select2-container").siblings('select:enabled').select2('open');
-});
-
-
-$(document).on('select2:open', () => {
-    document.querySelector('.select2-container--open .select2-search__field').focus();
-});
-
-
-
+/**
+ * Copy text to clipboard
+ * @param {HTMLElement} Data - Element with url data attribute
+ * @returns {Promise} - Promise for clipboard operation
+ */
 function copyToClipboard(Data) {
-
     event.preventDefault();
-    var $target = $(Data);
-    var textToCopy = $target.data('url');
-
+    const $target = $(Data);
+    const textToCopy = $target.data('url');
 
     // navigator clipboard api needs a secure context (https)
     if (navigator.clipboard && window.isSecureContext) {
-        // navigator clipboard api method'
-        return navigator.clipboard.writeText(textToCopy);
+        // navigator clipboard api method
+        return navigator.clipboard.writeText(textToCopy).then(() => {
+            Dashmix.helpers('jq-notify', {
+                type: 'success',
+                icon: 'fa fa-check me-1',
+                message: 'متن کپی شد'
+            });
+        });
     } else {
-        // text area method
+        // text area method for older browsers
         let textArea = document.createElement("textarea");
         textArea.value = textToCopy;
         // make the textarea out of viewport
@@ -829,53 +784,492 @@ function copyToClipboard(Data) {
         textArea.select();
         return new Promise((res, rej) => {
             // here the magic happens
-            document.execCommand('copy') ? res() : rej();
+            const successful = document.execCommand('copy');
             textArea.remove();
+
+            if (successful) {
+                Dashmix.helpers('jq-notify', {
+                    type: 'success',
+                    icon: 'fa fa-check me-1',
+                    message: 'متن کپی شد'
+                });
+                res();
+            } else {
+                rej();
+            }
         });
     }
 }
-// فرمت کردن اعداد در فیلدهای ورودی با کلاس number-format
-$(document).on('input', '.number-format', function () {
-    let value = $(this).val().replace(/,/g, '').replace(/\.\d+/, ''); // حذف کاماها و اعشار
-    if (value) {
-        value = parseInt(value, 10).toLocaleString('en-US'); // اضافه کردن کاماها
-        $(this).val(value);
+
+/**
+ * Handle AJAX errors
+ * @param {Object} xhr - XHR object
+ */
+function handleAjaxError(xhr) {
+    if (xhr.responseJSON) {
+        const errors = xhr.responseJSON;
+        for (let key in errors) {
+            Dashmix.helpers('jq-notify', {
+                type: 'danger',
+                icon: 'fa fa-times me-1',
+                message: errors[key]
+            });
+        }
+    } else if (xhr.statusText) {
+        Dashmix.helpers('jq-notify', {
+            type: 'danger',
+            icon: 'fa fa-times me-1',
+            message: 'Error: ' + xhr.statusText
+        });
+    }
+}
+
+// Event Handlers
+
+// Legacy modal handler
+$(document).on('click', '[data-toggle="modal-old"]', function (event) {
+    event.preventDefault();
+
+    const $trigger = $(this);
+    const targetModalId = $trigger.data('bs-target');
+
+    const modalHtml = `<div aria-labelledby="modal-action" class="modal fade" data-bs-focus="false" role="dialog" id="modal-action" tabindex="-1" aria-hidden="true"></div>`;
+    $('body').append(modalHtml);
+
+    const $modal = $(targetModalId);
+    let url = $trigger.attr("formaction");
+
+    // Add language code to URL
+    url = ModalUtils.addLanguageToUrl(url, ModalUtils.getLanguageCode());
+
+    $.get(url).done(function (data) {
+        $modal.html(data);
+        // Process URLs in loaded modal content
+        ModalUtils.processUrlsInContainer($modal);
+        
+        // راه‌اندازی Dynamic Select2 در modal
+        DynamicSelect2Manager.reinitializeSelect2InDiv($modal);
+        
+        $modal.modal("show");
+    }).fail(function (jqXHR) {
+        handleAjaxError(jqXHR);
+    });
+});
+
+// Modal without auto-remove handler
+$(document).on('click', '[data-toggle="show-modal"]', function (event) {
+    event.preventDefault();
+
+    const $trigger = $(this);
+    const url = $trigger.attr("href") || $trigger.attr("formaction");
+
+    createAndShowModalWithoutRemove(url);
+});
+
+// AJAX modal handler
+$(document).on('click', '[data-toggle="modal-ajax"]', function (event) {
+    event.preventDefault();
+
+    const $trigger = $(this);
+    const url = $trigger.attr("href") || $trigger.attr("formaction");
+
+    createAndShowModal(url);
+});
+
+// Clean up modals on hide
+$(document).on('hidden.bs.modal', '.modal', function () {
+    $(this).remove();
+});
+
+// Handle AJAX form submission inside modals
+$(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
+    event.preventDefault();
+
+    const $button = $(this);
+    $button.prop('disabled', true);
+    const $modal = $button.closest('.modal');
+
+    if (typeof tinymce !== 'undefined') {
+        tinymce.triggerSave();
+    }
+
+    const $form = $modal.find('form');
+    const formData = new FormData($form[0]);
+
+    // Add checkbox values to form data
+    $('input[type="checkbox"]').each(function () {
+        const $checkbox = $(this);
+        formData.append($checkbox.attr('id'), $checkbox.prop('checked'));
+    });
+
+    $.ajax({
+        url: $form.attr("action"),
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (response) {
+            if (response.status === "redirect") {
+                $(location).prop('href', response.redirectUrl);
+            } else if (response.status === "update-view") {
+                $.each(response.viewList, function (index, item) {
+                    const $container = $("#" + item.elementId);
+                    $container.html(item.view.result);
+                    // Process URLs in updated content
+                    ModalUtils.processUrlsInContainer($container);
+                    
+                    // راه‌اندازی مجدد Dynamic Select2
+                    DynamicSelect2Manager.reinitializeSelect2InDiv($container);
+                });
+                $modal.find('[data-bs-dismiss="modal"]').click();
+            } else if (response.status === "temp-save") {
+                $.each(response.viewList, function (index, item) {
+                    const $container = $("#" + item.elementId);
+                    $container.html(item.view.result);
+                    // Process URLs in updated content
+                    ModalUtils.processUrlsInContainer($container);
+                    
+                    // راه‌اندازی مجدد Dynamic Select2
+                    DynamicSelect2Manager.reinitializeSelect2InDiv($container);
+                });
+                SendResposeMessageInView(response);
+            }
+
+            if (response.message) {
+                SendResposeMessage(response.message);
+            }
+        },
+        error: function (xhr) {
+            $button.prop('disabled', false);
+            handleAjaxError(xhr);
+        }
+    });
+});
+
+// Submit a form inside a modal
+$(document).on('click', '[data-save="modal"]', function (event) {
+    const $button = $(this);
+    $button.prop('disabled', true);
+
+    const $form = $button.closest('.modal').find('form');
+    $form.submit();
+});
+
+// Modal form submission without page reload
+$("#modal-action").on('click', '[data-save="modal-noreload"]', function (event) {
+    const $button = $(this);
+    $button.prop('disabled', true);
+
+    const $form = $button.closest('.modal').find('form');
+    const url = $button.data('url');
+    const dataform = new FormData($form[0]);
+
+    // Add language code to form data
+    dataform.append('languageCode', ModalUtils.getLanguageCode());
+
+    const $partialElement = $("#partialid");
+
+    $.ajax({
+        type: "post",
+        url: url,
+        data: dataform,
+        contentType: false,
+        processData: false
+    }).done(function (data) {
+        $partialElement.empty().html(data);
+
+        // Process URLs in updated content
+        ModalUtils.processUrlsInContainer($partialElement);
+        
+        // راه‌اندازی مجدد Dynamic Select2
+        DynamicSelect2Manager.reinitializeSelect2InDiv($partialElement);
+
+        convertprices();
+        $button.closest('.modal').find('button[data-bs-dismiss="modal"]').click();
+    }).fail(function (xhr) {
+        $button.prop('disabled', false);
+        handleAjaxError(xhr);
+    });
+});
+
+// Load partial view via AJAX
+$(document).on('click', '[data-toggle="partialview"]', function (event) {
+    event.preventDefault();
+
+    const $target = $(this);
+    const viewId = $target.data('target');
+
+    const url = ModalUtils.getUrlFromElement($target);
+
+    // Add language code to URL
+    const urlWithLanguage = ModalUtils.addLanguageToUrl(url, ModalUtils.getLanguageCode());
+
+    $.get(urlWithLanguage).done(function (data) {
+        const $container = $(viewId);
+        $container.html(data);
+
+        // Process URLs in updated content
+        ModalUtils.processUrlsInContainer($container);
+        
+        // راه‌اندازی مجدد Dynamic Select2
+        DynamicSelect2Manager.reinitializeSelect2InDiv($container);
+
+        convertprices();
+    }).fail(function (xhr) {
+        handleAjaxError(xhr);
+    });
+});
+
+// Submit form to multiple targets
+$(document).on('click', '[data-toggle="submitformmultiple"]', function (event) {
+    event.preventDefault();
+
+    const $target = $(this);
+    const viewClass = $target.data('targetc');
+    const $form = $target.closest('form');
+
+    $("." + viewClass).addClass("block-mode-loading");
+
+    const dataform = new FormData($form[0]);
+
+    // Add language code to form data
+    dataform.append('languageCode', ModalUtils.getLanguageCode());
+
+    if (typeof tinymce !== 'undefined') {
+        tinymce.triggerSave();
+    }
+
+    // Add checkbox states to form data
+    $('input[type="checkbox"]').each(function () {
+        const $checkbox = $(this);
+        dataform.append($checkbox.attr('id'), $checkbox.prop('checked'));
+    });
+
+    // Add select values to form data
+    $form.find('select').each(function () {
+        dataform.append($(this).attr('name'), $(this).val());
+    });
+
+    const url = ModalUtils.getUrlFromElement($target);
+
+    $.ajax({
+        type: "post",
+        url: url,
+        data: dataform,
+        contentType: false,
+        processData: false
+    }).done(function (response) {
+        $.each(response.viewList, function (index, item) {
+            const $container = $("#" + item.elementId);
+            $container.html(item.view.result);
+
+            // Process URLs in updated content
+            ModalUtils.processUrlsInContainer($container);
+            
+            // راه‌اندازی مجدد Dynamic Select2
+            DynamicSelect2Manager.reinitializeSelect2InDiv($container);
+        });
+
+        convertprices();
+        $("." + viewClass).removeClass("block-mode-loading");
+        SendResposeMessage(response);
+    }).fail(function (xhr) {
+        $("." + viewClass).removeClass("block-mode-loading");
+        handleAjaxError(xhr);
+    });
+});
+
+// Live text input with partial view update
+$(document).on('keyup', 'input[type="text"][data-toggle="partialview"]', function (event) {
+    const $target = $(this);
+    const viewId = $target.data('target');
+
+    Dashmix.block('state_loading', viewId);
+
+    const formData = new FormData();
+
+    // Add language code to form data
+    formData.append('languageCode', ModalUtils.getLanguageCode());
+
+    // Get related select elements
+    const selects = $target.data('sclass');
+    if (typeof selects !== 'undefined') {
+        document.querySelectorAll('.' + selects).forEach(select => {
+            formData.append(select.name, select.value);
+        });
+    }
+
+    // Add the input's own value
+    formData.append($target.attr('name'), $target.val());
+
+    const url = $target.data('href') || $target.attr("formaction") || $target.closest('form').attr("action");
+
+    $.ajax({
+        url: url,
+        type: 'post',
+        data: formData,
+        processData: false,
+        contentType: false
+    }).done(function (response) {
+        const $container = $(viewId);
+        $container.html(response);
+
+        // Process URLs in updated content
+        ModalUtils.processUrlsInContainer($container);
+        
+        // راه‌اندازی مجدد Dynamic Select2
+        DynamicSelect2Manager.reinitializeSelect2InDiv($container);
+
+        Dashmix.block('state_normal', viewId);
+    }).fail(function (xhr) {
+        Dashmix.block('state_normal', viewId);
+        handleAjaxError(xhr);
+    });
+});
+
+// Radio button change with partial view update
+$(document).on('click', 'input[type="radio"][data-toggle="partialview"]', function (event) {
+    const $target = $(this);
+    const viewId = $target.data('target');
+    const value = $target.val();
+
+    // Create query data with language code
+    const data = {
+        value: value,
+        languageCode: ModalUtils.getLanguageCode()
+    };
+
+    const url = $target.data('href') || $target.attr("formaction") || $target.closest('form').attr("action");
+
+    $.get(url, data).done(function (data) {
+        const $container = $(viewId);
+        $container.html(data);
+
+        // Process URLs in updated content
+        ModalUtils.processUrlsInContainer($container);
+        
+        // راه‌اندازی مجدد Dynamic Select2
+        DynamicSelect2Manager.reinitializeSelect2InDiv($container);
+    }).fail(function (xhr) {
+        handleAjaxError(xhr);
+    });
+});
+
+// Submit form to update a specific target
+$(document).on('click', '[data-toggle="submitform"]', function (event) {
+    event.preventDefault();
+
+    const $target = $(this);
+    const viewId = $target.data('target');
+    const $form = $target.closest('form');
+
+    Dashmix.block('state_loading', viewId);
+
+    if (typeof tinymce !== 'undefined') {
+        tinymce.triggerSave();
+    }
+
+    const dataform = new FormData($form[0]);
+
+    // Add language code to form data
+    dataform.append('languageCode', ModalUtils.getLanguageCode());
+
+    // Add checkbox states to form data
+    $('input[type="checkbox"]').each(function () {
+        const $checkbox = $(this);
+        dataform.append($checkbox.attr('id'), $checkbox.prop('checked'));
+    });
+
+    const url = ModalUtils.getUrlFromElement($target);
+
+    $.ajax({
+        type: "post",
+        url: url,
+        data: dataform,
+        contentType: false,
+        processData: false
+    }).done(function (data) {
+        const $container = $(viewId);
+        $container.html(data);
+
+        // Process URLs in updated content
+        ModalUtils.processUrlsInContainer($container);
+        
+        // راه‌اندازی مجدد Dynamic Select2
+        DynamicSelect2Manager.reinitializeSelect2InDiv($container);
+
+        convertprices();
+        Dashmix.block('state_normal', viewId);
+    }).fail(function (xhr) {
+        Dashmix.block('state_normal', viewId);
+        handleAjaxError(xhr);
+    });
+});
+
+// SweetAlert confirmation
+$(document).on('click', '[data-toggle="swal-asp"]', function (event) {
+    event.preventDefault();
+
+    const $target = $(this);
+    const viewId = $target.data('target');
+    const title = $target.data('title');
+    const description = $target.data('desc');
+    let href = $target.attr('href');
+
+    Dashmix.block('state_loading', viewId);
+
+    // Add language code to href
+    href = ModalUtils.addLanguageToUrl(href, ModalUtils.getLanguageCode());
+
+    const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+            confirmButton: "btn btn-success",
+            cancelButton: "btn btn-danger"
+        },
+        buttonsStyling: false
+    });
+
+    swalWithBootstrapButtons.fire({
+        title: title,
+        text: description,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "تایید",
+        cancelButtonText: "لغو",
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $(location).prop('href', href);
+        } else {
+            Dashmix.block('state_normal', viewId);
+        }
+    });
+});
+
+// از کد قدیمی برای سازگاری با کدهای موجود باقی می‌ماند
+// Multiple partial view update handler - قابلیت بروزرسانی چندین partial view با یک تغییر
+$(document).on('change', 'select[data-toggle="multiplepartialview"]', function (event) {
+    // این event handler اکنون توسط DynamicSelect2Manager مدیریت می‌شود
+    // اما برای سازگاری با کدهای موجود باقی می‌ماند
+    console.log('Legacy multiplepartialview handler called - redirecting to DynamicSelect2Manager');
+});
+
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", function () {
+    // Process all URLs in the document on load
+    ModalUtils.processUrlsInContainer(document);
+    
+    // راه‌اندازی Dynamic Select2 Manager
+    DynamicSelect2Manager.init();
+});
+
+// jQuery ready handler برای سازگاری
+$(document).ready(function() {
+    // راه‌اندازی مجدد Dynamic Select2 Manager در صورت نیاز
+    if (!DynamicSelect2Manager.isInitialized) {
+        DynamicSelect2Manager.init();
     }
 });
 
-// حذف کاماها قبل از ارسال فرم
-$(document).on('submit', 'form', function () {
-    $('.number-format').each(function () {
-        let value = $(this).val().replace(/,/g, ''); // حذف کاماها
-        $(this).val(value);
-    });
-    return true; // ادامه ارسال فرم
-});
-
-// اعمال فرمت اولیه بعد از لود صفحه
-$(document).ready(function () {
-    $('.number-format').each(function () {
-        let value = $(this).val();
-        if (value) {
-            value = value.toString().replace(/,/g, '').replace(/\.\d+/, '');
-            if (value !== '') {
-                value = parseInt(value, 10).toLocaleString('en-US');
-                $(this).val(value);
-            }
-        }
-    });
-});
-
-// اعمال فرمت پس از نمایش مودال (برای عناصر داینامیک)
-$(document).on('shown.bs.modal', function () {
-    $('.number-format').each(function () {
-        let value = $(this).val();
-        if (value) {
-            value = value.toString().replace(/,/g, '').replace(/\.\d+/, '');
-            if (value !== '') {
-                value = parseInt(value, 10).toLocaleString('en-US');
-                $(this).val(value);
-            }
-        }
-    });
-});
+// Expose DynamicSelect2Manager globally for external access
+window.DynamicSelect2Manager = DynamicSelect2Manager;

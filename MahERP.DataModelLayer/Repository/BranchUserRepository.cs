@@ -1,4 +1,4 @@
-using MahERP.DataModelLayer.AcControl;
+﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
@@ -18,24 +18,7 @@ namespace MahERP.DataModelLayer.Repository
             _context = context;
         }
 
-        /// <summary>
-        /// ?????? ???? ??????? ???? ?? ???? ????? ????
-        /// </summary>
-        public List<BranchUser> GetBranchUsersByBranchId(int branchId, bool includeInactive = false)
-        {
-            var query = _context.BranchUser_Tbl
-                .Include(bu => bu.User)
-                .Include(bu => bu.Branch)
-                .Include(bu => bu.AssignedByUser)
-                .Where(bu => bu.BranchId == branchId);
-
-            if (!includeInactive)
-                query = query.Where(bu => bu.IsActive && bu.User.IsActive && !bu.User.IsRemoveUser);
-
-            return query.OrderBy(bu => bu.User.LastName)
-                       .ThenBy(bu => bu.User.FirstName)
-                       .ToList();
-        }
+       
 
         /// <summary>
         /// ?????? ????? ???? ?? ???? ?????
@@ -250,6 +233,37 @@ namespace MahERP.DataModelLayer.Repository
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// دریافت لیست کاربران شعبه به صورت ViewModel
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="includeInactive">شامل کاربران غیرفعال</param>
+        /// <returns>لیست کاربران شعبه به صورت ViewModel</returns>
+        public List<BranchUserViewModel> GetBranchUsersByBranchId(int branchId, bool includeInactive = false)
+        {
+            var query = from bu in _context.BranchUser_Tbl
+                        join b in _context.Branch_Tbl on bu.BranchId equals b.Id
+                        join u in _context.Users on bu.UserId equals u.Id
+                        where bu.BranchId == branchId
+                        select new { BranchUser = bu, Branch = b, User = u };
+
+            if (!includeInactive)
+                query = query.Where(x => x.BranchUser.IsActive && x.Branch.IsActive && x.User.IsActive && !x.User.IsRemoveUser);
+
+            return query.Select(x => new BranchUserViewModel
+            {
+                Id = x.BranchUser.Id,
+                BranchId = x.BranchUser.BranchId,
+                UserId = x.BranchUser.UserId,
+                Role = x.BranchUser.Role,
+                IsActive = x.BranchUser.IsActive,
+                AssignDate = x.BranchUser.AssignDate,
+                AssignedByUserId = x.BranchUser.AssignedByUserId,
+                BranchName = x.Branch.Name,
+                UserFullName = x.User.FirstName + " " + x.User.LastName
+            }).OrderBy(x => x.UserFullName).ToList();
         }
     }
 }

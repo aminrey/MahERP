@@ -976,5 +976,94 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             var branchUser = _uow.BranchUserUW.Get(bu => bu.UserId == userId && bu.IsActive).FirstOrDefault();
             return branchUser?.BranchId ?? 1; // پیش‌فرض شعبه اصلی
         }
+
+        /// <summary>
+        /// بروزرسانی لیست کاربران بر اساس شعبه انتخاب شده
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>PartialView حاوی لیست کاربران شعبه</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult BranchTriggerSelect(int branchId)
+        {
+            try
+            {
+                var response = new
+                {
+                    status = "update-view",
+                    viewList = new List<object>()
+                };
+
+                // دریافت کاربران شعبه انتخاب شده
+                var branchUsers = _uow.BranchUserUW.Get(bu => bu.BranchId == branchId && bu.IsActive)
+                    .Select(bu => bu.User)
+                    .Where(u => u.IsActive && !u.IsRemoveUser)
+                    .Select(u => new
+                    {
+                        Id = u.Id,
+                        FullNamesString = $"{u.FirstName} {u.LastName}"
+                    })
+                    .ToList();
+
+                // آماده‌سازی HTML برای select
+                var usersSelectHtml = "";
+                if (branchUsers.Any())
+                {
+                    var selectOptions = string.Join("", branchUsers.Select(user => 
+                        $"<option value=\"{user.Id}\">{user.FullNamesString}</option>"));
+                    
+                    usersSelectHtml = $@"
+                        <select class=""js-select2 form-select"" 
+                                id=""UserId"" 
+                                data-placeholder=""کاربران را انتخاب کنید"" 
+                                multiple=""multiple"" 
+                                name=""AppointmentUsers"" 
+                                style=""width: 100%;"">
+                            {selectOptions}
+                        </select>";
+                }
+                else
+                {
+                    usersSelectHtml = @"
+                        <select class=""js-select2 form-select"" 
+                                id=""UserId"" 
+                                data-placeholder=""کاربری در این شعبه یافت نشد"" 
+                                multiple=""multiple"" 
+                                name=""AppointmentUsers"" 
+                                style=""width: 100%;"">
+                        </select>";
+                }
+
+                // اضافه کردن به response
+                var viewList = new List<object>
+                {
+                    new
+                    {
+                        elementId = "UsersDiv",
+                        view = new
+                        {
+                            result = usersSelectHtml
+                        }
+                    }
+                };
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = viewList
+                });
+            }
+            catch (Exception ex)
+            {
+                // لاگ کردن خطا
+                Console.WriteLine($"Error in BranchTriggerSelect: {ex.Message}");
+                
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا در بارگذاری کاربران شعبه: " + ex.Message
+                });
+            }
+        }
     }
 }

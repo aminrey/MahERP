@@ -88,8 +88,15 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="AssignmentsSelectedTaskUserArraysString">کاربر های منتصب</label>
-                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.UsersInitial, "Id", "FullNamesString"))" id="AssignmentsSelectedTaskUserArraysString" data-placeholder="بسیاری را انتخاب کنید" multiple="multiple" name="AssignmentsSelectedTaskUserArraysString" style="width: 100%;">
-                                    </select>
+                                    <div id="UsersDiv">
+                                        <select class="js-select2 form-select" asp-items="@(new SelectList(Model.UsersInitial, "Id", "FullNamesString"))" 
+                                                id="AssignmentsSelectedTaskUserArraysString" 
+                                                data-placeholder="بسیاری را انتخاب کنید" 
+                                                multiple="multiple" 
+                                                name="AssignmentsSelectedTaskUserArraysString" 
+                                                style="width: 100%;">
+                                        </select>
+                                    </div>
                                     <span asp-validation-for="UsersInitial" class="text-danger"></span>
                                 </div>
                             </div>
@@ -99,7 +106,15 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="BranchIdSelected">انتخاب شعبه‌</label>
-                                    <select class="js-select2 form-select" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" id="BranchIdSelected" data-placeholder="شعبه را انتخاب کنید" name="BranchIdSelected" style="width: 100%;">
+                                    <select class="js-select2 form-select branch" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" 
+                                            id="BranchIdSelected" 
+                                            data-placeholder="شعبه را انتخاب کنید" 
+                                            name="BranchIdSelected" 
+                                            data-url="@Url.Action("BranchTriggerSelect","Tasks")" 
+                                            data-toggle="multiplepartialview"
+                                            data-target-divs="UsersDiv"
+                                            data-param-name="branchId"
+                                            style="width: 100%;">
                                         <option value="">انتخاب کنید</option>
                                     </select>
                                     <span asp-validation-for="branchListInitial" class="text-danger"></span>
@@ -170,6 +185,18 @@
                     targetDateFormat: 'yyyy-MM-dd HH:mm:ss',
                 });
             });
+
+            // کانفیگ سفارشی برای CreateNewTask
+            if (typeof DynamicSelect2Manager !== 'undefined') {
+                // اضافه کردن کانفیگ سفارشی برای AssignmentsSelectedTaskUserArraysString
+                DynamicSelect2Manager.addSelectConfig('UsersDiv', {
+                    id: 'AssignmentsSelectedTaskUserArraysString',
+                    name: 'AssignmentsSelectedTaskUserArraysString',
+                    multiple: true
+                });
+                
+                console.log('CreateNewTask specific configs added to DynamicSelect2Manager');
+            }
         });
     </script>
 }

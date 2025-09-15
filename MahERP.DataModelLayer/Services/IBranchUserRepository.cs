@@ -1,4 +1,4 @@
-using MahERP.DataModelLayer.Entities.AcControl;
+﻿using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using System.Collections.Generic;
 
@@ -6,13 +6,7 @@ namespace MahERP.DataModelLayer.Services
 {
     public interface IBranchUserRepository
     {
-        /// <summary>
-        /// ?????? ???? ??????? ???? ?? ???? ????? ????
-        /// </summary>
-        /// <param name="branchId">????? ????</param>
-        /// <param name="includeInactive">???? ??????? ???????</param>
-        /// <returns>???? ??????? ????</returns>
-        List<BranchUser> GetBranchUsersByBranchId(int branchId, bool includeInactive = false);
+       
 
         /// <summary>
         /// ?????? ????? ???? ?? ???? ?????
@@ -107,5 +101,14 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="isActive">????? ????</param>
         /// <returns>true ?? ???? ??????</returns>
         bool ToggleBranchUserStatus(int id, bool isActive);
+
+        /// <summary>
+        /// دریافت لیست کاربران شعبه به صورت ViewModel
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="includeInactive">شامل کاربران غیرفعال</param>
+        /// <returns>لیست کاربران شعبه به صورت ViewModel</returns>
+        public List<BranchUserViewModel> GetBranchUsersByBranchId(int branchId, bool includeInactive = false);
+
     }
 }
