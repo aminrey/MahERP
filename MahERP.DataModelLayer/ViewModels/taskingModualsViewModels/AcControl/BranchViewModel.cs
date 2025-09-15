@@ -63,7 +63,9 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         [Required(ErrorMessage = "شناسه شعبه الزامی است")]
         public int BranchId { get; set; }
 
-        [Required(ErrorMessage = "شناسه کاربر الزامی است")]
+        /// <summary>
+        /// شناسه کاربر تکی - فقط برای ویرایش استفاده می‌شود
+        /// </summary>
         [Display(Name = "کاربر")]
         public string UserId { get; set; }
 
@@ -81,6 +83,19 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         // اطلاعات نمایشی
         public string BranchName { get; set; }
         public string UserFullName { get; set; }
+        
+        /// <summary>
+        /// لیست تمام کاربر ها برای انتخاب در فرم
+        /// </summary>
+        public List<UserViewModelFull>? UsersIntial { get; set; }
+        
+        /// <summary>
+        /// لیست شناسه‌های کاربران انتخاب شده برای اختصاص به شعبه
+        /// فقط برای افزودن چندین کاربر استفاده می‌شود
+        /// </summary>
+        [Display(Name = "کاربران انتخابی")]
+        public List<string> UsersSelected { get; set; }
+
         public string RoleText 
         { 
             get

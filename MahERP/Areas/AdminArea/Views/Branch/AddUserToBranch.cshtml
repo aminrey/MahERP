@@ -1,0 +1,150 @@
+﻿@model BranchUserViewModel
+@{
+    ViewData["Title"] = "افزودن کاربر به شعبه " + Model.BranchName;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">افزودن کاربران به شعبه @Model.BranchName</h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Branch")">شعب</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Details", "Branch", new { id = Model.BranchId })">جزئیات شعبه</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">افزودن کاربران</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <!-- Add Users Form -->
+    <form method="POST" action="@Url.Action("AddUserTobranch", "Branch")">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="BranchId" />
+        
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">اطلاعات کاربران شعبه</h3>
+                <div class="block-options">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fa fa-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-4">
+                            <label class="form-label" for="UsersSelected">انتخاب کاربران <span class="text-danger">*</span></label>
+                            @if (Model.UsersIntial != null && Model.UsersIntial.Any())
+                            {
+                                <select class="js-select2 form-select" asp-items="@(new SelectList(Model.UsersIntial, "Id", "FullNamesString"))" id="UsersSelected" data-placeholder="چندین کاربر را انتخاب کنید" multiple="multiple" name="UsersSelected" style="width: 100%;">
+                                </select>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                    هیچ کاربر قابل انتساب به این شعبه وجود ندارد. همه کاربران فعال قبلاً به این شعبه اختصاص داده شده‌اند.
+                                </div>
+                            }
+                            <span asp-validation-for="UsersSelected" class="text-danger"></span>
+                            <small class="form-text text-muted">فقط کاربرانی که به این شعبه اختصاص نداده شده‌اند نمایش داده می‌شوند</small>
+                        </div>
+
+                        @if (Model.UsersIntial != null && Model.UsersIntial.Any())
+                        {
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="Role">نقش کاربران <span class="text-danger">*</span></label>
+                                        <select asp-for="Role" class="js-select2 form-select" data-placeholder="انتخاب نقش">
+                                            <option value="0" selected="@(Model.Role == 0)">کارشناس</option>
+                                            <option value="1" selected="@(Model.Role == 1)">ناظر</option>
+                                            <option value="2" selected="@(Model.Role == 2)">مدیر</option>
+                                        </select>
+                                        <span asp-validation-for="Role" class="text-danger"></span>
+                                        <small class="form-text text-muted">این نقش برای تمام کاربران انتخابی اعمال می‌شود</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="AssignDate">تاریخ اختصاص</label>
+                                        <input asp-for="AssignDate" class="form-control js-flatpickr" placeholder="انتخاب تاریخ اختصاص" readonly>
+                                        <span asp-validation-for="AssignDate" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-check">
+                                    <input asp-for="IsActive" class="form-check-input" checked="@Model.IsActive">
+                                    <span class="form-check-label">وضعیت فعال</span>
+                                </label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="block-content block-content-full block-content-sm bg-body-light text-end">
+                <a href="@Url.Action("Details", "Branch", new { id = Model.BranchId })" class="btn btn-alt-secondary">
+                    <i class="fa fa-arrow-right me-1"></i> انصراف
+                </a>
+                @if (Model.UsersIntial != null && Model.UsersIntial.Any())
+                {
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-check me-1"></i> ذخیره
+                    </button>
+                }
+            </div>
+        </div>
+    </form>
+    <!-- END Add Users Form -->
+</div>
+<!-- END Page Content -->
+
+@section scripts {
+    @if (Model.UsersIntial != null && Model.UsersIntial.Any())
+    {
+        <script>Dashmix.helpersOnLoad(['js-flatpickr', 'jq-select2']);</script>
+
+        <script>
+            $(document).ready(function() {
+                // Initialize Select2 for multiple user selection - اطلاعات از ViewModel لود می‌شود
+                $('#UsersSelected').select2({
+                    placeholder: 'چندین کاربر را انتخاب کنید',
+                    allowClear: true,
+                    language: {
+                        noResults: function() {
+                            return "هیچ کاربری یافت نشد";
+                        },
+                        searching: function() {
+                            return "در حال جستجو...";
+                        }
+                    }
+                });
+
+                // Initialize flatpickr for Persian date picker
+                $('.js-flatpickr').each(function() {
+                    new mds.MdsPersianDateTimePicker(this, {
+                        targetTextSelector: this,
+                        enableTimePicker: false,
+                        textFormat: 'yyyy/MM/dd',
+                        targetDateFormat: 'yyyy-MM-dd',
+                    });
+                });
+            });
+        </script>
+    }
+}

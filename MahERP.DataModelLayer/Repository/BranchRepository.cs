@@ -344,5 +344,56 @@ namespace MahERP.DataModelLayer.Repository
 
             return result;
         }
+
+        /// <summary>
+        /// دریافت اطلاعات کامل برای فرم افزودن کاربر به شعبه
+        /// شامل اطلاعات شعبه و لیست کاربران قابل انتساب
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>ViewModel کامل برای فرم افزودن کاربر</returns>
+        public BranchUserViewModel GetAddUserToBranchViewModel(int branchId)
+        {
+            // دریافت اطلاعات شعبه
+            var branch = _context.Branch_Tbl.FirstOrDefault(b => b.Id == branchId);
+            if (branch == null)
+                return null;
+
+            // دریافت شناسه‌های کاربرانی که قبلاً به این شعبه اختصاص داده شده‌اند
+            var existingUserIds = _context.BranchUser_Tbl
+                .Where(bu => bu.BranchId == branchId && bu.IsActive)
+                .Select(bu => bu.UserId)
+                .ToList();
+
+            // دریافت لیست کاربران فعال که در این شعبه نیستند
+            var availableUsers = (from user in _context.Users
+                                where user.IsActive && 
+                                      !user.IsRemoveUser && 
+                                      !existingUserIds.Contains(user.Id)
+                                select new UserViewModelFull
+                                {
+                                    Id = user.Id,
+                                    FirstName = user.FirstName,
+                                    LastName = user.LastName,
+                                    FullNamesString = user.FirstName + " " + user.LastName,
+                                    UserName = user.UserName,
+                                    Email = user.Email,
+                                    PhoneNumber = user.PhoneNumber,
+                                    IsActive = user.IsActive
+                                }).OrderBy(u => u.LastName).ThenBy(u => u.FirstName).ToList();
+
+            // ایجاد ViewModel کامل
+            var viewModel = new BranchUserViewModel
+            {
+                BranchId = branchId,
+                BranchName = branch.Name,
+                IsActive = true,
+                Role = 0, // کارشناس به‌عنوان پیش‌فرض
+                AssignDate = DateTime.Now,
+                UsersIntial = availableUsers,
+                UsersSelected = new List<string>()
+            };
+
+            return viewModel;
+        }
     }
 }

@@ -42,7 +42,7 @@
             </a>
         </div>
         <div class="col-6 col-md-4 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddUser", "Branch", new { branchId = Model.Id })">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddUserToBranch", "Branch", new { branchId = Model.Id })">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
                         <i class="fa fa-user-plus text-info"></i>
@@ -443,15 +443,15 @@
 </div>
 <!-- END Page Content -->
 <!-- Modal Container for dynamic content -->
-<div class="modal fade" id="modal-branch" tabindex="-1" role="dialog" aria-labelledby="modal-branch" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+<div class="modal fade" id="modal-branch" tabindex="-1" role="dialog" aria-labelledby="modal-branch-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content">
             <!-- Dynamic content will be loaded here -->
-            <div class="modal-body">
-                <div class="text-center">
-                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
-                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">در حال بارگذاری...</span>
                 </div>
+                <h5 class="mt-3">در حال بارگذاری...</h5>
             </div>
         </div>
     </div>
@@ -461,18 +461,57 @@
     <script>
         // Function to open modal and load content
         function openModal(url) {
-            $('#modal-branch .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
+            // نمایش loading
+            $('#modal-branch .modal-content').html(`
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                    <h5 class="mt-3">در حال بارگذاری...</h5>
+                </div>
+            `);
+            
+            // نمایش مودال
             $('#modal-branch').modal('show');
 
             // Load content via AJAX
-            $.get(url, function(data) {
-                $('#modal-branch .modal-content').html(data);
-            });
+            $.get(url)
+                .done(function(data) {
+                    $('#modal-branch .modal-content').html(data);
+                })
+                .fail(function() {
+                    $('#modal-branch .modal-content').html(`
+                        <div class="modal-header bg-danger">
+                            <h4 class="modal-title text-white">خطا</h4>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <i class="fa fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                            <h5>خطا در بارگذاری محتوا</h5>
+                            <p>لطفاً مجدداً تلاش کنید.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                        </div>
+                    `);
+                });
         }
 
         // Initialize tooltips
         $(document).ready(function() {
             $('[data-bs-toggle="tooltip"]').tooltip();
+            
+            // اطمینان از بستن مودال پس از submit موفق
+            $('#modal-branch').on('hidden.bs.modal', function () {
+                $(this).find('.modal-content').html(`
+                    <div class="modal-body text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                        <h5 class="mt-3">در حال بارگذاری...</h5>
+                    </div>
+                `);
+            });
         });
     </script>
 }

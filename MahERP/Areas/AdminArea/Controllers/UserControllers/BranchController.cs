@@ -237,99 +237,147 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
         // افزودن کاربر به شعبه - نمایش فرم
         [HttpGet]
-        public IActionResult AddUser(int branchId)
+        public IActionResult AddUserToBranch(int branchId)
         {
-            var branch = _uow.BranchUW.GetById(branchId);
-            if (branch == null)
+            // دریافت اطلاعات کامل از repository شامل:
+            // - اطلاعات شعبه
+            // - لیست کاربران قابل انتساب
+            var viewModel = _branchRepository.GetAddUserToBranchViewModel(branchId);
+            
+            // بررسی وجود شعبه
+            if (viewModel == null)
                 return RedirectToAction("ErrorView", "Home");
 
-            // دریافت لیست کاربران فعال که در این شعبه نیستند
-            var existingUserIds = _branchRepository.GetBranchUsers(branchId, true)
-                .Select(bu => bu.UserId)
-                .ToList();
+            // بررسی دسترسی کاربر لاگین شده به این شعبه
+            var currentUserId = _userManager.GetUserId(HttpContext.User);
+            var userBranches = _branchRepository.GetBrnachListByUserId(currentUserId);
+            
+            if (!userBranches.Any(b => b.Id == branchId))
+                return RedirectToAction("ErrorView", "Home");
 
-            var availableUsers = _userManager.Users
-                .Where(u => u.IsActive && !u.IsRemoveUser && !existingUserIds.Contains(u.Id))
-                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
-                .ToList();
-
-            ViewBag.Users = new SelectList(availableUsers, "Id", "FullName");
-            ViewBag.BranchId = branchId;
-            ViewBag.BranchName = branch.Name;
-
-            return View(new BranchUserViewModel
-            {
-                BranchId = branchId,
-                IsActive = true,
-                Role = 0, // کارشناس به‌عنوان پیش‌فرض
-                AssignDate = DateTime.Now
-            });
+            // ViewModel حاوی تمام اطلاعات لازم است
+            // نیاز به ViewBag نداریم چون همه چیز در ViewModel موجود است
+            return View(viewModel);
         }
 
         // افزودن کاربر به شعبه - پردازش فرم
+        /// <summary>
+        /// افزودن کاربران به شعبه - پردازش فرم
+        /// در صورت خطا، از repository برای بازیابی اطلاعات فرم استفاده می‌کند
+        /// </summary>
+        /// <param name="model">مدل اطلاعات کاربران شعبه</param>
+        /// <returns>نتیجه عملیات افزودن کاربران</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddUser(BranchUserViewModel model)
+        public IActionResult AddUserTobranch(BranchUserViewModel model)
         {
+            // حذف فیلد UsersSelected از ModelState چون اعتبارسنجی آن را دستی انجام می‌دهیم
+            ModelState.Remove("UsersSelected");
+            ModelState.Remove("UserFullName");
+            ModelState.Remove("AssignedByUserId");
+            ModelState.Remove("BranchName");
+            ModelState.Remove("UserId");
+
             if (ModelState.IsValid)
             {
                 var branch = _uow.BranchUW.GetById(model.BranchId);
                 if (branch == null)
                     return RedirectToAction("ErrorView", "Home");
 
-                // بررسی اینکه کاربر قبلاً به شعبه اضافه نشده باشد
-                var existingUser = _uow.BranchUserUW.Get(bu => bu.BranchId == model.BranchId && bu.UserId == model.UserId).FirstOrDefault();
-                if (existingUser != null)
+                // بررسی اینکه آیا لیست کاربران انتخابی خالی نیست
+                if (model.UsersSelected == null || !model.UsersSelected.Any())
                 {
-                    ModelState.AddModelError("UserId", "این کاربر قبلاً به شعبه اضافه شده است");
+                    ModelState.AddModelError("UsersSelected", "حداقل یک کاربر باید انتخاب شود");
                     
-                    var existingUserIds = _branchRepository.GetBranchUsers(model.BranchId, true)
-                        .Select(bu => bu.UserId)
-                        .ToList();
-
-                    var availableUsers = _userManager.Users
-                        .Where(u => u.IsActive && !u.IsRemoveUser && !existingUserIds.Contains(u.Id))
-                        .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
-                        .ToList();
-
-                    ViewBag.Users = new SelectList(availableUsers, "Id", "FullName");
-                    ViewBag.BranchId = model.BranchId;
-                    ViewBag.BranchName = branch.Name;
+                    // دریافت اطلاعات کامل فرم از repository
+                    var viewModelForError = _branchRepository.GetAddUserToBranchViewModel(model.BranchId);
+                    if (viewModelForError != null)
+                    {
+                        // انتقال اطلاعات فرم از model اصلی
+                        viewModelForError.UsersSelected = model.UsersSelected;
+                        viewModelForError.Role = model.Role;
+                        viewModelForError.IsActive = model.IsActive;
+                        viewModelForError.AssignDate = model.AssignDate;
+                        return View("AddUserToBranch", viewModelForError);
+                    }
                     
-                    return View(model);
+                    return RedirectToAction("ErrorView", "Home");
                 }
 
-                // ایجاد ارتباط جدید بین کاربر و شعبه
-                var branchUser = _mapper.Map<BranchUser>(model);
-                branchUser.AssignDate = DateTime.Now;
-                branchUser.AssignedByUserId = _userManager.GetUserId(User);
+                // بررسی اینکه آیا کاربران قبلاً به شعبه اضافه نشده‌اند
+                var existingUsers = _uow.BranchUserUW.Get(bu => bu.BranchId == model.BranchId && model.UsersSelected.Contains(bu.UserId))
+                    .Select(bu => bu.UserId)
+                    .ToList();
 
-                _uow.BranchUserUW.Create(branchUser);
+                if (existingUsers.Any())
+                {
+                    // دریافت نام کاربران تکراری
+                    var duplicateUserNames = _userManager.Users
+                        .Where(u => existingUsers.Contains(u.Id))
+                        .Select(u => u.FirstName + " " + u.LastName)
+                        .ToList();
+
+                    ModelState.AddModelError("UsersSelected", $"کاربران زیر قبلاً به شعبه اضافه شده‌اند: {string.Join(", ", duplicateUserNames)}");
+                    
+                    // دریافت اطلاعات کامل فرم از repository
+                    var viewModelForError = _branchRepository.GetAddUserToBranchViewModel(model.BranchId);
+                    if (viewModelForError != null)
+                    {
+                        // انتقال اطلاعات فرم از model اصلی
+                        viewModelForError.UsersSelected = model.UsersSelected;
+                        viewModelForError.Role = model.Role;
+                        viewModelForError.IsActive = model.IsActive;
+                        viewModelForError.AssignDate = model.AssignDate;
+                        return View("AddUserToBranch", viewModelForError);
+                    }
+                    
+                    return RedirectToAction("ErrorView", "Home");
+                }
+
+                // ایجاد ارتباط جدید برای هر کاربر انتخابی
+                var currentUserId = _userManager.GetUserId(User);
+                var assignDate = DateTime.Now;
+
+                foreach (var userId in model.UsersSelected)
+                {
+                    var branchUser = new BranchUser
+                    {
+                        BranchId = model.BranchId,
+                        UserId = userId,
+                        Role = model.Role,
+                        IsActive = model.IsActive,
+                        AssignDate = assignDate,
+                        AssignedByUserId = currentUserId
+                    };
+
+                    _uow.BranchUserUW.Create(branchUser);
+                }
+
+                // ذخیره تمام تغییرات
                 _uow.Save();
 
                 return RedirectToAction("Details", new { id = model.BranchId });
             }
 
-            var branch2 = _uow.BranchUW.GetById(model.BranchId);
-            var existingUserIds2 = _branchRepository.GetBranchUsers(model.BranchId, true)
-                .Select(bu => bu.UserId)
-                .ToList();
+            // در صورت عدم اعتبار ModelState، دریافت اطلاعات کامل فرم از repository
+            var viewModelForValidation = _branchRepository.GetAddUserToBranchViewModel(model.BranchId);
+            if (viewModelForValidation != null)
+            {
+                // حفظ اطلاعات وارد شده توسط کاربر
+                viewModelForValidation.UsersSelected = model.UsersSelected;
+                viewModelForValidation.Role = model.Role;
+                viewModelForValidation.IsActive = model.IsActive;
+                viewModelForValidation.AssignDate = model.AssignDate;
+                return View("AddUserToBranch", viewModelForValidation);
+            }
 
-            var availableUsers2 = _userManager.Users
-                .Where(u => u.IsActive && !u.IsRemoveUser && !existingUserIds2.Contains(u.Id))
-                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
-                .ToList();
-
-            ViewBag.Users = new SelectList(availableUsers2, "Id", "FullName");
-            ViewBag.BranchId = model.BranchId;
-            ViewBag.BranchName = branch2.Name;
-            
-            return View(model);
+            // در صورت بروز خطا در repository، بازگشت به صفحه خطا
+            return RedirectToAction("ErrorView", "Home");
         }
 
         // ویرایش کاربر شعبه - نمایش فرم
         [HttpGet]
-        public IActionResult EditUser(int id)
+        public IActionResult EditBranchUser(int id)
         {
             var branchUser = _branchRepository.GetBranchUserById(id);
             if (branchUser == null)
@@ -345,7 +393,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         // ویرایش کاربر شعبه - پردازش فرم
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditUser(BranchUserViewModel model)
+        public IActionResult EditBranchUser(BranchUserViewModel model)
         {
             if (ModelState.IsValid)
             {
