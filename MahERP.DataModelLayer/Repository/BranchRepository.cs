@@ -29,77 +29,8 @@ namespace MahERP.DataModelLayer.Repository
             return query.OrderBy(b => b.Name).ToList();
         }
 
-        public BranchViewModel GetBranchById(int id, bool includeUsers = false, bool includeStakeholders = false, bool includeTasks = false, bool includeChildBranches = false)
-        {
-            IQueryable<Branch> query = _context.Branch_Tbl.AsQueryable();
+      
 
-            if (includeUsers)
-                query = query.Include(b => b.BranchUsers)
-                             .ThenInclude(bu => bu.User);
-
-            if (includeStakeholders)
-                query = query.Include(b => b.Stakeholders);
-
-            if (includeTasks)
-                query = query.Include(b => b.TaskList);
-
-            if (includeChildBranches)
-                query = query.Include(b => b.ChildBranches);
-
-            // Include parent branch information
-            query = query.Include(b => b.ParentBranch);
-
-            var branch = query.FirstOrDefault(b => b.Id == id);
-
-            if (branch == null)
-                return null;
-
-            // Map Branch entity to BranchViewModel
-            BranchViewModel? branchViewModel = new BranchViewModel
-            {
-                Id = branch.Id,
-                Name = branch.Name,
-                Description = branch.Description,
-                Address = branch.Address,
-                Phone = branch.Phone,
-                Email = branch.Email,
-                ManagerName = branch.ManagerName,
-                IsActive = branch.IsActive,
-                IsMainBranch = branch.IsMainBranch,
-                ParentId = branch.ParentId,
-                CreateDate = branch.CreateDate,
-                LastUpdateDate = branch.LastUpdateDate,
-                ParentBranch = branch.ParentBranch != null ? new BranchViewModel
-                {
-                    Id = branch.ParentBranch.Id,
-                    Name = branch.ParentBranch.Name,
-                    IsMainBranch = branch.ParentBranch.IsMainBranch,
-                    IsActive = branch.ParentBranch.IsActive
-                } : null
-            };
-
-            return branchViewModel;
-        }
-
-        public List<Branch> GetMainBranches(bool includeInactive = false)
-        {
-            var query = _context.Branch_Tbl.Where(b => b.IsMainBranch);
-
-            if (!includeInactive)
-                query = query.Where(b => b.IsActive);
-
-            return query.OrderBy(b => b.Name).ToList();
-        }
-
-        public List<Branch> GetChildBranches(int parentId, bool includeInactive = false)
-        {
-            var query = _context.Branch_Tbl.Where(b => b.ParentId == parentId);
-
-            if (!includeInactive)
-                query = query.Where(b => b.IsActive);
-
-            return query.OrderBy(b => b.Name).ToList();
-        }
 
         public List<BranchUser> GetBranchUsers(int branchId, bool includeInactive = false)
         {
@@ -134,35 +65,8 @@ namespace MahERP.DataModelLayer.Repository
             return !query.Any();
         }
 
-        public List<Branch> SearchBranches(string searchTerm)
-        {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return GetBranches();
+      
 
-            var query = _context.Branch_Tbl
-                .Where(b => b.IsActive &&
-                           (b.Name.Contains(searchTerm) ||
-                            b.ManagerName.Contains(searchTerm) ||
-                            b.Phone.Contains(searchTerm) ||
-                            b.Email.Contains(searchTerm)));
-
-            return query.OrderBy(b => b.Name).ToList();
-        }
-
-        public List<Stakeholder> GetBranchStakeholders(int branchId, bool includeInactive = false)
-        {
-            var stakeholderIds = _context.StakeholderBranch_Tbl
-                .Where(sb => sb.BranchId == branchId && sb.IsActive)
-                .Select(sb => sb.StakeholderId);
-
-            var query = _context.Stakeholder_Tbl
-                .Where(s => stakeholderIds.Contains(s.Id) && !s.IsDeleted);
-
-            if (!includeInactive)
-                query = query.Where(s => s.IsActive);
-
-            return query.OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ToList();
-        }
 
         /// <summary>
         /// لیستی از شعبه‌هایی که آن کاربر در آن تعریف شده است 
@@ -186,8 +90,6 @@ namespace MahERP.DataModelLayer.Repository
                                   IsMainBranch = bu.IsMainBranch,
                                   IsActive = branchUser.IsActive
                               }).ToList();
-
-
             }
             else
             {
@@ -394,6 +296,30 @@ namespace MahERP.DataModelLayer.Repository
             };
 
             return viewModel;
+        }
+        public List<BranchUserViewModel> GetBranchUsersByBranchId(int branchId, bool includeInactive = false)
+        {
+            var query = from bu in _context.BranchUser_Tbl
+                        join b in _context.Branch_Tbl on bu.BranchId equals b.Id
+                        join u in _context.Users on bu.UserId equals u.Id
+                        where bu.BranchId == branchId
+                        select new { BranchUser = bu, Branch = b, User = u };
+
+            if (!includeInactive)
+                query = query.Where(x => x.BranchUser.IsActive && x.Branch.IsActive && x.User.IsActive && !x.User.IsRemoveUser);
+
+            return query.Select(x => new BranchUserViewModel
+            {
+                Id = x.BranchUser.Id,
+                BranchId = x.BranchUser.BranchId,
+                UserId = x.BranchUser.UserId,
+                Role = x.BranchUser.Role,
+                IsActive = x.BranchUser.IsActive,
+                AssignDate = x.BranchUser.AssignDate,
+                AssignedByUserId = x.BranchUser.AssignedByUserId,
+                BranchName = x.Branch.Name,
+                UserFullName = x.User.FirstName + " " + x.User.LastName
+            }).OrderBy(x => x.UserFullName).ToList();
         }
     }
 }

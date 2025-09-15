@@ -24,6 +24,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         private readonly IUnitOfWork _uow;
         private readonly ITaskRepository _taskRepository;           
         private readonly IStakeholderRepository _stakeholderRepository;
+        private readonly IBranchRepository _branchRepository;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
@@ -33,6 +34,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             IUnitOfWork uow,
             ITaskRepository taskRepository,
             IStakeholderRepository stakeholderRepository,
+            IBranchRepository branchRepository,
             UserManager<AppUsers> userManager,
             IMapper mapper,
             PersianDateHelper persianDateHelper,
@@ -43,6 +45,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _uow = uow;
             _taskRepository = taskRepository;
             _stakeholderRepository = stakeholderRepository;
+            _branchRepository = branchRepository;
             _userManager = userManager;
             _mapper = mapper;
             _webHostEnvironment = webHostEnvironment;
@@ -195,7 +198,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.DueDatePersian);
                     }
 
-                    // ذخیره در دیتابیس
+                    // ذخیره در دیتabیس
                     _uow.TaskUW.Create(task);
                     _uow.Save();
 
@@ -978,6 +981,83 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         /// <summary>
+        /// بروزرسانی لیست طرف حساب‌ها بر اساس شعبه انتخاب شده
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>PartialView حاوی لیست طرف حساب‌های شعبه</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult BranchTriggerSelectStakeholders(int branchId)
+        {
+            try
+            {
+                // دریافت طرف حساب‌های شعبه انتخاب شده با استفاده از Repository
+                var stakeholdersViewModels = _stakeholderRepository.GetStakeholdersByBranchId(branchId);
+                
+                // آماده‌سازی HTML برای select طرف حساب‌ها
+                var stakeholdersSelectHtml = "";
+                if (stakeholdersViewModels != null && stakeholdersViewModels.Any())
+                {
+                    var selectOptions = string.Join("", stakeholdersViewModels.Select(stakeholder => 
+                        $"<option value=\"{stakeholder.Id}\">{stakeholder.DisplayName}</option>"));
+                    
+                    stakeholdersSelectHtml = $@"
+                        <select class=""js-select2 form-select"" 
+                                asp-for=""StakeholderId"" 
+                                id=""StakeholderId"" 
+                                name=""StakeholderId""
+                                data-placeholder=""انتخاب کنید"" 
+                                style=""width: 100%;"">
+                            <option value="""">انتخاب کنید</option>
+                            {selectOptions}
+                        </select>";
+                }
+                else
+                {
+                    stakeholdersSelectHtml = @"
+                        <select class=""js-select2 form-select"" 
+                                asp-for=""StakeholderId"" 
+                                id=""StakeholderId"" 
+                                name=""StakeholderId""
+                                data-placeholder=""طرف حسابی در این شعبه یافت نشد"" 
+                                style=""width: 100%;"">
+                            <option value="""">طرف حسابی در این شعبه یافت نشد</option>
+                        </select>";
+                }
+
+                // ایجاد response با بروزرسانی دو div
+                var viewList = new List<object>
+                {
+                    new
+                    {
+                        elementId = "StakeholdersDiv",
+                        view = new
+                        {
+                            result = stakeholdersSelectHtml
+                        }
+                    }
+                };
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = viewList
+                });
+            }
+            catch (Exception ex)
+            {
+                // لاگ کردن خطا
+                Console.WriteLine($"Error in BranchTriggerSelectStakeholders: {ex.Message}");
+                
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا در بارگذاری طرف حساب‌های شعبه: " + ex.Message
+                });
+            }
+        }
+
+        /// <summary>
         /// بروزرسانی لیست کاربران بر اساس شعبه انتخاب شده
         /// </summary>
         /// <param name="branchId">شناسه شعبه</param>
@@ -994,18 +1074,16 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     viewList = new List<object>()
                 };
 
-                // دریافت کاربران شعبه انتخاب شده
-                var branchUsers = _uow.BranchUserUW.Get(bu => bu.BranchId == branchId && bu.IsActive)
-                    .Select(bu => bu.User)
-                    .Where(u => u.IsActive && !u.IsRemoveUser)
-                    .Select(u => new
-                    {
-                        Id = u.Id,
-                        FullNamesString = $"{u.FirstName} {u.LastName}"
-                    })
-                    .ToList();
+                // دریافت کاربران شعبه انتخاب شده با استفاده از Repository
+                var branchUsersViewModels = _branchRepository.GetBranchUsersByBranchId(branchId, includeInactive: false);
+                
+                var branchUsers = branchUsersViewModels.Select(bu => new
+                {
+                    Id = bu.UserId,
+                    FullNamesString = bu.UserFullName
+                }).ToList();
 
-                // آماده‌سازی HTML برای select
+                // آماده‌سازی HTML برای select کاربران
                 var usersSelectHtml = "";
                 if (branchUsers.Any())
                 {
@@ -1014,10 +1092,10 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     
                     usersSelectHtml = $@"
                         <select class=""js-select2 form-select"" 
-                                id=""UserId"" 
+                                id=""AssignmentsSelectedTaskUserArraysString"" 
                                 data-placeholder=""کاربران را انتخاب کنید"" 
                                 multiple=""multiple"" 
-                                name=""AppointmentUsers"" 
+                                name=""AssignmentsSelectedTaskUserArraysString"" 
                                 style=""width: 100%;"">
                             {selectOptions}
                         </select>";
@@ -1026,15 +1104,49 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 {
                     usersSelectHtml = @"
                         <select class=""js-select2 form-select"" 
-                                id=""UserId"" 
+                                id=""AssignmentsSelectedTaskUserArraysString"" 
                                 data-placeholder=""کاربری در این شعبه یافت نشد"" 
                                 multiple=""multiple"" 
-                                name=""AppointmentUsers"" 
+                                name=""AssignmentsSelectedTaskUserArraysString"" 
                                 style=""width: 100%;"">
                         </select>";
                 }
 
-                // اضافه کردن به response
+                // دریافت طرف حساب‌های شعبه انتخاب شده
+                var stakeholdersViewModels = _stakeholderRepository.GetStakeholdersByBranchId(branchId);
+                
+                // آماده‌سازی HTML برای select طرف حساب‌ها
+                var stakeholdersSelectHtml = "";
+                if (stakeholdersViewModels != null && stakeholdersViewModels.Any())
+                {
+                    var selectOptions = string.Join("", stakeholdersViewModels.Select(stakeholder => 
+                        $"<option value=\"{stakeholder.Id}\">{stakeholder.DisplayName}</option>"));
+                    
+                    stakeholdersSelectHtml = $@"
+                        <select class=""js-select2 form-select"" 
+                                asp-for=""StakeholderId"" 
+                                id=""StakeholderId"" 
+                                name=""StakeholderId""
+                                data-placeholder=""انتخاب کنید"" 
+                                style=""width: 100%;"">
+                            <option value="""">انتخاب کنید</option>
+                            {selectOptions}
+                        </select>";
+                }
+                else
+                {
+                    stakeholdersSelectHtml = @"
+                        <select class=""js-select2 form-select"" 
+                                asp-for=""StakeholderId"" 
+                                id=""StakeholderId"" 
+                                name=""StakeholderId""
+                                data-placeholder=""طرف حسابی در این شعبه یافت نشد"" 
+                                style=""width: 100%;"">
+                            <option value="""">طرف حسابی در این شعبه یافت نشد</option>
+                        </select>";
+                }
+
+                // اضافه کردن به response - بروزرسانی هم کاربران و هم طرف حساب‌ها
                 var viewList = new List<object>
                 {
                     new
@@ -1043,6 +1155,14 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         view = new
                         {
                             result = usersSelectHtml
+                        }
+                    },
+                    new
+                    {
+                        elementId = "StakeholdersDiv",
+                        view = new
+                        {
+                            result = stakeholdersSelectHtml
                         }
                     }
                 };
@@ -1061,7 +1181,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 return Json(new
                 {
                     status = "error",
-                    message = "خطا در بارگذاری کاربران شعبه: " + ex.Message
+                    message = "خطا در بارگذاری کاربران و طرف حساب‌های شعبه: " + ex.Message
                 });
             }
         }

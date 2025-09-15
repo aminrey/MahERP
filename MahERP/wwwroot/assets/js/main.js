@@ -203,7 +203,7 @@ const DynamicSelect2Manager = {
      * تشخیص خودکار target div ها
      */
     detectTargetDivs: function($select) {
-        const commonTargets = ['UsersDiv', 'CarbonCopyUsersDiv', 'CustomersDiv'];
+        const commonTargets = ['UsersDiv', 'CarbonCopyUsersDiv', 'CustomersDiv', 'StakeholdersDiv'];
         const detectedTargets = [];
         
         commonTargets.forEach(function(target) {
@@ -262,6 +262,11 @@ const DynamicSelect2Manager = {
                 multiple: true
             },
             'CustomersDiv': {
+                id: 'StakeholderId',
+                name: 'StakeholderId',
+                multiple: false
+            },
+            'StakeholdersDiv': {
                 id: 'StakeholderId',
                 name: 'StakeholderId',
                 multiple: false

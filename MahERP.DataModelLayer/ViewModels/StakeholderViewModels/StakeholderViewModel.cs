@@ -69,6 +69,11 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
         // نمایش نام کامل
         public string FullName => $"{FirstName} {LastName}";
 
+        // نمایش نام کامل با در نظر گیری نام شرکت - برای نمایش در select ها
+        public string DisplayName => string.IsNullOrEmpty(CompanyName) 
+            ? $"{FirstName} {LastName}"
+            : $"{FirstName} {LastName} ({CompanyName})";
+
         // نمایش نوع طرف حساب به صورت متنی
         public string StakeholderTypeText
         {

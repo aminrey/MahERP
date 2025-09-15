@@ -112,7 +112,7 @@
                                             name="BranchIdSelected" 
                                             data-url="@Url.Action("BranchTriggerSelect","Tasks")" 
                                             data-toggle="multiplepartialview"
-                                            data-target-divs="UsersDiv"
+                                            data-target-divs="UsersDiv,StakeholdersDiv"
                                             data-param-name="branchId"
                                             style="width: 100%;">
                                         <option value="">انتخاب کنید</option>
@@ -123,9 +123,11 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="StakeholderId">طرف حساب</label>
-                                    <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="js-select2 form-select" data-placeholder="انتخاب کنید" style="width: 100%;">
-                                        <option value="">انتخاب کنید</option>
-                                    </select>
+                                    <div id="StakeholdersDiv">
+                                        <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="js-select2 form-select" data-placeholder="انتخاب کنید" style="width: 100%;">
+                                            <option value="">انتخاب کنید</option>
+                                        </select>
+                                    </div>
                                     <span asp-validation-for="StakeholderId" class="text-danger"></span>
                                 </div>
                             </div>
@@ -193,6 +195,13 @@
                     id: 'AssignmentsSelectedTaskUserArraysString',
                     name: 'AssignmentsSelectedTaskUserArraysString',
                     multiple: true
+                });
+                
+                // اضافه کردن کانفیگ سفارشی برای StakeholdersDiv
+                DynamicSelect2Manager.addSelectConfig('StakeholdersDiv', {
+                    id: 'StakeholderId',
+                    name: 'StakeholderId',
+                    multiple: false
                 });
                 
                 console.log('CreateNewTask specific configs added to DynamicSelect2Manager');

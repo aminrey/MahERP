@@ -71,5 +71,7 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="branchId">شناسه شعبه</param>
         /// <returns>ViewModel کامل برای فرم افزودن کاربر</returns>
         public BranchUserViewModel GetAddUserToBranchViewModel(int branchId);
+        public List<BranchUserViewModel> GetBranchUsersByBranchId(int branchId, bool includeInactive = false);
+
     }
 }

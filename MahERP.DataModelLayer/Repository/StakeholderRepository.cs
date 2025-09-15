@@ -32,7 +32,25 @@ namespace MahERP.DataModelLayer.Repository
         }
         public List<StakeholderViewModel> GetStakeholdersByBranchId(int BranchId)
         {
-            return null;
+            // دریافت طرف حساب‌های مرتبط با شعبه از طریق جدول StakeholderBranch
+            var stakeholdersInBranch = (from stakeholder in _context.Stakeholder_Tbl
+                                       join stakeholderBranch in _context.StakeholderBranch_Tbl
+                                       on stakeholder.Id equals stakeholderBranch.StakeholderId
+                                       where stakeholderBranch.BranchId == BranchId && 
+                                             !stakeholder.IsDeleted && 
+                                             stakeholder.IsActive
+                                       select new StakeholderViewModel
+                                       {
+                                           Id = stakeholder.Id,
+                                           FirstName = stakeholder.FirstName,
+                                           LastName = stakeholder.LastName,
+                                           CompanyName = stakeholder.CompanyName,
+                                           Mobile = stakeholder.Mobile,
+                                           Phone = stakeholder.Phone,
+                                           Email = stakeholder.Email
+                                       }).ToList();
+
+            return stakeholdersInBranch;
         }
         
 
