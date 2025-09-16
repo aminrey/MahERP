@@ -40,7 +40,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             IWebHostEnvironment webHostEnvironment,
-            IRoleRepository roleRepository) : base(uow, userManager, persianDateHelper, memoryCache)
+            IRoleRepository roleRepository,
+            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
         {
             _uow = uow;
             _taskRepository = taskRepository;
@@ -54,128 +55,206 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         // لیست تسک‌ها - با کنترل سطح دسترسی داده
         [Permission("Tasks", "Index", 0)] // Read permission
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
-            var userId = _userManager.GetUserId(User);
-            TaskListForIndexViewModel Filters = new TaskListForIndexViewModel
+            try
             {
-                UserLoginid = userId,
+                var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
+                var userId = _userManager.GetUserId(User);
+                TaskListForIndexViewModel Filters = new TaskListForIndexViewModel
+                {
+                    UserLoginid = userId,
+                };
 
-            };
+                TaskListForIndexViewModel Model = new TaskListForIndexViewModel();
+                
+                switch (dataAccessLevel)
+                {
+                    case 0: // Personal - فقط تسک‌های خود کاربر
+                        Model = _taskRepository.GetTaskForIndexByUser(Filters);
+                        break;
+                    case 1: // Branch - تسک‌های شعبه
+                        break;
+                    case 2: // All - همه تسک‌ها
+                        break;
+                    default:
+                        break;
+                }
 
+                // ثبت لاگ مشاهده لیست تسک‌ها
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "Index",
+                    "مشاهده لیست تسک‌ها"
+                );
 
-
-
-            TaskListForIndexViewModel Model = new TaskListForIndexViewModel();
-           
-            
-            switch (dataAccessLevel)
-            {
-                case 0: // Personal - فقط تسک‌های خود کاربر
-                    //tasks = _taskRepository.GetTasksByUser(userId, includeAssigned: true, includeCreated: true);
-                    Model = _taskRepository.GetTaskForIndexByUser(Filters);
-                    break;
-                case 1: // Branch - تسک‌های شعبه
-                    //tasks = _taskRepository.GetTasksByBranch(GetUserBranchId(userId));
-                    break;
-                case 2: // All - همه تسک‌ها
-                    //tasks = _taskRepository.GetTasks();
-                    break;
-                default:
-                    //tasks = new List<Tasks>();
-                    break;
+                return View(Model);
             }
-
-            
-          
-            
-            return View(Model);
+            catch (Exception ex)
+            {
+                // ثبت لاگ خطا
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "Index",
+                    "خطا در دریافت لیست تسک‌ها",
+                    ex
+                );
+                
+                return RedirectToAction("ErrorView", "Home");
+            }
         }
 
         // نمایش تسک‌های اختصاص داده شده به کاربر جاری
         [Permission("Tasks", "MyTasks", 0)] // Read permission
-        public IActionResult MyTasks()
+        public async Task<IActionResult> MyTasks()
         {
-            var userId = _userManager.GetUserId(User);
-            var tasks = _taskRepository.GetTasksByUser(userId, includeAssigned: true, includeCreated: false);
-            var viewModels = _mapper.Map<List<TaskViewModel>>(tasks);
-            
-            // تکمیل اطلاعات اضافی
-            foreach (var viewModel in viewModels)
+            try
             {
-                var operations = _taskRepository.GetTaskOperations(viewModel.Id);
-                viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(operations);
+                var userId = _userManager.GetUserId(User);
+                var tasks = _taskRepository.GetTasksByUser(userId, includeAssigned: true, includeCreated: false);
+                var viewModels = _mapper.Map<List<TaskViewModel>>(tasks);
+                
+                // تکمیل اطلاعات اضافی
+                foreach (var viewModel in viewModels)
+                {
+                    var operations = _taskRepository.GetTaskOperations(viewModel.Id);
+                    viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(operations);
+                }
+                
+                ViewBag.Title = "تسک‌های من";
+                ViewBag.IsMyTasks = true;
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "MyTasks",
+                    "مشاهده تسک‌های شخصی"
+                );
+                
+                return View("Index", viewModels);
             }
-            
-            ViewBag.Title = "تسک‌های من";
-            ViewBag.IsMyTasks = true;
-            
-            return View("Index", viewModels);
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "MyTasks",
+                    "خطا در دریافت تسک‌های شخصی",
+                    ex
+                );
+                
+                return RedirectToAction("ErrorView", "Home");
+            }
         }
 
         // جزئیات تسک
         [Permission("Tasks", "Details", 0)] // Read permission
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var task = _taskRepository.GetTaskById(id, includeOperations: true, includeAssignments: true, includeAttachments: true, includeComments: true);
-            if (task == null)
-                return RedirectToAction("ErrorView", "Home");
+            try
+            {
+                var task = _taskRepository.GetTaskById(id, includeOperations: true, includeAssignments: true, includeAttachments: true, includeComments: true);
+                if (task == null)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "Tasks",
+                        "Details",
+                        "تلاش برای مشاهده تسک غیرموجود",
+                        recordId: id.ToString()
+                    );
+                    return RedirectToAction("ErrorView", "Home");
+                }
 
-            var viewModel = _mapper.Map<TaskViewModel>(task);
-            
-            // تکمیل اطلاعات عملیات‌ها
-            viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
-            
-            // تکمیل اطلاعات اختصاص‌ها
-            viewModel.AssignmentsTaskUser = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
-            
-            return View(viewModel);
+                var viewModel = _mapper.Map<TaskViewModel>(task);
+                
+                // تکمیل اطلاعات عملیات‌ها
+                viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
+                
+                // تکمیل اطلاعات اختصاص‌ها
+                viewModel.AssignmentsTaskUser = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "Details",
+                    $"مشاهده جزئیات تسک: {task.Title}",
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+                
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "Details",
+                    "خطا در دریافت جزئیات تسک",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
+                return RedirectToAction("ErrorView", "Home");
+            }
         }
 
         // افزودن تسک جدید - نمایش فرم
         // در متد Create (GET)
         [HttpGet]
         [Permission("Tasks", "CreateNewTask", 1)] // Create permission
-        /// <summary>
-        /// AddressRoute=از مسیری که وارد این  url شدی 
-        /// taskUserId چه کاربری این تسک را می سازد 
-        public IActionResult CreateNewTask(string AddressRouteInComingUrl, int TaskTeamMember = 0)
+        public async Task<IActionResult> CreateNewTask(string AddressRouteInComingUrl, int TaskTeamMember = 0)
         {
-            if (AddressRouteInComingUrl == null)
-                AddressRouteInComingUrl = "nolink";
-            string LogingUser = _userManager.GetUserId(HttpContext.User);
-           
+            try
+            {
+                if (AddressRouteInComingUrl == null)
+                    AddressRouteInComingUrl = "nolink";
+                string LogingUser = _userManager.GetUserId(HttpContext.User);
 
-            PopulateDropdowns();
+                PopulateDropdowns();
 
-            TaskViewModel Model  =  _taskRepository.CreateTaskAndCollectData(LogingUser);   
-            //return View(new TaskViewModel
-            //{ 
-            //    IsActive = true,
-            //    CreateDate = DateTime.Now
-            //});
-            
-            return View(Model);
+                TaskViewModel Model = _taskRepository.CreateTaskAndCollectData(LogingUser);
 
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "CreateNewTask",
+                    "مشاهده فرم ایجاد تسک جدید"
+                );
+
+                return View(Model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "CreateNewTask",
+                    "خطا در نمایش فرم ایجاد تسک",
+                    ex
+                );
+                
+                return RedirectToAction("ErrorView", "Home");
+            }
         }
 
         // در متد Create (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Permission("Tasks", "CreateNewTask", 1)]
-        public IActionResult CreateNewTask(TaskViewModel model)
+        public async Task<IActionResult> CreateNewTask(TaskViewModel model)
         {
-
-            List<string>      AssimentUserTask= model.AssignmentsSelectedTaskUserArraysString;
-           if (model.TaskCode == null)
+            List<string> AssimentUserTask = model.AssignmentsSelectedTaskUserArraysString;
+            if (model.TaskCode == null)
             {
                 model.TaskCode = "0";
             }
 
             try
             {
-
                 if (ModelState.IsValid)
                 {
                     // ایجاد تسک جدید
@@ -190,7 +269,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     task.Important = false;
                     task.Status = 0; // ایجاد شده
                     task.CreationMode = 0; // دستی
-                    task.TaskCategoryId= model.TaskCategoryIdSelected;
+                    task.TaskCategoryId = model.TaskCategoryIdSelected;
 
                     // تبدیل تاریخ شمسی به میلادی
                     if (!string.IsNullOrEmpty(model.DueDatePersian))
@@ -198,7 +277,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.DueDatePersian);
                     }
 
-                    // ذخیره در دیتabیس
+                    // ذخیره در دیتابیس
                     _uow.TaskUW.Create(task);
                     _uow.Save();
 
@@ -208,11 +287,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         SaveTaskAttachments(task.Id, model.Attachments);
                     }
 
-
                     // اختصاص به کاربر جاری (خود کاربر ایجاد کننده)
                     if (!AssimentUserTask.Contains(_userManager.GetUserId(User)))
                     {
-                        // اگر کاربر جاری در لیست اختصاص‌ها نیست، آن را اضافه می‌کنیم
                         var Selfassignment = new TaskAssignment
                         {
                             TaskId = task.Id,
@@ -220,7 +297,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                             AssignerUserId = _userManager.GetUserId(User),
                             AssignmentType = 1,
                             AssignmentDate = DateTime.Now,
-                            Description = "سازنده تسک" // اگر توضیحات رونوشت وجود دارد
+                            Description = "سازنده تسک"
                         };
                         _uow.TaskAssignmentUW.Create(Selfassignment);
                         _uow.Save();
@@ -236,12 +313,22 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                             AssignerUserId = _userManager.GetUserId(User),
                             AssignmentType = 0, // اصلی
                             AssignmentDate = DateTime.Now,
-                            Description ="انتصاب تسک به کاربر", // اگر توضیحات رونوشت وجود دارد
-
+                            Description = "انتصاب تسک به کاربر",
                         };
                         _uow.TaskAssignmentUW.Create(assignment);
-                        _uow.Save();    
+                        _uow.Save();
                     }
+
+                    // ثبت لاگ موفقیت
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "Tasks",
+                        "CreateNewTask",
+                        $"ایجاد تسک جدید: {task.Title}",
+                        recordId: task.Id.ToString(),
+                        entityType: "Tasks",
+                        recordTitle: task.Title
+                    );
 
                     TempData["SuccessMessage"] = "تسک با موفقیت ایجاد شد";
                     return RedirectToAction(nameof(Index));
@@ -249,7 +336,14 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             }
             catch (Exception ex)
             {
-                // لاگ کردن خطا
+                // ثبت لاگ خطا
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "CreateNewTask",
+                    "خطا در ایجاد تسک جدید",
+                    ex
+                );
+                
                 ModelState.AddModelError("", "خطایی در ثبت تسک رخ داد: " + ex.Message);
             }
 
@@ -260,65 +354,155 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         // ویرایش تسک - نمایش فرم
         [HttpGet]
         [Permission("Tasks", "Edit", 2)] // Edit permission
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var task = _taskRepository.GetTaskById(id, includeOperations: true);
-            if (task == null)
-                return RedirectToAction("ErrorView", "Home");
-
-            var viewModel = _mapper.Map<TaskViewModel>(task);
-            viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
-            
-            // تبدیل تاریخ میلادی به شمسی
-            if (task.DueDate.HasValue)
+            try
             {
-                viewModel.DueDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd HH:mm");
+                var task = _taskRepository.GetTaskById(id, includeOperations: true);
+                if (task == null)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "Tasks",
+                        "Edit",
+                        "تلاش برای ویرایش تسک غیرموجود",
+                        recordId: id.ToString()
+                    );
+                    return RedirectToAction("ErrorView", "Home");
+                }
+
+                var viewModel = _mapper.Map<TaskViewModel>(task);
+                viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
+                
+                // تبدیل تاریخ میلادی به شمسی
+                if (task.DueDate.HasValue)
+                {
+                    viewModel.DueDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd HH:mm");
+                }
+                
+                PopulateDropdowns();
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "Edit",
+                    $"مشاهده فرم ویرایش تسک: {task.Title}",
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+                
+                return View(viewModel);
             }
-            
-            PopulateDropdowns();
-            
-            return View(viewModel);
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "Edit",
+                    "خطا در نمایش فرم ویرایش تسک",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
+                return RedirectToAction("ErrorView", "Home");
+            }
         }
 
         // ویرایش تسک - پردازش فرم
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Permission("Tasks", "Edit", 2)] // Edit permission
-        public IActionResult Edit(TaskViewModel model)
+        public async Task<IActionResult> Edit(TaskViewModel model)
         {
             if (ModelState.IsValid)
             {
-               
-
-                // دریافت تسک از دیتابیس
-                var task = _uow.TaskUW.GetById(model.Id);
-                if (task == null)
-                    return RedirectToAction("ErrorView", "Home");
-
-                // به‌روزرسانی اطلاعات
-                _mapper.Map(model, task);
-                task.LastUpdateDate = DateTime.Now;
-                
-                // تبدیل تاریخ شمسی به میلادی
-                if (!string.IsNullOrEmpty(model.DueDatePersian))
+                try
                 {
-                    task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.DueDatePersian);
-                }
-                else
-                {
-                    task.DueDate = null;
-                }
-                
-                _uow.TaskUW.Update(task);
-                _uow.Save();
-                
-                // ذخیره فایل‌های پیوست
-                if (model.Attachments != null && model.Attachments.Count > 0)
-                {
-                    SaveTaskAttachments(task.Id, model.Attachments);
-                }
+                    // دریافت تسک از دیتابیس
+                    var task = _uow.TaskUW.GetById(model.Id);
+                    if (task == null)
+                    {
+                        await _activityLogger.LogActivityAsync(
+                            ActivityTypeEnum.Edit,
+                            "Tasks",
+                            "Edit",
+                            "تلاش برای ویرایش تسک غیرموجود",
+                            recordId: model.Id.ToString()
+                        );
+                        return RedirectToAction("ErrorView", "Home");
+                    }
 
-                return RedirectToAction(nameof(Details), new { id = model.Id });
+                    // ذخیره مقادیر قبلی برای لاگ
+                    var oldValues = new
+                    {
+                        task.Title,
+                        task.Description,
+                        task.DueDate,
+                        task.Priority,
+                        task.IsActive
+                    };
+
+                    // به‌روزرسانی اطلاعات
+                    _mapper.Map(model, task);
+                    task.LastUpdateDate = DateTime.Now;
+                    
+                    // تبدیل تاریخ شمسی به میلادی
+                    if (!string.IsNullOrEmpty(model.DueDatePersian))
+                    {
+                        task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.DueDatePersian);
+                    }
+                    else
+                    {
+                        task.DueDate = null;
+                    }
+                    
+                    _uow.TaskUW.Update(task);
+                    _uow.Save();
+                    
+                    // ذخیره فایل‌های پیوست
+                    if (model.Attachments != null && model.Attachments.Count > 0)
+                    {
+                        SaveTaskAttachments(task.Id, model.Attachments);
+                    }
+
+                    // مقادیر جدید برای لاگ
+                    var newValues = new
+                    {
+                        task.Title,
+                        task.Description,
+                        task.DueDate,
+                        task.Priority,
+                        task.IsActive
+                    };
+
+                    // ثبت لاگ تغییرات
+                    await _activityLogger.LogChangeAsync(
+                        ActivityTypeEnum.Edit,
+                        "Tasks",
+                        "Edit",
+                        $"ویرایش تسک: {task.Title}",
+                        oldValues,
+                        newValues,
+                        recordId: task.Id.ToString(),
+                        entityType: "Tasks",
+                        recordTitle: task.Title
+                    );
+
+                    return RedirectToAction(nameof(Details), new { id = model.Id });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "Tasks",
+                        "Edit",
+                        "خطا در ویرایش تسک",
+                        ex,
+                        recordId: model.Id.ToString()
+                    );
+                    
+                    ModelState.AddModelError("", "خطایی در ویرایش تسک رخ داد: " + ex.Message);
+                }
             }
             
             PopulateDropdowns();
@@ -327,126 +511,286 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         // فعال/غیرفعال کردن تسک - نمایش مودال تأیید
         [HttpGet]
-        public IActionResult ToggleActiveStatus(int id)
+        public async Task<IActionResult> ToggleActiveStatus(int id)
         {
-            var task = _uow.TaskUW.GetById(id);
-            if (task == null)
+            try
+            {
+                var task = _uow.TaskUW.GetById(id);
+                if (task == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                if (task.IsActive)
+                {
+                    // غیرفعال کردن
+                    ViewBag.themeclass = "bg-gd-fruit";
+                    ViewBag.ModalTitle = "غیرفعال کردن تسک";
+                    ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
+                }
+                else
+                {
+                    // فعال کردن
+                    ViewBag.themeclass = "bg-gd-lake";
+                    ViewBag.ModalTitle = "فعال کردن تسک";
+                    ViewBag.ButonClass = "btn rounded-0 btn-hero btn-success";
+                }
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "ToggleActiveStatus",
+                    $"مشاهده فرم تغییر وضعیت تسک: {task.Title}",
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+
+                return PartialView("_ToggleActiveStatus", _mapper.Map<TaskViewModel>(task));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "ToggleActiveStatus",
+                    "خطا در نمایش فرم تغییر وضعیت",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            if (task.IsActive)
-            {
-                // غیرفعال کردن
-                ViewBag.themeclass = "bg-gd-fruit";
-                ViewBag.ModalTitle = "غیرفعال کردن تسک";
-                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
             }
-            else
-            {
-                // فعال کردن
-                ViewBag.themeclass = "bg-gd-lake";
-                ViewBag.ModalTitle = "فعال کردن تسک";
-                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-success";
-            }
-
-            return PartialView("_ToggleActiveStatus", _mapper.Map<TaskViewModel>(task));
         }
 
         // فعال/غیرفعال کردن تسک - پردازش درخواست
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ToggleActiveStatusPost(int id)
+        public async Task<IActionResult> ToggleActiveStatusPost(int id)
         {
-            var task = _uow.TaskUW.GetById(id);
-            if (task == null)
+            try
+            {
+                var task = _uow.TaskUW.GetById(id);
+                if (task == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var oldStatus = task.IsActive;
+                task.IsActive = !task.IsActive;
+                task.LastUpdateDate = DateTime.Now;
+                
+                _uow.TaskUW.Update(task);
+                _uow.Save();
+
+                // ثبت لاگ
+                await _activityLogger.LogChangeAsync(
+                    ActivityTypeEnum.Edit,
+                    "Tasks",
+                    "ToggleActiveStatus",
+                    $"تغییر وضعیت تسک: {task.Title} از {(oldStatus ? "فعال" : "غیرفعال")} به {(task.IsActive ? "فعال" : "غیرفعال")}]",
+                    new { IsActive = oldStatus },
+                    new { IsActive = task.IsActive },
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "ToggleActiveStatus",
+                    "خطا در تغییر وضعیت تسک",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            task.IsActive = !task.IsActive;
-            task.LastUpdateDate = DateTime.Now;
-            
-            _uow.TaskUW.Update(task);
-            _uow.Save();
-
-            return RedirectToAction(nameof(Index));
+            }
         }
 
         // حذف تسک - نمایش مودال تأیید
         [HttpGet]
         [Permission("Tasks", "Delete", 3)] // Delete permission
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var task = _uow.TaskUW.GetById(id);
-            if (task == null)
+            try
+            {
+                var task = _uow.TaskUW.GetById(id);
+                if (task == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
+                ViewBag.themeclass = "bg-gd-fruit";
+                ViewBag.ViewTitle = "حذف تسک";
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "Delete",
+                    $"مشاهده فرم حذف تسک: {task.Title}",
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+
+                return PartialView("_DeleteTask", _mapper.Map<TaskViewModel>(task));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "Delete",
+                    "خطا در نمایش فرم حذف تسک",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
-            ViewBag.themeclass = "bg-gd-fruit";
-            ViewBag.ViewTitle = "حذف تسک";
-
-            return PartialView("_DeleteTask", _mapper.Map<TaskViewModel>(task));
+            }
         }
 
         // حذف تسک - پردازش درخواست
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Permission("Tasks", "Delete", 3)] // Delete permission
-        public IActionResult DeletePost(int id)
+        public async Task<IActionResult> DeletePost(int id)
         {
-            var task = _uow.TaskUW.GetById(id);
-            if (task == null)
+            try
+            {
+                var task = _uow.TaskUW.GetById(id);
+                if (task == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var taskTitle = task.Title;
+                task.IsDeleted = true;
+                task.LastUpdateDate = DateTime.Now;
+                
+                _uow.TaskUW.Update(task);
+                _uow.Save();
+
+                // ثبت لاگ حذف
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "Tasks",
+                    "Delete",
+                    $"حذف تسک: {taskTitle}",
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: taskTitle
+                );
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "Delete",
+                    "خطا در حذف تسک",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            task.IsDeleted = true;
-            task.LastUpdateDate = DateTime.Now;
-            
-            _uow.TaskUW.Update(task);
-            _uow.Save();
-
-            return RedirectToAction(nameof(Index));
+            }
         }
 
         // افزودن عملیات به تسک - نمایش مودال
         [HttpGet]
-        public IActionResult AddOperation(int taskId)
+        public async Task<IActionResult> AddOperation(int taskId)
         {
-            var task = _uow.TaskUW.GetById(taskId);
-            if (task == null)
-                return RedirectToAction("ErrorView", "Home");
-
-            // تعیین ترتیب پیش‌فرض برای عملیات جدید
-            var operations = _taskRepository.GetTaskOperations(taskId);
-            int nextOrder = operations.Count > 0 ? operations.Max(o => o.OperationOrder) + 1 : 1;
-
-            ViewBag.TaskId = taskId;
-            ViewBag.TaskTitle = task.Title;
-            ViewBag.OperationOrder = nextOrder;
-
-            return PartialView("_AddOperation", new TaskOperationViewModel
+            try
             {
-                TaskId = taskId,
-                OperationOrder = nextOrder,
-                IsCompleted = false
-            });
+                var task = _uow.TaskUW.GetById(taskId);
+                if (task == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                // تعیین ترتیب پیش‌فرض برای عملیات جدید
+                var operations = _taskRepository.GetTaskOperations(taskId);
+                int nextOrder = operations.Count > 0 ? operations.Max(o => o.OperationOrder) + 1 : 1;
+
+                ViewBag.TaskId = taskId;
+                ViewBag.TaskTitle = task.Title;
+                ViewBag.OperationOrder = nextOrder;
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "AddOperation",
+                    $"مشاهده فرم افزودن عملیات برای تسک: {task.Title}",
+                    recordId: taskId.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+
+                return PartialView("_AddOperation", new TaskOperationViewModel
+                {
+                    TaskId = taskId,
+                    OperationOrder = nextOrder,
+                    IsCompleted = false
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "AddOperation",
+                    "خطا در نمایش فرم افزودن عملیات",
+                    ex,
+                    recordId: taskId.ToString()
+                );
+                
+                return RedirectToAction("ErrorView", "Home");
+            }
         }
 
         // افزودن عملیات به تسک - پردازش مودال
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddOperation(TaskOperationViewModel model)
+        public async Task<IActionResult> AddOperation(TaskOperationViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var task = _uow.TaskUW.GetById(model.TaskId);
-                if (task == null)
-                    return RedirectToAction("ErrorView", "Home");
+                try
+                {
+                    var task = _uow.TaskUW.GetById(model.TaskId);
+                    if (task == null)
+                        return RedirectToAction("ErrorView", "Home");
 
-                var operation = _mapper.Map<TaskOperation>(model);
-                operation.CreateDate = DateTime.Now;
-                operation.CreatorUserId = _userManager.GetUserId(User);
+                    var operation = _mapper.Map<TaskOperation>(model);
+                    operation.CreateDate = DateTime.Now;
+                    operation.CreatorUserId = _userManager.GetUserId(User);
 
-                _uow.TaskOperationUW.Create(operation);
-                _uow.Save();
+                    _uow.TaskOperationUW.Create(operation);
+                    _uow.Save();
 
-                return RedirectToAction(nameof(Details), new { id = model.TaskId });
+                    // ثبت لاگ
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "Tasks",
+                        "AddOperation",
+                        $"افزودن عملیات جدید به تسک: {task.Title} - عملیات: {operation.Title}",
+                        recordId: model.TaskId.ToString(),
+                        entityType: "TaskOperation",
+                        recordTitle: operation.Title
+                    );
+
+                    return RedirectToAction(nameof(Details), new { id = model.TaskId });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "Tasks",
+                        "AddOperation",
+                        "خطا در افزودن عملیات جدید",
+                        ex,
+                        recordId: model.TaskId.ToString()
+                    );
+                    
+                    ModelState.AddModelError("", "خطایی در افزودن عملیات رخ داد: " + ex.Message);
+                }
             }
 
             var currentTask = _uow.TaskUW.GetById(model.TaskId);
@@ -459,56 +803,128 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         // ویرایش عملیات تسک - نمایش مودال
         [HttpGet]
-        public IActionResult EditOperation(int id)
+        public async Task<IActionResult> EditOperation(int id)
         {
-            var operation = _taskRepository.GetTaskOperationById(id);
-            if (operation == null)
+            try
+            {
+                var operation = _taskRepository.GetTaskOperationById(id);
+                if (operation == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var task = _uow.TaskUW.GetById(operation.TaskId);
+                ViewBag.TaskId = operation.TaskId;
+                ViewBag.TaskTitle = task.Title;
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "EditOperation",
+                    $"مشاهده فرم ویرایش عملیات: {operation.Title}",
+                    recordId: id.ToString(),
+                    entityType: "TaskOperation",
+                    recordTitle: operation.Title
+                );
+
+                return PartialView("_EditOperation", _mapper.Map<TaskOperationViewModel>(operation));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "EditOperation",
+                    "خطا در نمایش فرم ویرایش عملیات",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            var task = _uow.TaskUW.GetById(operation.TaskId);
-            ViewBag.TaskId = operation.TaskId;
-            ViewBag.TaskTitle = task.Title;
-
-            return PartialView("_EditOperation", _mapper.Map<TaskOperationViewModel>(operation));
+            }
         }
 
         // ویرایش عملیات تسک - پردازش مودال
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditOperation(TaskOperationViewModel model)
+        public async Task<IActionResult> EditOperation(TaskOperationViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var operation = _uow.TaskOperationUW.GetById(model.Id);
-                if (operation == null)
-                    return RedirectToAction("ErrorView", "Home");
-
-                // اگر وضعیت تکمیل تغییر کرده است
-                bool completionChanged = operation.IsCompleted != model.IsCompleted;
-                
-                // به‌روزرسانی اطلاعات
-                _mapper.Map(model, operation);
-                
-                // اگر عملیات به تازگی تکمیل شده است
-                if (completionChanged && model.IsCompleted)
+                try
                 {
-                    operation.CompletionDate = DateTime.Now;
-                    operation.CompletedByUserId = _userManager.GetUserId(User);
+                    var operation = _uow.TaskOperationUW.GetById(model.Id);
+                    if (operation == null)
+                        return RedirectToAction("ErrorView", "Home");
+
+                    // ذخیره مقادیر قبلی
+                    var oldValues = new
+                    {
+                        operation.Title,
+                        operation.Description,
+                        operation.IsCompleted,
+                        operation.OperationOrder
+                    };
+
+                    // اگر وضعیت تکمیل تغییر کرده است
+                    bool completionChanged = operation.IsCompleted != model.IsCompleted;
+                    
+                    // به‌روزرسانی اطلاعات
+                    _mapper.Map(model, operation);
+                    
+                    // اگر عملیات به تازگی تکمیل شده است
+                    if (completionChanged && model.IsCompleted)
+                    {
+                        operation.CompletionDate = DateTime.Now;
+                        operation.CompletedByUserId = _userManager.GetUserId(User);
+                    }
+                    // اگر عملیات از حالت تکمیل خارج شده است
+                    else if (completionChanged && !model.IsCompleted)
+                    {
+                        operation.CompletionDate = null;
+                        operation.CompletedByUserId = null;
+                    }
+
+                    _uow.TaskOperationUW.Update(operation);
+                    _uow.Save();
+
+                    // مقادیر جدید
+                    var newValues = new
+                    {
+                        operation.Title,
+                        operation.Description,
+                        operation.IsCompleted,
+                        operation.OperationOrder
+                    };
+
+                    // ثبت لاگ تغییرات
+                    await _activityLogger.LogChangeAsync(
+                        ActivityTypeEnum.Edit,
+                        "Tasks",
+                        "EditOperation",
+                        $"ویرایش عملیات: {operation.Title}",
+                        oldValues,
+                        newValues,
+                        recordId: operation.Id.ToString(),
+                        entityType: "TaskOperation",
+                        recordTitle: operation.Title
+                    );
+                    
+                    // بررسی اگر همه عملیات‌های تسک تکمیل شده‌اند، تسک را تکمیل کنیم
+                    UpdateTaskCompletionStatus(operation.TaskId);
+
+                    return RedirectToAction(nameof(Details), new { id = operation.TaskId });
                 }
-                // اگر عملیات از حالت تکمیل خارج شده است
-                else if (completionChanged && !model.IsCompleted)
+                catch (Exception ex)
                 {
-                    operation.CompletionDate = null;
-                    operation.CompletedByUserId = null;
+                    await _activityLogger.LogErrorAsync(
+                        "Tasks",
+                        "EditOperation",
+                        "خطا در ویرایش عملیات",
+                        ex,
+                        recordId: model.Id.ToString()
+                    );
+                    
+                    ModelState.AddModelError("", "خطایی در ویرایش عملیات رخ داد: " + ex.Message);
                 }
-
-                _uow.TaskOperationUW.Update(operation);
-                _uow.Save();
-                
-                // بررسی اگر همه عملیات‌های تسک تکمیل شده‌اند، تسک را تکمیل کنیم
-                UpdateTaskCompletionStatus(operation.TaskId);
-
-                return RedirectToAction(nameof(Details), new { id = operation.TaskId });
             }
 
             var task = _uow.TaskUW.GetById(model.TaskId);
@@ -520,133 +936,268 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         // حذف عملیات تسک - نمایش مودال تأیید
         [HttpGet]
-        public IActionResult DeleteOperation(int id)
+        public async Task<IActionResult> DeleteOperation(int id)
         {
-            var operation = _taskRepository.GetTaskOperationById(id);
-            if (operation == null)
+            try
+            {
+                var operation = _taskRepository.GetTaskOperationById(id);
+                if (operation == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var task = _uow.TaskUW.GetById(operation.TaskId);
+                ViewBag.TaskId = operation.TaskId;
+                ViewBag.TaskTitle = task.Title;
+                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
+                ViewBag.themeclass = "bg-gd-fruit";
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "DeleteOperation",
+                    $"مشاهده فرم حذف عملیات: {operation.Title}",
+                    recordId: id.ToString(),
+                    entityType: "TaskOperation",
+                    recordTitle: operation.Title
+                );
+
+                return PartialView("_DeleteOperation", _mapper.Map<TaskOperationViewModel>(operation));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "DeleteOperation",
+                    "خطا در نمایش فرم حذف عملیات",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            var task = _uow.TaskUW.GetById(operation.TaskId);
-            ViewBag.TaskId = operation.TaskId;
-            ViewBag.TaskTitle = task.Title;
-            ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
-            ViewBag.themeclass = "bg-gd-fruit";
-
-            return PartialView("_DeleteOperation", _mapper.Map<TaskOperationViewModel>(operation));
+            }
         }
 
         // حذف عملیات تسک - پردازش درخواست
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteOperationPost(int id)
+        public async Task<IActionResult> DeleteOperationPost(int id)
         {
-            var operation = _uow.TaskOperationUW.GetById(id);
-            if (operation == null)
+            try
+            {
+                var operation = _uow.TaskOperationUW.GetById(id);
+                if (operation == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                int taskId = operation.TaskId;
+                var operationTitle = operation.Title;
+
+                _uow.TaskOperationUW.Delete(operation);
+                _uow.Save();
+
+                // ثبت لاگ حذف
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "Tasks",
+                    "DeleteOperation",
+                    $"حذف عملیات: {operationTitle}",
+                    recordId: id.ToString(),
+                    entityType: "TaskOperation",
+                    recordTitle: operationTitle
+                );
+                
+                // بازتعیین ترتیب عملیات‌ها
+                ReorderOperations(taskId);
+                
+                // بررسی وضعیت تکمیل تسک
+                UpdateTaskCompletionStatus(taskId);
+
+                return RedirectToAction(nameof(Details), new { id = taskId });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "DeleteOperation",
+                    "خطا در حذف عملیات",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            int taskId = operation.TaskId;
-
-            _uow.TaskOperationUW.Delete(operation);
-            _uow.Save();
-            
-            // بازتعیین ترتیب عملیات‌ها
-            ReorderOperations(taskId);
-            
-            // بررسی وضعیت تکمیل تسک
-            UpdateTaskCompletionStatus(taskId);
-
-            return RedirectToAction(nameof(Details), new { id = taskId });
+            }
         }
 
         // تغییر وضعیت تکمیل عملیات - اکشن AJAX
         [HttpPost]
-        public IActionResult ToggleOperationCompletion(int id)
+        public async Task<IActionResult> ToggleOperationCompletion(int id)
         {
-            var operation = _uow.TaskOperationUW.GetById(id);
-            if (operation == null)
-                return Json(new { success = false, message = "عملیات یافت نشد" });
-
-            operation.IsCompleted = !operation.IsCompleted;
-            
-            if (operation.IsCompleted)
+            try
             {
-                operation.CompletionDate = DateTime.Now;
-                operation.CompletedByUserId = _userManager.GetUserId(User);
+                var operation = _uow.TaskOperationUW.GetById(id);
+                if (operation == null)
+                    return Json(new { success = false, message = "عملیات یافت نشد" });
+
+                var oldStatus = operation.IsCompleted;
+                operation.IsCompleted = !operation.IsCompleted;
+                
+                if (operation.IsCompleted)
+                {
+                    operation.CompletionDate = DateTime.Now;
+                    operation.CompletedByUserId = _userManager.GetUserId(User);
+                }
+                else
+                {
+                    operation.CompletionDate = null;
+                    operation.CompletedByUserId = null;
+                }
+
+                _uow.TaskOperationUW.Update(operation);
+                _uow.Save();
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Edit,
+                    "Tasks",
+                    "ToggleOperationCompletion",
+                    $"تغییر وضعیت تکمیل عملیات: {operation.Title} از {(oldStatus ? "تکمیل شده" : "تکمیل نشده")} به {(operation.IsCompleted ? "تکمیل شده" : "تکمیل نشده")}",
+                    recordId: id.ToString(),
+                    entityType: "TaskOperation",
+                    recordTitle: operation.Title
+                );
+                
+                // بررسی وضعیت تکمیل تسک
+                UpdateTaskCompletionStatus(operation.TaskId);
+
+                return Json(new { 
+                    success = true, 
+                    isCompleted = operation.IsCompleted,
+                    completionDate = operation.CompletionDate != null ? ConvertDateTime.ConvertMiladiToShamsi(operation.CompletionDate, "yyyy/MM/dd") : null
+                });
             }
-            else
+            catch (Exception ex)
             {
-                operation.CompletionDate = null;
-                operation.CompletedByUserId = null;
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "ToggleOperationCompletion",
+                    "خطا در تغییر وضعیت تکمیل عملیات",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
+                return Json(new { success = false, message = "خطا در تغییر وضعیت عملیات" });
             }
-
-            _uow.TaskOperationUW.Update(operation);
-            _uow.Save();
-            
-            // بررسی وضعیت تکمیل تسک
-            UpdateTaskCompletionStatus(operation.TaskId);
-
-            return Json(new { 
-                success = true, 
-                isCompleted = operation.IsCompleted,
-                completionDate = operation.CompletionDate != null ? ConvertDateTime.ConvertMiladiToShamsi(operation.CompletionDate, "yyyy/MM/dd") : null
-            });
         }
 
         // اختصاص تسک به کاربر - نمایش مودال
         [HttpGet]
-        public IActionResult AssignTask(int taskId)
+        public async Task<IActionResult> AssignTask(int taskId)
         {
-            var task = _uow.TaskUW.GetById(taskId);
-            if (task == null)
-                return RedirectToAction("ErrorView", "Home");
-
-            ViewBag.TaskId = taskId;
-            ViewBag.TaskTitle = task.Title;
-            ViewBag.Users = new SelectList(_userManager.Users
-                .Where(u => u.IsActive && !u.IsRemoveUser)
-                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                "Id", "FullName");
-
-            return PartialView("_AssignTask", new TaskAssignmentViewModel
+            try
             {
-                TaskId = taskId,
-                AssignDate = DateTime.Now
-            });
+                var task = _uow.TaskUW.GetById(taskId);
+                if (task == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                ViewBag.TaskId = taskId;
+                ViewBag.TaskTitle = task.Title;
+                ViewBag.Users = new SelectList(_userManager.Users
+                    .Where(u => u.IsActive && !u.IsRemoveUser)
+                    .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                    "Id", "FullName");
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "AssignTask",
+                    $"مشاهده فرم اختصاص تسک: {task.Title}",
+                    recordId: taskId.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+
+                return PartialView("_AssignTask", new TaskAssignmentViewModel
+                {
+                    TaskId = taskId,
+                    AssignDate = DateTime.Now
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "AssignTask",
+                    "خطا در نمایش فرم اختصاص تسک",
+                    ex,
+                    recordId: taskId.ToString()
+                );
+                
+                return RedirectToAction("ErrorView", "Home");
+            }
         }
 
         // اختصاص تسک به کاربر - پردازش مودال
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AssignTask(TaskAssignmentViewModel model)
+        public async Task<IActionResult> AssignTask(TaskAssignmentViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var task = _uow.TaskUW.GetById(model.TaskId);
-                if (task == null)
-                    return RedirectToAction("ErrorView", "Home");
-                
-                // بررسی آیا این کاربر قبلاً به این تسک اختصاص داده شده است
-                var existingAssignment = _taskRepository.GetTaskAssignmentByUserAndTask(model.AssignedUserId, model.TaskId);
-                if (existingAssignment != null)
+                try
                 {
-                    ModelState.AddModelError("AssignedUserId", "این کاربر قبلاً به این تسک اختصاص داده شده است");
-                    ViewBag.TaskId = model.TaskId;
-                    ViewBag.TaskTitle = task.Title;
-                    ViewBag.Users = new SelectList(_userManager.Users
-                        .Where(u => u.IsActive && !u.IsRemoveUser)
-                        .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                        "Id", "FullName");
-                    return PartialView("_AssignTask", model);
+                    var task = _uow.TaskUW.GetById(model.TaskId);
+                    if (task == null)
+                        return RedirectToAction("ErrorView", "Home");
+                    
+                    // بررسی آیا این کاربر قبلاً به این تسک اختصاص داده شده است
+                    var existingAssignment = _taskRepository.GetTaskAssignmentByUserAndTask(model.AssignedUserId, model.TaskId);
+                    if (existingAssignment != null)
+                    {
+                        ModelState.AddModelError("AssignedUserId", "این کاربر قبلاً به این تسک اختصاص داده شده است");
+                        ViewBag.TaskId = model.TaskId;
+                        ViewBag.TaskTitle = task.Title;
+                        ViewBag.Users = new SelectList(_userManager.Users
+                            .Where(u => u.IsActive && !u.IsRemoveUser)
+                            .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                            "Id", "FullName");
+                        return PartialView("_AssignTask", model);
+                    }
+
+                    var assignment = _mapper.Map<TaskAssignment>(model);
+                    assignment.AssignmentDate = DateTime.Now;
+                    assignment.AssignerUserId = _userManager.GetUserId(User);
+
+                    _uow.TaskAssignmentUW.Create(assignment);
+                    _uow.Save();
+
+                    // دریافت اطلاعات کاربر اختصاص یافته
+                    var assignedUser = await _userManager.FindByIdAsync(model.AssignedUserId);
+
+                    // ثبت لاگ
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "Tasks",
+                        "AssignTask",
+                        $"اختصاص تسک: {task.Title} به کاربر: {assignedUser?.FirstName} {assignedUser?.LastName}",
+                        recordId: model.TaskId.ToString(),
+                        entityType: "TaskAssignment",
+                        recordTitle: $"{task.Title} - {assignedUser?.FirstName} {assignedUser?.LastName}"
+                    );
+
+                    return RedirectToAction(nameof(Details), new { id = model.TaskId });
                 }
-
-                var assignment = _mapper.Map<TaskAssignment>(model);
-                assignment.AssignmentDate = DateTime.Now;
-                assignment.AssignerUserId = _userManager.GetUserId(User);
-
-                _uow.TaskAssignmentUW.Create(assignment);
-                _uow.Save();
-
-                return RedirectToAction(nameof(Details), new { id = model.TaskId });
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "Tasks",
+                        "AssignTask",
+                        "خطا در اختصاص تسک",
+                        ex,
+                        recordId: model.TaskId.ToString()
+                    );
+                    
+                    ModelState.AddModelError("", "خطایی در اختصاص تسک رخ داد: " + ex.Message);
+                }
             }
 
             var currentTask = _uow.TaskUW.GetById(model.TaskId);
@@ -662,216 +1213,450 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         // حذف اختصاص تسک - نمایش مودال تأیید
         [HttpGet]
-        public IActionResult RemoveAssignment(int id)
+        public async Task<IActionResult> RemoveAssignment(int id)
         {
-            var assignment = _taskRepository.GetTaskAssignmentById(id);
-            if (assignment == null)
+            try
+            {
+                var assignment = _taskRepository.GetTaskAssignmentById(id);
+                if (assignment == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                ViewBag.TaskId = assignment.TaskId;
+                ViewBag.TaskTitle = assignment.Task.Title;
+                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
+                ViewBag.themeclass = "bg-gd-fruit";
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "RemoveAssignment",
+                    $"مشاهده فرم حذف اختصاص تسک: {assignment.Task.Title}",
+                    recordId: id.ToString(),
+                    entityType: "TaskAssignment",
+                    recordTitle: assignment.Task.Title
+                );
+
+                return PartialView("_RemoveAssignment", _mapper.Map<TaskAssignmentViewModel>(assignment));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "RemoveAssignment",
+                    "خطا در نمایش فرم حذف اختصاص",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            ViewBag.TaskId = assignment.TaskId;
-            ViewBag.TaskTitle = assignment.Task.Title;
-            ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
-            ViewBag.themeclass = "bg-gd-fruit";
-
-            return PartialView("_RemoveAssignment", _mapper.Map<TaskAssignmentViewModel>(assignment));
+            }
         }
 
         // حذف اختصاص تسک - پردازش درخواست
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult RemoveAssignmentPost(int id)
+        public async Task<IActionResult> RemoveAssignmentPost(int id)
         {
-            var assignment = _uow.TaskAssignmentUW.GetById(id);
-            if (assignment == null)
+            try
+            {
+                var assignment = _uow.TaskAssignmentUW.GetById(id);
+                if (assignment == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                int taskId = assignment.TaskId;
+                var task = _uow.TaskUW.GetById(taskId);
+                var assignedUser = await _userManager.FindByIdAsync(assignment.AssignedUserId);
+
+                _uow.TaskAssignmentUW.Delete(assignment);
+                _uow.Save();
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "Tasks",
+                    "RemoveAssignment",
+                    $"حذف اختصاص تسک: {task?.Title} از کاربر: {assignedUser?.FirstName} {assignedUser?.LastName}",
+                    recordId: id.ToString(),
+                    entityType: "TaskAssignment",
+                    recordTitle: $"{task?.Title} - {assignedUser?.FirstName} {assignedUser?.LastName}"
+                );
+
+                return RedirectToAction(nameof(Details), new { id = taskId });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "RemoveAssignment",
+                    "خطا در حذف اختصاص تسک",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            int taskId = assignment.TaskId;
-
-            _uow.TaskAssignmentUW.Delete(assignment);
-            _uow.Save();
-
-            return RedirectToAction(nameof(Details), new { id = taskId });
+            }
         }
 
         // تکمیل تسک - نمایش مودال
         [HttpGet]
-        public IActionResult CompleteTask(int id)
+        public async Task<IActionResult> CompleteTask(int id)
         {
-            var task = _uow.TaskUW.GetById(id);
-            if (task == null)
+            try
+            {
+                var task = _uow.TaskUW.GetById(id);
+                if (task == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                if (task.CompletionDate.HasValue)
+                {
+                    ViewBag.ModalTitle = "بازگشایی تسک";
+                    ViewBag.ButtonText = "بازگشایی تسک";
+                    ViewBag.ButonClass = "btn rounded-0 btn-hero btn-warning";
+                    ViewBag.themeclass = "bg-gd-sun";
+                    ViewBag.IsReopening = true;
+                }
+                else
+                {
+                    ViewBag.ModalTitle = "تکمیل تسک";
+                    ViewBag.ButtonText = "تکمیل تسک";
+                    ViewBag.ButonClass = "btn rounded-0 btn-hero btn-success";
+                    ViewBag.themeclass = "bg-gd-sea";
+                    ViewBag.IsReopening = false;
+                }
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "CompleteTask",
+                    $"مشاهده فرم تکمیل/بازگشایی تسک: {task.Title}",
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+
+                return PartialView("_CompleteTask", _mapper.Map<TaskViewModel>(task));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "CompleteTask",
+                    "خطا در نمایش فرم تکمیل/بازگشایی تسک",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
                 return RedirectToAction("ErrorView", "Home");
-
-            if (task.CompletionDate.HasValue)
-            {
-                ViewBag.ModalTitle = "بازگشایی تسک";
-                ViewBag.ButtonText = "بازگشایی تسک";
-                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-warning";
-                ViewBag.themeclass = "bg-gd-sun";
-                ViewBag.IsReopening = true;
             }
-            else
-            {
-                ViewBag.ModalTitle = "تکمیل تسک";
-                ViewBag.ButtonText = "تکمیل تسک";
-                ViewBag.ButonClass = "btn rounded-0 btn-hero btn-success";
-                ViewBag.themeclass = "bg-gd-sea";
-                ViewBag.IsReopening = false;
-            }
-
-            return PartialView("_CompleteTask", _mapper.Map<TaskViewModel>(task));
         }
 
         // تکمیل تسک - پردازش درخواست
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CompleteTaskPost(int id, bool isReopening)
+        public async Task<IActionResult> CompleteTaskPost(int id, bool isReopening)
         {
-            var task = _uow.TaskUW.GetById(id);
-            if (task == null)
-                return RedirectToAction("ErrorView", "Home");
+            try
+            {
+                var task = _uow.TaskUW.GetById(id);
+                if (task == null)
+                    return RedirectToAction("ErrorView", "Home");
 
-            if (isReopening)
-            {
-                task.CompletionDate = null;
-                task.SupervisorApprovedDate = null;
-                task.ManagerApprovedDate = null;
-            }
-            else
-            {
-                task.CompletionDate = DateTime.Now;
-                
-                // اگر کاربر جاری سرپرست یا مدیر است، تایید متناظر را هم ثبت کنیم
-                var currentUser = _userManager.GetUserAsync(User).Result;
-                var isManager = User.IsInRole("Admin") || User.IsInRole("Manager");
-                var isSupervisor = User.IsInRole("Supervisor") || isManager;
-                
-                if (isSupervisor)
+                var oldCompletionDate = task.CompletionDate;
+                var taskTitle = task.Title;
+
+                if (isReopening)
                 {
-                    task.SupervisorApprovedDate = DateTime.Now;
+                    task.CompletionDate = null;
+                    task.SupervisorApprovedDate = null;
+                    task.ManagerApprovedDate = null;
+
+                    // ثبت لاگ بازگشایی
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Edit,
+                        "Tasks",
+                        "ReopenTask",
+                        $"بازگشایی تسک: {taskTitle}",
+                        recordId: id.ToString(),
+                        entityType: "Tasks",
+                        recordTitle: taskTitle
+                    );
                 }
-                
-                if (isManager)
+                else
                 {
-                    task.ManagerApprovedDate = DateTime.Now;
-                }
-                
-                // همه عملیات‌ها را به حالت تکمیل شده تغییر دهیم
-                var operations = _taskRepository.GetTaskOperations(id);
-                foreach (var operation in operations)
-                {
-                    if (!operation.IsCompleted)
+                    task.CompletionDate = DateTime.Now;
+                    
+                    // اگر کاربر جاری سرپرست یا مدیر است، تایید متناظر را هم ثبت کنیم
+                    var currentUser = _userManager.GetUserAsync(User).Result;
+                    var isManager = User.IsInRole("Admin") || User.IsInRole("Manager");
+                    var isSupervisor = User.IsInRole("Supervisor") || isManager;
+                    
+                    if (isSupervisor)
                     {
-                        operation.IsCompleted = true;
-                        operation.CompletionDate = DateTime.Now;
-                        operation.CompletedByUserId = _userManager.GetUserId(User);
-                        
-                        _uow.TaskOperationUW.Update(operation);
+                        task.SupervisorApprovedDate = DateTime.Now;
                     }
-                }
-            }
-            
-            task.LastUpdateDate = DateTime.Now;
-            _uow.TaskUW.Update(task);
-            _uow.Save();
+                    
+                    if (isManager)
+                    {
+                        task.ManagerApprovedDate = DateTime.Now;
+                    }
+                    
+                    // همه عملیات‌ها را به حالت تکمیل شده تغییر دهیم
+                    var operations = _taskRepository.GetTaskOperations(id);
+                    foreach (var operation in operations)
+                    {
+                        if (!operation.IsCompleted)
+                        {
+                            operation.IsCompleted = true;
+                            operation.CompletionDate = DateTime.Now;
+                            operation.CompletedByUserId = _userManager.GetUserId(User);
+                        
+                            _uow.TaskOperationUW.Update(operation);
+                        }
+                    }
 
-            return RedirectToAction(nameof(Details), new { id = id });
+                    // ثبت لاگ تکمیل
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Approve,
+                        "Tasks",
+                        "CompleteTask",
+                        $"تکمیل تسک: {taskTitle}",
+                        recordId: id.ToString(),
+                        entityType: "Tasks",
+                        recordTitle: taskTitle
+                    );
+                }
+                
+                task.LastUpdateDate = DateTime.Now;
+                _uow.TaskUW.Update(task);
+                _uow.Save();
+
+                return RedirectToAction(nameof(Details), new { id = id });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "CompleteTask",
+                    "خطا در تکمیل/بازگشایی تسک",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
+                return RedirectToAction("ErrorView", "Home");
+            }
         }
 
         // تایید تسک توسط سرپرست - اکشن AJAX
         [HttpPost]
         [Authorize(Roles = "Admin,Manager,Supervisor")]
         [Permission("Tasks  ", "ApproveTaskBySupervisor", 4)] // Approve permission
-        public IActionResult ApproveTaskBySupervisor(int id)
+        public async Task<IActionResult> ApproveTaskBySupervisor(int id)
         {
-            var task = _uow.TaskUW.GetById(id);
-            if (task == null)
-                return Json(new { success = false, message = "تسک یافت نشد" });
+            try
+            {
+                var task = _uow.TaskUW.GetById(id);
+                if (task == null)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Approve,
+                        "Tasks",
+                        "ApproveTaskBySupervisor",
+                        "تلاش برای تایید تسک غیرموجود",
+                        recordId: id.ToString()
+                    );
+                    return Json(new { success = false, message = "تسک یافت نشد" });
+                }
+                    
+                if (!task.CompletionDate.HasValue)
+                    return Json(new { success = false, message = "این تسک هنوز تکمیل نشده است" });
+
+                task.SupervisorApprovedDate = DateTime.Now;
+                task.LastUpdateDate = DateTime.Now;
                 
-            if (!task.CompletionDate.HasValue)
-                return Json(new { success = false, message = "این تسک هنوز تکمیل نشده است" });
+                _uow.TaskUW.Update(task);
+                _uow.Save();
 
-            task.SupervisorApprovedDate = DateTime.Now;
-            task.LastUpdateDate = DateTime.Now;
-            
-            _uow.TaskUW.Update(task);
-            _uow.Save();
+                // ثبت لاگ تایید سرپرست
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Approve,
+                    "Tasks",
+                    "ApproveTaskBySupervisor",
+                    $"تایید تسک توسط سرپرست: {task.Title}",
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
 
-            return Json(new { 
-                success = true, 
-                approvalDate = ConvertDateTime.ConvertMiladiToShamsi(task.SupervisorApprovedDate,"yyyy/MM/dd")
-            });
+                return Json(new { 
+                    success = true, 
+                    approvalDate = ConvertDateTime.ConvertMiladiToShamsi(task.SupervisorApprovedDate,"yyyy/MM/dd")
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "ApproveTaskBySupervisor",
+                    "خطا در تایید تسک توسط سرپرست",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
+                return Json(new { success = false, message = "خطا در تایید تسک" });
+            }
         }
 
         // تایید تسک توسط مدیر - اکشن AJAX
         [HttpPost]
         [Authorize(Roles = "Admin,Manager")]
         [Permission("Tasks  ", "ApproveTaskByManager", 4)] // Approve permission
-        public IActionResult ApproveTaskByManager(int id)
+        public async Task<IActionResult> ApproveTaskByManager(int id)
         {
-            var task = _uow.TaskUW.GetById(id);
-            if (task == null)
-                return Json(new { success = false, message = "تسک یافت نشد" });
-                
-            if (!task.CompletionDate.HasValue)
-                return Json(new { success = false, message = "این تسک هنوز تکمیل نشده است" });
-                
-            if (!task.SupervisorApprovedDate.HasValue)
-                return Json(new { success = false, message = "این تسک هنوز توسط سرپرست تایید نشده است" });
+            try
+            {
+                var task = _uow.TaskUW.GetById(id);
+                if (task == null)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Approve,
+                        "Tasks",
+                        "ApproveTaskByManager",
+                        "تلاش برای تایید تسک غیرموجود توسط مدیر",
+                        recordId: id.ToString()
+                    );
+                    return Json(new { success = false, message = "تسک یافت نشد" });
+                }
+                    
+                if (!task.CompletionDate.HasValue)
+                    return Json(new { success = false, message = "این تسک هنوز تکمیل نشده است" });
+                    
+                if (!task.SupervisorApprovedDate.HasValue)
+                    return Json(new { success = false, message = "این تسک هنوز توسط سرپرست تایید نشده است" });
 
-            task.ManagerApprovedDate = DateTime.Now;
-            task.LastUpdateDate = DateTime.Now;
-            
-            _uow.TaskUW.Update(task);
-            _uow.Save();
+                task.ManagerApprovedDate = DateTime.Now;
+                task.LastUpdateDate = DateTime.Now;
+                
+                _uow.TaskUW.Update(task);
+                _uow.Save();
 
-            return Json(new { 
-                success = true, 
-                approvalDate = ConvertDateTime.ConvertMiladiToShamsi(task.ManagerApprovedDate, "yyyy/MM/dd")
-            });
+                // ثبت لاگ تایید مدیر
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Approve,
+                    "Tasks",
+                    "ApproveTaskByManager",
+                    $"تایید تسک توسط مدیر: {task.Title}",
+                    recordId: id.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+
+                return Json(new { 
+                    success = true, 
+                    approvalDate = ConvertDateTime.ConvertMiladiToShamsi(task.ManagerApprovedDate, "yyyy/MM/dd")
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "ApproveTaskByManager",
+                    "خطا در تایید تسک توسط مدیر",
+                    ex,
+                    recordId: id.ToString()
+                );
+                
+                return Json(new { success = false, message = "خطا در تایید تسک" });
+            }
         }
 
         // جستجوی پیشرفته - نمایش فرم
         [HttpGet]
-        public IActionResult AdvancedSearch()
+        public async Task<IActionResult> AdvancedSearch()
         {
-            ViewBag.Categories = new SelectList(_taskRepository.GetAllCategories(), "Id", "Title");
-            ViewBag.Users = new SelectList(_userManager.Users
-                .Where(u => u.IsActive && !u.IsRemoveUser)
-                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                "Id", "FullName");
-                
-            ViewBag.Stakeholders = new SelectList(_stakeholderRepository.GetStakeholders()
-                .Select(s => new { Id = s.Id, FullName = $"{s.FirstName} {s.LastName}" }),
-                "Id", "FullName");
+            try
+            {
+                ViewBag.Categories = new SelectList(_taskRepository.GetAllCategories(), "Id", "Title");
+                ViewBag.Users = new SelectList(_userManager.Users
+                    .Where(u => u.IsActive && !u.IsRemoveUser)
+                    .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
+                    "Id", "FullName");
+                    
+                ViewBag.Stakeholders = new SelectList(_stakeholderRepository.GetStakeholders()
+                    .Select(s => new { Id = s.Id, FullName = $"{s.FirstName} {s.LastName}" }),
+                    "Id", "FullName");
 
-            return PartialView("_AdvancedSearch", new TaskSearchViewModel());
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "AdvancedSearch",
+                    "مشاهده فرم جستجوی پیشرفته تسک‌ها"
+                );
+
+                return PartialView("_AdvancedSearch", new TaskSearchViewModel());
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "AdvancedSearch",
+                    "خطا در نمایش فرم جستجوی پیشرفته",
+                    ex
+                );
+                
+                return PartialView("_AdvancedSearch", new TaskSearchViewModel());
+            }
         }
 
         // جستجوی پیشرفته - پردازش جستجو
         [HttpPost]
-        public IActionResult Search(TaskSearchViewModel model)
+        public async Task<IActionResult> Search(TaskSearchViewModel model)
         {
-            // انجام جستجو بر اساس پارامترهای دریافتی
-            var tasks = _taskRepository.SearchTasks(
-                model.SearchTerm, 
-                model.CategoryId, 
-                model.AssignedUserId,
-                model.IsCompleted);
-                
-            var viewModels = _mapper.Map<List<TaskViewModel>>(tasks);
-            
-            // تکمیل اطلاعات اضافی
-            foreach (var viewModel in viewModels)
+            try
             {
-                var operations = _taskRepository.GetTaskOperations(viewModel.Id);
-                viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(operations);
+                // انجام جستجو بر اساس پارامترهای دریافتی
+                var tasks = _taskRepository.SearchTasks(
+                    model.SearchTerm, 
+                    model.CategoryId, 
+                    model.AssignedUserId,
+                    model.IsCompleted);
+                    
+                var viewModels = _mapper.Map<List<TaskViewModel>>(tasks);
+                
+                // تکمیل اطلاعات اضافی
+                foreach (var viewModel in viewModels)
+                {
+                    var operations = _taskRepository.GetTaskOperations(viewModel.Id);
+                    viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(operations);
+                }
+
+                // ذخیره پارامترهای جستجو در ViewBag برای استفاده در صفحه نتایج
+                ViewBag.SearchModel = model;
+                ViewBag.Title = "نتایج جستجو";
+
+                // ثبت لاگ جستجو
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Search,
+                    "Tasks",
+                    "Search",
+                    $"جستجوی پیشرفته تسک‌ها - کلمه کلیدی: {model.SearchTerm ?? "خالی"}, تعداد نتایج: {viewModels.Count}"
+                );
+
+                return View("SearchResults", viewModels);
             }
-
-            // ذخیره پارامترهای جستجو در ViewBag برای استفاده در صفحه نتایج
-            ViewBag.SearchModel = model;
-            ViewBag.Title = "نتایج جستجو";
-
-            return View("SearchResults", viewModels);
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "Search",
+                    "خطا در جستجوی پیشرفته تسک‌ها",
+                    ex
+                );
+                
+                return View("SearchResults", new List<TaskViewModel>());
+            }
         }
 
         // توابع کمکی
@@ -987,7 +1772,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <returns>PartialView حاوی لیست طرف حساب‌های شعبه</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult BranchTriggerSelectStakeholders(int branchId)
+        public async Task<IActionResult> BranchTriggerSelectStakeholders(int branchId)
         {
             try
             {
@@ -1038,6 +1823,14 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     }
                 };
 
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "BranchTriggerSelectStakeholders",
+                    $"بارگذاری طرف حساب‌های شعبه {branchId}"
+                );
+
                 return Json(new
                 {
                     status = "update-view",
@@ -1047,7 +1840,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             catch (Exception ex)
             {
                 // لاگ کردن خطا
-                Console.WriteLine($"Error in BranchTriggerSelectStakeholders: {ex.Message}");
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "BranchTriggerSelectStakeholders",
+                    "خطا در بارگذاری طرف حساب‌های شعبه",
+                    ex
+                );
                 
                 return Json(new
                 {
@@ -1064,7 +1862,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <returns>PartialView حاوی لیست کاربران شعبه</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult BranchTriggerSelect(int branchId)
+        public async Task<IActionResult> BranchTriggerSelect(int branchId)
         {
             try
             {
@@ -1167,6 +1965,14 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     }
                 };
 
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "BranchTriggerSelect",
+                    $"بارگذاری کاربران و طرف حساب‌های شعبه {branchId}"
+                );
+
                 return Json(new
                 {
                     status = "update-view",
@@ -1176,7 +1982,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             catch (Exception ex)
             {
                 // لاگ کردن خطا
-                Console.WriteLine($"Error in BranchTriggerSelect: {ex.Message}");
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "BranchTriggerSelect",
+                    "خطا در بارگذاری کاربران و طرف حساب‌های شعبه",
+                    ex
+                );
                 
                 return Json(new
                 {

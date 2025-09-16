@@ -1,0 +1,536 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Core.LogStatisticsViewModel
+@{
+    ViewData["Title"] = "آمار و گزارش‌های سیستم";
+}
+
+<div class="content">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">@ViewData["Title"]</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Dashboard")">داشبورد</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">لاگ فعالیت‌ها</a></li>
+                        <li class="breadcrumb-item active">آمار و گزارش</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <!-- آمار کلی -->
+            <div class="row">
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>@Model.TotalLogs.ToString("N0")</h3>
+                            <p>مجموع لاگ‌ها</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-list"></i>
+                        </div>
+                        <a href="@Url.Action("Index")" class="small-box-footer">
+                            مشاهده همه <i class="fas fa-arrow-circle-left"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>@Model.TodayLogs.ToString("N0")</h3>
+                            <p>لاگ‌های امروز</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <a href="#" class="small-box-footer" onclick="getTodayLogs()">
+                            مشاهده جزئیات <i class="fas fa-arrow-circle-left"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>@Model.ErrorsLast24Hours</h3>
+                            <p>خطاهای 24 ساعت گذشته</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <a href="@Url.Action("ErrorLogs")" class="small-box-footer">
+                            مشاهده خطاها <i class="fas fa-arrow-circle-left"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3>@Model.SensitiveActivitiesLastWeek</h3>
+                            <p>فعالیت‌های حساس هفته گذشته</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <a href="@Url.Action("SensitiveLogs")" class="small-box-footer">
+                            مشاهده فعالیت‌های حساس <i class="fas fa-arrow-circle-left"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- آمار کاربران و سیستم -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-users"></i> آمار کاربران
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="description-block border-right">
+                                        <span class="description-percentage text-success">
+                                            <i class="fas fa-user-check"></i>
+                                        </span>
+                                        <h5 class="description-header">@Model.ActiveUsersToday</h5>
+                                        <span class="description-text">کاربران فعال امروز</span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="description-block">
+                                        <span class="description-percentage text-info">
+                                            <i class="fas fa-network-wired"></i>
+                                        </span>
+                                        <h5 class="description-header">@Model.UniqueIpsToday</h5>
+                                        <span class="description-text">IP های منحصر به فرد امروز</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <a href="@Url.Action("UserActivityStats")" class="btn btn-primary btn-sm btn-block">
+                                        آمار تفصیلی کاربران
+                                    </a>
+                                </div>
+                                <div class="col-sm-6">
+                                    <a href="@Url.Action("TopActiveUsers")" class="btn btn-success btn-sm btn-block">
+                                        کاربران پرفعالیت
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-server"></i> آمار عملکرد سیستم
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="description-block border-right">
+                                        <span class="description-percentage text-primary">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                        </span>
+                                        <h5 class="description-header">@Model.AverageProcessingTime.ToString("F1")</h5>
+                                        <span class="description-text">میانگین زمان پردازش (ms)</span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="description-block">
+                                        <span class="description-percentage text-warning">
+                                            <i class="fas fa-database"></i>
+                                        </span>
+                                        <h5 class="description-header">@Model.DatabaseSize.ToString("F2")</h5>
+                                        <span class="description-text">حجم پایگاه داده (MB)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <a href="@Url.Action("ModuleActivityStats")" class="btn btn-info btn-sm btn-block">
+                                        آمار ماژول‌ها
+                                    </a>
+                                </div>
+                                <div class="col-sm-6">
+                                    <a href="@Url.Action("ArchiveManagement")" class="btn btn-secondary btn-sm btn-block">
+                                        مدیریت آرشیو
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- نمودار فعالیت‌های زمانی -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-line"></i> روند فعالیت‌های سیستم
+                            </h3>
+                            <div class="card-tools">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="loadChart('week')">هفته گذشته</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="loadChart('month')">ماه گذشته</button>
+                                    <button type="button" class="btn btn-sm btn-info" onclick="loadChart('year')">سال گذشته</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart">
+                                <canvas id="activityChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- آمار بازه‌های زمانی -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-calendar-week"></i> آمار هفتگی
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress-group">
+                                <span class="float-right"><b>@Model.LastWeekLogs</b>/@Model.TotalLogs</span>
+                                <span class="progress-text">فعالیت‌های هفته گذشته</span>
+                                <div class="progress progress-sm">
+                                    <div class="progress-bar bg-primary" style="width: @(Model.TotalLogs > 0 ? (Model.LastWeekLogs * 100.0 / Model.TotalLogs).ToString("F1") : "0")%"></div>
+                                </div>
+                            </div>
+
+                            <div class="progress-group">
+                                <span class="float-right"><b>@Model.SensitiveActivitiesLastWeek</b>/@Model.LastWeekLogs</span>
+                                <span class="progress-text">فعالیت‌های حساس</span>
+                                <div class="progress progress-sm">
+                                    <div class="progress-bar bg-warning" style="width: @(Model.LastWeekLogs > 0 ? (Model.SensitiveActivitiesLastWeek * 100.0 / Model.LastWeekLogs).ToString("F1") : "0")%"></div>
+                                </div>
+                            </div>
+
+                            <div class="progress-group">
+                                <span class="float-right"><b>@Model.ErrorsLast24Hours</b>/@Model.TodayLogs</span>
+                                <span class="progress-text">نرخ خطا</span>
+                                <div class="progress progress-sm">
+                                    <div class="progress-bar bg-danger" style="width: @(Model.TodayLogs > 0 ? (Model.ErrorsLast24Hours * 100.0 / Model.TodayLogs).ToString("F1") : "0")%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-calendar-alt"></i> آمار ماهانه
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress-group">
+                                <span class="float-right"><b>@Model.LastMonthLogs</b>/@Model.TotalLogs</span>
+                                <span class="progress-text">فعالیت‌های ماه گذشته</span>
+                                <div class="progress progress-sm">
+                                    <div class="progress-bar bg-success" style="width: @(Model.TotalLogs > 0 ? (Model.LastMonthLogs * 100.0 / Model.TotalLogs).ToString("F1") : "0")%"></div>
+                                </div>
+                            </div>
+
+                            <div class="progress-group">
+                                <span class="float-right"><b>@(Model.LastMonthLogs / 30.0):F1</b></span>
+                                <span class="progress-text">میانگین فعالیت روزانه</span>
+                                <div class="progress progress-sm">
+                                    <div class="progress-bar bg-info" style="width: 75%"></div>
+                                </div>
+                            </div>
+
+                            <div class="progress-group">
+                                <span class="float-right"><b>@Model.ArchivedLogs</b>/@Model.TotalLogs</span>
+                                <span class="progress-text">لاگ‌های آرشیو شده</span>
+                                <div class="progress progress-sm">
+                                    <div class="progress-bar bg-secondary" style="width: @(Model.TotalLogs > 0 ? (Model.ArchivedLogs * 100.0 / Model.TotalLogs).ToString("F1") : "0")%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-shield-alt"></i> آمار امنیتی
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <a href="@Url.Action("FailedLoginAttempts")" class="btn btn-block btn-outline-danger btn-sm">
+                                <i class="fas fa-user-lock"></i> تلاش‌های ناموفق ورود
+                            </a>
+                            <a href="@Url.Action("AfterHoursActivities")" class="btn btn-block btn-outline-warning btn-sm">
+                                <i class="fas fa-clock"></i> فعالیت‌های خارج از ساعت کاری
+                            </a>
+                            <a href="@Url.Action("SuspiciousActivities")" class="btn btn-block btn-outline-info btn-sm">
+                                <i class="fas fa-search"></i> فعالیت‌های مشکوک
+                            </a>
+                            <button type="button" class="btn btn-block btn-outline-success btn-sm" onclick="refreshSecurityStats()">
+                                <i class="fas fa-sync"></i> بروزرسانی آمار امنیتی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- گزارش‌های سریع -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-file-export"></i> گزارش‌های سریع
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-primary btn-block" onclick="exportTodayReport()">
+                                        <i class="fas fa-download"></i> گزارش امروز
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-success btn-block" onclick="exportWeeklyReport()">
+                                        <i class="fas fa-calendar-week"></i> گزارش هفتگی
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-info btn-block" onclick="exportMonthlyReport()">
+                                        <i class="fas fa-calendar-alt"></i> گزارش ماهانه
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-warning btn-block" onclick="exportErrorReport()">
+                                        <i class="fas fa-bug"></i> گزارش خطاها
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        let activityChart;
+
+        $(document).ready(function() {
+            // بارگذاری نمودار پیش‌فرض
+            loadChart('week');
+            
+            // تنظیم auto-refresh
+            setInterval(function() {
+                refreshStats();
+            }, 60000); // هر دقیقه
+        });
+
+        // بارگذاری نمودار فعالیت‌ها
+        function loadChart(period) {
+            // TODO: بارگذاری داده‌های واقعی از API
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            
+            if (activityChart) {
+                activityChart.destroy();
+            }
+
+            const sampleData = generateSampleData(period);
+            
+            activityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sampleData.labels,
+                    datasets: [{
+                        label: 'فعالیت‌ها',
+                        data: sampleData.activities,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1
+                    }, {
+                        label: 'خطاها',
+                        data: sampleData.errors,
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'روند فعالیت‌های سیستم'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // تولید داده‌های نمونه
+        function generateSampleData(period) {
+            let labels = [];
+            let activities = [];
+            let errors = [];
+            
+            const days = period === 'week' ? 7 : period === 'month' ? 30 : 365;
+            
+            for (let i = days - 1; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(date.toLocaleDateString('fa-IR'));
+                activities.push(Math.floor(Math.random() * 1000) + 100);
+                errors.push(Math.floor(Math.random() * 50));
+            }
+            
+            return { labels, activities, errors };
+        }
+
+        // بروزرسانی آمار
+        function refreshStats() {
+            $.get('@Url.Action("GetLogStatistics")', function(data) {
+                if (data.success) {
+                    // بروزرسانی آمار در صفحه
+                    updateStatsDisplay(data.statistics);
+                }
+            });
+        }
+
+        // بروزرسانی آمار امنیتی
+        function refreshSecurityStats() {
+            $.get('@Url.Action("GetSecurityStats")', function(data) {
+                if (data.success) {
+                    toastr.success('آمار امنیتی بروزرسانی شد');
+                    // بروزرسانی نمایش آمار امنیتی
+                } else {
+                    toastr.error('خطا در بروزرسانی آمار امنیتی');
+                }
+            });
+        }
+
+        // دریافت لاگ‌های امروز
+        function getTodayLogs() {
+            const today = new Date().toISOString().split('T')[0];
+            window.location.href = '@Url.Action("Search")' + '?FromDate=' + today + '&ToDate=' + today;
+        }
+
+        // صادرات گزارش‌ها
+        function exportTodayReport() {
+            const today = new Date().toISOString().split('T')[0];
+            exportReport('today', { fromDate: today, toDate: today });
+        }
+
+        function exportWeeklyReport() {
+            const today = new Date();
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            exportReport('weekly', { 
+                fromDate: weekAgo.toISOString().split('T')[0], 
+                toDate: today.toISOString().split('T')[0] 
+            });
+        }
+
+        function exportMonthlyReport() {
+            const today = new Date();
+            const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            exportReport('monthly', { 
+                fromDate: monthAgo.toISOString().split('T')[0], 
+                toDate: today.toISOString().split('T')[0] 
+            });
+        }
+
+        function exportErrorReport() {
+            const today = new Date();
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            exportReport('errors', { 
+                fromDate: weekAgo.toISOString().split('T')[0], 
+                toDate: today.toISOString().split('T')[0],
+                onlyErrors: true 
+            });
+        }
+
+        // تابع کلی صادرات گزارش
+        function exportReport(type, params) {
+            // TODO: پیاده‌سازی صادرات گزارش
+            toastr.info('در حال آماده‌سازی گزارش...');
+            
+            // شبیه‌سازی عملیات
+            setTimeout(function() {
+                toastr.success('گزارش آماده شد');
+            }, 2000);
+        }
+
+        // بروزرسانی نمایش آمار
+        function updateStatsDisplay(stats) {
+            // TODO: بروزرسانی عناصر DOM با آمار جدید
+        }
+    </script>
+}
+
+<style>
+    .progress-group {
+        margin-bottom: 15px;
+    }
+    
+    .description-block {
+        margin: 10px 0;
+        text-align: center;
+    }
+    
+    .description-header {
+        margin: 10px 0 5px 0;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    
+    .description-text {
+        text-transform: uppercase;
+        font-size: 13px;
+    }
+    
+    .border-right {
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .small-box .inner {
+        padding: 10px;
+    }
+</style>

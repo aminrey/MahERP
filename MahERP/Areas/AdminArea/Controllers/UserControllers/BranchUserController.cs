@@ -31,7 +31,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             UserManager<AppUsers> userManager,
             IMapper mapper,
             PersianDateHelper persianDateHelper,
-            IMemoryCache memoryCache) : base(uow, userManager, persianDateHelper, memoryCache)
+            IMemoryCache memoryCache,
+            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
         {
             _uow = uow;
             _branchRepository = branchRepository;

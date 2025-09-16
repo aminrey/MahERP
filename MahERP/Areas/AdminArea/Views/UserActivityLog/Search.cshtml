@@ -1,0 +1,372 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Core.LogSearchViewModel
+@{
+    ViewData["Title"] = "جستجوی پیشرفته لاگ‌ها";
+}
+
+<div class="content">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">@ViewData["Title"]</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Dashboard")">داشبورد</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">لاگ فعالیت‌ها</a></li>
+                        <li class="breadcrumb-item active">جستجوی پیشرفته</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">فیلترهای جستجو</h3>
+                        </div>
+                        <form asp-action="Search" method="post">
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- کاربر -->
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="UserId">کاربر:</label>
+                                            <select asp-for="UserId" class="form-control select2" style="width: 100%;">
+                                                <option value="">همه کاربران</option>
+                                                <!-- TODO: بارگذاری لیست کاربران از دیتابیس -->
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- ماژول -->
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="ModuleName">ماژول:</label>
+                                            <select asp-for="ModuleName" class="form-control">
+                                                <option value="">همه ماژول‌ها</option>
+                                                <option value="Tasks">تسک‌ها</option>
+                                                <option value="CRM">CRM</option>
+                                                <option value="Users">کاربران</option>
+                                                <option value="Branches">شعب</option>
+                                                <option value="Contracts">قراردادها</option>
+                                                <option value="Stakeholders">طرف حساب‌ها</option>
+                                                <option value="Reports">گزارش‌ها</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- نوع فعالیت -->
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="ActivityType">نوع فعالیت:</label>
+                                            <select asp-for="ActivityType" class="form-control">
+                                                <option value="">همه انواع</option>
+                                                <option value="0">مشاهده</option>
+                                                <option value="1">ایجاد</option>
+                                                <option value="2">ویرایش</option>
+                                                <option value="3">حذف</option>
+                                                <option value="4">تایید</option>
+                                                <option value="5">رد</option>
+                                                <option value="6">ورود به سیستم</option>
+                                                <option value="7">خروج از سیستم</option>
+                                                <option value="8">دانلود فایل</option>
+                                                <option value="9">آپلود فایل</option>
+                                                <option value="10">جستجو</option>
+                                                <option value="11">چاپ</option>
+                                                <option value="12">ارسال ایمیل</option>
+                                                <option value="13">ارسال پیامک</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- نتیجه عملیات -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="ResultStatus">نتیجه عملیات:</label>
+                                            <select asp-for="ResultStatus" class="form-control">
+                                                <option value="">همه</option>
+                                                <option value="0">موفق</option>
+                                                <option value="1">ناموفق</option>
+                                                <option value="2">خطا</option>
+                                                <option value="3">دسترسی رد شده</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- سطح اهمیت -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="ImportanceLevel">سطح اهمیت:</label>
+                                            <select asp-for="ImportanceLevel" class="form-control">
+                                                <option value="">همه</option>
+                                                <option value="0">عادی</option>
+                                                <option value="1">مهم</option>
+                                                <option value="2">بحرانی</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- شعبه -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="BranchId">شعبه:</label>
+                                            <select asp-for="BranchId" class="form-control">
+                                                <option value="">همه شعب</option>
+                                                <!-- TODO: بارگذاری لیست شعب از دیتابیس -->
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- آدرس IP -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="IpAddress">آدرس IP:</label>
+                                            <input asp-for="IpAddress" class="form-control" placeholder="مثال: 192.168.1.100">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- تاریخ شروع -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="FromDate">از تاریخ:</label>
+                                            <input asp-for="FromDate" type="date" class="form-control">
+                                        </div>
+                                    </div>
+
+                                    <!-- تاریخ پایان -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="ToDate">تا تاریخ:</label>
+                                            <input asp-for="ToDate" type="date" class="form-control">
+                                        </div>
+                                    </div>
+
+                                    <!-- شناسه رکورد -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="RecordId">شناسه رکورد:</label>
+                                            <input asp-for="RecordId" class="form-control" placeholder="شناسه رکورد تحت تاثیر">
+                                        </div>
+                                    </div>
+
+                                    <!-- نوع انتیتی -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="EntityType">نوع انتیتی:</label>
+                                            <input asp-for="EntityType" class="form-control" placeholder="مثال: Task, User, Contract">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- متن جستجو -->
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="SearchText">جستجو در شرح:</label>
+                                            <input asp-for="SearchText" class="form-control" placeholder="متن مورد نظر برای جستجو در شرح فعالیت">
+                                        </div>
+                                    </div>
+
+                                    <!-- نام عمل -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="ActionName">نام عمل:</label>
+                                            <input asp-for="ActionName" class="form-control" placeholder="مثال: Create, Edit, Delete">
+                                        </div>
+                                    </div>
+
+                                    <!-- تعداد نتایج در صفحه -->
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="PageSize">تعداد در صفحه:</label>
+                                            <select asp-for="PageSize" class="form-control">
+                                                <option value="25">25</option>
+                                                <option value="50" selected>50</option>
+                                                <option value="100">100</option>
+                                                <option value="200">200</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- فیلترهای سریع -->
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>فیلترهای سریع:</label>
+                                            <div class="custom-control-inline">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input asp-for="OnlySensitive" type="checkbox" class="custom-control-input" id="onlySensitive">
+                                                    <label class="custom-control-label" for="onlySensitive">فقط فعالیت‌های حساس</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox ml-3">
+                                                    <input asp-for="OnlyErrors" type="checkbox" class="custom-control-input" id="onlyErrors">
+                                                    <label class="custom-control-label" for="onlyErrors">فقط خطاها</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- مرتب‌سازی -->
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="SortBy">مرتب‌سازی بر اساس:</label>
+                                            <select asp-for="SortBy" class="form-control">
+                                                <option value="ActivityDateTime">زمان فعالیت</option>
+                                                <option value="UserName">نام کاربر</option>
+                                                <option value="ModuleName">نام ماژول</option>
+                                                <option value="ActivityType">نوع فعالیت</option>
+                                                <option value="ResultStatus">نتیجه عملیات</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- جهت مرتب‌سازی -->
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="SortDirection">ترتیب:</label>
+                                            <select asp-for="SortDirection" class="form-control">
+                                                <option value="DESC">نزولی (جدید به قدیم)</option>
+                                                <option value="ASC">صعودی (قدیم به جدید)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-footer">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i> جستجو
+                                        </button>
+                                        <button type="button" class="btn btn-secondary ml-2" onclick="clearForm()">
+                                            <i class="fas fa-eraser"></i> پاک کردن
+                                        </button>
+                                        <a href="@Url.Action("Index")" class="btn btn-info ml-2">
+                                            <i class="fas fa-list"></i> بازگشت به لیست
+                                        </a>
+                                    </div>
+                                    <div class="col-md-6 text-right">
+                                        <!-- نمایش تعداد نتایج احتمالی -->
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle"></i>
+                                            برای جستجوی سریع‌تر، حداقل یک فیلتر انتخاب کنید
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- راهنمای استفاده -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-info collapsed-card">
+                        <div class="card-header">
+                            <h3 class="card-title">راهنمای استفاده از جستجوی پیشرفته</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>نکات مهم:</h5>
+                                    <ul>
+                                        <li>برای جستجوی سریع‌تر، از فیلترهای کمتر استفاده کنید</li>
+                                        <li>جستجو در بازه زمانی کوتاه‌تر سرعت بیشتری دارد</li>
+                                        <li>فیلتر "فقط فعالیت‌های حساس" برای نظارت امنیتی مفید است</li>
+                                        <li>می‌توانید چندین فیلتر را همزمان اعمال کنید</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>نمونه جستجوها:</h5>
+                                    <ul>
+                                        <li><strong>خطاهای امروز:</strong> نتیجه عملیات = خطا، از تاریخ = امروز</li>
+                                        <li><strong>ورودهای ناموفق:</strong> نوع فعالیت = ورود، نتیجه = ناموفق</li>
+                                        <li><strong>فعالیت‌های یک کاربر:</strong> انتخاب کاربر مورد نظر</li>
+                                        <li><strong>تغییرات حساس:</strong> فقط فعالیت‌های حساس = بله</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // فعال‌سازی Select2 برای dropdown های پیچیده
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                placeholder: 'انتخاب کنید...',
+                allowClear: true
+            });
+
+            // تنظیم تاریخ‌های پیش‌فرض
+            setDefaultDates();
+        });
+
+        // پاک کردن فرم
+        function clearForm() {
+            $('form')[0].reset();
+            $('.select2').val(null).trigger('change');
+        }
+
+        // تنظیم تاریخ‌های پیش‌فرض
+        function setDefaultDates() {
+            var today = new Date().toISOString().split('T')[0];
+            var weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            if (!$('#FromDate').val()) {
+                $('#FromDate').val(weekAgo);
+            }
+            if (!$('#ToDate').val()) {
+                $('#ToDate').val(today);
+            }
+        }
+
+        // اعتبارسنجی تاریخ‌ها
+        $('#FromDate, #ToDate').change(function() {
+            var fromDate = new Date($('#FromDate').val());
+            var toDate = new Date($('#ToDate').val());
+            
+            if (fromDate > toDate) {
+                alert('تاریخ شروع نمی‌تواند بزرگتر از تاریخ پایان باشد.');
+                $(this).val('');
+            }
+        });
+    </script>
+}
+
+<style>
+    .custom-control-inline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .select2-container--bootstrap4 .select2-selection {
+        height: calc(2.25rem + 2px) !important;
+    }
+</style>

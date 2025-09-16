@@ -1,0 +1,363 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Core.LogListViewModel
+@{
+    ViewData["Title"] = ViewBag.Title ?? "لاگ فعالیت‌های سیستم";
+    var currentPage = ViewBag.CurrentPage as string ?? "SystemLogs";
+}
+
+<div class="content">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">@ViewData["Title"]</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Dashboard")">داشبورد</a></li>
+                        <li class="breadcrumb-item"><a href="#">سیستم</a></li>
+                        <li class="breadcrumb-item active">لاگ فعالیت‌ها</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <!-- فیلترها و عملیات -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">فیلترها و عملیات</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <a href="@Url.Action("Index")" class="btn btn-primary btn-sm btn-block @(currentPage == "SystemLogs" ? "active" : "")">
+                                        <i class="fas fa-list"></i> همه لاگ‌ها
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="@Url.Action("Search")" class="btn btn-info btn-sm btn-block">
+                                        <i class="fas fa-search"></i> جستجوی پیشرفته
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="@Url.Action("SensitiveLogs")" class="btn btn-warning btn-sm btn-block @(currentPage == "SensitiveLogs" ? "active" : "")">
+                                        <i class="fas fa-exclamation-triangle"></i> لاگ‌های حساس
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="@Url.Action("ErrorLogs")" class="btn btn-danger btn-sm btn-block @(currentPage == "ErrorLogs" ? "active" : "")">
+                                        <i class="fas fa-bug"></i> لاگ‌های خطا
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="@Url.Action("Statistics")" class="btn btn-success btn-sm btn-block @(currentPage == "LogStatistics" ? "active" : "")">
+                                        <i class="fas fa-chart-bar"></i> آمار و گزارش
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="@Url.Action("ArchiveManagement")" class="btn btn-secondary btn-sm btn-block @(currentPage == "ArchiveManagement" ? "active" : "")">
+                                        <i class="fas fa-archive"></i> مدیریت آرشیو
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- نمایش پیام‌ها -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            }
+
+            <!-- جدول اصلی لاگ‌ها -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">@ViewData["Title"]</h3>
+                            <div class="card-tools">
+                                <span class="badge badge-primary">@Model.PaginationInfo</span>
+                            </div>
+                        </div>
+                        <div class="card-body table-responsive p-0">
+                            @if (Model.Logs.Any())
+                            {
+                                <table class="table table-hover text-nowrap">
+                                    <thead>
+                                        <tr>
+                                            <th>زمان</th>
+                                            <th>کاربر</th>
+                                            <th>نوع فعالیت</th>
+                                            <th>ماژول</th>
+                                            <th>عمل</th>
+                                            <th>نتیجه</th>
+                                            <th>IP</th>
+                                            <th>شعبه</th>
+                                            <th>عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var log in Model.Logs)
+                                        {
+                                            <tr class="@(log.ResultStatus == 2 ? "table-danger" : log.IsSensitive ? "table-warning" : "")">
+                                                <td>
+                                                    <small>@log.ActivityDateTimePersian</small>
+                                                    @if (log.ProcessingTimeMs.HasValue)
+                                                    {
+                                                        <br><span class="badge badge-info">@log.ProcessingTimeMs ms</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <strong>@log.UserFullName</strong>
+                                                    <br><small class="text-muted">@log.UserName</small>
+                                                    @if (!string.IsNullOrEmpty(log.DeviceTypeText))
+                                                    {
+                                                        <br><span class="badge badge-secondary">@log.DeviceTypeText</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <span class="badge @GetActivityTypeBadgeClass(log.ActivityType)">
+                                                        @log.ActivityTypeText
+                                                    </span>
+                                                    @if (log.IsSensitive)
+                                                    {
+                                                        <br><span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> حساس</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <strong>@log.ModuleName</strong>
+                                                    @if (!string.IsNullOrEmpty(log.EntityType))
+                                                    {
+                                                        <br><small class="text-muted">@log.EntityType</small>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @log.ActionName
+                                                    @if (!string.IsNullOrEmpty(log.HttpMethod))
+                                                    {
+                                                        <br><span class="badge badge-light">@log.HttpMethod</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <span class="badge @GetResultStatusBadgeClass(log.ResultStatus)">
+                                                        @log.ResultStatusText
+                                                    </span>
+                                                    @if (log.ImportanceLevel == 2)
+                                                    {
+                                                        <br><span class="badge badge-danger">بحرانی</span>
+                                                    }
+                                                    else if (log.ImportanceLevel == 1)
+                                                    {
+                                                        <br><span class="badge badge-warning">مهم</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @log.IpAddress
+                                                    @if (!string.IsNullOrEmpty(log.Location))
+                                                    {
+                                                        <br><small class="text-muted">@log.Location</small>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(log.BranchName))
+                                                    {
+                                                        <span class="badge badge-info">@log.BranchName</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="@Url.Action("Details", new { id = log.Id })" 
+                                                           class="btn btn-sm btn-info" title="جزئیات">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        @if (!string.IsNullOrEmpty(log.UserId))
+                                                        {
+                                                            <a href="@Url.Action("UserLogs", new { userId = log.UserId })" 
+                                                               class="btn btn-sm btn-primary" title="لاگ‌های کاربر">
+                                                                <i class="fas fa-user"></i>
+                                                            </a>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(log.ModuleName))
+                                                        {
+                                                            <a href="@Url.Action("ModuleLogs", new { moduleName = log.ModuleName })" 
+                                                               class="btn btn-sm btn-success" title="لاگ‌های ماژول">
+                                                                <i class="fas fa-puzzle-piece"></i>
+                                                            </a>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <div class="text-center p-4">
+                                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">هیچ لاگی یافت نشد</h5>
+                                    <p class="text-muted">با تغییر فیلترها مجدداً جستجو کنید.</p>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- صفحه‌بندی -->
+                        @if (Model.TotalPages > 1)
+                        {
+                            <div class="card-footer">
+                                <nav aria-label="صفحه‌بندی لاگ‌ها">
+                                    <ul class="pagination justify-content-center m-0">
+                                        @if (Model.HasPreviousPage)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@GetPageUrl(1)">ابتدا</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="@GetPageUrl(Model.PreviousPage)">قبلی</a>
+                                            </li>
+                                        }
+
+                                        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                                        {
+                                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                                <a class="page-link" href="@GetPageUrl(i)">@i</a>
+                                            </li>
+                                        }
+
+                                        @if (Model.HasNextPage)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@GetPageUrl(Model.NextPage)">بعدی</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="@GetPageUrl(Model.TotalPages)">انتها</a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </nav>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // تنظیم auto-refresh برای صفحه (هر 30 ثانیه)
+            @if (currentPage == "SystemLogs")
+            {
+                <text>
+                setTimeout(function() {
+                    window.location.reload();
+                }, 30000);
+                </text>
+            }
+
+            // نمایش tooltip برای دکمه‌ها
+            $('[title]').tooltip();
+        });
+    </script>
+}
+
+@functions {
+    /// <summary>
+    /// تولید URL برای صفحه‌بندی
+    /// </summary>
+    /// <param name="pageNumber">شماره صفحه</param>
+    /// <returns>URL صفحه</returns>
+    string GetPageUrl(int pageNumber)
+    {
+        var routeValues = new RouteValueDictionary();
+        
+        // افزودن پارامترهای موجود در URL
+        foreach (var key in Context.Request.Query.Keys)
+        {
+            if (key != "page")
+            {
+                routeValues[key] = Context.Request.Query[key];
+            }
+        }
+        
+        routeValues["page"] = pageNumber;
+        
+        return Url.Action(ViewContext.RouteData.Values["Action"].ToString(), routeValues);
+    }
+
+    /// <summary>
+    /// تعیین کلاس CSS برای نوع فعالیت
+    /// </summary>
+    /// <param name="activityType">نوع فعالیت</param>
+    /// <returns>کلاس CSS</returns>
+    string GetActivityTypeBadgeClass(byte activityType)
+    {
+        return activityType switch
+        {
+            0 => "badge-info",      // مشاهده
+            1 => "badge-success",   // ایجاد
+            2 => "badge-warning",   // ویرایش
+            3 => "badge-danger",    // حذف
+            4 => "badge-primary",   // تایید
+            5 => "badge-secondary", // رد
+            6 => "badge-info",      // ورود
+            7 => "badge-secondary", // خروج
+            8 => "badge-primary",   // دانلود
+            9 => "badge-warning",   // آپلود
+            10 => "badge-info",     // جستجو
+            11 => "badge-secondary",// چاپ
+            12 => "badge-info",     // ایمیل
+            13 => "badge-info",     // پیامک
+            _ => "badge-light"
+        };
+    }
+
+    /// <summary>
+    /// تعیین کلاس CSS برای وضعیت نتیجه
+    /// </summary>
+    /// <param name="resultStatus">وضعیت نتیجه</param>
+    /// <returns>کلاس CSS</returns>
+    string GetResultStatusBadgeClass(byte resultStatus)
+    {
+        return resultStatus switch
+        {
+            0 => "badge-success",   // موفق
+            1 => "badge-warning",   // ناموفق
+            2 => "badge-danger",    // خطا
+            3 => "badge-secondary", // دسترسی رد شده
+            _ => "badge-light"
+        };
+    }
+}

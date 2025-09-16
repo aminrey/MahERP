@@ -31,6 +31,11 @@ builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ICRMRepository, CRMRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>(); // اضافه شده
 builder.Services.AddScoped<IUserManagerRepository,UserManagerRepository>(); 
+builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>(); // اضافه شده
+
+// Activity Logger Service
+builder.Services.AddScoped<ActivityLoggerService>(); // اضافه شده
+builder.Services.AddHttpContextAccessor(); // اضافه شده
 
 
 builder.Services.Configure<IdentityOptions>(options =>

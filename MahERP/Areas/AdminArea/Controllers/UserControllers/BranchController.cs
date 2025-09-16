@@ -29,7 +29,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             UserManager<AppUsers> userManager,
             IMapper mapper,
             PersianDateHelper persianDateHelper,
-            IMemoryCache memoryCache) : base(uow, userManager, persianDateHelper, memoryCache)
+            IMemoryCache memoryCache,
+            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
         {
             _uow = uow;
             _branchRepository = branchRepository;
@@ -304,7 +305,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     return RedirectToAction("ErrorView", "Home");
                 }
 
-                // بررسی اینکه آیا کاربران قبلاً به شعبه اضافه نشده‌اند
+                // بررسی اینکه آیا کاربران قبلاً به شعبه اضافه شده‌اند
                 var existingUsers = _uow.BranchUserUW.Get(bu => bu.BranchId == model.BranchId && model.UsersSelected.Contains(bu.UserId))
                     .Select(bu => bu.UserId)
                     .ToList();

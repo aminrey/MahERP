@@ -14,17 +14,20 @@ namespace MahERP.Areas.AdminArea.Controllers.BaseControllers
         protected readonly UserManager<AppUsers> _userManager;
         protected readonly PersianDateHelper _persianDateHelper;
         protected readonly IMemoryCache _memoryCache;
+        protected readonly ActivityLoggerService _activityLogger;
 
         public BaseController(
             IUnitOfWork uow,
             UserManager<AppUsers> userManager,
             PersianDateHelper persianDateHelper,
-            IMemoryCache memoryCache)
+            IMemoryCache memoryCache,
+            ActivityLoggerService activityLogger)
         {
             _uow = uow;
             _userManager = userManager;
             _persianDateHelper = persianDateHelper;
             _memoryCache = memoryCache;
+            _activityLogger = activityLogger;
         }
     }
 }

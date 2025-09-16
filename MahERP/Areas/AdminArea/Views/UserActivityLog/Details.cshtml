@@ -1,0 +1,490 @@
+﻿@model MahERP.DataModelLayer.Entities.Core.UserActivityLog
+@{
+    ViewData["Title"] = "جزئیات لاگ فعالیت";
+}
+
+<div class="content">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">@ViewData["Title"]</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Dashboard")">داشبورد</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">لاگ فعالیت‌ها</a></li>
+                        <li class="breadcrumb-item active">جزئیات</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <!-- دکمه‌های عملیات -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="btn-group">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> بازگشت به لیست
+                        </a>
+                        <a href="@Url.Action("UserLogs", new { userId = Model.UserId })" class="btn btn-primary">
+                            <i class="fas fa-user"></i> سایر لاگ‌های این کاربر
+                        </a>
+                        <a href="@Url.Action("ModuleLogs", new { moduleName = Model.ModuleName })" class="btn btn-info">
+                            <i class="fas fa-puzzle-piece"></i> سایر لاگ‌های این ماژول
+                        </a>
+                        @if (Model.CorrelationId.HasValue)
+                        {
+                            <a href="@Url.Action("Search", new { correlationId = Model.CorrelationId })" class="btn btn-warning">
+                                <i class="fas fa-link"></i> فعالیت‌های مرتبط
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- اطلاعات اصلی -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-info-circle"></i> اطلاعات کلی فعالیت
+                            </h3>
+                            <div class="card-tools">
+                                @if (Model.IsSensitive)
+                                {
+                                    <span class="badge badge-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> فعالیت حساس
+                                    </span>
+                                }
+                                @if (Model.ImportanceLevel == 2)
+                                {
+                                    <span class="badge badge-danger">بحرانی</span>
+                                }
+                                else if (Model.ImportanceLevel == 1)
+                                {
+                                    <span class="badge badge-warning">مهم</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>شناسه لاگ:</strong></td>
+                                            <td>@Model.Id</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>زمان فعالیت:</strong></td>
+                                            <td>
+                                                @Model.ActivityDateTime.ToString("yyyy/MM/dd HH:mm:ss")
+                                                <br><small class="text-muted">(@Model.ActivityDateTime.ToString("dddd, dd MMMM yyyy"))</small>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>کاربر:</strong></td>
+                                            <td>
+                                                @if (Model.User != null)
+                                                {
+                                                    <strong>@($"{Model.User.FirstName} {Model.User.LastName}")</strong>
+                                                    <br><small class="text-muted">@Model.User.UserName</small>
+                                                    @if (!string.IsNullOrEmpty(Model.User.Email))
+                                                    {
+                                                        <br><small class="text-muted">@Model.User.Email</small>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">کاربر حذف شده</span>
+                                                    <br><small>@Model.UserId</small>
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>شعبه:</strong></td>
+                                            <td>
+                                                @if (Model.Branch != null)
+                                                {
+                                                    <span class="badge badge-info">@Model.Branch.Name</span>
+                                                }
+                                                else if (Model.BranchId.HasValue)
+                                                {
+                                                    <span class="text-muted">شعبه حذف شده (ID: @Model.BranchId)</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">تعیین نشده</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>نوع فعالیت:</strong></td>
+                                            <td>
+                                                <span class="badge @GetActivityTypeBadgeClass(Model.ActivityType)">
+                                                    @GetActivityTypeText(Model.ActivityType)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>نتیجه عملیات:</strong></td>
+                                            <td>
+                                                <span class="badge @GetResultStatusBadgeClass(Model.ResultStatus)">
+                                                    @GetResultStatusText(Model.ResultStatus)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>ماژول:</strong></td>
+                                            <td>@Model.ModuleName</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>عمل انجام شده:</strong></td>
+                                            <td>@Model.ActionName</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>نوع انتیتی:</strong></td>
+                                            <td>@(Model.EntityType ?? "نامشخص")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>شناسه رکورد:</strong></td>
+                                            <td>@(Model.RecordId ?? "ندارد")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>عنوان رکورد:</strong></td>
+                                            <td>@(Model.RecordTitle ?? "ندارد")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>زمان پردازش:</strong></td>
+                                            <td>
+                                                @if (Model.ProcessingTimeMs.HasValue)
+                                                {
+                                                    @Model.ProcessingTimeMs.Value <text>میلی‌ثانیه</text>
+                                                    @if (Model.ProcessingTimeMs.Value > 5000)
+                                                    {
+                                                        <span class="badge badge-warning">کند</span>
+                                                    }
+                                                    else if (Model.ProcessingTimeMs.Value > 1000)
+                                                    {
+                                                        <span class="badge badge-info">متوسط</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-success">سریع</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">نامشخص</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <h5>شرح فعالیت:</h5>
+                                        <div class="alert alert-info">
+                                            @Model.Description
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                            {
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <h5>پیام خطا:</h5>
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            @Model.ErrorMessage
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- اطلاعات فنی -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-cogs"></i> اطلاعات فنی
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>آدرس IP:</strong></td>
+                                    <td>@Model.IpAddress</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>نوع درخواست:</strong></td>
+                                    <td>
+                                        <span class="badge @GetHttpMethodBadgeClass(Model.HttpMethod)">
+                                            @Model.HttpMethod
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>URL درخواست:</strong></td>
+                                    <td>
+                                        <small class="text-break">@Model.RequestUrl</small>
+                                    </td>
+                                </tr>
+                                @if (!string.IsNullOrEmpty(Model.UserAgent))
+                                {
+                                    <tr>
+                                        <td><strong>مرورگر:</strong></td>
+                                        <td>
+                                            <small class="text-break">@Model.UserAgent</small>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (Model.DeviceType.HasValue)
+                                {
+                                    <tr>
+                                        <td><strong>نوع دستگاه:</strong></td>
+                                        <td>@GetDeviceTypeText(Model.DeviceType.Value)</td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.DeviceInfo))
+                                {
+                                    <tr>
+                                        <td><strong>اطلاعات دستگاه:</strong></td>
+                                        <td><small>@Model.DeviceInfo</small></td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.Location))
+                                {
+                                    <tr>
+                                        <td><strong>موقعیت جغرافیایی:</strong></td>
+                                        <td><small>@Model.Location</small></td>
+                                    </tr>
+                                }
+                                @if (Model.ResponseSize.HasValue)
+                                {
+                                    <tr>
+                                        <td><strong>حجم پاسخ:</strong></td>
+                                        <td>@Model.ResponseSize.Value بایت</td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.SessionId))
+                                {
+                                    <tr>
+                                        <td><strong>شناسه جلسه:</strong></td>
+                                        <td><small class="text-break">@Model.SessionId</small></td>
+                                    </tr>
+                                }
+                                @if (Model.CorrelationId.HasValue)
+                                {
+                                    <tr>
+                                        <td><strong>شناسه همبستگی:</strong></td>
+                                        <td><small class="text-break">@Model.CorrelationId</small></td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.Tags))
+                                {
+                                    <tr>
+                                        <td><strong>تگ‌ها:</strong></td>
+                                        <td><small>@Model.Tags</small></td>
+                                    </tr>
+                                }
+                                @if (Model.IsArchived && Model.ArchivedDate.HasValue)
+                                {
+                                    <tr>
+                                        <td><strong>آرشیو شده:</strong></td>
+                                        <td>
+                                            <span class="badge badge-secondary">بله</span>
+                                            <br><small>@Model.ArchivedDate.Value.ToString("yyyy/MM/dd")</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تغییرات داده‌ها -->
+            @if (!string.IsNullOrEmpty(Model.OldValues) || !string.IsNullOrEmpty(Model.NewValues))
+            {
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-exchange-alt"></i> تغییرات داده‌ها
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    @if (!string.IsNullOrEmpty(Model.OldValues))
+                                    {
+                                        <div class="col-md-6">
+                                            <h5>مقادیر قبلی:</h5>
+                                            <pre class="bg-light p-3 border rounded"><code>@Model.OldValues</code></pre>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.NewValues))
+                                    {
+                                        <div class="col-md-6">
+                                            <h5>مقادیر جدید:</h5>
+                                            <pre class="bg-light p-3 border rounded"><code>@Model.NewValues</code></pre>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- پارامترهای درخواست -->
+            @if (!string.IsNullOrEmpty(Model.RequestParameters))
+            {
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-code"></i> پارامترهای درخواست
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <pre class="bg-light p-3 border rounded"><code>@Model.RequestParameters</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@functions {
+    /// <summary>
+    /// تبدیل نوع فعالیت به متن فارسی
+    /// </summary>
+    string GetActivityTypeText(byte activityType)
+    {
+        return activityType switch
+        {
+            0 => "مشاهده",
+            1 => "ایجاد",
+            2 => "ویرایش",
+            3 => "حذف",
+            4 => "تایید",
+            5 => "رد",
+            6 => "ورود به سیستم",
+            7 => "خروج از سیستم",
+            8 => "دانلود فایل",
+            9 => "آپلود فایل",
+            10 => "جستجو",
+            11 => "چاپ",
+            12 => "ارسال ایمیل",
+            13 => "ارسال پیامک",
+            _ => "نامشخص"
+        };
+    }
+
+    /// <summary>
+    /// تعیین کلاس CSS برای نوع فعالیت
+    /// </summary>
+    string GetActivityTypeBadgeClass(byte activityType)
+    {
+        return activityType switch
+        {
+            0 => "badge-info",
+            1 => "badge-success",
+            2 => "badge-warning",
+            3 => "badge-danger",
+            4 => "badge-primary",
+            5 => "badge-secondary",
+            6 => "badge-info",
+            7 => "badge-secondary",
+            8 => "badge-primary",
+            9 => "badge-warning",
+            10 => "badge-info",
+            11 => "badge-secondary",
+            12 => "badge-info",
+            13 => "badge-info",
+            _ => "badge-light"
+        };
+    }
+
+    /// <summary>
+    /// تبدیل وضعیت نتیجه به متن فارسی
+    /// </summary>
+    string GetResultStatusText(byte resultStatus)
+    {
+        return resultStatus switch
+        {
+            0 => "موفق",
+            1 => "ناموفق",
+            2 => "خطا",
+            3 => "دسترسی رد شده",
+            _ => "نامشخص"
+        };
+    }
+
+    /// <summary>
+    /// تعیین کلاس CSS برای وضعیت نتیجه
+    /// </summary>
+    string GetResultStatusBadgeClass(byte resultStatus)
+    {
+        return resultStatus switch
+        {
+            0 => "badge-success",
+            1 => "badge-warning",
+            2 => "badge-danger",
+            3 => "badge-secondary",
+            _ => "badge-light"
+        };
+    }
+
+    /// <summary>
+    /// تبدیل نوع دستگاه به متن فارسی
+    /// </summary>
+    string GetDeviceTypeText(byte deviceType)
+    {
+        return deviceType switch
+        {
+            0 => "کامپیوتر",
+            1 => "موبایل",
+            2 => "تبلت",
+            _ => "نامشخص"
+        };
+    }
+
+    /// <summary>
+    /// تعیین کلاس CSS برای نوع درخواست HTTP
+    /// </summary>
+    string GetHttpMethodBadgeClass(string httpMethod)
+    {
+        return httpMethod?.ToUpper() switch
+        {
+            "GET" => "badge-info",
+            "POST" => "badge-success",
+            "PUT" => "badge-warning",
+            "DELETE" => "badge-danger",
+            "PATCH" => "badge-secondary",
+            _ => "badge-light"
+        };
+    }
+}

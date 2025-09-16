@@ -27,8 +27,9 @@ namespace MahERP.Areas.AdminArea.Controllers.BaseControllers
             IMapper Mapper,
             UserManager<AppUsers> UserManager,
             PersianDateHelper persianDateHelper, // Add this parameter
-            IMemoryCache memoryCache // Add this parameter
-        ) : base(Context, UserManager, persianDateHelper, memoryCache) // Pass the new parameters to the base constructor
+            IMemoryCache memoryCache, // Add this parameter
+            ActivityLoggerService activityLogger // Add this parameter
+        ) : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger) // Pass the new parameters to the base constructor
         {
             _Context = Context;
             _UserManager = UserManager;

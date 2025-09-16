@@ -258,6 +258,34 @@
                             </li>
                         </ul>
                     </li>
+
+                    <!-- User Activity Log Management -->
+                    <li class="nav-main-item">
+                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fas fa-history"></i>
+                            <span class="nav-main-link-name">لاگ فعالیت‌ها</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
+                                    <i class="nav-main-link-icon fas fa-list"></i>
+                                    <span class="nav-main-link-name">لیست فعالیت‌ها</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Search">
+                                    <i class="nav-main-link-icon fas fa-search"></i>
+                                    <span class="nav-main-link-name">جستجوی پیشرفته</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Statistics">
+                                    <i class="nav-main-link-icon fas fa-chart-line"></i>
+                                    <span class="nav-main-link-name">آمار و گزارشات</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 }
 
                 <!-- System Settings (Only for Admins) -->

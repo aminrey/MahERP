@@ -33,7 +33,8 @@ namespace MahERP.Areas.AdminArea.Controllers.CRMControllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            IWebHostEnvironment webHostEnvironment) : base(uow, userManager, persianDateHelper, memoryCache)
+            IWebHostEnvironment webHostEnvironment,
+            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
         {
             _uow = uow;
             _crmRepository = crmRepository;
