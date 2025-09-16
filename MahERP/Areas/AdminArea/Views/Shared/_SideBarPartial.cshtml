@@ -19,6 +19,50 @@
             <!-- END Logo -->
             <!-- Options -->
             <div>
+                <!-- Notification Bell -->
+                <div class="dropdown d-inline-block me-2">
+                    <button class="btn btn-sm btn-alt-secondary position-relative" type="button" id="notificationBell" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa fa-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount" style="font-size: 0.65em; display: none;">
+                            0
+                        </span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationBell" style="min-width: 350px; max-height: 400px; overflow-y: auto;">
+                        <!-- Notification Header -->
+                        <div class="dropdown-header d-flex justify-content-between align-items-center bg-primary text-white">
+                            <span class="fw-semibold">نوتیفیکیشن‌ها</span>
+                            <div>
+                                <button class="btn btn-sm btn-outline-light me-1" onclick="markAllNotificationsAsRead()" title="همه را خوانده شده علامت‌گذاری کن">
+                                    <i class="fa fa-check-double fa-xs"></i>
+                                </button>
+                                <a href="@Url.Action("Index", "Notification", new { area = "AdminArea" })" class="btn btn-sm btn-outline-light" title="مشاهده همه">
+                                    <i class="fa fa-external-link-alt fa-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification List -->
+                        <div id="notificationsList">
+                            <div class="text-center p-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">در حال بارگذاری...</span>
+                                </div>
+                                <div class="mt-2 text-muted small">در حال بارگذاری...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div class="dropdown-divider m-0"></div>
+                        <div class="dropdown-item text-center">
+                            <a href="@Url.Action("Index", "Notification", new { area = "AdminArea" })" class="text-decoration-none">
+                                <i class="fa fa-eye me-1"></i>
+                                مشاهده همه نوتیفیکیشن‌ها
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- END Notification Bell -->
+                
                 <!-- Toggle Sidebar Style -->
                 <button class="btn btn-sm btn-alt-secondary" data-class="fa-toggle-off fa-toggle-on" data-target="#sidebar-style-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('sidebar_style_toggle');Dashmix.layout('header_style_toggle');" type="button">
                     <i class="fa fa-toggle-off" id="sidebar-style-toggler"></i>
@@ -52,6 +96,15 @@
                     <a class="nav-main-link" asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">
                         <i class="nav-main-link-icon fa fa-tachometer-alt"></i>
                         <span class="nav-main-link-name">داشبورد</span>
+                    </a>
+                </li>
+
+                <!-- Notifications Menu Item -->
+                <li class="nav-main-item">
+                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="Notification" asp-action="Index">
+                        <i class="nav-main-link-icon fa fa-bell"></i>
+                        <span class="nav-main-link-name">نوتیفیکیشن‌ها</span>
+                        <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" id="sidebarNotificationCount" style="display: none;">0</span>
                     </a>
                 </li>
 
@@ -389,4 +442,209 @@
             }
         });
     }
+
+    // Notification Management Scripts
+    $(document).ready(function() {
+        // Load notifications on page load
+        loadNotifications();
+        
+        // Update notifications every 30 seconds
+        setInterval(loadNotifications, 30000);
+        
+        // Close dropdown when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#notificationBell').length) {
+                $('.dropdown-menu').removeClass('show');
+            }
+        });
+    });
+
+    function loadNotifications() {
+        $.get('@Url.Action("GetLatestNotifications", "Notification", new { area = "AdminArea" })', { count: 5 }, function(response) {
+            if (response.success) {
+                updateNotificationUI(response.notifications, response.unreadCount);
+            }
+        }).fail(function() {
+            console.error('خطا در بارگذاری نوتیفیکیشن‌ها');
+        });
+    }
+
+    function updateNotificationUI(notifications, unreadCount) {
+        // Update badge counts
+        if (unreadCount > 0) {
+            $('#notificationCount').text(unreadCount).show();
+            $('#sidebarNotificationCount').text(unreadCount).show();
+            
+            // Add pulsing animation for new notifications
+            $('#notificationBell').addClass('notification-pulse');
+        } else {
+            $('#notificationCount').hide();
+            $('#sidebarNotificationCount').hide();
+            $('#notificationBell').removeClass('notification-pulse');
+        }
+
+        // Update notification list
+        let notificationHtml = '';
+        
+        if (notifications.length === 0) {
+            notificationHtml = `
+                <div class="text-center p-3 text-muted">
+                    <i class="fa fa-bell-slash fa-2x mb-2"></i>
+                    <div>هیچ نوتیفیکیشنی وجود ندارد</div>
+                </div>
+            `;
+        } else {
+            notifications.forEach(function(notification) {
+                const isReadClass = notification.isRead ? 'notification-read' : 'notification-unread';
+                const priorityClass = notification.priorityClass || '';
+                
+                notificationHtml += `
+                    <div class="dropdown-item notification-item ${isReadClass} ${priorityClass}" data-notification-id="${notification.id}">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 me-2">
+                                <i class="fa ${notification.icon} text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1 fw-semibold text-truncate">${notification.title}</h6>
+                                    ${!notification.isRead ? '<span class="badge bg-danger rounded-pill">جدید</span>' : ''}
+                                </div>
+                                <p class="mb-1 text-muted small">${notification.message}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">${notification.systemName}</small>
+                                    <small class="text-muted">${notification.createTime}</small>
+                                </div>
+                                <div class="mt-1">
+                                    ${notification.actionUrl ? 
+                                        `<a href="javascript:void(0)" onclick="goToNotificationRecord(${notification.id})" class="btn btn-xs btn-primary me-1">
+                                            <i class="fa fa-eye fa-xs"></i>
+                                        </a>` : ''
+                                    }
+                                    ${!notification.isRead ? 
+                                        `<button class="btn btn-xs btn-success" onclick="markSingleNotificationAsRead(${notification.id})">
+                                            <i class="fa fa-check fa-xs"></i>
+                                        </button>` : ''
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        $('#notificationsList').html(notificationHtml);
+    }
+
+    function markSingleNotificationAsRead(notificationId) {
+        $.post('@Url.Action("MarkAsRead", "Notification", new { area = "AdminArea" })', { id: notificationId }, function(response) {
+            if (response.success) {
+                loadNotifications(); // Refresh the list
+            } else {
+                console.error('خطا در علامت‌گذاری نوتیفیکیشن');
+            }
+        });
+    }
+
+    function markAllNotificationsAsRead() {
+        $.post('@Url.Action("MarkAllAsRead", "Notification", new { area = "AdminArea" })', function(response) {
+            if (response.success) {
+                loadNotifications(); // Refresh the list
+                // Show success message
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'موفق',
+                        text: response.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            } else {
+                console.error('خطا در علامت‌گذاری همه نوتیفیکیشن‌ها');
+            }
+        });
+    }
+
+    function goToNotificationRecord(notificationId) {
+        window.location.href = '@Url.Action("GoToRelated", "Notification", new { area = "AdminArea" })' + '?id=' + notificationId;
+    }
+
+    // Click on notification item to mark as read and go to details
+    $(document).on('click', '.notification-item', function(e) {
+        if (!$(e.target).is('button, a, .btn')) {
+            const notificationId = $(this).data('notification-id');
+            window.location.href = '@Url.Action("Details", "Notification", new { area = "AdminArea" })' + '?id=' + notificationId;
+        }
+    });
 </script>
+
+<style>
+    .notification-pulse {
+        animation: notificationPulse 1.5s infinite;
+    }
+
+    @@keyframes notificationPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    .notification-unread {
+        background-color: rgba(13, 110, 253, 0.1);
+        border-right: 3px solid #0d6efd;
+    }
+
+    .notification-read {
+        opacity: 0.7;
+    }
+
+    .notification-item {
+        border-bottom: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .notification-item:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .notification-item:last-child {
+        border-bottom: none;
+    }
+
+    .priority-important {
+        border-right-color: #ffc107 !important;
+    }
+
+    .priority-urgent {
+        border-right-color: #dc3545 !important;
+    }
+
+    .priority-critical {
+        border-right-color: #dc3545 !important;
+        animation: criticalPulse 2s infinite;
+    }
+
+    @@keyframes criticalPulse {
+        0% { background-color: rgba(220, 53, 69, 0.1); }
+        50% { background-color: rgba(220, 53, 69, 0.2); }
+        100% { background-color: rgba(220, 53, 69, 0.1); }
+    }
+
+    .dropdown-menu {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+    }
+
+    .dropdown-header {
+        padding: 0.75rem 1rem;
+        margin: 0;
+    }
+
+    .btn-xs {
+        padding: 0.125rem 0.25rem;
+        font-size: 0.675rem;
+        line-height: 1.2;
+        border-radius: 0.125rem;
+    }
+</style>

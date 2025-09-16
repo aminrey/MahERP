@@ -41,6 +41,12 @@ namespace MahERP.DataModelLayer
         public DbSet<ActivityHistory> ActivityHistory_Tbl { get; set; }
         public DbSet<ActivityTask> ActivityTask_Tbl { get; set; }
         public DbSet<UserActivityLog> UserActivityLog_Tbl { get; set; }
+        public DbSet<CoreNotification> CoreNotification_Tbl { get; set; }
+        public DbSet<CoreNotificationDetail> CoreNotificationDetail_Tbl { get; set; }
+        public DbSet<CoreNotificationDelivery> CoreNotificationDelivery_Tbl { get; set; }
+        public DbSet<CoreNotificationSetting> CoreNotificationSetting_Tbl { get; set; }
+
+
 
         // Task Management
         public DbSet<Tasks> Tasks_Tbl { get; set; }

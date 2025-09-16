@@ -1,5 +1,6 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Entities.Organization;
@@ -31,6 +32,13 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<BranchUser> _branchUser;
         private GenereicClass<Team> _team;
         private GenereicClass<TeamMember> _teamMember;
+        #endregion
+
+        #region Core Notification System - سیستم نوتیفیکیشن کلی
+        private GenereicClass<CoreNotification> _coreNotification;
+        private GenereicClass<CoreNotificationDetail> _coreNotificationDetail;
+        private GenereicClass<CoreNotificationDelivery> _coreNotificationDelivery;
+        private GenereicClass<CoreNotificationSetting> _coreNotificationSetting;
         #endregion
 
         #region Stakeholder Management
@@ -192,6 +200,58 @@ namespace MahERP.DataModelLayer.Services
                     _teamMember = new GenereicClass<TeamMember>(_Context);
                 }
                 return _teamMember;
+            }
+        }
+
+        #endregion
+
+        #region Core Notification System Properties - سیستم نوتیفیکیشن کلی
+
+        public GenereicClass<CoreNotification> CoreNotificationUW
+        {
+            get
+            {
+                if (_coreNotification == null)
+                {
+                    _coreNotification = new GenereicClass<CoreNotification>(_Context);
+                }
+                return _coreNotification;
+            }
+        }
+
+        public GenereicClass<CoreNotificationDetail> CoreNotificationDetailUW
+        {
+            get
+            {
+                if (_coreNotificationDetail == null)
+                {
+                    _coreNotificationDetail = new GenereicClass<CoreNotificationDetail>(_Context);
+                }
+                return _coreNotificationDetail;
+            }
+        }
+
+        public GenereicClass<CoreNotificationDelivery> CoreNotificationDeliveryUW
+        {
+            get
+            {
+                if (_coreNotificationDelivery == null)
+                {
+                    _coreNotificationDelivery = new GenereicClass<CoreNotificationDelivery>(_Context);
+                }
+                return _coreNotificationDelivery;
+            }
+        }
+
+        public GenereicClass<CoreNotificationSetting> CoreNotificationSettingUW
+        {
+            get
+            {
+                if (_coreNotificationSetting == null)
+                {
+                    _coreNotificationSetting = new GenereicClass<CoreNotificationSetting>(_Context);
+                }
+                return _coreNotificationSetting;
             }
         }
 

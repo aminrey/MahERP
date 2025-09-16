@@ -1,5 +1,6 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Entities.Organization;
@@ -24,6 +25,13 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<BranchUser> BranchUserUW { get; }
         GenereicClass<Team> TeamUW { get; }
         GenereicClass<TeamMember> TeamMemberUW { get; }
+        #endregion
+
+        #region Core Notification System - سیستم نوتیفیکیشن کلی
+        GenereicClass<CoreNotification> CoreNotificationUW { get; }
+        GenereicClass<CoreNotificationDetail> CoreNotificationDetailUW { get; }
+        GenereicClass<CoreNotificationDelivery> CoreNotificationDeliveryUW { get; }
+        GenereicClass<CoreNotificationSetting> CoreNotificationSettingUW { get; }
         #endregion
 
         #region Stakeholder Management

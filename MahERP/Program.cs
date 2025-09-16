@@ -32,9 +32,11 @@ builder.Services.AddScoped<ICRMRepository, CRMRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>(); // اضافه شده
 builder.Services.AddScoped<IUserManagerRepository,UserManagerRepository>(); 
 builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>(); // اضافه شده
+builder.Services.AddScoped<ICoreNotificationRepository, CoreNotificationRepository>(); // سیستم نوتیفیشن کلی
 
 // Activity Logger Service
 builder.Services.AddScoped<ActivityLoggerService>(); // اضافه شده
+builder.Services.AddScoped<TaskNotificationService>(); // سرویس نوتیفیکیشن تسک‌ها
 builder.Services.AddHttpContextAccessor(); // اضافه شده
 
 

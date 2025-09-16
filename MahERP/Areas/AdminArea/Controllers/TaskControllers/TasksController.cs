@@ -29,6 +29,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IRoleRepository _roleRepository;
+        private readonly TaskNotificationService _taskNotificationService; // سرویس نوتیفیکشن تسک
 
         public TasksController(
             IUnitOfWork uow,
@@ -41,7 +42,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             IMemoryCache memoryCache,
             IWebHostEnvironment webHostEnvironment,
             IRoleRepository roleRepository,
-            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            ActivityLoggerService activityLogger,
+            TaskNotificationService taskNotificationService) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
         {
             _uow = uow;
             _taskRepository = taskRepository;
@@ -51,6 +53,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _mapper = mapper;
             _webHostEnvironment = webHostEnvironment;
             _roleRepository = roleRepository;
+            _taskNotificationService = taskNotificationService;
         }
 
         // لیست تسک‌ها - با کنترل سطح دسترسی داده
@@ -174,6 +177,10 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 
                 // تکمیل اطلاعات اختصاص‌ها
                 viewModel.AssignmentsTaskUser = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
+
+                // علامت‌گذاری نوتیفیکیشن‌های مرتبط با این تسک به عنوان خوانده شده
+                var currentUserId = _userManager.GetUserId(User);
+                await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
 
                 // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
@@ -319,6 +326,27 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         _uow.Save();
                     }
 
+                    // ارسال نوتیفیکیشن ایجاد تسک جدید
+                    try
+                    {
+                        await _taskNotificationService.NotifyTaskCreatedAsync(
+                            task.Id, 
+                            _userManager.GetUserId(User), 
+                            AssimentUserTask
+                        );
+                    }
+                    catch (Exception notificationEx)
+                    {
+                        // لاگ خطای نوتیفیکیشن اما عملیات اصلی را متوقف نکنیم
+                        await _activityLogger.LogErrorAsync(
+                            "Tasks",
+                            "CreateNewTask",
+                            "خطا در ارسال نوتیفیکیشن ایجاد تسک",
+                            notificationEx,
+                            recordId: task.Id.ToString()
+                        );
+                    }
+
                     // ثبت لاگ موفقیت
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Create,
@@ -433,7 +461,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         return RedirectToAction("ErrorView", "Home");
                     }
 
-                    // ذخیره مقادیر قبلی برای لاگ
+                    // ذخیره مقادیر قبلی برای تشخیص تغییرات
                     var oldValues = new
                     {
                         task.Title,
@@ -442,6 +470,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         task.Priority,
                         task.IsActive
                     };
+
+                    // تشخیص تغییرات قبل از ویرایش
+                    var changeDetails = _taskNotificationService.DetectTaskChanges(oldValues, model);
 
                     // به‌روزرسانی اطلاعات
                     _mapper.Map(model, task);
@@ -464,6 +495,30 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     if (model.Attachments != null && model.Attachments.Count > 0)
                     {
                         SaveTaskAttachments(task.Id, model.Attachments);
+                    }
+
+                    // ارسال نوتیفیکیشن ویرایش تسک (فقط اگر تغییری وجود داشته باشد)
+                    if (changeDetails.Any())
+                    {
+                        try
+                        {
+                            await _taskNotificationService.NotifyTaskEditedAsync(
+                                task.Id, 
+                                _userManager.GetUserId(User), 
+                                changeDetails
+                            );
+                        }
+                        catch (Exception notificationEx)
+                        {
+                            // لاگ خطای نوتیفیکیشن اما عملیات اصلی را متوقف نکنیم
+                            await _activityLogger.LogErrorAsync(
+                                "Tasks",
+                                "Edit",
+                                "خطا در ارسال نوتیفیکیشن ویرایش تسک",
+                                notificationEx,
+                                recordId: task.Id.ToString()
+                            );
+                        }
                     }
 
                     // مقادیر جدید برای لاگ
@@ -489,6 +544,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         recordTitle: task.Title
                     );
 
+                    TempData["SuccessMessage"] = "تسک با موفقیت ویرایش شد";
                     return RedirectToAction(nameof(Details), new { id = model.Id });
                 }
                 catch (Exception ex)
@@ -1173,6 +1229,26 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     // دریافت اطلاعات کاربر اختصاص یافته
                     var assignedUser = await _userManager.FindByIdAsync(model.AssignedUserId);
 
+                    // ارسال نوتیفیکیشن اختصاص کاربر جدید
+                    try
+                    {
+                        await _taskNotificationService.NotifyUserAssignedAsync(
+                            model.TaskId,
+                            model.AssignedUserId,
+                            _userManager.GetUserId(User)
+                        );
+                    }
+                    catch (Exception notificationEx)
+                    {
+                        await _activityLogger.LogErrorAsync(
+                            "Tasks",
+                            "AssignTask",
+                            "خطا در ارسال نوتیفیکیشن اختصاص کاربر",
+                            notificationEx,
+                            recordId: model.TaskId.ToString()
+                        );
+                    }
+
                     // ثبت لاگ
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Create,
@@ -1267,6 +1343,26 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 int taskId = assignment.TaskId;
                 var task = _uow.TaskUW.GetById(taskId);
                 var assignedUser = await _userManager.FindByIdAsync(assignment.AssignedUserId);
+
+                // ارسال نوتیفیکیشن حذف کاربر از تسک
+                try
+                {
+                    await _taskNotificationService.NotifyUserRemovedAsync(
+                        taskId,
+                        assignment.AssignedUserId,
+                        _userManager.GetUserId(User)
+                    );
+                }
+                catch (Exception notificationEx)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "Tasks",
+                        "RemoveAssignment",
+                        "خطا در ارسال نوتیفیکیشن حذف کاربر",
+                        notificationEx,
+                        recordId: id.ToString()
+                    );
+                }
 
                 _uow.TaskAssignmentUW.Delete(assignment);
                 _uow.Save();
@@ -1414,6 +1510,25 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         
                             _uow.TaskOperationUW.Update(operation);
                         }
+                    }
+
+                    // ارسال نوتیفیکیشن تکمیل تسک
+                    try
+                    {
+                        await _taskNotificationService.NotifyTaskCompletedAsync(
+                            id,
+                            _userManager.GetUserId(User)
+                        );
+                    }
+                    catch (Exception notificationEx)
+                    {
+                        await _activityLogger.LogErrorAsync(
+                            "Tasks",
+                            "CompleteTask",
+                            "خطا در ارسال نوتیفیکیشن تکمیل تسک",
+                            notificationEx,
+                            recordId: id.ToString()
+                        );
                     }
 
                     // ثبت لاگ تکمیل

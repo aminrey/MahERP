@@ -1,0 +1,404 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Core.NotificationViewModels.CoreNotificationListViewModel
+@{
+    ViewData["Title"] = "مدیریت نوتیفیکیشن‌ها";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-bell opacity-50 me-1"></i>
+            نوتیفیکیشن‌های من
+            @if (Model.UnreadCount > 0)
+            {
+                <span class="badge bg-danger rounded-pill ms-2">@Model.UnreadCount</span>
+            }
+        </h3>
+        <div class="block-options">
+            <button type="button" class="btn btn-sm btn-alt-success" onclick="markAllAsRead()">
+                <i class="fa fa-check-double opacity-50 me-1"></i> همه را خوانده شده علامت‌گذاری کن
+            </button>
+            <a asp-action="Statistics" class="btn btn-sm btn-alt-primary">
+                <i class="fa fa-chart-bar opacity-50 me-1"></i> آمار نوتیفیکیشن‌ها
+            </a>
+            <button type="button" class="btn btn-sm btn-alt-primary" onclick="refreshNotifications()">
+                <i class="fa fa-sync-alt opacity-50 me-1"></i> بروزرسانی
+            </button>
+        </div>
+    </div>
+    <div class="block-content">
+        <!-- Notification Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="block block-rounded bg-primary-light">
+                    <div class="block-content py-3">
+                        <div class="fs-4 fw-semibold text-primary text-center">
+                            @Model.TotalCount
+                        </div>
+                        <div class="text-center">تعداد کل نوتیفیکیشن‌ها</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-warning-light">
+                    <div class="block-content py-3">
+                        <div class="fs-4 fw-semibold text-warning text-center">
+                            @Model.UnreadCount
+                        </div>
+                        <div class="text-center">خوانده نشده</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-success-light">
+                    <div class="block-content py-3">
+                        <div class="fs-4 fw-semibold text-success text-center">
+                            @(Model.TotalCount - Model.UnreadCount)
+                        </div>
+                        <div class="text-center">خوانده شده</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-info-light">
+                    <div class="block-content py-3">
+                        <div class="fs-4 fw-semibold text-info text-center">
+                            @Model.ReadPercentage.ToString("F1")%
+                        </div>
+                        <div class="text-center">درصد خوانده شده</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END Notification Statistics -->
+
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <form method="get" action="@Url.Action("Index")" class="row align-items-end">
+                    <div class="col-lg-3 col-md-6">
+                        <label class="form-label" for="systemId">سیستم:</label>
+                        <select class="form-select" id="systemId" name="systemId">
+                            <option value="">همه سیستم‌ها</option>
+                            @foreach (var system in ViewBag.Systems)
+                            {
+                                <option value="@system.Id" selected="@(ViewBag.SystemId == system.Id)">
+                                    @system.Name
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="unreadOnly" name="unreadOnly" value="true" @(ViewBag.UnreadOnly ? "checked" : "")>
+                            <label class="form-check-label" for="unreadOnly">
+                                فقط خوانده نشده‌ها
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-filter me-1"></i>
+                            اعمال فیلتر
+                        </button>
+                    </div>
+                    <div class="col-lg-3 col-md-6 text-end">
+                        <a href="@Url.Action("Index")" class="btn btn-alt-secondary">
+                            <i class="fa fa-times me-1"></i>
+                            حذف فیلتر
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 40px;"><i class="fa fa-bell"></i></th>
+                        <th class="text-center">عنوان</th>
+                        <th class="text-center">سیستم</th>
+                        <th class="text-center" style="width: 120px;">اولویت</th>
+                        <th class="text-center" style="width: 120px;">تاریخ ایجاد</th>
+                        <th class="text-center" style="width: 120px;">وضعیت</th>
+                        <th class="text-center" style="width: 180px;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Notifications)
+                    {
+                        <tr class="@(!item.IsRead ? "table-warning" : "")">
+                            <td class="text-center">
+                                <i class="fa @item.Icon @(item.Priority > 1 ? "text-danger" : item.Priority > 0 ? "text-warning" : "text-primary")"></i>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@item.Title</div>
+                                <div class="text-muted small">@item.Message.Substring(0, Math.Min(item.Message.Length, 100))@(item.Message.Length > 100 ? "..." : "")</div>
+                                @if (!string.IsNullOrEmpty(item.RelatedRecordTitle))
+                                {
+                                    <small class="text-info">
+                                        <i class="fa fa-link me-1"></i>
+                                        مربوط به: @item.RelatedRecordTitle
+                                    </small>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@item.SystemName</span>
+                            </td>
+                            <td class="text-center">
+                                @if (item.Priority > 0)
+                                {
+                                    <span class="badge @item.PriorityClass">@item.PriorityName</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">عادی</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span>@item.CreateDatePersian</span>
+                                <small class="text-muted d-block">@item.CreateTime</small>
+                                <small class="text-primary">@item.RelativeTime</small>
+                            </td>
+                            <td class="text-center">
+                                @if (item.IsRead)
+                                {
+                                    <span class="badge bg-success">خوانده شده</span>
+                                    @if (!string.IsNullOrEmpty(item.ReadDatePersian))
+                                    {
+                                        <small class="text-muted d-block">@item.ReadDatePersian</small>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">خوانده نشده</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="جزئیات">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                @if (!string.IsNullOrEmpty(item.ActionUrl))
+                                {
+                                    <a href="@Url.Action("GoToRelated", new { id = item.Id })" class="btn btn-sm btn-alt-primary me-1" data-bs-toggle="tooltip" title="مشاهده رکورد مرتبط">
+                                        <i class="fa fa-external-link-alt"></i>
+                                    </a>
+                                }
+                                @if (!item.IsRead)
+                                {
+                                    <button type="button" class="btn btn-sm btn-alt-success" data-bs-toggle="tooltip" title="خوانده شده"
+                                            onclick="markAsRead(@item.Id)">
+                                        <i class="fa fa-check"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Notifications pagination">
+                    <ul class="pagination">
+                        @if (Model.HasPreviousPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    page = Model.CurrentPage - 1, 
+                                    systemId = ViewBag.SystemId, 
+                                    unreadOnly = ViewBag.UnreadOnly 
+                                })">قبلی</a>
+                            </li>
+                        }
+
+                        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    page = i, 
+                                    systemId = ViewBag.SystemId, 
+                                    unreadOnly = ViewBag.UnreadOnly 
+                                })">@i</a>
+                            </li>
+                        }
+
+                        @if (Model.HasNextPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    page = Model.CurrentPage + 1, 
+                                    systemId = ViewBag.SystemId, 
+                                    unreadOnly = ViewBag.UnreadOnly 
+                                })">بعدی</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+            
+            <div class="text-center mt-2">
+                <small class="text-muted">
+                    نمایش @((Model.CurrentPage - 1) * Model.PageSize + 1) تا @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCount)) از @Model.TotalCount نوتیفیکیشن
+                </small>
+            </div>
+        }
+
+        @if (!Model.Notifications.Any())
+        {
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fa fa-bell-slash fa-3x text-muted"></i>
+                </div>
+                <h4 class="h5 text-muted">هیچ نوتیفیکیشنی یافت نشد</h4>
+                <p class="text-muted">
+                    @if (ViewBag.UnreadOnly)
+                    {
+                        <span>همه نوتیفیکیشن‌های شما خوانده شده‌اند.</span>
+                    }
+                    else if (ViewBag.SystemId != null)
+                    {
+                        <span>در سیستم انتخاب شده نوتیفیکیشنی وجود ندارد.</span>
+                    }
+                    else
+                    {
+                        <span>هنوز هیچ نوتیفیکیشنی دریافت نکرده‌اید.</span>
+                    }
+                </p>
+                <a href="@Url.Action("Index")" class="btn btn-alt-primary">
+                    <i class="fa fa-home me-1"></i>
+                    بازگشت به همه نوتیفیکیشن‌ها
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Initialize tooltips
+        $(function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+        
+        // Override DataTable settings to disable pagination
+        $(document).ready(function() {
+            // Wait for DataTable to be initialized by Dashmix
+            setTimeout(function() {
+                $('.js-dataTable-responsive').each(function() {
+                    if ($.fn.DataTable.isDataTable(this)) {
+                        // Destroy existing DataTable
+                        $(this).DataTable().destroy();
+                    }
+                    
+                    // Reinitialize with custom settings
+                    $(this).DataTable({
+                        responsive: true,
+                        paging: false,           // Disable pagination
+                        info: false,            // Hide info text
+                        lengthChange: false,    // Hide length change dropdown
+                        searching: true,        // Keep search
+                        ordering: true,         // Keep sorting
+                        autoWidth: false,
+                        language: {
+                            search: "جستجو:",
+                            searchPlaceholder: "جستجو در نوتیفیکیشن‌ها...",
+                            emptyTable: "هیچ نوتیفیکیشنی یافت نشد",
+                            zeroRecords: "هیچ نتیجه‌ای یافت نشد"
+                        }
+                    });
+                });
+            }, 100);
+        });
+
+        // Mark single notification as read
+        function markAsRead(notificationId) {
+            $.post('@Url.Action("MarkAsRead")', { id: notificationId }, function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    Swal.fire('خطا', response.message || 'خطا در علامت‌گذاری نوتیفیکیشن', 'error');
+                }
+            });
+        }
+
+        // Mark all notifications as read
+        function markAllAsRead() {
+            const systemId = $('#systemId').val();
+            
+            Swal.fire({
+                title: 'تایید عملیات',
+                text: 'آیا مطمئن هستید که می‌خواهید همه نوتیفیکیشن‌ها را به عنوان خوانده شده علامت‌گذاری کنید؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله، علامت‌گذاری کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("MarkAllAsRead")', { systemId: systemId }, function(response) {
+                        if (response.success) {
+                            Swal.fire('موفق', response.message || 'همه نوتیفیکیشن‌ها علامت‌گذاری شدند', 'success').then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('خطا', response.message || 'خطا در علامت‌گذاری نوتیفیکیشن‌ها', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        // Refresh notifications
+        function refreshNotifications() {
+            location.reload();
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(function() {
+            updateUnreadCount();
+        }, 30000);
+
+        // Update unread count
+        function updateUnreadCount() {
+            $.get('@Url.Action("GetUnreadCount")', function(response) {
+                if (response.success && response.count > 0) {
+                    $('.badge.bg-danger.rounded-pill').text(response.count);
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .priority-important {
+            background-color: var(--bs-warning);
+        }
+
+        .priority-urgent {
+            background-color: var(--bs-danger);
+        }
+
+        .priority-critical {
+            background-color: var(--bs-danger);
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(var(--bs-danger-rgb), 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(var(--bs-danger-rgb), 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(var(--bs-danger-rgb), 0);
+            }
+        }
+
+        .table-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+    </style>
+}

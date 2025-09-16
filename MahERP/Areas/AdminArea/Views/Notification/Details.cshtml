@@ -1,0 +1,461 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Core.NotificationViewModels.CoreNotificationViewModel
+@{
+    ViewData["Title"] = "جزئیات نوتیفیکیشن";
+}
+
+<div class="block block-rounded">
+    <!-- Block Header -->
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa @Model.Icon opacity-50 me-1"></i>
+            جزئیات نوتیفیکیشن
+            @if (Model.Priority > 0)
+            {
+                <span class="badge @Model.PriorityClass ms-2">@Model.PriorityName</span>
+            }
+        </h3>
+        <div class="block-options">
+            <a href="@Url.Action("Index")" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-right opacity-50 me-1"></i>
+                بازگشت به لیست
+            </a>
+            @if (!string.IsNullOrEmpty(Model.ActionUrl))
+            {
+                <a href="@Url.Action("GoToRelated", new { id = Model.Id })" class="btn btn-sm btn-alt-primary">
+                    <i class="fa fa-external-link-alt opacity-50 me-1"></i>
+                    مشاهده رکورد مرتبط
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Block Content -->
+    <div class="block-content">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Notification Info Card -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle text-primary me-1"></i>
+                            اطلاعات کلی
+                        </h3>
+                        <div class="block-options">
+                            @if (!Model.IsRead)
+                            {
+                                <button type="button" class="btn btn-sm btn-alt-success" onclick="markAsRead(@Model.Id)">
+                                    <i class="fa fa-check me-1"></i>
+                                    علامت‌گذاری به عنوان خوانده شده
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">
+                                    <i class="fa fa-check-circle me-1"></i>
+                                    خوانده شده
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <!-- System Info -->
+                        <div class="row mb-4">
+                            <div class="col-sm-3">
+                                <div class="fw-semibold">سیستم مربوطه:</div>
+                            </div>
+                            <div class="col-sm-9">
+                                <span class="badge bg-secondary">@Model.SystemName</span>
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="row mb-4">
+                            <div class="col-sm-3">
+                                <div class="fw-semibold">عنوان:</div>
+                            </div>
+                            <div class="col-sm-9">
+                                <div class="fs-6">@Model.Title</div>
+                            </div>
+                        </div>
+
+                        <!-- Message -->
+                        <div class="row mb-4">
+                            <div class="col-sm-3">
+                                <div class="fw-semibold">پیام:</div>
+                            </div>
+                            <div class="col-sm-9">
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-0">@Model.Message</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notification Type -->
+                        <div class="row mb-4">
+                            <div class="col-sm-3">
+                                <div class="fw-semibold">نوع نوتیفیکیشن:</div>
+                            </div>
+                            <div class="col-sm-9">
+                                <span class="badge bg-info">@Model.NotificationTypeName</span>
+                            </div>
+                        </div>
+
+                        <!-- Priority -->
+                        <div class="row mb-4">
+                            <div class="col-sm-3">
+                                <div class="fw-semibold">اولویت:</div>
+                            </div>
+                            <div class="col-sm-9">
+                                @if (Model.Priority > 0)
+                                {
+                                    <span class="badge @Model.PriorityClass">@Model.PriorityName</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">عادی</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Related Record Information -->
+                @if (!string.IsNullOrEmpty(Model.RelatedRecordTitle))
+                {
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-link text-primary me-1"></i>
+                                رکورد مرتبط
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <div class="fw-semibold">عنوان رکورد:</div>
+                                </div>
+                                <div class="col-sm-9">
+                                    <strong>@Model.RelatedRecordTitle</strong>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.RelatedRecordType))
+                            {
+                                <div class="row mt-2">
+                                    <div class="col-sm-3">
+                                        <div class="fw-semibold">نوع رکورد:</div>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <span class="badge bg-secondary">@Model.RelatedRecordType</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.RelatedRecordId))
+                            {
+                                <div class="row mt-2">
+                                    <div class="col-sm-3">
+                                        <div class="fw-semibold">شناسه رکورد:</div>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <code>#@Model.RelatedRecordId</code>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.ActionUrl))
+                            {
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <a href="@Url.Action("GoToRelated", new { id = Model.Id })" class="btn btn-primary">
+                                            <i class="fa fa-external-link-alt me-1"></i>
+                                            مشاهده رکورد مرتبط
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Change Details -->
+                @if (Model.Details.Any())
+                {
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-edit text-primary me-1"></i>
+                                جزئیات تغییرات
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-vcenter">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center">فیلد</th>
+                                            <th class="text-center">مقدار قبلی</th>
+                                            <th class="text-center">مقدار جدید</th>
+                                            <th class="text-center">توضیحات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var detail in Model.Details)
+                                        {
+                                            <tr class="@detail.HighlightClass">
+                                                <td class="fw-semibold">@detail.FieldDisplayName</td>
+                                                <td class="text-center">
+                                                    @if (!string.IsNullOrEmpty(detail.OldValue))
+                                                    {
+                                                        <span class="badge bg-secondary">@detail.OldValue</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (!string.IsNullOrEmpty(detail.NewValue))
+                                                    {
+                                                        <span class="badge bg-primary">@detail.NewValue</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (!string.IsNullOrEmpty(detail.Description))
+                                                    {
+                                                        <small class="text-muted">@detail.Description</small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Status Information -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle text-primary me-1"></i>
+                            وضعیت نوتیفیکیشن
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <!-- Create Date -->
+                        <div class="mb-3">
+                            <small class="text-muted d-block">تاریخ ایجاد</small>
+                            <span class="fw-semibold">@Model.CreateDatePersian</span>
+                            <small class="text-muted d-block">ساعت: @Model.CreateTime</small>
+                        </div>
+
+                        <!-- Relative Time -->
+                        <div class="mb-3">
+                            <small class="text-muted d-block">زمان نسبی</small>
+                            <span class="text-primary">@Model.RelativeTime</span>
+                        </div>
+
+                        <!-- Read Status -->
+                        <div class="mb-3">
+                            <small class="text-muted d-block">وضعیت خواندن</small>
+                            @if (Model.IsRead)
+                            {
+                                <span class="text-success">
+                                    <i class="fa fa-check-circle me-1"></i>
+                                    خوانده شده
+                                </span>
+                                @if (!string.IsNullOrEmpty(Model.ReadDatePersian))
+                                {
+                                    <small class="text-muted d-block">در تاریخ: @Model.ReadDatePersian</small>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-warning">
+                                    <i class="fa fa-clock me-1"></i>
+                                    خوانده نشده
+                                </span>
+                            }
+                        </div>
+
+                        <!-- Click Status -->
+                        @if (Model.IsClicked)
+                        {
+                            <div class="mb-3">
+                                <small class="text-muted d-block">کلیک شده</small>
+                                <span class="text-info">
+                                    <i class="fa fa-mouse-pointer me-1"></i>
+                                    بله
+                                </span>
+                                @if (Model.ClickDate.HasValue)
+                                {
+                                    <small class="text-muted d-block">
+                                        در تاریخ: @ConvertDateTime.ConvertMiladiToShamsi(Model.ClickDate.Value, "yyyy/MM/dd HH:mm")
+                                    </small>
+                                }
+                            </div>
+                        }
+
+                        <!-- Sender Information -->
+                        @if (!string.IsNullOrEmpty(Model.SenderUserName))
+                        {
+                            <div class="mb-3">
+                                <small class="text-muted d-block">فرستنده</small>
+                                <span class="fw-semibold">
+                                    <i class="fa fa-user me-1"></i>
+                                    @Model.SenderUserName
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Delivery Information -->
+                @if (Model.Deliveries.Any())
+                {
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-paper-plane text-primary me-1"></i>
+                                اطلاعات ارسال
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            @foreach (var delivery in Model.Deliveries)
+                            {
+                                <div class="d-flex justify-content-between align-items-center mb-2 @(delivery != Model.Deliveries.Last() ? "border-bottom pb-2" : "")">
+                                    <div>
+                                        <span class="fw-semibold">@delivery.DeliveryMethodName</span>
+                                        @if (!string.IsNullOrEmpty(delivery.DeliveryAddress))
+                                        {
+                                            <small class="text-muted d-block">@delivery.DeliveryAddress</small>
+                                        }
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge @delivery.StatusClass">
+                                            <i class="fa @delivery.StatusIcon me-1"></i>
+                                            @delivery.DeliveryStatusName
+                                        </span>
+                                        @if (delivery.AttemptCount > 0)
+                                        {
+                                            <small class="text-muted d-block">تلاش: @delivery.AttemptCount</small>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Actions -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-cogs text-primary me-1"></i>
+                            عملیات
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="d-grid gap-2">
+                            @if (!string.IsNullOrEmpty(Model.ActionUrl))
+                            {
+                                <a href="@Url.Action("GoToRelated", new { id = Model.Id })" class="btn btn-primary">
+                                    <i class="fa fa-external-link-alt me-1"></i>
+                                    مشاهده رکورد مرتبط
+                                </a>
+                            }
+                            
+                            @if (!Model.IsRead)
+                            {
+                                <button type="button" class="btn btn-success" onclick="markAsRead(@Model.Id)">
+                                    <i class="fa fa-check me-1"></i>
+                                    علامت‌گذاری به عنوان خوانده شده
+                                </button>
+                            }
+                            
+                            <a href="@Url.Action("Index")" class="btn btn-alt-secondary">
+                                <i class="fa fa-arrow-right me-1"></i>
+                                بازگشت به لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Mark notification as read
+    function markAsRead(notificationId) {
+        $.post('@Url.Action("MarkAsRead")', { id: notificationId }, function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                Swal.fire('خطا', response.message || 'خطا در علامت‌گذاری نوتیفیکیشن', 'error');
+            }
+        });
+    }
+
+    // Auto-mark as read after 3 seconds if not already read
+    @if (!Model.IsRead)
+    {
+        <text>
+        setTimeout(function() {
+            markAsRead(@Model.Id);
+        }, 3000);
+        </text>
+    }
+</script>
+
+<style>
+    .highlight-change {
+        background-color: var(--bs-warning-bg-subtle);
+        border: 1px solid var(--bs-warning-border-subtle);
+    }
+
+    .priority-important {
+        background-color: var(--bs-warning);
+    }
+
+    .priority-urgent {
+        background-color: var(--bs-danger);
+    }
+
+    .priority-critical {
+        background-color: var(--bs-danger);
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(var(--bs-danger-rgb), 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(var(--bs-danger-rgb), 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(var(--bs-danger-rgb), 0);
+        }
+    }
+
+    .status-pending { background-color: var(--bs-warning); }
+    .status-sent { background-color: var(--bs-info); }
+    .status-delivered { background-color: var(--bs-success); }
+    .status-failed { background-color: var(--bs-danger); }
+    .status-cancelled { background-color: var(--bs-secondary); }
+    .status-blocked { background-color: var(--bs-dark); }
+</style>
+}
