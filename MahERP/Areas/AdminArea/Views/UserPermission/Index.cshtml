@@ -25,7 +25,7 @@
     <!-- Quick Actions -->
     <div class="row">
         <div class="col-md-6 col-xl-3">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="loadModal('@Url.Action("AssignRolePattern")')">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AssignRolePattern")" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold text-primary mb-1">
                         <i class="fa fa-user-plus"></i>
@@ -81,7 +81,7 @@
                 <i class="fa fa-users text-muted me-1"></i> لیست کاربران و دسترسی‌ها
             </h3>
             <div class="block-options">
-                <button type="button" class="btn btn-sm btn-primary" onclick="loadModal('@Url.Action("AssignRolePattern")')">
+                <button type="button" class="btn btn-sm btn-primary" data-toggle="modal-ajax" href="@Url.Action("AssignRolePattern")">
                     <i class="fa fa-plus opacity-50 me-1"></i> تخصیص الگوی نقش
                 </button>
             </div>
@@ -163,7 +163,7 @@
                                             <a class="btn btn-sm btn-alt-secondary" asp-action="UserPermissions" asp-route-userId="@Model[i].UserId" data-bs-toggle="tooltip" title="مشاهده دسترسی‌ها">
                                                 <i class="fa fa-fw fa-eye"></i>
                                             </a>
-                                            <button type="button" class="btn btn-sm btn-alt-secondary" href="@Url.Action("AssignRolePattern", "UserPermission", new { userId = Model[i].UserId })" data-bs-toggle="tooltip" title="تخصیص الگوی نقش">
+                                            <button type="button" class="btn btn-sm btn-alt-secondary" data-toggle="modal-ajax" href="@Url.Action("AssignRolePattern", "UserPermission", new { userId = Model[i].UserId })" data-bs-toggle="tooltip" title="تخصیص الگوی نقش">
                                                 <i class="fa fa-fw fa-plus"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-alt-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -174,7 +174,7 @@
                                                 {
                                                     @foreach (var pattern in Model[i].RolePatterns.Where(rp => rp.IsActive))
                                                     {
-                                                        <a class="dropdown-item text-danger" href="@Url.Action("RemoveRolePattern", "UserPermission", new { id = pattern.Id })">
+                                                        <a class="dropdown-item text-danger" href="@Url.Action("RemoveRolePattern", "UserPermission", new { id = pattern.Id })" data-toggle="modal-ajax">
                                                             <i class="fa fa-fw fa-times me-1"></i> حذف "@pattern.PatternName"
                                                         </a>
                                                     }
@@ -202,31 +202,8 @@
     </div>
 </div>
 <!-- END Page Content -->
-<!-- Modal Container -->
-<div class="modal fade" id="modal-userpermission" tabindex="-1" role="dialog" aria-labelledby="modal-userpermission" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-body">
-                <div class="text-center">
-                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
-                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
-        function loadModal(url) {
-            $('#modal-userpermission .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
-            $('#modal-userpermission').modal('show');
-
-            $.get(url, function(data) {
-                $('#modal-userpermission .modal-content').html(data);
-            });
-        }
-
         $(document).ready(function() {
             $('.js-dataTable-responsive').DataTable({
                 language: {

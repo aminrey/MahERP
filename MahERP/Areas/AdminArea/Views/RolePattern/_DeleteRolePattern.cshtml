@@ -1,41 +1,73 @@
 ﻿@model RolePatternViewModel
 
-<div class="modal-header @ViewBag.themeclass">
-    <h5 class="modal-title text-white">
-        <i class="fa fa-exclamation-triangle me-1"></i> @ViewBag.ViewTitle
-    </h5>
-    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
-</div>
-<div class="modal-body">
-    <div class="text-center py-3">
-        <div class="display-4 text-danger mb-3">
-            <i class="fa fa-exclamation-triangle"></i>
-        </div>
-        <h4 class="mb-3">آیا از حذف این الگوی نقش اطمینان دارید؟</h4>
-        <p class="mb-3">
-            <strong>الگوی نقش:</strong> @Model.PatternName
-        </p>
-        @if (Model.UsersCount > 0)
-        {
-            <div class="alert alert-warning">
-                <i class="fa fa-users me-1"></i>
-                <strong>توجه:</strong> این الگوی نقش به @Model.UsersCount کاربر تخصیص داده شده است.
-                با حذف این الگو، دسترسی‌های کاربران متأثر خواهد شد.
+@{
+    Layout = null;
+}
+
+<style>
+    .modal {
+        --bs-modal-width: 70%;
+        transition: 0.3s;
+    }
+</style>
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
+            <div class="block-header bg-danger-dark">
+                <h3 class="block-title">حذف الگوی نقش</h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
             </div>
-        }
-        <p class="text-muted">
-            این عملیات قابل بازگشت نیست و الگوی نقش به صورت کامل حذف خواهد شد.
-        </p>
+
+            <div class="block block-themed block-rounded mt-1">
+                <div class="block-header bg-danger-light">
+                    <h3 class="block-title">تأیید حذف الگوی نقش</h3>
+                </div>
+                <div class="block-content">
+                    <div class="text-center py-3">
+                        <div class="display-4 text-danger mb-3">
+                            <i class="fa fa-exclamation-triangle"></i>
+                        </div>
+                        <h4 class="mb-3">آیا از حذف این الگوی نقش اطمینان دارید؟</h4>
+
+                        <div class="row justify-content-center">
+                            <div class="col-8">
+                                <div class="alert alert-info">
+                                    <strong>الگوی نقش:</strong> @Model.PatternName
+                                </div>
+
+                                @if (Model.UsersCount > 0)
+                                {
+                                    <div class="alert alert-warning">
+                                        <i class="fa fa-users me-1"></i>
+                                        <strong>توجه:</strong> این الگوی نقش به @Model.UsersCount کاربر تخصیص داده شده است.
+                                        با حذف این الگو، دسترسی‌های کاربران متأثر خواهد شد.
+                                    </div>
+                                }
+
+                                <div class="alert alert-danger">
+                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                    این عملیات قابل بازگشت نیست و الگوی نقش به صورت کامل حذف خواهد شد.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="block-content block-content-full text-end bg-body">
+            <form asp-action="DeletePost" method="post" class="d-inline">
+                <input asp-for="Id" type="hidden" />
+                <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fa fa-trash-alt me-1"></i>حذف الگوی نقش
+                </button>
+            </form>
+        </div>
     </div>
-</div>
-<div class="modal-footer">
-    <form asp-action="DeletePost" method="post" class="d-inline">
-        <input asp-for="Id" type="hidden" />
-        <button type="submit" class="@ViewBag.ButonClass">
-            <i class="fa fa-trash-alt me-1"></i> حذف الگوی نقش
-        </button>
-    </form>
-    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
-        <i class="fa fa-times me-1"></i> انصراف
-    </button>
 </div>

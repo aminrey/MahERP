@@ -1,92 +1,100 @@
 ﻿@model AssignRolePatternViewModel
 
-<div class="modal-header bg-primary">
-    <h5 class="modal-title text-white">
-        <i class="fa fa-user-plus me-1"></i> تخصیص الگوی نقش به کاربر
-    </h5>
-    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+@{
+    Layout = null;
+}
+
+<style>
+    .modal {
+        --bs-modal-width: 80%;
+        transition: 0.3s;
+    }
+</style>
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
+            <div class="block-header bg-primary-dark">
+                <h3 class="block-title">تخصیص الگوی نقش به کاربر</h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="assign-role-form" asp-action="AssignRolePattern" method="post">
+                @Html.AntiForgeryToken()
+                <div class="block block-themed block-rounded mt-1">
+                    <div class="block-header bg-primary-light">
+                        <h3 class="block-title">انتخاب کاربر و الگوی نقش</h3>
+                    </div>
+                    <div class="block-content">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="row justify-content-center">
+                            <div class="row">
+                                <div class="form-floating mb-3 col-6">
+                                    <select asp-for="UserId" asp-items="ViewBag.Users" class="js-select2 form-control" id="UserId" data-placeholder="انتخاب کاربر...">
+                                        <option value="">انتخاب کاربر...</option>
+                                    </select>
+                                    <label asp-for="UserId" class="form-label input-label" for="UserId">کاربر</label>
+                                    <span asp-validation-for="UserId" class="text-danger"></span>
+                                </div>
+
+                                <div class="form-floating mb-3 col-6">
+                                    <select asp-for="RolePatternId" asp-items="ViewBag.RolePatterns" class="js-select2 form-control" id="RolePatternId" data-placeholder="انتخاب الگوی نقش...">
+                                        <option value="">انتخاب الگوی نقش...</option>
+                                    </select>
+                                    <label asp-for="RolePatternId" class="form-label input-label" for="RolePatternId">الگوی نقش</label>
+                                    <span asp-validation-for="RolePatternId" class="text-danger"></span>
+                                </div>
+
+                                <div class="form-floating mb-3 col-6">
+                                    <input asp-for="StartDate" class="form-control js-flatpickr" id="StartDate" placeholder="انتخاب تاریخ شروع" />
+                                    <label asp-for="StartDate" class="form-label input-label" for="StartDate">تاریخ شروع</label>
+                                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                                    <small class="form-text text-muted">در صورت خالی بودن، از همین لحظه فعال می‌شود</small>
+                                </div>
+
+                                <div class="form-floating mb-3 col-6">
+                                    <input asp-for="EndDate" class="form-control js-flatpickr" id="EndDate" placeholder="انتخاب تاریخ پایان" />
+                                    <label asp-for="EndDate" class="form-label input-label" for="EndDate">تاریخ پایان</label>
+                                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                                    <small class="form-text text-muted">در صورت خالی بودن، بدون انقضا خواهد بود</small>
+                                </div>
+
+                                <div class="form-floating mb-3 col-12">
+                                    <textarea asp-for="Notes" class="form-control" id="Notes" rows="3" placeholder="یادداشت یا توضیحات اضافی..."></textarea>
+                                    <label asp-for="Notes" class="form-label input-label" for="Notes">یادداشت</label>
+                                    <span asp-validation-for="Notes" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3 col-12">
+                                    <div class="form-check form-switch">
+                                        <input asp-for="IsActive" class="form-check-input" type="checkbox" id="IsActive" checked />
+                                        <label asp-for="IsActive" class="form-check-label" for="IsActive">فعال</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="block-content block-content-full text-end bg-body">
+            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+            <button class="btn btn-sm btn-primary" data-save="modal-ajax-save" type="button">
+                <i class="fa fa-check me-1"></i>تخصیص الگوی نقش
+            </button>
+        </div>
+    </div>
 </div>
-<form asp-action="AssignRolePattern" method="post" data-ajax="true" data-ajax-success="onAssignSuccess">
-    <div class="modal-body">
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="mb-3">
-                    <label asp-for="UserId" class="form-label"></label>
-                    <select asp-for="UserId" asp-items="ViewBag.Users" class="form-control">
-                        <option value="">انتخاب کاربر...</option>
-                    </select>
-                    <span asp-validation-for="UserId" class="text-danger"></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="mb-3">
-                    <label asp-for="RolePatternId" class="form-label"></label>
-                    <select asp-for="RolePatternId" asp-items="ViewBag.RolePatterns" class="form-control">
-                        <option value="">انتخاب الگوی نقش...</option>
-                    </select>
-                    <span asp-validation-for="RolePatternId" class="text-danger"></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label asp-for="StartDate" class="form-label"></label>
-                    <input asp-for="StartDate" class="form-control" type="date" />
-                    <span asp-validation-for="StartDate" class="text-danger"></span>
-                    <small class="form-text text-muted">در صورت خالی بودن، از همین لحظه فعال می‌شود</small>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label asp-for="EndDate" class="form-label"></label>
-                    <input asp-for="EndDate" class="form-control" type="date" />
-                    <span asp-validation-for="EndDate" class="text-danger"></span>
-                    <small class="form-text text-muted">در صورت خالی بودن، بدون انقضا خواهد بود</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="mb-3">
-                    <label asp-for="Notes" class="form-label"></label>
-                    <textarea asp-for="Notes" class="form-control" rows="3" placeholder="یادداشت یا توضیحات اضافی..."></textarea>
-                    <span asp-validation-for="Notes" class="text-danger"></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="form-check form-switch">
-                    <input asp-for="IsActive" class="form-check-input" type="checkbox" />
-                    <label asp-for="IsActive" class="form-check-label">فعال</label>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">
-            <i class="fa fa-check me-1"></i> تخصیص الگوی نقش
-        </button>
-        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
-            <i class="fa fa-times me-1"></i> انصراف
-        </button>
-    </div>
-</form>
 
 <script>
-    function onAssignSuccess(response) {
-        if (response.success) {
-            $('#modal-userpermission').modal('hide');
-            location.reload();
-        }
-    }
+
+            Dashmix.helpersOnLoad(['js-flatpickr', 'jq-select2']);
+
+
 </script>

@@ -126,12 +126,16 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
                 if (_roleRepository.AssignRolePatternToUser(userRolePattern))
                 {
-                    return Json(new { success = true, message = "الگوی نقش با موفقیت تخصیص داده شد" });
+                    return Json(new { 
+                        success = true, 
+                        message = new[] { new { status = "success", text = "الگوی نقش با موفقیت تخصیص داده شد" } }
+                    });
                 }
 
                 ModelState.AddModelError("", "خطا در تخصیص الگوی نقش");
             }
 
+            // در صورت خطا، مودال را دوباره نمایش دهید
             PopulateDropdowns(model.UserId);
             return PartialView("_AssignRolePattern", model);
         }
