@@ -21,9 +21,10 @@
     </div>
 </div>
 <!-- END Hero -->
+
 <!-- Page Content -->
 <div class="content content-full content-boxed">
-    <!-- New Task Form -->
+    <!-- فرم ایجاد تسک جدید -->
     <form method="POST" action="@Url.Action("CreateNewTask", "Tasks")" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
         <div class="block block-rounded">
@@ -38,15 +39,17 @@
             <div class="block-content">
                 <div class="row justify-content-center">
                     <div class="col-md-10 col-lg-8">
+                        <!-- نمایش خطاها -->
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+                        <!-- ردیف اول: کد تسک و نوع تسک -->
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="TaskCode">کد تسک <span class="text-danger">*</span></label>
                                     <input asp-for="TaskCode" class="form-control" readonly placeholder="کد تسک به صورت خودکار تولید می‌شود">
-@*                                     <span asp-validation-for="TaskCode" class="text-danger"></span>
- *@                                </div>
+                                    <!-- کد تسک به صورت خودکار تولید می‌شود -->
+                                </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="mb-4">
@@ -61,86 +64,121 @@
                                 </div>
                             </div>
                         </div>
-                      
+
+                        <!-- عنوان تسک -->
                         <div class="mb-4">
                             <label class="form-label" for="Title">عنوان تسک <span class="text-danger">*</span></label>
                             <input asp-for="Title" class="form-control" placeholder="عنوان تسک را وارد کنید">
                             <span asp-validation-for="Title" class="text-danger"></span>
                         </div>
 
+                        <!-- توضیحات تسک -->
                         <div class="mb-4">
                             <label asp-for="Description" class="form-label">توضیحات</label>
                             <textarea asp-for="Description" class="form-control" rows="4" placeholder="توضیحات تسک را وارد کنید"></textarea>
                             <span asp-validation-for="Description" class="text-danger"></span>
                         </div>
 
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="TaskCategoryIdSelected">دسته‌بندی</label>
-                                    <div id="TaskCategoriesDiv">
-                                        <select asp-for="TaskCategoryIdSelected" asp-items="@(new SelectList(Model.TaskCategoryInitial, "Id", "Title"))" id="TaskCategoryIdSelected" name="TaskCategoryIdSelected" class="js-select2 form-select" data-placeholder="انتخاب کنید" style="width: 100%;">
-                                            <option value="">انتخاب کنید</option>
-                                        </select>
-                                    </div>
-                                    <span asp-validation-for="TaskCategoryIdSelected" class="text-danger"></span>
-                                </div>
-                            </div>
-
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="AssignmentsSelectedTaskUserArraysString">کاربر های منتصب</label>
-                                    <div id="UsersDiv">
-                                        <select class="js-select2 form-select" asp-items="@(new SelectList(Model.UsersInitial, "Id", "FullNamesString"))" 
-                                                id="AssignmentsSelectedTaskUserArraysString" 
-                                                data-placeholder="بسیاری را انتخاب کنید" 
-                                                multiple="multiple" 
-                                                name="AssignmentsSelectedTaskUserArraysString" 
-                                                style="width: 100%;">
-                                        </select>
-                                    </div>
-                                    <span asp-validation-for="UsersInitial" class="text-danger"></span>
-                                </div>
-                            </div>
+                        <!-- انتخاب شعبه - مرحله اول cascade -->
+                        <div class="mb-4">
+                            <label class="form-label" for="BranchIdSelected">انتخاب شعبه <span class="text-danger">*</span></label>
+                            <select class="js-select2 form-select branch" 
+                                    asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" 
+                                    id="BranchIdSelected" 
+                                    data-placeholder="شعبه را انتخاب کنید" 
+                                    name="BranchIdSelected" 
+                                    data-url="@Url.Action("BranchTriggerSelect","Tasks")" 
+                                    data-toggle="multiplepartialview"
+                                    data-target-divs="UsersDiv,StakeholdersDiv,TaskCategoriesDiv"
+                                    data-param-name="branchId"
+                                    style="width: 100%;">
+                                <option value="">ابتدا شعبه را انتخاب کنید</option>
+                            </select>
+                            <span asp-validation-for="branchListInitial" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-info-circle me-1"></i>
+                                انتخاب شعبه باعث بروزرسانی کاربران، طرف حساب‌ها و دسته‌بندی‌ها می‌شود
+                            </small>
                         </div>
 
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="BranchIdSelected">انتخاب شعبه‌</label>
-                                    <select class="js-select2 form-select branch" asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" 
-                                            id="BranchIdSelected" 
-                                            data-placeholder="شعبه را انتخاب کنید" 
-                                            name="BranchIdSelected" 
-                                            data-url="@Url.Action("BranchTriggerSelect","Tasks")" 
-                                            data-toggle="multiplepartialview"
-                                            data-target-divs="UsersDiv,StakeholdersDiv,TaskCategoriesDiv"
-                                            data-param-name="branchId"
-                                            style="width: 100%;">
-                                        <option value="">انتخاب کنید</option>
-                                    </select>
-                                    <span asp-validation-for="branchListInitial" class="text-danger"></span>
-                                </div>
+                        <!-- کاربران منتصب - مرحله دوم cascade -->
+                        <div class="mb-4">
+                            <label class="form-label" for="AssignmentsSelectedTaskUserArraysString">کاربران منتصب</label>
+                            <div id="UsersDiv">
+                                <select class="js-select2 form-select" 
+                                        id="AssignmentsSelectedTaskUserArraysString" 
+                                        data-placeholder="ابتدا شعبه را انتخاب کنید" 
+                                        multiple="multiple" 
+                                        name="AssignmentsSelectedTaskUserArraysString" 
+                                        style="width: 100%;"
+                                        disabled>
+                                    <option value="">ابتدا شعبه را انتخاب کنید</option>
+                                </select>
                             </div>
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="StakeholderId">طرف حساب</label>
-                                    <div id="StakeholdersDiv">
-                                        <select asp-for="StakeholderId" asp-items="ViewBag.Stakeholders" class="js-select2 form-select" data-placeholder="انتخاب کنید" style="width: 100%;">
-                                            <option value="">انتخاب کنید</option>
-                                        </select>
-                                    </div>
-                                    <span asp-validation-for="StakeholderId" class="text-danger"></span>
-                                </div>
-                            </div>
+                            <span asp-validation-for="UsersInitial" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-users me-1"></i>
+                                کاربرانی که این تسک به آن‌ها اختصاص داده می‌شود
+                            </small>
                         </div>
 
+                        <!-- طرف حساب - مرحله سوم cascade -->
+                        <div class="mb-4">
+                            <label class="form-label" for="StakeholderId">طرف حساب</label>
+                            <div id="StakeholdersDiv">
+                                <select asp-for="StakeholderId" 
+                                        class="js-select2 form-select stakeholder-select" 
+                                        id="StakeholderId"
+                                        name="StakeholderId"
+                                        data-placeholder="ابتدا شعبه را انتخاب کنید" 
+                                        data-url="@Url.Action("BranchTriggerSelectStakeholders","Tasks")" 
+                                        data-toggle="partialview"
+                                        data-target-div="TaskCategoriesDiv"
+                                        data-param-name="branchId"
+                                        style="width: 100%;"
+                                        disabled>
+                                    <option value="">ابتدا شعبه را انتخاب کنید</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="StakeholderId" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-handshake me-1"></i>
+                                طرف حساب مرتبط با این تسک
+                            </small>
+                        </div>
+
+                        <!-- دسته‌بندی تسک - مرحله چهارم cascade -->
+                        <div class="mb-4">
+                            <label class="form-label" for="TaskCategoryIdSelected">دسته‌بندی تسک</label>
+                            <div id="TaskCategoriesDiv">
+                                <select asp-for="TaskCategoryIdSelected" 
+                                        id="TaskCategoryIdSelected" 
+                                        name="TaskCategoryIdSelected" 
+                                        class="js-select2 form-select" 
+                                        data-placeholder="ابتدا شعبه و طرف حساب را انتخاب کنید" 
+                                        style="width: 100%;"
+                                        disabled>
+                                    <option value="">ابتدا شعبه و طرف حساب را انتخاب کنید</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="TaskCategoryIdSelected" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-tags me-1"></i>
+                                دسته‌بندی بر اساس شعبه و طرف حساب انتخاب شده نمایش داده می‌شود
+                            </small>
+                        </div>
+
+                        <!-- ردیف: مهلت انجام و فایل‌های پیوست -->
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="DueDatePersian">مهلت انجام</label>
                                     <input asp-for="DueDatePersian" class="form-control js-flatpickr" placeholder="انتخاب تاریخ مهلت انجام">
                                     <span asp-validation-for="DueDatePersian" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="fa fa-calendar me-1"></i>
+                                        تاریخ و زمان مهلت انجام تسک
+                                    </small>
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -148,39 +186,51 @@
                                     <label class="form-label" for="Attachments">فایل‌های پیوست</label>
                                     <input type="file" name="Attachments" multiple class="form-control">
                                     <span asp-validation-for="Attachments" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="fa fa-paperclip me-1"></i>
+                                        فایل‌های مرتبط با تسک را ضمیمه کنید
+                                    </small>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- وضعیت فعال -->
                         <div class="mb-4">
                             <label class="form-check">
-                                <input asp-for="IsActive" class="form-check-input">
+                                <input asp-for="IsActive" class="form-check-input" checked>
                                 <span class="form-check-label">وضعیت فعال</span>
                             </label>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-toggle-on me-1"></i>
+                                تسک در حالت فعال ایجاد می‌شود
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- دکمه‌های عملیات -->
             <div class="block-content block-content-full block-content-sm bg-body-light text-end">
                 <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
                     <i class="fa fa-arrow-right me-1"></i> انصراف
                 </button>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fa fa-check me-1"></i> ذخیره
+                    <i class="fa fa-check me-1"></i> ذخیره تسک
                 </button>
             </div>
         </div>
     </form>
-    <!-- END New Task Form -->
+    <!-- END فرم ایجاد تسک جدید -->
 </div>
 <!-- END Page Content -->
+
 @section scripts {
-   
+    <!-- اسکریپت‌های مورد نیاز قالب -->
     <script>Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-maxlength', 'jq-select2', 'jq-rangeslider', 'jq-masked-inputs', 'jq-pw-strength']);</script>
 
     <script>
         $(document).ready(function() {
-            // Initialize flatpickr for Persian date picker
+            // راه‌اندازی تقویم شمسی برای انتخاب تاریخ مهلت
             $('.js-flatpickr').each(function() {
                 new mds.MdsPersianDateTimePicker(this, {
                     targetTextSelector: this,
@@ -190,31 +240,89 @@
                 });
             });
 
-            // کانفیگ سفارشی برای CreateNewTask
+            // کانفیگ سفارشی برای مدیریت Select2 های پویا
             if (typeof DynamicSelect2Manager !== 'undefined') {
-                // اضافه کردن کانفیگ سفارشی برای AssignmentsSelectedTaskUserArraysString
+                // تنظیمات برای کاربران
                 DynamicSelect2Manager.addSelectConfig('UsersDiv', {
                     id: 'AssignmentsSelectedTaskUserArraysString',
                     name: 'AssignmentsSelectedTaskUserArraysString',
-                    multiple: true
+                    multiple: true,
+                    placeholder: 'کاربران را انتخاب کنید'
                 });
                 
-                // اضافه کردن کانفیگ سفارشی برای StakeholdersDiv
+                // تنظیمات برای طرف حساب‌ها
                 DynamicSelect2Manager.addSelectConfig('StakeholdersDiv', {
                     id: 'StakeholderId',
                     name: 'StakeholderId',
-                    multiple: false
+                    multiple: false,
+                    placeholder: 'طرف حساب را انتخاب کنید'
                 });
                 
-                // اضافه کردن کانفیگ سفارشی برای TaskCategoriesDiv
+                // تنظیمات برای دسته‌بندی‌ها
                 DynamicSelect2Manager.addSelectConfig('TaskCategoriesDiv', {
                     id: 'TaskCategoryIdSelected',
                     name: 'TaskCategoryIdSelected',
-                    multiple: false
+                    multiple: false,
+                    placeholder: 'دسته‌بندی را انتخاب کنید'
                 });
                 
-                console.log('CreateNewTask specific configs added to DynamicSelect2Manager');
+                console.log('کانفیگ‌های CreateNewTask به DynamicSelect2Manager اضافه شد');
             }
+
+            // رویداد تغییر شعبه - بروزرسانی همه فیلدهای وابسته
+            $(document).on('change', '#BranchIdSelected', function() {
+                var branchId = $(this).val();
+                
+                if (branchId) {
+                    // فعال کردن فیلدهای وابسته
+                    $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', false);
+                    
+                    // بروزرسانی placeholder ها
+                    $('#AssignmentsSelectedTaskUserArraysString').attr('data-placeholder', 'کاربران را انتخاب کنید');
+                    $('#StakeholderId').attr('data-placeholder', 'طرف حساب را انتخاب کنید');
+                    $('#TaskCategoryIdSelected').attr('data-placeholder', 'ابتدا طرف حساب را انتخاب کنید');
+                    
+                    console.log('شعبه انتخاب شد:', branchId);
+                } else {
+                    // غیرفعال کردن فیلدهای وابسته
+                    $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
+                    
+                    // بازنشانی placeholder ها
+                    $('#AssignmentsSelectedTaskUserArraysString').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
+                    $('#StakeholderId').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
+                    $('#TaskCategoryIdSelected').attr('data-placeholder', 'ابتدا شعبه و طرف حساب را انتخاب کنید');
+                    
+                    console.log('شعبه پاک شد');
+                }
+            });
+
+            // رویداد تغییر طرف حساب - بروزرسانی دسته‌بندی‌ها
+            $(document).on('change', '#StakeholderId', function() {
+                var stakeholderId = $(this).val();
+                var branchId = $('#BranchIdSelected').val();
+                
+                if (stakeholderId && branchId) {
+                    // فعال کردن انتخاب دسته‌بندی
+                    $('#TaskCategoryIdSelected').prop('disabled', false);
+                    $('#TaskCategoryIdSelected').attr('data-placeholder', 'دسته‌بندی را انتخاب کنید');
+                    
+                    console.log('طرف حساب انتخاب شد:', stakeholderId);
+                } else {
+                    // غیرفعال کردن انتخاب دسته‌بندی
+                    $('#TaskCategoryIdSelected').prop('disabled', true);
+                    $('#TaskCategoryIdSelected').attr('data-placeholder', 'ابتدا طرف حساب را انتخاب کنید');
+                    
+                    console.log('طرف حساب پاک شد');
+                }
+            });
+
+            // بررسی اولیه وضعیت فیلدها
+            var initialBranchId = $('#BranchIdSelected').val();
+            if (!initialBranchId) {
+                $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
+            }
+
+            console.log('فرم CreateNewTask آماده شد - ترتیب cascade: شعبه -> کاربران -> طرف حساب -> دسته‌بندی');
         });
     </script>
 }
