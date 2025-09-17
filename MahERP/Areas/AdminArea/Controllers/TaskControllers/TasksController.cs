@@ -134,9 +134,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     id = task.Id,
                     title = task.Title,
                     start = task.DueDate?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    end = task.DueDate?.AddDays(2).ToString("yyyy-MM-ddTHH:mm:ss"), // اضافه کردن end
-                    backgroundColor = task.CalendarColor,
-                    borderColor = task.CalendarColor,
+                    end = task.DueDate?.AddDays(1).ToString("yyyy-MM-ddTHH:mm:ss"), // یک روز اضافه می‌کنیم
+                    backgroundColor = GetTaskBackgroundColor(task),
+                    borderColor = GetTaskBorderColor(task),
                     textColor = "#ffffff",
                     description = task.Description ?? "",
                     extendedProps = new
@@ -145,7 +145,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         categoryTitle = task.CategoryTitle ?? "",
                         stakeholderName = task.StakeholderName ?? "",
                         branchName = task.BranchName ?? "",
-                        statusText = task.StatusText,
+                        statusText = GetTaskStatusText(task),
                         isCompleted = task.IsCompleted,
                         isOverdue = task.IsOverdue,
                         detailUrl = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })
@@ -167,6 +167,31 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             }
         }
 
+        // متدهای کمکی برای تعیین رنگ‌ها
+        private string GetTaskBackgroundColor(TaskCalendarViewModel task)
+        {
+            if (task.IsCompleted)
+                return "#28a745"; // سبز - تکمیل شده
+            else if (task.IsOverdue)
+                return "#dc3545"; // قرمز - عقب افتاده
+            else
+                return "#007bff"; // آبی - در حال انجام
+        }
+
+        private string GetTaskBorderColor(TaskCalendarViewModel task)
+        {
+            return GetTaskBackgroundColor(task); // همان رنگ پس‌زمینه
+        }
+
+        private string GetTaskStatusText(TaskCalendarViewModel task)
+        {
+            if (task.IsCompleted)
+                return "تکمیل شده";
+            else if (task.IsOverdue)
+                return "عقب افتاده";
+            else
+                return "در حال انجام";
+        }
 
 
         // لیست تسک‌ها - با کنترل سطح دسترسی داده

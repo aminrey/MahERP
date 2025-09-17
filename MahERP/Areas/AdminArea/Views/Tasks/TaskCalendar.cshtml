@@ -1,6 +1,6 @@
 ﻿@model List<MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskCalendarViewModel>
 @{
-    ViewData["Title"] = "تقویم تسک‌ها";
+    ViewData["Title"] = @ViewBag.PageTitle;
     Layout = "~/Areas/AdminArea/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -126,16 +126,25 @@
     <!-- END Calendar Section -->
 </div>
 <!-- END Page Content -->
-
 @section Scripts {
+    <script>Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-maxlength', 'jq-select2', 'jq-rangeslider', 'jq-masked-inputs', 'jq-pw-strength']);</script>
+
     <!-- FullCalendar CSS & JS -->
     <link href="~/assets/js/plugins/fullcalendar/main.min.css" rel="stylesheet" />
     <script src="~/assets/js/plugins/fullcalendar/main.min.js"></script>
 
+    <!-- Page JS Code (اختیاری - در صورت نیاز) -->
+    <script src="~/assets/js/pages/be_comp_calendar.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('js-calendar-tasks');
-            
+
+            if (!calendarEl) {
+                console.error('Calendar element not found');
+                return;
+            }
+
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'fa',
@@ -150,103 +159,127 @@
                     today: 'امروز',
                     month: 'ماه',
                     week: 'هفته',
-                    day: 'روز'
+                    day: 'روز',
+                    list: 'لیست'
                 },
                 events: function(info, successCallback, failureCallback) {
-                    fetch('@Url.Action("GetCalendarEvents", "Tasks", new { area = "AdminArea" })?' + 
+                    fetch('@Url.Action("GetCalendarEvents", "Tasks", new { area = "AdminArea" })?' +
                           'start=' + info.startStr + '&end=' + info.endStr)
-                        .then(response => response.json())
-                        .then(data => successCallback(data))
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Calendar events loaded:', data);
+                            successCallback(data);
+                        })
                         .catch(error => {
                             console.error('Error loading calendar events:', error);
                             failureCallback(error);
                         });
                 },
                 eventClick: function(info) {
-                    // نمایش جزئیات تسک
                     showTaskDetails(info.event);
                 },
                 eventDidMount: function(info) {
                     // افزودن tooltip
-                    info.el.setAttribute('title', 
-                        info.event.title + '\n' +
-                        'وضعیت: ' + info.event.extendedProps.statusText + '\n' +
-                        'دسته‌بندی: ' + info.event.extendedProps.categoryTitle
-                    );
+                    var tooltipText = info.event.title;
+                    if (info.event.extendedProps.statusText) {
+                        tooltipText += '\nوضعیت: ' + info.event.extendedProps.statusText;
+                    }
+                    if (info.event.extendedProps.categoryTitle) {
+                        tooltipText += '\nدسته‌بندی: ' + info.event.extendedProps.categoryTitle;
+                    }
+
+                    info.el.setAttribute('title', tooltipText);
+                },
+                loading: function(bool) {
+                    if (bool) {
+                        console.log('Loading calendar events...');
+                    } else {
+                        console.log('Calendar events loaded successfully');
+                    }
                 }
             });
-            
+
             calendar.render();
 
             // تابع نمایش جزئیات تسک
             function showTaskDetails(event) {
+                // حذف مودال قبلی در صورت وجود
+                var existingModal = document.getElementById('taskDetailModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
                 var modal = `
-                    <div class="modal fade" id="taskDetailModal" tabindex="-1" role="dialog">
-                        <div class="modal-dialog" role="document">
+                    <div class="modal fade" id="taskDetailModal" tabindex="-1" role="dialog" aria-labelledby="taskDetailModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title">جزئیات تسک</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    <h5 class="modal-title" id="taskDetailModalLabel">جزئیات تسک</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
                                     <div class="row">
                                         <div class="col-12 mb-3">
-                                            <strong>عنوان:</strong> ${event.title}
+                                            <strong>عنوان:</strong> <span>${event.title || 'ندارد'}</span>
                                         </div>
                                         <div class="col-12 mb-3">
-                                            <strong>کد تسک:</strong> ${event.extendedProps.taskCode || 'ندارد'}
+                                            <strong>کد تسک:</strong> <span>${event.extendedProps.taskCode || 'ندارد'}</span>
                                         </div>
                                         <div class="col-12 mb-3">
-                                            <strong>وضعیت:</strong> 
-                                            <span class="badge" style="background-color: ${event.backgroundColor}">
-                                                ${event.extendedProps.statusText}
+                                            <strong>وضعیت:</strong>
+                                            <span class="badge" style="background-color: ${event.backgroundColor || '#6c757d'}; color: white;">
+                                                ${event.extendedProps.statusText || 'نامشخص'}
                                             </span>
                                         </div>
                                         <div class="col-12 mb-3">
-                                            <strong>دسته‌بندی:</strong> ${event.extendedProps.categoryTitle}
+                                            <strong>دسته‌بندی:</strong> <span>${event.extendedProps.categoryTitle || 'ندارد'}</span>
                                         </div>
                                         <div class="col-12 mb-3">
-                                            <strong>طرف حساب:</strong> ${event.extendedProps.stakeholderName}
+                                            <strong>طرف حساب:</strong> <span>${event.extendedProps.stakeholderName || 'ندارد'}</span>
                                         </div>
                                         <div class="col-12 mb-3">
-                                            <strong>شعبه:</strong> ${event.extendedProps.branchName}
+                                            <strong>شعبه:</strong> <span>${event.extendedProps.branchName || 'ندارد'}</span>
                                         </div>
                                         <div class="col-12 mb-3">
-                                            <strong>تاریخ مهلت:</strong> ${new Date(event.start).toLocaleDateString('fa-IR')}
+                                            <strong>تاریخ مهلت:</strong> <span>${event.start ? new Date(event.start).toLocaleDateString('fa-IR') : 'ندارد'}</span>
                                         </div>
-                                        ${event.extendedProps.description ? 
+                                        ${event.extendedProps.description ?
                                             `<div class="col-12 mb-3">
-                                                <strong>توضیحات:</strong> ${event.extendedProps.description}
+                                                <strong>توضیحات:</strong> <span>${event.extendedProps.description}</span>
                                             </div>` : ''
                                         }
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <a href="${event.extendedProps.detailUrl}" class="btn btn-primary">
-                                        مشاهده جزئیات کامل
-                                    </a>
+                                    ${event.extendedProps.detailUrl ?
+                                        `<a href="${event.extendedProps.detailUrl}" class="btn btn-primary">
+                                            <i class="fa fa-eye me-1"></i> مشاهده جزئیات کامل
+                                        </a>` : ''
+                                    }
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                        بستن
+                                        <i class="fa fa-times me-1"></i> بستن
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
-                
-                // حذف مودال قبلی در صورت وجود
-                var existingModal = document.getElementById('taskDetailModal');
-                if (existingModal) {
-                    existingModal.remove();
-                }
-                
+
                 // افزودن مودال جدید
                 document.body.insertAdjacentHTML('beforeend', modal);
-                
+
                 // نمایش مودال
                 var modalElement = new bootstrap.Modal(document.getElementById('taskDetailModal'));
                 modalElement.show();
             }
+
+            // تابع global کردن showTaskDetails
+            window.showTaskDetails = showTaskDetails;
         });
     </script>
 }
