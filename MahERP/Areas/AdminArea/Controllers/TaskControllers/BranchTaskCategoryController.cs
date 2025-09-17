@@ -44,7 +44,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// نمایش لیست دسته‌بندی‌های تسک متصل به شعبه مشخص
         /// </summary>
-        public IActionResult Index(int branchId)
+        public IActionResult Index(int branchId, int? stakeholderId = null)
         {
             var currentUserId = _userManager.GetUserId(HttpContext.User);
             var userBranches = _branchRepository.GetBrnachListByUserId(currentUserId);
@@ -54,6 +54,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
 
             var branchTaskCategories = _branchRepository.GetTaskCategoriesByBranchAndStakeholder(branchId, activeOnly: false);
+            
+            // فیلتر بر اساس طرف حساب در صورت انتخاب
+            if (stakeholderId.HasValue)
+            {
+                branchTaskCategories = branchTaskCategories.Where(btc => btc.StakeholderId == stakeholderId.Value).ToList();
+            }
             
             // تبدیل Entity ها به ViewModel
             var viewModels = branchTaskCategories.Select(btc => _mapper.Map<BranchTaskCategoryStakeholderViewModel>(btc)).ToList();
@@ -75,8 +81,24 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 }
             }
             
+            // دریافت طرف‌حساب‌های یکتا از دسته‌بندی‌های موجود برای فیلتر
+            var allBranchTaskCategories = _branchRepository.GetTaskCategoriesByBranchAndStakeholder(branchId, activeOnly: false);
+            var uniqueStakeholders = allBranchTaskCategories
+                .Where(btc => btc.Stakeholder != null)
+                .Select(btc => new { 
+                    Id = btc.StakeholderId, 
+                    DisplayName = $"{btc.Stakeholder.FirstName} {btc.Stakeholder.LastName}",
+                    CompanyName = btc.Stakeholder.CompanyName
+                })
+                .GroupBy(s => s.Id)
+                .Select(g => g.First())
+                .OrderBy(s => s.DisplayName)
+                .ToList();
+            
             ViewBag.BranchId = branchId;
             ViewBag.BranchName = userBranches.FirstOrDefault(b => b.Id == branchId)?.Name;
+            ViewBag.SelectedStakeholderId = stakeholderId;
+            ViewBag.UniqueStakeholders = uniqueStakeholders;
             
             return View(viewModels);
         }
