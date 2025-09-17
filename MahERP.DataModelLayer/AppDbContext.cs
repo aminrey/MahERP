@@ -65,6 +65,7 @@ namespace MahERP.DataModelLayer
         public DbSet<TaskTemplateOperation> TaskTemplateOperation_Tbl { get; set; }
         public DbSet<TaskViewer> TaskViewer_Tbl { get; set; }
         public DbSet<PredefinedCopyDescription> PredefinedCopyDescription_Tbl { get; set; }
+        public DbSet<BranchTaskCategory> BranchTaskCategory_Tbl { get; set; }
 
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }

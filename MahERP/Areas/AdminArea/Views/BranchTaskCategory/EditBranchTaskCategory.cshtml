@@ -1,0 +1,125 @@
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryViewModel
+
+@{
+    ViewData["Title"] = "ویرایش انتصاب دسته‌بندی";
+    Layout = "~/Areas/AdminArea/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Main Container -->
+<main id="main-container">
+    <!-- Hero Content -->
+    <div class="bg-body-light">
+        <div class="content content-full">
+            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
+                <div class="flex-grow-1">
+                    <h1 class="h3 fw-bold mb-1">ویرایش انتصاب دسته‌بندی</h1>
+                    <h2 class="fs-base lh-base fw-medium text-muted mb-0">ویرایش انتصاب دسته‌بندی "@Model.TaskCategoryTitle" به شعبه "@Model.BranchName"</h2>
+                </div>
+                <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-alt">
+                        <li class="breadcrumb-item">
+                            <a class="link-fx" href="@Url.Action("Index", "Home")">داشبورد</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a class="link-fx" href="@Url.Action("Index", "Branch", new { area = "AdminArea" })">شعب</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a class="link-fx" href="@Url.Action("Index", new { branchId = Model.BranchId })">دسته‌بندی‌های تسک</a>
+                        </li>
+                        <li class="breadcrumb-item" aria-current="page">ویرایش انتصاب</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero Content -->
+
+    <!-- Page Content -->
+    <div class="content">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-edit me-1 text-muted"></i>
+                    ویرایش انتصاب دسته‌بندی
+                </h3>
+                <div class="block-options">
+                    <a href="@Url.Action("Index", new { branchId = Model.BranchId })" class="btn btn-sm btn-alt-secondary">
+                        <i class="fa fa-arrow-right me-1"></i>بازگشت
+                    </a>
+                </div>
+            </div>
+            
+            <div class="block-content">
+                <form asp-action="EditBranchTaskCategory" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="BranchId" />
+                    <input type="hidden" asp-for="TaskCategoryId" />
+                    
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    
+                    <div class="row justify-content-center">
+                        <div class="col-xl-6 col-lg-8">
+                            <!-- اطلاعات انتصاب -->
+                            <div class="block block-themed block-rounded">
+                                <div class="block-header bg-info-light">
+                                    <h3 class="block-title">اطلاعات انتصاب</h3>
+                                </div>
+                                <div class="block-content">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">شعبه</label>
+                                            <div class="form-control-plaintext fw-semibold">@Model.BranchName</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">دسته‌بندی تسک</label>
+                                            <div class="form-control-plaintext fw-semibold">@Model.TaskCategoryTitle</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">تاریخ انتصاب</label>
+                                            <div class="form-control-plaintext">@MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">انتصاب توسط</label>
+                                            <div class="form-control-plaintext">@Model.AssignedByUserName</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- تنظیمات قابل ویرایش -->
+                            <div class="block block-themed block-rounded">
+                                <div class="block-header bg-primary-light">
+                                    <h3 class="block-title">تنظیمات</h3>
+                                </div>
+                                <div class="block-content">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input asp-for="IsActive" class="form-check-input" type="checkbox" id="IsActive" />
+                                            <label asp-for="IsActive" class="form-check-label" for="IsActive">وضعیت فعال</label>
+                                            <small class="form-text text-muted">در صورت غیرفعال بودن، این دسته‌بندی برای شعبه قابل استفاده نخواهد بود</small>
+                                        </div>
+                                        <span asp-validation-for="IsActive" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- دکمه‌های عملیات -->
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-check me-1"></i>
+                                    ذخیره تغییرات
+                                </button>
+                                <a href="@Url.Action("Index", new { branchId = Model.BranchId })" class="btn btn-alt-secondary">
+                                    <i class="fa fa-times me-1"></i>
+                                    انصراف
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- END Page Content -->
+</main>

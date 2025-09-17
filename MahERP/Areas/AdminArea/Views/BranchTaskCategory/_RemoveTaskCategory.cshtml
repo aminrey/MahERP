@@ -1,0 +1,70 @@
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryViewModel
+
+@{
+    Layout = null;
+}
+
+<style>
+    .modal {
+        --bs-modal-width: 50%;
+        transition: 0.3s;
+    }
+</style>
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
+            <div class="block-header @ViewBag.themeclass">
+                <h3 class="block-title">@ViewBag.ViewTitle</h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form asp-action="RemoveTaskCategoryPost" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <div class="block-content">
+                    <div class="text-center py-4">
+                        <div class="display-4 text-danger mb-3">
+                            <i class="fa fa-exclamation-triangle"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">آیا از حذف این انتصاب اطمینان دارید؟</h4>
+                        
+                        <div class="alert alert-warning text-start">
+                            <h6 class="fw-bold mb-2">اطلاعات انتصاب:</h6>
+                            <ul class="mb-0">
+                                <li><strong>شعبه:</strong> @Model.BranchName</li>
+                                <li><strong>دسته‌بندی:</strong> @Model.TaskCategoryTitle</li>
+                                <li><strong>تاریخ انتصاب:</strong> @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</li>
+                                <li><strong>وضعیت:</strong> @Model.StatusText</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-danger">
+                            <i class="fa fa-warning me-1"></i>
+                            <strong>توجه:</strong> این عملیات قابل بازگشت نیست و انتصاب دسته‌بندی به طور کامل حذف خواهد شد.
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="block-content block-content-full text-end bg-body">
+            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+            <button class="@ViewBag.ButonClass" data-save="modal-ajax-save" type="button">
+                <i class="fa fa-trash me-1"></i>حذف انتصاب
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // اجرای عملیات حذف
+    $('[data-save="modal-ajax-save"]').click(function() {
+        $('form').submit();
+    });
+</script>

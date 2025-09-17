@@ -65,6 +65,30 @@
                 </div>
             </a>
         </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("Index", "BranchTaskCategory", new { area = "AdminArea", branchId = Model.Id })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-list-alt text-warning"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        دسته‌بندی تسک
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" data-toggle="modal-ajax" href="@Url.Action("AssignTaskCategoryToBranch", "BranchTaskCategory", new { area = "AdminArea", branchId = Model.Id })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-plus-circle text-primary"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
+                        افزودن دسته‌بندی
+                    </p>
+                </div>
+            </a>
+        </div>
     </div>
     <!-- END Quick Actions -->
     <!-- Branch Information -->
@@ -260,7 +284,7 @@
                                                 </button>
                                             </form>
                                             <button type="button" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف"
-                                                    onclick="openModal('@Url.Action("RemoveUser", "Branch", new { id = user.Id })')">
+                                                    data-toggle="modal-ajax" href="@Url.Action("RemoveUser", "Branch", new { id = user.Id })">
                                                 <i class="fa fa-fw fa-trash-alt"></i>
                                             </button>
                                         </div>
@@ -440,6 +464,55 @@
         </div>
     }
     <!-- END Child Branches -->
+
+    <!-- Task Categories -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list-alt text-muted me-1"></i> دسته‌بندی‌های تسک شعبه
+            </h3>
+            <div class="block-options">
+                <a href="@Url.Action("Index", "BranchTaskCategory", new { area = "AdminArea", branchId = Model.Id })" class="btn btn-sm btn-alt-secondary me-1">
+                    <i class="fa fa-list me-1"></i> مشاهده همه
+                </a>
+                <button type="button" class="btn btn-sm btn-alt-primary" data-toggle="modal-ajax" href="@Url.Action("AssignTaskCategoryToBranch", "BranchTaskCategory", new { area = "AdminArea", branchId = Model.Id })">
+                    <i class="fa fa-plus me-1"></i> افزودن دسته‌بندی
+                </button>
+            </div>
+        </div>
+        <div class="block-content">
+            @* 
+            در اینجا می‌توانید لیست کوتاهی از دسته‌بندی‌های تسک نمایش دهید
+            برای نمونه، فقط ۵ دسته‌بندی اول را نمایش می‌دهیم
+            *@
+            <div class="row">
+                @for (int i = 1; i <= 3; i++)
+                {
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="block block-rounded block-link-shadow h-100">
+                            <div class="block-content text-center">
+                                <div class="py-3">
+                                    <div class="fs-3 fw-semibold mb-2">
+                                        <i class="fa fa-tag text-primary"></i>
+                                    </div>
+                                    <p class="fw-semibold mb-1">دسته‌بندی نمونه @i</p>
+                                    <p class="fs-sm text-muted mb-2">توضیحات دسته‌بندی</p>
+                                    <span class="badge bg-success">فعال</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            <div class="text-center">
+                <a href="@Url.Action("Index", "BranchTaskCategory", new { area = "AdminArea", branchId = Model.Id })" class="btn btn-alt-primary">
+                    <i class="fa fa-arrow-left me-1"></i> مشاهده تمام دسته‌بندی‌ها
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- END Task Categories -->
 </div>
 <!-- END Page Content -->
 <!-- Modal Container for dynamic content -->

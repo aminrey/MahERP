@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using MahERP.DataModelLayer.Entities.AcControl;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -28,5 +29,6 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         // Navigation properties
         public virtual ICollection<Tasks> TaskList { get; set; }
         public virtual ICollection<TaskCategory> ChildCategories { get; set; }
+        public virtual ICollection<BranchTaskCategory> BranchTaskCategorys { get; set; }
     }
 }

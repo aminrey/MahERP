@@ -78,9 +78,11 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="TaskCategoryIdSelected">دسته‌بندی</label>
-                                    <select asp-for="TaskCategoryIdSelected" asp-items="@(new SelectList(Model.TaskCategoryInitial, "Id", "Title"))" id="TaskCategoryIdSelected" name="TaskCategoryIdSelected" class="js-select2 form-select" data-placeholder="انتخاب کنید" style="width: 100%;">
-                                        <option value="">انتخاب کنید</option>
-                                    </select>
+                                    <div id="TaskCategoriesDiv">
+                                        <select asp-for="TaskCategoryIdSelected" asp-items="@(new SelectList(Model.TaskCategoryInitial, "Id", "Title"))" id="TaskCategoryIdSelected" name="TaskCategoryIdSelected" class="js-select2 form-select" data-placeholder="انتخاب کنید" style="width: 100%;">
+                                            <option value="">انتخاب کنید</option>
+                                        </select>
+                                    </div>
                                     <span asp-validation-for="TaskCategoryIdSelected" class="text-danger"></span>
                                 </div>
                             </div>
@@ -112,7 +114,7 @@
                                             name="BranchIdSelected" 
                                             data-url="@Url.Action("BranchTriggerSelect","Tasks")" 
                                             data-toggle="multiplepartialview"
-                                            data-target-divs="UsersDiv,StakeholdersDiv"
+                                            data-target-divs="UsersDiv,StakeholdersDiv,TaskCategoriesDiv"
                                             data-param-name="branchId"
                                             style="width: 100%;">
                                         <option value="">انتخاب کنید</option>
@@ -201,6 +203,13 @@
                 DynamicSelect2Manager.addSelectConfig('StakeholdersDiv', {
                     id: 'StakeholderId',
                     name: 'StakeholderId',
+                    multiple: false
+                });
+                
+                // اضافه کردن کانفیگ سفارشی برای TaskCategoriesDiv
+                DynamicSelect2Manager.addSelectConfig('TaskCategoriesDiv', {
+                    id: 'TaskCategoryIdSelected',
+                    name: 'TaskCategoryIdSelected',
                     multiple: false
                 });
                 

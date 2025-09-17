@@ -30,6 +30,7 @@ namespace MahERP.DataModelLayer.Services
         #region Organization
         private GenereicClass<Branch> _branch;
         private GenereicClass<BranchUser> _branchUser;
+        private GenereicClass<BranchTaskCategory> _branchTaskCategory;
         private GenereicClass<Team> _team;
         private GenereicClass<TeamMember> _teamMember;
         #endregion
@@ -176,6 +177,18 @@ namespace MahERP.DataModelLayer.Services
                     _branchUser = new GenereicClass<BranchUser>(_Context);
                 }
                 return _branchUser;
+            }
+        }
+
+        public GenereicClass<BranchTaskCategory> BranchTaskCategoryUW
+        {
+            get
+            {
+                if (_branchTaskCategory == null)
+                {
+                    _branchTaskCategory = new GenereicClass<BranchTaskCategory>(_Context);
+                }
+                return _branchTaskCategory;
             }
         }
 

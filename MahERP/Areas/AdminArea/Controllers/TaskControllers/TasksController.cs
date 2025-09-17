@@ -25,6 +25,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         private readonly ITaskRepository _taskRepository;           
         private readonly IStakeholderRepository _stakeholderRepository;
         private readonly IBranchRepository _branchRepository;
+        private readonly IBranchTaskCategoryRepository _branchTaskCategoryRepository; // اضافه شده
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
@@ -36,6 +37,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             ITaskRepository taskRepository,
             IStakeholderRepository stakeholderRepository,
             IBranchRepository branchRepository,
+            IBranchTaskCategoryRepository branchTaskCategoryRepository, // اضافه شده
             UserManager<AppUsers> userManager,
             IMapper mapper,
             PersianDateHelper persianDateHelper,
@@ -49,6 +51,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _taskRepository = taskRepository;
             _stakeholderRepository = stakeholderRepository;
             _branchRepository = branchRepository;
+            _branchTaskCategoryRepository = branchTaskCategoryRepository; // اضافه شده
             _userManager = userManager;
             _mapper = mapper;
             _webHostEnvironment = webHostEnvironment;
@@ -510,7 +513,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         }
                         catch (Exception notificationEx)
                         {
-                            // لاگ خطای نوتیفیکیشن اما عملیات اصلی را متوقف نکنیم
+                            // لاگ خطای نوتیفیکشن اما عملیات اصلی را متوقف نکنیم
                             await _activityLogger.LogErrorAsync(
                                 "Tasks",
                                 "Edit",
@@ -1525,7 +1528,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         await _activityLogger.LogErrorAsync(
                             "Tasks",
                             "CompleteTask",
-                            "خطا در ارسال نوتیفیکیشن تکمیل تسک",
+                            "خطا در ارسال نوتیفیکشن تکمیل تسک",
                             notificationEx,
                             recordId: id.ToString()
                         );
@@ -2059,7 +2062,41 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         </select>";
                 }
 
-                // اضافه کردن به response - بروزرسانی هم کاربران و هم طرف حساب‌ها
+                // دریافت دسته‌بندی‌های تسک شعبه انتخاب شده
+                var branchTaskCategories = _branchTaskCategoryRepository.GetTaskCategoriesForBranch(branchId);
+                
+                // آماده‌سازی HTML برای select دسته‌بندی‌ها
+                var categoriesSelectHtml = "";
+                if (branchTaskCategories != null && branchTaskCategories.Any())
+                {
+                    var selectOptions = string.Join("", branchTaskCategories.Select(category => 
+                        $"<option value=\"{category.Id}\">{category.Title}</option>"));
+                    
+                    categoriesSelectHtml = $@"
+                        <select class=""js-select2 form-select"" 
+                                asp-for=""TaskCategoryIdSelected"" 
+                                id=""TaskCategoryIdSelected"" 
+                                name=""TaskCategoryIdSelected""
+                                data-placeholder=""انتخاب کنید"" 
+                                style=""width: 100%;"">
+                            <option value="""">انتخاب کنید</option>
+                            {selectOptions}
+                        </select>";
+                }
+                else
+                {
+                    categoriesSelectHtml = @"
+                        <select class=""js-select2 form-select"" 
+                                asp-for=""TaskCategoryIdSelected"" 
+                                id=""TaskCategoryIdSelected"" 
+                                name=""TaskCategoryIdSelected""
+                                data-placeholder=""دسته‌بندی در این شعبه یافت نشد"" 
+                                style=""width: 100%;"">
+                            <option value="""">دسته‌بندی در این شعبه یافت نشد</option>
+                        </select>";
+                }
+
+                // اضافه کردن به response - بروزرسانی کاربران، طرف حساب‌ها و دسته‌بندی‌ها
                 var viewList = new List<object>
                 {
                     new
@@ -2077,6 +2114,14 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         {
                             result = stakeholdersSelectHtml
                         }
+                    },
+                    new
+                    {
+                        elementId = "TaskCategoriesDiv",
+                        view = new
+                        {
+                            result = categoriesSelectHtml
+                        }
                     }
                 };
 
@@ -2085,7 +2130,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     ActivityTypeEnum.View,
                     "Tasks",
                     "BranchTriggerSelect",
-                    $"بارگذاری کاربران و طرف حساب‌های شعبه {branchId}"
+                    $"بارگذاری کاربران، طرف حساب‌ها و دسته‌بندی‌های شعبه {branchId}"
                 );
 
                 return Json(new
@@ -2100,14 +2145,14 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 await _activityLogger.LogErrorAsync(
                     "Tasks",
                     "BranchTriggerSelect",
-                    "خطا در بارگذاری کاربران و طرف حساب‌های شعبه",
+                    "خطا در بارگذاری کاربران، طرف حساب‌ها و دسته‌بندی‌های شعبه",
                     ex
                 );
                 
                 return Json(new
                 {
                     status = "error",
-                    message = "خطا در بارگذاری کاربران و طرف حساب‌های شعبه: " + ex.Message
+                    message = "خطا در بارگذاری کاربران، طرف حساب‌ها و دسته‌بندی‌های شعبه: " + ex.Message
                 });
             }
         }

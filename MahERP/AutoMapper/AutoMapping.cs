@@ -5,6 +5,7 @@ using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels.CRMViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 
 namespace MahERP.AutoMapper
@@ -175,6 +176,17 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.StakeholderContact, opt => opt.Ignore())
                 .ForMember(dest => dest.CRMInteraction, opt => opt.Ignore());
+
+            // BranchTaskCategory Mappings - انتصاب دسته‌بندی تسک به شعبه
+            CreateMap<BranchTaskCategory, BranchTaskCategoryViewModel>()
+                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
+                .ForMember(dest => dest.TaskCategoryTitle, opt => opt.MapFrom(src => src.TaskCategory != null ? src.TaskCategory.Title : ""))
+                .ForMember(dest => dest.AssignedByUserName, opt => opt.MapFrom(src => src.AssignedByUser != null ? $"{src.AssignedByUser.FirstName} {src.AssignedByUser.LastName}" : ""));
+
+            CreateMap<BranchTaskCategoryViewModel, BranchTaskCategory>()
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskCategory, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignedByUser, opt => opt.Ignore());
 
             // RolePattern mappings
             CreateMap<RolePattern, RolePatternViewModel>()

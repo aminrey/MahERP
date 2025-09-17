@@ -1,0 +1,179 @@
+﻿@model IEnumerable<MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategory>
+
+@{
+    ViewData["Title"] = "دسته‌بندی‌های تسک شعبه";
+    Layout = "~/Areas/AdminArea/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- لینک‌های CSS مورد نیاز -->
+<style>
+    .task-category-item {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+    }
+    
+    .task-category-item:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .status-active {
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .status-inactive {
+        color: #dc3545;
+        font-weight: bold;
+    }
+</style>
+
+<!-- Main Container -->
+<main id="main-container">
+    <!-- Hero Content -->
+    <div class="bg-body-light">
+        <div class="content content-full">
+            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
+                <div class="flex-grow-1">
+                    <h1 class="h3 fw-bold mb-1">دسته‌بندی‌های تسک شعبه</h1>
+                    <h2 class="fs-base lh-base fw-medium text-muted mb-0">مدیریت دسته‌بندی‌های تسک متصل به شعبه: @ViewBag.BranchName</h2>
+                </div>
+                <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-alt">
+                        <li class="breadcrumb-item">
+                            <a class="link-fx" href="@Url.Action("Index", "Home")">داشبورد</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a class="link-fx" href="@Url.Action("Index", "Branch", new { area = "AdminArea" })">شعب</a>
+                        </li>
+                        <li class="breadcrumb-item" aria-current="page">دسته‌بندی‌های تسک</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero Content -->
+
+    <!-- Page Content -->
+    <div class="content">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-list-alt me-1 text-muted"></i>
+                    دسته‌بندی‌های تسک شعبه
+                </h3>
+                <div class="block-options">
+                    <a href="@Url.Action("AddTaskCategoryToBranch", new { branchId = ViewBag.BranchId })" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fa fa-plus me-1"></i>
+                        افزودن دسته‌بندی جدید
+                    </a>
+                </div>
+            </div>
+            
+            <div class="block-content">
+                @if (Model.Any())
+                {
+                    <div class="row">
+                        @foreach (var item in Model)
+                        {
+                            <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                                <div class="block block-rounded task-category-item h-100">
+                                    <div class="block-header bg-light">
+                                        <h3 class="block-title">@item.TaskCategory.Title</h3>
+                                        <div class="block-options">
+                                            <div class="dropdown">
+                                                <button type="button" class="btn-block-option" 
+                                                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <i class="fa fa-fw fa-ellipsis-v"></i>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" 
+                                                       href="@Url.Action("EditBranchTaskCategory", new { id = item.Id })">
+                                                        <i class="fa fa-fw fa-edit me-1"></i>ویرایش
+                                                    </a>
+                                                    <a class="dropdown-item" 
+                                                       href="@Url.Action("ToggleActiveStatus", new { id = item.Id })" 
+                                                       data-bs-toggle="modal" data-bs-target="#modal-popout">
+                                                        <i class="fa fa-fw @(item.IsActive ? "fa-toggle-off" : "fa-toggle-on") me-1"></i>
+                                                        @(item.IsActive ? "غیرفعال کردن" : "فعال کردن")
+                                                    </a>
+                                                    <div class="dropdown-divider"></div>
+                                                    <a class="dropdown-item text-danger" 
+                                                       href="@Url.Action("RemoveTaskCategory", new { id = item.Id })" 
+                                                       data-bs-toggle="modal" data-bs-target="#modal-popout">
+                                                        <i class="fa fa-fw fa-times me-1"></i>حذف
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="block-content">
+                                        @if (!string.IsNullOrEmpty(item.TaskCategory.Description))
+                                        {
+                                            <p class="text-muted">@item.TaskCategory.Description</p>
+                                        }
+                                        else
+                                        {
+                                            <p class="text-muted fst-italic">بدون توضیحات</p>
+                                        }
+                                        
+                                        <div class="row text-center">
+                                            <div class="col-6">
+                                                <div class="border-end">
+                                                    <div class="fs-sm fw-semibold text-uppercase text-muted">وضعیت</div>
+                                                    <div class="fs-sm @(item.IsActive ? "status-active" : "status-inactive")">
+                                                        @(item.IsActive ? "فعال" : "غیرفعال")
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="fs-sm fw-semibold text-uppercase text-muted">تاریخ انتصاب</div>
+                                                <div class="fs-sm">@MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(item.AssignDate, "yyyy/MM/dd")</div>
+                                            </div>
+                                        </div>
+                                        
+                                        @if (item.AssignedByUser != null)
+                                        {
+                                            <div class="mt-3 pt-3 border-top">
+                                                <div class="fs-sm text-muted">
+                                                    <i class="fa fa-user me-1"></i>
+                                                    انتصاب توسط: @item.AssignedByUser.FirstName @item.AssignedByUser.LastName
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <div class="display-4 text-muted mb-3">
+                            <i class="fa fa-list-alt"></i>
+                        </div>
+                        <h3 class="fw-normal text-muted">هیچ دسته‌بندی تسکی یافت نشد</h3>
+                        <p class="fs-sm text-muted">
+                            در حال حاضر هیچ دسته‌بندی تسکی به این شعبه متصل نشده است.
+                        </p>
+                        <a href="@Url.Action("AddTaskCategoryToBranch", new { branchId = ViewBag.BranchId })" 
+                           class="btn btn-primary">
+                            <i class="fa fa-plus me-1"></i>افزودن اولین دسته‌بندی
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <!-- END Page Content -->
+</main>
+
+<!-- مودال برای عملیات -->
+<div class="modal fade" id="modal-popout" tabindex="-1" role="dialog" aria-labelledby="modal-popout" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-popout" role="document">
+        <div class="modal-content">
+            <!-- محتوای مودال از طریق Ajax لود می‌شود -->
+        </div>
+    </div>
+</div>
