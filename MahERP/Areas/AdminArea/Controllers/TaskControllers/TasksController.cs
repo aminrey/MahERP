@@ -119,6 +119,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         // دریافت رویدادهای تقویم برای AJAX
+        // دریافت رویدادهای تقویم برای AJAX
         [HttpGet]
         public async Task<IActionResult> GetCalendarEvents(DateTime? start = null, DateTime? end = null)
         {
@@ -126,36 +127,66 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             {
                 var userId = _userManager.GetUserId(User);
 
+                Console.WriteLine($"GetCalendarEvents called - UserId: {userId}, Start: {start}, End: {end}");
+
                 // دریافت تسک‌ها بر اساس محدوده زمانی
                 var calendarTasks = _branchRepository.GetTasksForCalendarView(userId, null, start, end);
 
-                var events = calendarTasks.Select(task => new
+                Console.WriteLine($"Found {calendarTasks?.Count ?? 0} tasks");
+
+                var events = calendarTasks.Select(task =>
                 {
-                    id = task.Id,
-                    title = task.Title,
-                    start = task.DueDate?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    end = task.DueDate?.AddDays(1).ToString("yyyy-MM-ddTHH:mm:ss"), // یک روز اضافه می‌کنیم
-                    backgroundColor = GetTaskBackgroundColor(task),
-                    borderColor = GetTaskBorderColor(task),
-                    textColor = "#ffffff",
-                    description = task.Description ?? "",
-                    extendedProps = new
+                    // اطمینان از وجود DueDate
+                    if (!task.DueDate.HasValue)
                     {
-                        taskCode = task.TaskCode ?? "",
-                        categoryTitle = task.CategoryTitle ?? "",
-                        stakeholderName = task.StakeholderName ?? "",
-                        branchName = task.BranchName ?? "",
-                        statusText = GetTaskStatusText(task),
-                        isCompleted = task.IsCompleted,
-                        isOverdue = task.IsOverdue,
-                        detailUrl = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })
+                        Console.WriteLine($"Task {task.Id} has no DueDate - skipping");
+                        return null;
                     }
-                }).ToList();
+
+                    // تبدیل تاریخ میلادی به شمسی برای ارسال به تقویم
+                    var persianStartDate = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy-MM-dd");
+                    var persianEndDate = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value.AddHours(3), "yyyy-MM-dd");
+
+                    Console.WriteLine($"Task {task.Id}: {task.Title}");
+                    Console.WriteLine($"  Original Date (Gregorian): {task.DueDate}");
+                    Console.WriteLine($"  Converted Date (Persian): {persianStartDate}");
+
+                    return new
+                    {
+                        id = task.Id,
+                        title = task.Title,
+                        start = persianStartDate, // تاریخ شمسی
+                        end = persianEndDate,     // تاریخ شمسی
+                        backgroundColor = GetTaskBackgroundColor(task),
+                        borderColor = GetTaskBorderColor(task),
+                        textColor = "#ffffff",
+                        description = task.Description ?? "",
+                        extendedProps = new
+                        {
+                            taskCode = task.TaskCode ?? "",
+                            categoryTitle = task.CategoryTitle ?? "",
+                            stakeholderName = task.StakeholderName ?? "",
+                            branchName = task.BranchName ?? "",
+                            statusText = GetTaskStatusText(task),
+                            isCompleted = task.IsCompleted,
+                            isOverdue = task.IsOverdue,
+                            detailUrl = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" }),
+                            // اضافه کردن تاریخ‌های میلادی و شمسی برای نمایش
+                            gregorianDate = task.DueDate.Value.ToString("yyyy-MM-dd"),
+                            persianDate = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd"),
+                            persianDateFull = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "dddd، dd MMMM yyyy")
+                        }
+                    };
+                }).Where(e => e != null).ToList();
+
+                Console.WriteLine($"Returning {events.Count} events to calendar with Persian dates");
 
                 return Json(events);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error in GetCalendarEvents: {ex.Message}");
+
                 await _activityLogger.LogErrorAsync(
                     "Tasks",
                     "GetCalendarEvents",
