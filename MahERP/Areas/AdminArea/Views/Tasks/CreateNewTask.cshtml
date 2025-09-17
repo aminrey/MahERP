@@ -127,15 +127,10 @@
                             <label class="form-label" for="StakeholderId">طرف حساب</label>
                             <div id="StakeholdersDiv">
                                 <select asp-for="StakeholderId" 
-                                        class="js-select2 form-select stakeholder-select" 
+                                        class="js-select2 form-select" 
                                         id="StakeholderId"
                                         name="StakeholderId"
                                         data-placeholder="ابتدا شعبه را انتخاب کنید" 
-                                        data-url="@Url.Action("StakeholderTriggerSelectTaskCategories","Tasks")" 
-                                        data-toggle="partialview"
-                                        data-target-div="TaskCategoriesDiv"
-                                        data-param-name="stakeholderId"
-                                        data-branch-param="BranchIdSelected"
                                         style="width: 100%;"
                                         disabled>
                                     <option value="">ابتدا شعبه را انتخاب کنید</option>
@@ -270,9 +265,76 @@
                 console.log('کانفیگ‌های CreateNewTask به DynamicSelect2Manager اضافه شد');
             }
 
+            // تابع کمکی برای راه‌اندازی مجدد Select2 طرف حساب
+            function reinitializeStakeholderSelect() {
+                setTimeout(function() {
+                    if ($('#StakeholderId').length > 0) {
+                        $('#StakeholderId').select2({
+                            placeholder: 'طرف حساب را انتخاب کنید',
+                            allowClear: true,
+                            width: '100%'
+                        });
+                        console.log('Select2 طرف حساب مجدداً راه‌اندازی شد');
+                    }
+                }, 500);
+            }
+
+            // تابع فراخوانی AJAX برای بروزرسانی دسته‌بندی‌ها
+            function loadTaskCategoriesByStakeholder(branchId, stakeholderId) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                
+                console.log('شروع بارگذاری دسته‌بندی‌ها برای طرف حساب:', stakeholderId, 'در شعبه:', branchId);
+                
+                $.ajax({
+                    url: '@Url.Action("StakeholderTriggerSelectTaskCategories", "Tasks")',
+                    type: 'POST',
+                    data: {
+                        branchId: branchId,
+                        stakeholderId: stakeholderId,
+                        __RequestVerificationToken: token
+                    },
+                    beforeSend: function() {
+                        $('#TaskCategoryIdSelected').prop('disabled', true);
+                        $('#TaskCategoryIdSelected').attr('data-placeholder', 'در حال بارگذاری...');
+                        console.log('درخواست AJAX ارسال شد');
+                    },
+                    success: function(response) {
+                        console.log('پاسخ AJAX دریافت شد:', response);
+                        
+                        if (response.status === 'update-view' && response.viewList) {
+                            // بروزرسانی div دسته‌بندی‌ها
+                            response.viewList.forEach(function(item) {
+                                if (item.elementId === 'TaskCategoriesDiv') {
+                                    $('#' + item.elementId).html(item.view.result);
+                                    
+                                    // راه‌اندازی مجدد Select2 برای element جدید
+                                    $('#TaskCategoryIdSelected').select2({
+                                        placeholder: 'دسته‌بندی را انتخاب کنید',
+                                        allowClear: true,
+                                        width: '100%'
+                                    });
+                                    
+                                    $('#TaskCategoryIdSelected').prop('disabled', false);
+                                    console.log('دسته‌بندی‌ها با موفقیت بروزرسانی شد');
+                                }
+                            });
+                        } else {
+                            console.error('ساختار پاسخ نامعتبر:', response);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در بارگذاری دسته‌بندی‌ها:', error);
+                        console.error('جزئیات خطا:', xhr.responseText);
+                        $('#TaskCategoryIdSelected').prop('disabled', true);
+                        $('#TaskCategoryIdSelected').attr('data-placeholder', 'خطا در بارگذاری دسته‌بندی‌ها');
+                    }
+                });
+            }
+
             // رویداد تغییر شعبه - بروزرسانی همه فیلدهای وابسته
             $(document).on('change', '#BranchIdSelected', function() {
                 var branchId = $(this).val();
+                console.log('رویداد تغییر شعبه فراخوانی شد، شعبه انتخاب شده:', branchId);
                 
                 if (branchId) {
                     // فعال کردن فیلدهای وابسته
@@ -285,6 +347,9 @@
                     $('#AssignmentsSelectedTaskUserArraysString').attr('data-placeholder', 'کاربران را انتخاب کنید');
                     $('#StakeholderId').attr('data-placeholder', 'طرف حساب را انتخاب کنید');
                     $('#TaskCategoryIdSelected').attr('data-placeholder', 'ابتدا طرف حساب را انتخاب کنید');
+                    
+                    // راه‌اندازی مجدد Select2 طرف حساب پس از بروزرسانی cascade اول
+                    reinitializeStakeholderSelect();
                     
                     console.log('شعبه انتخاب شد:', branchId);
                 } else {
@@ -300,60 +365,24 @@
                 }
             });
 
-            // رویداد تغییر طرف حساب - بروزرسانی دسته‌بندی‌ها (CASCADE دوم)
+            // رویداد تغییر طرف حساب - بروزرسانی دسته‌بندی‌ها (CASCADE دوم) - با event delegation
             $(document).on('change', '#StakeholderId', function() {
                 var stakeholderId = $(this).val();
                 var branchId = $('#BranchIdSelected').val();
+                
+                console.log('رویداد تغییر طرف حساب فراخوانی شد');
+                console.log('طرف حساب انتخاب شده:', stakeholderId);
+                console.log('شعبه جاری:', branchId);
                 
                 if (stakeholderId && branchId) {
                     // فعال کردن انتخاب دسته‌بندی
                     $('#TaskCategoryIdSelected').prop('disabled', false);
                     $('#TaskCategoryIdSelected').attr('data-placeholder', 'در حال بارگذاری...');
                     
-                    // فراخوانی AJAX برای بارگذاری دسته‌بندی‌های مربوط به طرف حساب
-                    var token = $('input[name="__RequestVerificationToken"]').val();
+                    // فراخوانی تابع AJAX
+                    loadTaskCategoriesByStakeholder(branchId, stakeholderId);
                     
-                    $.ajax({
-                        url: '@Url.Action("StakeholderTriggerSelectTaskCategories", "Tasks")',
-                        type: 'POST',
-                        data: {
-                            branchId: branchId,
-                            stakeholderId: stakeholderId,
-                            __RequestVerificationToken: token
-                        },
-                        beforeSend: function() {
-                            $('#TaskCategoryIdSelected').prop('disabled', true);
-                            $('#TaskCategoryIdSelected').attr('data-placeholder', 'در حال بارگذاری...');
-                        },
-                        success: function(response) {
-                            if (response.status === 'update-view' && response.viewList) {
-                                // بروزرسانی div دسته‌بندی‌ها
-                                response.viewList.forEach(function(item) {
-                                    if (item.elementId === 'TaskCategoriesDiv') {
-                                        $('#' + item.elementId).html(item.view.result);
-                                        
-                                        // راه‌اندازی مجدد Select2 برای element جدید
-                                        $('#TaskCategoryIdSelected').select2({
-                                            placeholder: 'دسته‌بندی را انتخاب کنید',
-                                            allowClear: true,
-                                            width: '100%'
-                                        });
-                                        
-                                        $('#TaskCategoryIdSelected').prop('disabled', false);
-                                    }
-                                });
-                                
-                                console.log('دسته‌بندی‌های طرف حساب', stakeholderId, 'بارگذاری شد');
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('خطا در بارگذاری دسته‌بندی‌ها:', error);
-                            $('#TaskCategoryIdSelected').prop('disabled', true);
-                            $('#TaskCategoryIdSelected').attr('data-placeholder', 'خطا در بارگذاری دسته‌بندی‌ها');
-                        }
-                    });
-                    
-                    console.log('طرف حساب انتخاب شد:', stakeholderId);
+                    console.log('طرف حساب انتخاب شد و درخواست AJAX ارسال شد');
                 } else {
                     // غیرفعال کردن انتخاب دسته‌بندی
                     $('#TaskCategoryIdSelected').prop('disabled', true);
@@ -372,8 +401,14 @@
                         </select>
                     `);
                     
-                    console.log('طرف حساب پاک شد');
+                    console.log('طرف حساب پاک شد - دسته‌بندی‌ها ریست شد');
                 }
+            });
+
+            // اضافه کردن event listener برای Select2 events نیز
+            $(document).on('select2:select', '#StakeholderId', function(e) {
+                console.log('Select2 event triggered for stakeholder');
+                $(this).trigger('change');
             });
 
             // بررسی اولیه وضعیت فیلدها
@@ -383,6 +418,7 @@
             }
 
             console.log('فرم CreateNewTask آماده شد - ترتیب cascade: شعبه -> کاربران/طرف حساب -> دسته‌بندی');
+            console.log('Event delegation برای طرف حساب تنظیم شد');
         });
     </script>
 }

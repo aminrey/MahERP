@@ -2167,8 +2167,57 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
+                // ثبت لاگ ورودی
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "StakeholderTriggerSelectTaskCategories",
+                    $"درخواست cascade: شعبه {branchId}, طرف حساب {stakeholderId}"
+                );
+
+                // اعتبارسنجی پارامترهای ورودی
+                if (branchId <= 0)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "Tasks",
+                        "StakeholderTriggerSelectTaskCategories",
+                        "شناسه شعبه نامعتبر",
+                        new ArgumentException($"شناسه شعبه نامعتبر: {branchId}")
+                    );
+
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "شناسه شعبه نامعتبر است"
+                    });
+                }
+
+                if (stakeholderId <= 0)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "Tasks",
+                        "StakeholderTriggerSelectTaskCategories",
+                        "شناسه طرف حساب نامعتبر",
+                        new ArgumentException($"شناسه طرف حساب نامعتبر: {stakeholderId}")
+                    );
+
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "شناسه طرف حساب نامعتبر است"
+                    });
+                }
+
                 // دریافت دسته‌بندی‌های تسک مربوط به شعبه و طرف حساب انتخاب شده
                 var taskCategoriesViewModels = _branchRepository.GetTaskCategoriesForStakeholderChange(branchId, stakeholderId);
+                
+                // ثبت لاگ نتیجه جستجو
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "StakeholderTriggerSelectTaskCategories",
+                    $"تعداد دسته‌بندی‌های یافت شده: {taskCategoriesViewModels?.Count ?? 0}"
+                );
                 
                 // آماده‌سازی HTML برای select دسته‌بندی‌ها
                 var categoriesSelectHtml = "";
@@ -2214,34 +2263,49 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     }
                 };
 
-                // ثبت لاگ
+                // ثبت لاگ موفقیت
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Tasks",
                     "StakeholderTriggerSelectTaskCategories",
-                    $"بارگذاری دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {branchId}"
+                    $"بارگذاری موفق دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {branchId}"
                 );
 
                 return Json(new
                 {
                     status = "update-view",
-                    viewList = viewList
+                    viewList = viewList,
+                    debug = new
+                    {
+                        branchId = branchId,
+                        stakeholderId = stakeholderId,
+                        categoriesCount = taskCategoriesViewModels?.Count ?? 0,
+                        timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }
                 });
             }
             catch (Exception ex)
             {
-                // لاگ کردن خطا
+                // لاگ کردن خطا با جزئیات کامل
                 await _activityLogger.LogErrorAsync(
                     "Tasks",
                     "StakeholderTriggerSelectTaskCategories",
-                    "خطا در بارگذاری دسته‌بندی‌های طرف حساب",
+                    $"خطا در بارگذاری دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {branchId}",
                     ex
                 );
                 
                 return Json(new
                 {
                     status = "error",
-                    message = "خطا در بارگذاری دسته‌بندی‌های طرف حساب: " + ex.Message
+                    message = "خطا در بارگذاری دسته‌بندی‌های طرف حساب: " + ex.Message,
+                    debug = new
+                    {
+                        branchId = branchId,
+                        stakeholderId = stakeholderId,
+                        errorType = ex.GetType().Name,
+                        errorMessage = ex.Message,
+                        timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }
                 });
             }
         }
