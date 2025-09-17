@@ -517,6 +517,47 @@ namespace MahERP.DataModelLayer.Repository
             }
         }
 
+        /// <summary>
+        /// دریافت دسته‌بندی‌های تسک بر اساس شعبه و طرف حساب انتخاب شده (برای cascade)
+        /// این متد زمانی فراخوانی می‌شود که طرف حساب تغییر کند
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="stakeholderId">شناسه طرف حساب</param>
+        /// <returns>لیست دسته‌بندی‌های تسک قابل انتخاب</returns>
+        public List<TaskCategoryItemViewModel> GetTaskCategoriesForStakeholderChange(int branchId, int stakeholderId)
+        {
+            try
+            {
+                // دریافت دسته‌بندی‌هایی که برای این شعبه و طرف حساب تعریف شده‌اند
+                var assignedCategoryIds = _context.BranchTaskCategoryStakeholder_Tbl
+                    .Where(btcs => btcs.BranchId == branchId && 
+                                  btcs.StakeholderId == stakeholderId && 
+                                  btcs.IsActive)
+                    .Select(btcs => btcs.TaskCategoryId)
+                    .ToList();
+
+                // دریافت اطلاعات کامل دسته‌بندی‌ها
+                var taskCategories = _context.TaskCategory_Tbl
+                    .Where(tc => assignedCategoryIds.Contains(tc.Id) && tc.IsActive)
+                    .Select(tc => new TaskCategoryItemViewModel
+                    {
+                        Id = tc.Id,
+                        Title = tc.Title,
+                        Description = tc.Description,
+                        IsActive = tc.IsActive
+                    })
+                    .OrderBy(tc => tc.Title)
+                    .ToList();
+
+                return taskCategories;
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا
+                throw new Exception($"خطا در دریافت دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {branchId}: {ex.Message}", ex);
+            }
+        }
+
         #endregion
     }
 }

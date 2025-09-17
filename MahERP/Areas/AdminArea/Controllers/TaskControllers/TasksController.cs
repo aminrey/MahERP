@@ -2153,5 +2153,97 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 });
             }
         }
+
+        /// <summary>
+        /// بروزرسانی لیست دسته‌بندی‌ها بر اساس تغییر طرف حساب
+        /// این متد زمانی فراخوانی می‌شود که طرف حساب در فرم تغییر کند
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="stakeholderId">شناسه طرف حساب</param>
+        /// <returns>PartialView حاوی لیست دسته‌بندی‌های مربوط به طرف حساب</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StakeholderTriggerSelectTaskCategories(int branchId, int stakeholderId)
+        {
+            try
+            {
+                // دریافت دسته‌بندی‌های تسک مربوط به شعبه و طرف حساب انتخاب شده
+                var taskCategoriesViewModels = _branchRepository.GetTaskCategoriesForStakeholderChange(branchId, stakeholderId);
+                
+                // آماده‌سازی HTML برای select دسته‌بندی‌ها
+                var categoriesSelectHtml = "";
+                if (taskCategoriesViewModels != null && taskCategoriesViewModels.Any())
+                {
+                    var selectOptions = string.Join("", taskCategoriesViewModels.Select(category => 
+                        $"<option value=\"{category.Id}\">{category.Title}</option>"));
+                    
+                    categoriesSelectHtml = $@"
+                        <select class=""js-select2 form-select"" 
+                                asp-for=""TaskCategoryIdSelected"" 
+                                id=""TaskCategoryIdSelected"" 
+                                name=""TaskCategoryIdSelected""
+                                data-placeholder=""انتخاب کنید"" 
+                                style=""width: 100%;"">
+                            <option value="""">انتخاب کنید</option>
+                            {selectOptions}
+                        </select>";
+                }
+                else
+                {
+                    categoriesSelectHtml = @"
+                        <select class=""js-select2 form-select"" 
+                                asp-for=""TaskCategoryIdSelected"" 
+                                id=""TaskCategoryIdSelected"" 
+                                name=""TaskCategoryIdSelected""
+                                data-placeholder=""دسته‌بندی برای این طرف حساب یافت نشد"" 
+                                style=""width: 100%;"">
+                            <option value="""">دسته‌بندی برای این طرف حساب یافت نشد</option>
+                        </select>";
+                }
+
+                // ایجاد response برای بروزرسانی div دسته‌بندی‌ها
+                var viewList = new List<object>
+                {
+                    new
+                    {
+                        elementId = "TaskCategoriesDiv",
+                        view = new
+                        {
+                            result = categoriesSelectHtml
+                        }
+                    }
+                };
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "StakeholderTriggerSelectTaskCategories",
+                    $"بارگذاری دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {branchId}"
+                );
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = viewList
+                });
+            }
+            catch (Exception ex)
+            {
+                // لاگ کردن خطا
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "StakeholderTriggerSelectTaskCategories",
+                    "خطا در بارگذاری دسته‌بندی‌های طرف حساب",
+                    ex
+                );
+                
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا در بارگذاری دسته‌بندی‌های طرف حساب: " + ex.Message
+                });
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
-﻿using MahERP.DataModelLayer.ViewModels.UserViewModels;
-using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
-using MahERP.CommonLayer.PublicClasses; // اضافه شده
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MahERP.CommonLayer.PublicClasses; // اضافه شده
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl
 {
@@ -42,21 +42,25 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl
         /// <summary>
         /// وضعیت فعال/غیرفعال
         /// </summary>
+        [Required]
         [Display(Name = "وضعیت فعال")]
         public bool IsActive { get; set; } = true;
 
         /// <summary>
         /// تاریخ تخصیص
         /// </summary>
+        [Required]
         [Display(Name = "تاریخ تخصیص")]
         public DateTime AssignDate { get; set; } = DateTime.Now;
 
         /// <summary>
         /// شناسه کاربر تخصیص دهنده
         /// </summary>
+        [Display(Name = "تخصیص دهنده")]
         public string? AssignedByUserId { get; set; }
 
         // اطلاعات نمایشی
+
         /// <summary>
         /// نام شعبه (برای نمایش)
         /// </summary>
@@ -78,10 +82,23 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl
         /// <summary>
         /// نام کاربر تخصیص دهنده (برای نمایش)
         /// </summary>
-        [Display(Name = "تخصیص دهنده")]
+        [Display(Name = "نام تخصیص دهنده")]
         public string? AssignedByUserName { get; set; }
 
+        /// <summary>
+        /// تاریخ تخصیص به صورت شمسی (برای نمایش)
+        /// </summary>
+        [Display(Name = "تاریخ تخصیص شمسی")]
+        public string? AssignDatePersian { get; set; }
+
+        /// <summary>
+        /// وضعیت به صورت متنی (برای نمایش)
+        /// </summary>
+        [Display(Name = "وضعیت")]
+        public string StatusText => IsActive ? "فعال" : "غیرفعال";
+
         // لیست‌های مورد نیاز برای فرم‌ها
+
         /// <summary>
         /// لیست دسته‌بندی‌های در دسترس برای انتخاب
         /// </summary>
@@ -91,57 +108,56 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl
         /// لیست طرف حساب‌های در دسترس برای انتخاب
         /// </summary>
         public List<StakeholderItemViewModel>? StakeholdersInitial { get; set; }
-
-        /// <summary>
-        /// متن وضعیت فعال/غیرفعال برای نمایش
-        /// </summary>
-        public string StatusText => IsActive ? "فعال" : "غیرفعال";
-
-        /// <summary>
-        /// تاریخ شمسی تخصیص برای نمایش
-        /// </summary>
-        public string AssignDatePersian => ConvertDateTime.ConvertMiladiToShamsi(AssignDate, "yyyy/MM/dd");
     }
 
     /// <summary>
-    /// ViewModel برای آیتم‌های دسته‌بندی تسک در لیست‌های کشویی
+    /// ViewModel کوچک برای آیتم‌های دسته‌بندی تسک
     /// </summary>
     public class TaskCategoryItemViewModel
     {
         public int Id { get; set; }
+
+        [Display(Name = "عنوان")]
         public string Title { get; set; }
+
+        [Display(Name = "توضیحات")]
         public string? Description { get; set; }
+
+        [Display(Name = "وضعیت فعال")]
         public bool IsActive { get; set; }
     }
 
     /// <summary>
-    /// ViewModel برای آیتم‌های طرف حساب در لیست‌های کشویی
+    /// ViewModel کوچک برای آیتم‌های طرف حساب
     /// </summary>
     public class StakeholderItemViewModel
     {
         public int Id { get; set; }
+
+        [Display(Name = "نام")]
         public string FirstName { get; set; }
+
+        [Display(Name = "نام خانوادگی")]
         public string LastName { get; set; }
+
+        [Display(Name = "نام شرکت")]
         public string? CompanyName { get; set; }
+
+        [Display(Name = "نوع طرف حساب")]
         public byte StakeholderType { get; set; }
+
+        [Display(Name = "وضعیت فعال")]
         public bool IsActive { get; set; }
 
         /// <summary>
-        /// نام کامل برای نمایش
+        /// نمایش نام کامل با در نظر گیری نام شرکت
         /// </summary>
-        public string DisplayName
-        {
-            get
-            {
-                var fullName = $"{FirstName} {LastName}";
-                if (!string.IsNullOrEmpty(CompanyName))
-                    fullName += $" ({CompanyName})";
-                return fullName;
-            }
-        }
+        public string DisplayName => string.IsNullOrEmpty(CompanyName) 
+            ? $"{FirstName} {LastName}"
+            : $"{FirstName} {LastName} ({CompanyName})";
 
         /// <summary>
-        /// نوع طرف حساب به صورت متنی
+        /// نمایش نوع طرف حساب به صورت متنی
         /// </summary>
         public string StakeholderTypeText
         {
@@ -150,9 +166,10 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl
                 return StakeholderType switch
                 {
                     0 => "مشتری",
-                    1 => "تامین کننده",
-                    2 => "همکار",
-                    3 => "سایر",
+                    1 => "تامین کننده", 
+                    2 => "نماینده فروش",
+                    3 => "شریک",
+                    4 => "بازاریاب",
                     _ => "نامشخص"
                 };
             }

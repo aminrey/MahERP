@@ -131,10 +131,11 @@
                                         id="StakeholderId"
                                         name="StakeholderId"
                                         data-placeholder="ابتدا شعبه را انتخاب کنید" 
-                                        data-url="@Url.Action("BranchTriggerSelectStakeholders","Tasks")" 
+                                        data-url="@Url.Action("StakeholderTriggerSelectTaskCategories","Tasks")" 
                                         data-toggle="partialview"
                                         data-target-div="TaskCategoriesDiv"
-                                        data-param-name="branchId"
+                                        data-param-name="stakeholderId"
+                                        data-branch-param="BranchIdSelected"
                                         style="width: 100%;"
                                         disabled>
                                     <option value="">ابتدا شعبه را انتخاب کنید</option>
@@ -143,7 +144,7 @@
                             <span asp-validation-for="StakeholderId" class="text-danger"></span>
                             <small class="form-text text-muted">
                                 <i class="fa fa-handshake me-1"></i>
-                                طرف حساب مرتبط با این تسک
+                                طرف حساب مرتبط با این تسک - انتخاب طرف حساب باعث بروزرسانی دسته‌بندی‌ها می‌شود
                             </small>
                         </div>
 
@@ -275,7 +276,10 @@
                 
                 if (branchId) {
                     // فعال کردن فیلدهای وابسته
-                    $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', false);
+                    $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId').prop('disabled', false);
+                    
+                    // غیرفعال کردن دسته‌بندی تا طرف حساب انتخاب شود
+                    $('#TaskCategoryIdSelected').prop('disabled', true);
                     
                     // بروزرسانی placeholder ها
                     $('#AssignmentsSelectedTaskUserArraysString').attr('data-placeholder', 'کاربران را انتخاب کنید');
@@ -296,7 +300,7 @@
                 }
             });
 
-            // رویداد تغییر طرف حساب - بروزرسانی دسته‌بندی‌ها
+            // رویداد تغییر طرف حساب - بروزرسانی دسته‌بندی‌ها (CASCADE دوم)
             $(document).on('change', '#StakeholderId', function() {
                 var stakeholderId = $(this).val();
                 var branchId = $('#BranchIdSelected').val();
@@ -304,13 +308,69 @@
                 if (stakeholderId && branchId) {
                     // فعال کردن انتخاب دسته‌بندی
                     $('#TaskCategoryIdSelected').prop('disabled', false);
-                    $('#TaskCategoryIdSelected').attr('data-placeholder', 'دسته‌بندی را انتخاب کنید');
+                    $('#TaskCategoryIdSelected').attr('data-placeholder', 'در حال بارگذاری...');
+                    
+                    // فراخوانی AJAX برای بارگذاری دسته‌بندی‌های مربوط به طرف حساب
+                    var token = $('input[name="__RequestVerificationToken"]').val();
+                    
+                    $.ajax({
+                        url: '@Url.Action("StakeholderTriggerSelectTaskCategories", "Tasks")',
+                        type: 'POST',
+                        data: {
+                            branchId: branchId,
+                            stakeholderId: stakeholderId,
+                            __RequestVerificationToken: token
+                        },
+                        beforeSend: function() {
+                            $('#TaskCategoryIdSelected').prop('disabled', true);
+                            $('#TaskCategoryIdSelected').attr('data-placeholder', 'در حال بارگذاری...');
+                        },
+                        success: function(response) {
+                            if (response.status === 'update-view' && response.viewList) {
+                                // بروزرسانی div دسته‌بندی‌ها
+                                response.viewList.forEach(function(item) {
+                                    if (item.elementId === 'TaskCategoriesDiv') {
+                                        $('#' + item.elementId).html(item.view.result);
+                                        
+                                        // راه‌اندازی مجدد Select2 برای element جدید
+                                        $('#TaskCategoryIdSelected').select2({
+                                            placeholder: 'دسته‌بندی را انتخاب کنید',
+                                            allowClear: true,
+                                            width: '100%'
+                                        });
+                                        
+                                        $('#TaskCategoryIdSelected').prop('disabled', false);
+                                    }
+                                });
+                                
+                                console.log('دسته‌بندی‌های طرف حساب', stakeholderId, 'بارگذاری شد');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('خطا در بارگذاری دسته‌بندی‌ها:', error);
+                            $('#TaskCategoryIdSelected').prop('disabled', true);
+                            $('#TaskCategoryIdSelected').attr('data-placeholder', 'خطا در بارگذاری دسته‌بندی‌ها');
+                        }
+                    });
                     
                     console.log('طرف حساب انتخاب شد:', stakeholderId);
                 } else {
                     // غیرفعال کردن انتخاب دسته‌بندی
                     $('#TaskCategoryIdSelected').prop('disabled', true);
                     $('#TaskCategoryIdSelected').attr('data-placeholder', 'ابتدا طرف حساب را انتخاب کنید');
+                    
+                    // پاک کردن محتوای دسته‌بندی‌ها
+                    $('#TaskCategoriesDiv').html(`
+                        <select class="js-select2 form-select" 
+                                asp-for="TaskCategoryIdSelected" 
+                                id="TaskCategoryIdSelected" 
+                                name="TaskCategoryIdSelected"
+                                data-placeholder="ابتدا طرف حساب را انتخاب کنید" 
+                                style="width: 100%;"
+                                disabled>
+                            <option value="">ابتدا طرف حساب را انتخاب کنید</option>
+                        </select>
+                    `);
                     
                     console.log('طرف حساب پاک شد');
                 }
@@ -322,7 +382,7 @@
                 $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
             }
 
-            console.log('فرم CreateNewTask آماده شد - ترتیب cascade: شعبه -> کاربران -> طرف حساب -> دسته‌بندی');
+            console.log('فرم CreateNewTask آماده شد - ترتیب cascade: شعبه -> کاربران/طرف حساب -> دسته‌بندی');
         });
     </script>
 }
