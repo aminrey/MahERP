@@ -601,7 +601,7 @@
             $.ajax({
                 url: '@Url.Action("ApproveTaskByManager")',
                 type: 'POST',
-                data: { id = taskId },
+                data: { id: taskId },
                 success: function (result) {
                     if (result.success) {
                         // Reload the page to show updated state

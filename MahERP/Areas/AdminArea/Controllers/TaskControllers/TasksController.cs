@@ -1401,28 +1401,42 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
+                // دریافت اطلاعات تسک از دیتابیس
                 var task = _uow.TaskUW.GetById(id);
                 if (task == null)
                     return RedirectToAction("ErrorView", "Home");
 
+                // بررسی دسترسی کاربر به این تسک (اختیاری - بر اساس نیاز سیستم)
+                var currentUserId = _userManager.GetUserId(HttpContext.User);
+                
+                // تنظیم ViewBag برای نمایش صحیح مودال
                 if (task.CompletionDate.HasValue)
                 {
+                    // حالت بازگشایی تسک
                     ViewBag.ModalTitle = "بازگشایی تسک";
                     ViewBag.ButtonText = "بازگشایی تسک";
-                    ViewBag.ButonClass = "btn rounded-0 btn-hero btn-warning";
-                    ViewBag.themeclass = "bg-gd-sun";
+                    ViewBag.ButonClass = "btn btn-warning";
+                    ViewBag.themeclass = "bg-warning";
                     ViewBag.IsReopening = true;
                 }
                 else
                 {
+                    // حالت تکمیل تسک
                     ViewBag.ModalTitle = "تکمیل تسک";
                     ViewBag.ButtonText = "تکمیل تسک";
-                    ViewBag.ButonClass = "btn rounded-0 btn-hero btn-success";
-                    ViewBag.themeclass = "bg-gd-sea";
+                    ViewBag.ButonClass = "btn btn-success";
+                    ViewBag.themeclass = "bg-success";
                     ViewBag.IsReopening = false;
                 }
 
-                // ثبت لاگ
+                // ایجاد ViewModel با اطلاعات کامل تسک
+                var viewModel = _mapper.Map<TaskViewModel>(task);
+                
+                // دریافت عملیات‌های تسک برای نمایش در مودال
+                var operations = _taskRepository.GetTaskOperations(task.Id);
+                viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(operations);
+
+                // ثبت لاگ فعالیت کاربر
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Tasks",
@@ -1433,10 +1447,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     recordTitle: task.Title
                 );
 
-                return PartialView("_CompleteTask", _mapper.Map<TaskViewModel>(task));
+                // بازگشت PartialView برای نمایش در مودال
+                return PartialView("_CompleteTask", viewModel);
             }
             catch (Exception ex)
             {
+                // ثبت لاگ خطا
                 await _activityLogger.LogErrorAsync(
                     "Tasks",
                     "CompleteTask",
@@ -1445,6 +1461,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     recordId: id.ToString()
                 );
                 
+                // در صورت بروز خطا، بازگشت به صفحه خطا
                 return RedirectToAction("ErrorView", "Home");
             }
         }
