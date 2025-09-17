@@ -65,7 +65,7 @@ namespace MahERP.DataModelLayer
         public DbSet<TaskTemplateOperation> TaskTemplateOperation_Tbl { get; set; }
         public DbSet<TaskViewer> TaskViewer_Tbl { get; set; }
         public DbSet<PredefinedCopyDescription> PredefinedCopyDescription_Tbl { get; set; }
-        public DbSet<BranchTaskCategory> BranchTaskCategory_Tbl { get; set; }
+        public DbSet<BranchTaskCategoryStakeholder> BranchTaskCategoryStakeholder_Tbl { get; set; }
 
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
@@ -803,6 +803,31 @@ namespace MahERP.DataModelLayer
                 .HasOne(tc => tc.ParentCategory)
                 .WithMany()
                 .HasForeignKey(tc => tc.ParentCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BranchTaskCategoryStakeholder relationships
+            modelBuilder.Entity<BranchTaskCategoryStakeholder>()
+                .HasOne(btcs => btcs.Branch)
+                .WithMany()
+                .HasForeignKey(btcs => btcs.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<BranchTaskCategoryStakeholder>()
+                .HasOne(btcs => btcs.TaskCategory)
+                .WithMany()
+                .HasForeignKey(btcs => btcs.TaskCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<BranchTaskCategoryStakeholder>()
+                .HasOne(btcs => btcs.Stakeholder)
+                .WithMany()
+                .HasForeignKey(btcs => btcs.StakeholderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<BranchTaskCategoryStakeholder>()
+                .HasOne(btcs => btcs.AssignedByUser)
+                .WithMany()
+                .HasForeignKey(btcs => btcs.AssignedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // AppUsers self-referencing relationship

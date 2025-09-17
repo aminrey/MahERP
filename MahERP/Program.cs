@@ -26,7 +26,6 @@ builder.Services.AddIdentity<AppUsers, AppRoles>()
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
 builder.Services.AddScoped<IBranchRepository, BranchRepository>();
-builder.Services.AddScoped<IBranchTaskCategoryRepository, BranchTaskCategoryRepository>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ICRMRepository, CRMRepository>();

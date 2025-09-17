@@ -25,7 +25,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         private readonly ITaskRepository _taskRepository;           
         private readonly IStakeholderRepository _stakeholderRepository;
         private readonly IBranchRepository _branchRepository;
-        private readonly IBranchTaskCategoryRepository _branchTaskCategoryRepository; // اضافه شده
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
@@ -37,7 +36,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             ITaskRepository taskRepository,
             IStakeholderRepository stakeholderRepository,
             IBranchRepository branchRepository,
-            IBranchTaskCategoryRepository branchTaskCategoryRepository, // اضافه شده
             UserManager<AppUsers> userManager,
             IMapper mapper,
             PersianDateHelper persianDateHelper,
@@ -51,7 +49,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _taskRepository = taskRepository;
             _stakeholderRepository = stakeholderRepository;
             _branchRepository = branchRepository;
-            _branchTaskCategoryRepository = branchTaskCategoryRepository; // اضافه شده
             _userManager = userManager;
             _mapper = mapper;
             _webHostEnvironment = webHostEnvironment;
@@ -181,7 +178,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 // تکمیل اطلاعات اختصاص‌ها
                 viewModel.AssignmentsTaskUser = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
 
-                // علامت‌گذاری نوتیفیکیشن‌های مرتبط با این تسک به عنوان خوانده شده
+                // علامت‌گذاری نوتیفیکشن‌های مرتبط با این تسک به عنوان خوانده شده
                 var currentUserId = _userManager.GetUserId(User);
                 await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
 
@@ -2063,7 +2060,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 }
 
                 // دریافت دسته‌بندی‌های تسک شعبه انتخاب شده
-                var branchTaskCategories = _branchTaskCategoryRepository.GetTaskCategoriesForBranch(branchId);
+                var branchTaskCategories = _branchRepository.GetTaskCategoriesForBranchStakeholder(branchId);
                 
                 // آماده‌سازی HTML برای select دسته‌بندی‌ها
                 var categoriesSelectHtml = "";

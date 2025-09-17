@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250917081043_Add_Stakeholder_to_BranchTaskCategory_renametable")]
+    partial class Add_Stakeholder_to_BranchTaskCategory_renametable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -312,52 +315,6 @@ namespace MahERP.DataModelLayer.Migrations
                         });
                 });
 
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategoryStakeholder", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AssignDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AssignedByUserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("BranchId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("StakeholderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TaskCategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TaskCategoryId1")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssignedByUserId");
-
-                    b.HasIndex("BranchId");
-
-                    b.HasIndex("StakeholderId");
-
-                    b.HasIndex("TaskCategoryId");
-
-                    b.HasIndex("TaskCategoryId1");
-
-                    b.ToTable("BranchTaskCategoryStakeholder_Tbl");
-                });
-
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchUser", b =>
                 {
                     b.Property<int>("Id")
@@ -400,6 +357,46 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("BranchUser_Tbl");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Branch_TaskCategory_Stakeholder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AssignDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("StakeholderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskCategoryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedByUserId");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("StakeholderId");
+
+                    b.HasIndex("TaskCategoryId");
+
+                    b.ToTable("Branch_TaskCategory_Stakeholder_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Contract", b =>
@@ -3510,45 +3507,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("ParentBranch");
                 });
 
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategoryStakeholder", b =>
-                {
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedByUser")
-                        .WithMany()
-                        .HasForeignKey("AssignedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
-                        .WithMany()
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
-                        .WithMany()
-                        .HasForeignKey("StakeholderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", "TaskCategory")
-                        .WithMany()
-                        .HasForeignKey("TaskCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", null)
-                        .WithMany("BranchTaskCategoryStakeholders")
-                        .HasForeignKey("TaskCategoryId1");
-
-                    b.Navigation("AssignedByUser");
-
-                    b.Navigation("Branch");
-
-                    b.Navigation("Stakeholder");
-
-                    b.Navigation("TaskCategory");
-                });
-
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchUser", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedByUser")
@@ -3578,6 +3536,41 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("Branch");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Branch_TaskCategory_Stakeholder", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedByUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
+                        .WithMany()
+                        .HasForeignKey("StakeholderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", "TaskCategory")
+                        .WithMany("BranchTaskCategorys")
+                        .HasForeignKey("TaskCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AssignedByUser");
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Stakeholder");
+
+                    b.Navigation("TaskCategory");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Contract", b =>
@@ -4837,7 +4830,7 @@ namespace MahERP.DataModelLayer.Migrations
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", b =>
                 {
-                    b.Navigation("BranchTaskCategoryStakeholders");
+                    b.Navigation("BranchTaskCategorys");
 
                     b.Navigation("ChildCategories");
 

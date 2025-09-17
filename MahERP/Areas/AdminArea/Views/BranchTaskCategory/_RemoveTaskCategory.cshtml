@@ -1,4 +1,4 @@
-﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryViewModel
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryStakeholderViewModel
 
 @{
     Layout = null;
@@ -6,7 +6,7 @@
 
 <style>
     .modal {
-        --bs-modal-width: 50%;
+        --bs-modal-width: 55%;
         transition: 0.3s;
     }
 </style>
@@ -30,41 +30,35 @@
                 <div class="block-content">
                     <div class="text-center py-4">
                         <div class="display-4 text-danger mb-3">
-                            <i class="fa fa-exclamation-triangle"></i>
+                            <i class="fa fa-trash-alt"></i>
                         </div>
                         <h4 class="fw-bold mb-3">آیا از حذف این انتصاب اطمینان دارید؟</h4>
                         
-                        <div class="alert alert-warning text-start">
+                        <div class="alert alert-danger text-start">
                             <h6 class="fw-bold mb-2">اطلاعات انتصاب:</h6>
                             <ul class="mb-0">
                                 <li><strong>شعبه:</strong> @Model.BranchName</li>
                                 <li><strong>دسته‌بندی:</strong> @Model.TaskCategoryTitle</li>
-                                <li><strong>تاریخ انتصاب:</strong> @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</li>
+                                <li><strong>طرف حساب:</strong> @Model.StakeholderName</li>
                                 <li><strong>وضعیت:</strong> @Model.StatusText</li>
+                                <li><strong>تاریخ انتصاب:</strong> @Model.AssignDatePersian</li>
                             </ul>
                         </div>
                         
-                        <div class="alert alert-danger">
-                            <i class="fa fa-warning me-1"></i>
-                            <strong>توجه:</strong> این عملیات قابل بازگشت نیست و انتصاب دسته‌بندی به طور کامل حذف خواهد شد.
+                        <div class="alert alert-warning">
+                            <i class="fa fa-exclamation-triangle me-1"></i>
+                            <strong>هشدار:</strong> با حذف این انتصاب، دسته‌بندی از لیست دسته‌بندی‌های قابل انتخاب برای این شعبه و طرف حساب حذف خواهد شد. این عمل قابل بازگشت نیست.
                         </div>
                     </div>
                 </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                    <button class="btn btn-sm @ViewBag.ButonClass" type="submit">
+                        <i class="fa fa-trash-alt me-1"></i>حذف انتصاب
+                    </button>
+                </div>
             </form>
-        </div>
-
-        <div class="block-content block-content-full text-end bg-body">
-            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
-            <button class="@ViewBag.ButonClass" data-save="modal-ajax-save" type="button">
-                <i class="fa fa-trash me-1"></i>حذف انتصاب
-            </button>
         </div>
     </div>
 </div>
-
-<script>
-    // اجرای عملیات حذف
-    $('[data-save="modal-ajax-save"]').click(function() {
-        $('form').submit();
-    });
-</script>

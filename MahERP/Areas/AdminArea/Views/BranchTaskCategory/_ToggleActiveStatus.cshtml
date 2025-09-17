@@ -1,4 +1,4 @@
-﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryViewModel
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryStakeholderViewModel
 
 @{
     Layout = null;
@@ -6,7 +6,7 @@
 
 <style>
     .modal {
-        --bs-modal-width: 50%;
+        --bs-modal-width: 55%;
         transition: 0.3s;
     }
 </style>
@@ -41,8 +41,9 @@
                             <ul class="mb-0">
                                 <li><strong>شعبه:</strong> @Model.BranchName</li>
                                 <li><strong>دسته‌بندی:</strong> @Model.TaskCategoryTitle</li>
+                                <li><strong>طرف حساب:</strong> @Model.StakeholderName</li>
                                 <li><strong>وضعیت فعلی:</strong> @Model.StatusText</li>
-                                <li><strong>تاریخ انتصاب:</strong> @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</li>
+                                <li><strong>تاریخ انتصاب:</strong> @Model.AssignDatePersian</li>
                             </ul>
                         </div>
                         
@@ -50,34 +51,27 @@
                         {
                             <div class="alert alert-warning">
                                 <i class="fa fa-warning me-1"></i>
-                                با غیرفعال کردن این انتصاب، دسته‌بندی برای شعبه قابل استفاده نخواهد بود.
+                                با غیرفعال کردن این انتصاب، دسته‌بندی برای این شعبه و طرف حساب قابل استفاده نخواهد بود.
                             </div>
                         }
                         else
                         {
                             <div class="alert alert-success">
                                 <i class="fa fa-check me-1"></i>
-                                با فعال کردن این انتصاب، دسته‌بندی مجدداً برای شعبه قابل استفاده خواهد بود.
+                                با فعال کردن این انتصاب، دسته‌بندی مجدداً برای این شعبه و طرف حساب قابل استفاده خواهد بود.
                             </div>
                         }
                     </div>
                 </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                    <button class="btn btn-sm @ViewBag.ButonClass" type="submit">
+                        <i class="fa @(Model.IsActive ? "fa-toggle-off" : "fa-toggle-on") me-1"></i>
+                        @(Model.IsActive ? "غیرفعال کردن" : "فعال کردن")
+                    </button>
+                </div>
             </form>
-        </div>
-
-        <div class="block-content block-content-full text-end bg-body">
-            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
-            <button class="@ViewBag.ButonClass" data-save="modal-ajax-save" type="button">
-                <i class="fa @(Model.IsActive ? "fa-toggle-off" : "fa-toggle-on") me-1"></i>
-                @(Model.IsActive ? "غیرفعال کردن" : "فعال کردن")
-            </button>
         </div>
     </div>
 </div>
-
-<script>
-    // اجرای عملیات تغییر وضعیت
-    $('[data-save="modal-ajax-save"]').click(function() {
-        $('form').submit();
-    });
-</script>

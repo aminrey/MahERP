@@ -1,4 +1,4 @@
-﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryViewModel
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryStakeholderViewModel
 
 @{
     ViewData["Title"] = "ویرایش انتصاب دسته‌بندی";
@@ -13,7 +13,7 @@
             <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
                 <div class="flex-grow-1">
                     <h1 class="h3 fw-bold mb-1">ویرایش انتصاب دسته‌بندی</h1>
-                    <h2 class="fs-base lh-base fw-medium text-muted mb-0">ویرایش انتصاب دسته‌بندی "@Model.TaskCategoryTitle" به شعبه "@Model.BranchName"</h2>
+                    <h2 class="fs-base lh-base fw-medium text-muted mb-0">ویرایش انتساب دسته‌بندی "@Model.TaskCategoryTitle" به شعبه "@Model.BranchName" و طرف حساب "@Model.StakeholderName"</h2>
                 </div>
                 <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-alt">
@@ -52,67 +52,67 @@
             <div class="block-content">
                 <form asp-action="EditBranchTaskCategory" method="post">
                     @Html.AntiForgeryToken()
+                    
                     <input type="hidden" asp-for="Id" />
                     <input type="hidden" asp-for="BranchId" />
-                    <input type="hidden" asp-for="TaskCategoryId" />
-                    
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-                    
+                    <input type="hidden" asp-for="TaskCategoryIdSelected" />
+                    <input type="hidden" asp-for="StakeholderId" />
+                    <input type="hidden" asp-for="AssignDate" />
+                    <input type="hidden" asp-for="AssignedByUserId" />
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
                     <div class="row justify-content-center">
-                        <div class="col-xl-6 col-lg-8">
-                            <!-- اطلاعات انتصاب -->
-                            <div class="block block-themed block-rounded">
-                                <div class="block-header bg-info-light">
-                                    <h3 class="block-title">اطلاعات انتصاب</h3>
+                        <div class="col-lg-8">
+                            <!-- اطلاعات نمایشی -->
+                            <div class="row mb-4">
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded">
+                                        <h6 class="fw-semibold mb-1">شعبه</h6>
+                                        <p class="mb-0">@Model.BranchName</p>
+                                    </div>
                                 </div>
-                                <div class="block-content">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">شعبه</label>
-                                            <div class="form-control-plaintext fw-semibold">@Model.BranchName</div>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">دسته‌بندی تسک</label>
-                                            <div class="form-control-plaintext fw-semibold">@Model.TaskCategoryTitle</div>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">تاریخ انتصاب</label>
-                                            <div class="form-control-plaintext">@MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</div>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">انتصاب توسط</label>
-                                            <div class="form-control-plaintext">@Model.AssignedByUserName</div>
-                                        </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded">
+                                        <h6 class="fw-semibold mb-1">دسته‌بندی تسک</h6>
+                                        <p class="mb-0">@Model.TaskCategoryTitle</p>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 mt-3">
+                                    <div class="p-3 bg-body-light rounded">
+                                        <h6 class="fw-semibold mb-1">طرف حساب</h6>
+                                        <p class="mb-0">@Model.StakeholderName</p>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 mt-3">
+                                    <div class="p-3 bg-body-light rounded">
+                                        <h6 class="fw-semibold mb-1">تاریخ تخصیص</h6>
+                                        <p class="mb-0">@Model.AssignDatePersian</p>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- تنظیمات قابل ویرایش -->
-                            <div class="block block-themed block-rounded">
-                                <div class="block-header bg-primary-light">
-                                    <h3 class="block-title">تنظیمات</h3>
+                            <div class="form-group mb-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsActive" class="form-check-input" type="checkbox" id="IsActive" />
+                                    <label asp-for="IsActive" class="form-check-label" for="IsActive">
+                                        وضعیت فعال
+                                    </label>
+                                    <span asp-validation-for="IsActive" class="text-danger"></span>
                                 </div>
-                                <div class="block-content">
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input asp-for="IsActive" class="form-check-input" type="checkbox" id="IsActive" />
-                                            <label asp-for="IsActive" class="form-check-label" for="IsActive">وضعیت فعال</label>
-                                            <small class="form-text text-muted">در صورت غیرفعال بودن، این دسته‌بندی برای شعبه قابل استفاده نخواهد بود</small>
-                                        </div>
-                                        <span asp-validation-for="IsActive" class="text-danger"></span>
-                                    </div>
-                                </div>
+                                <small class="form-text text-muted">
+                                    در صورت غیرفعال کردن، این دسته‌بندی در لیست دسته‌بندی‌های قابل انتخاب برای تسک‌های این شعبه و طرف حساب نمایش داده نخواهد شد.
+                                </small>
                             </div>
 
                             <!-- دکمه‌های عملیات -->
-                            <div class="text-center">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fa fa-check me-1"></i>
-                                    ذخیره تغییرات
+                            <div class="form-group text-center">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fa fa-check me-1"></i>ذخیره تغییرات
                                 </button>
                                 <a href="@Url.Action("Index", new { branchId = Model.BranchId })" class="btn btn-alt-secondary">
-                                    <i class="fa fa-times me-1"></i>
-                                    انصراف
+                                    <i class="fa fa-times me-1"></i>انصراف
                                 </a>
                             </div>
                         </div>
@@ -123,3 +123,8 @@
     </div>
     <!-- END Page Content -->
 </main>
+<!-- END Main Container -->
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

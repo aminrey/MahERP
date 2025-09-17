@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MahERP.DataModelLayer.Entities.AcControl
 {
-    public class BranchTaskCategory
+    public class Branch_TaskCategory_Stakeholder
     {
         [Key]
         public int Id { get; set; }
@@ -19,7 +19,12 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         [ForeignKey("TaskCategoryId")]
         public virtual TaskCategory TaskCategory { get; set; }
 
-        
+
+        public int StakeholderId { get; set; }
+        [ForeignKey("StakeholderId")]
+        public virtual Stakeholder Stakeholder { get; set; }
+
+
 
         public bool IsActive { get; set; } = true;
 

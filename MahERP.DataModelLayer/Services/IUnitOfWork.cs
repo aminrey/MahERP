@@ -23,7 +23,7 @@ namespace MahERP.DataModelLayer.Services
         #region Organization
         GenereicClass<Branch> BranchUW { get; }
         GenereicClass<BranchUser> BranchUserUW { get; }
-        GenereicClass<BranchTaskCategory> BranchTaskCategoryUW { get; }
+        GenereicClass<BranchTaskCategoryStakeholder> BranchTaskCategoryUW { get; }
         GenereicClass<Team> TeamUW { get; }
         GenereicClass<TeamMember> TeamMemberUW { get; }
         #endregion

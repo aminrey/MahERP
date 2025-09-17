@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250917080559_Add_Stakeholder_to_BranchTaskCategory")]
+    partial class Add_Stakeholder_to_BranchTaskCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -312,7 +315,7 @@ namespace MahERP.DataModelLayer.Migrations
                         });
                 });
 
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategoryStakeholder", b =>
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -325,7 +328,6 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("AssignedByUserId")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("BranchId")
@@ -340,9 +342,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int>("TaskCategoryId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaskCategoryId1")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedByUserId");
@@ -353,9 +352,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskCategoryId");
 
-                    b.HasIndex("TaskCategoryId1");
-
-                    b.ToTable("BranchTaskCategoryStakeholder_Tbl");
+                    b.ToTable("BranchTaskCategory_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchUser", b =>
@@ -3510,35 +3507,31 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("ParentBranch");
                 });
 
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategoryStakeholder", b =>
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategory", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedByUser")
                         .WithMany()
                         .HasForeignKey("AssignedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
                         .WithMany()
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
                         .WithMany()
                         .HasForeignKey("StakeholderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", "TaskCategory")
-                        .WithMany()
+                        .WithMany("BranchTaskCategorys")
                         .HasForeignKey("TaskCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", null)
-                        .WithMany("BranchTaskCategoryStakeholders")
-                        .HasForeignKey("TaskCategoryId1");
 
                     b.Navigation("AssignedByUser");
 
@@ -4837,7 +4830,7 @@ namespace MahERP.DataModelLayer.Migrations
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", b =>
                 {
-                    b.Navigation("BranchTaskCategoryStakeholders");
+                    b.Navigation("BranchTaskCategorys");
 
                     b.Navigation("ChildCategories");
 

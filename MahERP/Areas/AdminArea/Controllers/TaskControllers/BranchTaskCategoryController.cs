@@ -19,7 +19,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
     public class BranchTaskCategoryController : BaseController
     {
         private readonly IUnitOfWork _uow;
-        private readonly IBranchTaskCategoryRepository _branchTaskCategoryRepository;
         private readonly IBranchRepository _branchRepository;
         private readonly ITaskRepository _taskRepository;
         private new readonly UserManager<AppUsers> _userManager;
@@ -27,7 +26,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
         public BranchTaskCategoryController(
             IUnitOfWork uow,
-            IBranchTaskCategoryRepository branchTaskCategoryRepository,
             IBranchRepository branchRepository,
             ITaskRepository taskRepository,
             UserManager<AppUsers> userManager,
@@ -37,7 +35,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
         {
             _uow = uow;
-            _branchTaskCategoryRepository = branchTaskCategoryRepository;
             _branchRepository = branchRepository;
             _taskRepository = taskRepository;
             _userManager = userManager;
@@ -56,12 +53,32 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             if (!userBranches.Any(b => b.Id == branchId))
                 return RedirectToAction("ErrorView", "Home");
 
-            var branchTaskCategories = _branchTaskCategoryRepository.GetTaskCategoriesByBranchId(branchId, activeOnly: false);
+            var branchTaskCategories = _branchRepository.GetTaskCategoriesByBranchAndStakeholder(branchId, activeOnly: false);
+            
+            // تبدیل Entity ها به ViewModel
+            var viewModels = branchTaskCategories.Select(btc => _mapper.Map<BranchTaskCategoryStakeholderViewModel>(btc)).ToList();
+            
+            // تکمیل اطلاعات نمایشی
+            foreach (var viewModel in viewModels)
+            {
+                var entity = branchTaskCategories.FirstOrDefault(e => e.Id == viewModel.Id);
+                if (entity != null)
+                {
+                    viewModel.BranchName = entity.Branch?.Name;
+                    viewModel.TaskCategoryTitle = entity.TaskCategory?.Title;
+                    viewModel.StakeholderName = entity.Stakeholder != null 
+                        ? $"{entity.Stakeholder.FirstName} {entity.Stakeholder.LastName}" 
+                        : "";
+                    viewModel.AssignedByUserName = entity.AssignedByUser != null 
+                        ? $"{entity.AssignedByUser.FirstName} {entity.AssignedByUser.LastName}" 
+                        : "";
+                }
+            }
             
             ViewBag.BranchId = branchId;
             ViewBag.BranchName = userBranches.FirstOrDefault(b => b.Id == branchId)?.Name;
             
-            return View(branchTaskCategories);
+            return View(viewModels);
         }
 
         /// <summary>
@@ -73,7 +90,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             // دریافت اطلاعات کامل از repository شامل:
             // - اطلاعات شعبه
             // - لیست دسته‌بندی‌های قابل انتساب
-            var viewModel = _branchTaskCategoryRepository.GetAddTaskCategoryToBranchViewModel(branchId);
+            BranchTaskCategoryStakeholderViewModel? viewModel = _branchRepository.GetAddTaskCategoryToBranchStakeholderViewModel(branchId);
             
             // بررسی وجود شعبه
             if (viewModel == null)
@@ -93,12 +110,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// افزودن دسته‌بندی تسک به شعبه - نمایش فرم
         /// </summary>
         [HttpGet]
-        public IActionResult AddTaskCategoryToBranch(int branchId)
+        public IActionResult AddTaskCategoryToBranch(int branchId, int? stakeholderId = null)
         {
             // دریافت اطلاعات کامل از repository شامل:
             // - اطلاعات شعبه
             // - لیست دسته‌بندی‌های قابل انتساب
-            var viewModel = _branchTaskCategoryRepository.GetAddTaskCategoryToBranchViewModel(branchId);
+            var viewModel = _branchRepository.GetAddTaskCategoryToBranchStakeholderViewModel(branchId, stakeholderId);
             
             // بررسی وجود شعبه
             if (viewModel == null)
@@ -120,7 +137,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddTaskCategoryToBranch(BranchTaskCategoryViewModel model)
+        public IActionResult AddTaskCategoryToBranch(BranchTaskCategoryStakeholderViewModel model)
         {
             // حذف فیلدهای اضافی از ModelState چون اعتبارسنجی آن را دستی انجام می‌دهیم
             ModelState.Remove("TaskCategoriesSelected");
@@ -128,7 +145,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             ModelState.Remove("AssignedByUserId");
             ModelState.Remove("AssignedByUserName");
             ModelState.Remove("BranchName");
-            ModelState.Remove("TaskCategoryId");
+            ModelState.Remove("TaskCategoryIdSelected");
 
             if (ModelState.IsValid)
             {
@@ -142,7 +159,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     ModelState.AddModelError("TaskCategoriesSelected", "حداقل یک دسته‌بندی باید انتخاب شود");
                     
                     // دریافت اطلاعات کامل فرم از repository
-                    var viewModelForError = _branchTaskCategoryRepository.GetAddTaskCategoryToBranchViewModel(model.BranchId);
+                    var viewModelForError = _branchRepository.GetAddTaskCategoryToBranchStakeholderViewModel(model.BranchId, model.StakeholderId);
                     if (viewModelForError != null)
                     {
                         // انتقال اطلاعات فرم از model اصلی
@@ -155,9 +172,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     return RedirectToAction("ErrorView", "Home");
                 }
 
-                // بررسی اینکه آیا دسته‌بندی‌ها قبلاً به شعبه اضافه شده‌اند
-                var existingCategories = _uow.BranchTaskCategoryUW.Get(btc => btc.BranchId == model.BranchId && model.TaskCategoriesSelected.Contains(btc.TaskCategoryId))
-                    .Select(btc => btc.TaskCategoryId)
+                // بررسی اینکه آیا دسته‌بندی‌ها قبلاً به شعبه و طرف حساب اضافه شده‌اند
+                var existingCategories = model.TaskCategoriesSelected
+                    .Where(categoryId => _branchRepository.IsTaskCategoryAssignedToBranchStakeholder(model.BranchId, categoryId, model.StakeholderId))
                     .ToList();
 
                 if (existingCategories.Any())
@@ -168,10 +185,10 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         .Select(tc => tc.Title)
                         .ToList();
 
-                    ModelState.AddModelError("TaskCategoriesSelected", $"دسته‌بندی‌های زیر قبلاً به شعبه اضافه شده‌اند: {string.Join(", ", duplicateCategoryNames)}");
+                    ModelState.AddModelError("TaskCategoriesSelected", $"دسته‌بندی‌های زیر قبلاً به شعبه و طرف حساب اضافه شده‌اند: {string.Join(", ", duplicateCategoryNames)}");
                     
                     // دریافت اطلاعات کامل فرم از repository
-                    var viewModelForError = _branchTaskCategoryRepository.GetAddTaskCategoryToBranchViewModel(model.BranchId);
+                    var viewModelForError = _branchRepository.GetAddTaskCategoryToBranchStakeholderViewModel(model.BranchId, model.StakeholderId);
                     if (viewModelForError != null)
                     {
                         // انتقال اطلاعات فرم از model اصلی
@@ -190,16 +207,17 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
                 foreach (var categoryId in model.TaskCategoriesSelected)
                 {
-                    var branchTaskCategory = new BranchTaskCategory
+                    var branchTaskCategoryStakeholder = new BranchTaskCategoryStakeholder
                     {
                         BranchId = model.BranchId,
                         TaskCategoryId = categoryId,
+                        StakeholderId = model.StakeholderId,
                         IsActive = model.IsActive,
                         AssignDate = assignDate,
                         AssignedByUserId = currentUserId
                     };
 
-                    _uow.BranchTaskCategoryUW.Create(branchTaskCategory);
+                    _uow.BranchTaskCategoryUW.Create(branchTaskCategoryStakeholder);
                 }
 
                 // ذخیره تمام تغییرات
@@ -209,7 +227,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             }
 
             // در صورت عدم اعتبار ModelState، دریافت اطلاعات کامل فرم از repository
-            var viewModelForValidation = _branchTaskCategoryRepository.GetAddTaskCategoryToBranchViewModel(model.BranchId);
+            var viewModelForValidation = _branchRepository.GetAddTaskCategoryToBranchStakeholderViewModel(model.BranchId, model.StakeholderId);
             if (viewModelForValidation != null)
             {
                 // حفظ اطلاعات وارد شده توسط کاربر
@@ -224,28 +242,29 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         /// <summary>
-        /// ویرایش انتصاب دسته‌بندی تسک به شعبه - نمایش فرم
+        /// ویرایش انتساب دسته‌بندی تسک به شعبه - نمایش فرم
         /// </summary>
         [HttpGet]
         public IActionResult EditBranchTaskCategory(int id)
         {
-            var branchTaskCategory = _branchTaskCategoryRepository.GetBranchTaskCategoryById(id);
+            var branchTaskCategory = _branchRepository.GetBranchTaskCategoryStakeholderById(id);
             if (branchTaskCategory == null)
                 return RedirectToAction("ErrorView", "Home");
 
-            var viewModel = _mapper.Map<BranchTaskCategoryViewModel>(branchTaskCategory);
+            var viewModel = _mapper.Map<BranchTaskCategoryStakeholderViewModel>(branchTaskCategory);
             viewModel.BranchName = branchTaskCategory.Branch.Name;
             viewModel.TaskCategoryTitle = branchTaskCategory.TaskCategory.Title;
+            viewModel.StakeholderName = $"{branchTaskCategory.Stakeholder.FirstName} {branchTaskCategory.Stakeholder.LastName}";
 
             return View(viewModel);
         }
 
         /// <summary>
-        /// ویرایش انتصاب دسته‌بندی تسک به شعبه - پردازش فرم
+        /// ویرایش انتساب دسته‌بندی تسک به شعبه - پردازش فرم
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditBranchTaskCategory(BranchTaskCategoryViewModel model)
+        public IActionResult EditBranchTaskCategory(BranchTaskCategoryStakeholderViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -262,9 +281,10 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 return RedirectToAction("Index", new { branchId = branchTaskCategory.BranchId });
             }
 
-            var branchTaskCategoryForError = _branchTaskCategoryRepository.GetBranchTaskCategoryById(model.Id);
+            var branchTaskCategoryForError = _branchRepository.GetBranchTaskCategoryStakeholderById(model.Id);
             model.BranchName = branchTaskCategoryForError.Branch.Name;
             model.TaskCategoryTitle = branchTaskCategoryForError.TaskCategory.Title;
+            model.StakeholderName = $"{branchTaskCategoryForError.Stakeholder.FirstName} {branchTaskCategoryForError.Stakeholder.LastName}";
             
             return View(model);
         }
@@ -275,13 +295,14 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         [HttpGet]
         public IActionResult RemoveTaskCategory(int id)
         {
-            var branchTaskCategory = _branchTaskCategoryRepository.GetBranchTaskCategoryById(id);
+            var branchTaskCategory = _branchRepository.GetBranchTaskCategoryStakeholderById(id);
             if (branchTaskCategory == null)
                 return RedirectToAction("ErrorView", "Home");
 
-            var viewModel = _mapper.Map<BranchTaskCategoryViewModel>(branchTaskCategory);
+            var viewModel = _mapper.Map<BranchTaskCategoryStakeholderViewModel>(branchTaskCategory);
             viewModel.BranchName = branchTaskCategory.Branch.Name;
             viewModel.TaskCategoryTitle = branchTaskCategory.TaskCategory.Title;
+            viewModel.StakeholderName = $"{branchTaskCategory.Stakeholder.FirstName} {branchTaskCategory.Stakeholder.LastName}";
 
             ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
             ViewBag.themeclass = "bg-gd-fruit";
@@ -334,7 +355,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 ViewBag.ButonClass = "btn rounded-0 btn-hero btn-success";
             }
 
-            return PartialView("_ToggleActiveStatus", _mapper.Map<BranchTaskCategoryViewModel>(branchTaskCategory));
+            return PartialView("_ToggleActiveStatus", _mapper.Map<BranchTaskCategoryStakeholderViewModel>(branchTaskCategory));
         }
 
         /// <summary>

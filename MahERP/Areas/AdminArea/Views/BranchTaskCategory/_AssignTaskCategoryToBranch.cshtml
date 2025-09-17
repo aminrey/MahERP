@@ -1,4 +1,4 @@
-﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryViewModel
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl.BranchTaskCategoryStakeholderViewModel
 
 @{
     Layout = null;
@@ -6,7 +6,7 @@
 
 <style>
     .modal {
-        --bs-modal-width: 70%;
+        --bs-modal-width: 80%;
         transition: 0.3s;
     }
 </style>
@@ -14,8 +14,8 @@
 <div class="modal-dialog" role="document">
     <div class="modal-content">
         <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
-            <div class="block-header bg-primary-dark">
-                <h3 class="block-title">تخصیص دسته‌بندی تسک به شعبه</h3>
+            <div class="block-header bg-primary-light">
+                <h3 class="block-title">افزودن دسته‌بندی تسک به شعبه</h3>
                 <div class="block-options">
                     <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
                         <i class="fa fa-fw fa-times"></i>
@@ -23,30 +23,51 @@
                 </div>
             </div>
 
-            <form id="assign-task-category-form" asp-controller="BranchTaskCategory" asp-action="AddTaskCategoryToBranch" asp-area="AdminArea" method="post">
+            <form asp-action="AddTaskCategoryToBranch" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="BranchId" />
-                
-                <div class="block block-themed block-rounded mt-1">
-                    <div class="block-header bg-primary-light">
-                        <h3 class="block-title">انتخاب دسته‌بندی‌های تسک</h3>
+
+                <div class="block-content">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <!-- اطلاعات شعبه -->
+                    <div class="alert alert-info mb-4">
+                        <i class="fa fa-info-circle me-1"></i>
+                        <strong>شعبه:</strong> @Model.BranchName
                     </div>
-                    <div class="block-content">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                        <div class="row justify-content-center">
-                            <!-- اطلاعات شعبه -->
-                            <div class="col-12 mb-3">
-                                <div class="alert alert-info">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    <strong>شعبه:</strong> @Model.BranchName
-                                </div>
+                    <!-- انتخاب طرف حساب -->
+                    <div class="form-group mb-4">
+                        <label class="form-label" for="StakeholderId">طرف حساب <span class="text-danger">*</span></label>
+                        @if (Model.StakeholdersInitial?.Any() == true)
+                        {
+                            <select asp-for="StakeholderId" class="form-select js-select2" data-placeholder="طرف حساب را انتخاب کنید">
+                                <option value="">انتخاب کنید</option>
+                                @foreach (var stakeholder in Model.StakeholdersInitial)
+                                {
+                                    <option value="@stakeholder.Id" selected="@(Model.StakeholderId == stakeholder.Id)">
+                                        @stakeholder.DisplayName - @stakeholder.StakeholderTypeText
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="StakeholderId" class="text-danger"></span>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <i class="fa fa-exclamation-triangle me-1"></i>
+                                هیچ طرف حسابی برای این شعبه تعریف نشده است.
                             </div>
+                        }
+                    </div>
 
-                            @if (Model.TaskCategoriesInitial?.Any() == true)
+                    @if (Model.StakeholdersInitial?.Any() == true)
+                    {
+                        <div id="task-categories-section" style="@(Model.StakeholderId == 0 ? "display: none;" : "")">
+                            @if (Model.TaskCategoryInitial?.Any() == true)
                             {
                                 <!-- انتخاب دسته‌بندی‌ها -->
-                                <div class="col-12 mb-3">
+                                <div class="form-group mb-4">
                                     <label class="form-label">دسته‌بندی‌های تسک <span class="text-danger">*</span></label>
                                     
                                     <!-- انتخاب همه -->
@@ -58,7 +79,7 @@
                                     </div>
                                     
                                     <div class="row">
-                                        @foreach (var category in Model.TaskCategoriesInitial)
+                                        @foreach (var category in Model.TaskCategoryInitial)
                                         {
                                             <div class="col-md-6 col-lg-4 mb-2">
                                                 <div class="form-check form-check-block">
@@ -82,55 +103,64 @@
                                 </div>
 
                                 <!-- تنظیمات -->
-                                <div class="col-12">
+                                <div class="form-group mb-4">
                                     <div class="form-check form-switch">
                                         <input asp-for="IsActive" class="form-check-input" type="checkbox" id="IsActive" checked />
                                         <label asp-for="IsActive" class="form-check-label" for="IsActive">وضعیت فعال</label>
                                     </div>
+                                    <small class="form-text text-muted">
+                                        دسته‌بندی‌های تسک به صورت فعال به شعبه و طرف حساب اختصاص داده خواهند شد.
+                                    </small>
                                 </div>
                             }
                             else
                             {
-                                <div class="col-12 text-center py-4">
-                                    <div class="display-4 text-muted mb-3">
-                                        <i class="fa fa-info-circle"></i>
-                                    </div>
-                                    <h5 class="text-muted">دسته‌بندی جدیدی برای افزودن موجود نیست</h5>
-                                    <p class="fs-sm text-muted">
-                                        همه دسته‌بندی‌های موجود قبلاً به این شعبه اضافه شده‌اند.
-                                    </p>
+                                <div class="alert alert-info">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    همه دسته‌بندی‌های موجود قبلاً به این شعبه و طرف حساب اضافه شده‌اند.
                                 </div>
                             }
                         </div>
-                    </div>
+                    }
+                </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                    @if (Model.StakeholdersInitial?.Any() == true && Model.TaskCategoryInitial?.Any() == true)
+                    {
+                        <button class="btn btn-sm btn-primary" type="submit" id="save-button" disabled>
+                            <i class="fa fa-check me-1"></i>افزودن دسته‌بندی‌ها
+                        </button>
+                    }
                 </div>
             </form>
-        </div>
-
-        <div class="block-content block-content-full text-end bg-body">
-            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
-            @if (Model.TaskCategoriesInitial?.Any() == true)
-            {
-                <button class="btn btn-sm btn-primary" data-save="modal-ajax-save" type="button">
-                    <i class="fa fa-check me-1"></i>تخصیص دسته‌بندی‌ها
-                </button>
-            }
         </div>
     </div>
 </div>
 
 <script>
     $(document).ready(function() {
-        // اجرای عملیات تخصیص
-        $('[data-save="modal-ajax-save"]').click(function() {
-            var selectedCategories = $('input[name="TaskCategoriesSelected"]:checked').length;
+        // Initialize Select2
+        if (typeof $.fn.select2 !== 'undefined') {
+            $('.js-select2').select2({
+                placeholder: 'انتخاب کنید',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $('.modal-content')
+            });
+        }
+
+        // تغییر طرف حساب
+        $('#StakeholderId').change(function() {
+            var stakeholderId = $(this).val();
             
-            if (selectedCategories === 0) {
-                alert('لطفاً حداقل یک دسته‌بندی انتخاب کنید.');
-                return false;
+            if (stakeholderId) {
+                $('#task-categories-section').show();
+                $('#save-button').prop('disabled', false);
+            } else {
+                $('#task-categories-section').hide();
+                $('#save-button').prop('disabled', true);
             }
-            
-            $('#assign-task-category-form').submit();
         });
 
         // انتخاب همه دسته‌بندی‌ها
@@ -139,7 +169,7 @@
         });
         
         // بررسی وضعیت انتخاب همه
-        $('input[name="TaskCategoriesSelected"]').change(function() {
+        $(document).on('change', 'input[name="TaskCategoriesSelected"]', function() {
             var totalCheckboxes = $('input[name="TaskCategoriesSelected"]').length;
             var checkedCheckboxes = $('input[name="TaskCategoriesSelected"]:checked').length;
             
@@ -147,7 +177,10 @@
             $('#selectAll').prop('indeterminate', checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes);
         });
 
-        // اولین بار هم چک کنیم
-        $('input[name="TaskCategoriesSelected"]').trigger('change');
+        // بررسی اولیه وضعیت دکمه ذخیره
+        if ($('#StakeholderId').val()) {
+            $('#save-button').prop('disabled', false);
+            $('#task-categories-section').show();
+        }
     });
 </script>

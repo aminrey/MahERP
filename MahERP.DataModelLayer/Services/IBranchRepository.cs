@@ -1,5 +1,7 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
 using System.Collections.Generic;
 
 namespace MahERP.DataModelLayer.Services
@@ -71,7 +73,65 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="branchId">شناسه شعبه</param>
         /// <returns>ViewModel کامل برای فرم افزودن کاربر</returns>
         public BranchUserViewModel GetAddUserToBranchViewModel(int branchId);
+        
+        /// <summary>
+        /// دریافت لیست کاربران شعبه با جزئیات کامل
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="includeInactive">شامل کاربران غیرفعال</param>
+        /// <returns>لیست کاربران شعبه</returns>
         public List<BranchUserViewModel> GetBranchUsersByBranchId(int branchId, bool includeInactive = false);
 
+        #region متدهای مدیریت دسته‌بندی تسک شعبه با طرف حساب
+
+        /// <summary>
+        /// دریافت لیست دسته‌بندی‌های تسک متصل به شعبه و طرف حساب مشخص
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="stakeholderId">شناسه طرف حساب</param>
+        /// <param name="activeOnly">فقط موارد فعال</param>
+        /// <returns>لیست دسته‌بندی‌های تسک شعبه و طرف حساب</returns>
+        public List<BranchTaskCategoryStakeholder> GetTaskCategoriesByBranchAndStakeholder(int branchId, int? stakeholderId = null, bool activeOnly = true);
+
+        /// <summary>
+        /// دریافت اطلاعات کامل انتصاب دسته‌بندی به شعبه و طرف حساب
+        /// </summary>
+        /// <param name="id">شناسه انتصاب</param>
+        /// <returns>اطلاعات انتصاب</returns>
+        public BranchTaskCategoryStakeholder GetBranchTaskCategoryStakeholderById(int id);
+
+        /// <summary>
+        /// دریافت ViewModel برای افزودن دسته‌بندی به شعبه با طرف حساب
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="stakeholderId">شناسه طرف حساب</param>
+        /// <returns>ViewModel شامل اطلاعات لازم</returns>
+        public BranchTaskCategoryStakeholderViewModel GetAddTaskCategoryToBranchStakeholderViewModel(int branchId, int? stakeholderId = null);
+
+        /// <summary>
+        /// بررسی اینکه آیا دسته‌بندی قبلاً به شعبه و طرف حساب اضافه شده یا نه
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="taskCategoryId">شناسه دسته‌بندی</param>
+        /// <param name="stakeholderId">شناسه طرف حساب</param>
+        /// <returns>true اگر قبلاً اضافه شده باشد</returns>
+        public bool IsTaskCategoryAssignedToBranchStakeholder(int branchId, int taskCategoryId, int stakeholderId);
+
+        /// <summary>
+        /// دریافت لیست دسته‌بندی‌های تسک برای شعبه مشخص (برای استفاده در فرم‌های دیگر)
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="stakeholderId">شناسه طرف حساب (اختیاری)</param>
+        /// <returns>لیست دسته‌بندی‌های تسک شعبه</returns>
+        public List<TaskCategory> GetTaskCategoriesForBranchStakeholder(int branchId, int? stakeholderId = null);
+
+        /// <summary>
+        /// دریافت لیست طرف حساب‌های شعبه که دسته‌بندی تسک دارند
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>لیست طرف حساب‌ها</returns>
+        public List<Stakeholder> GetStakeholdersWithTaskCategoriesByBranch(int branchId);
+
+        #endregion
     }
 }

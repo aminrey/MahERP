@@ -1,7 +1,9 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.TaskManagement; // اضافه شده
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl; // اضافه شده
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -321,5 +323,200 @@ namespace MahERP.DataModelLayer.Repository
                 UserFullName = x.User.FirstName + " " + x.User.LastName
             }).OrderBy(x => x.UserFullName).ToList();
         }
+
+        #region متدهای مدیریت دسته‌بندی تسک شعبه با طرف حساب
+
+        /// <summary>
+        /// دریافت لیست دسته‌بندی‌های تسک متصل به شعبه و طرف حساب مشخص
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="stakeholderId">شناسه طرف حساب</param>
+        /// <param name="activeOnly">فقط موارد فعال</param>
+        /// <returns>لیست دسته‌بندی‌های تسک شعبه و طرف حساب</returns>
+        public List<BranchTaskCategoryStakeholder> GetTaskCategoriesByBranchAndStakeholder(int branchId, int? stakeholderId = null, bool activeOnly = true)
+        {
+            var query = _context.BranchTaskCategoryStakeholder_Tbl
+                .Include(btcs => btcs.Branch)
+                .Include(btcs => btcs.TaskCategory)
+                .Include(btcs => btcs.Stakeholder)
+                .Include(btcs => btcs.AssignedByUser)
+                .Where(btcs => btcs.BranchId == branchId);
+
+            if (stakeholderId.HasValue)
+                query = query.Where(btcs => btcs.StakeholderId == stakeholderId.Value);
+
+            if (activeOnly)
+                query = query.Where(btcs => btcs.IsActive);
+
+            return query.OrderBy(btcs => btcs.TaskCategory.Title).ToList();
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات کامل انتساب دسته‌بندی به شعبه و طرف حساب
+        /// </summary>
+        /// <param name="id">شناسه انتساب</param>
+        /// <returns>اطلاعات انتصاب</returns>
+        public BranchTaskCategoryStakeholder GetBranchTaskCategoryStakeholderById(int id)
+        {
+            return _context.BranchTaskCategoryStakeholder_Tbl
+                .Include(btcs => btcs.Branch)
+                .Include(btcs => btcs.TaskCategory)
+                .Include(btcs => btcs.Stakeholder)
+                .Include(btcs => btcs.AssignedByUser)
+                .FirstOrDefault(btcs => btcs.Id == id);
+        }
+
+        /// <summary>
+        /// دریافت ViewModel برای افزودن دسته‌بندی به شعبه با طرف حساب
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="stakeholderId">شناسه طرف حساب</param>
+        /// <returns>ViewModel شامل اطلاعات لازم</returns>
+        public BranchTaskCategoryStakeholderViewModel GetAddTaskCategoryToBranchStakeholderViewModel(int branchId, int? stakeholderId = null)
+        {
+            try
+            {
+                // دریافت اطلاعات شعبه
+                var branch = _context.Branch_Tbl.FirstOrDefault(b => b.Id == branchId);
+                if (branch == null)
+                    return null;
+
+                // دریافت شناسه‌های دسته‌بندی‌هایی که قبلاً به این شعبه و طرف حساب اختصاص داده شده‌اند
+                var existingCategoryIds = _context.BranchTaskCategoryStakeholder_Tbl
+                    .Where(btcs => btcs.BranchId == branchId && 
+                                  (!stakeholderId.HasValue || btcs.StakeholderId == stakeholderId.Value) && 
+                                  btcs.IsActive)
+                    .Select(btcs => btcs.TaskCategoryId)
+                    .ToList();
+
+                // دریافت لیست دسته‌بندی‌های فعال که هنوز اختصاص داده نشده‌اند
+                var availableCategories = _context.TaskCategory_Tbl
+                    .Where(tc => tc.IsActive && !existingCategoryIds.Contains(tc.Id))
+                    .Select(tc => new TaskCategoryItemViewModel
+                    {
+                        Id = tc.Id,
+                        Title = tc.Title,
+                        Description = tc.Description,
+                        IsActive = tc.IsActive
+                    })
+                    .OrderBy(tc => tc.Title)
+                    .ToList();
+
+                // دریافت لیست طرف حساب‌های مرتبط با شعبه
+                var stakeholderIds = _context.StakeholderBranch_Tbl
+                    .Where(sb => sb.BranchId == branchId && sb.IsActive)
+                    .Select(sb => sb.StakeholderId);
+
+                var availableStakeholders = _context.Stakeholder_Tbl
+                    .Where(s => stakeholderIds.Contains(s.Id) && s.IsActive && !s.IsDeleted)
+                    .Select(s => new StakeholderItemViewModel
+                    {
+                        Id = s.Id,
+                        FirstName = s.FirstName,
+                        LastName = s.LastName,
+                        CompanyName = s.CompanyName,
+                        StakeholderType = s.StakeholderType,
+                        IsActive = s.IsActive
+                    })
+                    .OrderBy(s => s.LastName)
+                    .ThenBy(s => s.FirstName)
+                    .ToList();
+
+                // ایجاد ViewModel
+                var viewModel = new BranchTaskCategoryStakeholderViewModel
+                {
+                    BranchId = branchId,
+                    BranchName = branch.Name,
+                    StakeholderId = stakeholderId ?? 0,
+                    IsActive = true,
+                    AssignDate = DateTime.Now,
+                    TaskCategoryInitial = availableCategories,
+                    StakeholdersInitial = availableStakeholders,
+                    TaskCategoriesSelected = new List<int>()
+                };
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا
+                throw new Exception($"خطا در دریافت اطلاعات فرم افزودن دسته‌بندی به شعبه {branchId}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// بررسی اینکه آیا دسته‌بندی قبلاً به شعبه و طرف حساب اضافه شده یا نه
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="taskCategoryId">شناسه دسته‌بندی</param>
+        /// <param name="stakeholderId">شناسه طرف حساب</param>
+        /// <returns>true اگر قبلاً اضافه شده باشد</returns>
+        public bool IsTaskCategoryAssignedToBranchStakeholder(int branchId, int taskCategoryId, int stakeholderId)
+        {
+            return _context.BranchTaskCategoryStakeholder_Tbl
+                .Any(btcs => btcs.BranchId == branchId && 
+                            btcs.TaskCategoryId == taskCategoryId && 
+                            btcs.StakeholderId == stakeholderId && 
+                            btcs.IsActive);
+        }
+
+        /// <summary>
+        /// دریافت لیست دسته‌بندی‌های تسک برای شعبه مشخص (برای استفاده در فرم‌های دیگر)
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <param name="stakeholderId">شناسه طرف حساب (اختیاری)</param>
+        /// <returns>لیست دسته‌بندی‌های تسک شعبه</returns>
+        public List<TaskCategory> GetTaskCategoriesForBranchStakeholder(int branchId, int? stakeholderId = null)
+        {
+            try
+            {
+                var query = from btcs in _context.BranchTaskCategoryStakeholder_Tbl
+                           join tc in _context.TaskCategory_Tbl on btcs.TaskCategoryId equals tc.Id
+                           where btcs.BranchId == branchId && btcs.IsActive && tc.IsActive
+                           select new { btcs, tc };
+
+                if (stakeholderId.HasValue)
+                    query = query.Where(x => x.btcs.StakeholderId == stakeholderId.Value);
+
+                return query.Select(x => x.tc)
+                           .Distinct()
+                           .OrderBy(tc => tc.Title)
+                           .ToList();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا
+                throw new Exception($"خطا در دریافت دسته‌بندی‌های شعبه {branchId}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست طرف حساب‌های شعبه که دسته‌بندی تسک دارند
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>لیست طرف حساب‌ها</returns>
+        public List<Stakeholder> GetStakeholdersWithTaskCategoriesByBranch(int branchId)
+        {
+            try
+            {
+                var stakeholderIds = _context.BranchTaskCategoryStakeholder_Tbl
+                    .Where(btcs => btcs.BranchId == branchId && btcs.IsActive)
+                    .Select(btcs => btcs.StakeholderId)
+                    .Distinct();
+
+                return _context.Stakeholder_Tbl
+                    .Where(s => stakeholderIds.Contains(s.Id) && s.IsActive && !s.IsDeleted)
+                    .OrderBy(s => s.LastName)
+                    .ThenBy(s => s.FirstName)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا
+                throw new Exception($"خطا در دریافت طرف حساب‌های شعبه {branchId}: {ex.Message}", ex);
+            }
+        }
+
+        #endregion
     }
 }

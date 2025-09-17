@@ -29,6 +29,6 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         // Navigation properties
         public virtual ICollection<Tasks> TaskList { get; set; }
         public virtual ICollection<TaskCategory> ChildCategories { get; set; }
-        public virtual ICollection<BranchTaskCategory> BranchTaskCategorys { get; set; }
+        public virtual ICollection<BranchTaskCategoryStakeholder> BranchTaskCategoryStakeholders { get; set; }
     }
 }
