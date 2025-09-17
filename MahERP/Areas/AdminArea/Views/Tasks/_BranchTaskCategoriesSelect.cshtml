@@ -1,0 +1,52 @@
+﻿@model List<TaskCategoryItemViewModel>
+
+@{
+    Layout = null;
+}
+
+@if (Model?.Any() == true)
+{
+    <select class="js-select2 form-select" 
+            id="TaskCategoryIdSelected" 
+            name="TaskCategoryIdSelected"
+            data-placeholder="انتخاب کنید" 
+            style="width: 100%;">
+        <option value="">انتخاب کنید</option>
+        @foreach (var category in Model)
+        {
+            <option value="@category.Id">@category.Title</option>
+        }
+    </select>
+}
+else
+{
+    <select class="js-select2 form-select" 
+            id="TaskCategoryIdSelected" 
+            name="TaskCategoryIdSelected"
+            data-placeholder="دسته‌بندی در این شعبه یافت نشد" 
+            style="width: 100%;"
+            disabled>
+        <option value="">دسته‌بندی در این شعبه یافت نشد</option>
+    </select>
+}
+
+<script>
+    $(document).ready(function() {
+        $('#TaskCategoryIdSelected').select2({
+            placeholder: '@(Model?.Any() == true ? "دسته‌بندی را انتخاب کنید" : "دسته‌بندی در این شعبه یافت نشد")',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        @if (Model?.Any() == true)
+        {
+            <text>$('#TaskCategoryIdSelected').prop('disabled', false);</text>
+        }
+        else
+        {
+            <text>$('#TaskCategoryIdSelected').prop('disabled', true);</text>
+        }
+        
+        console.log('Partial view BranchTaskCategoriesSelect loaded with @(Model?.Count ?? 0) categories');
+    });
+</script>

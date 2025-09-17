@@ -9,6 +9,7 @@ using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -1881,96 +1882,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         /// <summary>
-        /// بروزرسانی لیست طرف حساب‌ها بر اساس شعبه انتخاب شده
-        /// </summary>
-        /// <param name="branchId">شناسه شعبه</param>
-        /// <returns>PartialView حاوی لیست طرف حساب‌های شعبه</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BranchTriggerSelectStakeholders(int branchId)
-        {
-            try
-            {
-                // دریافت طرف حساب‌های شعبه انتخاب شده با استفاده از Repository
-                var stakeholdersViewModels = _stakeholderRepository.GetStakeholdersByBranchId(branchId);
-                
-                // آماده‌سازی HTML برای select طرف حساب‌ها
-                var stakeholdersSelectHtml = "";
-                if (stakeholdersViewModels != null && stakeholdersViewModels.Any())
-                {
-                    var selectOptions = string.Join("", stakeholdersViewModels.Select(stakeholder => 
-                        $"<option value=\"{stakeholder.Id}\">{stakeholder.DisplayName}</option>"));
-                    
-                    stakeholdersSelectHtml = $@"
-                        <select class=""js-select2 form-select"" 
-                                asp-for=""StakeholderId"" 
-                                id=""StakeholderId"" 
-                                name=""StakeholderId""
-                                data-placeholder=""انتخاب کنید"" 
-                                style=""width: 100%;"">
-                            <option value="""">انتخاب کنید</option>
-                            {selectOptions}
-                        </select>";
-                }
-                else
-                {
-                    stakeholdersSelectHtml = @"
-                        <select class=""js-select2 form-select"" 
-                                asp-for=""StakeholderId"" 
-                                id=""StakeholderId"" 
-                                name=""StakeholderId""
-                                data-placeholder=""طرف حسابی در این شعبه یافت نشد"" 
-                                style=""width: 100%;"">
-                            <option value="""">طرف حسابی در این شعبه یافت نشد</option>
-                        </select>";
-                }
-
-                // ایجاد response با بروزرسانی دو div
-                var viewList = new List<object>
-                {
-                    new
-                    {
-                        elementId = "StakeholdersDiv",
-                        view = new
-                        {
-                            result = stakeholdersSelectHtml
-                        }
-                    }
-                };
-
-                // ثبت لاگ
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View,
-                    "Tasks",
-                    "BranchTriggerSelectStakeholders",
-                    $"بارگذاری طرف حساب‌های شعبه {branchId}"
-                );
-
-                return Json(new
-                {
-                    status = "update-view",
-                    viewList = viewList
-                });
-            }
-            catch (Exception ex)
-            {
-                // لاگ کردن خطا
-                await _activityLogger.LogErrorAsync(
-                    "Tasks",
-                    "BranchTriggerSelectStakeholders",
-                    "خطا در بارگذاری طرف حساب‌های شعبه",
-                    ex
-                );
-                
-                return Json(new
-                {
-                    status = "error",
-                    message = "خطا در بارگذاری طرف حساب‌های شعبه: " + ex.Message
-                });
-            }
-        }
-
-        /// <summary>
         /// بروزرسانی لیست کاربران بر اساس شعبه انتخاب شده
         /// </summary>
         /// <param name="branchId">شناسه شعبه</param>
@@ -1981,153 +1892,55 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
-                var response = new
-                {
-                    status = "update-view",
-                    viewList = new List<object>()
-                };
-
                 // دریافت کاربران شعبه انتخاب شده با استفاده از Repository
                 var branchUsersViewModels = _branchRepository.GetBranchUsersByBranchId(branchId, includeInactive: false);
-                
-                var branchUsers = branchUsersViewModels.Select(bu => new
-                {
-                    Id = bu.UserId,
-                    FullNamesString = bu.UserFullName
-                }).ToList();
-
-                // آماده‌سازی HTML برای select کاربران
-                var usersSelectHtml = "";
-                if (branchUsers.Any())
-                {
-                    var selectOptions = string.Join("", branchUsers.Select(user => 
-                        $"<option value=\"{user.Id}\">{user.FullNamesString}</option>"));
-                    
-                    usersSelectHtml = $@"
-                        <select class=""js-select2 form-select"" 
-                                id=""AssignmentsSelectedTaskUserArraysString"" 
-                                data-placeholder=""کاربران را انتخاب کنید"" 
-                                multiple=""multiple"" 
-                                name=""AssignmentsSelectedTaskUserArraysString"" 
-                                style=""width: 100%;"">
-                            {selectOptions}
-                        </select>";
-                }
-                else
-                {
-                    usersSelectHtml = @"
-                        <select class=""js-select2 form-select"" 
-                                id=""AssignmentsSelectedTaskUserArraysString"" 
-                                data-placeholder=""کاربری در این شعبه یافت نشد"" 
-                                multiple=""multiple"" 
-                                name=""AssignmentsSelectedTaskUserArraysString"" 
-                                style=""width: 100%;"">
-                        </select>";
-                }
 
                 // دریافت طرف حساب‌های شعبه انتخاب شده
                 var stakeholdersViewModels = _stakeholderRepository.GetStakeholdersByBranchId(branchId);
-                
-                // آماده‌سازی HTML برای select طرف حساب‌ها
-                var stakeholdersSelectHtml = "";
-                if (stakeholdersViewModels != null && stakeholdersViewModels.Any())
-                {
-                    var selectOptions = string.Join("", stakeholdersViewModels.Select(stakeholder => 
-                        $"<option value=\"{stakeholder.Id}\">{stakeholder.DisplayName}</option>"));
-                    
-                    stakeholdersSelectHtml = $@"
-                        <select class=""js-select2 form-select"" 
-                                asp-for=""StakeholderId"" 
-                                id=""StakeholderId"" 
-                                name=""StakeholderId""
-                                data-placeholder=""انتخاب کنید"" 
-                                style=""width: 100%;"">
-                            <option value="""">انتخاب کنید</option>
-                            {selectOptions}
-                        </select>";
-                }
-                else
-                {
-                    stakeholdersSelectHtml = @"
-                        <select class=""js-select2 form-select"" 
-                                asp-for=""StakeholderId"" 
-                                id=""StakeholderId"" 
-                                name=""StakeholderId""
-                                data-placeholder=""طرف حسابی در این شعبه یافت نشد"" 
-                                style=""width: 100%;"">
-                            <option value="""">طرف حسابی در این شعبه یافت نشد</option>
-                        </select>";
-                }
 
                 // دریافت دسته‌بندی‌های تسک شعبه انتخاب شده
                 var branchTaskCategories = _branchRepository.GetTaskCategoriesForBranchStakeholder(branchId);
-                
-                // آماده‌سازی HTML برای select دسته‌بندی‌ها
-                var categoriesSelectHtml = "";
-                if (branchTaskCategories != null && branchTaskCategories.Any())
-                {
-                    var selectOptions = string.Join("", branchTaskCategories.Select(category => 
-                        $"<option value=\"{category.Id}\">{category.Title}</option>"));
-                    
-                    categoriesSelectHtml = $@"
-                        <select class=""js-select2 form-select"" 
-                                asp-for=""TaskCategoryIdSelected"" 
-                                id=""TaskCategoryIdSelected"" 
-                                name=""TaskCategoryIdSelected""
-                                data-placeholder=""انتخاب کنید"" 
-                                style=""width: 100%;"">
-                            <option value="""">انتخاب کنید</option>
-                            {selectOptions}
-                        </select>";
-                }
-                else
-                {
-                    categoriesSelectHtml = @"
-                        <select class=""js-select2 form-select"" 
-                                asp-for=""TaskCategoryIdSelected"" 
-                                id=""TaskCategoryIdSelected"" 
-                                name=""TaskCategoryIdSelected""
-                                data-placeholder=""دسته‌بندی در این شعبه یافت نشد"" 
-                                style=""width: 100%;"">
-                            <option value="""">دسته‌بندی در این شعبه یافت نشد</option>
-                        </select>";
-                }
+
+                // رندر کردن partial views
+                var usersPartialView = await this.RenderViewToStringAsync("_BranchUsersSelect", branchUsersViewModels);
+                var stakeholdersPartialView = await this.RenderViewToStringAsync("_BranchStakeholdersSelect", stakeholdersViewModels);
+                var categoriesPartialView = await this.RenderViewToStringAsync("_BranchTaskCategoriesSelect", branchTaskCategories);
 
                 // اضافه کردن به response - بروزرسانی کاربران، طرف حساب‌ها و دسته‌بندی‌ها
                 var viewList = new List<object>
+        {
+            new
+            {
+                elementId = "UsersDiv",
+                view = new
                 {
-                    new
-                    {
-                        elementId = "UsersDiv",
-                        view = new
-                        {
-                            result = usersSelectHtml
-                        }
-                    },
-                    new
-                    {
-                        elementId = "StakeholdersDiv",
-                        view = new
-                        {
-                            result = stakeholdersSelectHtml
-                        }
-                    },
-                    new
-                    {
-                        elementId = "TaskCategoriesDiv",
-                        view = new
-                        {
-                            result = categoriesSelectHtml
-                        }
-                    }
-                };
+                    result = usersPartialView
+                }
+            },
+            new
+            {
+                elementId = "StakeholdersDiv",
+                view = new
+                {
+                    result = stakeholdersPartialView
+                }
+            },
+            new
+            {
+                elementId = "TaskCategoriesDiv",
+                view = new
+                {
+                    result = categoriesPartialView
+                }
+            }
+        };
 
                 // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Tasks",
                     "BranchTriggerSelect",
-                    $"بارگذاری کاربران، طرف حساب‌ها و دسته‌بندی‌های شعبه {branchId}"
+                    $"بارگذاری کاربران ({branchUsersViewModels?.Count ?? 0}), طرف حساب‌ها ({stakeholdersViewModels?.Count ?? 0}) و دسته‌بندی‌های ({branchTaskCategories?.Count ?? 0}) شعبه {branchId}"
                 );
 
                 return Json(new
@@ -2145,7 +1958,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     "خطا در بارگذاری کاربران، طرف حساب‌ها و دسته‌بندی‌های شعبه",
                     ex
                 );
-                
+
                 return Json(new
                 {
                     status = "error",
@@ -2162,8 +1975,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <param name="stakeholderId">شناسه طرف حساب</param>
         /// <returns>PartialView حاوی لیست دسته‌بندی‌های مربوط به طرف حساب</returns>
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> StakeholderTriggerSelectTaskCategories(int branchId, int stakeholderId)
+        public async Task<IActionResult> StakeholderTriggerSelectTaskCategories(int stakeholderId, int BranchIdSelected)
         {
             try
             {
@@ -2172,17 +1984,17 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     ActivityTypeEnum.View,
                     "Tasks",
                     "StakeholderTriggerSelectTaskCategories",
-                    $"درخواست cascade: شعبه {branchId}, طرف حساب {stakeholderId}"
+                    $"درخواست cascade: شعبه {BranchIdSelected}, طرف حساب {stakeholderId}"
                 );
 
                 // اعتبارسنجی پارامترهای ورودی
-                if (branchId <= 0)
+                if (BranchIdSelected <= 0)
                 {
                     await _activityLogger.LogErrorAsync(
                         "Tasks",
                         "StakeholderTriggerSelectTaskCategories",
                         "شناسه شعبه نامعتبر",
-                        new ArgumentException($"شناسه شعبه نامعتبر: {branchId}")
+                        new ArgumentException($"شناسه شعبه نامعتبر: {BranchIdSelected}")
                     );
 
                     return Json(new
@@ -2209,8 +2021,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 }
 
                 // دریافت دسته‌بندی‌های تسک مربوط به شعبه و طرف حساب انتخاب شده
-                var taskCategoriesViewModels = _branchRepository.GetTaskCategoriesForStakeholderChange(branchId, stakeholderId);
-                
+                var taskCategoriesViewModels = _branchRepository.GetTaskCategoriesForStakeholderChange(BranchIdSelected, stakeholderId);
+
                 // ثبت لاگ نتیجه جستجو
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
@@ -2218,57 +2030,29 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     "StakeholderTriggerSelectTaskCategories",
                     $"تعداد دسته‌بندی‌های یافت شده: {taskCategoriesViewModels?.Count ?? 0}"
                 );
-                
-                // آماده‌سازی HTML برای select دسته‌بندی‌ها
-                var categoriesSelectHtml = "";
-                if (taskCategoriesViewModels != null && taskCategoriesViewModels.Any())
-                {
-                    var selectOptions = string.Join("", taskCategoriesViewModels.Select(category => 
-                        $"<option value=\"{category.Id}\">{category.Title}</option>"));
-                    
-                    categoriesSelectHtml = $@"
-                        <select class=""js-select2 form-select"" 
-                                asp-for=""TaskCategoryIdSelected"" 
-                                id=""TaskCategoryIdSelected"" 
-                                name=""TaskCategoryIdSelected""
-                                data-placeholder=""انتخاب کنید"" 
-                                style=""width: 100%;"">
-                            <option value="""">انتخاب کنید</option>
-                            {selectOptions}
-                        </select>";
-                }
-                else
-                {
-                    categoriesSelectHtml = @"
-                        <select class=""js-select2 form-select"" 
-                                asp-for=""TaskCategoryIdSelected"" 
-                                id=""TaskCategoryIdSelected"" 
-                                name=""TaskCategoryIdSelected""
-                                data-placeholder=""دسته‌بندی برای این طرف حساب یافت نشد"" 
-                                style=""width: 100%;"">
-                            <option value="""">دسته‌بندی برای این طرف حساب یافت نشد</option>
-                        </select>";
-                }
+
+                // رندر کردن partial view
+                var partialViewHtml = await this.RenderViewToStringAsync("_TaskCategoriesSelect", taskCategoriesViewModels, true);
 
                 // ایجاد response برای بروزرسانی div دسته‌بندی‌ها
                 var viewList = new List<object>
+        {
+            new
+            {
+                elementId = "TaskCategoriesDiv",
+                view = new
                 {
-                    new
-                    {
-                        elementId = "TaskCategoriesDiv",
-                        view = new
-                        {
-                            result = categoriesSelectHtml
-                        }
-                    }
-                };
+                    result = partialViewHtml
+                }
+            }
+        };
 
                 // ثبت لاگ موفقیت
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Tasks",
                     "StakeholderTriggerSelectTaskCategories",
-                    $"بارگذاری موفق دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {branchId}"
+                    $"بارگذاری موفق دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {BranchIdSelected}"
                 );
 
                 return Json(new
@@ -2277,7 +2061,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     viewList = viewList,
                     debug = new
                     {
-                        branchId = branchId,
+                        branchId = BranchIdSelected,
                         stakeholderId = stakeholderId,
                         categoriesCount = taskCategoriesViewModels?.Count ?? 0,
                         timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
@@ -2290,17 +2074,17 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 await _activityLogger.LogErrorAsync(
                     "Tasks",
                     "StakeholderTriggerSelectTaskCategories",
-                    $"خطا در بارگذاری دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {branchId}",
+                    $"خطا در بارگذاری دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {BranchIdSelected}",
                     ex
                 );
-                
+
                 return Json(new
                 {
                     status = "error",
                     message = "خطا در بارگذاری دسته‌بندی‌های طرف حساب: " + ex.Message,
                     debug = new
                     {
-                        branchId = branchId,
+                        branchId = BranchIdSelected,
                         stakeholderId = stakeholderId,
                         errorType = ex.GetType().Name,
                         errorMessage = ex.Message,

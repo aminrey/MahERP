@@ -124,6 +124,22 @@ namespace MahERP.AutoMapper
             CreateMap<TaskCategoryViewModel, TaskCategory>()
                 .ForMember(dest => dest.ParentCategory, opt => opt.Ignore());
 
+            // اضافه کردن mapping جدید برای TaskCategoryItemViewModel
+            CreateMap<TaskCategory, TaskCategoryItemViewModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
+
+            CreateMap<TaskCategoryItemViewModel, TaskCategory>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.ParentCategory, opt => opt.Ignore())
+                .ForMember(dest => dest.ChildCategories, opt => opt.Ignore());
+              
+
             // CRM Interaction Mappings
             CreateMap<CRMInteraction, CRMInteractionViewModel>()
                 .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : ""))

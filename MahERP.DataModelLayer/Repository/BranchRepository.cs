@@ -7,6 +7,7 @@ using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl; // ا
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using AutoMapper; // اضافه کردن فضای نام AutoMapper
 
 namespace MahERP.DataModelLayer.Repository
 {
@@ -14,11 +15,13 @@ namespace MahERP.DataModelLayer.Repository
     {
         private readonly AppDbContext _context;
         private readonly IUserManagerRepository _userManagerRepository;
+        private readonly IMapper _mapper; // اضافه کردن AutoMapper
 
-        public BranchRepository(AppDbContext context, IUserManagerRepository userManagerRepository)
+        public BranchRepository(AppDbContext context, IUserManagerRepository userManagerRepository, IMapper mapper)
         {
             _context = context;
             _userManagerRepository = userManagerRepository;
+            _mapper = mapper; // تزریق AutoMapper
         }
 
         public List<Branch> GetBranches(bool includeInactive = false)
@@ -466,7 +469,7 @@ namespace MahERP.DataModelLayer.Repository
         /// <param name="branchId">شناسه شعبه</param>
         /// <param name="stakeholderId">شناسه طرف حساب (اختیاری)</param>
         /// <returns>لیست دسته‌بندی‌های تسک شعبه</returns>
-        public List<TaskCategory> GetTaskCategoriesForBranchStakeholder(int branchId, int? stakeholderId = null)
+        public List<TaskCategoryItemViewModel> GetTaskCategoriesForBranchStakeholder(int branchId, int? stakeholderId = null)
         {
             try
             {
@@ -478,42 +481,18 @@ namespace MahERP.DataModelLayer.Repository
                 if (stakeholderId.HasValue)
                     query = query.Where(x => x.btcs.StakeholderId == stakeholderId.Value);
 
-                return query.Select(x => x.tc)
-                           .Distinct()
-                           .OrderBy(tc => tc.Title)
-                           .ToList();
+                var taskCategories = query.Select(x => x.tc)
+                       .Distinct()
+                       .OrderBy(tc => tc.Title)
+                       .ToList();
+            
+                // استفاده از AutoMapper برای تبدیل به TaskCategoryItemViewModel
+                return _mapper.Map<List<TaskCategoryItemViewModel>>(taskCategories);
             }
             catch (Exception ex)
             {
                 // لاگ خطا
                 throw new Exception($"خطا در دریافت دسته‌بندی‌های شعبه {branchId}: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// دریافت لیست طرف حساب‌های شعبه که دسته‌بندی تسک دارند
-        /// </summary>
-        /// <param name="branchId">شناسه شعبه</param>
-        /// <returns>لیست طرف حساب‌ها</returns>
-        public List<Stakeholder> GetStakeholdersWithTaskCategoriesByBranch(int branchId)
-        {
-            try
-            {
-                var stakeholderIds = _context.BranchTaskCategoryStakeholder_Tbl
-                    .Where(btcs => btcs.BranchId == branchId && btcs.IsActive)
-                    .Select(btcs => btcs.StakeholderId)
-                    .Distinct();
-
-                return _context.Stakeholder_Tbl
-                    .Where(s => stakeholderIds.Contains(s.Id) && s.IsActive && !s.IsDeleted)
-                    .OrderBy(s => s.LastName)
-                    .ThenBy(s => s.FirstName)
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                // لاگ خطا
-                throw new Exception($"خطا در دریافت طرف حساب‌های شعبه {branchId}: {ex.Message}", ex);
             }
         }
 
@@ -539,17 +518,11 @@ namespace MahERP.DataModelLayer.Repository
                 // دریافت اطلاعات کامل دسته‌بندی‌ها
                 var taskCategories = _context.TaskCategory_Tbl
                     .Where(tc => assignedCategoryIds.Contains(tc.Id) && tc.IsActive)
-                    .Select(tc => new TaskCategoryItemViewModel
-                    {
-                        Id = tc.Id,
-                        Title = tc.Title,
-                        Description = tc.Description,
-                        IsActive = tc.IsActive
-                    })
                     .OrderBy(tc => tc.Title)
                     .ToList();
 
-                return taskCategories;
+                // استفاده از AutoMapper برای تبدیل به TaskCategoryItemViewModel
+                return _mapper.Map<List<TaskCategoryItemViewModel>>(taskCategories);
             }
             catch (Exception ex)
             {

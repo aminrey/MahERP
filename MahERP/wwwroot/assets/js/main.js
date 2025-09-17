@@ -294,10 +294,19 @@ const DynamicSelect2Manager = {
         // نمایش loading
         this.showLoadingInTargets(targets);
         
-        // تعیین نام پارامتر
+        // تعیین نام پارامتر اصلی
         const paramName = this.getParamNameFromSelect($select);
         const ajaxData = {};
         ajaxData[paramName] = selectedValue;
+        
+        // اضافه کردن پارامتر اضافی (مثل BranchIdSelected)
+        const branchParam = $select.data('branch-param');
+        if (branchParam) {
+            const branchValue = $('#' + branchParam).val();
+            if (branchValue) {
+                ajaxData[branchParam] = branchValue;
+            }
+        }
         
         // اضافه کردن CSRF token
         const token = $('input[name="__RequestVerificationToken"]').val();

@@ -1,0 +1,31 @@
+﻿@model List<TaskCategoryItemViewModel>
+
+@{
+    Layout = null;
+}
+
+@if (Model?.Any() == true)
+{
+    <select class="js-select2 form-select"
+            id="TaskCategoryIdSelected" 
+            name="TaskCategoryIdSelected"
+            data-placeholder="دسته‌بندی را انتخاب کنید" 
+            style="width: 100%;">
+        <option value="">انتخاب کنید</option>
+        @foreach (var category in Model)
+        {
+            <option value="@category.Id">@category.Title</option>
+        }
+    </select>
+}
+else
+{
+    <select class="js-select2 form-select" 
+            id="TaskCategoryIdSelected" 
+            name="TaskCategoryIdSelected"
+            data-placeholder="دسته‌بندی برای این طرف حساب یافت نشد" 
+            style="width: 100%;"
+            disabled>
+        <option value="">دسته‌بندی برای این طرف حساب یافت نشد</option>
+    </select>
+}

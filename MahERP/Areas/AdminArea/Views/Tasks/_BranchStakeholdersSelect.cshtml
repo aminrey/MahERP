@@ -1,0 +1,57 @@
+﻿@model List<StakeholderViewModel>
+
+@{
+    Layout = null;
+}
+
+@if (Model?.Any() == true)
+{
+    <select class="js-select2 form-select" 
+            id="StakeholderId" 
+            name="StakeholderId"
+            data-placeholder="انتخاب کنید" 
+            data-url="@Url.Action("StakeholderTriggerSelectTaskCategories","Tasks")"
+            data-toggle="multiplepartialview"
+            data-target-divs="TaskCategoriesDiv"
+            data-param-name="stakeholderId"
+            data-branch-param="BranchIdSelected"
+            style="width: 100%;">
+        <option value="">انتخاب کنید</option>
+        @foreach (var stakeholder in Model)
+        {
+            <option value="@stakeholder.Id">@stakeholder.DisplayName</option>
+        }
+    </select>
+}
+else
+{
+    <select class="js-select2 form-select" 
+            id="StakeholderId" 
+            name="StakeholderId"
+            data-placeholder="طرف حسابی در این شعبه یافت نشد" 
+            style="width: 100%;"
+            disabled>
+        <option value="">طرف حسابی در این شعبه یافت نشد</option>
+    </select>
+}
+
+<script>
+    $(document).ready(function() {
+        $('#StakeholderId').select2({
+            placeholder: '@(Model?.Any() == true ? "طرف حساب را انتخاب کنید" : "طرف حسابی در این شعبه یافت نشد")',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        @if (Model?.Any() == true)
+        {
+            <text>$('#StakeholderId').prop('disabled', false);</text>
+        }
+        else
+        {
+            <text>$('#StakeholderId').prop('disabled', true);</text>
+        }
+        
+        console.log('Partial view BranchStakeholdersSelect loaded with @(Model?.Count ?? 0) stakeholders');
+    });
+</script>

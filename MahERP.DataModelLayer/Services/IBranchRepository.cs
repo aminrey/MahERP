@@ -123,14 +123,7 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="branchId">شناسه شعبه</param>
         /// <param name="stakeholderId">شناسه طرف حساب (اختیاری)</param>
         /// <returns>لیست دسته‌بندی‌های تسک شعبه</returns>
-        public List<TaskCategory> GetTaskCategoriesForBranchStakeholder(int branchId, int? stakeholderId = null);
-
-        /// <summary>
-        /// دریافت لیست طرف حساب‌های شعبه که دسته‌بندی تسک دارند
-        /// </summary>
-        /// <param name="branchId">شناسه شعبه</param>
-        /// <returns>لیست طرف حساب‌ها</returns>
-        public List<Stakeholder> GetStakeholdersWithTaskCategoriesByBranch(int branchId);
+        List<TaskCategoryItemViewModel> GetTaskCategoriesForBranchStakeholder(int branchId, int? stakeholderId = null);
 
         /// <summary>
         /// دریافت دسته‌بندی‌های تسک بر اساس شعبه و طرف حساب انتخاب شده (برای cascade)
@@ -139,7 +132,7 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="branchId">شناسه شعبه</param>
         /// <param name="stakeholderId">شناسه طرف حساب</param>
         /// <returns>لیست دسته‌بندی‌های تسک قابل انتخاب</returns>
-        public List<TaskCategoryItemViewModel> GetTaskCategoriesForStakeholderChange(int branchId, int stakeholderId);
+        List<TaskCategoryItemViewModel> GetTaskCategoriesForStakeholderChange(int branchId, int stakeholderId);
 
         #endregion
     }

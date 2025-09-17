@@ -126,11 +126,16 @@
                         <div class="mb-4">
                             <label class="form-label" for="StakeholderId">طرف حساب</label>
                             <div id="StakeholdersDiv">
-                                <select asp-for="StakeholderId" 
-                                        class="js-select2 form-select" 
+                                <select asp-for="StakeholderId"
+                                        class="js-select2 form-select"
                                         id="StakeholderId"
                                         name="StakeholderId"
-                                        data-placeholder="ابتدا شعبه را انتخاب کنید" 
+                                        data-placeholder="ابتدا شعبه را انتخاب کنید"
+                                        data-url="@Url.Action("StakeholderTriggerSelectTaskCategories", "Tasks")"
+                                        data-toggle="multiplepartialview"
+                                        data-target-divs="TaskCategoriesDiv"
+                                        data-param-name="stakeholderId"
+                                        data-branch-param="BranchIdSelected"
                                         style="width: 100%;"
                                         disabled>
                                     <option value="">ابتدا شعبه را انتخاب کنید</option>
