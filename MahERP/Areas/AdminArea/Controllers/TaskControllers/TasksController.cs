@@ -57,6 +57,118 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _taskNotificationService = taskNotificationService;
         }
 
+        // نمایش تقویم تسک‌ها
+        [HttpGet]
+        [Permission("Tasks", "TaskCalendar", 0)] // Read permission
+        public async Task<IActionResult> TaskCalendar()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // دریافت تسک‌های کاربر برای نمایش در تقویم
+                var calendarTasks = _branchRepository.GetTasksForCalendarView(userId);
+
+                // تبدیل تاریخ‌ها به فرمت مناسب تقویم
+                var calendarEvents = calendarTasks.Select(task => new
+                {
+                    
+                    id = task.Id,
+                    title = task.Title,
+                    start = task.DueDate?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    end = task.DueDate?.AddDays(2).ToString("yyyy-MM-ddTHH:mm:ss"), // اضافه کردن end
+
+                    backgroundColor = task.CalendarColor,
+                    borderColor = task.CalendarColor,
+                    textColor = "#ffffff",
+                    description = task.Description,
+                    taskCode = task.TaskCode,
+                    categoryTitle = task.CategoryTitle,
+                    stakeholderName = task.StakeholderName,
+                    branchName = task.BranchName,
+                    statusText = task.StatusText,
+                    isCompleted = task.IsCompleted,
+                    isOverdue = task.IsOverdue,
+                    url = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })
+                }).ToList();
+
+                ViewBag.CalendarEvents = System.Text.Json.JsonSerializer.Serialize(calendarEvents);
+                ViewBag.PageTitle = "تقویم تسک‌ها";
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "TaskCalendar",
+                    "مشاهده تقویم تسک‌ها"
+                );
+
+                return View(calendarTasks);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "TaskCalendar",
+                    "خطا در نمایش تقویم تسک‌ها",
+                    ex
+                );
+
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        // دریافت رویدادهای تقویم برای AJAX
+        [HttpGet]
+        public async Task<IActionResult> GetCalendarEvents(DateTime? start = null, DateTime? end = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // دریافت تسک‌ها بر اساس محدوده زمانی
+                var calendarTasks = _branchRepository.GetTasksForCalendarView(userId, null, start, end);
+
+                var events = calendarTasks.Select(task => new
+                {
+                    id = task.Id,
+                    title = task.Title,
+                    start = task.DueDate?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    end = task.DueDate?.AddDays(2).ToString("yyyy-MM-ddTHH:mm:ss"), // اضافه کردن end
+                    backgroundColor = task.CalendarColor,
+                    borderColor = task.CalendarColor,
+                    textColor = "#ffffff",
+                    description = task.Description ?? "",
+                    extendedProps = new
+                    {
+                        taskCode = task.TaskCode ?? "",
+                        categoryTitle = task.CategoryTitle ?? "",
+                        stakeholderName = task.StakeholderName ?? "",
+                        branchName = task.BranchName ?? "",
+                        statusText = task.StatusText,
+                        isCompleted = task.IsCompleted,
+                        isOverdue = task.IsOverdue,
+                        detailUrl = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })
+                    }
+                }).ToList();
+
+                return Json(events);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "GetCalendarEvents",
+                    "خطا در دریافت رویدادهای تقویم",
+                    ex
+                );
+
+                return Json(new List<object>());
+            }
+        }
+
+
+
         // لیست تسک‌ها - با کنترل سطح دسترسی داده
         [Permission("Tasks", "Index", 0)] // Read permission
         public async Task<IActionResult> Index()
