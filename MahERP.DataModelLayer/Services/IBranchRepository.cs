@@ -2,6 +2,8 @@
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using System;
 using System.Collections.Generic;
 
 namespace MahERP.DataModelLayer.Services
@@ -135,5 +137,15 @@ namespace MahERP.DataModelLayer.Services
         List<TaskCategoryItemViewModel> GetTaskCategoriesForStakeholderChange(int branchId, int stakeholderId);
 
         #endregion
+
+        /// <summary>
+        /// دریافت تسک‌های شعبه برای نمایش در تقویم بر اساس تاریخ مهلت انجام
+        /// </summary>
+        /// <param name="userId">شناسه کاربر جهت فیلتر تسک‌های مرتبط</param>
+        /// <param name="branchId">شناسه شعبه جهت فیلتر تسک‌های شعبه (اختیاری)</param>
+        /// <param name="startDate">تاریخ شروع محدوده نمایش (اختیاری)</param>
+        /// <param name="endDate">تاریخ پایان محدوده نمایش (اختیاری)</param>
+        /// <returns>لیست تسک‌های دارای تاریخ مهلت برای نمایش در تقویم</returns>
+        List<TaskCalendarViewModel> GetTasksForCalendarView(string userId, int? branchId = null, DateTime? startDate = null, DateTime? endDate = null);
     }
 }

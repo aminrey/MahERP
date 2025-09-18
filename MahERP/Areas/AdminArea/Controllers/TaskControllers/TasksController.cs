@@ -57,6 +57,174 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _taskNotificationService = taskNotificationService;
         }
 
+        // نمایش تقویم تسک‌ها
+        [HttpGet]
+        [Permission("Tasks", "TaskCalendar", 0)] // Read permission
+        public async Task<IActionResult> TaskCalendar()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // دریافت تسک‌های کاربر برای نمایش در تقویم
+                var calendarTasks = _branchRepository.GetTasksForCalendarView(userId);
+
+                // تبدیل تاریخ‌ها به فرمت مناسب تقویم
+                var calendarEvents = calendarTasks.Select(task => new
+                {
+                    
+                    id = task.Id,
+                    title = task.Title,
+                    start = task.DueDate?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    end = task.DueDate?.AddDays(2).ToString("yyyy-MM-ddTHH:mm:ss"), // اضافه کردن end
+
+                    backgroundColor = task.CalendarColor,
+                    borderColor = task.CalendarColor,
+                    textColor = "#ffffff",
+                    description = task.Description,
+                    taskCode = task.TaskCode,
+                    categoryTitle = task.CategoryTitle,
+                    stakeholderName = task.StakeholderName,
+                    branchName = task.BranchName,
+                    statusText = task.StatusText,
+                    isCompleted = task.IsCompleted,
+                    isOverdue = task.IsOverdue,
+                    url = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })
+                }).ToList();
+
+                ViewBag.CalendarEvents = System.Text.Json.JsonSerializer.Serialize(calendarEvents);
+                ViewBag.PageTitle = "تقویم تسک‌ها";
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "TaskCalendar",
+                    "مشاهده تقویم تسک‌ها"
+                );
+
+                return View(calendarTasks);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "TaskCalendar",
+                    "خطا در نمایش تقویم تسک‌ها",
+                    ex
+                );
+
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        // دریافت رویدادهای تقویم برای AJAX
+        // دریافت رویدادهای تقویم برای AJAX
+        [HttpGet]
+        public async Task<IActionResult> GetCalendarEvents(DateTime? start = null, DateTime? end = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                Console.WriteLine($"GetCalendarEvents called - UserId: {userId}, Start: {start}, End: {end}");
+
+                // دریافت تسک‌ها بر اساس محدوده زمانی
+                var calendarTasks = _branchRepository.GetTasksForCalendarView(userId, null, start, end);
+
+                Console.WriteLine($"Found {calendarTasks?.Count ?? 0} tasks");
+
+                var events = calendarTasks.Select(task =>
+                {
+                    // اطمینان از وجود DueDate
+                    if (!task.DueDate.HasValue)
+                    {
+                        Console.WriteLine($"Task {task.Id} has no DueDate - skipping");
+                        return null;
+                    }
+
+                    // تبدیل تاریخ میلادی به شمسی برای ارسال به تقویم
+                    var persianStartDate = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy-MM-dd");
+                    var persianEndDate = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value.AddHours(3), "yyyy-MM-dd");
+
+                    Console.WriteLine($"Task {task.Id}: {task.Title}");
+                    Console.WriteLine($"  Original Date (Gregorian): {task.DueDate}");
+                    Console.WriteLine($"  Converted Date (Persian): {persianStartDate}");
+
+                    return new
+                    {
+                        id = task.Id,
+                        title = task.Title,
+                        start = persianStartDate, // تاریخ شمسی
+                        end = persianEndDate,     // تاریخ شمسی
+                        backgroundColor = GetTaskBackgroundColor(task),
+                        borderColor = GetTaskBorderColor(task),
+                        textColor = "#ffffff",
+                        description = task.Description ?? "",
+                        extendedProps = new
+                        {
+                            taskCode = task.TaskCode ?? "",
+                            categoryTitle = task.CategoryTitle ?? "",
+                            stakeholderName = task.StakeholderName ?? "",
+                            branchName = task.BranchName ?? "",
+                            statusText = GetTaskStatusText(task),
+                            isCompleted = task.IsCompleted,
+                            isOverdue = task.IsOverdue,
+                            detailUrl = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" }),
+                            // اضافه کردن تاریخ‌های میلادی و شمسی برای نمایش
+                            gregorianDate = task.DueDate.Value.ToString("yyyy-MM-dd"),
+                            persianDate = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd"),
+                            persianDateFull = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "dddd، dd MMMM yyyy")
+                        }
+                    };
+                }).Where(e => e != null).ToList();
+
+                Console.WriteLine($"Returning {events.Count} events to calendar with Persian dates");
+
+                return Json(events);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetCalendarEvents: {ex.Message}");
+
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "GetCalendarEvents",
+                    "خطا در دریافت رویدادهای تقویم",
+                    ex
+                );
+
+                return Json(new List<object>());
+            }
+        }
+
+        // متدهای کمکی برای تعیین رنگ‌ها
+        private string GetTaskBackgroundColor(TaskCalendarViewModel task)
+        {
+            if (task.IsCompleted)
+                return "#28a745"; // سبز - تکمیل شده
+            else if (task.IsOverdue)
+                return "#dc3545"; // قرمز - عقب افتاده
+            else
+                return "#007bff"; // آبی - در حال انجام
+        }
+
+        private string GetTaskBorderColor(TaskCalendarViewModel task)
+        {
+            return GetTaskBackgroundColor(task); // همان رنگ پس‌زمینه
+        }
+
+        private string GetTaskStatusText(TaskCalendarViewModel task)
+        {
+            if (task.IsCompleted)
+                return "تکمیل شده";
+            else if (task.IsOverdue)
+                return "عقب افتاده";
+            else
+                return "در حال انجام";
+        }
+
+
         // لیست تسک‌ها - با کنترل سطح دسترسی داده
         [Permission("Tasks", "Index", 0)] // Read permission
         public async Task<IActionResult> Index()
@@ -1401,28 +1569,42 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
+                // دریافت اطلاعات تسک از دیتابیس
                 var task = _uow.TaskUW.GetById(id);
                 if (task == null)
                     return RedirectToAction("ErrorView", "Home");
 
+                // بررسی دسترسی کاربر به این تسک (اختیاری - بر اساس نیاز سیستم)
+                var currentUserId = _userManager.GetUserId(HttpContext.User);
+                
+                // تنظیم ViewBag برای نمایش صحیح مودال
                 if (task.CompletionDate.HasValue)
                 {
+                    // حالت بازگشایی تسک
                     ViewBag.ModalTitle = "بازگشایی تسک";
                     ViewBag.ButtonText = "بازگشایی تسک";
-                    ViewBag.ButonClass = "btn rounded-0 btn-hero btn-warning";
-                    ViewBag.themeclass = "bg-gd-sun";
+                    ViewBag.ButonClass = "btn btn-warning";
+                    ViewBag.themeclass = "bg-warning";
                     ViewBag.IsReopening = true;
                 }
                 else
                 {
+                    // حالت تکمیل تسک
                     ViewBag.ModalTitle = "تکمیل تسک";
                     ViewBag.ButtonText = "تکمیل تسک";
-                    ViewBag.ButonClass = "btn rounded-0 btn-hero btn-success";
-                    ViewBag.themeclass = "bg-gd-sea";
+                    ViewBag.ButonClass = "btn btn-success";
+                    ViewBag.themeclass = "bg-success";
                     ViewBag.IsReopening = false;
                 }
 
-                // ثبت لاگ
+                // ایجاد ViewModel با اطلاعات کامل تسک
+                var viewModel = _mapper.Map<TaskViewModel>(task);
+                
+                // دریافت عملیات‌های تسک برای نمایش در مودال
+                var operations = _taskRepository.GetTaskOperations(task.Id);
+                viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(operations);
+
+                // ثبت لاگ فعالیت کاربر
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Tasks",
@@ -1433,10 +1615,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     recordTitle: task.Title
                 );
 
-                return PartialView("_CompleteTask", _mapper.Map<TaskViewModel>(task));
+                // بازگشت PartialView برای نمایش در مودال
+                return PartialView("_CompleteTask", viewModel);
             }
             catch (Exception ex)
             {
+                // ثبت لاگ خطا
                 await _activityLogger.LogErrorAsync(
                     "Tasks",
                     "CompleteTask",
@@ -1445,6 +1629,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     recordId: id.ToString()
                 );
                 
+                // در صورت بروز خطا، بازگشت به صفحه خطا
                 return RedirectToAction("ErrorView", "Home");
             }
         }
