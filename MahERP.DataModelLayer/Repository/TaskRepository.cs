@@ -299,5 +299,143 @@ namespace MahERP.DataModelLayer.Repository
             return _context.TaskAssignment_Tbl
                 .FirstOrDefault(a => a.AssignedUserId == userId && a.TaskId == taskId);
         }
+        /// <summary>
+        /// دریافت تسک‌های شعبه برای نمایش در تقویم بر اساس فیلترهای مختلف
+        /// </summary>
+        /// <param name="userId">شناسه کاربر جهت فیلتر تسک‌های مرتبط</param>
+        /// <param name="branchId">شناسه شعبه جهت فیلتر تسک‌های شعبه (اختیاری)</param>
+        /// <param name="startDate">تاریخ شروع محدوده نمایش (اختیاری)</param>
+        /// <param name="endDate">تاریخ پایان محدوده نمایش (اختیاری)</param>
+        /// <param name="assignedUserIds">لیست شناسه کاربران منتصب (اختیاری)</param>
+        /// <param name="stakeholderId">شناسه طرف حساب (اختیاری)</param>
+        /// <returns>لیست تسک‌های دارای تاریخ مهلت برای نمایش در تقویم</returns>
+        public List<TaskCalendarViewModel> GetTasksForCalendarView(
+            string userId,
+            int? branchId = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            List<string> assignedUserIds = null,
+            int? stakeholderId = null)
+        {
+            try
+            {
+                // کوئری پایه تسک‌ها
+                var query = _context.Tasks_Tbl
+                    .Where(t => !t.IsDeleted &&
+                               t.IsActive &&
+                               t.DueDate.HasValue) // فقط تسک‌های دارای تاریخ مهلت
+                    .Include(t => t.TaskCategory)
+                    .Include(t => t.Stakeholder)
+                    .Include(t => t.TaskAssignments)
+                        .ThenInclude(ta => ta.AssignedUser)
+                    .AsQueryable();
+
+                // فیلتر بر اساس محدوده زمانی
+                if (startDate.HasValue)
+                {
+                    query = query.Where(t => t.DueDate >= startDate.Value);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(t => t.DueDate <= endDate.Value);
+                }
+
+                // فیلتر بر اساس شعبه انتخاب شده
+                if (branchId.HasValue)
+                {
+                    // تسک‌های مرتبط با شعبه مشخص
+                    query = query.Where(t =>
+                        // تسک‌هایی که کاربران آن شعبه در آن‌ها اختصاص دارند
+                        t.TaskAssignments.Any(ta =>
+                            _context.BranchUser_Tbl.Any(bu =>
+                                bu.UserId == ta.AssignedUserId &&
+                                bu.BranchId == branchId.Value &&
+                                bu.IsActive)) ||
+                        // یا تسک‌هایی که طرف حساب آن‌ها متعلق به همان شعبه است
+                        (t.StakeholderId.HasValue &&
+                         _context.StakeholderBranch_Tbl.Any(sb =>
+                            sb.StakeholderId == t.StakeholderId &&
+                            sb.BranchId == branchId.Value))
+                    );
+                }
+                else
+                {
+                    // اگر شعبه انتخاب نشده، فقط تسک‌هایی که کاربر جاری در آن‌ها دخیل است
+                    query = query.Where(t =>
+                        t.CreatorUserId == userId ||
+                        t.TaskAssignments.Any(ta => ta.AssignedUserId == userId));
+                }
+
+                // فیلتر بر اساس کاربران منتصب
+                if (assignedUserIds != null && assignedUserIds.Any())
+                {
+                    query = query.Where(t =>
+                        t.TaskAssignments.Any(ta => assignedUserIds.Contains(ta.AssignedUserId)));
+                }
+
+                // فیلتر بر اساس طرف حساب
+                if (stakeholderId.HasValue)
+                {
+                    query = query.Where(t => t.StakeholderId == stakeholderId.Value);
+                }
+
+                // اجرای کوئری و تبدیل به ViewModel
+                var tasks = query.Select(t => new TaskCalendarViewModel
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    Description = t.Description,
+                    TaskCode = t.TaskCode,
+                    DueDate = t.DueDate,
+                    IsCompleted = t.CompletionDate.HasValue,
+                    IsOverdue = !t.CompletionDate.HasValue && t.DueDate < DateTime.Now,
+
+                    // اطلاعات طرف حساب
+                    StakeholderId = t.StakeholderId,
+                    StakeholderName = t.Stakeholder != null ?
+                        $"{t.Stakeholder.FirstName} {t.Stakeholder.LastName}" : "ندارد",
+
+                    // اطلاعات دسته‌بندی
+                    CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : "ندارد",
+
+                    // اطلاعات شعبه (از طریق StakeholderBranch یا BranchUser)
+                    BranchName = _context.StakeholderBranch_Tbl
+                        .Where(sb => sb.StakeholderId == t.StakeholderId)
+                        .Join(_context.Branch_Tbl, sb => sb.BranchId, b => b.Id, (sb, b) => b.Name)
+                        .FirstOrDefault() ??
+                        _context.BranchUser_Tbl
+                            .Where(bu => t.TaskAssignments.Any(ta => ta.AssignedUserId == bu.UserId) && bu.IsActive)
+                            .Join(_context.Branch_Tbl, bu => bu.BranchId, b => b.Id, (bu, b) => b.Name)
+                            .FirstOrDefault() ?? "ندارد",
+
+                    // تعیین رنگ بر اساس وضعیت
+                    CalendarColor = t.CompletionDate.HasValue ? "#28a745" : // سبز - تکمیل شده
+                                   (!t.CompletionDate.HasValue && t.DueDate < DateTime.Now) ? "#dc3545" : // قرمز - عقب افتاده
+                                   "#007bff", // آبی - در حال انجام
+
+                    // متن وضعیت
+                    StatusText = t.CompletionDate.HasValue ? "تکمیل شده" :
+                                (!t.CompletionDate.HasValue && t.DueDate < DateTime.Now) ? "عقب افتاده" :
+                                "در حال انجام",
+
+                    // تاریخ ایجاد
+                    CreateDate = t.CreateDate,
+
+                    // شناسه سازنده
+                    CreatorUserId = t.CreatorUserId
+                })
+                .OrderBy(t => t.DueDate)
+                .ToList();
+
+                return tasks;
+            }
+            catch (Exception ex)
+            {
+                // در صورت بروز خطا، لیست خالی برگردانده می‌شود
+                // لاگ خطا باید در اینجا ثبت شود
+                return new List<TaskCalendarViewModel>();
+            }
+        }
     }
 }

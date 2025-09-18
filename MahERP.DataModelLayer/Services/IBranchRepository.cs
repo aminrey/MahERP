@@ -138,14 +138,6 @@ namespace MahERP.DataModelLayer.Services
 
         #endregion
 
-        /// <summary>
-        /// دریافت تسک‌های شعبه برای نمایش در تقویم بر اساس تاریخ مهلت انجام
-        /// </summary>
-        /// <param name="userId">شناسه کاربر جهت فیلتر تسک‌های مرتبط</param>
-        /// <param name="branchId">شناسه شعبه جهت فیلتر تسک‌های شعبه (اختیاری)</param>
-        /// <param name="startDate">تاریخ شروع محدوده نمایش (اختیاری)</param>
-        /// <param name="endDate">تاریخ پایان محدوده نمایش (اختیاری)</param>
-        /// <returns>لیست تسک‌های دارای تاریخ مهلت برای نمایش در تقویم</returns>
-        List<TaskCalendarViewModel> GetTasksForCalendarView(string userId, int? branchId = null, DateTime? startDate = null, DateTime? endDate = null);
+        
     }
 }

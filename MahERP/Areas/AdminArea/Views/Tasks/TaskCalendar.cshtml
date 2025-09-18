@@ -1,7 +1,9 @@
 ﻿@model List<MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskCalendarViewModel>
+@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
 @{
     ViewData["Title"] = @ViewBag.PageTitle;
     Layout = "~/Areas/AdminArea/Views/Shared/_AdminLayout.cshtml";
+    var filterModel = ViewBag.FilterModel as TaskCalendarFilterViewModel;
 }
 
 <!-- Page Content -->
@@ -26,7 +28,6 @@
         </div>
     </div>
     <!-- END Hero -->
-
     <!-- Calendar Section -->
     <div class="row g-0 flex-xl-grow-1">
         <div class="col-xl-3">
@@ -38,9 +39,91 @@
                     </button>
                 </div>
                 <!-- END Toggle Side Content -->
-
                 <!-- Side Content -->
                 <div class="d-none d-xl-block push" id="side-content">
+                    <!-- فیلترهای تقویم -->
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">فیلترهای تقویم</h3>
+                            <div class="block-options">
+                                <button type="button" class="btn btn-sm btn-alt-secondary" id="clearFilters">
+                                    <i class="fa fa-times me-1"></i> پاک کردن
+                                </button>
+                            </div>
+                        </div>
+                        <div class="block-content">
+                            <!-- انتخاب شعبه - مرحله اول cascade -->
+                            <div class="mb-3">
+                                <label class="form-label fw-medium" for="FilterBranchId">انتخاب شعبه</label>
+                                <select class="js-select2 form-select"
+                                        id="FilterBranchId"
+                                        data-placeholder="همه شعبه‌ها"
+                                        data-url="@Url.Action("BranchTriggerSelect", "Tasks")"
+                                        data-toggle="multiplepartialview"
+                                        data-target-divs="FilterUsersDiv,FilterStakeholdersDiv"
+                                        data-param-name="branchId"
+                                        style="width: 100%;">
+                                    <option value="">همه شعبه‌ها</option>
+                                    @if (filterModel?.BranchListInitial != null)
+                                    {
+                                        @foreach (var branch in filterModel.BranchListInitial)
+                                        {
+                                            <option value="@branch.Id">@branch.Name</option>
+                                        }
+                                    }
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    انتخاب شعبه باعث بروزرسانی کاربران و طرف حساب‌ها می‌شود
+                                </small>
+                            </div>
+
+                            <!-- کاربران انتصابی - مرحله دوم cascade -->
+                            <div class="mb-3">
+                                <label class="form-label fw-medium" for="FilterAssignedUsers">کاربران انتصابی</label>
+                                <div id="FilterUsersDiv">
+                                    <select class="js-select2 form-select"
+                                            id="FilterAssignedUsers"
+                                            data-placeholder="ابتدا شعبه را انتخاب کنید"
+                                            multiple="multiple"
+                                            style="width: 100%;"
+                                            disabled>
+                                        <option value="">ابتدا شعبه را انتخاب کنید</option>
+                                    </select>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-users me-1"></i>
+                                    فیلتر بر اساس کاربران اختصاص یافته به تسک‌ها
+                                </small>
+                            </div>
+
+                            <!-- طرف حساب - مرحله سوم cascade -->
+                            <div class="mb-3">
+                                <label class="form-label fw-medium" for="FilterStakeholderId">طرف حساب</label>
+                                <div id="FilterStakeholdersDiv">
+                                    <select class="js-select2 form-select"
+                                            id="FilterStakeholderId"
+                                            data-placeholder="ابتدا شعبه را انتخاب کنید"
+                                            style="width: 100%;"
+                                            disabled>
+                                        <option value="">ابتدا شعبه را انتخاب کنید</option>
+                                    </select>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-handshake me-1"></i>
+                                    فیلتر بر اساس طرف حساب مرتبط با تسک‌ها
+                                </small>
+                            </div>
+
+                            <!-- دکمه اعمال فیلتر -->
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-primary w-100" id="applyFilters">
+                                    <i class="fa fa-filter me-1"></i> اعمال فیلترها
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- END فیلترهای تقویم -->
                     <!-- Quick Actions -->
                     <div class="block block-rounded">
                         <div class="block-header block-header-default">
@@ -61,7 +144,6 @@
                         </div>
                     </div>
                     <!-- END Quick Actions -->
-
                     <!-- Calendar Legend -->
                     <div class="block block-rounded">
                         <div class="block-header block-header-default">
@@ -83,7 +165,6 @@
                         </div>
                     </div>
                     <!-- END Calendar Legend -->
-
                     <!-- Task Statistics -->
                     <div class="block block-rounded">
                         <div class="block-header block-header-default">
@@ -93,15 +174,15 @@
                             <div class="row text-center">
                                 <div class="col-12 mb-2">
                                     <div class="fs-sm text-muted">کل تسک‌ها</div>
-                                    <div class="fs-4 fw-bold text-primary">@Model.Count</div>
+                                    <div class="fs-4 fw-bold text-primary" id="totalTasksCount">@Model.Count</div>
                                 </div>
                                 <div class="col-6 mb-2">
                                     <div class="fs-sm text-muted">تکمیل شده</div>
-                                    <div class="fs-5 fw-bold text-success">@Model.Count(t => t.IsCompleted)</div>
+                                    <div class="fs-5 fw-bold text-success" id="completedTasksCount">@Model.Count(t => t.IsCompleted)</div>
                                 </div>
                                 <div class="col-6 mb-2">
                                     <div class="fs-sm text-muted">عقب افتاده</div>
-                                    <div class="fs-5 fw-bold text-danger">@Model.Count(t => t.IsOverdue)</div>
+                                    <div class="fs-5 fw-bold text-danger" id="overdueTasksCount">@Model.Count(t => t.IsOverdue)</div>
                                 </div>
                             </div>
                         </div>
@@ -163,8 +244,18 @@
                     list: 'لیست'
                 },
                 events: function(info, successCallback, failureCallback) {
-                    fetch('@Url.Action("GetCalendarEvents", "Tasks", new { area = "AdminArea" })?' +
-                          'start=' + info.startStr + '&end=' + info.endStr)
+                    // دریافت مقادیر فیلترهای جاری
+                    var currentFilters = getCurrentFilters();
+
+                    var requestUrl = '@Url.Action("GetCalendarEvents", "Tasks", new { area = "AdminArea" })?' +
+                          'start=' + info.startStr + '&end=' + info.endStr +
+                          (currentFilters.branchId ? '&branchId=' + currentFilters.branchId : '') +
+                          (currentFilters.assignedUserIds ? '&assignedUserIds=' + currentFilters.assignedUserIds : '') +
+                          (currentFilters.stakeholderId ? '&stakeholderId=' + currentFilters.stakeholderId : '');
+
+                    console.log('Loading calendar events with URL:', requestUrl);
+
+                    fetch(requestUrl)
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error('Network response was not ok');
@@ -173,6 +264,7 @@
                         })
                         .then(data => {
                             console.log('Calendar events loaded:', data);
+                            updateTaskStatistics(data);
                             successCallback(data);
                         })
                         .catch(error => {
@@ -205,6 +297,48 @@
             });
 
             calendar.render();
+
+            // تابع دریافت فیلترهای جاری
+            function getCurrentFilters() {
+                return {
+                    branchId: $('#FilterBranchId').val() || null,
+                    assignedUserIds: $('#FilterAssignedUsers').val() ? $('#FilterAssignedUsers').val().join(',') : null,
+                    stakeholderId: $('#FilterStakeholderId').val() || null
+                };
+            }
+
+            // تابع بروزرسانی آمار تسک‌ها
+            function updateTaskStatistics(events) {
+                var totalTasks = events.length;
+                var completedTasks = events.filter(e => e.extendedProps && e.extendedProps.isCompleted).length;
+                var overdueTasks = events.filter(e => e.extendedProps && e.extendedProps.isOverdue).length;
+
+                $('#totalTasksCount').text(totalTasks);
+                $('#completedTasksCount').text(completedTasks);
+                $('#overdueTasksCount').text(overdueTasks);
+            }
+
+            // رویداد اعمال فیلترها
+            $('#applyFilters').on('click', function() {
+                console.log('Applying filters and refreshing calendar...');
+                calendar.refetchEvents();
+            });
+
+            // رویداد پاک کردن فیلترها
+            $('#clearFilters').on('click', function() {
+                console.log('Clearing all filters...');
+
+                // پاک کردن مقادیر فیلترها
+                $('#FilterBranchId').val('').trigger('change');
+                $('#FilterAssignedUsers').val([]).trigger('change');
+                $('#FilterStakeholderId').val('').trigger('change');
+
+                // غیرفعال کردن فیلدهای وابسته
+                $('#FilterAssignedUsers, #FilterStakeholderId').prop('disabled', true);
+
+                // بروزرسانی تقویم
+                calendar.refetchEvents();
+            });
 
             // تابع نمایش جزئیات تسک
             function showTaskDetails(event) {
@@ -246,7 +380,7 @@
                                             <strong>شعبه:</strong> <span>${event.extendedProps.branchName || 'ندارد'}</span>
                                         </div>
                                         <div class="col-12 mb-3">
-                                            <strong>تاریخ مهلت:</strong> <span>${event.start ? new Date(event.start).toLocaleDateString('fa-IR') : 'ندارد'}</span>
+                                            <strong>تاریخ مهلت:</strong> <span>${event.extendedProps.persianDateFull || 'ندارد'}</span>
                                         </div>
                                         ${event.extendedProps.description ?
                                             `<div class="col-12 mb-3">
@@ -278,8 +412,66 @@
                 modalElement.show();
             }
 
+            // مدیریت فیلترهای cascade
+            // رویداد تغییر شعبه - بروزرسانی کاربران و طرف حساب‌ها
+            $(document).on('change', '#FilterBranchId', function() {
+                var branchId = $(this).val();
+                console.log('Filter branch changed:', branchId);
+
+                if (branchId) {
+                    // فعال کردن فیلدهای وابسته
+                    $('#FilterAssignedUsers, #FilterStakeholderId').prop('disabled', false);
+
+                    // پاک کردن انتخاب‌های قبلی
+                    $('#FilterAssignedUsers').val([]).trigger('change');
+                    $('#FilterStakeholderId').val('').trigger('change');
+
+                    // بروزرسانی placeholder ها
+                    $('#FilterAssignedUsers').attr('data-placeholder', 'کاربران را انتخاب کنید');
+                    $('#FilterStakeholderId').attr('data-placeholder', 'طرف حساب را انتخاب کنید');
+
+                    console.log('Branch selected for filter:', branchId);
+                } else {
+                    // غیرفعال کردن فیلدهای وابسته
+                    $('#FilterAssignedUsers, #FilterStakeholderId').prop('disabled', true);
+
+                    // پاک کردن انتخاب‌های قبلی
+                    $('#FilterAssignedUsers').val([]).trigger('change');
+                    $('#FilterStakeholderId').val('').trigger('change');
+
+                    // بازنشانی placeholder ها
+                    $('#FilterAssignedUsers').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
+                    $('#FilterStakeholderId').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
+
+                    console.log('Filter branch cleared');
+                }
+            });
+
+            // کانفیگ سفارشی برای مدیریت Select2 های فیلتر
+            if (typeof DynamicSelect2Manager !== 'undefined') {
+                // تنظیمات برای کاربران فیلتر
+                DynamicSelect2Manager.addSelectConfig('FilterUsersDiv', {
+                    id: 'FilterAssignedUsers',
+                    name: 'FilterAssignedUsers',
+                    multiple: true,
+                    placeholder: 'کاربران را انتخاب کنید'
+                });
+
+                // تنظیمات برای طرف حساب‌های فیلتر
+                DynamicSelect2Manager.addSelectConfig('FilterStakeholdersDiv', {
+                    id: 'FilterStakeholderId',
+                    name: 'FilterStakeholderId',
+                    multiple: false,
+                    placeholder: 'طرف حساب را انتخاب کنید'
+                });
+
+                console.log('کانفیگ‌های فیلتر TaskCalendar به DynamicSelect2Manager اضافه شد');
+            }
+
             // تابع global کردن showTaskDetails
             window.showTaskDetails = showTaskDetails;
+
+            console.log('TaskCalendar با فیلترهای جدید آماده شد');
         });
     </script>
 }

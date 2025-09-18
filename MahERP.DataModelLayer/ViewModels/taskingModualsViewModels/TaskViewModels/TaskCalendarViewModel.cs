@@ -1,10 +1,10 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
 {
     /// <summary>
-    /// ViewModel برای نمایش تسک‌ها در تقویم بر اساس تاریخ مهلت انجام
+    /// ViewModel برای نمایش تسک‌ها در تقویم
+    /// حاوی اطلاعات ضروری برای نمایش در FullCalendar
     /// </summary>
     public class TaskCalendarViewModel
     {
@@ -16,55 +16,32 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// <summary>
         /// عنوان تسک
         /// </summary>
-        [Display(Name = "عنوان")]
         public string Title { get; set; }
 
         /// <summary>
         /// توضیحات تسک
         /// </summary>
-        [Display(Name = "توضیحات")]
         public string? Description { get; set; }
 
         /// <summary>
         /// کد تسک
         /// </summary>
-        [Display(Name = "کد تسک")]
         public string? TaskCode { get; set; }
 
         /// <summary>
         /// تاریخ مهلت انجام
         /// </summary>
-        [Display(Name = "تاریخ مهلت")]
         public DateTime? DueDate { get; set; }
 
         /// <summary>
-        /// تاریخ تکمیل
+        /// آیا تسک تکمیل شده است؟
         /// </summary>
-        [Display(Name = "تاریخ تکمیل")]
-        public DateTime? CompletionDate { get; set; }
-
-        /// <summary>
-        /// آیا تسک تکمیل شده است
-        /// </summary>
-        [Display(Name = "تکمیل شده")]
         public bool IsCompleted { get; set; }
 
         /// <summary>
-        /// عنوان دسته‌بندی
+        /// آیا تسک عقب افتاده است؟
         /// </summary>
-        [Display(Name = "دسته‌بندی")]
-        public string CategoryTitle { get; set; }
-
-        /// <summary>
-        /// شناسه دسته‌بندی
-        /// </summary>
-        public int? CategoryId { get; set; }
-
-        /// <summary>
-        /// نام طرف حساب
-        /// </summary>
-        [Display(Name = "طرف حساب")]
-        public string StakeholderName { get; set; }
+        public bool IsOverdue { get; set; }
 
         /// <summary>
         /// شناسه طرف حساب
@@ -72,69 +49,49 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public int? StakeholderId { get; set; }
 
         /// <summary>
-        /// نام شعبه
+        /// نام طرف حساب
         /// </summary>
-        [Display(Name = "شعبه")]
-        public string BranchName { get; set; }
+        public string? StakeholderName { get; set; }
 
         /// <summary>
-        /// شناسه شعبه
+        /// عنوان دسته‌بندی تسک
         /// </summary>
-        public int? BranchId { get; set; }
+        public string? CategoryTitle { get; set; }
 
         /// <summary>
-        /// تاریخ ایجاد
+        /// نام شعبه مرتبط با تسک
         /// </summary>
-        [Display(Name = "تاریخ ایجاد")]
-        public DateTime CreateDate { get; set; }
+        public string? BranchName { get; set; }
 
         /// <summary>
-        /// شناسه کاربر ایجاد کننده
+        /// رنگ نمایش در تقویم
         /// </summary>
-        public string? CreatorUserId { get; set; }
-
-        /// <summary>
-        /// وضعیت فعال
-        /// </summary>
-        [Display(Name = "فعال")]
-        public bool IsActive { get; set; }
-
-        /// <summary>
-        /// آیا تسک از مهلت گذشته است
-        /// </summary>
-        [Display(Name = "گذشته از مهلت")]
-        public bool IsOverdue { get; set; }
-
-        /// <summary>
-        /// رنگ نمایش در تقویم بر اساس وضعیت تسک
-        /// </summary>
-        public string CalendarColor
-        {
-            get
-            {
-                if (IsCompleted)
-                    return "#28a745"; // سبز برای تکمیل شده
-                else if (IsOverdue)
-                    return "#dc3545"; // قرمز برای عقب افتاده
-                else
-                    return "#007bff"; // آبی برای در حال انجام
-            }
-        }
+        public string CalendarColor { get; set; }
 
         /// <summary>
         /// متن وضعیت تسک برای نمایش
         /// </summary>
-        public string StatusText
+        public string StatusText { get; set; }
+
+        /// <summary>
+        /// تاریخ ایجاد تسک
+        /// </summary>
+        public DateTime CreateDate { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر سازنده تسک
+        /// </summary>
+        public string CreatorUserId { get; set; }
+
+        /// <summary>
+        /// سازنده پیش‌فرض
+        /// </summary>
+        public TaskCalendarViewModel()
         {
-            get
-            {
-                if (IsCompleted)
-                    return "تکمیل شده";
-                else if (IsOverdue)
-                    return "عقب افتاده";
-                else
-                    return "در حال انجام";
-            }
+            Title = string.Empty;
+            CalendarColor = "#007bff"; // رنگ پیش‌فرض آبی
+            StatusText = "نامشخص";
+            CreatorUserId = string.Empty;
         }
     }
 }

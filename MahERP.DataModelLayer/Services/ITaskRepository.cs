@@ -26,6 +26,24 @@ namespace MahERP.DataModelLayer.Repository
         public TaskViewModel CreateTaskAndCollectData(string UserId);
 
         public TaskListForIndexViewModel GetTaskForIndexByUser(TaskListForIndexViewModel filterModel);
+        /// <summary>
+        /// دریافت تسک‌های شعبه برای نمایش در تقویم بر اساس تاریخ مهلت انجام
+        /// متد اصلاح شده برای پذیرش فیلترهای اضافی
+        /// </summary>
+        /// <param name="userId">شناسه کاربر جهت فیلتر تسک‌های مرتبط</param>
+        /// <param name="branchId">شناسه شعبه جهت فیلتر تسک‌های شعبه (اختیاری)</param>
+        /// <param name="startDate">تاریخ شروع محدوده نمایش (اختیاری)</param>
+        /// <param name="endDate">تاریخ پایان محدوده نمایش (اختیاری)</param>
+        /// <param name="assignedUserIds">لیست شناسه کاربران منتصب (اختیاری)</param>
+        /// <param name="stakeholderId">شناسه طرف حساب (اختیاری)</param>
+        /// <returns>لیست تسک‌های دارای تاریخ مهلت برای نمایش در تقویم</returns>
+        List<TaskCalendarViewModel> GetTasksForCalendarView(
+            string userId,
+            int? branchId = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            List<string> assignedUserIds = null,
+            int? stakeholderId = null);
 
     }
 }

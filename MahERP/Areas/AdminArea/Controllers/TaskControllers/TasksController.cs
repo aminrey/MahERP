@@ -57,26 +57,25 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _taskNotificationService = taskNotificationService;
         }
 
-        // نمایش تقویم تسک‌ها
+        // نمایش تقویم تسک‌ها - با اضافه کردن فیلترها
         [HttpGet]
-        [Permission("Tasks", "TaskCalendar", 0)] // Read permission
+        [Permission("Tasks", "TaskCalendar", 0)]
         public async Task<IActionResult> TaskCalendar()
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
 
-                // دریافت تسک‌های کاربر برای نمایش در تقویم
-                var calendarTasks = _branchRepository.GetTasksForCalendarView(userId);
+                // دریافت تسک‌های کاربر برای نمایش در تقویم (بدون فیلتر اولیه) - اصلاح شده
+                var calendarTasks = _taskRepository.GetTasksForCalendarView(userId);
 
                 // تبدیل تاریخ‌ها به فرمت مناسب تقویم
                 var calendarEvents = calendarTasks.Select(task => new
                 {
-                    
                     id = task.Id,
                     title = task.Title,
                     start = task.DueDate?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    end = task.DueDate?.AddDays(2).ToString("yyyy-MM-ddTHH:mm:ss"), // اضافه کردن end
+                    end = task.DueDate?.AddDays(2).ToString("yyyy-MM-ddTHH:mm:ss"),
 
                     backgroundColor = task.CalendarColor,
                     borderColor = task.CalendarColor,
@@ -94,6 +93,15 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
                 ViewBag.CalendarEvents = System.Text.Json.JsonSerializer.Serialize(calendarEvents);
                 ViewBag.PageTitle = "تقویم تسک‌ها";
+
+                // تهیه داده‌های فیلترها - مشابه CreateNewTask
+                var filterModel = new TaskCalendarFilterViewModel();
+
+                // دریافت شعبه‌های کاربر
+                filterModel.BranchListInitial = _branchRepository.GetBrnachListByUserId(userId);
+
+                // اضافه کردن فیلترهای پیش‌فرض (همه شعبه‌ها)
+                ViewBag.FilterModel = filterModel;
 
                 // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
@@ -118,21 +126,39 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             }
         }
 
-        // دریافت رویدادهای تقویم برای AJAX
-        // دریافت رویدادهای تقویم برای AJAX
+        // دریافت رویدادهای تقویم برای AJAX - با فیلترهای جدید
+        // دریافت رویدادهای تقویم برای AJAX - با فیلترهای جدید
         [HttpGet]
-        public async Task<IActionResult> GetCalendarEvents(DateTime? start = null, DateTime? end = null)
+        public async Task<IActionResult> GetCalendarEvents(
+            DateTime? start = null,
+            DateTime? end = null,
+            int? branchId = null,
+            string assignedUserIds = null,
+            int? stakeholderId = null)
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
 
-                Console.WriteLine($"GetCalendarEvents called - UserId: {userId}, Start: {start}, End: {end}");
+                Console.WriteLine($"GetCalendarEvents called - UserId: {userId}, Start: {start}, End: {end}, BranchId: {branchId}, AssignedUserIds: {assignedUserIds}, StakeholderId: {stakeholderId}");
 
-                // دریافت تسک‌ها بر اساس محدوده زمانی
-                var calendarTasks = _branchRepository.GetTasksForCalendarView(userId, null, start, end);
+                // تبدیل رشته کاربران به لیست
+                List<string> userFilterList = null;
+                if (!string.IsNullOrEmpty(assignedUserIds))
+                {
+                    userFilterList = assignedUserIds.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+                }
 
-                Console.WriteLine($"Found {calendarTasks?.Count ?? 0} tasks");
+                // دریافت تسک‌ها بر اساس محدوده زمانی و فیلترهای جدید - اصلاح شده
+                var calendarTasks = _taskRepository.GetTasksForCalendarView(
+                    userId,
+                    branchId,
+                    start,
+                    end,
+                    userFilterList,
+                    stakeholderId);
+
+                Console.WriteLine($"Found {calendarTasks?.Count ?? 0} tasks with filters");
 
                 var events = calendarTasks.Select(task =>
                 {
@@ -151,14 +177,32 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     Console.WriteLine($"  Original Date (Gregorian): {task.DueDate}");
                     Console.WriteLine($"  Converted Date (Persian): {persianStartDate}");
 
+                    // تعیین رنگ پس‌زمینه بر اساس وضعیت تسک
+                    string backgroundColor;
+                    if (task.IsCompleted)
+                        backgroundColor = "#28a745"; // سبز - تکمیل شده
+                    else if (task.IsOverdue)
+                        backgroundColor = "#dc3545"; // قرمز - عقب افتاده
+                    else
+                        backgroundColor = "#007bff"; // آبی - در حال انجام
+
+                    // تعیین متن وضعیت
+                    string statusText;
+                    if (task.IsCompleted)
+                        statusText = "تکمیل شده";
+                    else if (task.IsOverdue)
+                        statusText = "عقب افتاده";
+                    else
+                        statusText = "در حال انجام";
+
                     return new
                     {
                         id = task.Id,
                         title = task.Title,
                         start = persianStartDate, // تاریخ شمسی
                         end = persianEndDate,     // تاریخ شمسی
-                        backgroundColor = GetTaskBackgroundColor(task),
-                        borderColor = GetTaskBorderColor(task),
+                        backgroundColor = backgroundColor,
+                        borderColor = backgroundColor, // همان رنگ پس‌زمینه
                         textColor = "#ffffff",
                         description = task.Description ?? "",
                         extendedProps = new
@@ -167,7 +211,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                             categoryTitle = task.CategoryTitle ?? "",
                             stakeholderName = task.StakeholderName ?? "",
                             branchName = task.BranchName ?? "",
-                            statusText = GetTaskStatusText(task),
+                            statusText = statusText,
                             isCompleted = task.IsCompleted,
                             isOverdue = task.IsOverdue,
                             detailUrl = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" }),
@@ -179,7 +223,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     };
                 }).Where(e => e != null).ToList();
 
-                Console.WriteLine($"Returning {events.Count} events to calendar with Persian dates");
+                Console.WriteLine($"Returning {events.Count} filtered events to calendar with Persian dates");
 
                 return Json(events);
             }
@@ -196,32 +240,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
                 return Json(new List<object>());
             }
-        }
-
-        // متدهای کمکی برای تعیین رنگ‌ها
-        private string GetTaskBackgroundColor(TaskCalendarViewModel task)
-        {
-            if (task.IsCompleted)
-                return "#28a745"; // سبز - تکمیل شده
-            else if (task.IsOverdue)
-                return "#dc3545"; // قرمز - عقب افتاده
-            else
-                return "#007bff"; // آبی - در حال انجام
-        }
-
-        private string GetTaskBorderColor(TaskCalendarViewModel task)
-        {
-            return GetTaskBackgroundColor(task); // همان رنگ پس‌زمینه
-        }
-
-        private string GetTaskStatusText(TaskCalendarViewModel task)
-        {
-            if (task.IsCompleted)
-                return "تکمیل شده";
-            else if (task.IsOverdue)
-                return "عقب افتاده";
-            else
-                return "در حال انجام";
         }
 
 
