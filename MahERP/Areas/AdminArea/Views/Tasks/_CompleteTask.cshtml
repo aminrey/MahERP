@@ -14,11 +14,11 @@
 <div class="modal-dialog" role="document">
     <div class="modal-content">
         <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
-            <div class="block-header @ViewBag.themeclass">
-                <h3 class="block-title text-white">@ViewBag.ModalTitle</h3>
+            <div class="block-header @(ViewBag.IsReopening ? "bg-warning-dark" : "bg-success-dark")">
+                <h3 class="block-title">@(ViewBag.IsReopening ? "بازگشایی تسک" : "تکمیل تسک")</h3>
                 <div class="block-options">
                     <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
-                        <i class="fa fa-fw fa-times text-white"></i>
+                        <i class="fa fa-fw fa-times"></i>
                     </button>
                 </div>
             </div>
@@ -29,7 +29,7 @@
                 <input type="hidden" name="isReopening" value="@ViewBag.IsReopening.ToString().ToLower()" />
 
                 <div class="block block-themed block-rounded mt-1">
-                    <div class="block-header bg-primary-light">
+                    <div class="block-header @(ViewBag.IsReopening ? "bg-warning-light" : "bg-success-light")">
                         <h3 class="block-title">تأیید عملیات</h3>
                     </div>
                     <div class="block-content">
@@ -103,7 +103,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 @if (Model.Operations?.Any() == true)
                                 {
                                     <!-- نمایش وضعیت عملیات‌ها -->
@@ -113,20 +113,20 @@
                                             وضعیت عملیات‌ها
                                         </h6>
                                         <div class="progress mb-2" style="height: 20px;">
-                                            <div class="progress-bar bg-success" role="progressbar" 
-                                                 style="width: @Model.ProgressPercentage%" 
-                                                 aria-valuenow="@Model.ProgressPercentage" 
-                                                 aria-valuemin="0" 
+                                            <div class="progress-bar bg-success" role="progressbar"
+                                                 style="width: @Model.ProgressPercentage%"
+                                                 aria-valuenow="@Model.ProgressPercentage"
+                                                 aria-valuemin="0"
                                                  aria-valuemax="100">
                                                 @Model.ProgressPercentage% تکمیل شده
                                             </div>
                                         </div>
-                                        
+
                                         @{
                                             var completedCount = Model.Operations.Count(o => o.IsCompleted);
                                             var totalCount = Model.Operations.Count();
                                         }
-                                        
+
                                         <small class="text-muted">
                                             @completedCount از @totalCount عملیات تکمیل شده است
                                             @if (completedCount < totalCount)
@@ -149,8 +149,8 @@
             <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">
                 <i class="fa fa-times me-1"></i>انصراف
             </button>
-            <button class="@ViewBag.ButonClass btn-sm" type="submit" form="complete-task-form">
-                <i class="fa @(ViewBag.IsReopening ? "fa-redo" : "fa-check") me-1"></i>@ViewBag.ButtonText
+            <button class="btn btn-sm @(ViewBag.IsReopening ? "btn-warning" : "btn-success")" data-save="modal-ajax-save" type="button">
+                <i class="fa @(ViewBag.IsReopening ? "fa-redo" : "fa-check") me-1"></i>@(ViewBag.IsReopening ? "بازگشایی" : "تکمیل")
             </button>
         </div>
     </div>
@@ -161,6 +161,33 @@
         // تنظیم فوکوس روی دکمه اصلی
         $('.modal').on('shown.bs.modal', function () {
             $('@(ViewBag.IsReopening ? ".btn-warning" : ".btn-success")').focus();
+        });
+
+        // Event handler برای پردازش موفقیت‌آمیز AJAX
+        $('[data-save="modal-ajax-save"]').on('ajaxFormSuccess', function(event, response) {
+            if (response && response.success) {
+                // نمایش پیام موفقیت
+                if (response.message && response.message.length > 0) {
+                    toastr.success(response.message[0].text);
+                }
+
+                // بستن modal
+                $('.modal').modal('hide');
+
+                // refresh کردن صفحه بعد از بسته شدن modal
+                $('.modal').on('hidden.bs.modal', function () {^
+                    location.reload();
+                });
+            }
+        });
+
+        // Event handler برای خطاهای AJAX
+        $('[data-save="modal-ajax-save"]').on('ajaxFormError', function(event, response) {
+            if (response && response.message) {
+                toastr.error(response.message);
+            } else {
+                toastr.error('خطا در انجام عملیات');
+            }
         });
     });
 </script>

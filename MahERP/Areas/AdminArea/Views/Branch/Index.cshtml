@@ -142,9 +142,12 @@
                                         <i class="fa fa-fw fa-pencil-alt"></i>
                                     </a>
                                     <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="@(branch.IsActive ? "غیرفعال کردن" : "فعال کردن")"
-                                            onclick="openModal('@Url.Action("ToggleActivation", "Branch", new { id = branch.Id })')">
+                                            href="@Url.Action("ToggleActivation", "Branch", new { id = branch.Id })" data-toggle="modal-ajax">
                                         <i class="fa fa-fw @(branch.IsActive ? "fa-ban" : "fa-check")"></i>
                                     </button>
+
+
+
                                     <a href="@Url.Action("UsersIndex", "Branch", new { branchId = branch.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="مدیریت کاربران شعبه">
                                         <i class="fa fa-fw fa-users"></i>
                                     </a>

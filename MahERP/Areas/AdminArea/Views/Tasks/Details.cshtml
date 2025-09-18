@@ -41,7 +41,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="loadModal('@Url.Action("CompleteTask", new { id = Model.Id })')">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("CompleteTask", new { id = Model.Id })" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold text-@(Model.CompletionDate.HasValue ? "warning" : "success") mb-1">
                         <i class="fa fa-@(Model.CompletionDate.HasValue ? "redo" : "check")"></i>
@@ -53,7 +53,8 @@
             </a>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="loadModal('@Url.Action("AddOperation", new { taskId = Model.Id })')">
+            <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddOperation", new { taskId = Model.Id })" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold text-info mb-1">
                         <i class="fa fa-plus-circle"></i>
@@ -65,7 +66,8 @@
             </a>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="javascript:void(0)" onclick="loadModal('@Url.Action("AssignTask", new { taskId = Model.Id })')">
+            <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AssignTask", new { taskId = Model.Id })" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold text-dark mb-1">
                         <i class="fa fa-user-plus"></i>
@@ -93,11 +95,13 @@
                                 <i class="fa fa-fw fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-default-alt-secondary">
-                                <a class="dropdown-item" href="javascript:void(0)" onclick="loadModal('@Url.Action("ToggleActiveStatus", new { id = Model.Id })')">
+                                <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+                                <a class="dropdown-item" href="@Url.Action("ToggleActiveStatus", new { id = Model.Id })" data-toggle="modal-ajax">
                                     <i class="fa fa-fw @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-1"></i> @(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="loadModal('@Url.Action("Delete", new { id = Model.Id })')">
+                                <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+                                <a class="dropdown-item text-danger" href="@Url.Action("Delete", new { id = Model.Id })" data-toggle="modal-ajax">
                                     <i class="fa fa-fw fa-trash-alt me-1"></i> حذف
                                 </a>
                             </div>
@@ -292,7 +296,8 @@
                         <i class="fa fa-cogs text-muted me-1"></i> عملیات‌های تسک
                     </h3>
                     <div class="block-options">
-                        <button type="button" class="btn btn-sm btn-alt-primary" onclick="loadModal('@Url.Action("AddOperation", new { taskId = Model.Id })')">
+                        <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+                        <button type="button" class="btn btn-sm btn-alt-primary" data-toggle="modal-ajax" href="@Url.Action("AddOperation", new { taskId = Model.Id })">
                             <i class="fa fa-plus opacity-50 me-1"></i> افزودن عملیات
                         </button>
                     </div>
@@ -342,17 +347,18 @@
                                                 }
                                             </td>
                                             <td class="text-center d-none d-lg-table-cell fs-sm">
-                                                @(operation.CompletionDate.HasValue ? ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate, "yyyy/MM/dd") : "-")
+                                                @(operation.CompletionDate.HasValue? ConvertDateTime.ConvertMiladiToShamsi(operation.CompletionDate, "yyyy/MM/dd") : "-")
                                             </td>
                                             <td class="text-center">
                                                 <button type="button" class="btn btn-sm btn-alt-secondary me-1" onclick="toggleOperationCompletion(@operation.Id)" data-bs-toggle="tooltip" title="@(operation.IsCompleted ? "بازگشت به حالت در انتظار" : "تکمیل عملیات")">
                                                     <i class="fa fa-fw @(operation.IsCompleted ? "fa-undo text-warning" : "fa-check text-success")"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-alt-secondary me-1" onclick="loadModal('@Url.Action("EditOperation", new { id = operation.Id })')" data-bs-toggle="tooltip" title="ویرایش">
+                                                <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+                                                <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-toggle="modal-ajax" href="@Url.Action("EditOperation", new { id = operation.Id })" data-bs-toggle="tooltip" title="ویرایش">
                                                     <i class="fa fa-fw fa-pencil-alt"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف"
-                                                        onclick="loadModal('@Url.Action("DeleteOperation", new { id = operation.Id })')">
+                                                <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+                                                <button type="button" class="btn btn-sm btn-alt-danger" data-toggle="modal-ajax" href="@Url.Action("DeleteOperation", new { id = operation.Id })" data-bs-toggle="tooltip" title="حذف">
                                                     <i class="fa fa-fw fa-trash-alt"></i>
                                                 </button>
                                             </td>
@@ -374,7 +380,8 @@
                         <i class="fa fa-users text-muted me-1"></i> کاربران اختصاص داده شده
                     </h3>
                     <div class="block-options">
-                        <button type="button" class="btn btn-sm btn-alt-primary" onclick="loadModal('@Url.Action("AssignTask", new { taskId = Model.Id })')">
+                        <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+                        <button type="button" class="btn btn-sm btn-alt-primary" data-toggle="modal-ajax" href="@Url.Action("AssignTask", new { taskId = Model.Id })">
                             <i class="fa fa-user-plus opacity-50 me-1"></i> اختصاص
                         </button>
                     </div>
@@ -402,7 +409,8 @@
                                             <i class="fa fa-calendar-check"></i> تاریخ تخصیص: @(ConvertDateTime.ConvertMiladiToShamsi(assignment.AssignDate, "yyyy/MM/dd"))
                                         </div>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-alt-danger" onclick="loadModal('@Url.Action("RemoveAssignment", new { id = assignment.Id })')" data-bs-toggle="tooltip" title="حذف تخصیص">
+                                    <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+                                    <button type="button" class="btn btn-sm btn-alt-danger" data-toggle="modal-ajax" href="@Url.Action("RemoveAssignment", new { id = assignment.Id })" data-bs-toggle="tooltip" title="حذف تخصیص">
                                         <i class="fa fa-user-minus"></i>
                                     </button>
                                 </div>
@@ -531,34 +539,8 @@
     </div>
 </div>
 <!-- END Page Content -->
-<!-- Modal Container for dynamic content -->
-<div class="modal fade" id="modal-task" tabindex="-1" role="dialog" aria-labelledby="modal-task" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <!-- Dynamic content will be loaded here -->
-            <div class="modal-body">
-                <div class="text-center">
-                    <i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i>
-                    <h3 class="mt-2 mb-3">در حال بارگذاری...</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
-        // Function to open modal and load content
-        function loadModal(url) {
-            $('#modal-task .modal-content').html('<div class="modal-body text-center"><i class="fa fa-3x fa-spinner fa-spin text-primary my-3"></i><h3 class="mt-2 mb-3">در حال بارگذاری...</h3></div>');
-            $('#modal-task').modal('show');
-
-            // Load content via AJAX
-            $.get(url, function(data) {
-                $('#modal-task .modal-content').html(data);
-            });
-        }
-
         function toggleOperationCompletion(operationId) {
             $.ajax({
                 url: '@Url.Action("ToggleOperationCompletion")',
@@ -628,6 +610,13 @@
 
             // Initialize tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // Event handler برای بستن خودکار modal و refresh صفحه
+            $(document).on('modalClosed', function(event, response) {
+                if (response && response.success && response.refreshPage) {
+                    location.reload();
+                }
+            });
         });
     </script>
 }

@@ -1,41 +1,96 @@
 ﻿@model TaskOperationViewModel
 
-<div class="modal-header block-header-default">
-    <h3 class="modal-title">افزودن عملیات جدید</h3>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
-</div>
-<form asp-action="AddOperation" method="post">
-    <div class="modal-body">
-        <input type="hidden" asp-for="TaskId" />
-        <input type="hidden" asp-for="OperationOrder" />
-        
-        <div class="form-group mb-3">
-            <label asp-for="Title" class="form-label">عنوان عملیات</label>
-            <input asp-for="Title" class="form-control" />
-            <span asp-validation-for="Title" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group mb-3">
-            <label asp-for="Description" class="form-label">توضیحات</label>
-            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-            <span asp-validation-for="Description" class="text-danger"></span>
-        </div>
-        
-        <div class="alert alert-info">
-            <div class="d-flex">
-                <div class="flex-shrink-0">
-                    <i class="fa fa-info-circle fa-2x text-info"></i>
-                </div>
-                <div class="flex-grow-1 ms-3">
-                    <p class="mb-0">این عملیات به عنوان گام <strong>@ViewBag.OperationOrder</strong> در تسک <strong>@ViewBag.TaskTitle</strong> اضافه خواهد شد.</p>
+@{
+    Layout = null;
+}
+
+<style>
+    .modal {
+        --bs-modal-width: 60%;
+        transition: 0.3s;
+    }
+</style>
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
+            <div class="block-header bg-info-dark">
+                <h3 class="block-title">افزودن عملیات جدید</h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
                 </div>
             </div>
+
+            <form id="add-operation-form" asp-action="AddOperation" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="TaskId" />
+                <input type="hidden" asp-for="OperationOrder" />
+
+                <div class="block block-themed block-rounded mt-1">
+                    <div class="block-header bg-info-light">
+                        <h3 class="block-title">اطلاعات عملیات</h3>
+                    </div>
+                    <div class="block-content">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="row justify-content-center">
+                            <div class="col-12">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="Title" class="form-control" id="Title" placeholder="عنوان عملیات" />
+                                    <label asp-for="Title" class="form-label input-label" for="Title">عنوان عملیات</label>
+                                    <span asp-validation-for="Title" class="text-danger"></span>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <textarea asp-for="Description" class="form-control" id="Description" rows="3" placeholder="توضیحات عملیات..."></textarea>
+                                    <label asp-for="Description" class="form-label input-label" for="Description">توضیحات</label>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-info-circle fa-2x text-info"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <p class="mb-0">این عملیات به عنوان گام <strong>@ViewBag.OperationOrder</strong> در تسک <strong>@ViewBag.TaskTitle</strong> اضافه خواهد شد.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="block-content block-content-full text-end bg-body">
+            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+            <button class="btn btn-sm btn-info" data-save="modal-ajax-save" type="button">
+                <i class="fa fa-plus me-1"></i>افزودن عملیات
+            </button>
         </div>
     </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">بستن</button>
-        <button type="submit" class="btn btn-alt-primary">
-            <i class="fa fa-check opacity-50 me-1"></i> افزودن عملیات
-        </button>
-    </div>
-</form>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // تنظیم فوکوس روی فیلد عنوان
+        $('#Title').focus();
+
+        // Event handler برای موفقیت
+        $('[data-save="modal-ajax-save"]').on('ajaxFormSuccess', function(event, response) {
+            if (response && response.success) {
+                if (response.message && response.message.length > 0) {
+                    toastr.success(response.message[0].text);
+                }
+                $('.modal').modal('hide');
+                $('.modal').on('hidden.bs.modal', function () {
+                    location.reload();
+                });
+            }
+        });
+    });
+</script>

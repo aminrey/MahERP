@@ -1661,7 +1661,13 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             {
                 var task = _uow.TaskUW.GetById(id);
                 if (task == null)
-                    return RedirectToAction("ErrorView", "Home");
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "تسک یافت نشد"
+                    });
+                }
 
                 var oldCompletionDate = task.CompletionDate;
                 var taskTitle = task.Title;
@@ -1686,22 +1692,22 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 else
                 {
                     task.CompletionDate = DateTime.Now;
-                    
+
                     // اگر کاربر جاری سرپرست یا مدیر است، تایید متناظر را هم ثبت کنیم
                     var currentUser = _userManager.GetUserAsync(User).Result;
                     var isManager = User.IsInRole("Admin") || User.IsInRole("Manager");
                     var isSupervisor = User.IsInRole("Supervisor") || isManager;
-                    
+
                     if (isSupervisor)
                     {
                         task.SupervisorApprovedDate = DateTime.Now;
                     }
-                    
+
                     if (isManager)
                     {
                         task.ManagerApprovedDate = DateTime.Now;
                     }
-                    
+
                     // همه عملیات‌ها را به حالت تکمیل شده تغییر دهیم
                     var operations = _taskRepository.GetTaskOperations(id);
                     foreach (var operation in operations)
@@ -1711,7 +1717,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                             operation.IsCompleted = true;
                             operation.CompletionDate = DateTime.Now;
                             operation.CompletedByUserId = _userManager.GetUserId(User);
-                        
+
                             _uow.TaskOperationUW.Update(operation);
                         }
                     }
@@ -1746,12 +1752,19 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         recordTitle: taskTitle
                     );
                 }
-                
+
                 task.LastUpdateDate = DateTime.Now;
                 _uow.TaskUW.Update(task);
                 _uow.Save();
 
-                return RedirectToAction(nameof(Details), new { id = id });
+                // برگرداندن پاسخ JSON برای modal-ajax
+                var successMessage = isReopening ? "تسک با موفقیت بازگشایی شد" : "تسک با موفقیت تکمیل شد";
+                return Json(new
+                {
+                    success = true,
+                    message = new[] { new { status = "success", text = successMessage } },
+                    refreshPage = true  // اختیاری: برای refresh کردن صفحه بعد از بسته شدن modal
+                });
             }
             catch (Exception ex)
             {
@@ -1762,8 +1775,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     ex,
                     recordId: id.ToString()
                 );
-                
-                return RedirectToAction("ErrorView", "Home");
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در انجام عملیات"
+                });
             }
         }
 
