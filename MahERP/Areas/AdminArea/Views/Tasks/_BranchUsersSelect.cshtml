@@ -39,4 +39,59 @@ else
         
         console.log('Partial view BranchUsersSelect loaded with @(Model?.Count ?? 0) users');
     });
+
+    // کانفیگ سفارشی برای مدیریت Select2 های فیلتر
+    if (typeof DynamicSelect2Manager !== 'undefined') {
+        // تنظیمات برای کاربران فیلتر
+        DynamicSelect2Manager.addSelectConfig('FilterUsersDiv', {
+            id: 'FilterAssignedUsers',
+            name: 'FilterAssignedUsers',
+            multiple: true,
+            placeholder: 'کاربران را انتخاب کنید'
+        });
+
+        // تنظیمات برای طرف حساب‌های فیلتر
+        DynamicSelect2Manager.addSelectConfig('FilterStakeholdersDiv', {
+            id: 'FilterStakeholderId',
+            name: 'FilterStakeholderId',
+            multiple: false,
+            placeholder: 'طرف حساب را انتخاب کنید'
+        });
+
+        console.log('کانفیگ‌های فیلتر TaskCalendar به DynamicSelect2Manager اضافه شد');
+    }
+
+    // رویداد تغییر شعبه - بروزرسانی کاربران و طرف حساب‌ها
+    $(document).on('change', '#FilterBranchId', function() {
+        var branchId = $(this).val();
+        console.log('Filter branch changed:', branchId);
+
+        if (branchId) {
+            // فعال کردن فیلدهای وابسته
+            $('#FilterAssignedUsers, #FilterStakeholderId').prop('disabled', false);
+
+            // پاک کردن انتخاب‌های قبلی
+            $('#FilterAssignedUsers').val([]).trigger('change');
+            $('#FilterStakeholderId').val('').trigger('change');
+
+            // بروزرسانی placeholder ها
+            $('#FilterAssignedUsers').attr('data-placeholder', 'کاربران را انتخاب کنید');
+            $('#FilterStakeholderId').attr('data-placeholder', 'طرف حساب را انتخاب کنید');
+
+            console.log('Branch selected for filter:', branchId);
+        } else {
+            // غیرفعال کردن فیلدهای وابسته
+            $('#FilterAssignedUsers, #FilterStakeholderId').prop('disabled', true);
+
+            // پاک کردن انتخاب‌های قبلی
+            $('#FilterAssignedUsers').val([]).trigger('change');
+            $('#FilterStakeholderId').val('').trigger('change');
+
+            // بازنشانی placeholder ها
+            $('#FilterAssignedUsers').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
+            $('#FilterStakeholderId').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
+
+            console.log('Filter branch cleared');
+        }
+    });
 </script>

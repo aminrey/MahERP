@@ -1,0 +1,52 @@
+﻿@model List<StakeholderViewModel>
+
+@{
+    Layout = null;
+}
+
+@if (Model?.Any() == true)
+{
+    <select class="js-select2 form-select" 
+            id="FilterStakeholderId" 
+            name="FilterStakeholderId"
+            data-placeholder="طرف حساب را انتخاب کنید" 
+            style="width: 100%;">
+        <option value="">طرف حساب را انتخاب کنید</option>
+        @foreach (var stakeholder in Model)
+        {
+            <option value="@stakeholder.Id">@stakeholder.DisplayName</option>
+        }
+    </select>
+}
+else
+{
+    <select class="js-select2 form-select" 
+            id="FilterStakeholderId" 
+            name="FilterStakeholderId"
+            data-placeholder="طرف حسابی در این شعبه یافت نشد"  
+            style="width: 100%;"
+            disabled>
+        <option value="">طرف حسابی در این شعبه یافت نشد</option>
+    </select>
+}
+
+<script>
+    $(document).ready(function() {
+        $('#FilterStakeholderId').select2({
+            placeholder: '@(Model?.Any() == true ? "طرف حساب را انتخاب کنید" : "طرف حسابی در این شعبه یافت نشد")',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        @if (Model?.Any() == true)
+        {
+            <text>$('#FilterStakeholderId').prop('disabled', false);</text>
+        }
+        else
+        {
+            <text>$('#FilterStakeholderId').prop('disabled', true);</text>
+        }
+        
+        console.log('Filter BranchStakeholdersSelect loaded with @(Model?.Count ?? 0) stakeholders');
+    });
+</script>

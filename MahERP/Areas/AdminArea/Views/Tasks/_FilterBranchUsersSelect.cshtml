@@ -1,0 +1,51 @@
+﻿@model List<BranchUserViewModel>
+
+@{
+    Layout = null;
+}
+
+@if (Model?.Any() == true)
+{
+    <select class="js-select2 form-select" 
+            id="FilterAssignedUsers" 
+            data-placeholder="کاربران را انتخاب کنید" 
+            multiple="multiple" 
+            name="FilterAssignedUsers" 
+            style="width: 100%;">
+        @foreach (var user in Model)
+        {
+            <option value="@user.UserId">@user.UserFullName</option>
+        }
+    </select>
+}
+else
+{
+    <select class="js-select2 form-select" 
+            id="FilterAssignedUsers" 
+            data-placeholder="کاربری در این شعبه یافت نشد" 
+            multiple="multiple" 
+            name="FilterAssignedUsers" 
+            style="width: 100%;">
+    </select>
+}
+
+<script>
+    $(document).ready(function() {
+        $('#FilterAssignedUsers').select2({
+            placeholder: '@(Model?.Any() == true ? "کاربران را انتخاب کنید" : "کاربری در این شعبه یافت نشد")',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        @if (Model?.Any() == true)
+        {
+            <text>$('#FilterAssignedUsers').prop('disabled', false);</text>
+        }
+        else
+        {
+            <text>$('#FilterAssignedUsers').prop('disabled', true);</text>
+        }
+        
+        console.log('Filter BranchUsersSelect loaded with @(Model?.Count ?? 0) users');
+    });
+</script>

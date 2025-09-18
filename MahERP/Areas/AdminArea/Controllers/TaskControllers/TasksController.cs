@@ -2296,5 +2296,80 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 });
             }
         }
+
+        /// <summary>
+        /// بروزرسانی فیلترهای تقویم بر اساس شعبه انتخاب شده
+        /// این متد مخصوص TaskCalendar است و ID های مختلف را بروزرسانی می‌کند
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>PartialView حاوی فیلترهای تقویم</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BranchTriggerSelectForCalendar(int branchId)
+        {
+            try
+            {
+                // دریافت کاربران شعبه انتخاب شده با استفاده از Repository
+                var branchUsersViewModels = _branchRepository.GetBranchUsersByBranchId(branchId, includeInactive: false);
+
+                // دریافت طرف حساب‌های شعبه انتخاب شده
+                var stakeholdersViewModels = _stakeholderRepository.GetStakeholdersByBranchId(branchId);
+
+                // رندر کردن partial views مخصوص فیلتر
+                var usersPartialView = await this.RenderViewToStringAsync("_FilterBranchUsersSelect", branchUsersViewModels);
+                var stakeholdersPartialView = await this.RenderViewToStringAsync("_FilterBranchStakeholdersSelect", stakeholdersViewModels);
+
+                // اضافه کردن به response - بروزرسانی فیلترهای تقویم
+                var viewList = new List<object>
+                {
+                    new
+                    {
+                        elementId = "FilterUsersDiv",
+                        view = new
+                        {
+                            result = usersPartialView
+                        }
+                    },
+                    new
+                    {
+                        elementId = "FilterStakeholdersDiv",
+                        view = new
+                        {
+                            result = stakeholdersPartialView
+                        }
+                    }
+                };
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "BranchTriggerSelectForCalendar",
+                    $"بارگذاری فیلترهای تقویم - کاربران ({branchUsersViewModels?.Count ?? 0}), طرف حساب‌ها ({stakeholdersViewModels?.Count ?? 0}) شعبه {branchId}"
+                );
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = viewList
+                });
+            }
+            catch (Exception ex)
+            {
+                // لاگ کردن خطا
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "BranchTriggerSelectForCalendar",
+                    "خطا در بارگذاری فیلترهای تقویم",
+                    ex
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا در بارگذاری فیلترهای تقویم: " + ex.Message
+                });
+            }
+        }
     }
 }
