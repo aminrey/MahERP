@@ -113,5 +113,16 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <para>در صورت مشاهده تسک توسط کاربر، زمان مشاهده در این ویژگی ذخیره می‌شود.</para>
         /// </summary>
         public DateTime? ReadDate { get; set; }
+        /// <summary>
+        /// گزارش کاربر در رابطه با انجام تسک
+        /// <para>کاربر می‌تواند گزارش مربوط به انجام تسک را در این ویژگی ثبت کند.</para>
+        /// </summary>
+        public string? UserReport { get; set; }
+
+        /// <summary>
+        /// تاریخ ثبت گزارش توسط کاربر
+        /// <para>زمانی که کاربر گزارش را ثبت می‌کند، این ویژگی مقداردهی می‌شود.</para>
+        /// </summary>
+        public DateTime? ReportDate { get; set; }
     }
 }

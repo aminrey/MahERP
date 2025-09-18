@@ -2423,6 +2423,9 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<DateTime?>("ReadDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("ReportDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -2431,6 +2434,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
+
+                    b.Property<string>("UserReport")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
