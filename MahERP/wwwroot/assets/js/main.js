@@ -1,57 +1,23 @@
 ﻿/**
  * Bootstrap5Modal.js
- * Enhanced modal functionality for Bootstrap 5 with language parameter support
+ * Enhanced modal functionality for Bootstrap 5 
  */
 
-// Utility functions for URL and language handling
+// Utility functions for URL 
 const ModalUtils = {
-    /**
-     * Get the current language code from the hidden input
-     * @returns {string} - The language code or 'fa' as default
-     */
-    getLanguageCode: function () {
-        const languageElement = document.getElementById("languageCode");
-        return languageElement ? languageElement.value : 'fa';
-    },
 
     /**
-     * Add language parameter to URL if it doesn't already exist
-     * @param {string} urlString - URL to process
-     * @param {string} languageCode - Language code to add
-     * @returns {string} - URL with language parameter
-     */
-    addLanguageToUrl: function (urlString, languageCode) {
-        if (!urlString || urlString === '#' || urlString.startsWith('javascript:')) {
-            return urlString;
-        }
-
-        try {
-            const url = new URL(urlString, window.location.origin);
-            if (!url.searchParams.has("languageCode")) {
-                url.searchParams.set("languageCode", languageCode);
-                return url.toString();
-            }
-            return urlString;
-        } catch (e) {
-            console.warn("Invalid URL:", urlString);
-            return urlString;
-        }
-    },
-
-    /**
-     * Process all URLs in a container to add language parameters
+     * Process all URLs in a container to 
      * @param {HTMLElement|jQuery} container - Container element to process
      */
     processUrlsInContainer: function (container) {
-        const languageCode = this.getLanguageCode();
         const $container = $(container);
 
         // Process buttons with formaction
         $container.find("button[formaction]").each((i, button) => {
             const formaction = $(button).attr("formaction");
             if (formaction) {
-                const newUrl = this.addLanguageToUrl(formaction, languageCode);
-                $(button).attr("formaction", newUrl);
+                $(button).attr("formaction", formaction);
             }
         });
 
@@ -59,21 +25,11 @@ const ModalUtils = {
         $container.find("a[href]").each((i, link) => {
             const href = $(link).attr("href");
             if (href && href !== '#' && !href.startsWith('javascript:')) {
-                const newUrl = this.addLanguageToUrl(href, languageCode);
-                $(link).attr("href", newUrl);
+                $(link).attr("href", href);
             }
         });
 
-        // Add language code to forms
-        $container.find("form").each((i, form) => {
-            if (!$(form).find("input[name='languageCode']").length) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'languageCode',
-                    value: languageCode
-                }).appendTo($(form));
-            }
-        });
+      
     },
 
     /**
@@ -314,8 +270,7 @@ const DynamicSelect2Manager = {
             ajaxData.__RequestVerificationToken = token;
         }
 
-        // اضافه کردن language code
-        ajaxData.languageCode = ModalUtils.getLanguageCode();
+ 
 
         $.ajax({
             url: url,
@@ -482,8 +437,6 @@ function createAndShowModalWithoutRemove(url) {
     $('body').append(modalHtml);
     const $modal = $('#' + uniqueModalId);
 
-    // Add language parameter to URL
-    const urlWithLanguage = ModalUtils.addLanguageToUrl(url, ModalUtils.getLanguageCode());
 
     // Load content into the modal via AJAX
     $.get(urlWithLanguage).done(function (data) {
@@ -514,11 +467,8 @@ function createAndShowModal(url) {
     $('body').append(modalHtml);
     const $modal = $('#' + uniqueModalId);
 
-    // Add language parameter to URL
-    const urlWithLanguage = ModalUtils.addLanguageToUrl(url, ModalUtils.getLanguageCode());
-
     // Load content into the modal via AJAX
-    $.get(urlWithLanguage).done(function (data) {
+    $.get(url).done(function (data) {
         try {
             // Check if data is valid
             if (!data) {
@@ -853,9 +803,6 @@ $(document).on('click', '[data-toggle="modal-old"]', function (event) {
     const $modal = $(targetModalId);
     let url = $trigger.attr("formaction");
 
-    // Add language code to URL
-    url = ModalUtils.addLanguageToUrl(url, ModalUtils.getLanguageCode());
-
     $.get(url).done(function (data) {
         $modal.html(data);
         // Process URLs in loaded modal content
@@ -978,8 +925,6 @@ $("#modal-action").on('click', '[data-save="modal-noreload"]', function (event) 
     const url = $button.data('url');
     const dataform = new FormData($form[0]);
 
-    // Add language code to form data
-    dataform.append('languageCode', ModalUtils.getLanguageCode());
 
     const $partialElement = $("#partialid");
 
@@ -1015,8 +960,6 @@ $(document).on('click', '[data-toggle="partialview"]', function (event) {
 
     const url = ModalUtils.getUrlFromElement($target);
 
-    // Add language code to URL
-    const urlWithLanguage = ModalUtils.addLanguageToUrl(url, ModalUtils.getLanguageCode());
 
     $.get(urlWithLanguage).done(function (data) {
         const $container = $(viewId);
@@ -1046,8 +989,6 @@ $(document).on('click', '[data-toggle="submitformmultiple"]', function (event) {
 
     const dataform = new FormData($form[0]);
 
-    // Add language code to form data
-    dataform.append('languageCode', ModalUtils.getLanguageCode());
 
     if (typeof tinymce !== 'undefined') {
         tinymce.triggerSave();
@@ -1102,8 +1043,6 @@ $(document).on('keyup', 'input[type="text"][data-toggle="partialview"]', functio
 
     const formData = new FormData();
 
-    // Add language code to form data
-    formData.append('languageCode', ModalUtils.getLanguageCode());
 
     // Get related select elements
     const selects = $target.data('sclass');
@@ -1147,11 +1086,6 @@ $(document).on('click', 'input[type="radio"][data-toggle="partialview"]', functi
     const viewId = $target.data('target');
     const value = $target.val();
 
-    // Create query data with language code
-    const data = {
-        value: value,
-        languageCode: ModalUtils.getLanguageCode()
-    };
 
     const url = $target.data('href') || $target.attr("formaction") || $target.closest('form').attr("action");
 
@@ -1185,8 +1119,6 @@ $(document).on('click', '[data-toggle="submitform"]', function (event) {
 
     const dataform = new FormData($form[0]);
 
-    // Add language code to form data
-    dataform.append('languageCode', ModalUtils.getLanguageCode());
 
     // Add checkbox states to form data
     $('input[type="checkbox"]').each(function () {
@@ -1232,8 +1164,6 @@ $(document).on('click', '[data-toggle="swal-asp"]', function (event) {
 
     Dashmix.block('state_loading', viewId);
 
-    // Add language code to href
-    href = ModalUtils.addLanguageToUrl(href, ModalUtils.getLanguageCode());
 
     const swalWithBootstrapButtons = Swal.mixin({
         customClass: {

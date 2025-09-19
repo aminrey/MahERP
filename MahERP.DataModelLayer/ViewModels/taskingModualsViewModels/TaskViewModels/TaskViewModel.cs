@@ -1,6 +1,8 @@
 ﻿using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -17,7 +19,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
         //[MaxLength(7, ErrorMessage = "کد تسک حداکثر 7 کاراکتر باشد")]
         public string? TaskCode { get; set; }
 
-        [Required(ErrorMessage = "عنوان تسک الزامی است")]
+        [Required(ErrorMessage = "عنوان تسک الزامی است و نمی‌تواند خالی باشد")]
         [Display(Name = "عنوان تسک")]
         [MaxLength(200, ErrorMessage = "عنوان تسک حداکثر 200 کاراکتر باشد")]
         public string Title { get; set; }
@@ -36,6 +38,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
         public int? ContractId { get; set; }
 
         [Display(Name = "شعبه")]
+
         public int? BranchId { get; set; }
 
         [Display(Name = "تسک بالادست")]
@@ -133,11 +136,16 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
     /// هر جا initial هست یک لیست  جهت انتخاب هستد
     /// intial یعنی همه لیست و لود میکنه و برای نمایش تمام کاربر ها هست . 
     /// </summary>
-    public List<BranchViewModel>? branchListInitial { get; set; }
-    public List<UserViewModelFull>? UsersInitial { get; set; }
-    public List<StakeholderViewModel>? StakeholdersInitial { get; set; }
-    public List<TaskCategory>? TaskCategoryInitial { get; set; }
+    public List<BranchViewModel>? branchListInitial { get; set; } = new List<BranchViewModel>();
+    public List<UserViewModelFull>? UsersInitial { get; set; } = new List<UserViewModelFull>();
+    public List<StakeholderViewModel>? StakeholdersInitial { get; set; } = new List<StakeholderViewModel>();
+    public List<TaskCategory>? TaskCategoryInitial { get; set; } = new List<TaskCategory>();
 
+    /// <summary>
+    /// لیست تیم‌های موجود برای انتخاب
+    /// </summary>
+    [Display(Name = "تیم‌های موجود")]
+    public List<TeamViewModel>? TeamsInitial { get; set; } = new List<TeamViewModel>();
 
     // AssignmentsTask
     /// <summary>
@@ -156,6 +164,13 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
     /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
     /// </summary>
     public List<string>? AssignmentsSelectedTaskUserArraysString { get; set; }
+
+    /// <summary>
+    /// لیست تیم‌های انتخاب شده برای اختصاص تسک
+    /// </summary>
+    [Display(Name = "تیم‌های انتخاب شده")]
+    public List<int>? AssignmentsSelectedTeamIds { get; set; }
+
     /// <summary>
     /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
     /// </summary>
@@ -166,6 +181,22 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
     [Display(Name = "دسته‌بندی")]
     public int TaskCategoryIdSelected { get; set; } 
 
+    /// <summary>
+    /// نشان‌دهنده اینکه آیا کاربر می‌خواهد کد را دستی وارد کند
+    /// </summary>
+    [Display(Name = "ورود دستی کد")]
+    public bool IsManualTaskCode { get; set; } = false;
+
+    /// <summary>
+    /// کد تسک دستی وارد شده توسط کاربر
+    /// </summary>
+    [Display(Name = "کد تسک دستی")]
+    public string? ManualTaskCode { get; set; }
+
+    /// <summary>
+    /// تنظیمات کد تسک برای نمایش در view
+    /// </summary>
+    public TaskCodeSettings? TaskCodeSettings { get; set; }
 }
 
 

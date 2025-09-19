@@ -1,0 +1,63 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamMemberViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">اضافه کردن عضو به تیم: @Model.TeamTitle</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="AddMemberSubmit" method="post">
+            @Html.AntiForgeryToken()
+            
+            <div class="modal-body">
+                <input type="hidden" asp-for="TeamId" />
+                
+                <div class="mb-3">
+                    <label asp-for="UserId" class="form-label required"></label>
+                    <select asp-for="UserId" class="form-select js-select2" asp-items="ViewBag.AvailableUsers" required>
+                        <option value="">-- انتخاب کاربر --</option>
+                    </select>
+                    <span asp-validation-for="UserId" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Position" class="form-label"></label>
+                            <input asp-for="Position" class="form-control" placeholder="سمت در تیم" />
+                            <span asp-validation-for="Position" class="text-danger"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="MembershipType" class="form-label"></label>
+                            <select asp-for="MembershipType" class="form-select" asp-items="ViewBag.MembershipTypes">
+                            </select>
+                            <span asp-validation-for="MembershipType" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="RoleDescription" class="form-label"></label>
+                    <textarea asp-for="RoleDescription" class="form-control" rows="2" placeholder="شرح نقش کاربر در تیم (اختیاری)"></textarea>
+                    <span asp-validation-for="RoleDescription" class="text-danger"></span>
+                </div>
+
+                <div class="form-check">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                    <label asp-for="IsActive" class="form-check-label"></label>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="btn btn-primary" data-save="modal-ajax-save">
+                    <i class="fa fa-plus me-1"></i> اضافه کردن
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

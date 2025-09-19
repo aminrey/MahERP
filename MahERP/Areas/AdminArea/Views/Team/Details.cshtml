@@ -1,0 +1,129 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamViewModel
+@{
+    ViewData["Title"] = "جزئیات تیم - " + Model.Title;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">@ViewData["Title"]</h3>
+        <div class="block-options">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-alt-primary">
+                <i class="fa fa-edit me-1"></i> ویرایش
+            </a>
+            <a asp-action="Index" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-left me-1"></i> بازگشت
+            </a>
+        </div>
+    </div>
+    <div class="block-content">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Team Information -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">اطلاعات تیم</h3>
+                    </div>
+                    <div class="block-content">
+                        <!-- Team info content -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>عنوان:</strong> @Model.Title</p>
+                                <p><strong>شعبه:</strong> @Model.BranchName</p>
+                                <p>
+                                    <strong>سطح دسترسی:</strong>
+                                    <span class="badge bg-@(Model.AccessLevel == 0 ? "primary" : "secondary")">@Model.AccessLevelText</span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p>
+                                    <strong>تیم والد:</strong>
+                                    @(string.IsNullOrEmpty(Model.ParentTeamTitle) ? "ریشه" : Model.ParentTeamTitle)
+                                </p>
+                                <p>
+                                    <strong>وضعیت:</strong>
+                                    <span class="badge bg-@(Model.IsActive ? "success" : "danger")">@(Model.IsActive ? "فعال" : "غیرفعال")</span>
+                                </p>
+                                <p><strong>ترتیب نمایش:</strong> @Model.DisplayOrder</p>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <hr>
+                            <p><strong>توضیحات:</strong></p>
+                            <p class="text-muted">@Model.Description</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Team Members -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">اعضای تیم (@Model.TeamMembers.Count)</h3>
+                        <div class="block-options">
+                            <button type="button" class="btn btn-sm btn-alt-success"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("AddMemberModal", new { teamId = Model.Id })">
+                                <i class="fa fa-plus me-1"></i> اضافه کردن عضو
+                            </button>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <div id="team-members-table">
+                            @{
+                                ViewBag.TeamId = Model.Id;
+                            }
+                            @await Html.PartialAsync("_TeamMembersTable", Model.TeamMembers)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Manager Information -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">مدیر تیم</h3>
+                    </div>
+                    <div class="block-content">
+                        <div id="manager-info-card">
+                            @await Html.PartialAsync("_ManagerCard", Model)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Information -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">اطلاعات کنترلی</h3>
+                    </div>
+                    <div class="block-content">
+                        <p>
+                            <small class="text-muted">ایجاد شده:</small><br>
+                            @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd HH:mm")
+                        </p>
+
+                        @if (!string.IsNullOrEmpty(Model.CreatorName))
+                        {
+                            <p><small class="text-muted">ایجاد کننده:</small><br>@Model.CreatorName</p>
+                        }
+
+                        @if (Model.LastUpdateDate.HasValue)
+                        {
+                            <p>
+                                <small class="text-muted">آخرین بروزرسانی:</small><br>
+                                @ConvertDateTime.ConvertMiladiToShamsi(Model.LastUpdateDate.Value, "yyyy/MM/dd HH:mm")
+                            </p>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.LastUpdaterName))
+                        {
+                            <p><small class="text-muted">آخرین بروزرسان:</small><br>@Model.LastUpdaterName</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -2,7 +2,8 @@
 @{
     ViewData["Title"] = "افزودن قرارداد جدید";
 }
-
+<script src="~/lib/tinymce/tinymce.min.js"></script>
+<script src="~/assets/js/tinymceconfig.js"></script>
 <!-- Hero -->
 <div class="bg-body-light">
     <div class="content content-full">
@@ -45,12 +46,12 @@
                             </select>
                             <span asp-validation-for="StakeholderId" class="text-danger"></span>
                         </div>
-                        <div class="mb-4">
+                        <div class="mb-4 col-12 col-lg-6">
                             <label class="form-label" for="Title">عنوان قرارداد <span class="text-danger">*</span></label>
                             <input asp-for="Title" class="form-control" placeholder="عنوان قرارداد را وارد کنید">
                             <span asp-validation-for="Title" class="text-danger"></span>
                         </div>
-                        <div class="mb-4">
+                        <div class="mb-4 col-12 col-lg-6">
                             <label class="form-label" for="ContractNumber">شماره قرارداد <span class="text-danger">*</span></label>
                             <input asp-for="ContractNumber" class="form-control" placeholder="شماره قرارداد را وارد کنید">
                             <span asp-validation-for="ContractNumber" class="text-danger"></span>
@@ -77,19 +78,39 @@
                             <span asp-validation-for="ContractValue" class="text-danger"></span>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label" for="Status">وضعیت قرارداد</label>
-                            <select asp-for="Status" class="form-select">
-                                <option value="0">پیش‌نویس</option>
-                                <option value="1" selected>فعال</option>
-                                <option value="2">تمام شده</option>
-                                <option value="3">لغو شده</option>
-                            </select>
+                            <label class="form-label">وضعیت قرارداد</label>
+                            <div class="space-x-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="status-unknown" name="Status" type="radio" value="-1" asp-for="Status" />
+                                    <label class="form-check-label" for="status-unknown">نامعلوم</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="status-draft" name="Status" type="radio" value="0" asp-for="Status" />
+                                    <label class="form-check-label" for="status-draft">پیش‌نویس</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input checked="" class="form-check-input" id="status-active" name="Status" type="radio" value="1" asp-for="Status" />
+                                    <label class="form-check-label" for="status-active">فعال</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="status-finished" name="Status" type="radio" value="2" asp-for="Status" />
+                                    <label class="form-check-label" for="status-finished">تمام شده</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="status-cancelled" name="Status" type="radio" value="3" asp-for="Status" />
+                                    <label class="form-check-label" for="status-cancelled">لغو شده</label>
+                                </div>
+                            </div>
                             <span asp-validation-for="Status" class="text-danger"></span>
                         </div>
                         <div class="mb-4">
                             <label class="form-label" for="Description">توضیحات</label>
                             <textarea asp-for="Description" class="form-control" rows="4" placeholder="توضیحات اضافی را وارد کنید"></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <script>
+                                simpletiny('Description', 'توضیحات', 300);
+
+                            </script>
+
                         </div>
                         <div class="mb-4">
                             <label class="form-check">

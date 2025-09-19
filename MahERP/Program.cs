@@ -2,6 +2,7 @@
 using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -33,7 +34,8 @@ builder.Services.AddScoped<IRoleRepository, RoleRepository>(); // اضافه ش�
 builder.Services.AddScoped<IUserManagerRepository,UserManagerRepository>(); 
 builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>(); // اضافه شده
 builder.Services.AddScoped<ICoreNotificationRepository, CoreNotificationRepository>(); // سیستم نوتیفیشن کلی
-
+builder.Services.AddScoped<TaskCodeGenerator>();
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 // Activity Logger Service
 builder.Services.AddScoped<ActivityLoggerService>(); // اضافه شده
 builder.Services.AddScoped<TaskNotificationService>(); // سرویس نوتیفیکیشن تسک‌ها

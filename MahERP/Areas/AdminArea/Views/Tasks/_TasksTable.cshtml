@@ -1,0 +1,153 @@
+﻿@model List<TaskViewModel>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-striped table-vcenter">
+        <thead>
+            <tr>
+                <th class="text-center" style="width: 100px;">کد تسک</th>
+                <th class="text-center">عنوان</th>
+                <th class="text-center">دسته‌بندی</th>
+                <th class="text-center" style="width: 120px;">اولویت</th>
+                <th class="text-center" style="width: 120px;">مهلت انجام</th>
+                <th class="text-center" style="width: 120px;">وضعیت</th>
+                <th class="text-center" style="width: 120px;">پیشرفت</th>
+                <th class="text-center" style="width: 180px;">عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-center">
+                            <span class="badge bg-primary">@item.TaskCode</span>
+                        </td>
+                        <td class="text-start">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="fw-semibold">@item.Title</a>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <small class="d-block text-muted">@(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)</small>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (!string.IsNullOrEmpty(item.CategoryTitle))
+                            {
+                                <span class="badge bg-secondary">@item.CategoryTitle</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">بدون دسته‌بندی</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @switch (item.TaskType)
+                            {
+                                case 0:
+                                    <span class="badge bg-light text-dark">
+                                        <i class="fa fa-tasks me-1"></i>عادی
+                                    </span>
+                                    break;
+                                case 1:
+                                    <span class="badge bg-warning">
+                                        <i class="fa fa-exclamation-circle me-1"></i>مهم
+                                    </span>
+                                    break;
+                                case 2:
+                                    <span class="badge bg-danger">
+                                        <i class="fa fa-fire me-1"></i>فوری
+                                    </span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (item.DueDate.HasValue)
+                            {
+                                var persianDate = ConvertDateTime.ConvertMiladiToShamsi(item.DueDate, "yyyy/MM/dd");
+                                if (item.DueDate.Value < DateTime.Now && !item.CompletionDate.HasValue)
+                                {
+                                    <span class="text-danger fw-bold">@persianDate</span>
+                                    <small class="d-block text-danger">تاخیردار</small>
+                                }
+                                else
+                                {
+                                    <span>@persianDate</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">تعیین نشده</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (item.IsDeleted)
+                            {
+                                <span class="badge bg-danger">حذف شده</span>
+                            }
+                            else if (!item.IsActive)
+                            {
+                                <span class="badge bg-warning">غیرفعال</span>
+                            }
+                            else if (item.CompletionDate.HasValue && item.ManagerApprovedDate.HasValue)
+                            {
+                                <span class="badge bg-success">تکمیل و تایید شده</span>
+                            }
+                            else if (item.CompletionDate.HasValue && item.SupervisorApprovedDate.HasValue)
+                            {
+                                <span class="badge bg-info">تایید سرپرست</span>
+                            }
+                            else if (item.CompletionDate.HasValue)
+                            {
+                                <span class="badge bg-primary">تکمیل شده</span>
+                            }
+                            else if (item.DueDate.HasValue && DateTime.Now > item.DueDate.Value)
+                            {
+                                <span class="badge bg-danger">تاخیر</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info">در حال انجام</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <div class="progress push mb-0">
+                                <div class="progress-bar progress-bar-striped @(item.ProgressPercentage == 100 ? " bg-success" : "bg-primary")" role="progressbar"
+                                     style="width: @item.ProgressPercentage%" aria-valuenow="@item.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
+                                    <span class="fs-sm fw-semibold">@item.ProgressPercentage%</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="جزئیات">
+                                <i class="fa fa-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="ویرایش">
+                                <i class="fa fa-pencil-alt"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip"
+                                    title="@(item.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")"
+                                    href="@Url.Action("ToggleActiveStatus", new { id = item.Id })" data-toggle="modal-ajax">
+                                <i class="fa @(item.IsActive ? "fa-ban" : "fa-check")"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف"
+                                    href="@Url.Action("DeleteConfirmModal", new { id = item.Id })" data-toggle="modal-ajax">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="8" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fa fa-inbox fa-2x mb-2"></i>
+                            <p>هیچ تسکی یافت نشد</p>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

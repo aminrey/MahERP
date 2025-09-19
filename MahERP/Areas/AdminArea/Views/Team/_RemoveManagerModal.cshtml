@@ -1,0 +1,39 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title text-warning">
+                <i class="fa fa-exclamation-triangle me-1"></i>
+                حذف مدیر تیم
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="RemoveManagerSubmit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="teamId" value="@Model.Id" />
+            
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fa fa-user-minus fa-3x text-warning mb-3"></i>
+                    <h5>آیا از حذف مدیر این تیم اطمینان دارید؟</h5>
+                    
+                    <div class="alert alert-info">
+                        <strong>تیم:</strong> @Model.Title<br>
+                        <strong>مدیر فعلی:</strong> @Model.ManagerFullName
+                    </div>
+                    
+                    <p class="text-muted">پس از حذف، این تیم بدون مدیر خواهد بود.</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="btn btn-warning" data-save="modal-ajax-save">
+                    <i class="fa fa-user-minus me-1"></i> حذف مدیر
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

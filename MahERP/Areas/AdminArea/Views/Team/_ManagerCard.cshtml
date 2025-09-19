@@ -1,0 +1,33 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamViewModel
+
+<div class="text-center">
+    @if (Model.HasManager)
+    {
+        <div class="mb-3">
+            <i class="fa fa-user-tie fa-3x text-primary mb-2"></i>
+            <h5>@Model.ManagerFullName</h5>
+            <button type="button" class="btn btn-sm btn-outline-primary me-1" 
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("AssignManagerModal", new { teamId = Model.Id })">
+                <i class="fa fa-edit"></i> تغییر
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" 
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("RemoveManagerModal", new { teamId = Model.Id })">
+                <i class="fa fa-times"></i> حذف
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="mb-3">
+            <i class="fa fa-user-slash fa-3x text-muted mb-2"></i>
+            <h5 class="text-muted">بدون مدیر</h5>
+            <button type="button" class="btn btn-primary" 
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("AssignManagerModal", new { teamId = Model.Id })">
+                <i class="fa fa-plus me-1"></i> انتخاب مدیر
+            </button>
+        </div>
+    }
+</div>

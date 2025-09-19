@@ -1,0 +1,127 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamViewModel
+@{
+    ViewData["Title"] = "ویرایش تیم - " + Model.Title;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">@ViewData["Title"]</h3>
+        <div class="block-options">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-sm btn-alt-info">
+                <i class="fa fa-eye me-1"></i> جزئیات
+            </a>
+            <a asp-action="Index" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-left me-1"></i> بازگشت
+            </a>
+        </div>
+    </div>
+    <div class="block-content">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="BranchId" />
+            <input type="hidden" asp-for="CreateDate" />
+            <input type="hidden" asp-for="CreatorName" />
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label required"></label>
+                        <input asp-for="Title" class="form-control" placeholder="نام تیم را وارد کنید" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="ParentTeamId" class="form-label"></label>
+                        <select asp-for="ParentTeamId" class="form-select" asp-items="ViewBag.ParentTeams">
+                        </select>
+                        <span asp-validation-for="ParentTeamId" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="ManagerUserId" class="form-label"></label>
+                        <select asp-for="ManagerUserId" class="form-select" asp-items="ViewBag.AvailableUsers">
+                        </select>
+                        <span asp-validation-for="ManagerUserId" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="AccessLevel" class="form-label"></label>
+                        <select asp-for="AccessLevel" class="form-select" asp-items="ViewBag.AccessLevels">
+                        </select>
+                        <span asp-validation-for="AccessLevel" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="DisplayOrder" class="form-label"></label>
+                        <input asp-for="DisplayOrder" class="form-control" type="number" min="1" />
+                        <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsActive" class="form-check-label"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3" placeholder="توضیحات تیم (اختیاری)"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <!-- نمایش اطلاعات ایجاد -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <strong>ایجاد شده:</strong> @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd HH:mm")
+                        @if (!string.IsNullOrEmpty(Model.CreatorName))
+                        {
+                            <span> توسط @Model.CreatorName</span>
+                        }
+                    </small>
+                </div>
+                <div class="col-md-6">
+                    @if (Model.LastUpdateDate.HasValue)
+                    {
+                        <small class="text-muted">
+                            <strong>آخرین بروزرسانی:</strong> @ConvertDateTime.ConvertMiladiToShamsi(Model.LastUpdateDate.Value, "yyyy/MM/dd HH:mm")
+                            @if (!string.IsNullOrEmpty(Model.LastUpdaterName))
+                            {
+                                <span> توسط @Model.LastUpdaterName</span>
+                            }
+                        </small>
+                    }
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check me-1"></i> ذخیره تغییرات
+                </button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                    <i class="fa fa-times me-1"></i> انصراف
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

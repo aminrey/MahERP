@@ -40,7 +40,7 @@
                                 </a>
                             </div>
                         </div>
-                        
+
                         <!-- Notification List -->
                         <div id="notificationsList">
                             <div class="text-center p-3">
@@ -50,7 +50,7 @@
                                 <div class="mt-2 text-muted small">در حال بارگذاری...</div>
                             </div>
                         </div>
-                        
+
                         <!-- Footer -->
                         <div class="dropdown-divider m-0"></div>
                         <div class="dropdown-item text-center">
@@ -62,7 +62,6 @@
                     </div>
                 </div>
                 <!-- END Notification Bell -->
-                
                 <!-- Toggle Sidebar Style -->
                 <button class="btn btn-sm btn-alt-secondary" data-class="fa-toggle-off fa-toggle-on" data-target="#sidebar-style-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('sidebar_style_toggle');Dashmix.layout('header_style_toggle');" type="button">
                     <i class="fa fa-toggle-off" id="sidebar-style-toggler"></i>
@@ -191,184 +190,211 @@
                                 <span class="nav-main-link-name">تقویم تسک‌ها</span>
                             </a>
                         </li>
-                        </li>
+                </li>
+                <li class="nav-main-item">
+                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="TaskCategory" asp-action="Index">
+                        <i class="nav-main-link-icon fa fa-tag"></i>
+                        <span class="nav-main-link-name">دسته‌بندی‌ها</span>
+                    </a>
+                </li>
+                <li class="nav-main-item">
+                    <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
+                        <i class="nav-main-link-icon fa fa-search"></i>
+                        <span class="nav-main-link-name">جستجوی پیشرفته</span>
+                    </a>
+                </li>
+            </ul>
+            </li>
+            <!-- END Task Management Section -->
+            <!-- CRM Management Section -->
+            <li class="nav-main-item">
+                <a class="nav-main-link nav-main-link-submenu" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
+                    <i class="nav-main-link-icon fa fa-handshake"></i>
+                    <span class="nav-main-link-name">مدیریت مشتریان</span>
+                </a>
+                <ul class="nav-main-submenu">
+                    <li class="nav-main-item">
+                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Index">
+                            <i class="nav-main-link-icon fa fa-list"></i>
+                            <span class="nav-main-link-name">تعاملات CRM</span>
+                        </a>
+                    </li>
+                    <li class="nav-main-item">
+                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Create">
+                            <i class="nav-main-link-icon fa fa-plus-circle"></i>
+                            <span class="nav-main-link-name">افزودن تعامل جدید</span>
+                        </a>
+                    </li>
+                    <li class="nav-main-item">
+                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="MyInteractions">
+                            <i class="nav-main-link-icon fa fa-user-friends"></i>
+                            <span class="nav-main-link-name">تعاملات من</span>
+                        </a>
+                    </li>
+                    <li class="nav-main-item">
+                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Statistics">
+                            <i class="nav-main-link-icon fa fa-chart-bar"></i>
+                            <span class="nav-main-link-name">آمار و گزارشات</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- User and Permission Management -->
+            @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+            {
+                <li class="nav-main-heading">مدیریت کاربران و دسترسی</li>
+
+                <!-- Branch Management -->
+                <li class="nav-main-item">
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fa fa-sitemap"></i>
+                        <span class="nav-main-link-name">مدیریت شعب</span>
+                    </a>
+                    <ul class="nav-main-submenu">
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="TaskCategory" asp-action="Index">
-                                <i class="nav-main-link-icon fa fa-tag"></i>
-                                <span class="nav-main-link-name">دسته‌بندی‌ها</span>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Branch" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-list"></i>
+                                <span class="nav-main-link-name">لیست شعب</span>
                             </a>
                         </li>
                         <li class="nav-main-item">
-                            <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
-                                <i class="nav-main-link-icon fa fa-search"></i>
-                                <span class="nav-main-link-name">جستجوی پیشرفته</span>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Branch" asp-action="AddBranch">
+                                <i class="nav-main-link-icon fa fa-plus-circle"></i>
+                                <span class="nav-main-link-name">افزودن شعبه جدید</span>
                             </a>
                         </li>
                     </ul>
                 </li>
-                <!-- END Task Management Section -->
 
-                <!-- CRM Management Section -->
+                <!-- Team Management Section - NEW -->
                 <li class="nav-main-item">
-                    <a class="nav-main-link nav-main-link-submenu" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
-                        <i class="nav-main-link-icon fa fa-handshake"></i>
-                        <span class="nav-main-link-name">مدیریت مشتریان</span>
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fa fa-users"></i>
+                        <span class="nav-main-link-name">مدیریت تیم‌ها</span>
                     </a>
                     <ul class="nav-main-submenu">
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Index">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Team" asp-action="Index">
                                 <i class="nav-main-link-icon fa fa-list"></i>
-                                <span class="nav-main-link-name">تعاملات CRM</span>
+                                <span class="nav-main-link-name">لیست تیم‌ها</span>
                             </a>
                         </li>
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Create">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Team" asp-action="OrganizationalChart">
+                                <i class="nav-main-link-icon fa fa-sitemap"></i>
+                                <span class="nav-main-link-name">چارت سازمانی</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Team" asp-action="Create">
                                 <i class="nav-main-link-icon fa fa-plus-circle"></i>
-                                <span class="nav-main-link-name">افزودن تعامل جدید</span>
+                                <span class="nav-main-link-name">ایجاد تیم جدید</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- END Team Management Section -->
+                <!-- User Management -->
+                <li class="nav-main-item">
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fa fa-user-friends"></i>
+                        <span class="nav-main-link-name">مدیریت کاربران</span>
+                    </a>
+                    <ul class="nav-main-submenu">
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-list"></i>
+                                <span class="nav-main-link-name">لیست کاربران</span>
                             </a>
                         </li>
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="MyInteractions">
-                                <i class="nav-main-link-icon fa fa-user-friends"></i>
-                                <span class="nav-main-link-name">تعاملات من</span>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="AddUser">
+                                <i class="nav-main-link-icon fa fa-user-plus"></i>
+                                <span class="nav-main-link-name">افزودن کاربر جدید</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Permission Management -->
+                <li class="nav-main-item">
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fa fa-shield-alt"></i>
+                        <span class="nav-main-link-name">مدیریت نقش‌ها</span>
+                    </a>
+                    <ul class="nav-main-submenu">
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="RolePattern" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-key"></i>
+                                <span class="nav-main-link-name">الگوهای نقش</span>
                             </a>
                         </li>
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Statistics">
-                                <i class="nav-main-link-icon fa fa-chart-bar"></i>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserPermission" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-users-cog"></i>
+                                <span class="nav-main-link-name">دسترسی کاربران</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserPermission" asp-action="PermissionLogs">
+                                <i class="nav-main-link-icon fa fa-clipboard-list"></i>
+                                <span class="nav-main-link-name">لاگ دسترسی‌ها</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- User Activity Log Management -->
+                <li class="nav-main-item">
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fas fa-history"></i>
+                        <span class="nav-main-link-name">لاگ فعالیت‌ها</span>
+                    </a>
+                    <ul class="nav-main-submenu">
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
+                                <i class="nav-main-link-icon fas fa-list"></i>
+                                <span class="nav-main-link-name">لیست فعالیت‌ها</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Search">
+                                <i class="nav-main-link-icon fas fa-search"></i>
+                                <span class="nav-main-link-name">جستجوی پیشرفته</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Statistics">
+                                <i class="nav-main-link-icon fas fa-chart-line"></i>
                                 <span class="nav-main-link-name">آمار و گزارشات</span>
                             </a>
                         </li>
                     </ul>
                 </li>
+            }
 
-                <!-- User and Permission Management -->
-                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
-                {
-                    <li class="nav-main-heading">مدیریت کاربران و دسترسی</li>
-                    
-                    <!-- Branch Management -->
-                    <li class="nav-main-item">
-                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                            <i class="nav-main-link-icon fa fa-sitemap"></i>
-                            <span class="nav-main-link-name">مدیریت شعب</span>
-                        </a>
-                        <ul class="nav-main-submenu">
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="Branch" asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-list"></i>
-                                    <span class="nav-main-link-name">لیست شعب</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="Branch" asp-action="AddBranch">
-                                    <i class="nav-main-link-icon fa fa-plus-circle"></i>
-                                    <span class="nav-main-link-name">افزودن شعبه جدید</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+            <!-- System Settings (Only for Admins) -->
+            @if (User.IsInRole("Admin"))
+            {
+                <li class="nav-main-heading">تنظیمات سیستم</li>
 
-                    <!-- User Management -->
-                    <li class="nav-main-item">
-                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                            <i class="nav-main-link-icon fa fa-users"></i>
-                            <span class="nav-main-link-name">مدیریت کاربران</span>
-                        </a>
-                        <ul class="nav-main-submenu">
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-list"></i>
-                                    <span class="nav-main-link-name">لیست کاربران</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="AddUser">
-                                    <i class="nav-main-link-icon fa fa-user-plus"></i>
-                                    <span class="nav-main-link-name">افزودن کاربر جدید</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    <!-- Permission Management -->
-                    <li class="nav-main-item">
-                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                            <i class="nav-main-link-icon fa fa-shield-alt"></i>
-                            <span class="nav-main-link-name">مدیریت نقش‌ها</span>
-                        </a>
-                        <ul class="nav-main-submenu">
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="RolePattern" asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-key"></i>
-                                    <span class="nav-main-link-name">الگوهای نقش</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserPermission" asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-users-cog"></i>
-                                    <span class="nav-main-link-name">دسترسی کاربران</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserPermission" asp-action="PermissionLogs">
-                                    <i class="nav-main-link-icon fa fa-clipboard-list"></i>
-                                    <span class="nav-main-link-name">لاگ دسترسی‌ها</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    <!-- User Activity Log Management -->
-                    <li class="nav-main-item">
-                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                            <i class="nav-main-link-icon fas fa-history"></i>
-                            <span class="nav-main-link-name">لاگ فعالیت‌ها</span>
-                        </a>
-                        <ul class="nav-main-submenu">
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
-                                    <i class="nav-main-link-icon fas fa-list"></i>
-                                    <span class="nav-main-link-name">لیست فعالیت‌ها</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Search">
-                                    <i class="nav-main-link-icon fas fa-search"></i>
-                                    <span class="nav-main-link-name">جستجوی پیشرفته</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Statistics">
-                                    <i class="nav-main-link-icon fas fa-chart-line"></i>
-                                    <span class="nav-main-link-name">آمار و گزارشات</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                }
-
-                <!-- System Settings (Only for Admins) -->
-                @if (User.IsInRole("Admin"))
-                {
-                    <li class="nav-main-heading">تنظیمات سیستم</li>
-                    
-                    <li class="nav-main-item">
-                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="Team" asp-action="Index">
-                            <i class="nav-main-link-icon fa fa-users-cog"></i>
-                            <span class="nav-main-link-name">تیم‌ها</span>
-                        </a>
-                    </li>
-                }
-
-                <!-- Logout -->
-                <li class="nav-main-heading">خروج</li>
                 <li class="nav-main-item">
-                    <a class="nav-main-link" href="javascript:void(0)" onclick="document.getElementById('logoutForm').submit();">
-                        <i class="nav-main-link-icon fa fa-sign-out-alt"></i>
-                        <span class="nav-main-link-name">خروج از سیستم</span>
+                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="Settings" asp-action="Index">
+                        <i class="nav-main-link-icon fa fa-cogs"></i>
+                        <span class="nav-main-link-name">تنظیمات عمومی</span>
                     </a>
                 </li>
+            }
+
+            <!-- Logout -->
+            <li class="nav-main-heading">خروج</li>
+            <li class="nav-main-item">
+                <a class="nav-main-link" href="javascript:void(0)" onclick="document.getElementById('logoutForm').submit();">
+                    <i class="nav-main-link-icon fa fa-sign-out-alt"></i>
+                    <span class="nav-main-link-name">خروج از سیستم</span>
+                </a>
+            </li>
 
             </ul>
 
@@ -378,7 +404,6 @@
     <!-- END Sidebar Scrolling -->
 </nav>
 <!-- END Sidebar -->
-
 <!-- Hidden Logout Form -->
 <form id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post" class="d-none">
     @Html.AntiForgeryToken()
@@ -454,10 +479,10 @@
     $(document).ready(function() {
         // Load notifications on page load
         loadNotifications();
-        
+
         // Update notifications every 30 seconds
         setInterval(loadNotifications, 30000);
-        
+
         // Close dropdown when clicking outside
         $(document).on('click', function(e) {
             if (!$(e.target).closest('#notificationBell').length) {
@@ -481,7 +506,7 @@
         if (unreadCount > 0) {
             $('#notificationCount').text(unreadCount).show();
             $('#sidebarNotificationCount').text(unreadCount).show();
-            
+
             // Add pulsing animation for new notifications
             $('#notificationBell').addClass('notification-pulse');
         } else {
@@ -492,7 +517,7 @@
 
         // Update notification list
         let notificationHtml = '';
-        
+
         if (notifications.length === 0) {
             notificationHtml = `
                 <div class="text-center p-3 text-muted">
@@ -504,7 +529,7 @@
             notifications.forEach(function(notification) {
                 const isReadClass = notification.isRead ? 'notification-read' : 'notification-unread';
                 const priorityClass = notification.priorityClass || '';
-                
+
                 notificationHtml += `
                     <div class="dropdown-item notification-item ${isReadClass} ${priorityClass}" data-notification-id="${notification.id}">
                         <div class="d-flex">
@@ -522,12 +547,12 @@
                                     <small class="text-muted">${notification.createTime}</small>
                                 </div>
                                 <div class="mt-1">
-                                    ${notification.actionUrl ? 
+                                    ${notification.actionUrl ?
                                         `<a href="javascript:void(0)" onclick="goToNotificationRecord(${notification.id})" class="btn btn-xs btn-primary me-1">
                                             <i class="fa fa-eye fa-xs"></i>
                                         </a>` : ''
                                     }
-                                    ${!notification.isRead ? 
+                                    ${!notification.isRead ?
                                         `<button class="btn btn-xs btn-success" onclick="markSingleNotificationAsRead(${notification.id})">
                                             <i class="fa fa-check fa-xs"></i>
                                         </button>` : ''
@@ -539,7 +564,7 @@
                 `;
             });
         }
-        
+
         $('#notificationsList').html(notificationHtml);
     }
 
@@ -592,9 +617,17 @@
     }
 
     @@keyframes notificationPulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
     }
 
     .notification-unread {
@@ -612,13 +645,13 @@
         transition: background-color 0.2s ease;
     }
 
-    .notification-item:hover {
-        background-color: rgba(0, 0, 0, 0.05);
-    }
+        .notification-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
 
-    .notification-item:last-child {
-        border-bottom: none;
-    }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
 
     .priority-important {
         border-right-color: #ffc107 !important;
@@ -634,9 +667,17 @@
     }
 
     @@keyframes criticalPulse {
-        0% { background-color: rgba(220, 53, 69, 0.1); }
-        50% { background-color: rgba(220, 53, 69, 0.2); }
-        100% { background-color: rgba(220, 53, 69, 0.1); }
+        0% {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        50% {
+            background-color: rgba(220, 53, 69, 0.2);
+        }
+
+        100% {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
     }
 
     .dropdown-menu {

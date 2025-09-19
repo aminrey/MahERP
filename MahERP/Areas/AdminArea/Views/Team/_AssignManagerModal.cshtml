@@ -1,0 +1,46 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.AssignManagerViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">انتخاب مدیر تیم: @Model.TeamTitle</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="AssignManagerSubmit" method="post">
+            @Html.AntiForgeryToken()
+            
+            <div class="modal-body">
+                <input type="hidden" asp-for="TeamId" />
+                
+                @if (!string.IsNullOrEmpty(Model.CurrentManagerName))
+                {
+                    <div class="alert alert-info">
+                        <strong>مدیر فعلی:</strong> @Model.CurrentManagerName
+                    </div>
+                }
+                
+                <div class="mb-3">
+                    <label asp-for="ManagerUserId" class="form-label required"></label>
+                    <select asp-for="ManagerUserId" class="form-select js-select2" required>
+                        <option value="">-- انتخاب مدیر --</option>
+                        @foreach (var user in ViewBag.AvailableUsers as List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.UserSelectListItem>)
+                        {
+                            <option value="@user.UserId" selected="@(user.UserId == Model.ManagerUserId)">
+                                @user.FullName @(string.IsNullOrEmpty(user.Position) ? "" : $"({user.Position})")
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="ManagerUserId" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="btn btn-primary" data-save="modal-ajax-save">
+                    <i class="fa fa-check me-1"></i> تایید
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

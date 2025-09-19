@@ -2,11 +2,13 @@
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.ViewModels.CRMViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 
 namespace MahERP.AutoMapper
 {
@@ -244,6 +246,42 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.RolePattern, opt => opt.Ignore())
                 .ForMember(dest => dest.AssignedByUser, opt => opt.Ignore());
+
+            // NEW TEAM MAPPINGS
+            // Team -> TeamViewModel
+            CreateMap<Team, TeamViewModel>()
+                .ForMember(dest => dest.ParentTeamTitle, opt => opt.MapFrom(src => src.ParentTeam != null ? src.ParentTeam.Title : null))
+                .ForMember(dest => dest.ManagerFullName, opt => opt.MapFrom(src => src.Manager != null ? $"{src.Manager.FirstName} {src.Manager.LastName}" : null))
+                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : null))
+                .ForMember(dest => dest.AccessLevelText, opt => opt.MapFrom(src => GetTeamAccessLevelText(src.AccessLevel)))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
+                .ForMember(dest => dest.LastUpdaterName, opt => opt.MapFrom(src => src.LastUpdater != null ? $"{src.LastUpdater.FirstName} {src.LastUpdater.LastName}" : null))
+                .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
+                .ForMember(dest => dest.TeamMembers, opt => opt.Ignore())
+                .ForMember(dest => dest.Level, opt => opt.Ignore());
+
+            // TeamViewModel -> Team
+            CreateMap<TeamViewModel, Team>()
+                .ForMember(dest => dest.ParentTeam, opt => opt.Ignore())
+                .ForMember(dest => dest.Manager, opt => opt.Ignore())
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
+                .ForMember(dest => dest.TeamMembers, opt => opt.Ignore());
+
+            // TeamMember -> TeamMemberViewModel
+            CreateMap<TeamMember, TeamMemberViewModel>()
+                .ForMember(dest => dest.TeamTitle, opt => opt.MapFrom(src => src.Team != null ? src.Team.Title : null))
+                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : null))
+                .ForMember(dest => dest.MembershipTypeText, opt => opt.MapFrom(src => GetMembershipTypeText(src.MembershipType)))
+                .ForMember(dest => dest.AddedByUserName, opt => opt.MapFrom(src => src.AddedByUser != null ? $"{src.AddedByUser.FirstName} {src.AddedByUser.LastName}" : null));
+
+            // TeamMemberViewModel -> TeamMember
+            CreateMap<TeamMemberViewModel, TeamMember>()
+                .ForMember(dest => dest.Team, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.AddedByUser, opt => opt.Ignore());
         }
 
         // Helper methods for mapping
@@ -300,6 +338,27 @@ namespace MahERP.AutoMapper
                 "ManagePermissions" => "مدیریت دسترسی‌ها",
                 "*" => "همه عملیات",
                 _ => actionName ?? ""
+            };
+        }
+
+        private static string GetTeamAccessLevelText(byte accessLevel)
+        {
+            return accessLevel switch
+            {
+                0 => "عمومی",
+                1 => "محدود",
+                _ => "نامشخص"
+            };
+        }
+
+        private static string GetMembershipTypeText(byte membershipType)
+        {
+            return membershipType switch
+            {
+                0 => "عضو عادی",
+                1 => "عضو ویژه",
+                2 => "مدیر تیم",
+                _ => "نامشخص"
             };
         }
     }

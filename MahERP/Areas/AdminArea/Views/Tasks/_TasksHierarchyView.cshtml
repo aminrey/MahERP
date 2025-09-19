@@ -1,0 +1,63 @@
+﻿@model TaskListForIndexViewModel
+
+<div class="hierarchy-tasks">
+    <!-- تسک‌های شخصی -->
+    @if (Model.GroupedTasks.MyTasks.Any())
+    {
+        <div class="mb-4">
+            <h5 class="text-primary">
+                <i class="fa fa-user me-2"></i>
+                تسک‌های من (@Model.GroupedTasks.MyTasks.Count)
+            </h5>
+            @await Html.PartialAsync("_TasksTable", Model.GroupedTasks.MyTasks)
+        </div>
+    }
+
+    <!-- تسک‌های اعضای تیم -->
+    @if (Model.GroupedTasks.TeamMemberTasks.Any())
+    {
+        <div class="mb-4">
+            <h5 class="text-info">
+                <i class="fa fa-users me-2"></i>
+                اعضای تیم من
+            </h5>
+            @foreach (var teamMember in Model.GroupedTasks.TeamMemberTasks)
+            {
+                @if (teamMember.Value.Any())
+                {
+                    <div class="ms-3 mb-3">
+                        <h6 class="text-muted">
+                            <i class="fa fa-user-circle me-1"></i>
+                            @teamMember.Key (@teamMember.Value.Count تسک)
+                        </h6>
+                        @await Html.PartialAsync("_TasksTable", teamMember.Value)
+                    </div>
+                }
+            }
+        </div>
+    }
+
+    <!-- تسک‌های تیم‌های زیرمجموعه -->
+    @if (Model.GroupedTasks.SubTeamTasks.Any())
+    {
+        <div class="mb-4">
+            <h5 class="text-success">
+                <i class="fa fa-sitemap me-2"></i>
+                تیم‌های زیرمجموعه
+            </h5>
+            @foreach (var subTeam in Model.GroupedTasks.SubTeamTasks)
+            {
+                @if (subTeam.Value.Any())
+                {
+                    <div class="ms-3 mb-3">
+                        <h6 class="text-muted">
+                            <i class="fa fa-users me-1"></i>
+                            تیم @subTeam.Key (@subTeam.Value.Count تسک)
+                        </h6>
+                        @await Html.PartialAsync("_TasksTable", subTeam.Value)
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>

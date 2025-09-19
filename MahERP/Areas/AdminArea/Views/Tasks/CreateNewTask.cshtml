@@ -21,7 +21,6 @@
     </div>
 </div>
 <!-- END Hero -->
-
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <!-- فرم ایجاد تسک جدید -->
@@ -38,29 +37,135 @@
             </div>
             <div class="block-content">
                 <div class="row justify-content-center">
-                    <div class="col-md-10 col-lg-8">
-                        <!-- نمایش خطاها -->
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <div class="col-md-12 col-lg-10">
+                        <!-- نمایش خطاهای عمومی -->
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger alert-dismissible" role="alert">
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                <h4 class="alert-heading">
+                                    <i class="fa fa-exclamation-triangle me-2"></i>
+                                    خطا در اعتبارسنجی اطلاعات
+                                </h4>
+                                <p class="mb-0">لطفاً خطاهای زیر را اصلاح کنید:</p>
+                                <hr>
+                                <ul class="mb-0">
+                                    @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@modelError.ErrorMessage</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        <!-- نمایش پیام‌های موفقیت -->
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success alert-dismissible" role="alert">
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                <i class="fa fa-check-circle me-2"></i>
+                                @TempData["SuccessMessage"]
+                            </div>
+                        }
+
+                        <!-- نمایش پیام‌های خطای عمومی -->
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger alert-dismissible" role="alert">
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                <i class="fa fa-times-circle me-2"></i>
+                                @TempData["ErrorMessage"]
+                            </div>
+                        }
 
                         <!-- ردیف اول: کد تسک و نوع تسک -->
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="mb-4">
-                                    <label class="form-label" for="TaskCode">کد تسک <span class="text-danger">*</span></label>
-                                    <input asp-for="TaskCode" class="form-control" readonly placeholder="کد تسک به صورت خودکار تولید می‌شود">
-                                    <!-- کد تسک به صورت خودکار تولید می‌شود -->
+                                    <label class="form-label" for="TaskCode">
+                                        کد تسک <span class="text-danger">*</span>
+                                        @if (Model.TaskCodeSettings?.AllowManualInput == true)
+                                        {
+                                            <small class="text-muted ms-2">
+                                                (پیشوند سیستمی: @Model.TaskCodeSettings.SystemPrefix-)
+                                            </small>
+                                        }
+                                    </label>
+
+                                    <!-- نمایش کد اتوماتیک -->
+                                    <div id="automaticCodeDiv" style="@(Model.IsManualTaskCode ? "display: none;" : "")">
+                                        <input asp-for="TaskCode" class="form-control @(ViewData.ModelState["TaskCode"]?.Errors.Count > 0 ? "is-invalid" : "")" readonly
+                                               placeholder="کد تسک به صورت خودکار تولید می‌شود"
+                                               id="automaticTaskCode">
+                                        <div class="invalid-feedback">
+                                            <span asp-validation-for="TaskCode"></span>
+                                        </div>
+                                        <small class="form-text text-success">
+                                            <i class="fa fa-robot me-1"></i>
+                                            کد تسک به صورت خودکار تولید شده: <strong>@Model.TaskCode</strong>
+                                        </small>
+                                    </div>
+
+                                    <!-- ورودی کد دستی -->
+                                    @if (Model.TaskCodeSettings?.AllowManualInput == true)
+                                    {
+                                        <div id="manualCodeDiv" style="@(Model.IsManualTaskCode ? "" : "display: none;")">
+                                            <input asp-for="ManualTaskCode" class="form-control @(ViewData.ModelState["ManualTaskCode"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                                   placeholder="کد تسک دلخواه خود را وارد کنید"
+                                                   id="manualTaskCode">
+                                            <div class="invalid-feedback">
+                                                <span asp-validation-for="ManualTaskCode"></span>
+                                            </div>
+                                            <small class="form-text text-warning">
+                                                <i class="fa fa-exclamation-triangle me-1"></i>
+                                                نمی‌توانید از پیشوند '@Model.TaskCodeSettings.SystemPrefix-' استفاده کنید
+                                            </small>
+                                        </div>
+
+                                        <!-- کلید تغییر حالت -->
+                                        <div class="form-check mt-2">
+                                            <input asp-for="IsManualTaskCode" class="form-check-input"
+                                                   id="toggleManualCode" onchange="toggleTaskCodeInput()">
+                                            <label class="form-check-label" for="toggleManualCode">
+                                                <i class="fa fa-edit me-1"></i>
+                                                ورود دستی کد تسک
+                                            </label>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="mb-4">
-                                    <label class="form-label" for="TaskType">نوع تسک</label>
-                                    <select asp-for="TaskType" class="js-select2 form-select" data-placeholder="انتخاب کنید">
-                                        <option value="">انتخاب کنید</option>
-                                        <option value="0">عادی</option>
-                                        <option value="1">مهم</option>
-                                        <option value="2">اضطراری</option>
-                                    </select>
-                                    <span asp-validation-for="TaskType" class="text-danger"></span>
+                                    <label class="form-label">نوع تسک</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check form-check-inline">
+                                            <input asp-for="TaskType" class="form-check-input @(ViewData.ModelState["TaskType"]?.Errors.Count > 0 ? "is-invalid" : "")" id="tasktype-normal" name="TaskType" type="radio" value="0" checked />
+                                            <label class="form-check-label" for="tasktype-normal">
+                                                <i class="fa fa-tasks me-2 text-muted"></i>
+                                                عادی
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input asp-for="TaskType" class="form-check-input @(ViewData.ModelState["TaskType"]?.Errors.Count > 0 ? "is-invalid" : "")" id="tasktype-important" name="TaskType" type="radio" value="1" />
+                                            <label class="form-check-label" for="tasktype-important">
+                                                <i class="fa fa-exclamation-circle me-2 text-warning"></i>
+                                                مهم
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input asp-for="TaskType" class="form-check-input @(ViewData.ModelState["TaskType"]?.Errors.Count > 0 ? "is-invalid" : "")" id="tasktype-urgent" name="TaskType" type="radio" value="2" />
+                                            <label class="form-check-label" for="tasktype-urgent">
+                                                <i class="fa fa-fire me-2 text-danger"></i>
+                                                اضطراری
+                                            </label>
+                                        </div>
+                                    </div>
+                                    @if (ViewData.ModelState["TaskType"]?.Errors.Count > 0)
+                                    {
+                                        <div class="invalid-feedback d-block">
+                                            <span asp-validation-for="TaskType"></span>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -68,57 +173,111 @@
                         <!-- عنوان تسک -->
                         <div class="mb-4">
                             <label class="form-label" for="Title">عنوان تسک <span class="text-danger">*</span></label>
-                            <input asp-for="Title" class="form-control" placeholder="عنوان تسک را وارد کنید">
-                            <span asp-validation-for="Title" class="text-danger"></span>
+                            <input asp-for="Title" class="form-control @(ViewData.ModelState["Title"]?.Errors.Count > 0 ? "is-invalid" : "")" placeholder="عنوان تسک را وارد کنید">
+                            @if (ViewData.ModelState["Title"]?.Errors.Count > 0)
+                            {
+                                <div class="invalid-feedback">
+                                    <span asp-validation-for="Title"></span>
+                                </div>
+                            }
                         </div>
 
                         <!-- توضیحات تسک -->
                         <div class="mb-4">
                             <label asp-for="Description" class="form-label">توضیحات</label>
-                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="توضیحات تسک را وارد کنید"></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <textarea asp-for="Description" class="form-control @(ViewData.ModelState["Description"]?.Errors.Count > 0 ? "is-invalid" : "")" rows="4" placeholder="توضیحات تسک را وارد کنید"></textarea>
+                            @if (ViewData.ModelState["Description"]?.Errors.Count > 0)
+                            {
+                                <div class="invalid-feedback">
+                                    <span asp-validation-for="Description"></span>
+                                </div>
+                            }
                         </div>
 
                         <!-- انتخاب شعبه - مرحله اول cascade -->
                         <div class="mb-4">
                             <label class="form-label" for="BranchIdSelected">انتخاب شعبه <span class="text-danger">*</span></label>
-                            <select class="js-select2 form-select branch" 
-                                    asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name"))" 
-                                    id="BranchIdSelected" 
-                                    data-placeholder="شعبه را انتخاب کنید" 
-                                    name="BranchIdSelected" 
-                                    data-url="@Url.Action("BranchTriggerSelect","Tasks")" 
+                            <select class="js-select2 form-select branch @(ViewData.ModelState["BranchIdSelected"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                    asp-items="@(Model.branchListInitial != null && Model.branchListInitial.Any() ? new SelectList(Model.branchListInitial, "Id", "Name", Model.BranchIdSelected) : new SelectList(Enumerable.Empty<BranchViewModel>(), "Id", "Name"))"
+                                    id="BranchIdSelected"
+                                    data-placeholder="شعبه را انتخاب کنید"
+                                    name="BranchIdSelected"
+                                    asp-for="BranchIdSelected"
+                                    data-url="@Url.Action("BranchTriggerSelect", "Tasks")"
                                     data-toggle="multiplepartialview"
-                                    data-target-divs="UsersDiv,StakeholdersDiv,TaskCategoriesDiv"
+                                    data-target-divs="UsersDiv,TeamsDiv,StakeholdersDiv,TaskCategoriesDiv"
                                     data-param-name="branchId"
                                     style="width: 100%;">
                                 <option value="">ابتدا شعبه را انتخاب کنید</option>
                             </select>
-                            <span asp-validation-for="branchListInitial" class="text-danger"></span>
-                            <small class="form-text text-muted">
-                                <i class="fa fa-info-circle me-1"></i>
-                                انتخاب شعبه باعث بروزرسانی کاربران، طرف حساب‌ها و دسته‌بندی‌ها می‌شود
-                            </small>
+                            <div class="invalid-feedback">
+                                <span asp-validation-for="BranchIdSelected"></span>
+                            </div>
+                            @if (Model.branchListInitial == null || !Model.branchListInitial.Any())
+                            {
+                                <small class="form-text text-warning">
+                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                    هیچ شعبه‌ای برای شما تعریف نشده است. لطفاً با مدیر سیستم تماس بگیرید.
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    انتخاب شعبه باعث بروزرسانی کاربران، طرف حساب‌ها و دسته‌بندی‌ها می‌شود
+                                </small>
+                            }
                         </div>
 
                         <!-- کاربران منتصب - مرحله دوم cascade -->
                         <div class="mb-4">
                             <label class="form-label" for="AssignmentsSelectedTaskUserArraysString">کاربران منتصب</label>
                             <div id="UsersDiv">
-                                <select class="js-select2 form-select" 
-                                        id="AssignmentsSelectedTaskUserArraysString" 
-                                        data-placeholder="ابتدا شعبه را انتخاب کنید" 
-                                        multiple="multiple" 
-                                        name="AssignmentsSelectedTaskUserArraysString" 
+                                <select class="js-select2 form-select @(ViewData.ModelState["AssignmentsSelectedTaskUserArraysString"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                        id="AssignmentsSelectedTaskUserArraysString"
+                                        data-placeholder="ابتدا شعبه را انتخاب کنید"
+                                        multiple="multiple"
+                                        name="AssignmentsSelectedTaskUserArraysString"
                                         style="width: 100%;"
                                         disabled>
                                     <option value="">ابتدا شعبه را انتخاب کنید</option>
                                 </select>
                             </div>
-                            <span asp-validation-for="UsersInitial" class="text-danger"></span>
+                            @if (ViewData.ModelState["AssignmentsSelectedTaskUserArraysString"]?.Errors.Count > 0)
+                            {
+                                <div class="invalid-feedback d-block">
+                                    <span asp-validation-for="AssignmentsSelectedTaskUserArraysString"></span>
+                                </div>
+                            }
                             <small class="form-text text-muted">
                                 <i class="fa fa-users me-1"></i>
                                 کاربرانی که این تسک به آن‌ها اختصاص داده می‌شود
+                            </small>
+                        </div>
+
+                        <!-- تیم‌های منتصب - مرحله دوم cascade جدید -->
+                        <div class="mb-4">
+                            <label class="form-label" for="AssignmentsSelectedTeamIds">تیم‌های منتصب</label>
+                            <div id="TeamsDiv">
+                                <select class="js-select2 form-select @(ViewData.ModelState["AssignmentsSelectedTeamIds"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                        id="AssignmentsSelectedTeamIds"
+                                        data-placeholder="ابتدا شعبه را انتخاب کنید"
+                                        multiple="multiple"
+                                        name="AssignmentsSelectedTeamIds"
+                                        style="width: 100%;"
+                                        disabled>
+                                    <option value="">ابتدا شعبه را انتخاب کنید</option>
+                                </select>
+                            </div>
+                            @if (ViewData.ModelState["AssignmentsSelectedTeamIds"]?.Errors.Count > 0)
+                            {
+                                <div class="invalid-feedback d-block">
+                                    <span asp-validation-for="AssignmentsSelectedTeamIds"></span>
+                                </div>
+                            }
+                            <small class="form-text text-muted">
+                                <i class="fa fa-sitemap me-1"></i>
+                                تیم‌هایی که این تسک به تمام اعضای آن‌ها اختصاص داده می‌شود
                             </small>
                         </div>
 
@@ -127,7 +286,7 @@
                             <label class="form-label" for="StakeholderId">طرف حساب</label>
                             <div id="StakeholdersDiv">
                                 <select asp-for="StakeholderId"
-                                        class="js-select2 form-select"
+                                        class="js-select2 form-select @(ViewData.ModelState["StakeholderId"]?.Errors.Count > 0 ? "is-invalid" : "")"
                                         id="StakeholderId"
                                         name="StakeholderId"
                                         data-placeholder="ابتدا شعبه را انتخاب کنید"
@@ -141,7 +300,12 @@
                                     <option value="">ابتدا شعبه را انتخاب کنید</option>
                                 </select>
                             </div>
-                            <span asp-validation-for="StakeholderId" class="text-danger"></span>
+                            @if (ViewData.ModelState["StakeholderId"]?.Errors.Count > 0)
+                            {
+                                <div class="invalid-feedback d-block">
+                                    <span asp-validation-for="StakeholderId"></span>
+                                </div>
+                            }
                             <small class="form-text text-muted">
                                 <i class="fa fa-handshake me-1"></i>
                                 طرف حساب مرتبط با این تسک - انتخاب طرف حساب باعث بروزرسانی دسته‌بندی‌ها می‌شود
@@ -152,17 +316,22 @@
                         <div class="mb-4">
                             <label class="form-label" for="TaskCategoryIdSelected">دسته‌بندی تسک</label>
                             <div id="TaskCategoriesDiv">
-                                <select asp-for="TaskCategoryIdSelected" 
-                                        id="TaskCategoryIdSelected" 
-                                        name="TaskCategoryIdSelected" 
-                                        class="js-select2 form-select" 
-                                        data-placeholder="ابتدا شعبه و طرف حساب را انتخاب کنید" 
+                                <select asp-for="TaskCategoryIdSelected"
+                                        id="TaskCategoryIdSelected"
+                                        name="TaskCategoryIdSelected"
+                                        class="js-select2 form-select @(ViewData.ModelState["TaskCategoryIdSelected"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                        data-placeholder="ابتدا شعبه و طرف حساب را انتخاب کنید"
                                         style="width: 100%;"
                                         disabled>
                                     <option value="">ابتدا شعبه و طرف حساب را انتخاب کنید</option>
                                 </select>
                             </div>
-                            <span asp-validation-for="TaskCategoryIdSelected" class="text-danger"></span>
+                            @if (ViewData.ModelState["TaskCategoryIdSelected"]?.Errors.Count > 0)
+                            {
+                                <div class="invalid-feedback d-block">
+                                    <span asp-validation-for="TaskCategoryIdSelected"></span>
+                                </div>
+                            }
                             <small class="form-text text-muted">
                                 <i class="fa fa-tags me-1"></i>
                                 دسته‌بندی بر اساس شعبه و طرف حساب انتخاب شده نمایش داده می‌شود
@@ -174,8 +343,13 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="DueDatePersian">مهلت انجام</label>
-                                    <input asp-for="DueDatePersian" class="form-control js-flatpickr" placeholder="انتخاب تاریخ مهلت انجام">
-                                    <span asp-validation-for="DueDatePersian" class="text-danger"></span>
+                                    <input asp-for="DueDatePersian" class="form-control js-flatpickr @(ViewData.ModelState["DueDatePersian"]?.Errors.Count > 0 ? "is-invalid" : "")" placeholder="انتخاب تاریخ مهلت انجام">
+                                    @if (ViewData.ModelState["DueDatePersian"]?.Errors.Count > 0)
+                                    {
+                                        <div class="invalid-feedback">
+                                            <span asp-validation-for="DueDatePersian"></span>
+                                        </div>
+                                    }
                                     <small class="form-text text-muted">
                                         <i class="fa fa-calendar me-1"></i>
                                         تاریخ و زمان مهلت انجام تسک
@@ -185,8 +359,13 @@
                             <div class="col-sm-6">
                                 <div class="mb-4">
                                     <label class="form-label" for="Attachments">فایل‌های پیوست</label>
-                                    <input type="file" name="Attachments" multiple class="form-control">
-                                    <span asp-validation-for="Attachments" class="text-danger"></span>
+                                    <input type="file" name="Attachments" multiple class="form-control @(ViewData.ModelState["Attachments"]?.Errors.Count > 0 ? "is-invalid" : "")">
+                                    @if (ViewData.ModelState["Attachments"]?.Errors.Count > 0)
+                                    {
+                                        <div class="invalid-feedback">
+                                            <span asp-validation-for="Attachments"></span>
+                                        </div>
+                                    }
                                     <small class="form-text text-muted">
                                         <i class="fa fa-paperclip me-1"></i>
                                         فایل‌های مرتبط با تسک را ضمیمه کنید
@@ -198,9 +377,15 @@
                         <!-- وضعیت فعال -->
                         <div class="mb-4">
                             <label class="form-check">
-                                <input asp-for="IsActive" class="form-check-input" checked>
+                                <input asp-for="IsActive" class="form-check-input @(ViewData.ModelState["IsActive"]?.Errors.Count > 0 ? "is-invalid" : "")" checked>
                                 <span class="form-check-label">وضعیت فعال</span>
                             </label>
+                            @if (ViewData.ModelState["IsActive"]?.Errors.Count > 0)
+                            {
+                                <div class="invalid-feedback d-block">
+                                    <span asp-validation-for="IsActive"></span>
+                                </div>
+                            }
                             <small class="form-text text-muted">
                                 <i class="fa fa-toggle-on me-1"></i>
                                 تسک در حالت فعال ایجاد می‌شود
@@ -209,7 +394,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- دکمه‌های عملیات -->
             <div class="block-content block-content-full block-content-sm bg-body-light text-end">
                 <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
@@ -224,12 +409,134 @@
     <!-- END فرم ایجاد تسک جدید -->
 </div>
 <!-- END Page Content -->
-
 @section scripts {
     <!-- اسکریپت‌های مورد نیاز قالب -->
     <script>Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-maxlength', 'jq-select2', 'jq-rangeslider', 'jq-masked-inputs', 'jq-pw-strength']);</script>
 
     <script>
+        // تابع تغییر حالت ورودی کد تسک
+        function toggleTaskCodeInput() {
+            var isManual = $('#toggleManualCode').is(':checked');
+            var automaticDiv = $('#automaticCodeDiv');
+            var manualDiv = $('#manualCodeDiv');
+            var automaticInput = $('#automaticTaskCode');
+            var manualInput = $('#manualTaskCode');
+
+            if (isManual) {
+                // حالت ورود دستی
+                automaticDiv.slideUp(300);
+                manualDiv.slideDown(300);
+                automaticInput.removeAttr('name');
+                manualInput.attr('name', 'TaskCode');
+                manualInput.focus();
+
+                console.log('تغییر به حالت ورود دستی کد تسک');
+            } else {
+                // حالت اتوماتیک
+                manualDiv.slideUp(300);
+                automaticDiv.slideDown(300);
+                manualInput.removeAttr('name');
+                automaticInput.attr('name', 'TaskCode');
+
+                // پاک کردن کد دستی
+                manualInput.val('');
+
+                console.log('تغییر به حالت کد اتوماتیک');
+            }
+        }
+
+        // اعتبارسنجی کد دستی
+        function validateManualTaskCode() {
+            var manualCode = $('#manualTaskCode').val();
+            var systemPrefix = '@Model.TaskCodeSettings?.SystemPrefix';
+
+            if (manualCode && systemPrefix) {
+                if (manualCode.toLowerCase().startsWith(systemPrefix.toLowerCase() + '-')) {
+                    $('#manualTaskCode').addClass('is-invalid');
+                    return false;
+                } else {
+                    $('#manualTaskCode').removeClass('is-invalid');
+                    return true;
+                }
+            }
+            return true;
+        }
+
+        // تابع validation سمت کلاینت
+        function validateForm() {
+            var isValid = true;
+            var errorMessages = [];
+
+            // بررسی عنوان تسک
+            var title = $('#Title').val().trim();
+            if (!title) {
+                $('#Title').addClass('is-invalid');
+                errorMessages.push('عنوان تسک الزامی است');
+                isValid = false;
+            } else {
+                $('#Title').removeClass('is-invalid');
+            }
+
+            // بررسی انتخاب شعبه
+            var branchId = $('#BranchIdSelected').val();
+            if (!branchId) {
+                errorMessages.push('انتخاب شعبه الزامی است');
+                isValid = false;
+            }
+
+            // بررسی کد تسک در حالت دستی
+            var isManual = $('#toggleManualCode').is(':checked');
+            if (isManual) {
+                if (!validateManualTaskCode()) {
+                    errorMessages.push('کد تسک نامعتبر است. نمی‌توانید از پیشوند سیستمی استفاده کنید.');
+                    isValid = false;
+                }
+
+                var manualCode = $('#manualTaskCode').val().trim();
+                if (!manualCode) {
+                    $('#manualTaskCode').addClass('is-invalid');
+                    errorMessages.push('کد تسک الزامی است');
+                    isValid = false;
+                }
+            }
+
+            // نمایش پیام‌های خطا
+            if (!isValid) {
+                showValidationErrors(errorMessages);
+            }
+
+            return isValid;
+        }
+
+        // نمایش پیام‌های خطای validation
+        function showValidationErrors(errors) {
+            var alertHtml = `
+                <div class="alert alert-danger alert-dismissible validation-alert" role="alert">
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <h4 class="alert-heading">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        خطا در اعتبارسنجی اطلاعات
+                    </h4>
+                    <p class="mb-0">لطفاً خطاهای زیر را اصلاح کنید:</p>
+                    <hr>
+                    <ul class="mb-0">`;
+
+            errors.forEach(function(error) {
+                alertHtml += `<li>${error}</li>`;
+            });
+
+            alertHtml += `</ul></div>`;
+
+            // حذف alert قبلی و اضافه کردن جدید
+            $('.validation-alert').remove();
+            $('.col-md-12.col-lg-10').prepend(alertHtml);
+
+            // اسکرول به بالای صفحه
+            $('html, body').animate({
+                scrollTop: $('.validation-alert').offset().top - 100
+            }, 500);
+        }
+
         $(document).ready(function() {
             // راه‌اندازی تقویم شمسی برای انتخاب تاریخ مهلت
             $('.js-flatpickr').each(function() {
@@ -241,6 +548,34 @@
                 });
             });
 
+            // اعتبارسنجی ورودی کد دستی
+            $('#manualTaskCode').on('input', function() {
+                validateManualTaskCode();
+            });
+
+            // اعتبارسنجی عنوان تسک
+            $('#Title').on('blur', function() {
+                var title = $(this).val().trim();
+                if (!title) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            // اعتبارسنجی فرم قبل از ارسال
+            $('form').on('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            // حذف کلاس‌های خطا هنگام تغییر مقدار
+            $('input, select, textarea').on('input change', function() {
+                $(this).removeClass('is-invalid');
+            });
+
             // کانفیگ سفارشی برای مدیریت Select2 های پویا
             if (typeof DynamicSelect2Manager !== 'undefined') {
                 // تنظیمات برای کاربران
@@ -250,7 +585,15 @@
                     multiple: true,
                     placeholder: 'کاربران را انتخاب کنید'
                 });
-                
+
+                // تنظیمات برای تیم‌ها
+                DynamicSelect2Manager.addSelectConfig('TeamsDiv', {
+                    id: 'AssignmentsSelectedTeamIds',
+                    name: 'AssignmentsSelectedTeamIds',
+                    multiple: true,
+                    placeholder: 'تیم‌ها را انتخاب کنید'
+                });
+
                 // تنظیمات برای طرف حساب‌ها
                 DynamicSelect2Manager.addSelectConfig('StakeholdersDiv', {
                     id: 'StakeholderId',
@@ -258,7 +601,7 @@
                     multiple: false,
                     placeholder: 'طرف حساب را انتخاب کنید'
                 });
-                
+
                 // تنظیمات برای دسته‌بندی‌ها
                 DynamicSelect2Manager.addSelectConfig('TaskCategoriesDiv', {
                     id: 'TaskCategoryIdSelected',
@@ -266,7 +609,7 @@
                     multiple: false,
                     placeholder: 'دسته‌بندی را انتخاب کنید'
                 });
-                
+
                 console.log('کانفیگ‌های CreateNewTask به DynamicSelect2Manager اضافه شد');
             }
 
@@ -287,9 +630,9 @@
             // تابع فراخوانی AJAX برای بروزرسانی دسته‌بندی‌ها
             function loadTaskCategoriesByStakeholder(branchId, stakeholderId) {
                 var token = $('input[name="__RequestVerificationToken"]').val();
-                
+
                 console.log('شروع بارگذاری دسته‌بندی‌ها برای طرف حساب:', stakeholderId, 'در شعبه:', branchId);
-                
+
                 $.ajax({
                     url: '@Url.Action("StakeholderTriggerSelectTaskCategories", "Tasks")',
                     type: 'POST',
@@ -305,20 +648,20 @@
                     },
                     success: function(response) {
                         console.log('پاسخ AJAX دریافت شد:', response);
-                        
+
                         if (response.status === 'update-view' && response.viewList) {
                             // بروزرسانی div دسته‌بندی‌ها
                             response.viewList.forEach(function(item) {
                                 if (item.elementId === 'TaskCategoriesDiv') {
                                     $('#' + item.elementId).html(item.view.result);
-                                    
+
                                     // راه‌اندازی مجدد Select2 برای element جدید
                                     $('#TaskCategoryIdSelected').select2({
                                         placeholder: 'دسته‌بندی را انتخاب کنید',
                                         allowClear: true,
                                         width: '100%'
                                     });
-                                    
+
                                     $('#TaskCategoryIdSelected').prop('disabled', false);
                                     console.log('دسته‌بندی‌ها با موفقیت بروزرسانی شد');
                                 }
@@ -340,32 +683,31 @@
             $(document).on('change', '#BranchIdSelected', function() {
                 var branchId = $(this).val();
                 console.log('رویداد تغییر شعبه فراخوانی شد، شعبه انتخاب شده:', branchId);
-                
+
                 if (branchId) {
                     // فعال کردن فیلدهای وابسته
-                    $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId').prop('disabled', false);
-                    
+                    $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds, #StakeholderId').prop('disabled', false);
+
                     // غیرفعال کردن دسته‌بندی تا طرف حساب انتخاب شود
                     $('#TaskCategoryIdSelected').prop('disabled', true);
-                    
+
                     // بروزرسانی placeholder ها
                     $('#AssignmentsSelectedTaskUserArraysString').attr('data-placeholder', 'کاربران را انتخاب کنید');
+                    $('#AssignmentsSelectedTeamIds').attr('data-placeholder', 'تیم‌ها را انتخاب کنید');
                     $('#StakeholderId').attr('data-placeholder', 'طرف حساب را انتخاب کنید');
                     $('#TaskCategoryIdSelected').attr('data-placeholder', 'ابتدا طرف حساب را انتخاب کنید');
-                    
-                    // راه‌اندازی مجدد Select2 طرف حساب پس از بروزرسانی cascade اول
-                    reinitializeStakeholderSelect();
-                    
+
                     console.log('شعبه انتخاب شد:', branchId);
                 } else {
                     // غیرفعال کردن فیلدهای وابسته
-                    $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
-                    
+                    $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
+
                     // بازنشانی placeholder ها
                     $('#AssignmentsSelectedTaskUserArraysString').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
+                    $('#AssignmentsSelectedTeamIds').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
                     $('#StakeholderId').attr('data-placeholder', 'ابتدا شعبه را انتخاب کنید');
                     $('#TaskCategoryIdSelected').attr('data-placeholder', 'ابتدا شعبه و طرف حساب را انتخاب کنید');
-                    
+
                     console.log('شعبه پاک شد');
                 }
             });
@@ -374,38 +716,38 @@
             $(document).on('change', '#StakeholderId', function() {
                 var stakeholderId = $(this).val();
                 var branchId = $('#BranchIdSelected').val();
-                
+
                 console.log('رویداد تغییر طرف حساب فراخوانی شد');
                 console.log('طرف حساب انتخاب شده:', stakeholderId);
                 console.log('شعبه جاری:', branchId);
-                
+
                 if (stakeholderId && branchId) {
                     // فعال کردن انتخاب دسته‌بندی
                     $('#TaskCategoryIdSelected').prop('disabled', false);
                     $('#TaskCategoryIdSelected').attr('data-placeholder', 'در حال بارگذاری...');
-                    
+
                     // فراخوانی تابع AJAX
                     loadTaskCategoriesByStakeholder(branchId, stakeholderId);
-                    
+
                     console.log('طرف حساب انتخاب شد و درخواست AJAX ارسال شد');
                 } else {
                     // غیرفعال کردن انتخاب دسته‌بندی
                     $('#TaskCategoryIdSelected').prop('disabled', true);
                     $('#TaskCategoryIdSelected').attr('data-placeholder', 'ابتدا طرف حساب را انتخاب کنید');
-                    
+
                     // پاک کردن محتوای دسته‌بندی‌ها
                     $('#TaskCategoriesDiv').html(`
-                        <select class="js-select2 form-select" 
-                                asp-for="TaskCategoryIdSelected" 
-                                id="TaskCategoryIdSelected" 
+                        <select class="js-select2 form-select"
+                                asp-for="TaskCategoryIdSelected"
+                                id="TaskCategoryIdSelected"
                                 name="TaskCategoryIdSelected"
-                                data-placeholder="ابتدا طرف حساب را انتخاب کنید" 
+                                data-placeholder="ابتدا طرف حساب را انتخاب کنید"
                                 style="width: 100%;"
                                 disabled>
                             <option value="">ابتدا طرف حساب را انتخاب کنید</option>
                         </select>
                     `);
-                    
+
                     console.log('طرف حساب پاک شد - دسته‌بندی‌ها ریست شد');
                 }
             });
@@ -419,7 +761,7 @@
             // بررسی اولیه وضعیت فیلدها
             var initialBranchId = $('#BranchIdSelected').val();
             if (!initialBranchId) {
-                $('#AssignmentsSelectedTaskUserArraysString, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
+                $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
             }
 
             console.log('فرم CreateNewTask آماده شد - ترتیب cascade: شعبه -> کاربران/طرف حساب -> دسته‌بندی');

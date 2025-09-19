@@ -23,6 +23,7 @@
 <div class="content">
     <!-- Quick Actions -->
     <div class="row items-push">
+        <!-- اولین فضا: افزودن قرارداد جدید -->
         <div class="col-6 col-md-4 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddContract", "Contract")">
                 <div class="block-content py-5">
@@ -35,6 +36,18 @@
                 </div>
             </a>
         </div>
+
+        <!-- دومی: خالی -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <!-- فضای خالی -->
+        </div>
+
+        <!-- سومی: خالی -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <!-- فضای خالی -->
+        </div>
+
+        <!-- چهارمی: جستجوی پیشرفته -->
         <div class="col-6 col-md-4 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AdvancedSearch", "Contract")" data-toggle="modal-ajax">
                 <div class="block-content py-5">
@@ -47,6 +60,8 @@
                 </div>
             </a>
         </div>
+
+        <!-- پنجمی: قراردادهای فعال -->
         <div class="col-6 col-md-4 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("ActiveContracts", "Contract")">
                 <div class="block-content py-5">
@@ -59,6 +74,8 @@
                 </div>
             </a>
         </div>
+
+        <!-- ششمی: قراردادهای منقضی شده -->
         <div class="col-6 col-md-4 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("ExpiredContracts", "Contract")">
                 <div class="block-content py-5">
@@ -73,7 +90,6 @@
         </div>
     </div>
     <!-- END Quick Actions -->
-
     <!-- Filter Toolbar -->
     <div class="block block-rounded">
         <div class="block-content block-content-full bg-body-light">

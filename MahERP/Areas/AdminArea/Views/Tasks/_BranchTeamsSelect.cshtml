@@ -1,0 +1,26 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamViewModel>
+
+<select class="js-select2 form-select" 
+        id="AssignmentsSelectedTeamIds" 
+        name="AssignmentsSelectedTeamIds" 
+        data-placeholder="تیم‌ها را انتخاب کنید" 
+        multiple="multiple" 
+        style="width: 100%;">
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var team in Model)
+        {
+            <option value="@team.Id">
+                @team.Title
+                @if (!string.IsNullOrEmpty(team.ManagerFullName) && team.ManagerFullName != "ندارد")
+                {
+                    <text> (مدیر: @team.ManagerFullName)</text>
+                }
+            </option>
+        }
+    }
+    else
+    {
+        <option value="" disabled>هیچ تیمی در این شعبه وجود ندارد</option>
+    }
+</select>   

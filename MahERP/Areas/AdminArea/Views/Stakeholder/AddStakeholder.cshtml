@@ -2,7 +2,8 @@
 @{
     ViewData["Title"] = "افزودن طرف حساب جدید";
 }
-
+<script src="~/lib/tinymce/tinymce.min.js"></script>
+<script src="~/assets/js/tinymceconfig.js"></script>
 <!-- Hero -->
 <div class="bg-body-light">
     <div class="content content-full">
@@ -23,207 +24,303 @@
 <!-- END Hero -->
 <!-- Page Content -->
 <div class="content content-full content-boxed">
-    <!-- New Stakeholder Form -->
+    <!-- Tab Navigation as Tiles -->
+    <div class="row g-sm mb-4 justify-content-evenly">
+        <div class="col-6 col-lg-3 ">
+            <a class="block block-link-shadow text-center tab-tile active" href="javascript:void(0)" data-tab="identity-info">
+                <div class="block-content block-content-full ratio ratio-16x9">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div>
+                            <i class="far fa-2x fa-user-circle text-primary"></i>
+                            <div class="fw-semibold mt-3 text-uppercase">اطلاعات هویتی</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a class="block block-link-shadow text-center tab-tile" href="javascript:void(0)" data-tab="interaction-info">
+                <div class="block-content block-content-full ratio ratio-16x9">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div>
+                            <i class="far fa-2x fa-handshake text-primary"></i>
+                            <div class="fw-semibold mt-3 text-uppercase">اطلاعات تعاملی</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <!-- END Tab Navigation as Tiles -->
+    <!-- Tab Content -->
     <form method="POST" action="@Url.Action("AddStakeholder", "Stakeholder")" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
-        <div class="block block-rounded">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">اطلاعات اصلی</h3>
-                <div class="block-options">
-                    <button type="submit" class="btn btn-sm btn-primary">
+
+        <!-- Identity Information Tab -->
+        <div class="tab-content-pane active" id="identity-info">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">اطلاعات هویتی</h3>
+                    <div class="block-options">
+                        <!-- Buttons -->
+
+                        <!-- Buttons End -->
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="row justify-content-center">
+                        <div class="col-md-10 col-lg-8">
+                            <div class="mb-4">
+                                <label class="form-label" for="StakeholderType">نوع طرف حساب <span class="text-danger">*</span></label>
+                                <select asp-for="StakeholderType" asp-items="StaticSelectLists.StakeholderTypes" class="form-select"></select>
+                                <span asp-validation-for="StakeholderType" class="text-danger"></span>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="FirstName">نام <span class="text-danger">*</span></label>
+                                        <input asp-for="FirstName" class="form-control" placeholder="نام کوچک طرف حساب را وارد کنید">
+                                        <span asp-validation-for="FirstName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="LastName">نام خانوادگی <span class="text-danger">*</span></label>
+                                        <input asp-for="LastName" class="form-control" placeholder="نام خانوادگی طرف حساب را وارد کنید">
+                                        <span asp-validation-for="LastName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="CompanyName">نام شرکت</label>
+                                <input asp-for="CompanyName" class="form-control" placeholder="نام شرکت را وارد کنید">
+                                <span asp-validation-for="CompanyName" class="text-danger"></span>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="Phone">تلفن ثابت</label>
+                                        <input asp-for="Phone" class="form-control" placeholder="تلفن ثابت را وارد کنید">
+                                        <span asp-validation-for="Phone" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="Mobile">تلفن همراه</label>
+                                        <input asp-for="Mobile" class="form-control" placeholder="تلفن همراه را وارد کنید">
+                                        <span asp-validation-for="Mobile" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label asp-for="Email" class="form-label"></label>
+                                        <input asp-for="Email" class="form-control" placeholder="ایمیل را وارد کنید">
+                                        <span asp-validation-for="Email" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label asp-for="NationalCode" class="form-label"></label>
+                                        <input asp-for="NationalCode" class="form-control" placeholder="کد ملی را وارد کنید">
+                                        <span asp-validation-for="NationalCode" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label asp-for="PostalCode" class="form-label"></label>
+                                        <input asp-for="PostalCode" class="form-control" placeholder="کد پستی را وارد کنید">
+                                        <span asp-validation-for="PostalCode" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="mb-4">
+                                        <label class="form-check">
+                                            <input asp-for="IsActive" class="form-check-input">
+                                            <span class="form-check-label">وضعیت فعال</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label asp-for="Address" class="form-label"></label>
+                                <textarea asp-for="Address" class="form-control" rows="1" placeholder="آدرس را وارد کنید"></textarea>
+                                <span asp-validation-for="Address" class="text-danger"></span>
+                            </div>
+                            <div class="mb-4">
+                                <label asp-for="Description" class="form-label"></label>
+                                <textarea asp-for="Description" class="form-control" rows="3" placeholder="توضیحات اضافی را وارد کنید"></textarea>
+<script>
+
+                                    simpletiny('Description', 'توضیحات اضافی و یادداشت‌های مربوط به طرف حساب را در اینجا وارد کنید...', 250);
+
+</script>                      
+</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END Identity Information Tab -->
+        <!-- Interaction Information Tab -->
+        <div class="tab-content-pane" id="interaction-info">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">اطلاعات تعاملی (CRM)</h3>
+                    <div class="block-options">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fa fa-check me-1"></i> ذخیره
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="row justify-content-center">
+                        <div class="col-md-10 col-lg-8">
+                            <div class="mb-4">
+                                <label class="form-label" for="CRMInfo_LeadSource">منبع آشنایی</label>
+                                <select asp-for="CRMInfo.LeadSource" asp-items="StaticSelectLists.LeadSources" class="form-select"></select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="CRMInfo_SalesStage">مرحله فروش</label>
+                                <select asp-for="CRMInfo.SalesStage" asp-items="StaticSelectLists.SalesStages" class="form-select"></select>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="CRMInfo_PotentialValue">ارزش بالقوه (میلیون تومان)</label>
+                                        <input asp-for="CRMInfo.PotentialValue" class="form-control" placeholder="ارزش بالقوه مشتری">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="CRMInfo_CreditRating">رتبه اعتباری</label>
+                                        <select asp-for="CRMInfo.CreditRating" asp-items="StaticSelectLists.CreditRatings" class="form-select"></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="CRMInfo_Industry">صنعت / حوزه فعالیت</label>
+                                <input asp-for="CRMInfo.Industry" class="form-control" placeholder="صنعت یا حوزه فعالیت مشتری">
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="CRMInfo_EmployeeCount">تعداد کارمندان</label>
+                                        <input asp-for="CRMInfo.EmployeeCount" class="form-control" placeholder="تعداد کارمندان">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" for="CRMInfo_AnnualRevenue">گردش مالی سالانه (میلیون تومان)</label>
+                                        <input asp-for="CRMInfo.AnnualRevenue" class="form-control" placeholder="گردش مالی سالانه">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="CRMInfo_SalesRepUserId">کارشناس فروش اختصاصی</label>
+                                <select asp-for="CRMInfo.SalesRepUserId" asp-items="ViewBag.SalesReps" class="form-select">
+                                    <option value="">انتخاب کنید</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="CRMInfo_Preferences">علاقه‌مندی‌ها و ترجیحات</label>
+                                <textarea asp-for="CRMInfo.Preferences" class="form-control" rows="4" placeholder="علاقه‌مندی‌ها و ترجیحات مشتری"></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label asp-for="CRMInfo.InternalNotes" class="form-label"></label>
+
+                                <textarea asp-for="CRMInfo.InternalNotes"class="form-control" rows="4" placeholder="یادداشت‌های داخلی (فقط برای استفاده داخلی)"></textarea>
+                               <script>
+                                    simpletiny('CRMInfo_InternalNotes', 'یادداشت‌های داخلی و محرمانه را در اینجا وارد کنید...', 300);
+
+                               </script>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="block-content block-content-full block-content-sm bg-body-light text-end">
+                    <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                        <i class="fa fa-arrow-right me-1"></i> بازگشت 
+                    </button>
+                    <button type="submit" class="btn btn-primary">
                         <i class="fa fa-check me-1"></i> ذخیره
                     </button>
                 </div>
             </div>
-            <div class="block-content">
-                <div class="row justify-content-center">
-                    <div class="col-md-10 col-lg-8">
-                        <div class="mb-4">
-                            <label class="form-label" for="StakeholderType">نوع طرف حساب <span class="text-danger">*</span></label>
-                            <select asp-for="StakeholderType" asp-items="StaticSelectLists.StakeholderTypes" class="form-select"></select>
-                            <span asp-validation-for="StakeholderType" class="text-danger"></span>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="FirstName">نام <span class="text-danger">*</span></label>
-                                    <input asp-for="FirstName" class="form-control" placeholder="نام کوچک طرف حساب را وارد کنید">
-                                    <span asp-validation-for="FirstName" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="LastName">نام خانوادگی <span class="text-danger">*</span></label>
-                                    <input asp-for="LastName" class="form-control" placeholder="نام خانوادگی طرف حساب را وارد کنید">
-                                    <span asp-validation-for="LastName" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="CompanyName">نام شرکت</label>
-                            <input asp-for="CompanyName" class="form-control" placeholder="نام شرکت را وارد کنید">
-                            <span asp-validation-for="CompanyName" class="text-danger"></span>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="Phone">تلفن ثابت</label>
-                                    <input asp-for="Phone" class="form-control" placeholder="تلفن ثابت را وارد کنید">
-                                    <span asp-validation-for="Phone" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="Mobile">تلفن همراه</label>
-                                    <input asp-for="Mobile" class="form-control" placeholder="تلفن همراه را وارد کنید">
-                                    <span asp-validation-for="Mobile" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label asp-for="Email" class="form-label"></label>
-                                    <input asp-for="Email" class="form-control" placeholder="ایمیل را وارد کنید">
-                                    <span asp-validation-for="Email" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label asp-for="NationalCode" class="form-label"></label>
-                                    <input asp-for="NationalCode" class="form-control" placeholder="کد ملی را وارد کنید">
-                                    <span asp-validation-for="NationalCode" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label asp-for="PostalCode" class="form-label"></label>
-                                    <input asp-for="PostalCode" class="form-control" placeholder="کد پستی را وارد کنید">
-                                    <span asp-validation-for="PostalCode" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="mb-4">
-                                    <label class="form-check">
-                                        <input asp-for="IsActive" class="form-check-input">
-                                        <span class="form-check-label">وضعیت فعال</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label asp-for="Address" class="form-label"></label>
-                            <textarea asp-for="Address" class="form-control" rows="3" placeholder="آدرس را وارد کنید"></textarea>
-                            <span asp-validation-for="Address" class="text-danger"></span>
-                        </div>
-                        <div class="mb-4">
-                            <label asp-for="Description" class="form-label"></label>
-                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="توضیحات اضافی را وارد کنید"></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-
-        <!-- CRM Information -->
-        <div class="block block-rounded">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">اطلاعات CRM</h3>
-                <div class="block-options">
-                    <button type="button" class="btn-block-option" data-toggle="block-option" data-action="content_toggle"></button>
-                </div>
-            </div>
-            <div class="block-content">
-                <div class="row justify-content-center">
-                    <div class="col-md-10 col-lg-8">
-                        <div class="mb-4">
-                            <label class="form-label" for="CRMInfo_LeadSource">منبع آشنایی</label>
-                            <select asp-for="CRMInfo.LeadSource" asp-items="StaticSelectLists.LeadSources" class="form-select"></select>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="CRMInfo_SalesStage">مرحله فروش</label>
-                            <select asp-for="CRMInfo.SalesStage" asp-items="StaticSelectLists.SalesStages" class="form-select"></select>
-                        </div>
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="CRMInfo_PotentialValue">ارزش بالقوه (میلیون تومان)</label>
-                                    <input asp-for="CRMInfo.PotentialValue" class="form-control" placeholder="ارزش بالقوه مشتری">
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="CRMInfo_CreditRating">رتبه اعتباری</label>
-                                    <select asp-for="CRMInfo.CreditRating" asp-items="StaticSelectLists.CreditRatings" class="form-select"></select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="CRMInfo_Industry">صنعت / حوزه فعالیت</label>
-                            <input asp-for="CRMInfo.Industry" class="form-control" placeholder="صنعت یا حوزه فعالیت مشتری">
-                        </div>
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="CRMInfo_EmployeeCount">تعداد کارمندان</label>
-                                    <input asp-for="CRMInfo.EmployeeCount" class="form-control" placeholder="تعداد کارمندان">
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-4">
-                                    <label class="form-label" for="CRMInfo_AnnualRevenue">گردش مالی سالانه (میلیون تومان)</label>
-                                    <input asp-for="CRMInfo.AnnualRevenue" class="form-control" placeholder="گردش مالی سالانه">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="CRMInfo_SalesRepUserId">کارشناس فروش اختصاصی</label>
-                            <select asp-for="CRMInfo.SalesRepUserId" asp-items="ViewBag.SalesReps" class="form-select">
-                                <option value="">انتخاب کنید</option>
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="CRMInfo_Preferences">علاقه‌مندی‌ها و ترجیحات</label>
-                            <textarea asp-for="CRMInfo.Preferences" class="form-control" rows="4" placeholder="علاقه‌مندی‌ها و ترجیحات مشتری"></textarea>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="CRMInfo_InternalNotes">یادداشت‌های داخلی</label>
-                            <textarea asp-for="CRMInfo.InternalNotes" class="form-control" rows="4" placeholder="یادداشت‌های داخلی (فقط برای استفاده داخلی)"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="block-content block-content-full block-content-sm bg-body-light text-end">
-                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
-                    <i class="fa fa-arrow-right me-1"></i> انصراف
-                </button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fa fa-check me-1"></i> ذخیره
-                </button>
-            </div>
-        </div>
+        <!-- END Interaction Information Tab -->
     </form>
     <!-- END New Stakeholder Form -->
 </div>
 <!-- END Page Content -->
-@section scripts {
+@section styles {
+    <style>
+        .tab-tile {
+            transition: all 0.3s ease;
+        }
+
+        .tab-tile.active {
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            border-color: #007bff;
+        }
+
+        .tab-tile.active .text-primary {
+            color: #007bff !important;
+        }
+
+        .tab-content-pane {
+            display: none;
+        }
+
+        .tab-content-pane.active {
+            display: block;
+        }
+    </style>
+}
+@section Scripts {
     <script>
         $(document).ready(function() {
+            // تب کلیک handler
+            $('.tab-tile').click(function(e) {
+                e.preventDefault();
+
+                // Remove active from all tiles
+                $('.tab-tile').removeClass('active');
+
+                // Add active to clicked tile
+                $(this).addClass('active');
+
+                // Hide all tab content
+                $('.tab-content-pane').removeClass('active');
+
+                // Show selected tab content
+                var targetTab = $(this).data('tab');
+                $('#' + targetTab).addClass('active');
+            });
+
             // بررسی نوع طرف حساب و نمایش/عدم نمایش بخش های مرتبط
             $('#StakeholderType').change(function() {
                 // اگر مشتری باشد، بخش CRM را نمایش بده
                 if ($(this).val() == "0") {
-                    $('.block-rounded:eq(1)').show();
+                    // نمایش تب اطلاعات تعاملی
+                    $('[data-tab="interaction-info"]').parent().show();
                 } else {
-                    $('.block-rounded:eq(1)').hide();
+                    // مخفی کردن تب اطلاعات تعاملی و بازگشت به تب اول
+                    $('[data-tab="interaction-info"]').parent().hide();
+                    $('[data-tab="identity-info"]').click();
                 }
             });
 
             // اعمال تغییرات بر اساس مقدار اولیه
             $('#StakeholderType').trigger('change');
+
+            // راه‌اندازی TinyMCE برای یادداشت‌های داخلی
+            // منتظر می‌مانیم تا تب CRM نمایش داده شود
+                
         });
     </script>
 }

@@ -1,5 +1,6 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
@@ -18,14 +19,16 @@ namespace MahERP.DataModelLayer.Repository
         private readonly IUnitOfWork _unitOfWork;
         private readonly IStakeholderRepository _StakeholderRepo;
         private readonly IUserManagerRepository _userManagerRepository;
+        private readonly TaskCodeGenerator _taskCodeGenerator;
 
-        public TaskRepository(AppDbContext context, IBranchRepository branchRipository, IUnitOfWork unitOfWork, IUserManagerRepository userManagerRepository, IStakeholderRepository stakeholderRepo)
+        public TaskRepository(AppDbContext context, IBranchRepository branchRipository, IUnitOfWork unitOfWork, IUserManagerRepository userManagerRepository, IStakeholderRepository stakeholderRepo, TaskCodeGenerator taskCodeGenerator)
         {
             _context = context;
             _BranchRipository = branchRipository;
             _unitOfWork = unitOfWork;
             _userManagerRepository = userManagerRepository;
             _StakeholderRepo = stakeholderRepo;
+            _taskCodeGenerator = taskCodeGenerator;
         }
 
         public TaskListForIndexViewModel GetTaskForIndexByUser(TaskListForIndexViewModel filterModel)
@@ -41,38 +44,41 @@ namespace MahERP.DataModelLayer.Repository
                 Tasks = new List<TaskViewModel>()
             };
 
-            List< TaskViewModel> tasks = (from ts in _context.TaskAssignment_Tbl 
-                                                  join t in _context.Tasks_Tbl on ts.TaskId equals t.Id
-                                                  join cate in _context.TaskCategory_Tbl on t.TaskCategoryId equals cate .Id
-                                               where ts.AssignedUserId == userId && !t.IsDeleted
-                                                    select new TaskViewModel
-                                                    {
-                                                        Id = t.Id,
-                                                        Title = t.Title,
-                                                        Description = t.Description,
-                                                        TaskCode = t.TaskCode,
-                                                        CreateDate = t.CreateDate,
-                                                        DueDate = t.DueDate,
-                                                        CompletionDate = t.CompletionDate,
-                                                        ManagerApprovedDate = t.ManagerApprovedDate,
-                                                        SupervisorApprovedDate = t.SupervisorApprovedDate,
-                                                        IsActive = t.IsActive,
-                                                        IsDeleted = t.IsDeleted,
-                                                        BranchId = t.BranchId,
-                                                        CategoryId = cate.Id,
-                                                        CategoryTitle = cate.Title,
-                                                        CreatorUserId = t.CreatorUserId,
-                                                        StakeholderId = t.StakeholderId
+            // اصلاح کوئری LINQ برای جلوگیری از مشکل anonymous type
+            var tasksQuery = from ts in _context.TaskAssignment_Tbl
+                             join t in _context.Tasks_Tbl on ts.TaskId equals t.Id
+                             join cate in _context.TaskCategory_Tbl on t.TaskCategoryId equals cate.Id into categoryJoin
+                             from category in categoryJoin.DefaultIfEmpty()
+                             where ts.AssignedUserId == userId && !t.IsDeleted
+                             select new { t, category };
 
-                                                    }
-
-
-                                                ).ToList();
+            var tasks = tasksQuery.ToList().Select(item => new TaskViewModel
+            {
+                Id = item.t.Id,
+                Title = item.t.Title ?? string.Empty,
+                Description = item.t.Description,
+                TaskCode = item.t.TaskCode,
+                CreateDate = item.t.CreateDate,
+                DueDate = item.t.DueDate,
+                CompletionDate = item.t.CompletionDate,
+                ManagerApprovedDate = item.t.ManagerApprovedDate,
+                SupervisorApprovedDate = item.t.SupervisorApprovedDate,
+                IsActive = item.t.IsActive,
+                IsDeleted = item.t.IsDeleted,
+                BranchId = item.t.BranchId,
+                CategoryId = item.category?.Id,
+                CategoryTitle = item.category?.Title,
+                CreatorUserId = item.t.CreatorUserId,
+                StakeholderId = item.t.StakeholderId,
+                TaskType = item.t.TaskType
+            }).ToList();
 
             taskForIndexViewModel.Tasks = tasks;
+            taskForIndexViewModel.TotalCount = tasks.Count;
 
             return taskForIndexViewModel;
         }
+
         public bool IsTaskCodeUnique(string taskCode, int? excludeId = null)
         {
             if (string.IsNullOrWhiteSpace(taskCode))
@@ -85,29 +91,31 @@ namespace MahERP.DataModelLayer.Repository
 
             return !query.Any();
         }
+
         public TaskViewModel CreateTaskAndCollectData(string UserId)
         {
-            ///پیدا کردن شماره تسک بعدی
-            var NewTaskId = _unitOfWork.TaskUW.GetNextPrimaryKey();
             var Tasks = new TaskViewModel();
             Tasks.branchListInitial = _BranchRipository.GetBrnachListByUserId(UserId);
             Tasks.TaskCategoryInitial = GetAllCategories();
-
-            //int BranchFirst = Tasks.Branchs.FirstOrDefault().Id;
-            //Tasks.StakeholderId = 0;
-            //int CustomersFirst = Tasks.Customers.First().Id;
             Tasks.UsersInitial = _userManagerRepository.GetUserListBybranchId(0);
-            //Tasks.DutyList = _DutyCustorepo.GetListDutyByCustomer_ByBranch(CustomersFirst, BranchFirst);
-            //Tasks.ContractList = _Cusrepo.GetContractList(CustomersFirst);
-            //Tasks.NextTaskId = NewTaskId;
+
+            // تولید کد تسک اتوماتیک
+            Tasks.TaskCode = _taskCodeGenerator.GenerateTaskCode();
+
+            // تنظیمات کد تسک
+            Tasks.TaskCodeSettings = _taskCodeGenerator.GetTaskCodeSettings();
+
+            // مقدار پیش‌فرض برای ورود دستی کد
+            Tasks.IsManualTaskCode = false;
 
             return Tasks;
         }
 
-
-
-
-
+        // اضافه کردن متد جدید برای اعتبارسنجی کد تسک
+        public bool ValidateTaskCode(string taskCode, int? excludeId = null)
+        {
+            return _taskCodeGenerator.ValidateTaskCode(taskCode, excludeId);
+        }
 
         public List<Tasks> GetTasks(bool includeDeleted = false, int? categoryId = null, string assignedUserId = null)
         {
@@ -276,8 +284,6 @@ namespace MahERP.DataModelLayer.Repository
             return query.OrderByDescending(t => t.CreateDate).ToList();
         }
 
-      
-
         public List<TaskAssignment> GetTaskAssignments(int taskId)
         {
             return _context.TaskAssignment_Tbl
@@ -299,6 +305,7 @@ namespace MahERP.DataModelLayer.Repository
             return _context.TaskAssignment_Tbl
                 .FirstOrDefault(a => a.AssignedUserId == userId && a.TaskId == taskId);
         }
+
         /// <summary>
         /// دریافت تسک‌های شعبه برای نمایش در تقویم بر اساس فیلترهای مختلف
         /// </summary>
@@ -380,11 +387,28 @@ namespace MahERP.DataModelLayer.Repository
                     query = query.Where(t => t.StakeholderId == stakeholderId.Value);
                 }
 
-                // اجرای کوئری و تبدیل به ViewModel
-                var tasks = query.Select(t => new TaskCalendarViewModel
+                // اجرای کوئری و تبدیل به ViewModel در حافظه برای جلوگیری از مشکل anonymous type
+                var tasksData = query.Select(t => new
+                {
+                    t.Id,
+                    t.Title,
+                    t.Description,
+                    t.TaskCode,
+                    t.DueDate,
+                    t.CompletionDate,
+                    t.CreateDate,
+                    t.CreatorUserId,
+                    t.StakeholderId,
+                    StakeholderFirstName = t.Stakeholder != null ? t.Stakeholder.FirstName : null,
+                    StakeholderLastName = t.Stakeholder != null ? t.Stakeholder.LastName : null,
+                    CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : null
+                }).ToList();
+
+                // تبدیل به TaskCalendarViewModel در حافظه
+                var tasks = tasksData.Select(t => new TaskCalendarViewModel
                 {
                     Id = t.Id,
-                    Title = t.Title,
+                    Title = t.Title ?? string.Empty,
                     Description = t.Description,
                     TaskCode = t.TaskCode,
                     DueDate = t.DueDate,
@@ -393,21 +417,14 @@ namespace MahERP.DataModelLayer.Repository
 
                     // اطلاعات طرف حساب
                     StakeholderId = t.StakeholderId,
-                    StakeholderName = t.Stakeholder != null ?
-                        $"{t.Stakeholder.FirstName} {t.Stakeholder.LastName}" : "ندارد",
+                    StakeholderName = t.StakeholderFirstName != null && t.StakeholderLastName != null ?
+                        $"{t.StakeholderFirstName} {t.StakeholderLastName}" : "ندارد",
 
                     // اطلاعات دسته‌بندی
-                    CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : "ندارد",
+                    CategoryTitle = t.CategoryTitle ?? "ندارد",
 
-                    // اطلاعات شعبه (از طریق StakeholderBranch یا BranchUser)
-                    BranchName = _context.StakeholderBranch_Tbl
-                        .Where(sb => sb.StakeholderId == t.StakeholderId)
-                        .Join(_context.Branch_Tbl, sb => sb.BranchId, b => b.Id, (sb, b) => b.Name)
-                        .FirstOrDefault() ??
-                        _context.BranchUser_Tbl
-                            .Where(bu => t.TaskAssignments.Any(ta => ta.AssignedUserId == bu.UserId) && bu.IsActive)
-                            .Join(_context.Branch_Tbl, bu => bu.BranchId, b => b.Id, (bu, b) => b.Name)
-                            .FirstOrDefault() ?? "ندارد",
+                    // اطلاعات شعبه (به دلیل پیچیدگی کوئری، بعداً اضافه می‌شود)
+                    BranchName = "ندارد", // فعلاً ساده‌سازی شده
 
                     // تعیین رنگ بر اساس وضعیت
                     CalendarColor = t.CompletionDate.HasValue ? "#28a745" : // سبز - تکمیل شده
@@ -423,7 +440,7 @@ namespace MahERP.DataModelLayer.Repository
                     CreateDate = t.CreateDate,
 
                     // شناسه سازنده
-                    CreatorUserId = t.CreatorUserId
+                    CreatorUserId = t.CreatorUserId ?? string.Empty
                 })
                 .OrderBy(t => t.DueDate)
                 .ToList();

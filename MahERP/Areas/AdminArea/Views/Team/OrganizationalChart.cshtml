@@ -1,0 +1,208 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationalChartViewModel
+@{
+    ViewData["Title"] = "چارت سازمانی - " + Model.BranchName;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">@ViewData["Title"]</h3>
+        <div class="block-options">
+            <div class="dropdown">
+                <button type="button" class="btn btn-sm btn-alt-primary dropdown-toggle" id="branchDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-building me-1"></i> @Model.BranchName
+                </button>
+                <div class="dropdown-menu" aria-labelledby="branchDropdown">
+                    @foreach (var branch in ViewBag.UserBranches as SelectList)
+                    {
+                        <a class="dropdown-item" href="@Url.Action("OrganizationalChart", new { branchId = branch.Value })">
+                            @branch.Text
+                        </a>
+                    }
+                </div>
+            </div>
+          
+            <a asp-action="Index" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-list opacity-50 me-1"></i> نمایش لیستی
+            </a>
+            <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-success">
+                <i class="fa fa-plus opacity-50 me-1"></i> تیم جدید
+            </a>
+        </div>
+    </div>
+    <div class="block-content">
+        <div class="row">
+            <div class="col-12">
+                <div id="org-chart-container" class="text-center">
+                    @if (Model.RootTeams.Any())
+                    {
+                        @foreach (var rootTeam in Model.RootTeams)
+                        {
+                            @await Html.PartialAsync("_TeamNode", rootTeam)
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state py-5">
+                            <i class="fa fa-sitemap fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">هیچ تیمی تعریف نشده است</h4>
+                            <p class="text-muted">برای شروع، یک تیم جدید ایجاد کنید</p>
+                            <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-primary">
+                                <i class="fa fa-plus me-1"></i> ایجاد اولین تیم
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Styles {
+    <style>
+        .org-chart-container {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .team-node {
+            display: inline-block;
+            margin: 10px;
+            position: relative;
+        }
+
+        .team-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            min-width: 250px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .team-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .team-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);    
+        }
+
+        .team-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-manager {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .team-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .team-actions .btn {
+            padding: 4px 8px;
+            font-size: 0.8em;
+            border-radius: 6px;
+        }
+
+        .child-teams {
+            margin-top: 30px;
+            position: relative;
+        }
+
+        .child-teams::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 15px;
+            background: #dee2e6;
+        }
+
+        .child-teams > .team-node {
+            position: relative;
+        }
+
+        .child-teams > .team-node:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            right: 0;
+            width: calc(100% + 20px);
+            height: 2px;
+            background: #dee2e6;
+            z-index: -1;
+        }
+
+        .child-teams > .team-node::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 15px;
+            background: #dee2e6;
+        }
+
+        .empty-state {
+            background: white;
+            border-radius: 12px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .manager-empty {
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        @@media (max-width: 768px) {
+            .team-card {
+                min-width: 200px;
+                padding: 15px;
+            }
+            
+            .team-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // اکنون از سیستم مودال استاندارد main.js استفاده می‌کنیم
+        // هیچ کد JavaScript اضافی نیاز نیست
+        
+        // تنها تابع‌های مختص چارت سازمانی که نیاز به reload صفحه دارند
+        function refreshChart() {
+            location.reload();
+        }
+        
+        // تابع کمکی برای بروزرسانی چارت پس از تغییرات
+        function updateChartNode(teamId) {
+            // در نسخه‌های آینده می‌توان از AJAX برای بروزرسانی استفاده کرد
+            refreshChart();
+        }
+    </script>
+}
