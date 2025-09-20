@@ -1,0 +1,184 @@
+﻿@model int
+@{
+    // دریافت سمت‌ها و اعضا از سرویس
+    var hierarchyData = ViewBag.TeamHierarchy as TeamHierarchyViewModel;
+}
+
+<div class="positions-hierarchy">
+    @if (hierarchyData?.Positions.Any() == true)
+    {
+        @foreach (var position in hierarchyData.Positions.OrderBy(p => p.PowerLevel))
+        {
+            <div class="position-node mb-3" data-position-id="@position.Id">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">
+                                <i class="fa fa-briefcase me-2 text-primary"></i>
+                                @position.Title
+                                <small class="text-muted">(@position.PowerLevelText)</small>
+                            </h6>
+                            @if (!string.IsNullOrEmpty(position.Description))
+                            {
+                                <small class="text-muted">@position.Description</small>
+                            }
+                        </div>
+                        <div class="position-actions">
+                            <span class="badge bg-info me-2">
+                                @position.CurrentMembers
+                                @if (position.MaxMembers.HasValue)
+                                {
+                                    <span>/@position.MaxMembers</span>
+                                }
+                                عضو
+                            </span>
+                            
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("EditPositionModal", "TeamPosition", new { id = position.Id })"
+                                    data-bs-toggle="tooltip" title="ویرایش سمت">
+                                <i class="fa fa-edit"></i>
+                            </button>
+
+                            @if (position.CanAddMember)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-success"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("AddMemberToPositionModal", "Team", new { teamId = Model, positionId = position.Id })"
+                                        data-bs-toggle="tooltip" title="اضافه کردن عضو به این سمت">
+                                    <i class="fa fa-user-plus"></i>
+                                </button>
+                            }
+
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("DeletePositionModal", "TeamPosition", new { id = position.Id })"
+                                    data-bs-toggle="tooltip" title="حذف سمت">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    @if (position.Members.Any())
+                    {
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach (var member in position.Members.Where(m => m.IsActive))
+                                {
+                                    <div class="col-md-6 mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa fa-user me-2 text-secondary"></i>
+                                            <div class="flex-grow-1">
+                                                <strong>@member.UserFullName</strong>
+                                                @if (!string.IsNullOrEmpty(member.RoleDescription))
+                                                {
+                                                    <br><small class="text-muted">@member.RoleDescription</small>
+                                                }
+                                            </div>
+                                            <div class="member-actions">
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        data-toggle="modal-ajax"
+                                                        href="@Url.Action("EditMemberModal", "Team", new { id = member.Id })"
+                                                        data-bs-toggle="tooltip" title="ویرایش عضو">
+                                                    <i class="fa fa-edit"></i>
+                                                </button>
+                                                
+                                                <button type="button" class="btn btn-sm btn-outline-info"
+                                                        data-toggle="modal-ajax"
+                                                        href="@Url.Action("ManageMemberTaskViewersModal", "TaskViewer", new { memberId = member.Id })"
+                                                        data-bs-toggle="tooltip" title="مجوزهای مشاهده تسک">
+                                                    <i class="fa fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card-body text-center text-muted">
+                            <i class="fa fa-users fa-2x mb-2"></i>
+                            <p>هیچ عضوی در این سمت قرار ندارد</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-4">
+            <i class="fa fa-briefcase fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">هیچ سمتی تعریف نشده است</h5>
+            <p class="text-muted">برای شروع، اولین سمت تیم را تعریف کنید</p>
+            <button type="button" class="btn btn-primary"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("CreatePositionModal", "TeamPosition", new { teamId = Model })">
+                <i class="fa fa-plus me-1"></i> تعریف اولین سمت
+            </button>
+        </div>
+    }
+
+    @if (hierarchyData?.MembersWithoutPosition.Any() == true)
+    {
+        <div class="members-without-position mt-4">
+            <div class="card">
+                <div class="card-header bg-warning-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-exclamation-triangle me-2 text-warning"></i>
+                        اعضای بدون سمت (@hierarchyData.MembersWithoutPosition.Count)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var member in hierarchyData.MembersWithoutPosition)
+                        {
+                            <div class="col-md-6 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="fa fa-user me-2 text-warning"></i>
+                                    <span>@member.UserFullName</span>
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
+                                            data-toggle="modal-ajax"
+                                            href="@Url.Action("AssignPositionModal", "Team", new { memberId = member.Id })"
+                                            data-bs-toggle="tooltip" title="تخصیص سمت">
+                                        <i class="fa fa-briefcase"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+.positions-hierarchy .position-node {
+    margin-left: 0;
+}
+
+.positions-hierarchy .position-node[data-position-id] .card {
+    border-left: 4px solid var(--bs-primary);
+    transition: all 0.3s ease;
+}
+
+.positions-hierarchy .position-node[data-position-id]:hover .card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.position-actions .btn {
+    margin-left: 0.25rem;
+}
+
+.member-actions .btn {
+    margin-left: 0.25rem;
+}
+
+.bg-warning-light {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+</style>

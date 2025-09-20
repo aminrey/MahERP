@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250920121129_mig3Permissions")]
+    partial class mig3Permissions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3269,29 +3272,11 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsViewed")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastUpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LastUpdaterUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<byte?>("SpecialPermissionType")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
@@ -3313,13 +3298,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("AddedByUserId");
 
-                    b.HasIndex("LastUpdaterUserId");
-
                     b.HasIndex("TaskId");
 
                     b.HasIndex("TasksId");
-
-                    b.HasIndex("TeamId");
 
                     b.HasIndex("UserId");
 
@@ -4710,10 +4691,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
-                        .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
                         .WithMany()
                         .HasForeignKey("TaskId")
@@ -4724,10 +4701,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .WithMany("TaskViewers")
                         .HasForeignKey("TasksId");
 
-                    b.HasOne("MahERP.DataModelLayer.Entities.Organization.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -4736,11 +4709,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Navigation("AddedByUser");
 
-                    b.Navigation("LastUpdater");
-
                     b.Navigation("Task");
-
-                    b.Navigation("Team");
 
                     b.Navigation("User");
                 });

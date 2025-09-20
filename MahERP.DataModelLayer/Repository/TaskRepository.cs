@@ -454,5 +454,42 @@ namespace MahERP.DataModelLayer.Repository
                 return new List<TaskCalendarViewModel>();
             }
         }
+
+        /// <summary>
+        /// دریافت تسک‌ها بر اساس مجوزهای مشاهده کاربر
+        /// </summary>
+        public List<Tasks> GetVisibleTasksForUser(string userId, bool includeDeleted = false)
+        {
+            // دریافت شناسه تسک‌هایی که کاربر مجوز مشاهده آن‌ها را دارد
+            var visibleTaskIds = _context.TaskViewer_Tbl
+                .Where(tv => tv.UserId == userId && tv.IsActive)
+                .Where(tv => !tv.StartDate.HasValue || tv.StartDate <= DateTime.Now)
+                .Where(tv => !tv.EndDate.HasValue || tv.EndDate >= DateTime.Now)
+                .Select(tv => tv.TaskId)
+                .ToList();
+
+            var query = _context.Tasks_Tbl
+                .Where(t => visibleTaskIds.Contains(t.Id));
+
+            if (!includeDeleted)
+                query = query.Where(t => !t.IsDeleted);
+
+            return query.OrderByDescending(t => t.CreateDate).ToList();
+        }
+
+        /// <summary>
+        /// بررسی اینکه آیا کاربر مجوز مشاهده تسک خاصی را دارد
+        /// </summary>
+        public bool CanUserViewTask(string userId, int taskId)
+        {
+            var now = DateTime.Now;
+            
+            return _context.TaskViewer_Tbl
+                .Any(tv => tv.UserId == userId && 
+                          tv.TaskId == taskId && 
+                          tv.IsActive &&
+                          (!tv.StartDate.HasValue || tv.StartDate <= now) &&
+                          (!tv.EndDate.HasValue || tv.EndDate >= now));
+        }
     }
 }

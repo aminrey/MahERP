@@ -28,16 +28,19 @@ namespace MahERP.DataModelLayer.Entities.Organization
         public virtual AppUsers User { get; set; }
 
         /// <summary>
-        /// عنوان یا سمت کاربر در تیم
+        /// سمت عضو در تیم (رابطه با TeamPosition)
         /// </summary>
-        [MaxLength(100)]
-        public string Position { get; set; }
+        public int? PositionId { get; set; }
+        [ForeignKey("PositionId")]
+        public virtual TeamPosition? Position { get; set; }
+
+ 
 
         /// <summary>
         /// توضیحات نقش کاربر در تیم
         /// </summary>
         [MaxLength(500)]
-        public string RoleDescription { get; set; }
+        public string? RoleDescription { get; set; }
 
         /// <summary>
         /// نوع عضویت
@@ -78,6 +81,17 @@ namespace MahERP.DataModelLayer.Entities.Organization
         /// تاریخ آخرین بروزرسانی
         /// </summary>
         public DateTime? LastUpdateDate { get; set; }
+
+        /// <summary>
+        /// سطح قدرت عضو (از سمت گرفته می‌شود)
+        /// </summary>
+        [NotMapped]
+        public int PowerLevel => Position?.PowerLevel ?? 999; // 999 برای اعضای بدون سمت
+
+        /// <summary>
+        /// نام سمت برای نمایش
+        /// </summary>
+        [NotMapped]
+        public string PositionTitle => Position?.Title  ?? "عضو";
     }
 }
-

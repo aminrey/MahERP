@@ -26,6 +26,7 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<BranchTaskCategoryStakeholder> BranchTaskCategoryUW { get; }
         GenereicClass<Team> TeamUW { get; }
         GenereicClass<TeamMember> TeamMemberUW { get; }
+        GenereicClass<TeamPosition> TeamPositionUW { get; }
         #endregion
 
         #region Core Notification System - سیستم نوتیفیکیشن کلی

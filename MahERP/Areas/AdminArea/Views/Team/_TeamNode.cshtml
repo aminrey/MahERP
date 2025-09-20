@@ -1,6 +1,6 @@
 ﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamViewModel
 
-<div class="team-node">
+<div class="team-node" data-level="@Model.Level">
     <div class="team-card">
         <div class="team-title">
             @Model.Title
@@ -22,7 +22,15 @@
         </div>
 
         <div class="team-actions">
-            <!-- انتخاب/تغییر مدیر با استفاده از سیستم مودال استاندارد -->
+            <!-- مجوزهای مشاهده تسک - دکمه جدید -->
+            <button type="button" class="btn btn-sm btn-outline-light"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("ManageTeamTaskViewersModal", "TaskViewer", new { teamId = Model.Id })"
+                    data-bs-toggle="tooltip" title="مدیریت مجوزهای مشاهده تسک‌های تیم">
+                <i class="fa fa-eye"></i>
+            </button>
+
+            <!-- انتخاب/تغییر مدیر -->
             <button type="button" class="btn btn-sm btn-outline-light"
                     data-toggle="modal-ajax"
                     href="@Url.Action("AssignManagerModal", new { teamId = Model.Id })"
@@ -32,7 +40,7 @@
 
             @if (Model.HasManager)
             {
-                <!-- حذف مدیر با مودال تایید -->
+                <!-- حذف مدیر -->
                 <button type="button" class="btn btn-sm btn-outline-light"
                         data-toggle="modal-ajax"
                         href="@Url.Action("RemoveManagerModal", new { teamId = Model.Id })"
@@ -41,28 +49,25 @@
                 </button>
             }
 
-            <!-- جزئیات تیم -->
+            <!-- سایر دکمه‌ها... -->
             <a asp-action="Details" asp-route-id="@Model.Id"
                class="btn btn-sm btn-outline-light"
                data-bs-toggle="tooltip" title="مشاهده جزئیات تیم">
                 <i class="fa fa-eye"></i>
             </a>
 
-            <!-- ویرایش تیم -->
             <a asp-action="Edit" asp-route-id="@Model.Id"
                class="btn btn-sm btn-outline-light"
                data-bs-toggle="tooltip" title="ویرایش اطلاعات تیم">
                 <i class="fa fa-edit"></i>
             </a>
 
-            <!-- اضافه کردن تیم فرزند -->
             <a asp-action="Create" asp-route-branchId="@Model.BranchId" asp-route-parentTeamId="@Model.Id"
                class="btn btn-sm btn-outline-light"
                data-bs-toggle="tooltip" title="ایجاد تیم فرزند">
                 <i class="fa fa-plus"></i>
             </a>
 
-            <!-- حذف تیم با مودال تایید -->
             <button type="button" class="btn btn-sm btn-outline-light"
                     data-toggle="modal-ajax"
                     href="@Url.Action("DeleteConfirmModal", new { id = Model.Id })"

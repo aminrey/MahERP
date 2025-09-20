@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
@@ -203,7 +203,7 @@ namespace MahERP.DataModelLayer.Repository
 
         public OrganizationalChartViewModel GetOrganizationalChart(int branchId)
         {
-            var teams = GetTeamHierarchy(branchId);
+            var teams = GetTeamHierarchy(branchId); // اصلاح شده
             var availableUsers = GetAvailableUsersForBranch(branchId);
 
             var branchName = _context.Branch_Tbl
@@ -221,11 +221,14 @@ namespace MahERP.DataModelLayer.Repository
             };
         }
 
+        /// <summary>
+        /// دریافت سلسله مراتب تیم‌ها برای چارت سازمانی
+        /// </summary>
         public List<TeamViewModel> GetTeamHierarchy(int branchId)
         {
             var teams = GetTeamsByBranchId(branchId, false);
             
-            // ?????? ??? ?? ??? ?? ????? ?????
+            // محاسبه سطح هر تیم در سلسله مراتب
             foreach (var team in teams)
             {
                 team.Level = CalculateTeamLevel(team, teams);
@@ -246,7 +249,6 @@ namespace MahERP.DataModelLayer.Repository
 
         public List<UserSelectListItem> GetAvailableUsersForBranch(int branchId)
         {
-            // ?????? ??????? ????? ?? ????
             var users = _context.BranchUser_Tbl
                 .Include(bu => bu.User)
                 .Where(bu => bu.BranchId == branchId && bu.User.IsActive)
@@ -336,5 +338,152 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         #endregion
+
+        #region Team Position Methods
+
+public List<TeamPosition> GetTeamPositions(int teamId, bool includeInactive = false)
+{
+    var query = _context.TeamPosition_Tbl
+        .Include(p => p.TeamMembers.Where(tm => tm.IsActive))
+            .ThenInclude(tm => tm.User)
+        .Where(p => p.TeamId == teamId);
+
+    if (!includeInactive)
+        query = query.Where(p => p.IsActive);
+
+    return query.OrderBy(p => p.PowerLevel).ToList();
+}
+
+public TeamPosition GetTeamPositionById(int positionId)
+{
+    return _context.TeamPosition_Tbl
+        .Include(p => p.Team)
+        .Include(p => p.TeamMembers.Where(tm => tm.IsActive))
+            .ThenInclude(tm => tm.User)
+        .Include(p => p.Creator)
+        .Include(p => p.LastUpdater)
+        .FirstOrDefault(p => p.Id == positionId);
+}
+
+public int CreateTeamPosition(TeamPosition position)
+{
+    position.CreateDate = DateTime.Now;
+    _context.TeamPosition_Tbl.Add(position);
+    _context.SaveChanges();
+    return position.Id;
+}
+
+public bool UpdateTeamPosition(TeamPosition position)
+{
+    try
+    {
+        position.LastUpdateDate = DateTime.Now;
+        _context.TeamPosition_Tbl.Update(position);
+        _context.SaveChanges();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+public bool DeleteTeamPosition(int positionId)
+{
+    try
+    {
+        var position = GetTeamPositionById(positionId);
+        if (position == null || !CanDeletePosition(positionId))
+            return false;
+
+        _context.TeamPosition_Tbl.Remove(position);
+        _context.SaveChanges();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+public bool CanDeletePosition(int positionId)
+{
+    return !_context.TeamMember_Tbl
+        .Any(tm => tm.PositionId == positionId && tm.IsActive);
+}
+
+/// <summary>
+/// دریافت درخت سمت‌ها با اعضا برای یک تیم خاص
+/// </summary>
+public TeamHierarchyViewModel GetTeamPositionHierarchy(int teamId)
+{
+    var team = GetTeamById(teamId);
+    if (team == null) return null;
+
+    var positions = GetTeamPositions(teamId);
+    
+    var hierarchy = new TeamHierarchyViewModel
+    {
+        TeamId = teamId,
+        TeamTitle = team.Title,
+        Positions = positions.Select(p => new TeamPositionHierarchyViewModel
+        {
+            Id = p.Id,
+            Title = p.Title,
+            Description = p.Description,
+            PowerLevel = p.PowerLevel,
+            CurrentMembers = p.TeamMembers.Count(tm => tm.IsActive),
+            MaxMembers = p.MaxMembers,
+            CanAddMember = !p.MaxMembers.HasValue || p.TeamMembers.Count(tm => tm.IsActive) < p.MaxMembers.Value,
+            PowerLevelText = p.PowerLevel switch
+            {
+                0 => "مدیر تیم",
+                1 => "معاون/سرپرست",
+                2 => "کارشناس ارشد",
+                3 => "کارشناس",
+                _ => $"سطح {p.PowerLevel}"
+            },
+            Members = p.TeamMembers.Where(tm => tm.IsActive).Select(tm => new TeamMemberViewModel
+            {
+                Id = tm.Id,
+                UserId = tm.UserId,
+                UserFullName = $"{tm.User.FirstName} {tm.User.LastName}",
+                PositionId = tm.PositionId,
+                PositionTitle = p.Title,
+                PowerLevel = p.PowerLevel,
+                RoleDescription = tm.RoleDescription,
+                IsActive = tm.IsActive
+            }).ToList()
+        }).ToList(),
+        MembersWithoutPosition = GetTeamMembers(teamId)
+            .Where(tm => tm.IsActive && !tm.PositionId.HasValue).ToList()
+    };
+
+    return hierarchy;
+}
+
+public bool IsPositionTitleUnique(int teamId, string title, int? excludePositionId = null)
+{
+    var query = _context.TeamPosition_Tbl
+        .Where(p => p.TeamId == teamId && p.Title == title && p.IsActive);
+
+    if (excludePositionId.HasValue)
+        query = query.Where(p => p.Id != excludePositionId.Value);
+
+    return !query.Any();
+}
+
+public bool IsPowerLevelUnique(int teamId, int powerLevel, int? excludePositionId = null)
+{
+    var query = _context.TeamPosition_Tbl
+        .Where(p => p.TeamId == teamId && p.PowerLevel == powerLevel && p.IsActive);
+
+    if (excludePositionId.HasValue)
+        query = query.Where(p => p.Id != excludePositionId.Value);
+
+    return !query.Any();
+}
+
+#endregion
     }
 }

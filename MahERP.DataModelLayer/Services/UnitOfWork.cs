@@ -33,6 +33,8 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<BranchTaskCategoryStakeholder> _branchTaskCategory;
         private GenereicClass<Team> _team;
         private GenereicClass<TeamMember> _teamMember;
+        public GenereicClass<TeamPosition> _TeamPosition;
+
         #endregion
 
         #region Core Notification System - سیستم نوتیفیکیشن کلی
@@ -165,6 +167,18 @@ namespace MahERP.DataModelLayer.Services
                     _branch = new GenereicClass<Branch>(_Context);
                 }
                 return _branch;
+            }
+        }
+
+        public GenereicClass<TeamPosition> TeamPositionUW
+        {
+            get
+            {
+                if (_TeamPosition == null)
+                {
+                    _TeamPosition = new GenereicClass<TeamPosition>(_Context);
+                }
+                return _TeamPosition;
             }
         }
 

@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250920104750_mig2fixTeam")]
+    partial class mig2fixTeam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2259,10 +2262,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<byte>("MembershipType")
                         .HasColumnType("tinyint");
 
-                    b.Property<int?>("PositionId")
-                        .HasColumnType("int");
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("RoleDescription")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -2280,78 +2286,11 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("AddedByUserId");
 
-                    b.HasIndex("PositionId");
-
                     b.HasIndex("TeamId");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("TeamMember_Tbl");
-                });
-
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organization.TeamPosition", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("CanViewPeerTasks")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CanViewSubordinateTasks")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatorUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastUpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LastUpdaterUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("MaxMembers")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PowerLevel")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatorUserId");
-
-                    b.HasIndex("LastUpdaterUserId");
-
-                    b.HasIndex("TeamId");
-
-                    b.ToTable("TeamPosition_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.PredefinedCopyDescription", b =>
@@ -3269,29 +3208,11 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsViewed")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastUpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LastUpdaterUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<byte?>("SpecialPermissionType")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
@@ -3313,13 +3234,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("AddedByUserId");
 
-                    b.HasIndex("LastUpdaterUserId");
-
                     b.HasIndex("TaskId");
 
                     b.HasIndex("TasksId");
-
-                    b.HasIndex("TeamId");
 
                     b.HasIndex("UserId");
 
@@ -4299,10 +4216,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MahERP.DataModelLayer.Entities.Organization.TeamPosition", "Position")
-                        .WithMany("TeamMembers")
-                        .HasForeignKey("PositionId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.Organization.Team", "Team")
                         .WithMany("TeamMembers")
                         .HasForeignKey("TeamId")
@@ -4317,36 +4230,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Navigation("AddedByUser");
 
-                    b.Navigation("Position");
-
                     b.Navigation("Team");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organization.TeamPosition", b =>
-                {
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
-                        .WithMany()
-                        .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
-                        .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.Organization.Team", "Team")
-                        .WithMany("TeamPositions")
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("LastUpdater");
-
-                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskAssignment", b =>
@@ -4710,10 +4596,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
-                        .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
                         .WithMany()
                         .HasForeignKey("TaskId")
@@ -4724,10 +4606,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .WithMany("TaskViewers")
                         .HasForeignKey("TasksId");
 
-                    b.HasOne("MahERP.DataModelLayer.Entities.Organization.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -4736,11 +4614,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Navigation("AddedByUser");
 
-                    b.Navigation("LastUpdater");
-
                     b.Navigation("Task");
-
-                    b.Navigation("Team");
 
                     b.Navigation("User");
                 });
@@ -4959,13 +4833,6 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.Navigation("ChildTeams");
 
-                    b.Navigation("TeamMembers");
-
-                    b.Navigation("TeamPositions");
-                });
-
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organization.TeamPosition", b =>
-                {
                     b.Navigation("TeamMembers");
                 });
 

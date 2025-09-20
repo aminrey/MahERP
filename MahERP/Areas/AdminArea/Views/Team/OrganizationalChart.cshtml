@@ -20,10 +20,7 @@
                     }
                 </div>
             </div>
-          
-            <a asp-action="Index" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-secondary">
-                <i class="fa fa-list opacity-50 me-1"></i> نمایش لیستی
-            </a>
+
             <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-success">
                 <i class="fa fa-plus opacity-50 me-1"></i> تیم جدید
             </a>
@@ -68,6 +65,7 @@
             display: inline-block;
             margin: 10px;
             position: relative;
+            vertical-align: top;
         }
 
         .team-card {
@@ -126,6 +124,11 @@
         .child-teams {
             margin-top: 30px;
             position: relative;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
         .child-teams::before {
@@ -139,16 +142,12 @@
             background: #dee2e6;
         }
 
-        .child-teams > .team-node {
-            position: relative;
-        }
-
-        .child-teams > .team-node:not(:last-child)::after {
+        .child-teams::after {
             content: '';
             position: absolute;
             top: -15px;
+            left: 0;
             right: 0;
-            width: calc(100% + 20px);
             height: 2px;
             background: #dee2e6;
             z-index: -1;
@@ -163,6 +162,10 @@
             width: 2px;
             height: 15px;
             background: #dee2e6;
+        }
+
+        .team-node:not(:has(.child-teams)) .team-card {
+            margin-bottom: 0;
         }
 
         .empty-state {
@@ -185,23 +188,42 @@
             .team-actions {
                 flex-direction: column;
             }
+
+            .child-teams {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .child-teams::after {
+                display: none;
+            }
+        }
+
+        .team-node[data-level="0"] .team-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .team-node[data-level="1"] .team-card {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        }
+
+        .team-node[data-level="2"] .team-card {
+            background: linear-gradient(135deg, #45b7d1 0%, #96c93d 100%);
+        }
+
+        .team-node[data-level="3"] .team-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
     </style>
 }
 
 @section Scripts {
     <script>
-        // اکنون از سیستم مودال استاندارد main.js استفاده می‌کنیم
-        // هیچ کد JavaScript اضافی نیاز نیست
-        
-        // تنها تابع‌های مختص چارت سازمانی که نیاز به reload صفحه دارند
         function refreshChart() {
             location.reload();
         }
         
-        // تابع کمکی برای بروزرسانی چارت پس از تغییرات
         function updateChartNode(teamId) {
-            // در نسخه‌های آینده می‌توان از AJAX برای بروزرسانی استفاده کرد
             refreshChart();
         }
     </script>

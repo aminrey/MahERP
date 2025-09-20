@@ -10,7 +10,7 @@
             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-alt-primary">
                 <i class="fa fa-edit me-1"></i> ویرایش
             </a>
-            <a asp-action="Index" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-secondary">
+            <a asp-action="OrganizationalChart" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-secondary">
                 <i class="fa fa-arrow-left me-1"></i> بازگشت
             </a>
         </div>
@@ -56,7 +56,31 @@
                     </div>
                 </div>
 
-                <!-- Team Members -->
+                <!-- Team Positions - بخش جدید -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">سمت‌های تیم</h3>
+                        <div class="block-options">
+                            <button type="button" class="btn btn-sm btn-alt-success"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("CreatePositionModal", "Team", new { teamId = Model.Id })">
+                                <i class="fa fa-plus me-1"></i> تعریف سمت جدید
+                            </button>
+                            <button type="button" class="btn btn-sm btn-alt-info"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("ManageTaskViewersModal", "Team", new { teamId = Model.Id })">
+                                <i class="fa fa-eye me-1"></i> مجوزهای مشاهده تسک
+                            </button>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <div id="team-positions-hierarchy">
+                            @await Html.PartialAsync("_TeamPositionsHierarchy", Model.Id)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Members - بخش اصلاح شده -->
                 <div class="block block-rounded">
                     <div class="block-header block-header-default">
                         <h3 class="block-title">اعضای تیم (@Model.TeamMembers.Count)</h3>

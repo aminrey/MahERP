@@ -1,4 +1,4 @@
-using MahERP.DataModelLayer.Entities.Organization;
+﻿using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using System.Collections.Generic;
 
@@ -24,7 +24,6 @@ namespace MahERP.DataModelLayer.Repository
 
         // Organizational Chart
         OrganizationalChartViewModel GetOrganizationalChart(int branchId);
-        List<TeamViewModel> GetTeamHierarchy(int branchId);
         List<UserSelectListItem> GetAvailableUsersForBranch(int branchId);
 
         // Manager assignment
@@ -36,5 +35,58 @@ namespace MahERP.DataModelLayer.Repository
         List<Team> GetTeamsByManagerId(string managerId);
         bool HasChildTeams(int teamId);
         bool CanDeleteTeam(int teamId);
+        #region Team Position Methods
+
+        /// <summary>
+        /// دریافت سمت‌های یک تیم
+        /// </summary>
+        List<TeamPosition> GetTeamPositions(int teamId, bool includeInactive = false);
+
+        /// <summary>
+        /// دریافت سمت با جزئیات کامل
+        /// </summary>
+        TeamPosition GetTeamPositionById(int positionId);
+
+        /// <summary>
+        /// ایجاد سمت جدید
+        /// </summary>
+        int CreateTeamPosition(TeamPosition position);
+
+        /// <summary>
+        /// بروزرسانی سمت
+        /// </summary>
+        bool UpdateTeamPosition(TeamPosition position);
+
+        /// <summary>
+        /// حذف سمت
+        /// </summary>
+        bool DeleteTeamPosition(int positionId);
+
+        /// <summary>
+        /// بررسی امکان حذف سمت
+        /// </summary>
+        bool CanDeletePosition(int positionId);
+
+        /// <summary>
+        /// دریافت سلسله مراتب تیم‌ها برای چارت سازمانی
+        /// </summary>
+        List<TeamViewModel> GetTeamHierarchy(int branchId);
+
+        /// <summary>
+        /// دریافت درخت سمت‌ها با اعضا برای یک تیم خاص
+        /// </summary>
+        TeamHierarchyViewModel GetTeamPositionHierarchy(int teamId);
+
+        /// <summary>
+        /// بررسی تکراری نبودن عنوان سمت در تیم
+        /// </summary>
+        bool IsPositionTitleUnique(int teamId, string title, int? excludePositionId = null);
+
+        /// <summary>
+        /// بررسی تکراری نبودن سطح قدرت در تیم
+        /// </summary>
+        bool IsPowerLevelUnique(int teamId, int powerLevel, int? excludePositionId = null);
+
+        #endregion
     }
 }

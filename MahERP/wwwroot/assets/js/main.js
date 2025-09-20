@@ -873,26 +873,10 @@ $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
             if (response.status === "redirect") {
                 $(location).prop('href', response.redirectUrl);
             } else if (response.status === "update-view") {
-                $.each(response.viewList, function (index, item) {
-                    const $container = $("#" + item.elementId);
-                    $container.html(item.view.result);
-                    // Process URLs in updated content
-                    ModalUtils.processUrlsInContainer($container);
-                    
-                    // راه‌اندازی مجدد Dynamic Select2
-                    DynamicSelect2Manager.reinitializeSelect2InDiv($container);
-                });
+                // بروزرسانی view ها
                 $modal.find('[data-bs-dismiss="modal"]').click();
             } else if (response.status === "temp-save") {
-                $.each(response.viewList, function (index, item) {
-                    const $container = $("#" + item.elementId);
-                    $container.html(item.view.result);
-                    // Process URLs in updated content
-                    ModalUtils.processUrlsInContainer($container);
-                    
-                    // راه‌اندازی مجدد Dynamic Select2
-                    DynamicSelect2Manager.reinitializeSelect2InDiv($container);
-                });
+                // پردازش temp-save
                 SendResposeMessageInView(response);
             }
 
