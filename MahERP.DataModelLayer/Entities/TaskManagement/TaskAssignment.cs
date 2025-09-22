@@ -18,17 +18,29 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// کاربرانی که این تسک به آن‌ها تخصیص داده شده است.
         /// <para>این ویژگی شناسه کاربری را که تسک به او اختصاص داده شده نگهداری می‌کند.</para>
         /// </summary>
-        public string AssignedUserId { get; set; }
+        public string? AssignedUserId { get; set; }
         [ForeignKey("AssignedUserId")]
-        public virtual AppUsers AssignedUser { get; set; }
+        public virtual AppUsers? AssignedUser { get; set; }
 
         /// <summary>
         /// کاربری که این تسک را به کاربر دیگر تخصیص داده است.
         /// <para>این ویژگی شناسه کاربری را که تسک را به کاربر دیگر اختصاص داده نگهداری می‌کند.</para>
         /// </summary>
-        public string AssignerUserId { get; set; }
+        public string? AssignerUserId { get; set; }
         [ForeignKey("AssignerUserId")]
-        public virtual AppUsers AssignerUser { get; set; }
+        public virtual AppUsers? AssignerUser { get; set; }
+
+        /// <summary>
+        /// اطلاعات کاربر حذف شده که این تسک به او تخصیص داده شده بود (یوزرنیم، نام و نام خانوادگی)
+        /// در صورتی که کاربر تخصیص‌یافته بطور کامل حذف شود، این فیلد پر می‌شود
+        /// </summary>
+        public string? DeletedAssignedUserInfo { get; set; }
+
+        /// <summary>
+        /// اطلاعات کاربر حذف شده که این تسک را تخصیص داده بود (یوزرنیم، نام و نام خانوادگی)
+        /// در صورتی که کاربر تخصیص‌دهنده بطور کامل حذف شود، این فیلد پر می‌شود
+        /// </summary>
+        public string? DeletedAssignerUserInfo { get; set; }
 
         /// <summary>
         /// 0- اصلی (اجراکننده)
@@ -52,7 +64,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// </summary>
         public int? PredefinedCopyDescriptionId { get; set; }
         [ForeignKey("PredefinedCopyDescriptionId")]
-        public virtual PredefinedCopyDescription PredefinedCopyDescription { get; set; }
+        public virtual PredefinedCopyDescription? PredefinedCopyDescription { get; set; }
 
         /// <summary>
         /// تاریخ تخصیص تسک به کاربر
@@ -113,6 +125,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <para>در صورت مشاهده تسک توسط کاربر، زمان مشاهده در این ویژگی ذخیره می‌شود.</para>
         /// </summary>
         public DateTime? ReadDate { get; set; }
+
         /// <summary>
         /// گزارش کاربر در رابطه با انجام تسک
         /// <para>کاربر می‌تواند گزارش مربوط به انجام تسک را در این ویژگی ثبت کند.</para>
