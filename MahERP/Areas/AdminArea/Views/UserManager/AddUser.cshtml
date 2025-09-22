@@ -4,6 +4,13 @@
 
 }
 
+<style>
+    .required::after {
+        content: " *";
+        color: red;
+        font-weight: bold;
+    }
+</style>
 
 <!-- Main Container -->
 <main id="main-container">
@@ -54,30 +61,31 @@
 
                                         <div class="form-floating  mb-3 col-6">
                                             <input asp-for="FirstName" class="form-control" id="example-text-input-floating" placeholder="نام" type="text">
-                                            <label asp-for="FirstName" class="form-label input-label " for="example-text-input-floating">نام</label>
-
+                                            <label asp-for="FirstName" class="form-label input-label required" for="example-text-input-floating">نام</label>
+                                            <span asp-validation-for="FirstName" class="text-danger"></span>
                                         </div>
 
                                         <div class="form-floating  mb-3 col-6">
                                             <input asp-for="LastName" class="form-control" id="example-text-input-floating" placeholder="نام خانوادگی" type="text">
-                                            <label asp-for="LastName" class="form-label input-label " for="example-text-input-floating">نام خانوادگی</label>
-
+                                            <label asp-for="LastName" class="form-label input-label required" for="example-text-input-floating">نام خانوادگی</label>
+                                            <span asp-validation-for="LastName" class="text-danger"></span>
                                         </div>
                                         <div class="form-floating  mb-3 col-6">
-                                            <input asp-for="UserName" class="form-control" id="example-text-input-floating" placeholder="نام کاربری" type="text">
-                                            <label asp-for="UserName" class="form-label input-label " for="example-text-input-floating">نام کاربری</label>
-
+                                            <input asp-for="UserName" class="form-control" id="UserName" placeholder="نام کاربری" type="text">
+                                            <label asp-for="UserName" class="form-label input-label required" for="example-text-input-floating">نام کاربری</label>
+                                            <span asp-validation-for="UserName" class="text-danger"></span>
+                                            <div id="username-message" class="mt-2"></div>
                                         </div>
 
                                         <div class="form-floating  mb-3 col-6">
                                             <input asp-for="PhoneNumber" class="form-control" id="example-text-input-floating" placeholder="شماره تماس" type="text">
-                                            <label asp-for="PhoneNumber" class="form-label input-label " for="example-text-input-floating">شماره تماس</label>
-
+                                            <label asp-for="PhoneNumber" class="form-label input-label required" for="example-text-input-floating">شماره تماس</label>
+                                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                                         </div>
 
                                         <div class="form-floating mb-3 col-6">
                                             <div class="col-6">
-                                                <label class="form-label">جنسیت</label>
+                                                <label class="form-label required">جنسیت</label>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-check form-check-inline">
@@ -92,8 +100,8 @@
                                         </div>
                                         <div class="form-floating  mb-3 col-6">
                                             <input asp-for="Email" class="form-control" id="example-text-input-floating" placeholder="آدرس ایمیل" type="text">
-                                            <label asp-for="Email" class="form-label input-label " for="example-text-input-floating">آدرس ایمیل</label>
-
+                                            <label asp-for="Email" class="form-label input-label required" for="example-text-input-floating">آدرس ایمیل</label>
+                                            <span asp-validation-for="Email" class="text-danger"></span>
                                         </div>
                                     </div>
 
@@ -123,6 +131,30 @@
             }
         });
 
+        // بررسی موجود بودن یوزرنیم
+        $("#UserName").on('blur', function () {
+            var username = $(this).val();
+            if (username.length > 0) {
+                $.ajax({
+                    url: '@Url.Action("CheckUsernameAvailability", "UserManager")',
+                    type: 'POST',
+                    data: { username: username },
+                    success: function (response) {
+                        var messageDiv = $('#username-message');
+                        if (response.status === 'exists') {
+                            messageDiv.html('<div class="alert alert-warning">' + response.message + '</div>');
+                        } else if (response.status === 'available') {
+                            messageDiv.html('<div class="alert alert-success">' + response.message + '</div>');
+                        } else {
+                            messageDiv.html('<div class="alert alert-danger">' + response.message + '</div>');
+                        }
+                    },
+                    error: function () {
+                        $('#username-message').html('<div class="alert alert-danger">خطا در بررسی یوزرنیم</div>');
+                    }
+                });
+            }
+        });
     </script>
 
     <script>
@@ -131,7 +163,5 @@
                 $(item).val("");
             });
         }
-
-
     </script>
 }

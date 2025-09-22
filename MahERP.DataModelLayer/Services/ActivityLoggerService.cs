@@ -489,6 +489,11 @@ namespace MahERP.DataModelLayer.Services
         Edit = 2,
 
         /// <summary>
+        /// به‌روزرسانی
+        /// </summary>
+        Update = 2, 
+
+        /// <summary>
         /// حذف
         /// </summary>
         Delete = 3,

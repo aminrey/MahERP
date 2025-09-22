@@ -1,34 +1,58 @@
-﻿@model AppUsers
+﻿@model UserViewModelFull
 @{
     Layout = null;
 }
 
-<!-- Fade In Block Modal -->
+<!-- مودال بایگانی کاربر با استاندارد پروژه -->
 
 <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content modal-contents">
         <div class="block block-rounded block-themed block-transparent mb-0">
 
-            <div class="block-header bg-danger">
-                <h3 class="block-title" style="color:white;">حذف کاربر</h3>
+            <!-- هدر مودال با رنگ‌بندی استاندارد -->
+            <div class="block-header bg-warning">
+                <h3 class="block-title" style="color:white;">بایگانی کاربر</h3>
                 <div class="block-options">
                     <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
                         <i class="fa fa-fw fa-times"></i>
                     </button>
                 </div>
             </div>
-            <form asp-controller="UserManager" asp-action="RemoveUserPost" method="post">
-                <input asp-for="Id" type="hidden" />
 
+            <!-- فرم ارسال داده‌ها -->
+            <form asp-controller="UserManager" asp-action="RemoveUserPost" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+
+                <!-- محتوای مودال -->
                 <div class="block-content">
                     <div class="row push">
-                        <span>آیا از حذف کاربر بنام <span style="font-weight:bold;">@Model.FirstName @Model.LastName</span> مطمئن هستین؟</span>
+                        <div class="col-12">
+                            <p class="fs-sm text-muted mb-3">
+                                آیا از بایگانی کاربر با نام <span style="font-weight:bold;">@Model.FullNamesString</span> مطمئن هستید؟
+                            </p>
+                            
+                            <!-- اطلاعات مهم درباره بایگانی -->
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading"><i class="fa fa-info-circle me-2"></i>توجه مهم:</h6>
+                                <p class="mb-2">با بایگانی این کاربر:</p>
+                                <ul class="mb-0 small">
+                                    <li>کاربر از تمام شعبه‌ها و تیم‌ها خارج می‌شود</li>
+                                    <li>در لیست کاربران نمایش داده نمی‌شود</li>
+                                    <li>تسک‌های او همچنان حفظ می‌ماند</li>
+                                    <li>در صورت نیاز می‌توان کاربر را بازیابی کرد</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
+                <!-- دکمه‌های عملیات -->
                 <div class="block-content block-content-full text-end bg-body">
-                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">بازگشت</button>
-                    <button class="btn btn-hero btn-danger" data-save="modal-ajax-save" type="button">حذف</button>
+                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                    <button class="btn btn-hero btn-warning" data-save="modal" type="button">
+                        <i class="fa fa-archive me-1"></i>بایگانی کاربر
+                    </button>
                 </div>
 
             </form>
@@ -36,4 +60,4 @@
     </div>
 </div>
 
-<!-- END Fade In Block Modal -->
+<!-- پایان مودال بایگانی کاربر -->

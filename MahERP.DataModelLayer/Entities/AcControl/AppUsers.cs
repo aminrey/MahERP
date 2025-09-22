@@ -51,9 +51,24 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public bool IsAdmin { get; set; }
         
         /// <summary>
-        /// مشتری حذف شده؟
+        /// مشتری حذف شده؟ (بایگانی شده)
         /// </summary>
         public bool IsRemoveUser { get; set; }
+
+        /// <summary>
+        /// کاربر بطور کامل حذف شده؟ (برای چک کردن تکراری بودن یوزرنیم)
+        /// </summary>
+        public bool IsCompletelyDeleted { get; set; }
+
+        /// <summary>
+        /// تاریخ بایگانی کاربر
+        /// </summary>
+        public DateTime? ArchivedDate { get; set; }
+
+        /// <summary>
+        /// تاریخ حذف کامل کاربر
+        /// </summary>
+        public DateTime? CompletelyDeletedDate { get; set; }
 
         public DateTime BirthDay { get; set; }
         public DateTime RegisterDate { get; set; }//تاریخ عضویت

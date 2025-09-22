@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Index";
     int Counter = 1;
+    bool isCurrentUserAdmin = ViewBag.IsCurrentUserAdmin ?? false;
+    bool showArchived = ViewBag.ShowArchived ?? false;
+    int archivedUsersCount = ViewBag.ArchivedUsersCount ?? 0;
 }
 
 <!-- Main Container -->
@@ -11,7 +14,14 @@
         <div class="content content-full">
             <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
                 <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
-                    لیست کاربران
+                    @if (showArchived)
+                    {
+                        <text>کاربران بایگانی شده</text>
+                    }
+                    else
+                    {
+                        <text>لیست کاربران</text>
+                    }
                 </h1>
                 <nav aria-label="breadcrumb" class="flex-shrink-0 my-2 my-sm-0 ms-sm-3">
                     <ol class="breadcrumb">
@@ -19,7 +29,14 @@
                             کاربران
                         </li>
                         <li aria-current="page" class="breadcrumb-item active">
-                            لیست کاربران
+                            @if (showArchived)
+                            {
+                                <text>کاربران بایگانی</text>
+                            }
+                            else
+                            {
+                                <text>لیست کاربران</text>
+                            }
                         </li>
                     </ol>
                 </nav>
@@ -27,19 +44,49 @@
         </div>
     </div>
     <!-- END Hero -->
+    
     <!-- Page Content -->
     <div class="content">
         <!-- Dynamic Table Responsive -->
         <div class="block block-rounded">
             <div class="block-header block-header-default">
-                <div class="add-button">
-                    <a asp-controller="UserManager" asp-action="AddUser" class="btn btn-success me-1 mb-3">
-                        <i class="fa fa-fw fa-plus me-1"></i>افزودن کاربر جدید
-                    </a>
+                <div class="add-button d-flex justify-content-between w-100">
+                    <div>
+                        @if (!showArchived)
+                        {
+                            <a asp-controller="UserManager" asp-action="AddUser" class="btn btn-success me-1 mb-3">
+                                <i class="fa fa-fw fa-plus me-1"></i>افزودن کاربر جدید
+                            </a>
+                        }
+                        
+                        @if (isCurrentUserAdmin)
+                        {
+                            @if (showArchived)
+                            {
+                                <a asp-controller="UserManager" asp-action="Index" asp-route-showArchived="false" class="btn btn-primary me-1 mb-3">
+                                    <i class="fa fa-fw fa-users me-1"></i>کاربران فعال
+                                </a>
+                            }
+                            else if (archivedUsersCount > 0)
+                            {
+                                <a asp-controller="UserManager" asp-action="Index" asp-route-showArchived="true" class="btn btn-warning me-1 mb-3">
+                                    <i class="fa fa-fw fa-archive me-1"></i>کاربران بایگانی (@archivedUsersCount)
+                                </a>
+                            }
+                        }
+                    </div>
+                    
+                    @if (showArchived)
+                    {
+                        <div class="alert alert-info mb-3">
+                            <i class="fa fa-info-circle me-1"></i>
+                            این کاربران بایگانی شده‌اند و در سیستم فعال نیستند. می‌توانید آنها را بازیابی یا حذف کامل کنید.
+                        </div>
+                    }
                 </div>
             </div>
             <div class="block-content block-content-full">
-                <!-- DataTables init on table by adding .js-dataTable-responsive class, functionality is initialized in js/pages/be_tables_datatables.min.js which was auto compiled from _js/pages/be_tables_datatables.js -->
+                <!-- جدول کاربران با قابلیت DataTable -->
                 <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive">
                     <thead>
                         <tr>
@@ -62,7 +109,13 @@
                                <td class="text-center d-none d-sm-table-cell">@item.UserName</td>
                                 <td class="text-center d-none d-sm-table-cell">@item.PhoneNumber</td>
 
-                                @if (item.IsActive == true)
+                                @if (showArchived)
+                                {
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">بایگانی شده</span>
+                                    </td>
+                                }
+                                else if (item.IsActive == true)
                                 {
                                     <td class="text-center">
                                         <button asp-controller="UserManager" asp-action="ActiveOrDeactiveUser" asp-route-UserId="@item.Id"
@@ -70,7 +123,6 @@
                                             فعال
                                         </button>
                                     </td>
-
                                 }
                                 else
                                 {
@@ -83,25 +135,55 @@
                                 }
 
                                 <td class="text-center">
-                                    <div class="btn-group">
+                                    @if (showArchived)
+                                    {
+                                        <!-- دکمه‌های مخصوص کاربران بایگانی -->
+                                        <div class="btn-group" role="group" aria-label="عملیات کاربر بایگانی">
+                                            <!-- دکمه بازیابی -->
+                                            <button onclick="RestoreUser('@item.Id')" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="بازیابی کاربر" type="button">
+                                                <i class="fa fa-undo"></i>
+                                            </button>
 
-                                        <button asp-controller="UserManager" asp-action="ChangePasswordByAdmin" asp-route-UserId="@item.Id"
-                                                class="btn btn-sm btn-alt-secondary" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title=" تغییر رمز عبور " type="button">
-                                            <i class="fa fa-key"></i>
-                                        </button>
+                                            <!-- دکمه حذف کامل -->
+                                            <button asp-controller="UserManager" asp-action="CompletelyDeleteUser" asp-route-UserId="@item.Id"
+                                                    class="btn btn-sm btn-danger" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title="حذف کامل کاربر" type="button">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <!-- دکمه‌های عادی برای کاربران فعال -->
+                                        <div class="btn-group" role="group" aria-label="عملیات کاربر">
 
-                                        <a asp-controller="UserManager" asp-action="EditUser" asp-route-UserId="@item.Id" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title=" ویرایش " type="button">
-                                            <i class="fa fa-pencil-alt"></i>
-                                        </a>
+                                            <!-- دکمه تغییر رمز عبور -->
+                                            <button asp-controller="UserManager" asp-action="ChangePasswordByAdmin" asp-route-UserId="@item.Id"
+                                                    class="btn btn-sm btn-alt-secondary" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title="تغییر رمز عبور" type="button">
+                                                <i class="fa fa-key"></i>
+                                            </button>
 
-                                        <button asp-controller="UserManager" asp-action="RemoveUser" asp-route-UserId="@item.Id"
-                                                class="btn btn-sm btn-alt-secondary" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title=" حذف " type="button">
-                                            <i class="fa fa-times"></i>
-                                        </button>
+                                            <!-- دکمه ویرایش کاربر -->
+                                            <a asp-controller="UserManager" asp-action="EditUser" asp-route-UserId="@item.Id" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش" type="button">
+                                                <i class="fa fa-pencil-alt"></i>
+                                            </a>
 
-                                    </div>
+                                            <!-- دکمه بایگانی کاربر -->
+                                            <button asp-controller="UserManager" asp-action="RemoveUser" asp-route-UserId="@item.Id"
+                                                    class="btn btn-sm btn-warning" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title="بایگانی کاربر" type="button">
+                                                <i class="fa fa-archive"></i>
+                                            </button>
+
+                                            @if (isCurrentUserAdmin)
+                                            {
+                                                <!-- دکمه حذف کامل کاربر - فقط برای ادمین -->
+                                                <button asp-controller="UserManager" asp-action="CompletelyDeleteUser" asp-route-UserId="@item.Id"
+                                                        class="btn btn-sm btn-danger" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title="حذف کامل کاربر" type="button">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    }
                                 </td>
-
 
                             </tr>
                             Counter++;
@@ -111,16 +193,59 @@
                 </table>
             </div>
         </div>
-        <!-- Dynamic Table Responsive -->
+        <!-- END Dynamic Table Responsive -->
     </div>
     <!-- END Page Content -->
 </main>
 <!-- END Main Container -->
-@Html.Partial("_Modal")
+
+<!-- Modal Container برای استفاده توسط main.js -->
+<div class="modal fade" id="modal-action" tabindex="-1" role="dialog" aria-labelledby="modal-action" aria-hidden="true">
+    <!-- محتوای دینامیک در اینجا بارگذاری می‌شود -->
+</div>
 
 @section Scripts {
+    <script>
+        // راه‌اندازی tooltips برای دکمه‌های عملیات
+        $(document).ready(function() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+            
+            // بهینه‌سازی عملکرد DataTable
+            $('.js-dataTable-responsive').on('init.dt', function() {
+                console.log('جدول کاربران با موفقیت بارگذاری شد');
+            });
+        });
 
+        // تابع بازیابی کاربر بایگانی شده
+        function RestoreUser(userId) {
+            if (confirm('آیا مطمئن هستید که می‌خواهید این کاربر را بازیابی کنید؟')) {
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("RestoreUser", "UserManager")",
+                    data: {
+                        UserId: userId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.status === "redirect") {
+                            location.href = response.redirectUrl;
+                        } else if (response.status === "error") {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert("خطا در بازیابی کاربر");
+                    }
+                });
+            }
+        }
+    </script>
 }
+
+<!-- فرم مخفی برای توکن CSRF -->
+<form style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
 
 
 

@@ -116,6 +116,12 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         [ForeignKey("CreatorUserId")]
         public virtual AppUsers? Creator { get; set; }
 
+        /// <summary>
+        /// اطلاعات کاربر حذف شده که به این تسک منتصب بوده (یوزرنیم، نام و نام خانوادگی)
+        /// در صورتی که کاربر بطور کامل حذف شود، این فیلد پر می‌شود
+        /// </summary>
+        public string? DeletedUserInfo { get; set; }
+
         public int? StakeholderId { get; set; }
         [ForeignKey("StakeholderId")]
         public virtual Stakeholder? Stakeholder { get; set; }

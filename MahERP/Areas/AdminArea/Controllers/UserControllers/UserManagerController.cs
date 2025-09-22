@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using System.Security.Claims;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
@@ -17,11 +19,13 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         private readonly IUnitOfWork _Context;
         private readonly UserManager<AppUsers> _UserManager;
         private readonly IMapper _Mapper;
+        private readonly IUserManagerRepository _UserRepository;
 
         public UserManagerController(
             IUnitOfWork context, 
             UserManager<AppUsers> userManager, 
             IMapper Mapper, 
+            UserManagerRepository userrepository, // تصحیح نوع پارامتر
             PersianDateHelper persianDateHelper, 
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger)
@@ -30,20 +34,51 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             _Context = context;
             _UserManager = userManager;
             _Mapper = Mapper;
+            _UserRepository = userrepository;
         }
 
-        public async Task<IActionResult> Index()
+        /// <summary>
+        /// صفحه اصلی لیست کاربران - نمایش کاربران فعال و امکان مشاهده کاربران بایگانی برای ادمین
+        /// </summary>
+        /// <param name="showArchived">نمایش کاربران بایگانی شده</param>
+        /// <returns>لیست کاربران</returns>
+        public async Task<IActionResult> Index(bool showArchived = false)
         {
             try
             {
-                var model = _Context.UserManagerUW.Get().Where(c => c.IsAdmin).ToList();
+                // بررسی اینکه کاربر جاری ادمین است یا نه
+                var currentUser = await _UserManager.GetUserAsync(User);
+                bool isCurrentUserAdmin = currentUser?.IsAdmin == true;
+
+                List<AppUsers> model;
+
+                if (showArchived && isCurrentUserAdmin)
+                {
+                    // نمایش کاربران بایگانی شده فقط برای ادمین
+                    model = _Context.UserManagerUW.Get()
+                        .Where(c => c.IsAdmin && c.IsRemoveUser && !c.IsCompletelyDeleted)
+                        .ToList();
+                }
+                else
+                {
+                    // نمایش کاربران فعال
+                    model = _Context.UserManagerUW.Get()
+                        .Where(c => c.IsAdmin && c.IsActive && !c.IsRemoveUser && !c.IsCompletelyDeleted)
+                        .ToList();
+                }
+
+                // ارسال اطلاعات برای نمایش در ویو
+                ViewBag.IsCurrentUserAdmin = isCurrentUserAdmin;
+                ViewBag.ShowArchived = showArchived;
+                ViewBag.ArchivedUsersCount = isCurrentUserAdmin ? 
+                    _Context.UserManagerUW.Get().Count(c => c.IsAdmin && c.IsRemoveUser && !c.IsCompletelyDeleted) : 0;
 
                 // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "UserManager",
                     "Index",
-                    "مشاهده لیست کاربران"
+                    showArchived ? "مشاهده لیست کاربران بایگانی شده" : "مشاهده لیست کاربران"
                 );
 
                 return View(model);
@@ -97,15 +132,19 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             {
                 try
                 {
-                    if (await _UserManager.FindByNameAsync(model.UserName) != null)
+                    // بررسی وجود یوزرنیم (حتی در کاربران حذف شده کامل)
+                    bool usernameExists = await _UserRepository.IsUsernameExistsAsync(model.UserName);
+                    if (usernameExists)
                     {
-                        ModelState.AddModelError("UserName", "نام کاربری تکراری می باشد.");
+                        ModelState.AddModelError("UserName", "فردی با این یوزرنیم وجود دارد. برای استفاده از این یوزرنیم باید کاربر قبلی را بطور کامل حذف کنید.");
                         return View(model);
                     }
                     
                     var userMapped = _Mapper.Map<AppUsers>(model);
                     userMapped.IsAdmin = true;
                     userMapped.IsActive = true;
+                    userMapped.IsRemoveUser = false;
+                    userMapped.IsCompletelyDeleted = false;
                     userMapped.RegisterDate = DateTime.Now;
                     
                     IdentityResult result = await _UserManager.CreateAsync(userMapped, "Admin1234@");
@@ -257,8 +296,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                             user.PositionName
                         };
 
-                        // ثبت لاگ تغییرات
-                        await _activityLogger.LogChangeAsync(
+                        // ثبت لاگ تغییرات - تصحیح خطای type inference
+                        await _activityLogger.LogChangeAsync<object>(
                             ActivityTypeEnum.Edit,
                             "UserManager",
                             "EditUser",
@@ -304,34 +343,253 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             return View(model);
         }
 
+        /// <summary>
+        /// نمایش مودال حذف کامل کاربر
+        /// </summary>
+        /// <param name="UserId">شناسه کاربر</param>
+        /// <returns>مودال حذف کامل</returns>
+        [HttpGet]
+        public async Task<IActionResult> CompletelyDeleteUser(string UserId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(UserId))
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "UserManager",
+                        "CompletelyDeleteUser",
+                        "تلاش برای نمایش مودال حذف کامل کاربر بدون شناسه"
+                    );
+                    return RedirectToAction("ErrorView", "Home");
+                }
+
+                // دریافت اطلاعات کاربر
+                var user = _Context.UserManagerUW.GetById(UserId);
+                if (user == null)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "UserManager",
+                        "CompletelyDeleteUser",
+                        "تلاش برای نمایش مودال حذف کامل کاربر غیرموجود",
+                        recordId: UserId
+                    );
+                    return NotFound();
+                }
+
+                // ایجاد ViewModel برای نمایش در مودال
+                var userViewModel = new UserViewModelFull
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    FullNamesString = $"{user.FirstName} {user.LastName}",
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber
+                };
+
+                // ثبت لاگ نمایش مودال حذف کامل
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "UserManager",
+                    "CompletelyDeleteUser",
+                    $"نمایش مودال حذف کامل کاربر: {user.FirstName} {user.LastName}",
+                    recordId: UserId,
+                    entityType: "AppUsers",
+                    recordTitle: $"{user.FirstName} {user.LastName}"
+                );
+
+                return PartialView("_CompletelyDeleteUser", userViewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "UserManager",
+                    "CompletelyDeleteUser",
+                    "خطا در نمایش مودال حذف کامل کاربر",
+                    ex,
+                    recordId: UserId
+                );
+                
+                return Json(new { status = "error", message = "خطا در بارگذاری مودال" });
+            }
+        }
+
+        /// <summary>
+        /// پردازش حذف کامل کاربر
+        /// </summary>
+        /// <param name="Id">شناسه کاربر</param>
+        /// <returns>نتیجه عملیات</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompletelyDeleteUserPost(string Id)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // بررسی وجود کاربر
+                    var user = _Context.UserManagerUW.GetById(Id);
+                    if (user == null)
+                    {
+                        await _activityLogger.LogActivityAsync(
+                            ActivityTypeEnum.Delete,
+                            "UserManager",
+                            "CompletelyDeleteUser",
+                            "تلاش برای حذف کامل کاربر غیرموجود",
+                            recordId: Id
+                        );
+                        return Json(new { status = "error", message = "کاربر یافت نشد" });
+                    }
+
+                    var userName = $"{user.FirstName} {user.LastName}";
+                    var userInfo = new
+                    {
+                        user.Id,
+                        user.UserName,
+                        user.FirstName,
+                        user.LastName,
+                        user.Email,
+                        user.PhoneNumber,
+                        user.IsActive,
+                        user.RegisterDate
+                    };
+                    
+                    // حذف کامل کاربر با استفاده از Repository
+                    bool result = await _UserRepository.CompletelyDeleteUserAsync(Id);
+                    
+                    if (!result)
+                    {
+                        await _activityLogger.LogActivityAsync(
+                            ActivityTypeEnum.Delete,
+                            "UserManager",
+                            "CompletelyDeleteUser",
+                            $"شکست در حذف کامل کاربر: {userName}",
+                            recordId: Id,
+                            entityType: "AppUsers",
+                            recordTitle: userName
+                        );
+                        return Json(new { status = "error", message = "خطا در حذف کامل کاربر" });
+                    }
+
+                    // ثبت لاگ حذف کامل موفق
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Delete,
+                        "UserManager",
+                        "CompletelyDeleteUser",
+                        $"حذف کامل کاربر: {userName} - تمام اطلاعات کاربر از سیستم حذف شد",
+                        recordId: Id,
+                        entityType: "AppUsers",
+                        recordTitle: userName
+                    );
+
+                    // ثبت لاگ اطلاعات حذف شده برای بررسی‌های آینده - تصحیح خطای type inference
+                    await _activityLogger.LogChangeAsync<object>(
+                        ActivityTypeEnum.Delete,
+                        "UserManager",
+                        "CompletelyDeleteUser",
+                        $"جزئیات کاربر حذف شده: {userName}",
+                        userInfo,
+                        new { Status = "Completely Deleted", DeletedAt = DateTime.Now },
+                        recordId: Id,
+                        entityType: "AppUsers",
+                        recordTitle: userName
+                    );
+
+                    return Json(new { status = "redirect", redirectUrl = Url.Action(nameof(Index)) });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "UserManager",
+                        "CompletelyDeleteUser",
+                        "خطا در حذف کامل کاربر",
+                        ex,
+                        recordId: Id
+                    );
+                    
+                    return Json(new { status = "error", message = "خطا در حذف کامل کاربر" });
+                }
+            }
+
+            await _activityLogger.LogActivityAsync(
+                ActivityTypeEnum.Delete,
+                "UserManager",
+                "CompletelyDeleteUser",
+                "تلاش برای حذف کامل کاربر با داده‌های نامعتبر",
+                recordId: Id
+            );
+
+            return BadRequest(ModelState);
+        }
+
+        /// <summary>
+        /// به‌روزرسانی RemoveUser برای نمایش مودال بایگانی با ثبت لاگ کامل
+        /// </summary>
+        /// <param name="UserId">شناسه کاربر</param>
+        /// <returns>مودال بایگانی</returns>
         [HttpGet]
         public async Task<IActionResult> RemoveUser(string UserId)
         {
             try
             {
+                if (string.IsNullOrEmpty(UserId))
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "UserManager",
+                        "RemoveUser",
+                        "تلاش برای نمایش مودال بایگانی کاربر بدون شناسه"
+                    );
+                    return RedirectToAction("ErrorView", "Home");
+                }
+
                 var model = _Context.UserManagerUW.GetById(UserId);
                 if (model == null)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "UserManager",
+                        "RemoveUser",
+                        "تلاش برای نمایش مودال بایگانی کاربر غیرموجود",
+                        recordId: UserId
+                    );
                     return RedirectToAction("ErrorView", "Home");
+                }
 
-                // ثبت لاگ
+                // ایجاد ViewModel برای نمایش در مودال
+                var userViewModel = new UserViewModelFull
+                {
+                    Id = model.Id,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    FullNamesString = $"{model.FirstName} {model.LastName}",
+                    UserName = model.UserName,
+                    Email = model.Email,
+                    PhoneNumber = model.PhoneNumber
+                };
+
+                // ثبت لاگ نمایش مودال بایگانی
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "UserManager",
                     "RemoveUser",
-                    $"مشاهده فرم حذف کاربر: {model.FirstName} {model.LastName}",
+                    $"نمایش مودال بایگانی کاربر: {model.FirstName} {model.LastName}",
                     recordId: UserId,
                     entityType: "AppUsers",
                     recordTitle: $"{model.FirstName} {model.LastName}"
                 );
 
-                return PartialView("_RemoveUser", model);
+                return PartialView("_RemoveUser", userViewModel);
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync(
                     "UserManager",
                     "RemoveUser",
-                    "خطا در نمایش فرم حذف کاربر",
+                    "خطا در نمایش مودال بایگانی کاربر",
                     ex,
                     recordId: UserId
                 );
@@ -354,15 +612,18 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
                     var userName = $"{user.FirstName} {user.LastName}";
                     
-                    _Context.UserManagerUW.DeleteById(Id);
-                    _Context.Save();
+                    // بایگانی کاربر به جای حذف
+                    bool result = await _UserRepository.ArchiveUserAsync(Id);
+                    
+                    if (!result)
+                        return Json(new { status = "error", message = "خطا در بایگانی کاربر" });
 
-                    // ثبت لاگ حذف
+                    // ثبت لاگ بایگانی - استفاده از Edit به جای Update
                     await _activityLogger.LogActivityAsync(
-                        ActivityTypeEnum.Delete,
+                        ActivityTypeEnum.Edit,
                         "UserManager",
-                        "RemoveUser",
-                        $"حذف کاربر: {userName}",
+                        "ArchiveUser",
+                        $"بایگانی کاربر: {userName}",
                         recordId: Id,
                         entityType: "AppUsers",
                         recordTitle: userName
@@ -374,16 +635,71 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 {
                     await _activityLogger.LogErrorAsync(
                         "UserManager",
-                        "RemoveUser",
-                        "خطا در حذف کاربر",
+                        "ArchiveUser",
+                        "خطا در بایگانی کاربر",
                         ex,
                         recordId: Id
                     );
                     
-                    return Json(new { status = "error", message = "خطا در حذف کاربر" });
+                    return Json(new { status = "error", message = "خطا در بایگانی کاربر" });
                 }
             }
             return BadRequest(ModelState);
+        }
+
+        /// <summary>
+        /// بازیابی کاربر بایگانی شده
+        /// </summary>
+        /// <param name="UserId">شناسه کاربر</param>
+        /// <returns>نتیجه عملیات</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestoreUser(string UserId)
+        {
+            try
+            {
+                var user = _Context.UserManagerUW.GetById(UserId);
+                if (user == null)
+                    return Json(new { status = "error", message = "کاربر یافت نشد" });
+
+                if (!user.IsRemoveUser)
+                    return Json(new { status = "error", message = "کاربر بایگانی نشده است" });
+
+                // بازیابی کاربر
+                user.IsRemoveUser = false;
+                user.IsActive = true;
+                user.ArchivedDate = null;
+
+                _Context.UserManagerUW.Update(user);
+                _Context.Save();
+
+                var userName = $"{user.FirstName} {user.LastName}";
+
+                // ثبت لاگ بازیابی - استفاده از Edit به جای Update
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Edit,
+                    "UserManager",
+                    "RestoreUser",
+                    $"بازیابی کاربر بایگانی شده: {userName}",
+                    recordId: UserId,
+                    entityType: "AppUsers",
+                    recordTitle: userName
+                );
+
+                return Json(new { status = "redirect", redirectUrl = Url.Action(nameof(Index)) });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "UserManager",
+                    "RestoreUser",
+                    "خطا در بازیابی کاربر",
+                    ex,
+                    recordId: UserId
+                );
+                
+                return Json(new { status = "error", message = "خطا در بازیابی کاربر" });
+            }
         }
 
         [HttpGet]
@@ -540,8 +856,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 _Context.UserManagerUW.Update(User);
                 _Context.Save();
 
-                // ثبت لاگ تغییر وضعیت
-                await _activityLogger.LogChangeAsync(
+                // ثبت لاگ تغییر وضعیت - تصحیح خطای type inference
+                await _activityLogger.LogChangeAsync<object>(
                     ActivityTypeEnum.Edit,
                     "UserManager",
                     "ActiveOrDeactiveUser",
@@ -566,6 +882,44 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 );
                 
                 return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// بررسی دسترسی یوزرنیم جدید
+        /// </summary>
+        /// <param name="username">نام کاربری</param>
+        /// <param name="userId">شناسه کاربر جهت استثنا (برای ویرایش)</param>
+        /// <returns>نتیجه بررسی</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckUsernameAvailability(string username, string userId = null)
+        {
+            try
+            {
+                bool exists = await _UserRepository.IsUsernameExistsAsync(username, userId);
+                
+                if (exists)
+                {
+                    return Json(new { 
+                        status = "exists", 
+                        message = "فردی با این یوزرنیم وجود دارد. برای استفاده از این یوزرنیم باید کاربر قبلی را بطور کامل حذف کنید.",
+                        showCompleteDeleteOption = true
+                    });
+                }
+                
+                return Json(new { status = "available", message = "یوزرنیم قابل استفاده است" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "UserManager",
+                    "CheckUsernameAvailability",
+                    "خطا در بررسی یوزرنیم",
+                    ex
+                );
+                
+                return Json(new { status = "error", message = "خطا در بررسی یوزرنیم" });
             }
         }
     }
