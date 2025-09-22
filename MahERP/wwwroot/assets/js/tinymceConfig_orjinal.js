@@ -13,34 +13,6 @@
         directionality: "rtl",
         theme_advanced_toolbar_align: "right",
 
-        // تنظیمات برای حذف HTML تگ‌های ناخواسته
-        valid_elements: 'p,br,strong,b,em,i,u,ol,ul,li,a[href],table,tr,td,th,thead,tbody',
-        invalid_elements: 'script,style,link,meta,html,head,body,iframe,frame,object,embed,applet',
-        forced_root_block: 'p',
-        force_br_newlines: false,
-        force_p_newlines: true,
-        remove_trailing_brs: true,
-        
-        // پاک‌سازی محتوا هنگام paste
-        paste_data_images: false,
-        paste_remove_styles: true,
-        paste_remove_styles_if_webkit: true,
-        paste_strip_class_attributes: 'all',
-        
-        // فیلتر کردن محتوای HTML
-        setup: function (editor) {
-            editor.on('BeforeSetContent', function (e) {
-                // حذف تمام تگ‌های HTML غیر مجاز
-                e.content = e.content.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-                e.content = e.content.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-                e.content = e.content.replace(/<link[^>]*>/gi, '');
-                e.content = e.content.replace(/<meta[^>]*>/gi, '');
-                e.content = e.content.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
-                e.content = e.content.replace(/<object[^>]*>.*?<\/object>/gi, '');
-                e.content = e.content.replace(/<embed[^>]*>/gi, '');
-            });
-        },
-
         // تنظیمات سایز فونت
         fontsize_formats: "8pt 9pt 10pt 11pt 12pt 14pt 16pt 18pt 20pt 22pt 24pt 26pt 28pt 36pt 48pt 72pt",
 
@@ -92,34 +64,6 @@ function fulltiny(title, placeholder, height = 500) {
         placeholder: placeholder,
         directionality: "rtl",
         theme_advanced_toolbar_align: "right",
-
-        // تنظیمات برای حذف HTML تگ‌های ناخواسته
-        valid_elements: 'p,br,strong,b,em,i,u,ol,ul,li,a[href],table,tr,td,th,thead,tbody,h1,h2,h3,h4,h5,h6,hr',
-        invalid_elements: 'script,style,link,meta,html,head,body,iframe,frame,object,embed,applet',
-        forced_root_block: 'p',
-        force_br_newlines: false,
-        force_p_newlines: true,
-        remove_trailing_brs: true,
-        
-        // پاک‌سازی محتوا هنگام paste
-        paste_data_images: false,
-        paste_remove_styles: true,
-        paste_remove_styles_if_webkit: true,
-        paste_strip_class_attributes: 'all',
-        
-        // فیلتر کردن محتوای HTML
-        setup: function (editor) {
-            editor.on('BeforeSetContent', function (e) {
-                // حذف تمام تگ‌های HTML غیر مجاز
-                e.content = e.content.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-                e.content = e.content.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-                e.content = e.content.replace(/<link[^>]*>/gi, '');
-                e.content = e.content.replace(/<meta[^>]*>/gi, '');
-                e.content = e.content.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
-                e.content = e.content.replace(/<object[^>]*>.*?<\/object>/gi, '');
-                e.content = e.content.replace(/<embed[^>]*>/gi, '');
-            });
-        },
 
         // تنظیمات سایز فونت
         fontsize_formats: "8pt 9pt 10pt 11pt 12pt 14pt 16pt 18pt 20pt 22pt 24pt 26pt 28pt 36pt 48pt 72pt",

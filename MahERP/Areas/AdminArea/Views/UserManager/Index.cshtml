@@ -40,7 +40,7 @@
             </div>
             <div class="block-content block-content-full">
                 <!-- DataTables init on table by adding .js-dataTable-responsive class, functionality is initialized in js/pages/be_tables_datatables.min.js which was auto compiled from _js/pages/be_tables_datatables.js -->
-                <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive">
+                <table class="table table-bordered table-striped table-vcenter js-dataTable-no-pagination">
                     <thead>
                         <tr>
                             <th class="d-none d-sm-table-cell text-center" style="width: 80px;">#</th>
@@ -119,7 +119,24 @@
 @Html.Partial("_Modal")
 
 @section Scripts {
-
+    <script>
+        $(document).ready(function() {
+            $('.js-dataTable-no-pagination').DataTable({
+                paging: false,
+                info: false,
+                language: {
+                    search: "جستجو:",
+                    searchPlaceholder: "جستجو در جدول...",
+                    lengthMenu: "نمایش _MENU_ رکورد",
+                    info: "نمایش _START_ تا _END_ از _TOTAL_ رکورد",
+                    infoEmpty: "نمایش 0 تا 0 از 0 رکورد",
+                    infoFiltered: "(فیلتر شده از _MAX_ رکورد)",
+                    emptyTable: "هیچ داده‌ای در جدول وجود ندارد",
+                    zeroRecords: "هیچ رکوردی یافت نشد"
+                }
+            });
+        });
+    </script>
 }
 
 
