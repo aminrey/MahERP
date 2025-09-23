@@ -74,8 +74,8 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
         // Navigation properties for display
         [Display(Name = "عنوان دسته‌بندی")]
         public string? CategoryTitle { get; set; }
-    [Display(Name = "ای دی  دسته‌بندی")]
 
+    [Display(Name = "ای دی  دسته‌بندی")]
     public int? CategoryId { get; set; } =null;
 
     [Display(Name = "نام ایجاد کننده")]
@@ -178,8 +178,9 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
     [Display(Name = "شعبه")]
 
     public int BranchIdSelected { get; set; }
+    
     [Display(Name = "دسته‌بندی")]
-    public int TaskCategoryIdSelected { get; set; } 
+    public int? TaskCategoryIdSelected { get; set; } 
 
     /// <summary>
     /// نشان‌دهنده اینکه آیا کاربر می‌خواهد کد را دستی وارد کند

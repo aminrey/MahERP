@@ -994,7 +994,12 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 task.Status = 0;
                 task.CreationMode = 0;
                 task.TaskCategoryId = model.TaskCategoryIdSelected;
+
                 task.BranchId = model.BranchIdSelected; // اضافه کردن BranchId
+
+             
+
+
 
                 // تبدیل تاریخ شمسی به میلادی
                 if (!string.IsNullOrEmpty(model.DueDatePersian))
