@@ -278,6 +278,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.AddedByUserName, opt => opt.MapFrom(src => src.AddedByUser != null ? $"{src.AddedByUser.FirstName} {src.AddedByUser.LastName}" : null));
 
             // TeamMemberViewModel -> TeamMember
+            CreateMap<TeamPositionViewModel, TeamPosition>().ReverseMap();
             CreateMap<TeamMemberViewModel, TeamMember>()
                 .ForMember(dest => dest.Team, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())

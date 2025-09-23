@@ -137,7 +137,8 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// </summary>
         public IActionResult Details(int id)
         {
-            var team = _teamRepository.GetTeamById(id);
+            // دریافت تیم با اعضا و سمت‌ها در یک بار اتصال
+            var team = _teamRepository.GetTeamById(id, includePositions: true, includeMembers: true);
             if (team == null)
                 return NotFound();
 
@@ -147,8 +148,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             if (!userBranches.Any(b => b.Id == team.BranchId))
                 return RedirectToAction("ErrorView", "Home");
 
-            // دریافت اعضای تیم
-            team.TeamMembers = _teamRepository.GetTeamMembers(id);
+
 
             return View(team);
         }
@@ -617,6 +617,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 return BadRequest("خطا در بارگذاری فرم: " + ex.Message);
             }
         }
+
         /// <summary>
         /// ثبت انتخاب مدیر تیم با پاسخ JSON
         /// </summary>
@@ -630,27 +631,41 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 {
                     success = false,
                     message = new[] {
-                        new { status = "error", text = "داده‌های ورودی نامعتبر است." }
-                    }
+                new { status = "error", text = "داده‌های ورودی نامعتبر است." }
+            }
                 });
             }
 
             try
             {
                 var currentUserId = _userManager.GetUserId(User);
+
+                // بررسی وجود تیم قبل از انجام عملیات
+                var existingTeam = _teamRepository.GetTeamById(model.TeamId);
+                if (existingTeam == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = new[] {
+                    new { status = "error", text = "تیم مورد نظر یافت نشد." }
+                }
+                    });
+                }
+
                 var success = _teamRepository.AssignManager(model.TeamId, model.ManagerUserId, currentUserId);
 
                 if (success)
                 {
-                    // دریافت اطلاعات تیم برای branchId
+                    // بروزرسانی اطلاعات تیم بدون استفاده از AutoMapper
                     var updatedTeam = _teamRepository.GetTeamById(model.TeamId);
 
                     return Json(new
                     {
                         success = true,
                         message = new[] {
-                            new { status = "success", text = "مدیر تیم با موفقیت انتخاب شد." }
-                        },
+                    new { status = "success", text = "مدیر تیم با موفقیت انتخاب شد و سمت مدیریت ایجاد گردید." }
+                },
                         status = "redirect",
                         redirectUrl = Url.Action("OrganizationalChart", new { branchId = updatedTeam.BranchId })
                     });
@@ -661,19 +676,22 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     {
                         success = false,
                         message = new[] {
-                            new { status = "error", text = "خطا در انتخاب مدیر تیم. ممکن است کاربر انتخاب شده قبلاً مدیر تیم دیگری باشد." }
-                        }
+                    new { status = "error", text = "خطا در انتخاب مدیر تیم. ممکن است کاربر انتخاب شده قبلاً مدیر تیم دیگری باشد." }
+                }
                     });
                 }
             }
             catch (Exception ex)
             {
+                // بهبود نمایش خطا برای دیباگ
+                var errorMessage = ex.InnerException?.Message ?? ex.Message;
+
                 return Json(new
                 {
                     success = false,
                     message = new[] {
-                        new { status = "error", text = "خطا: " + ex.Message }
-                    }
+                new { status = "error", text = $"خطا در انتخاب مدیر: {errorMessage}" }
+            }
                 });
             }
         }
@@ -962,6 +980,12 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Json(new { success = false, message = "سطح قدرت انتخاب شده قبلاً استفاده شده است." });
                 }
 
+                // ✅ بررسی تکراری نبودن سمت پیش‌فرض
+                if (model.IsDefault && !_teamRepository.IsDefaultPositionUnique(model.TeamId))
+                {
+                    return Json(new { success = false, message = "در این تیم قبلاً یک سمت پیش‌فرض تعریف شده است. لطفاً ابتدا آن را غیرفعال کنید." });
+                }
+
                 // ایجاد سمت جدید
                 var position = new TeamPosition
                 {
@@ -1089,6 +1113,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 }
 
                 var position = _teamRepository.GetTeamPositionById(id);
+
                 if (position == null)
                 {
                     return Json(new { success = false, message = "سمت مورد نظر یافت نشد." });
@@ -1100,6 +1125,11 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Json(new { success = false, message = "سمت با این عنوان قبلاً در این تیم تعریف شده است." });
                 }
 
+                // ✅ بررسی تکراری نبودن سمت پیش‌فرض
+                if (model.IsDefault && !_teamRepository.IsDefaultPositionUnique(model.TeamId, id))
+                {
+                    return Json(new { success = false, message = "در این تیم قبلاً یک سمت پیش‌فرض تعریف شده است. لطفاً ابتدا آن را غیرفعال کنید." });
+                }
                 // بروزرسانی
                 position.Title = model.Title;
                 position.Description = model.Description;
@@ -1221,7 +1251,6 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 });
             }
         }
-
         /// <summary>
         /// دریافت درخت سمت‌های تیم برای نمایش در partial view
         /// </summary>
@@ -1229,10 +1258,13 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         {
             try
             {
-                var hierarchyData = _teamRepository.GetTeamPositionHierarchy(teamId); 
-                ViewBag.TeamHierarchy = hierarchyData;
+                var hierarchyData = _teamRepository.GetTeamPositionHierarchy(teamId);
 
-                return PartialView("_TeamPositionsHierarchy", teamId);
+                // ارسال داده‌ها به ViewBag برای استفاده در partial view
+                ViewBag.TeamHierarchy = hierarchyData;
+                ViewBag.TeamId = teamId;
+
+                return PartialView("_TeamPositionsHierarchy", hierarchyData);
             }
             catch (Exception ex)
             {
@@ -1243,7 +1275,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     ex,
                     recordId: teamId.ToString()
                 );
-                return PartialView("_TeamPositionsHierarchy", teamId);
+                return PartialView("_TeamPositionsHierarchy", new TeamHierarchyViewModel { TeamId = teamId });
             }
         }
 

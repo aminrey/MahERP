@@ -24,8 +24,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         public UserManagerController(
             IUnitOfWork context, 
             UserManager<AppUsers> userManager, 
-            IMapper Mapper, 
-            UserManagerRepository userrepository, // تصحیح نوع پارامتر
+            IMapper Mapper,
+            IUserManagerRepository userrepository, // تصحیح نوع پارامتر
             PersianDateHelper persianDateHelper, 
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger)

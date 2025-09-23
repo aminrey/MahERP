@@ -56,30 +56,73 @@
                     </div>
                 </div>
 
-                <!-- Team Positions - بخش جدید -->
-                <div class="block block-rounded">
-                    <div class="block-header block-header-default">
-                        <h3 class="block-title">سمت‌های تیم</h3>
-                        <div class="block-options">
-                            <button type="button" class="btn btn-sm btn-alt-success"
-                                    data-toggle="modal-ajax"
-                                    href="@Url.Action("CreatePositionModal", "Team", new { teamId = Model.Id })">
-                                <i class="fa fa-plus me-1"></i> تعریف سمت جدید
-                            </button>
-                            <button type="button" class="btn btn-sm btn-alt-info"
-                                    data-toggle="modal-ajax"
-                                    href="@Url.Action("ManageTaskViewersModal", "Team", new { teamId = Model.Id })">
-                                <i class="fa fa-eye me-1"></i> مجوزهای مشاهده تسک
-                            </button>
-                        </div>
-                    </div>
-                    <div class="block-content">
-                        <div id="team-positions-hierarchy">
-                            @await Html.PartialAsync("_TeamPositionsHierarchy", Model.Id)
-                        </div>
-                    </div>
+              <!-- Team Positions - بخش اصلاح شده -->
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">سمت‌های تیم</h3>
+        <div class="block-options">
+            <button type="button" class="btn btn-sm btn-alt-success"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("CreatePositionModal", "Team", new { teamId = Model.Id })">
+                <i class="fa fa-plus me-1"></i> تعریف سمت جدید
+            </button>
+            <button type="button" class="btn btn-sm btn-alt-info"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("ManageTaskViewersModal", "Team", new { teamId = Model.Id })">
+                <i class="fa fa-eye me-1"></i> مجوزهای مشاهده تسک
+            </button>
+        </div>
+    </div>
+    <div class="block-content">
+        <div id="team-positions-hierarchy">
+            @if (Model.TeamPositions?.Any() == true)
+            {
+               
+                    // ایجاد TeamHierarchyViewModel برای نمایش
+                    var hierarchyData = new TeamHierarchyViewModel
+                    {
+                        TeamId = Model.Id,
+                        TeamTitle = Model.Title,
+                        Positions = Model.TeamPositions.OrderBy(p => p.PowerLevel).Select(p => new TeamPositionHierarchyViewModel
+                        {
+                            Id = p.Id,
+                            Title = p.Title,
+                            Description = p.Description,
+                            PowerLevel = p.PowerLevel,
+                            CurrentMembers = p.Members?.Count(m => m.IsActive) ?? 0,
+                            MaxMembers = p.MaxMembers,
+                            CanAddMember = !p.MaxMembers.HasValue || (p.Members?.Count(m => m.IsActive) ?? 0) < p.MaxMembers.Value,
+                            PowerLevelText = p.PowerLevel switch
+                            {
+                                0 => "مدیر تیم",
+                                1 => "معاون/سرپرست", 
+                                2 => "کارشناس ارشد",
+                                3 => "کارشناس",
+                                _ => $"سطح {p.PowerLevel}"
+                            },
+                            Members = p.Members?.Where(m => m.IsActive).ToList() ?? new List<TeamMemberViewModel>()
+                        }).ToList(),
+                        MembersWithoutPosition = Model.TeamMembers?.Where(m => m.IsActive && !m.PositionId.HasValue).ToList() ?? new List<TeamMemberViewModel>()
+                    };
+                
+                @await Html.PartialAsync("_TeamPositionsHierarchy", hierarchyData)
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="fa fa-briefcase fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">هیچ سمتی تعریف نشده است</h5>
+                    <p class="text-muted">برای شروع، اولین سمت تیم را تعریف کنید</p>
+                    <button type="button" class="btn btn-primary"
+                            data-toggle="modal-ajax"
+                            href="@Url.Action("CreatePositionModal", "Team", new { teamId = Model.Id })">
+                        <i class="fa fa-plus me-1"></i> تعریف اولین سمت
+                    </button>
                 </div>
-
+            }
+        </div>
+    </div>
+</div>
                 <!-- Team Members - بخش اصلاح شده -->
                 <div class="block block-rounded">
                     <div class="block-header block-header-default">
