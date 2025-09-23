@@ -14,7 +14,7 @@ namespace MahERP.DataModelLayer.Repository
         bool UpdateTeam(Team team);
         bool DeleteTeam(int teamId);
         bool ToggleTeamStatus(int teamId);
-
+            
         // TeamMember CRUD operations
         List<TeamMemberViewModel> GetTeamMembers(int teamId, bool includeInactive = false);
         TeamMemberViewModel GetTeamMemberById(int memberId);
@@ -114,5 +114,15 @@ namespace MahERP.DataModelLayer.Repository
         bool RemoveManagerFromManagementPosition(int teamId);
 
         #endregion
+
+        /// <summary>
+        /// خارج کردن عضو از سمت (بدون حذف از تیم)
+        /// </summary>
+        bool RemoveMemberFromPosition(int memberId);
+
+        /// <summary>
+        /// تخصیص عضو به سمت
+        /// </summary>
+        bool AssignMemberToPosition(int memberId, int positionId);
     }
 }

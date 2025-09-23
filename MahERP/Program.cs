@@ -36,6 +36,7 @@ builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository
 builder.Services.AddScoped<ICoreNotificationRepository, CoreNotificationRepository>(); // سیستم نوتیفیشن کلی
 builder.Services.AddScoped<TaskCodeGenerator>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<ITaskVisibilityRepository, TaskVisibilityRepository>();
 // Activity Logger Service
 builder.Services.AddScoped<ActivityLoggerService>(); // اضافه شده
 builder.Services.AddScoped<TaskNotificationService>(); // سرویس نوتیفیکیشن تسک‌ها

@@ -97,7 +97,8 @@
                                 }
 
                                 <button type="button" class="btn btn-outline-danger"
-                                        onclick="removeMember(@member.Id, '@member.UserFullName')"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("RemoveMemberModal", new { memberId = member.Id })"
                                         title="حذف از تیم">
                                     <i class="fa fa-trash"></i>
                                 </button>
@@ -121,23 +122,3 @@ else
         </button>
     </div>
 }
-
-<script>
-    function removeMember(memberId, memberName) {
-        if (confirm(`آیا از حذف "${memberName}" از تیم اطمینان دارید؟`)) {
-            $.post('@Url.Action("RemoveMember", "Team")', {
-                memberId: memberId,
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-            }, function(result) {
-                if (result.success) {
-                    // بروزرسانی صفحه یا جدول
-                    location.reload();
-                } else {
-                    alert('خطا: ' + result.message);
-                }
-            }).fail(function() {
-                alert('خطا در ارتباط با سرور');
-            });
-        }
-    }
-</script>

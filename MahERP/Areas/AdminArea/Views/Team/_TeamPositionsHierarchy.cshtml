@@ -1,117 +1,65 @@
 ﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamHierarchyViewModel
 
-<div class="positions-hierarchy">
+<div class="positions-org-chart">
     @if (Model?.Positions?.Any() == true)
     {
-        @foreach (var position in Model.Positions.OrderBy(p => p.PowerLevel))
-        {
-            <div class="position-node mb-3" data-position-id="@position.Id">
-                <div class="card">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-0">
-                                <i class="fa fa-briefcase me-2 text-primary"></i>
-                                @position.Title
-                                <small class="text-muted">(@position.PowerLevelText)</small>
-                            </h6>
-                            @if (!string.IsNullOrEmpty(position.Description))
-                            {
-                                <small class="text-muted">@position.Description</small>
-                            }
-                        </div>
-                        <div class="position-actions">
-                            <span class="badge bg-info me-2">
-                                @position.CurrentMembers
-                                @if (position.MaxMembers.HasValue)
-                                {
-                                    <span>/@position.MaxMembers</span>
-                                }
-                                عضو
-                            </span>
-                            
-                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                    data-toggle="modal-ajax"
-                                    href="@Url.Action("EditPositionModal", "Team", new { id = position.Id })"
-                                    data-bs-toggle="tooltip" title="ویرایش سمت">
-                                <i class="fa fa-edit"></i>
-                            </button>
+        <div class="positions-hierarchy-vertical">
+            @{
+                // گروه‌بندی سمت‌ها بر اساس سطح قدرت
+                var positionsByPowerLevel = Model.Positions
+                    .GroupBy(p => p.PowerLevel)
+                    .OrderBy(g => g.Key) // کمترین سطح قدرت = بالاترین مقام
+                    .ToList();
+            }
 
-                            @if (position.CanAddMember)
-                            {
-                                <button type="button" class="btn btn-sm btn-outline-success"
-                                        data-toggle="modal-ajax"
-                                        href="@Url.Action("AddMemberToPositionModal", "Team", new { teamId = Model.TeamId, positionId = position.Id })"
-                                        data-bs-toggle="tooltip" title="اضافه کردن عضو به این سمت">
-                                    <i class="fa fa-user-plus"></i>
-                                </button>
-                            }
+            @for (int i = 0; i < positionsByPowerLevel.Count; i++)
+            {
+                var powerLevelGroup = positionsByPowerLevel[i];
+                var isFirstLevel = i == 0;
+                var isLastLevel = i == positionsByPowerLevel.Count - 1;
 
-                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                    onclick="deletePosition(@position.Id, '@position.Title')"
-                                    data-bs-toggle="tooltip" title="حذف سمت">
-                                <i class="fa fa-trash"></i>
-                            </button>
+                <div class="hierarchy-level" data-level="@i" data-power-level="@powerLevelGroup.Key">
+                    <!-- عنوان سطح -->
+                    <div class="level-header">
+                        <div class="level-badge">
+                            سطح @(powerLevelGroup.Key): @(powerLevelGroup.Key switch
+                            {
+                                0 => "مدیریت",
+                                1 => "معاونت/سرپرستی",
+                                2 => "کارشناسی ارشد",
+                                3 => "کارشناسی",
+                                _ => $"سطح {powerLevelGroup.Key}"
+                            })
                         </div>
                     </div>
-                    
-                    @if (position.Members?.Any() == true)
+
+                    <!-- سمت‌های این سطح -->
+                    <div class="level-positions">
+                        @foreach (var position in powerLevelGroup.OrderBy(p => p.Title))
+                        {
+                            <div class="position-container">
+                                @await Html.PartialAsync("_PositionNode", position)
+                            </div>
+                        }
+                    </div>
+
+                    <!-- خط اتصال به سطح بعدی -->
+                    @if (!isLastLevel)
                     {
-                        <div class="card-body">
-                            <div class="row">
-                                @foreach (var member in position.Members)
-                                {
-                                    <div class="col-md-6 mb-2">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa fa-user me-2 text-secondary"></i>
-                                            <div class="flex-grow-1">
-                                                <strong>@member.UserFullName</strong>
-                                                @if (!string.IsNullOrEmpty(member.RoleDescription))
-                                                {
-                                                    <br><small class="text-muted">@member.RoleDescription</small>
-                                                }
-                                            </div>
-                                            <div class="member-actions">
-                                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                                        data-toggle="modal-ajax"
-                                                        href="@Url.Action("EditMemberModal", "Team", new { id = member.Id })"
-                                                        data-bs-toggle="tooltip" title="ویرایش عضو">
-                                                    <i class="fa fa-edit"></i>
-                                                </button>
-                                                
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        onclick="removeMemberFromPosition(@member.Id, '@member.UserFullName')"
-                                                        data-bs-toggle="tooltip" title="حذف از سمت">
-                                                    <i class="fa fa-user-times"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
+                        <div class="level-connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow">
+                                <i class="fa fa-chevron-down"></i>
                             </div>
                         </div>
                     }
-                    else
-                    {
-                        <div class="card-body text-center text-muted">
-                            <i class="fa fa-users fa-2x mb-2"></i>
-                            <p>هیچ عضوی در این سمت قرار ندارد</p>
-                            @if (position.CanAddMember)
-                            {
-                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                        data-toggle="modal-ajax"
-                                        href="@Url.Action("AddMemberToPositionModal", "Team", new { teamId = Model.TeamId, positionId = position.Id })">
-                                    <i class="fa fa-user-plus me-1"></i> اضافه کردن عضو
-                                </button>
-                            }
-                        </div>
-                    }
                 </div>
-            </div>
-        }
+            }
+        </div>
     }
     else
     {
-        <div class="text-center py-4">
+        <div class="empty-state py-5">
             <i class="fa fa-briefcase fa-3x text-muted mb-3"></i>
             <h5 class="text-muted">هیچ سمتی تعریف نشده است</h5>
             <p class="text-muted">برای شروع، اولین سمت تیم را تعریف کنید</p>
@@ -125,37 +73,328 @@
 
     @if (Model?.MembersWithoutPosition?.Any() == true)
     {
-        <div class="members-without-position mt-4">
-            <div class="card">
-                <div class="card-header bg-warning-light">
-                    <h6 class="mb-0">
-                        <i class="fa fa-exclamation-triangle me-2 text-warning"></i>
-                        اعضای بدون سمت (@Model.MembersWithoutPosition.Count)
-                    </h6>
+        <div class="unassigned-section">
+            <div class="level-header">
+                <div class="level-badge warning">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    اعضای بدون سمت (@Model.MembersWithoutPosition.Count)
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        @foreach (var member in Model.MembersWithoutPosition)
-                        {
-                            <div class="col-md-6 mb-2">
-                                <div class="d-flex align-items-center">
-                                    <i class="fa fa-user me-2 text-warning"></i>
-                                    <span>@member.UserFullName</span>
-                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                                            data-toggle="modal-ajax"
-                                            href="@Url.Action("AssignPositionModal", "Team", new { memberId = member.Id })"
-                                            data-bs-toggle="tooltip" title="تخصیص سمت">
-                                        <i class="fa fa-briefcase"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        }
+            </div>
+            <div class="unassigned-members">
+                @foreach (var member in Model.MembersWithoutPosition)
+                {
+                    <div class="unassigned-member-card">
+                        <div class="member-info">
+                            <i class="fa fa-user me-2"></i>
+                            <span>@member.UserFullName</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-warning"
+                                data-toggle="modal-ajax"
+                                href="@Url.Action("AssignPositionModal", "Team", new { memberId = member.Id })"
+                                data-bs-toggle="tooltip" title="تخصیص سمت">
+                            <i class="fa fa-briefcase"></i>
+                        </button>
                     </div>
-                </div>
+                }
             </div>
         </div>
     }
 </div>
+
+<style>
+    .positions-org-chart {
+        padding: 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        overflow-x: auto;
+    }
+
+    .positions-hierarchy-vertical {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        width: 100%;
+    }
+
+    /* سطح سلسله مراتب */
+    .hierarchy-level {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+    /* عنوان سطح */
+    .level-header {
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .level-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 1.1em;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        position: relative;
+        z-index: 3;
+    }
+
+    .level-badge.warning {
+        background: linear-gradient(135deg, #ff9a56 0%, #ffad56 100%);
+        box-shadow: 0 4px 15px rgba(255, 154, 86, 0.3);
+    }
+
+    .hierarchy-level[data-level="0"] .level-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .hierarchy-level[data-level="1"] .level-badge {
+        background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    }
+
+    .hierarchy-level[data-level="2"] .level-badge {
+        background: linear-gradient(135deg, #45b7d1 0%, #96c93d 100%);
+    }
+
+    .hierarchy-level[data-level="3"] .level-badge {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    /* سمت‌های هر سطح */
+    .level-positions {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 25px;
+        flex-wrap: wrap;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .position-container {
+        flex-shrink: 0;
+    }
+
+    /* اتصالات بین سطوح */
+    .level-connector {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 10px 0 30px 0;
+        position: relative;
+        z-index: 2;
+    }
+
+    .connector-line {
+        width: 3px;
+        height: 30px;
+        background: linear-gradient(to bottom, #ddd, #999);
+        border-radius: 2px;
+        position: relative;
+    }
+
+    .connector-line::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background: #999;
+        border-radius: 50%;
+    }
+
+    .connector-arrow {
+        margin-top: 5px;
+        color: #666;
+        font-size: 1.2em;
+        animation: bounce 2s infinite;
+    }
+
+    @@keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-5px);
+        }
+        60% {
+            transform: translateY(-3px);
+        }
+    }
+
+    /* استایل‌های سمت */
+    .position-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        color: white;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+        min-width: 280px;
+        max-width: 320px;
+        position: relative;
+        overflow: hidden;
+        border: 3px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .position-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    }
+
+    .position-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+    }
+
+    /* رنگ‌بندی سمت‌ها بر اساس سطح */
+    .hierarchy-level[data-level="0"] .position-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .hierarchy-level[data-level="1"] .position-card {
+        background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        border-color: rgba(78, 205, 196, 0.3);
+    }
+
+    .hierarchy-level[data-level="2"] .position-card {
+        background: linear-gradient(135deg, #45b7d1 0%, #96c93d 100%);
+        border-color: rgba(69, 183, 209, 0.3);
+    }
+
+    .hierarchy-level[data-level="3"] .position-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-color: rgba(240, 147, 251, 0.3);
+    }
+
+    /* سایر سطوح */
+    .hierarchy-level:not([data-level="0"]):not([data-level="1"]):not([data-level="2"]):not([data-level="3"]) .position-card {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        border-color: rgba(168, 237, 234, 0.3);
+        color: #333;
+    }
+
+    /* اعضای بدون سمت */
+    .unassigned-section {
+        width: 100%;
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px dashed #ddd;
+    }
+
+    .unassigned-members {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .unassigned-member-card {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        border-radius: 10px;
+        padding: 15px 20px;
+        color: #8b4513;
+        box-shadow: 0 4px 15px rgba(252, 182, 159, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border: 2px solid rgba(255, 236, 210, 0.5);
+        transition: all 0.3s ease;
+    }
+
+    .unassigned-member-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(252, 182, 159, 0.4);
+    }
+
+    .member-info {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+
+    .unassigned-member-card .btn {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(139, 69, 19, 0.3);
+        color: #8b4513;
+        padding: 6px 12px;
+        font-size: 0.9em;
+        font-weight: 500;
+    }
+
+    .unassigned-member-card .btn:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: rgba(139, 69, 19, 0.5);
+        transform: scale(1.05);
+    }
+
+    /* حالت خالی */
+    .empty-state {
+        background: white;
+        border-radius: 15px;
+        text-align: center;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .level-positions {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .position-card {
+            min-width: 250px;
+            max-width: 300px;
+        }
+
+        .unassigned-members {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .level-badge {
+            font-size: 1em;
+            padding: 8px 20px;
+        }
+    }
+
+    /* انیمیشن ورود */
+    .hierarchy-level {
+        animation: slideInFromTop 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    .hierarchy-level:nth-child(1) { animation-delay: 0.1s; }
+    .hierarchy-level:nth-child(2) { animation-delay: 0.2s; }
+    .hierarchy-level:nth-child(3) { animation-delay: 0.3s; }
+    .hierarchy-level:nth-child(4) { animation-delay: 0.4s; }
+
+    @@keyframes slideInFromTop {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 
 <script>
 function deletePosition(positionId, positionTitle) {
@@ -165,7 +404,11 @@ function deletePosition(positionId, positionTitle) {
             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
         }, function(result) {
             if (result.success) {
-                location.reload();
+                if (result.status === 'redirect' && result.redirectUrl) {
+                    window.location.href = result.redirectUrl;
+                } else {
+                    location.reload();
+                }
             } else {
                 alert('خطا: ' + result.message);
             }
@@ -175,48 +418,16 @@ function deletePosition(positionId, positionTitle) {
     }
 }
 
-function removeMemberFromPosition(memberId, memberName) {
-    if (confirm(`آیا از حذف "${memberName}" از این سمت اطمینان دارید؟`)) {
-        $.post('@Url.Action("RemoveMemberFromPosition", "Team")', {
-            memberId: memberId,
-            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-        }, function(result) {
-            if (result.success) {
-                location.reload();
-            } else {
-                alert('خطا: ' + result.message);
-            }
-        }).fail(function() {
-            alert('خطا در ارتباط با سرور');
-        });
-    }
-}
+// راهنمای تعاملی
+$(document).ready(function() {
+    // اضافه کردن tooltip برای نمایش سطح قدرت
+    $('.position-card').each(function() {
+        var level = $(this).closest('[data-level]').attr('data-level');
+        var powerLevel = $(this).closest('[data-power-level]').attr('data-power-level');
+        $(this).attr('title', `سطح سلسله مراتب: ${level} | سطح قدرت: ${powerLevel}`);
+    });
+    
+    // فعال‌سازی tooltip
+    $('[data-bs-toggle="tooltip"]').tooltip();
+});
 </script>
-
-<style>
-.positions-hierarchy .position-node {
-    margin-left: 0;
-}
-
-.positions-hierarchy .position-node[data-position-id] .card {
-    border-left: 4px solid var(--bs-primary);
-    transition: all 0.3s ease;
-}
-
-.positions-hierarchy .position-node[data-position-id]:hover .card {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-}
-
-.position-actions .btn {
-    margin-left: 0.25rem;
-}
-
-.member-actions .btn {
-    margin-left: 0.25rem;
-}
-
-.bg-warning-light {
-    background-color: rgba(255, 193, 7, 0.1) !important;
-}
-</style>

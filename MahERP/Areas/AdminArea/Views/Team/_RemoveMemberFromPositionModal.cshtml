@@ -1,0 +1,102 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamMemberViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">خارج کردن از سمت: @Model.PositionTitle</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="RemoveMemberFromPositionSubmit" method="post">
+            @Html.AntiForgeryToken()
+            
+            <div class="modal-body">
+                <input type="hidden" asp-for="Id" name="memberId" />
+                
+                <div class="alert alert-info d-flex align-items-center mb-3">
+                    <i class="fa fa-info-circle me-2"></i>
+                    <div>
+                        <strong>توجه:</strong> عضو از سمت خارج می‌شود اما در تیم باقی می‌ماند.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <p class="mb-2">آیا از خارج کردن <strong>@Model.UserFullName</strong> از سمت <strong>@Model.PositionTitle</strong> اطمینان دارید؟</p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fa fa-user-times me-2"></i>
+                        پس از این عمل، عضو به عنوان "عضو عادی" بدون سمت خاص در تیم <strong>@Model.TeamTitle</strong> باقی خواهد ماند.
+                    </div>
+                </div>
+
+                <div class="bg-light p-3 rounded">
+                    <h6 class="mb-2">اطلاعات عضو:</h6>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>نام:</strong></div>
+                        <div class="col-sm-8">@Model.UserFullName</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>سمت فعلی:</strong></div>
+                        <div class="col-sm-8">
+                            <span class="badge bg-primary">@Model.PositionTitle</span>
+                            @if (Model.PowerLevel.HasValue)
+                            {
+                                <small class="text-muted">(قدرت: @Model.PowerLevel)</small>
+                            }
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>تیم:</strong></div>
+                        <div class="col-sm-8">@Model.TeamTitle</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.RoleDescription))
+                    {
+                        <div class="row">
+                            <div class="col-sm-4"><strong>شرح نقش:</strong></div>
+                            <div class="col-sm-8">@Model.RoleDescription</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="btn btn-warning" data-save="modal-ajax-save">
+                    <i class="fa fa-user-times me-1"></i> خارج کردن از سمت
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('form[asp-action="RemoveMemberFromPositionSubmit"]').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = $(this).serialize();
+        var $submitBtn = $(this).find('button[type="submit"]');
+        var originalText = $submitBtn.html();
+        
+        // نمایش لودینگ
+        $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> در حال انجام...');
+        
+        $.post($(this).attr('action'), formData, function(result) {
+            if (result.success) {
+                showNotification(result.message, 'success');
+                if (result.status === 'redirect' && result.redirectUrl) {
+                    window.location.href = result.redirectUrl;
+                } else {
+                    location.reload();
+                }
+            } else {
+                showNotification(result.message, 'error');
+                $submitBtn.prop('disabled', false).html(originalText);
+            }
+        }).fail(function() {
+            showNotification('خطا در ارتباط با سرور', 'error');
+            $submitBtn.prop('disabled', false).html(originalText);
+        });
+    });
+});
+</script>

@@ -1,0 +1,177 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.AssignPositionViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">تخصیص سمت</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="AssignPositionSubmit" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="modal-body">
+                <input type="hidden" asp-for="MemberId" />
+                <input type="hidden" asp-for="TeamId" />
+
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    تخصیص سمت به <strong>@Model.UserFullName</strong> در تیم <strong>@Model.TeamTitle</strong>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PositionId" class="form-label required">انتخاب سمت</label>
+                    <select asp-for="PositionId" class="form-select" asp-items="ViewBag.AvailablePositions"
+                            id="positionSelect" required>
+                        <option value="">-- انتخاب سمت --</option>
+                        <option value="CUSTOM">سطح دستی (عنوان دلخواه)</option>
+                    </select>
+                    <span asp-validation-for="PositionId" class="text-danger"></span>
+                </div>
+
+                <!-- فیلدهای دستی -->
+                <div id="customPositionFields" style="display: none;">
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <strong>توجه:</strong> این سمت به صورت موقت برای این عضو ایجاد می‌شود
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="CustomTitle" class="form-label required">عنوان سمت</label>
+                            <input type="text" id="CustomTitle" name="CustomTitle" class="form-control"
+                                   placeholder="مثال: مشاور، متخصص، ..." />
+                            <small class="form-text text-muted">عنوان دلخواه برای سمت</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="CustomPowerLevel" class="form-label required">سطح قدرت</label>
+                            <input type="number" id="CustomPowerLevel" name="CustomPowerLevel"
+                                   class="form-control" min="0" max="100" value="7"
+                                   placeholder="عدد بین 0 تا 100" />
+                            <small class="form-text text-muted">عدد کمتر = قدرت بیشتر</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="CustomDescription" class="form-label">توضیحات سمت</label>
+                        <textarea id="CustomDescription" name="CustomDescription" class="form-control" rows="2"
+                                  placeholder="توضیحات اختیاری در مورد این سمت..."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" id="CustomCanViewSubordinateTasks"
+                                       name="CustomCanViewSubordinateTasks" class="form-check-input" checked />
+                                <label for="CustomCanViewSubordinateTasks" class="form-check-label">
+                                    مشاهده تسک‌های زیردستان
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" id="CustomCanViewPeerTasks"
+                                       name="CustomCanViewPeerTasks" class="form-check-input" />
+                                <label for="CustomCanViewPeerTasks" class="form-check-label">
+                                    مشاهده تسک‌های همسطح
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="btn btn-primary" data-save="modal-ajax-save">
+                    <i class="fa fa-briefcase me-1"></i> تخصیص سمت
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // مدیریت نمایش/مخفی کردن فیلدهای دستی
+        $('#positionSelect').on('change', function() {
+            var selectedValue = $(this).val();
+
+            if (selectedValue === 'CUSTOM') {
+                $('#customPositionFields').slideDown();
+                // تنظیم فیلدهای ضروری برای validation
+                $('#CustomTitle').attr('required', true);
+                $('#CustomPowerLevel').attr('required', true);
+            } else {
+                $('#customPositionFields').slideUp();
+                // حذف validation برای فیلدهای دستی
+                $('#CustomTitle').removeAttr('required');
+                $('#CustomPowerLevel').removeAttr('required');
+            }
+        });
+
+        // اعتبارسنجی فرم قبل از ارسال
+        $('form').on('submit', function(e) {
+            var selectedPosition = $('#positionSelect').val();
+
+            if (selectedPosition === 'CUSTOM') {
+                var customTitle = $('#CustomTitle').val().trim();
+                var customPowerLevel = $('#CustomPowerLevel').val();
+
+                if (!customTitle) {
+                    e.preventDefault();
+                    alert('لطفاً عنوان سمت را وارد کنید.');
+                    $('#CustomTitle').focus();
+                    return false;
+                }
+
+                if (!customPowerLevel || customPowerLevel < 0 || customPowerLevel > 100) {
+                    e.preventDefault();
+                    alert('لطفاً سطح قدرت معتبر (0 تا 100) وارد کنید.');
+                    $('#CustomPowerLevel').focus();
+                    return false;
+                }
+            } else if (!selectedPosition) {
+                e.preventDefault();
+                alert('لطفاً یک سمت انتخاب کنید.');
+                $('#positionSelect').focus();
+                return false;
+            }
+        });
+
+        // بررسی وجود سمت‌های موجود
+        var availablePositionsCount = $('#positionSelect option[value!=""][value!="CUSTOM"]').length;
+        if (availablePositionsCount === 0) {
+            // اگر سمت موجودی نیست، فقط گزینه دستی را نمایش بده
+            $('#positionSelect').val('CUSTOM').trigger('change');
+            $('#positionSelect').prop('disabled', true);
+
+            var $notice = $('<div class="alert alert-info mt-2">' +
+                '<i class="fa fa-info-circle me-2"></i>' +
+                'هیچ سمت موجودی برای انتخاب وجود ندارد. لطفاً سمت دستی تعریف کنید.' +
+                '</div>');
+            $('#positionSelect').after($notice);
+        }
+    });
+</script>
+
+<style>
+    #customPositionFields {
+        border: 2px dashed #ffc107;
+        border-radius: 10px;
+        padding: 15px;
+        background-color: rgba(255, 193, 7, 0.05);
+        margin-top: 15px;
+    }
+
+        #customPositionFields .alert-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-color: rgba(255, 193, 7, 0.2);
+        }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+</style>

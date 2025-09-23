@@ -1,0 +1,370 @@
+﻿@model TaskVisibilityChartViewModel
+@{
+    ViewData["Title"] = "چارت قدرت مشاهده تسک‌ها - " + Model.BranchName;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">@ViewData["Title"]</h3>
+        <div class="block-options">
+            <div class="dropdown">
+                <button type="button" class="btn btn-sm btn-alt-primary dropdown-toggle" id="branchDropdown" data-bs-toggle="dropdown">
+                    <i class="fa fa-building me-1"></i> @Model.BranchName
+                </button>
+                <div class="dropdown-menu" aria-labelledby="branchDropdown">
+                    @foreach (var branch in ViewBag.UserBranches as SelectList)
+                    {
+                        <a class="dropdown-item" href="@Url.Action("TaskVisibilityChart", new { branchId = branch.Value })">
+                            @branch.Text
+                        </a>
+                    }
+                </div>
+            </div>
+            
+            <button type="button" class="btn btn-sm btn-alt-success" data-bs-toggle="modal" data-bs-target="#specialPermissionModal">
+                <i class="fa fa-plus me-1"></i> مجوز خاص جدید
+            </button>
+            
+            <a asp-action="OrganizationalChart" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-sitemap me-1"></i> چارت سازمانی
+            </a>
+        </div>
+    </div>
+
+    <!-- آمار کلی -->
+    <div class="block-content border-bottom">
+        <div class="row">
+            <div class="col-md-2">
+                <div class="block block-rounded bg-info-light">
+                    <div class="block-content py-3 text-center">
+                        <div class="fs-4 fw-semibold text-info">@Model.Stats.TotalTeams</div>
+                        <div class="text-muted">تیم‌ها</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="block block-rounded bg-success-light">
+                    <div class="block-content py-3 text-center">
+                        <div class="fs-4 fw-semibold text-success">@Model.Stats.TotalMembers</div>
+                        <div class="text-muted">اعضا</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="block block-rounded bg-warning-light">
+                    <div class="block-content py-3 text-center">
+                        <div class="fs-4 fw-semibold text-warning">@Model.Stats.TotalPositions</div>
+                        <div class="text-muted">سمت‌ها</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="block block-rounded bg-primary-light">
+                    <div class="block-content py-3 text-center">
+                        <div class="fs-4 fw-semibold text-primary">@Model.Stats.ActiveSpecialPermissions</div>
+                        <div class="text-muted">مجوزهای فعال</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="block block-rounded bg-danger-light">
+                    <div class="block-content py-3 text-center">
+                        <div class="fs-4 fw-semibold text-danger">@Model.Stats.ExpiredSpecialPermissions</div>
+                        <div class="text-muted">مجوزهای منقضی</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="block block-rounded bg-secondary-light">
+                    <div class="block-content py-3 text-center">
+                        <div class="fs-4 fw-semibold text-secondary">@Model.Stats.TotalSpecialPermissions</div>
+                        <div class="text-muted">کل مجوزها</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="block-content">
+        <div class="row">
+            <!-- ساختار سلسله مراتبی تیم‌ها -->
+            <div class="col-md-8">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-sitemap me-2"></i>
+                            ساختار سلسله مراتبی و قدرت مشاهده
+                        </h3>
+                        <div class="block-options">
+                            <button type="button" class="btn btn-sm btn-alt-info" id="toggleViewMode">
+                                <i class="fa fa-eye me-1"></i> تغییر نمایش
+                            </button>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <div id="hierarchy-container">
+                            @if (Model.TeamHierarchy.Any())
+                            {
+                                @foreach (var rootTeam in Model.TeamHierarchy)
+                                {
+                                    @await Html.PartialAsync("_TaskVisibilityTeamNode", rootTeam)
+                                }
+                            }
+                            else
+                            {
+                                <div class="empty-state py-5 text-center">
+                                    <i class="fa fa-sitemap fa-3x text-muted mb-3"></i>
+                                    <h4 class="text-muted">هیچ تیمی تعریف نشده است</h4>
+                                    <p class="text-muted">برای شروع، یک تیم جدید ایجاد کنید</p>
+                                    <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-primary">
+                                        <i class="fa fa-plus me-1"></i> ایجاد اولین تیم
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- مجوزهای خاص (تبصره‌ها) -->
+            <div class="col-md-4">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-key me-2"></i>
+                            مجوزهای خاص (تبصره‌ها)
+                        </h3>
+                        <div class="block-options">
+                            <span class="badge bg-primary">@Model.SpecialPermissions.Count</span>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        @if (Model.SpecialPermissions.Any())
+                        {
+                            <div class="space-y-3">
+                                @foreach (var permission in Model.SpecialPermissions.OrderByDescending(p => p.AddedDate))
+                                {
+                                    @await Html.PartialAsync("_SpecialPermissionCard", permission)
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fa fa-key fa-2x text-muted mb-3"></i>
+                                <p class="text-muted">هیچ مجوز خاصی تعریف نشده است</p>
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#specialPermissionModal">
+                                    <i class="fa fa-plus me-1"></i> ایجاد اولین مجوز
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- توزیع قدرت بر اساس سطح -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-chart-bar me-2"></i>
+                            توزیع قدرت بر اساس سطح
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        @if (Model.Stats.PowerLevelDistribution.Any())
+                        {
+                            @foreach (var level in Model.Stats.PowerLevelDistribution.OrderBy(x => x.Key))
+                            {
+                                var percentage = Model.Stats.TotalPositions > 0 ? (level.Value * 100.0 / Model.Stats.TotalPositions) : 0;
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="fw-semibold">سطح @level.Key</span>
+                                        <span class="text-muted">@level.Value نفر</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-@(GetPowerLevelColor(level.Key))" 
+                                             style="width: @percentage.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%">
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center">هیچ سمتی تعریف نشده است</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای ایجاد مجوز خاص -->
+<div class="modal fade" id="specialPermissionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ایجاد مجوز خاص جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="GrantSpecialPermissionSubmit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="TeamId" value="0" id="modalTeamId" />
+                
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">کاربر دریافت کننده مجوز</label>
+                            <select name="GranteeUserId" class="form-select js-select2" required>
+                                <option value="">-- انتخاب کاربر --</option>
+                                @if (ViewBag.AvailableUsers != null)
+                                {
+                                    @foreach (var user in ViewBag.AvailableUsers as List<UserViewModelFull> ?? new List<UserViewModelFull>())
+                                    {
+                                        <option value="@user.Id">@user.FullNamesString</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">نوع مجوز</label>
+                            <select name="PermissionType" class="form-select" required id="permissionTypeSelect">
+                                <option value="">-- انتخاب نوع --</option>
+                                <option value="0">مشاهده تسک‌های کاربر خاص</option>
+                                <option value="1">مشاهده تسک‌های تیم خاص</option>
+                                <option value="2">مشاهده تسک‌های تیم و زیرتیم‌ها</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="targetSelectionRow" style="display: none;">
+                        <div class="col-md-6 mb-3" id="targetUserDiv" style="display: none;">
+                            <label class="form-label">کاربر هدف</label>
+                            <select name="TargetUserId" class="form-select js-select2">
+                                <option value="">-- انتخاب کاربر --</option>
+                                @if (ViewBag.AvailableUsers != null)
+                                {
+                                    @foreach (var user in ViewBag.AvailableUsers as List<UserViewModelFull> ?? new List<UserViewModelFull>())
+                                    {
+                                        <option value="@user.Id">@user.FullNamesString</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3" id="targetTeamDiv" style="display: none;">
+                            <label class="form-label">تیم هدف</label>
+                            <select name="TargetTeamId" class="form-select js-select2">
+                                <option value="">-- انتخاب تیم --</option>
+                                @if (ViewBag.AvailableTeams != null)
+                                {
+                                    @foreach (var team in ViewBag.AvailableTeams as List<TeamViewModel> ?? new List<TeamViewModel>())
+                                    {
+                                        <option value="@team.Id">@team.Title</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاریخ شروع</label>
+                            <input type="date" name="StartDate" class="form-control" />
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاریخ پایان</label>
+                            <input type="date" name="EndDate" class="form-control" />
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">توضیحات</label>
+                        <textarea name="Description" class="form-control" rows="3" 
+                                  placeholder="دلیل اعطای این مجوز را بنویسید..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save me-1"></i> ایجاد مجوز
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetPowerLevelColor(int powerLevel)
+    {
+        return powerLevel switch
+        {
+            0 => "danger",    // مدیر - قرمز
+            1 => "warning",   // معاون - نارنجی
+            2 => "primary",   // کارشناس ارشد - آبی
+            3 => "info",      // کارشناس - فیروزه‌ای
+            4 => "success",   // کارشناس مبتدی - سبز
+            _ => "secondary"  // سایر - خاکستری
+        };
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/task-visibility-chart.css" />
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // مدیریت نمایش/مخفی کردن فیلدهای هدف
+            $('#permissionTypeSelect').on('change', function() {
+                var selectedValue = $(this).val();
+                
+                if (selectedValue === '0') {
+                    $('#targetSelectionRow').show();
+                    $('#targetUserDiv').show();
+                    $('#targetTeamDiv').hide();
+                } else if (selectedValue === '1' || selectedValue === '2') {
+                    $('#targetSelectionRow').show();
+                    $('#targetUserDiv').hide();
+                    $('#targetTeamDiv').show();
+                } else {
+                    $('#targetSelectionRow').hide();
+                    $('#targetUserDiv').hide();
+                    $('#targetTeamDiv').hide();
+                }
+            });
+
+            // Initialize Select2
+            $('.js-select2').select2({
+                width: '100%',
+                allowClear: true
+            });
+
+            // Toggle view mode
+            $('#toggleViewMode').on('click', function() {
+                $('.team-visibility-card').toggleClass('compact-view');
+                $(this).find('i').toggleClass('fa-eye fa-eye-slash');
+            });
+        });
+
+        function revokePermission(viewerId) {
+            if (confirm('آیا از لغو این مجوز اطمینان دارید؟')) {
+                $.post('@Url.Action("RemoveTaskViewerPermission")', {
+                    viewerId: viewerId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                }).done(function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('خطا در لغو مجوز: ' + response.message);
+                    }
+                });
+            }
+        }
+    </script>
+}

@@ -1,0 +1,98 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamMemberViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">حذف عضو از تیم: @Model.TeamTitle</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="RemoveMemberSubmit" method="post">
+            @Html.AntiForgeryToken()
+            
+            <div class="modal-body">
+                <input type="hidden" name="memberId" value="@Model.Id" />
+                
+                <div class="alert alert-warning d-flex align-items-center mb-3">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    <div>
+                        <strong>هشدار!</strong> این عمل قابل برگشت نیست.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <p class="mb-2">آیا از حذف <strong>@Model.UserFullName</strong> از تیم <strong>@Model.TeamTitle</strong> اطمینان دارید؟</p>
+                    
+                    @if (!string.IsNullOrEmpty(Model.PositionTitle))
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-2"></i>
+                            این عضو در سمت <strong>@Model.PositionTitle</strong> قرار دارد و با حذف از تیم، از سمت نیز خارج خواهد شد.
+                        </div>
+                    }
+                </div>
+
+                <div class="bg-light p-3 rounded">
+                    <h6 class="mb-2">اطلاعات عضو:</h6>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>نام:</strong></div>
+                        <div class="col-sm-8">@Model.UserFullName</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PositionTitle))
+                    {
+                        <div class="row">
+                            <div class="col-sm-4"><strong>سمت:</strong></div>
+                            <div class="col-sm-8">@Model.PositionTitle</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.RoleDescription))
+                    {
+                        <div class="row">
+                            <div class="col-sm-4"><strong>شرح نقش:</strong></div>
+                            <div class="col-sm-8">@Model.RoleDescription</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="btn btn-danger" data-save="modal-ajax-save">
+                    <i class="fa fa-trash me-1"></i> حذف از تیم
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('form[asp-action="RemoveMemberSubmit"]').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = $(this).serialize();
+        var $submitBtn = $(this).find('button[type="submit"]');
+        var originalText = $submitBtn.html();
+        
+        // نمایش لودینگ
+        $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> در حال حذف...');
+        
+        $.post($(this).attr('action'), formData, function(result) {
+            if (result.success) {
+                showNotification(result.message, 'success');
+                if (result.status === 'redirect' && result.redirectUrl) {
+                    window.location.href = result.redirectUrl;
+                } else {
+                    location.reload();
+                }
+            } else {
+                showNotification(result.message, 'error');
+                $submitBtn.prop('disabled', false).html(originalText);
+            }
+        }).fail(function() {
+            showNotification('خطا در ارتباط با سرور', 'error');
+            $submitBtn.prop('disabled', false).html(originalText);
+        });
+    });
+});
+</script>

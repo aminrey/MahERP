@@ -1,0 +1,487 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamPositionHierarchyViewModel
+@{
+    // اگر عنوان سمت وجود دارد، آن را نمایش بده، در غیر این صورت متن سطح قدرت
+    var displayText = !string.IsNullOrWhiteSpace(Model.Title) ? Model.Title : Model.PowerLevelText;
+}
+<div class="position-node" data-position-id="@Model.Id" data-power-level="@Model.PowerLevel">
+    <div class="position-card">
+     
+        <!-- توضیحات سمت -->
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="position-description">
+                <i class="fa fa-info-circle me-1"></i>
+                @Model.Description
+            </div>
+        }
+
+        <!-- اطلاعات آماری سمت -->
+        <div class="position-stats">
+            <div class="stat-item">
+                <i class="fa fa-users me-1"></i>
+                <span class="stat-number">@Model.CurrentMembers</span>
+                @if (Model.MaxMembers.HasValue)
+                {
+                    <span class="stat-separator">/</span>
+                    <span class="stat-max">@Model.MaxMembers</span>
+                }
+                <span class="stat-label">عضو</span>
+            </div>
+            @if (Model.MaxMembers.HasValue)
+            {
+                <div class="capacity-bar">
+                    <div class="capacity-fill" style="width: @(Model.MaxMembers > 0 ? (Model.CurrentMembers * 100.0 / Model.MaxMembers.Value) : 0)%"></div>
+                </div>
+            }
+        </div>
+
+        <!-- عملیات سمت -->
+        <div class="position-quick-actions">
+            <button type="button" class="action-btn edit-btn"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("EditPositionModal", "Team", new { id = Model.Id })"
+                    data-bs-toggle="tooltip" title="ویرایش سمت">
+                <i class="fa fa-edit"></i>
+            </button>
+
+            @if (Model.CanAddMember)
+            {
+                <button type="button" class="action-btn add-btn"
+                        data-toggle="modal-ajax"
+                        href="@Url.Action("AddMemberToPositionModal", "Team", new { teamId = Model.TeamId, positionId = Model.Id })"
+                        data-bs-toggle="tooltip" title="اضافه کردن عضو">
+                    <i class="fa fa-user-plus"></i>
+                </button>
+            }
+
+            <button type="button" class="action-btn delete-btn"
+                    onclick="deletePosition(@Model.Id, '@displayText')"
+                    data-bs-toggle="tooltip" title="حذف سمت">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
+
+        <!-- فاصل -->
+        <div class="divider"></div>
+
+        <!-- اعضای سمت -->
+        <div class="position-members">
+            @if (Model.Members?.Any() == true)
+            {
+                <div class="members-header">
+                    <h6 class="members-title">
+                        <i class="fa fa-users me-1"></i>
+                        اعضای سمت
+                    </h6>
+                </div>
+
+                <div class="members-list">
+                    @foreach (var member in Model.Members.OrderBy(m => m.UserFullName))
+                    {
+                        <div class="member-card">
+                            <div class="member-info">
+                                <div class="member-avatar">
+                                    <i class="fa fa-user"></i>
+                                </div>
+                                <div class="member-details">
+                                    <div class="member-name">@member.UserFullName</div>
+                                    @if (!string.IsNullOrEmpty(member.RoleDescription))
+                                    {
+                                        <div class="member-role">@member.RoleDescription</div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="member-actions">
+                                <button type="button" class="member-action-btn edit"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("EditMemberModal", "Team", new { id = member.Id })"
+                                        data-bs-toggle="tooltip" title="ویرایش عضو">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+
+                                <button type="button" class="member-action-btn remove"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("RemoveMemberFromPositionModal", new { memberId = member.Id })"
+                                        data-bs-toggle="tooltip" title="حذف از سمت">
+                                    <i class="fa fa-user-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fa fa-users"></i>
+                    </div>
+                    <div class="empty-text">هیچ عضوی در این سمت قرار ندارد</div>
+                    @if (Model.CanAddMember)
+                    {
+                        <button type="button" class="add-member-btn"
+                                data-toggle="modal-ajax"
+                                href="@Url.Action("AddMemberToPositionModal", "Team", new { teamId = Model.TeamId, positionId = Model.Id })">
+                            <i class="fa fa-user-plus me-1"></i>
+                            اضافه کردن اولین عضو
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- باقی استایل‌ها همان قبل -->
+<style>
+    /* کارت اصلی سمت */
+    .position-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 0;
+        color: white;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+        min-width: 320px;
+        max-width: 380px;
+        position: relative;
+        overflow: hidden;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .position-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Header سمت */
+    .position-header {
+        padding: 20px 20px 15px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .position-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        flex: 1;
+    }
+
+    .position-badge {
+        background: rgba(255, 255, 255, 0.25);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* توضیحات */
+    .position-description {
+        padding: 15px 20px 10px 20px;
+        font-size: 0.9em;
+        opacity: 0.9;
+        background: rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* آمار سمت */
+    .position-stats {
+        padding: 15px 20px;
+        text-align: center;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-size: 0.95em;
+        margin-bottom: 10px;
+    }
+
+    .stat-number {
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+
+    .stat-separator {
+        margin: 0 2px;
+        opacity: 0.7;
+    }
+
+    .stat-max {
+        opacity: 0.8;
+    }
+
+    .stat-label {
+        margin-right: 5px;
+        opacity: 0.9;
+    }
+
+    /* نوار ظرفیت */
+    .capacity-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .capacity-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4ecdc4, #44a08d);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+        position: relative;
+    }
+
+        .capacity-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+    @@keyframes shimmer {
+        0%
+
+    {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+
+    }
+
+    /* عملیات سریع */
+    .position-quick-actions {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 15px 20px 10px 20px;
+    }
+
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+        cursor: pointer;
+    }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+    .edit-btn:hover {
+        background: rgba(52, 152, 219, 0.3);
+    }
+
+    .add-btn:hover {
+        background: rgba(46, 204, 113, 0.3);
+    }
+
+    .delete-btn:hover {
+        background: rgba(231, 76, 60, 0.3);
+    }
+
+    /* خط تقسیم */
+    .divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        margin: 0 20px;
+    }
+
+    /* بخش اعضا */
+    .position-members {
+        padding: 20px;
+    }
+
+    .add-member-btn{
+        color: #353535;
+    }
+    .members-header {
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    .members-title {
+        font-size: 1em;
+        font-weight: 600;
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    /* لیست اعضا */
+    .members-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .member-card {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+        .member-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+    .member-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .member-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .member-details {
+        flex: 1;
+    }
+
+    .member-name {
+        font-weight: 600;
+        font-size: 0.95em;
+        margin-bottom: 2px;
+    }
+
+    .member-role {
+        font-size: 0.8em;
+        opacity: 0.8;
+        font-style: italic;
+    }
+
+    /* عملیات عضو */
+    .member-actions {
+        display: flex;
+        gap: 5px;
+    }
+
+    .member-action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-size: 0.8em;
+    }
+
+        .member-action-btn:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .member-action-btn.edit:hover {
+            background: rgba(52, 152, 219, 0.4);
+        }
+
+        .member-action-btn.remove:hover {
+            background: rgba(231, 76, 60, 0.4);
+        }
+
+    /* حالت خالی */
+    .empty-state {
+        text-align: center;
+        padding: 10px;
+        color: #343a40;
+    }
+
+    .empty-icon {
+        font-size: 3em;
+        margin-bottom: 5px;
+        opacity: 0.5;
+    }
+
+    .empty-text {
+        font-size: 0.9em;
+        margin-bottom: 5px;
+        opacity: 0.8;
+    }
+
+    .add-member-btn {
+   
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 0.9em;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+       
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .position-card
+
+    {
+        min-width: 280px;
+        max-width: 320px;
+    }
+
+    .position-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .member-card {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .member-actions {
+        justify-content: center;
+    }
+
+    }
+</style>

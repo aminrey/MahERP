@@ -1,0 +1,208 @@
+﻿@model TeamTaskVisibilityNode
+
+<div class="team-visibility-node" data-level="@Model.Level">
+    <div class="team-visibility-card">
+        <div class="team-visibility-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="team-title mb-0">
+                    <i class="fa fa-users me-2"></i>
+                    @Model.TeamTitle
+                </h5>
+                <div class="team-level-badge">
+                    <span class="badge bg-white text-dark">سطح @Model.Level</span>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.ManagerName))
+            {
+                <div class="team-manager mt-2">
+                    <i class="fa fa-user-tie me-1"></i>
+                    <strong>مدیر:</strong> @Model.ManagerName
+                    <span class="badge bg-success bg-opacity-20 text-success ms-2">
+                        <i class="fa fa-eye me-1"></i>
+                        دسترسی کامل به زیرمجموعه
+                    </span>
+                </div>
+            }
+            else
+            {
+                <div class="team-manager mt-2 text-muted">
+                    <i class="fa fa-user-slash me-1"></i>
+                    بدون مدیر
+                </div>
+            }
+        </div>
+
+        <!-- سمت‌ها و قدرت مشاهده -->
+        @if (Model.Positions.Any())
+        {
+            <div class="positions-container mt-3">
+                <h6 class="positions-title">
+                    <i class="fa fa-briefcase me-1"></i>
+                    سمت‌ها و قدرت مشاهده:
+                </h6>
+
+                <div class="positions-grid">
+                    @foreach (var position in Model.Positions.OrderBy(p => p.PowerLevel))
+                    {
+                        <div class="position-card" data-power-level="@position.PowerLevel">
+                            <div class="position-header">
+                                <div class="position-title">
+                                    <strong>@position.PositionTitle</strong>
+                                    <span class="power-level-badge">سطح @position.PowerLevel</span>
+                                </div>
+
+                                <div class="position-permissions">
+                                    @if (position.CanViewSubordinateTasks)
+                                    {
+                                        <span class="permission-badge subordinate">
+                                            <i class="fa fa-arrow-down me-1"></i>
+                                            زیردستان
+                                        </span>
+                                    }
+                                    @if (position.CanViewPeerTasks)
+                                    {
+                                        <span class="permission-badge peer">
+                                            <i class="fa fa-arrows-alt-h me-1"></i>
+                                            همسطح
+                                        </span>
+                                    }
+                                    @if (!position.CanViewSubordinateTasks && !position.CanViewPeerTasks)
+                                    {
+                                        <span class="permission-badge none">
+                                            <i class="fa fa-eye-slash me-1"></i>
+                                            فقط خود
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (position.Members.Any())
+                            {
+                                <div class="position-members">
+                                    @foreach (var member in position.Members)
+                                    {
+                                        <div class="member-item">
+                                            <div class="member-info">
+                                                <i class="fa fa-user me-1"></i>
+                                                <span class="member-name">@member.UserFullName</span>
+                                                <span class="member-stats text-muted">
+                                                    (@member.VisibleTasksCount تسک قابل مشاهده)
+                                                </span>
+                                            </div>
+
+                                            @if (member.AccessSources.Any())
+                                            {
+                                                <div class="member-access-sources">
+                                                    @foreach (var source in member.AccessSources)
+                                                    {
+                                                        <small class="access-source-tag">@source</small>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="no-members text-muted">
+                                    <i class="fa fa-user-slash me-1"></i>
+                                    بدون عضو
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- اعضای بدون سمت -->
+        @if (Model.MembersWithoutPosition.Any())
+        {
+            <div class="members-without-position mt-3">
+                <h6 class="section-title">
+                    <i class="fa fa-users me-1"></i>
+                    اعضای بدون سمت:
+                </h6>
+
+                <div class="members-list">
+                    @foreach (var member in Model.MembersWithoutPosition)
+                    {
+                        <div class="member-item basic">
+                            <i class="fa fa-user me-1"></i>
+                            <span class="member-name">@member.UserFullName</span>
+                            <span class="member-stats text-muted">
+                                (@member.VisibleTasksCount تسک قابل مشاهده)
+                            </span>
+                            <span class="permission-badge basic">
+                                <i class="fa fa-eye-slash me-1"></i>
+                                دسترسی محدود
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- مجوزهای خاص مرتبط -->
+        @if (Model.RelatedSpecialPermissions.Any())
+        {
+            <div class="special-permissions mt-3">
+                <h6 class="section-title">
+                    <i class="fa fa-key me-1"></i>
+                    مجوزهای خاص:
+                </h6>
+
+                <div class="special-permissions-list">
+                    @foreach (var permission in Model.RelatedSpecialPermissions.Where(p => p.IsActive))
+                    {
+                        <div class="special-permission-item @(permission.IsExpired ? "expired" : "active")">
+                            <div class="permission-info">
+                                <strong>@permission.GranteeUserName</strong>
+                                <span class="permission-type">@permission.PermissionTypeText</span>
+                                @if (!string.IsNullOrEmpty(permission.TargetTeamTitle))
+                                {
+                                    <span class="target-info">→ @permission.TargetTeamTitle</span>
+                                }
+                            </div>
+
+                            @if (permission.EndDate.HasValue)
+                            {
+                                <div class="permission-expiry">
+                                    <i class="fa fa-clock me-1"></i>
+                                    تا @permission.EndDate.Value.ToString("yyyy/MM/dd")
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- اقدامات -->
+        <div class="team-actions mt-3">
+            <a href="@Url.Action("Details", new { id = Model.TeamId })"
+               class="btn btn-sm btn-light">
+                <i class="fa fa-eye me-1"></i> جزئیات
+            </a>
+
+            <button type="button" class="btn btn-sm btn-primary"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("ManageTaskViewersModal", new { teamId = Model.TeamId })">
+                <i class="fa fa-key me-1"></i> مدیریت مجوزها
+            </button>
+        </div>
+    </div>
+
+    <!-- زیرتیم‌ها -->
+    @if (Model.SubTeams.Any())
+    {
+        <div class="sub-teams">
+            @foreach (var subTeam in Model.SubTeams)
+            {
+                @await Html.PartialAsync("_TaskVisibilityTeamNode", subTeam)
+            }
+        </div>
+    }
+</div>

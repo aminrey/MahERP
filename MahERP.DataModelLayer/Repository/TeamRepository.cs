@@ -536,20 +536,14 @@ public TeamHierarchyViewModel GetTeamPositionHierarchy(int teamId)
         Positions = positions.Select(p => new TeamPositionHierarchyViewModel
         {
             Id = p.Id,
+            TeamId = teamId,
             Title = p.Title,
             Description = p.Description,
             PowerLevel = p.PowerLevel,
             CurrentMembers = p.TeamMembers.Count(tm => tm.IsActive),
             MaxMembers = p.MaxMembers,
             CanAddMember = !p.MaxMembers.HasValue || p.TeamMembers.Count(tm => tm.IsActive) < p.MaxMembers.Value,
-            PowerLevelText = p.PowerLevel switch
-            {
-                0 => "مدیر تیم",
-                1 => "معاون/سرپرست",
-                2 => "کارشناس ارشد",
-                3 => "کارشناس",
-                _ => $"سطح {p.PowerLevel}"
-            },
+            PowerLevelText = GetPowerLevelText(p.PowerLevel), // استفاده از متد جدید
             Members = p.TeamMembers.Where(tm => tm.IsActive).Select(tm => new TeamMemberViewModel
             {
                 Id = tm.Id,
@@ -622,7 +616,7 @@ public TeamPosition GetOrCreateManagementPosition(int teamId, string creatorUser
         TeamId = teamId,
         Title = "مدیریت تیم",
         Description = "سمت مدیریت تیم - ایجاد شده به صورت خودکار",
-        PowerLevel = 999, // بالاترین سطح قدرت
+        PowerLevel = 1, // بالاترین سطح قدرت
         CanViewSubordinateTasks = true,
         CanViewPeerTasks = true,
         MaxMembers = 1, // فقط یک نفر می‌تواند مدیر باشد
@@ -647,7 +641,7 @@ public TeamPosition GetManagementPosition(int teamId)
             .ThenInclude(tm => tm.User)
         .FirstOrDefault(p => p.TeamId == teamId && 
                            p.Title == MANAGEMENT_POSITION_TITLE && 
-                           p.PowerLevel == 0 && 
+                           p.PowerLevel == 999 && // تغییر از 0 به 999 برای تطبیق با GetOrCreateManagementPosition
                            p.IsActive);
 }
 
@@ -723,7 +717,7 @@ public bool RemoveManagerFromManagementPosition(int teamId)
 
         foreach (var member in managementMembers)
         {
-            // به جای حذف کامل، می‌توانیم سمت را null کنیم یا عضویت را غیرفعال کنیم
+            // به جای حذف کامل، می‌توانید سمت را null کنید یا عضویت را غیرفعال کنید
             member.PositionId = null;
             member.MembershipType = 0; // عضو عادی
             member.RoleDescription = "عضو";
@@ -739,6 +733,101 @@ public bool RemoveManagerFromManagementPosition(int teamId)
     }
 }
 
+/// <summary>
+/// خارج کردن عضو از سمت (بدون حذف از تیم)
+/// </summary>
+public bool RemoveMemberFromPosition(int memberId)
+{
+    try
+    {
+        var member = _context.TeamMember_Tbl.Find(memberId);
+        if (member == null) return false;
+
+        // فقط سمت را null می‌کنیم، عضو در تیم باقی می‌ماند
+        member.PositionId = null;
+        member.MembershipType = 0; // تبدیل به عضو عادی
+        member.RoleDescription = "عضو";
+        member.LastUpdateDate = DateTime.Now;
+
+        _context.SaveChanges();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+/// <summary>
+/// تخصیص عضو به سمت
+/// </summary>
+public bool AssignMemberToPosition(int memberId, int positionId)
+{
+    try
+    {
+        var member = _context.TeamMember_Tbl.Find(memberId);
+        var position = _context.TeamPosition_Tbl.Find(positionId);
+        
+        if (member == null || position == null) return false;
+
+        // بررسی ظرفیت سمت
+        if (position.MaxMembers.HasValue)
+        {
+            var currentCount = _context.TeamMember_Tbl
+                .Count(tm => tm.PositionId == positionId && tm.IsActive);
+            
+            if (currentCount >= position.MaxMembers.Value)
+                return false;
+        }
+
+        member.PositionId = positionId;
+        member.LastUpdateDate = DateTime.Now;
+
+        _context.SaveChanges();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
 #endregion
+
+/// <summary>
+/// دریافت متن سطح قدرت بر اساس PowerLevel
+/// </summary>
+public static string GetPowerLevelText(int powerLevel)
+{
+    return powerLevel switch
+    {
+        0 => "مدیر تیم",
+        1 => "معاون/سرپرست",
+        2 => "کارشناس ارشد",
+        3 => "کارشناس",
+        4 => "کارشناس مبتدی",
+        5 => "منشی/دستیار",
+        6 => "کارمند",
+        _ => $"سطح {powerLevel}"
+    };
+}
+
+/// <summary>
+/// دریافت عنوان پیش‌فرض سمت بر اساس PowerLevel
+/// </summary>
+public static string GetDefaultPositionTitle(int powerLevel)
+{
+    return powerLevel switch
+    {
+        0 => "مدیر تیم",
+        1 => "معاون",
+        2 => "کارشناس ارشد",
+        3 => "کارشناس",
+        4 => "کارشناس مبتدی", 
+        5 => "منشی",
+        6 => "کارمند",
+        _ => $"سمت سطح {powerLevel}"
+    };
+}
     }
 }

@@ -1,4 +1,4 @@
-﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.ManageTeamTaskViewersViewModel
+﻿@model ManageTeamTaskViewersViewModel
 
 <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -8,157 +8,19 @@
         </div>
 
         <div class="modal-body">
-            <!-- تب‌های مدیریت -->
-            <ul class="nav nav-tabs" id="taskViewerTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="current-permissions-tab" data-bs-toggle="tab" 
-                            data-bs-target="#current-permissions" type="button" role="tab">
-                        مجوزهای فعلی
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="grant-permission-tab" data-bs-toggle="tab" 
-                            data-bs-target="#grant-permission" type="button" role="tab">
-                        اعطای مجوز جدید
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="auto-generate-tab" data-bs-toggle="tab" 
-                            data-bs-target="#auto-generate" type="button" role="tab">
-                        تولید خودکار
-                    </button>
-                </li>
-            </ul>
+            <div class="alert alert-info">
+                <h6><i class="fa fa-info-circle me-1"></i> اطلاعات تیم</h6>
+                <p><strong>تیم:</strong> @Model.TeamTitle</p>
+                <p><strong>تعداد اعضا:</strong> @Model.TeamMembers.Count()</p>
+                <p><strong>کاربران در دسترس:</strong> @Model.AvailableUsers.Count()</p>
+            </div>
 
-            <div class="tab-content mt-3" id="taskViewerTabContent">
-                <!-- مجوزهای فعلی -->
-                <div class="tab-pane fade show active" id="current-permissions" role="tabpanel">
-                    @if (Model.ExistingViewers.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>کاربر</th>
-                                        <th>نوع دسترسی</th>
-                                        <th>تاریخ اعطا</th>
-                                        <th>توضیحات</th>
-                                        <th>عملیات</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var viewer in Model.ExistingViewers)
-                                    {
-                                        <tr>
-                                            <td>@viewer.UserFullName</td>
-                                            <td>
-                                                <span class="badge bg-primary">@viewer.AccessTypeText</span>
-                                            </td>
-                                            <td>@viewer.AddedDatePersian</td>
-                                            <td>@(viewer.Description ?? "-")</td>
-                                            <td>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        onclick="removeTaskViewerPermission(@viewer.Id)"
-                                                        data-bs-toggle="tooltip" title="حذف مجوز">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <i class="fa fa-info-circle fa-2x text-muted mb-2"></i>
-                            <p class="text-muted">هیچ مجوز خاصی تعریف نشده است.</p>
-                        </div>
-                    }
-                </div>
-
-                <!-- اعطای مجوز جدید -->
-                <div class="tab-pane fade" id="grant-permission" role="tabpanel">
-                    <form id="grant-permission-form">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="TeamId" value="@Model.TeamId" />
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label required">کاربر دریافت‌کننده مجوز</label>
-                                    <select name="GranteeUserId" class="form-select js-select2" required>
-                                        <option value="">-- انتخاب کاربر --</option>
-                                        @foreach (var user in Model.AvailableUsers)
-                                        {
-                                            <option value="@user.UserId">@user.FullName (@user.Position)</option>
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label required">نوع دسترسی</label>
-                                    <select name="AccessType" class="form-select" required>
-                                        <option value="">-- انتخاب نوع دسترسی --</option>
-                                        <option value="0">مجوز خاص</option>
-                                        <option value="1">مدیر تیم</option>
-                                        <option value="2">عضو تیم</option>
-                                        <option value="3">دسترسی عمومی</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">تاریخ شروع اعتبار</label>
-                                    <input type="date" name="StartDate" class="form-control" />
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">تاریخ پایان اعتبار</label>
-                                    <input type="date" name="EndDate" class="form-control" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">توضیحات</label>
-                            <textarea name="Description" class="form-control" rows="2" 
-                                      placeholder="دلیل اعطای این مجوز..."></textarea>
-                        </div>
-
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fa fa-plus me-1"></i> اعطای مجوز
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- تولید خودکار -->
-                <div class="tab-pane fade" id="auto-generate" role="tabpanel">
-                    <div class="alert alert-info">
-                        <h6><i class="fa fa-info-circle me-1"></i> تولید خودکار مجوزها</h6>
-                        <p class="mb-2">این عملیات بر اساس سمت‌های تعریف شده در تیم، مجوزهای مشاهده تسک را به صورت خودکار تولید می‌کند.</p>
-                        <ul class="mb-0">
-                            <li>اعضای تیم که دارای سمت‌هایی با قابلیت مشاهده تسک‌های زیردستان هستند</li>
-                            <li>اعضای تیم که دارای سمت‌هایی با قابلیت مشاهده تسک‌های همسطح هستند</li>
-                        </ul>
-                    </div>
-
-                    <div class="text-center">
-                        <button type="button" class="btn btn-warning" onclick="generatePositionBasedViewers(@Model.TeamId)">
-                            <i class="fa fa-magic me-1"></i> تولید خودکار مجوزها
-                        </button>
-                    </div>
-                </div>
+            <!-- محتوای اصلی بعداً اضافه می‌شود -->
+            <div class="text-center">
+                <p class="text-muted">این بخش در حال توسعه است.</p>
+                <button type="button" class="btn btn-primary" onclick="alert('عملکرد تست - مودال باز شد!')">
+                    تست عملکرد
+                </button>
             </div>
         </div>
 
@@ -167,76 +29,3 @@
         </div>
     </div>
 </div>
-
-<script>
-// اعطای مجوز جدید
-$('#grant-permission-form').on('submit', function(e) {
-    e.preventDefault();
-    
-    var formData = $(this).serialize();
-    
-    $.post('@Url.Action("GrantSpecialPermissionSubmit", "Team")', formData)
-        .done(function(response) {
-            if (response.success) {
-                showAlert('success', response.message);
-                if (response.status === 'refresh-modal') {
-                    location.reload(); // یا بارگذاری مجدد محتوای مودال
-                }
-            } else {
-                showAlert('error', response.message);
-            }
-        })
-        .fail(function() {
-            showAlert('error', 'خطا در ارسال درخواست');
-        });
-});
-
-// حذف مجوز
-function removeTaskViewerPermission(viewerId) {
-    if (confirm('آیا از حذف این مجوز اطمینان دارید؟')) {
-        var data = {
-            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
-            viewerId: viewerId
-        };
-        
-        $.post('@Url.Action("RemoveTaskViewerPermission", "Team")', data)
-            .done(function(response) {
-                if (response.success) {
-                    showAlert('success', response.message);
-                    if (response.status === 'refresh-modal') {
-                        location.reload();
-                    }
-                } else {
-                    showAlert('error', response.message);
-                }
-            });
-    }
-}
-
-// تولید خودکار مجوزها
-function generatePositionBasedViewers(teamId) {
-    if (confirm('آیا از تولید خودکار مجوزها بر اساس سمت‌های تیم اطمینان دارید؟')) {
-        var data = {
-            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
-            teamId: teamId
-        };
-        
-        $.post('@Url.Action("GeneratePositionBasedViewers", "Team")', data)
-            .done(function(response) {
-                if (response.success) {
-                    showAlert('success', response.message);
-                    if (response.status === 'refresh-modal') {
-                        location.reload();
-                    }
-                } else {
-                    showAlert('error', response.message);
-                }
-            });
-    }
-}
-
-function showAlert(type, message) {
-    // پیاده‌سازی نمایش alert بر اساس سیستم alert موجود در پروژه
-    console.log(type + ': ' + message);
-}
-</script>

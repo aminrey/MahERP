@@ -1,0 +1,99 @@
+﻿@model SpecialTaskPermissionNode
+
+<div class="special-permission-card @(Model.IsActive ? "active" : "inactive") @(Model.IsExpired ? "expired" : "")">
+    <div class="permission-header">
+        <div class="permission-user">
+            <i class="fa fa-user-tag me-1"></i>
+            <strong>@Model.GranteeUserName</strong>
+            @if (!string.IsNullOrEmpty(Model.GranteeTeamTitle))
+            {
+                <small class="text-muted">(@Model.GranteeTeamTitle)</small>
+            }
+        </div>
+        
+        <div class="permission-status">
+            @if (Model.IsExpired)
+            {
+                <span class="badge bg-danger">منقضی شده</span>
+            }
+            else if (Model.IsActive)
+            {
+                <span class="badge bg-success">فعال</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary">غیرفعال</span>
+            }
+        </div>
+    </div>
+
+    <div class="permission-details">
+        <div class="permission-type">
+            <i class="fa fa-key me-1"></i>
+            <span class="type-text">@Model.PermissionTypeText</span>
+        </div>
+        
+        @if (!string.IsNullOrEmpty(Model.TargetTeamTitle))
+        {
+            <div class="permission-target">
+                <i class="fa fa-bullseye me-1"></i>
+                <span class="target-text">هدف: @Model.TargetTeamTitle</span>
+            </div>
+        }
+        
+        @if (!string.IsNullOrEmpty(Model.TargetUserName))
+        {
+            <div class="permission-target">
+                <i class="fa fa-user-circle me-1"></i>
+                <span class="target-text">کاربر هدف: @Model.TargetUserName</span>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Description))
+    {
+        <div class="permission-description">
+            <small class="text-muted">
+                <i class="fa fa-comment me-1"></i>
+                @Model.Description
+            </small>
+        </div>
+    }
+
+    <div class="permission-meta">
+        <div class="meta-info">
+            <small class="text-muted">
+                <i class="fa fa-calendar-plus me-1"></i>
+                اعطا شده: @Model.AddedDate.ToString("yyyy/MM/dd")
+                توسط @Model.AddedByUserName
+            </small>
+        </div>
+        
+        @if (Model.EndDate.HasValue)
+        {
+            <div class="meta-info">
+                <small class="@(Model.IsExpired ? "text-danger" : "text-warning")">
+                    <i class="fa fa-calendar-times me-1"></i>
+                    انقضا: @Model.EndDate.Value.ToString("yyyy/MM/dd")
+                </small>
+            </div>
+        }
+    </div>
+
+    <div class="permission-actions">
+        @if (Model.IsActive && !Model.IsExpired)
+        {
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    onclick="revokePermission(@Model.ViewerId)">
+                <i class="fa fa-times me-1"></i> لغو
+            </button>
+        }
+        
+        <button type="button" class="btn btn-sm btn-outline-info"
+                data-toggle="modal-ajax"
+                href="@(Url.Action("ViewPermissionDetailsModal", new { viewerId = Model.ViewerId }))">
+            <i class="fa fa-info-circle me-1"></i> 
+            جزئیات
+        </button>
+    </div>
+</div>

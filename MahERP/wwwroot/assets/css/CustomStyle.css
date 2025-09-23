@@ -493,3 +493,399 @@ body {
 .offcanvas .dropdown-menu {
     z-index: 9999 !important;
 }
+/* چارت قدرت مشاهده تسک‌ها */
+.visibility-chart-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.team-visibility-node {
+    margin: 20px 0;
+    position: relative;
+}
+
+.team-visibility-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+    .team-visibility-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+.team-visibility-header .team-title {
+    color: #2c3e50;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.team-level-badge .badge {
+    font-size: 0.8rem;
+}
+
+.team-manager {
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.positions-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.positions-title {
+    color: #495057;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.positions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.position-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.2s ease;
+}
+
+    .position-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+
+.position-header {
+    margin-bottom: 10px;
+}
+
+.position-title {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+    .position-title strong {
+        color: #2c3e50;
+        font-size: 1rem;
+    }
+
+.power-level-badge {
+    background: #6c757d;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+
+.position-permissions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.permission-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+    .permission-badge.subordinate {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .permission-badge.peer {
+        background: #cce7ff;
+        color: #004085;
+        border: 1px solid #b6d4fe;
+    }
+
+    .permission-badge.none {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .permission-badge.basic {
+        background: #e9ecef;
+        color: #495057;
+        border: 1px solid #ced4da;
+    }
+
+.position-members {
+    margin-top: 10px;
+}
+
+.member-item {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+    .member-item:last-child {
+        border-bottom: none;
+    }
+
+    .member-item.basic {
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        border: none;
+    }
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.member-stats {
+    font-size: 0.85rem;
+    margin-left: 8px;
+}
+
+.member-access-sources {
+    margin-top: 4px;
+}
+
+.access-source-tag {
+    background: #e9ecef;
+    color: #6c757d;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    margin-right: 4px;
+}
+
+.members-without-position,
+.special-permissions {
+    margin-top: 15px;
+    padding: 15px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+}
+
+.section-title {
+    color: #856404;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.special-permissions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.special-permission-item {
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+    border-left: 3px solid #28a745;
+}
+
+    .special-permission-item.expired {
+        border-left-color: #dc3545;
+        opacity: 0.7;
+    }
+
+.permission-info {
+    font-size: 0.9rem;
+}
+
+.permission-type {
+    color: #6c757d;
+    font-size: 0.8rem;
+    margin-left: 8px;
+}
+
+.target-info {
+    color: #007bff;
+    font-size: 0.8rem;
+}
+
+.permission-expiry {
+    color: #856404;
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
+.team-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.sub-teams {
+    margin-top: 30px;
+    margin-left: 30px;
+    position: relative;
+}
+
+    .sub-teams::before {
+        content: '';
+        position: absolute;
+        left: -15px;
+        top: 0;
+        bottom: 50%;
+        width: 2px;
+        background: #dee2e6;
+    }
+
+.no-members {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Special Permission Cards */
+.special-permission-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.2s ease;
+}
+
+    .special-permission-card.active {
+        border-left: 4px solid #28a745;
+    }
+
+    .special-permission-card.expired {
+        border-left: 4px solid #dc3545;
+        opacity: 0.7;
+    }
+
+    .special-permission-card.inactive {
+        border-left: 4px solid #6c757d;
+        opacity: 0.8;
+    }
+
+.permission-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.permission-user strong {
+    color: #2c3e50;
+}
+
+.permission-details {
+    margin-bottom: 10px;
+}
+
+.permission-type,
+.permission-target {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.type-text,
+.target-text {
+    color: #495057;
+}
+
+.permission-description {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.permission-meta {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    margin-bottom: 10px;
+}
+
+.meta-info {
+    margin-bottom: 5px;
+}
+
+.permission-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .positions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .member-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .permission-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .sub-teams {
+        margin-left: 15px;
+    }
+
+    .team-actions {
+        flex-direction: column;
+    }
+}
+
+/* Level-based Colors */
+.team-visibility-node[data-level="0"] .team-visibility-card {
+    border-left-color: #e74c3c;
+}
+
+.team-visibility-node[data-level="1"] .team-visibility-card {
+    border-left-color: #f39c12;
+}
+
+.team-visibility-node[data-level="2"] .team-visibility-card {
+    border-left-color: #3498db;
+}
+
+.team-visibility-node[data-level="3"] .team-visibility-card {
+    border-left-color: #27ae60;
+}
+
+.team-visibility-node[data-level="4"] .team-visibility-card {
+    border-left-color: #9b59b6;
+}

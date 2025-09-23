@@ -1,0 +1,39 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.AddMemberToPositionViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">اضافه کردن عضو به سمت: @Model.PositionTitle</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="AddMemberToPositionSubmit" method="post">
+            @Html.AntiForgeryToken()
+            
+            <div class="modal-body">
+                <input type="hidden" asp-for="TeamId" />
+                <input type="hidden" asp-for="PositionId" />
+                
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    اضافه کردن عضو به سمت <strong>@Model.PositionTitle</strong> در تیم <strong>@Model.TeamTitle</strong>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="MemberId" class="form-label required">انتخاب عضو</label>
+                    <select asp-for="MemberId" class="form-select" asp-items="ViewBag.AvailableMembers" required>
+                        <option value="">-- انتخاب عضو --</option>
+                    </select>
+                    <span asp-validation-for="MemberId" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="btn btn-success" data-save="modal-ajax-save">
+                    <i class="fa fa-user-plus me-1"></i> اضافه کردن
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

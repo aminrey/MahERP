@@ -16,6 +16,7 @@ using System;
 using System.Linq;
 using MahERP.Extentions;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 
 namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 {
@@ -28,6 +29,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         private readonly IUserManagerRepository _userRepository;
         private readonly IMapper _mapper;
         private new readonly UserManager<AppUsers> _userManager;
+        private readonly ITaskVisibilityRepository _taskVisibilityRepository;
 
         public TeamController(
             IUnitOfWork uow,
@@ -38,13 +40,15 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             ITeamRepository teamRepository,
             IBranchRepository branchRepository,
             IUserManagerRepository userRepository,
-            IMapper mapper) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            IMapper mapper,
+            ITaskVisibilityRepository taskVisibilityRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
         {
             _teamRepository = teamRepository;
             _branchRepository = branchRepository;
             _userRepository = userRepository;
             _mapper = mapper;
             _userManager = userManager;
+            _taskVisibilityRepository = taskVisibilityRepository;
         }
 
         #region Chart Views
@@ -66,6 +70,41 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
             var chart = _teamRepository.GetOrganizationalChart(branchId);
             ViewBag.UserBranches = new SelectList(userBranches, "Id", "Name", branchId);
+
+            return View(chart);
+        }
+
+        /// <summary>
+        /// نمایش چارت قدرت مشاهده تسک‌ها
+        /// </summary>
+        public async Task<IActionResult> TaskVisibilityChart(int branchId = 0)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var userBranches = _branchRepository.GetBrnachListByUserId(currentUserId);
+
+            if (branchId == 0)
+                branchId = userBranches.FirstOrDefault()?.Id ?? 0;
+
+            if (branchId == 0 || !userBranches.Any(b => b.Id == branchId))
+                return RedirectToAction("ErrorView", "Home");
+
+            // استفاده از repository به جای service
+            var chart = await _taskVisibilityRepository.GenerateVisibilityChartAsync(branchId);
+
+            if (chart == null)
+                return RedirectToAction("ErrorView", "Home");
+
+            ViewBag.UserBranches = new SelectList(userBranches, "Id", "Name", branchId);
+            ViewBag.AvailableUsers = _teamRepository.GetAvailableUsersForBranch(branchId);
+            ViewBag.AvailableTeams = _teamRepository.GetTeamsByBranchId(branchId);
+
+            await _activityLogger.LogActivityAsync(
+                ActivityTypeEnum.View,
+                "Team",
+                "TaskVisibilityChart",
+                $"مشاهده چارت قدرت مشاهده تسک‌ها برای شعبه: {chart.BranchName}",
+                recordId: branchId.ToString()
+            );
 
             return View(chart);
         }
@@ -114,14 +153,31 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 var team = _mapper.Map<Team>(model);
                 var currentUserId = _userManager.GetUserId(User);
 
-                team.CreatorUserId = _userManager.GetUserId(User);
+                team.CreatorUserId = currentUserId;
                 team.CreateDate = DateTime.Now;
-                team.LastUpdaterUserId = currentUserId; // این خط اضافه شده
-                team.LastUpdateDate = DateTime.Now; // این خط هم اضافه شده
+                team.LastUpdaterUserId = currentUserId;
+                team.LastUpdateDate = DateTime.Now;
 
                 var teamId = _teamRepository.CreateTeam(team);
 
-                TempData["SuccessMessage"] = "تیم با موفقیت ایجاد شد.";
+                // اگر مدیر انتخاب شده است، آن را تنظیم کن
+                if (!string.IsNullOrEmpty(model.ManagerUserId))
+                {
+                    var managerAssignmentSuccess = _teamRepository.AssignManager(teamId, model.ManagerUserId, currentUserId);
+                    if (!managerAssignmentSuccess)
+                    {
+                        // اگر انتصاب مدیر ناموفق بود، تیم را حذف کن
+                        _teamRepository.DeleteTeam(teamId);
+                        ModelState.AddModelError("", "خطا در انتصاب مدیر به تیم. لطفاً دوباره تلاش کنید.");
+                        PrepareTeamViewBags(model.BranchId);
+                        return View(model);
+                    }
+                }
+
+                TempData["SuccessMessage"] = !string.IsNullOrEmpty(model.ManagerUserId) 
+                    ? "تیم با موفقیت ایجاد شد و مدیر تیم تنظیم گردید."
+                    : "تیم با موفقیت ایجاد شد.";
+                
                 return RedirectToAction("Details", new { id = teamId });
             }
             catch (Exception ex)
@@ -968,6 +1024,12 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Json(new { success = false, message = "شما به این تیم دسترسی ندارید." });
                 }
 
+                // اگر عنوان خالی است، از عنوان پیش‌فرض استفاده کن
+                if (string.IsNullOrWhiteSpace(model.Title))
+                {
+                    model.Title = TeamRepository.GetDefaultPositionTitle(model.PowerLevel);
+                }
+
                 // بررسی تکراری نبودن عنوان
                 if (!_teamRepository.IsPositionTitleUnique(model.TeamId, model.Title))
                 {
@@ -980,7 +1042,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Json(new { success = false, message = "سطح قدرت انتخاب شده قبلاً استفاده شده است." });
                 }
 
-                // ✅ بررسی تکراری نبودن سمت پیش‌فرض
+                // بررسی تکراری نبودن سمت پیش‌فرض
                 if (model.IsDefault && !_teamRepository.IsDefaultPositionUnique(model.TeamId))
                 {
                     return Json(new { success = false, message = "در این تیم قبلاً یک سمت پیش‌فرض تعریف شده است. لطفاً ابتدا آن را غیرفعال کنید." });
@@ -998,7 +1060,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     MaxMembers = model.MaxMembers,
                     IsDefault = model.IsDefault,
                     IsActive = model.IsActive,
-                    DisplayOrder = model.PowerLevel, // استفاده از PowerLevel برای ترتیب نمایش
+                    DisplayOrder = model.PowerLevel,
                     CreatorUserId = currentUserId
                 };
 
@@ -1117,6 +1179,12 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 if (position == null)
                 {
                     return Json(new { success = false, message = "سمت مورد نظر یافت نشد." });
+                }
+
+                // اگر عنوان خالی است، از عنوان پیش‌فرض استفاده کن
+                if (string.IsNullOrWhiteSpace(model.Title))
+                {
+                    model.Title = TeamRepository.GetDefaultPositionTitle(model.PowerLevel);
                 }
 
                 // بررسی تکراری نبودن عنوان
@@ -1311,7 +1379,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     AvailableUsers = _teamRepository.GetAvailableUsersForBranch(team.BranchId)
                 };
 
-                // دریافت مجوزهای موجود (اگر TaskViewerRepository در دسترس باشد)
+                // دریافت مجوزهای موجود
                 if (_uow.TaskViewerUW != null)
                 {
                     var existingViewers = _uow.TaskViewerUW.Get(tv => tv.TeamId == teamId && tv.IsActive);
@@ -1321,7 +1389,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                         UserId = tv.UserId,
                         UserFullName = tv.User != null ? $"{tv.User.FirstName} {tv.User.LastName}" : "نامشخص",
                         AccessType = tv.AccessType,
-                        AccessTypeText = tv.AccessTypeText,
+                        AccessTypeText = GetAccessTypeText(tv.AccessType), // اضافه کردن این متد
                         Description = tv.Description,
                         AddedDate = tv.AddedDate,
                         IsActive = tv.IsActive
@@ -1610,7 +1678,482 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 });
             }
         }
+        /// <summary>
+        /// نمایش مودال تأیید حذف عضو از تیم
+        /// </summary>
+        [HttpGet]
+        public IActionResult RemoveMemberModal(int memberId)
+        {
+            try
+            {
+                var member = _teamRepository.GetTeamMemberById(memberId);
+                if (member == null)
+                    return NotFound();
 
+                return PartialView("_RemoveMemberModal", member);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("خطا در بارگذاری فرم: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// حذف عضو از تیم با پاسخ JSON
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RemoveMemberSubmit(int memberId)
+        {
+            try
+            {
+                var member = _teamRepository.GetTeamMemberById(memberId);
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "عضو مورد نظر یافت نشد." });
+                }
+
+                var success = _teamRepository.RemoveTeamMember(memberId);
+
+                if (success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = "عضو با موفقیت از تیم حذف شد.",
+                        status = "redirect",
+                        redirectUrl = Url.Action("Details", new { id = member.TeamId })
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "خطا در حذف عضو از تیم." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "خطا: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// نمایش مودال تأیید حذف عضو از سمت
+        /// </summary>
+        [HttpGet]
+        public IActionResult RemoveMemberFromPositionModal(int memberId)
+        {
+            try
+            {
+                var member = _teamRepository.GetTeamMemberById(memberId);
+                if (member == null)
+                    return NotFound();
+
+                if (!member.PositionId.HasValue)
+                {
+                    return BadRequest("این عضو در هیچ سمتی قرار ندارد.");
+                }
+
+                return PartialView("_RemoveMemberFromPositionModal", member);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("خطا در بارگذاری فرم: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// حذف عضو از سمت (نه از تیم)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RemoveMemberFromPositionSubmit(int memberId)
+        {
+            try
+            {
+                var member = _teamRepository.GetTeamMemberById(memberId);
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "عضو مورد نظر یافت نشد." });
+                }
+
+                if (!member.PositionId.HasValue)
+                {
+                    return Json(new { success = false, message = "این عضو در هیچ سمتی قرار ندارد." });
+                }
+
+                var success = _teamRepository.RemoveMemberFromPosition(memberId);
+
+                if (success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = "عضو با موفقیت از سمت خارج شد.",
+                        status = "redirect",
+                        redirectUrl = Url.Action("Details", new { id = member.TeamId })
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "خطا در خارج کردن عضو از سمت." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "خطا: " + ex.Message });
+            }
+        }
+        /// <summary>
+        /// نمایش مودال ویرایش عضو تیم
+        /// </summary>
+        [HttpGet]
+        public IActionResult EditMemberModal(int id)
+        {
+            try
+            {
+                var member = _teamRepository.GetTeamMemberById(id);
+                if (member == null)
+                    return NotFound();
+
+                // بررسی دسترسی کاربر
+                var team = _teamRepository.GetTeamById(member.TeamId);
+                if (team == null)
+                    return NotFound();
+
+                var currentUserId = _userManager.GetUserId(User);
+                var userBranches = _branchRepository.GetBrnachListByUserId(currentUserId);
+                if (!userBranches.Any(b => b.Id == team.BranchId))
+                    return Forbid();
+
+                // آماده‌سازی ViewBag ها
+                PrepareEditMemberViewBags(team.BranchId, member.TeamId);
+
+                return PartialView("_EditMemberModal", member);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("خطا در بارگذاری فرم: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// ویرایش عضو تیم
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditMemberSubmit(TeamMemberViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return Json(new
+                {
+                    success = false,
+                    message = "داده‌های ورودی نامعتبر است.",
+                    errors = errors
+                });
+            }
+
+            try
+            {
+                var member = _mapper.Map<TeamMember>(model);
+                member.LastUpdateDate = DateTime.Now;
+
+                var success = _teamRepository.UpdateTeamMember(member);
+
+                if (success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = "اطلاعات عضو با موفقیت بروزرسانی شد.",
+                        status = "redirect",
+                        redirectUrl = Url.Action("Details", new { id = model.TeamId })
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "خطا در بروزرسانی اطلاعات عضو." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "خطا: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// نمایش مودال تخصیص سمت به عضو
+        /// </summary>
+        [HttpGet]
+        public IActionResult AssignPositionModal(int memberId)
+        {
+            try
+            {
+                var member = _teamRepository.GetTeamMemberById(memberId);
+                if (member == null)
+                    return NotFound();
+
+                // بررسی اینکه عضو قبلاً سمت ندارد
+                if (member.PositionId.HasValue)
+                {
+                    return BadRequest("این عضو قبلاً دارای سمت است.");
+                }
+
+                var team = _teamRepository.GetTeamById(member.TeamId);
+                if (team == null)
+                    return NotFound();
+
+                // دریافت سمت‌های موجود در تیم
+                var availablePositions = _teamRepository.GetTeamPositions(member.TeamId)
+                    .Where(p => p.IsActive && (!p.MaxMembers.HasValue || p.TeamMembers.Count(tm => tm.IsActive) < p.MaxMembers.Value))
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.Id.ToString(),
+                        Text = $"{p.Title} (قدرت: {p.PowerLevel})"
+                    }).ToList();
+
+                ViewBag.AvailablePositions = availablePositions;
+
+                var model = new AssignPositionViewModel
+                {
+                    MemberId = memberId,
+                    TeamId = member.TeamId,
+                    UserFullName = member.UserFullName,
+                    TeamTitle = team.Title
+                };
+
+                return PartialView("_AssignPositionModal", model);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("خطا در بارگذاری فرم: " + ex.Message);
+            }
+        }
+        /// <summary>
+        /// تخصیص سمت به عضو
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AssignPositionSubmit(AssignPositionViewModel model,
+            string customTitle, int? customPowerLevel, string customDescription,
+            bool customCanViewSubordinateTasks = true, bool customCanViewPeerTasks = false)
+        {
+            // حذف ModelState.IsValid چون برای این action غیرضروری است
+
+            try
+            {
+                int positionId;
+
+                // بررسی اینکه آیا سمت دستی انتخاب شده یا نه
+                if (model.PositionId.ToString() == "CUSTOM")
+                {
+                    // ایجاد سمت جدید برای این عضو
+                    if (string.IsNullOrWhiteSpace(customTitle))
+                    {
+                        return Json(new { success = false, message = "عنوان سمت الزامی است." });
+                    }
+
+                    if (!customPowerLevel.HasValue)
+                    {
+                        return Json(new { success = false, message = "سطح قدرت الزامی است." });
+                    }
+
+                    // بررسی تکراری نبودن عنوان
+                    if (!_teamRepository.IsPositionTitleUnique(model.TeamId, customTitle))
+                    {
+                        return Json(new { success = false, message = "سمت با این عنوان قبلاً در این تیم تعریف شده است." });
+                    }
+
+                    // ایجاد سمت جدید
+                    var newPosition = new TeamPosition
+                    {
+                        TeamId = model.TeamId,
+                        Title = customTitle,
+                        Description = customDescription ?? $"سمت دستی ایجاد شده برای {model.UserFullName}",
+                        PowerLevel = customPowerLevel.Value,
+                        CanViewSubordinateTasks = customCanViewSubordinateTasks,
+                        CanViewPeerTasks = customCanViewPeerTasks,
+                        MaxMembers = 1, // فقط برای همین عضو
+                        IsDefault = false,
+                        IsActive = true,
+                        DisplayOrder = customPowerLevel.Value,
+                        CreatorUserId = _userManager.GetUserId(User)
+                    };
+
+                    positionId = _teamRepository.CreateTeamPosition(newPosition);
+                }
+                else
+                {
+                    // استفاده از سمت موجود
+                    positionId = model.PositionId;
+                }
+
+                var success = _teamRepository.AssignMemberToPosition(model.MemberId, positionId);
+
+                if (success)
+                {
+                    var message = model.PositionId.ToString() == "CUSTOM"
+                        ? $"سمت جدید '{customTitle}' ایجاد شد و به عضو تخصیص یافت."
+                        : "سمت با موفقیت تخصیص یافت.";
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = message,
+                        status = "redirect",
+                        redirectUrl = Url.Action("Details", new { id = model.TeamId })
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "خطا در تخصیص سمت." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "خطا: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// نمایش مودال اضافه کردن عضو به سمت خاص
+        /// </summary>
+        [HttpGet]
+        public IActionResult AddMemberToPositionModal(int teamId, int positionId)
+        {
+            try
+            {
+                var team = _teamRepository.GetTeamById(teamId);
+                var position = _teamRepository.GetTeamPositionById(positionId);
+        
+                if (team == null || position == null)
+                    return NotFound();
+
+                // بررسی ظرفیت سمت
+                if (position.MaxMembers.HasValue && position.TeamMembers.Count(tm => tm.IsActive) >= position.MaxMembers.Value)
+                {
+                    return BadRequest("ظرفیت این سمت تکمیل شده است.");
+                }
+
+                // دریافت اعضای تیم که سمت ندارند یا سمت متفاوتی دارند
+                var availableMembers = _teamRepository.GetTeamMembers(teamId)
+                    .Where(m => m.IsActive && (!m.PositionId.HasValue || m.PositionId != positionId))
+                    .Select(m => new SelectListItem
+                    {
+                        Value = m.Id.ToString(),
+                        Text = m.UserFullName
+                    }).ToList();
+
+                ViewBag.AvailableMembers = availableMembers;
+
+                var model = new AddMemberToPositionViewModel
+                {
+                    TeamId = teamId,
+                    PositionId = positionId,
+                    TeamTitle = team.Title,
+                    PositionTitle = position.Title
+                };
+
+                return PartialView("_AddMemberToPositionModal", model);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("خطا در بارگذاری فرم: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// اضافه کردن عضو به سمت خاص
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddMemberToPositionSubmit(AddMemberToPositionViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, message = "داده‌های ورودی نامعتبر است." });
+            }
+
+            try
+            {
+                var success = _teamRepository.AssignMemberToPosition(model.MemberId, model.PositionId);
+
+                if (success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = "عضو با موفقیت به سمت اضافه شد.",
+                        status = "redirect",
+                        redirectUrl = Url.Action("Details", new { id = model.TeamId })
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "خطا در اضافه کردن عضو به سمت." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "خطا: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// آماده‌سازی ViewBag برای ویرایش عضو
+        /// </summary>
+        private void PrepareEditMemberViewBags(int branchId, int teamId)
+        {
+            var availableUsers = _teamRepository.GetAvailableUsersForBranch(branchId)
+                .Select(u => new SelectListItem
+                {
+                    Value = u.UserId,
+                    Text = u.FullName + (string.IsNullOrEmpty(u.Position) ? "" : $" ({u.Position})")
+                }).ToList();
+
+            ViewBag.AvailableUsers = availableUsers;
+
+            var availablePositions = _teamRepository.GetTeamPositions(teamId)
+                .Where(p => p.IsActive)
+                .Select(p => new SelectListItem
+                {
+                    Value = p.Id.ToString(),
+                    Text = $"{p.Title} (قدرت: {p.PowerLevel})"
+                }).ToList();
+
+            // فقط یک گزینه "بدون سمت" اضافه می‌کنیم
+            availablePositions.Insert(0, new SelectListItem { Value = "", Text = "-- بدون سمت --" });
+            ViewBag.AvailablePositions = availablePositions;
+
+            ViewBag.MembershipTypes = new SelectList(new[]
+            {
+                new { Value = 0, Text = "عضو عادی" },
+                new { Value = 1, Text = "عضو ویژه" },
+                new { Value = 2, Text = "مدیر تیم" }
+            }, "Value", "Text");
+        }      
         #endregion
+
+        /// <summary>
+        /// تکمیل شدن متد GetAccessTypeText که در TaskViewer استفاده می‌شود
+        /// </summary>
+        private string GetAccessTypeText(byte accessType)
+        {
+            return accessType switch
+            {
+                0 => "مجوز خاص",
+                1 => "مدیر تیم",
+                2 => "عضو تیم",
+                3 => "دسترسی عمومی",
+                4 => "سازنده",
+                5 => "منتصب",
+                _ => "نامشخص"
+            };
+        }
     }
 }

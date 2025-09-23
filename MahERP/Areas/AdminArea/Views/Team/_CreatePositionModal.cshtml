@@ -19,24 +19,61 @@
                 <div class="row">
                     <!-- عنوان سمت -->
                     <div class="col-md-6 mb-3">
-                        <label asp-for="Title" class="form-label"></label>
-                        <input asp-for="Title" class="form-control" placeholder="مثال: مدیر، کارشناس، متخصص" />
+                        <label asp-for="Title" class="form-label">عنوان سمت</label>
+                        <input asp-for="Title" class="form-control" id="titleField" 
+                               placeholder="خالی بگذارید برای استفاده از عنوان پیش‌فرض" />
+                        <small class="form-text text-info">
+                            <i class="fa fa-lightbulb me-1"></i>
+                            اگر خالی بگذارید، بر اساس سطح قدرت عنوان مناسب انتخاب می‌شود
+                        </small>
                         <span asp-validation-for="Title" class="text-danger"></span>
                     </div>
 
                     <!-- سطح قدرت -->
                     <div class="col-md-6 mb-3">
-                        <label asp-for="PowerLevel" class="form-label"></label>
-                        <input asp-for="PowerLevel" type="number" class="form-control" min="0" max="100" 
-                               placeholder="0 تا 100" />
-                        <small class="form-text text-muted">عدد بالاتر = قدرت بیشتر</small>
+                        <label asp-for="PowerLevel" class="form-label">سطح قدرت</label>
+                        <select asp-for="PowerLevel" class="form-select" id="powerLevelSelect">
+                            <option value="0">0 - مدیر تیم</option>
+                            <option value="1">1 - معاون/سرپرست</option>
+                            <option value="2">2 - کارشناس ارشد</option>
+                            <option value="3" selected>3 - کارشناس</option>
+                            <option value="4">4 - کارشناس مبتدی</option>
+                            <option value="5">5 - منشی/دستیار</option>
+                            <option value="6">6 - کارمند</option>
+                            <option value="CUSTOM">سطح دستی (عنوان دلخواه)</option>
+                        </select>
+                        <small class="form-text text-muted">عدد کمتر = قدرت بیشتر</small>
                         <span asp-validation-for="PowerLevel" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- فیلدهای سطح دستی -->
+                <div id="customLevelFields" style="display: none;">
+                    <div class="alert alert-success">
+                        <i class="fa fa-info-circle me-2"></i>
+                        <strong>سطح دستی:</strong> می‌توانید سطح قدرت و عنوان دلخواه تعریف کنید
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="customPowerLevelInput" class="form-label required">سطح قدرت دستی</label>
+                            <input type="number" id="customPowerLevelInput" name="CustomPowerLevel" 
+                                   class="form-control" min="0" max="100" placeholder="مثال: 7, 8, 9, ..." />
+                            <small class="form-text text-muted">عدد بین 0 تا 100</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="customTitleInput" class="form-label required">عنوان دستی</label>
+                            <input type="text" id="customTitleInput" name="CustomTitle" 
+                                   class="form-control" placeholder="مثال: مشاور، متخصص، ..." />
+                            <small class="form-text text-muted">عنوان دلخواه برای سمت</small>
+                        </div>
                     </div>
                 </div>
 
                 <!-- توضیحات -->
                 <div class="mb-3">
-                    <label asp-for="Description" class="form-label"></label>
+                    <label asp-for="Description" class="form-label">توضیحات</label>
                     <textarea asp-for="Description" class="form-control" rows="3" 
                               placeholder="توضیحات اختیاری در مورد این سمت..."></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
@@ -45,7 +82,7 @@
                 <div class="row">
                     <!-- حداکثر اعضا -->
                     <div class="col-md-6 mb-3">
-                        <label asp-for="MaxMembers" class="form-label"></label>
+                        <label asp-for="MaxMembers" class="form-label">حداکثر تعداد اعضا</label>
                         <input asp-for="MaxMembers" type="number" class="form-control" min="1" 
                                placeholder="بدون محدودیت" />
                         <small class="form-text text-muted">خالی بگذارید برای بدون محدودیت</small>
@@ -57,15 +94,15 @@
                         <label class="form-label">تنظیمات</label>
                         <div class="form-check">
                             <input asp-for="IsDefault" class="form-check-input" id="isDefaultCheckbox" />
-                            <label asp-for="IsDefault" class="form-check-label"></label>
+                            <label asp-for="IsDefault" class="form-check-label">سمت پیش‌فرض</label>
                             <div class="alert alert-warning mt-2" id="defaultWarning" style="display: none;">
                                 <i class="fa fa-exclamation-triangle me-1"></i>
                                 <small>تنها یک سمت در هر تیم می‌تواند پیش‌فرض باشد.</small>
                             </div>
                         </div>
                         <div class="form-check">
-                            <input asp-for="IsActive" class="form-check-input" />
-                            <label asp-for="IsActive" class="form-check-label"></label>
+                            <input asp-for="IsActive" class="form-check-input" checked />
+                            <label asp-for="IsActive" class="form-check-label">وضعیت فعال</label>
                         </div>
                     </div>
                 </div>
@@ -79,8 +116,8 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-check">
-                                <input asp-for="CanViewSubordinateTasks" class="form-check-input" />
-                                <label asp-for="CanViewSubordinateTasks" class="form-check-label"></label>
+                                <input asp-for="CanViewSubordinateTasks" class="form-check-input" checked />
+                                <label asp-for="CanViewSubordinateTasks" class="form-check-label">مشاهده تسک‌های زیردستان</label>
                                 <small class="form-text text-muted d-block">
                                     مشاهده تسک‌های سمت‌های پایین‌تر
                                 </small>
@@ -89,7 +126,7 @@
                         <div class="col-md-6">
                             <div class="form-check">
                                 <input asp-for="CanViewPeerTasks" class="form-check-input" />
-                                <label asp-for="CanViewPeerTasks" class="form-check-label"></label>
+                                <label asp-for="CanViewPeerTasks" class="form-check-label">مشاهده تسک‌های همسطح</label>
                                 <small class="form-text text-muted d-block">
                                     مشاهده تسک‌های سمت‌های همسطح
                                 </small>
@@ -103,9 +140,10 @@
                     <i class="fa fa-info-circle me-1"></i>
                     <strong>راهنما:</strong>
                     <ul class="mb-0 mt-2">
-                        <li>سطح قدرت برای تعیین سلسله مراتب استفاده می‌شود</li>
+                        <li>سطح قدرت برای تعیین سلسله مراتب استفاده می‌شود (عدد کمتر = قدرت بیشتر)</li>
                         <li>سمت پیش‌فرض به طور خودکار به اعضای جدید اختصاص می‌یابد</li>
                         <li>مجوزهای مشاهده تسک برای کنترل دسترسی کاربران استفاده می‌شود</li>
+                        <li>برای سطح دستی می‌توانید هر عدد بین 0 تا 100 و عنوان دلخواه انتخاب کنید</li>
                     </ul>
                 </div>
             </div>
@@ -126,15 +164,139 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        $(document).ready(function() {
-            $('#isDefaultCheckbox').change(function() {
-                if ($(this).is(':checked')) {
-                    $('#defaultWarning').show();
-                } else {
-                    $('#defaultWarning').hide();
-                }
-            });
-        });
-    </script>
 }
+
+<script>
+$(document).ready(function() {
+    var defaultTitles = {
+        '0': 'مدیر تیم',
+        '1': 'معاون',
+        '2': 'کارشناس ارشد',
+        '3': 'کارشناس',
+        '4': 'کارشناس مبتدی',
+        '5': 'منشی',
+        '6': 'کارمند'
+    };
+
+    // نمایش/مخفی کردن هشدار سمت پیش‌فرض
+    $('#isDefaultCheckbox').change(function() {
+        if ($(this).is(':checked')) {
+            $('#defaultWarning').slideDown();
+        } else {
+            $('#defaultWarning').slideUp();
+        }
+    });
+
+    // نمایش پیش‌نمایش عنوان بر اساس سطح قدرت
+    function updatePlaceholder() {
+        var powerLevel = $('#powerLevelSelect').val();
+        var titleField = $('#titleField');
+        
+        if (powerLevel !== 'CUSTOM' && titleField.val() === '') {
+            titleField.attr('placeholder', defaultTitles[powerLevel] || 'سمت سطح ' + powerLevel);
+        }
+    }
+
+    $('#powerLevelSelect').on('change', function() {
+        var selectedValue = $(this).val();
+        
+        if (selectedValue === 'CUSTOM') {
+            $('#customLevelFields').slideDown();
+            $('#customPowerLevelInput').attr('required', true);
+            $('#customTitleInput').attr('required', true);
+            
+            // پیشنهاد مقادیر پیش‌فرض
+            if (!$('#customPowerLevelInput').val()) {
+                $('#customPowerLevelInput').val('7');
+            }
+            if (!$('#customTitleInput').val() && $('#titleField').val()) {
+                $('#customTitleInput').val($('#titleField').val());
+            }
+        } else {
+            $('#customLevelFields').slideUp();
+            $('#customPowerLevelInput').removeAttr('required');
+            $('#customTitleInput').removeAttr('required');
+            updatePlaceholder();
+        }
+    });
+
+    // همگام‌سازی عنوان دستی با عنوان اصلی
+    $('#titleField').on('input', function() {
+        if ($('#powerLevelSelect').val() === 'CUSTOM') {
+            $('#customTitleInput').val($(this).val());
+        }
+    });
+
+    $('#customTitleInput').on('input', function() {
+        if ($('#powerLevelSelect').val() === 'CUSTOM') {
+            $('#titleField').val($(this).val());
+        }
+    });
+
+    // اعتبارسنجی فرم قبل از ارسال
+    $('form').on('submit', function(e) {
+        var selectedPowerLevel = $('#powerLevelSelect').val();
+        
+        if (selectedPowerLevel === 'CUSTOM') {
+            var customPowerLevel = $('#customPowerLevelInput').val();
+            var customTitle = $('#customTitleInput').val().trim();
+            
+            if (!customPowerLevel || customPowerLevel < 0 || customPowerLevel > 100) {
+                e.preventDefault();
+                alert('لطفاً سطح قدرت معتبر (0 تا 100) وارد کنید.');
+                $('#customPowerLevelInput').focus();
+                return false;
+            }
+            
+            if (!customTitle) {
+                e.preventDefault();
+                alert('لطفاً عنوان سمت را وارد کنید.');
+                $('#customTitleInput').focus();
+                return false;
+            }
+            
+            // تنظیم مقادیر hidden fields برای ارسال
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'PowerLevel',
+                value: customPowerLevel
+            }).appendTo('form');
+            
+            $('#titleField').val(customTitle);
+        }
+    });
+    
+    // تنظیم اولیه placeholder
+    updatePlaceholder();
+});
+</script>
+
+<style>
+    #customLevelFields {
+        border: 2px dashed #28a745;
+        border-radius: 10px;
+        padding: 15px;
+        background-color: rgba(40, 167, 69, 0.05);
+        margin-bottom: 15px;
+    }
+    
+    #customLevelFields .alert-success {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-color: rgba(40, 167, 69, 0.2);
+        color: #155724;
+    }
+    
+    .required {
+        color: #dc3545;
+    }
+    
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    #defaultWarning {
+        background-color: rgba(255, 193, 7, 0.1);
+        border-color: rgba(255, 193, 7, 0.2);
+    }
+</style>

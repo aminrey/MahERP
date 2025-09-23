@@ -21,11 +21,18 @@
                 </div>
             </div>
 
+            <!-- دکمه جدید برای چارت قدرت مشاهده -->
+            <a asp-action="TaskVisibilityChart" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-info">
+                <i class="fa fa-eye opacity-50 me-1"></i> چارت قدرت مشاهده تسک‌ها
+            </a>
+
             <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-success">
                 <i class="fa fa-plus opacity-50 me-1"></i> تیم جدید
             </a>
         </div>
     </div>
+    
+    <!-- باقی کد بدون تغییر -->
     <div class="block-content">
         <div class="row">
             <div class="col-12">
@@ -53,7 +60,9 @@
         </div>
     </div>
 </div>
+
 @section Styles {
+    <!-- CSS موجود بدون تغییر -->
     <style>
         .org-chart-container {
             padding: 20px;
@@ -85,6 +94,20 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
 
+        /* اضافه کردن استایل برای دکمه جدید */
+        .btn-alt-info {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-alt-info:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+            color: white;
+        }
+
+        /* باقی CSS بدون تغییر */
         .team-card::before {
             content: '';
             position: absolute;

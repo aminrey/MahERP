@@ -105,18 +105,47 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public bool IsActive { get; set; } = true;
     }
 
- 
-
     public class TeamPositionHierarchyViewModel
     {
         public int Id { get; set; }
+        public int TeamId { get; set; } // اضافه کردن این خط
         public string Title { get; set; }
         public string? Description { get; set; }
         public int PowerLevel { get; set; }
+        public string? PowerLevelText { get; set; }
         public int CurrentMembers { get; set; }
         public int? MaxMembers { get; set; }
         public bool CanAddMember { get; set; }
         public List<TeamMemberViewModel> Members { get; set; } = new();
-        public string PowerLevelText { get; set; }
+    }
+    public class AssignPositionViewModel
+    {
+        public int MemberId { get; set; }
+        public int TeamId { get; set; }
+        public string UserFullName { get; set; }
+        public string TeamTitle { get; set; }
+
+        [Required(ErrorMessage = "انتخاب سمت الزامی است")]
+        public int PositionId { get; set; }
+
+        // فیلدهای جدید برای سمت دستی
+        public string CustomTitle { get; set; }
+        public int? CustomPowerLevel { get; set; }
+        public string CustomDescription { get; set; }
+        public bool CustomCanViewSubordinateTasks { get; set; } = true;
+        public bool CustomCanViewPeerTasks { get; set; } = false;
+    }
+
+
+    public class AddMemberToPositionViewModel
+        {
+            public int TeamId { get; set; }
+            public int PositionId { get; set; }
+            public string? TeamTitle { get; set; }
+            public string? PositionTitle { get; set; }
+
+            [Required(ErrorMessage = "انتخاب عضو الزامی است")]
+            public int MemberId { get; set; }
+        
     }
 }
