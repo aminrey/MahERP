@@ -12,9 +12,6 @@
     }
 </style>
 
-<!-- Main Container -->
-<main id="main-container">
-
     <!-- Hero -->
     <div class="bg-body-light">
         <div class="content content-full">
@@ -100,8 +97,7 @@
                                         </div>
                                         <div class="form-floating  mb-3 col-6">
                                             <input asp-for="Email" class="form-control" id="example-text-input-floating" placeholder="آدرس ایمیل" type="text">
-                                            <label asp-for="Email" class="form-label input-label required" for="example-text-input-floating">آدرس ایمیل</label>
-                                            <span asp-validation-for="Email" class="text-danger"></span>
+                                            <label asp-for="Email" class="form-label input-label " for="example-text-input-floating">آدرس ایمیل</label>
                                         </div>
                                     </div>
 
@@ -116,8 +112,6 @@
     </div>
 
 
-
-</main>
 <!-- END Main Container -->
 @section Scripts{
 
@@ -138,8 +132,10 @@
                 $.ajax({
                     url: '@Url.Action("CheckUsernameAvailability", "UserManager")',
                     type: 'POST',
-                    data: { username: username },
-                    success: function (response) {
+        data: {
+                             username: username,
+                             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                         },                    success: function (response) {
                         var messageDiv = $('#username-message');
                         if (response.status === 'exists') {
                             messageDiv.html('<div class="alert alert-warning">' + response.message + '</div>');

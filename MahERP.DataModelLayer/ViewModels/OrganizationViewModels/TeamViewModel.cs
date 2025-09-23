@@ -48,11 +48,17 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
 
         // برای نمایش چارت سازمانی
         public List<TeamViewModel> ChildTeams { get; set; } = new List<TeamViewModel>();
-        public List<TeamMemberViewModel> TeamMembers { get; set; } = new List<TeamMemberViewModel>();
 
-        // سمت‌های تیم - اضافه شده
-        public List<TeamPositionViewModel> TeamPositions { get; set; } = new List<TeamPositionViewModel>();
+        /// <summary>
+        /// سمت‌های تیم (در صورت درخواست)
+        /// </summary>
+        public List<TeamPositionViewModel> TeamPositions { get; set; } = new();
 
+        /// <summary>
+        /// اعضای تیم (در صورت درخواست)
+        /// </summary>
+        public List<TeamMemberViewModel> TeamMembers { get; set; } = new();
+        
         public int Level { get; set; } // سطح در چارت سازمانی
         public bool HasManager => !string.IsNullOrEmpty(ManagerUserId);
 

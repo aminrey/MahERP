@@ -13,7 +13,10 @@ namespace MahERP.DataModelLayer.Repository
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
-
+        
+        // Constant برای نام سمت مدیریت
+        private const string MANAGEMENT_POSITION_TITLE = "مدیریت تیم";
+        
         public TeamRepository(AppDbContext context, IMapper mapper)
         {
             _context = context;
@@ -38,23 +41,118 @@ namespace MahERP.DataModelLayer.Repository
             var teams = query.ToList();
             return _mapper.Map<List<TeamViewModel>>(teams);
         }
-
-        public TeamViewModel GetTeamById(int teamId)
+        public TeamViewModel GetTeamById(int teamId, bool includePositions = false, bool includeMembers = false)
         {
-            var team = _context.Team_Tbl
+            var query = _context.Team_Tbl
                 .Include(t => t.Manager)
                 .Include(t => t.ParentTeam)
                 .Include(t => t.Branch)
                 .Include(t => t.Creator)
                 .Include(t => t.LastUpdater)
                 .Include(t => t.ChildTeams)
-                .Include(t => t.TeamMembers.Where(tm => tm.IsActive))
+                .AsQueryable();
+
+            // شامل کردن سمت‌ها در صورت درخواست
+            if (includePositions)
+            {
+                query = query.Include(t => t.TeamPositions.Where(tp => tp.IsActive))
+                    .ThenInclude(tp => tp.TeamMembers.Where(tm => tm.IsActive))
+                        .ThenInclude(tm => tm.User);
+            }
+
+            // شامل کردن اعضا در صورت درخواست
+            if (includeMembers)
+            {
+                query = query.Include(t => t.TeamMembers.Where(tm => tm.IsActive))
                     .ThenInclude(tm => tm.User)
-                .FirstOrDefault(t => t.Id == teamId);
+                    .Include(t => t.TeamMembers.Where(tm => tm.IsActive))
+                    .ThenInclude(tm => tm.Position);
+            }
 
-            return team != null ? _mapper.Map<TeamViewModel>(team) : null;
+            var team = query.FirstOrDefault(t => t.Id == teamId);
+
+            if (team == null) return null;
+
+            var teamViewModel = _mapper.Map<TeamViewModel>(team);
+
+            // تنظیم اطلاعات اضافی در صورت نیاز
+            if (includePositions && team.TeamPositions != null)
+            {
+                teamViewModel.TeamPositions = team.TeamPositions
+                    .Where(tp => tp.IsActive)
+                    .OrderBy(tp => tp.PowerLevel)
+                    .Select(tp => new TeamPositionViewModel
+                    {
+                        Id = tp.Id,
+                        TeamId = tp.TeamId,
+                        TeamTitle = team.Title,
+                        Title = tp.Title,
+                        Description = tp.Description,
+                        PowerLevel = tp.PowerLevel,
+                        CanViewSubordinateTasks = tp.CanViewSubordinateTasks,
+                        CanViewPeerTasks = tp.CanViewPeerTasks,
+                        MaxMembers = tp.MaxMembers,
+                        IsDefault = tp.IsDefault,
+                        IsActive = tp.IsActive,
+                        DisplayOrder = tp.DisplayOrder,
+                        CreateDate = tp.CreateDate,
+                        CreatorName = tp.Creator != null ? $"{tp.Creator.FirstName} {tp.Creator.LastName}" : "",
+                        LastUpdateDate = tp.LastUpdateDate,
+                        LastUpdaterName = tp.LastUpdater != null ? $"{tp.LastUpdater.FirstName} {tp.LastUpdater.LastName}" : "",
+                        Members = tp.TeamMembers?.Where(tm => tm.IsActive).Select(tm => new TeamMemberViewModel
+                        {
+                            Id = tm.Id,
+                            TeamId = tm.TeamId,
+                            UserId = tm.UserId,
+                            UserFullName = $"{tm.User.FirstName} {tm.User.LastName}",
+                            PositionId = tm.PositionId,
+                            PositionTitle = tp.Title,
+                            PowerLevel = tp.PowerLevel,
+                            RoleDescription = tm.RoleDescription,
+                            MembershipType = tm.MembershipType,
+                            StartDate = tm.StartDate,
+                            EndDate = tm.EndDate,
+                            IsActive = tm.IsActive
+                        }).ToList() ?? new List<TeamMemberViewModel>()
+                    }).ToList();
+            }
+
+            if (includeMembers && team.TeamMembers != null)
+            {
+                teamViewModel.TeamMembers = team.TeamMembers
+                    .Where(tm => tm.IsActive)
+                    .Select(tm => new TeamMemberViewModel
+                    {
+                        Id = tm.Id,
+                        TeamId = tm.TeamId,
+                        TeamTitle = team.Title,
+                        UserId = tm.UserId,
+                        UserFullName = $"{tm.User.FirstName} {tm.User.LastName}",
+                        PositionId = tm.PositionId,
+                        PositionTitle = tm.Position?.Title ?? null,
+                        PowerLevel = tm.Position?.PowerLevel,
+                        Position = tm.Position?.Title ?? "عضو", // فیلد legacy برای سازگاری
+                        RoleDescription = tm.RoleDescription,
+                        MembershipType = tm.MembershipType,
+                        MembershipTypeText = tm.MembershipType switch
+                        {
+                            0 => "عضو عادی",
+                            1 => "عضو ویژه", 
+                            2 => "مدیر تیم",
+                            _ => "نامشخص"
+                        },
+                        StartDate = tm.StartDate,
+                        EndDate = tm.EndDate,
+                        AddedByUserId = tm.AddedByUserId,
+                        AddedByUserName = tm.AddedByUser != null ? $"{tm.AddedByUser.FirstName} {tm.AddedByUser.LastName}" : "",
+                        IsActive = tm.IsActive,
+                        CreateDate = tm.CreateDate,
+                        LastUpdateDate = tm.LastUpdateDate
+                    }).ToList();
+            }
+
+            return teamViewModel;
         }
-
         public Team GetTeamEntityById(int teamId)
         {
             return _context.Team_Tbl
@@ -275,9 +373,14 @@ namespace MahERP.DataModelLayer.Repository
                 var team = _context.Team_Tbl.Find(teamId);
                 if (team == null) return false;
 
+                // تنظیم مدیر در جدول Team
                 team.ManagerUserId = managerUserId;
                 team.LastUpdaterUserId = assignedByUserId;
                 team.LastUpdateDate = DateTime.Now;
+
+                // اضافه کردن مدیر به سمت مدیریت
+                var success = AddManagerToManagementPosition(teamId, managerUserId, assignedByUserId);
+                if (!success) return false;
 
                 _context.SaveChanges();
                 return true;
@@ -295,6 +398,10 @@ namespace MahERP.DataModelLayer.Repository
                 var team = _context.Team_Tbl.Find(teamId);
                 if (team == null) return false;
 
+                // حذف مدیر از سمت مدیریت
+                RemoveManagerFromManagementPosition(teamId);
+
+                // حذف مدیر از جدول Team
                 team.ManagerUserId = null;
                 team.LastUpdateDate = DateTime.Now;
 
@@ -482,6 +589,154 @@ public bool IsPowerLevelUnique(int teamId, int powerLevel, int? excludePositionI
         query = query.Where(p => p.Id != excludePositionId.Value);
 
     return !query.Any();
+}
+
+/// <summary>
+/// بررسی تکراری نبودن سمت پیش‌فرض در تیم
+/// فقط یک سمت در هر تیم می‌تواند پیش‌فرض باشد
+/// </summary>
+public bool IsDefaultPositionUnique(int teamId, int? excludePositionId = null)
+{
+    var query = _context.TeamPosition_Tbl
+        .Where(p => p.TeamId == teamId && p.IsDefault && p.IsActive);
+
+    if (excludePositionId.HasValue)
+        query = query.Where(p => p.Id != excludePositionId.Value);
+
+    return !query.Any();
+}
+
+/// <summary>
+/// ایجاد یا دریافت سمت "مدیریت تیم" برای یک تیم
+/// </summary>
+public TeamPosition GetOrCreateManagementPosition(int teamId, string creatorUserId)
+{
+    // ابتدا بررسی می‌کنیم که سمت مدیریت وجود دارد یا نه
+    var existingPosition = GetManagementPosition(teamId);
+    if (existingPosition != null)
+        return existingPosition;
+
+    // ایجاد سمت مدیریت جدید
+    var managementPosition = new TeamPosition
+    {
+        TeamId = teamId,
+        Title = "مدیریت تیم",
+        Description = "سمت مدیریت تیم - ایجاد شده به صورت خودکار",
+        PowerLevel = 999, // بالاترین سطح قدرت
+        CanViewSubordinateTasks = true,
+        CanViewPeerTasks = true,
+        MaxMembers = 1, // فقط یک نفر می‌تواند مدیر باشد
+        DisplayOrder = 0,
+        IsDefault = false,
+        IsActive = true,
+        CreatorUserId = creatorUserId,
+        CreateDate = DateTime.Now
+    };
+
+    CreateTeamPosition(managementPosition);
+    return managementPosition;
+}
+
+/// <summary>
+/// دریافت سمت مدیریت تیم
+/// </summary>
+public TeamPosition GetManagementPosition(int teamId)
+{
+    return _context.TeamPosition_Tbl
+        .Include(p => p.TeamMembers)
+            .ThenInclude(tm => tm.User)
+        .FirstOrDefault(p => p.TeamId == teamId && 
+                           p.Title == MANAGEMENT_POSITION_TITLE && 
+                           p.PowerLevel == 0 && 
+                           p.IsActive);
+}
+
+/// <summary>
+/// اضافه کردن مدیر تیم به سمت مدیریت
+/// </summary>
+public bool AddManagerToManagementPosition(int teamId, string managerUserId, string assignedByUserId)
+{
+    try
+    {
+        // دریافت یا ایجاد سمت مدیریت
+        var managementPosition = GetOrCreateManagementPosition(teamId, assignedByUserId);
+
+        // حذف مدیر قبلی از سمت مدیریت (اگر وجود دارد)
+        RemoveManagerFromManagementPosition(teamId);
+
+        // بررسی اینکه کاربر قبلاً عضو تیم است یا نه
+        var existingMember = _context.TeamMember_Tbl
+            .FirstOrDefault(tm => tm.TeamId == teamId && tm.UserId == managerUserId && tm.IsActive);
+
+        if (existingMember != null)
+        {
+            // اگر قبلاً عضو است، فقط سمتش را به مدیریت تغییر می‌دهیم
+            existingMember.PositionId = managementPosition.Id;
+            existingMember.MembershipType = 2; // مدیر تیم
+            existingMember.RoleDescription = "مدیر تیم";
+            existingMember.LastUpdateDate = DateTime.Now;
+            _context.TeamMember_Tbl.Update(existingMember);
+        }
+        else
+        {
+            // اضافه کردن به عنوان عضو جدید در سمت مدیریت
+            var teamMember = new TeamMember
+            {
+                TeamId = teamId,
+                UserId = managerUserId,
+                PositionId = managementPosition.Id,
+                MembershipType = 2, // مدیر تیم
+                RoleDescription = "مدیر تیم",
+                StartDate = DateTime.Now,
+                AddedByUserId = assignedByUserId,
+                
+                IsActive = true,
+                CreateDate = DateTime.Now
+            };
+
+            _context.TeamMember_Tbl.Add(teamMember);
+        }
+
+        _context.SaveChanges();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+/// <summary>
+/// حذف مدیر از سمت مدیریت (بدون حذف سمت)
+/// </summary>
+public bool RemoveManagerFromManagementPosition(int teamId)
+{
+    try
+    {
+        var managementPosition = GetManagementPosition(teamId);
+        if (managementPosition == null) return true;
+
+        // حذف تمام اعضای سمت مدیریت
+        var managementMembers = _context.TeamMember_Tbl
+            .Where(tm => tm.TeamId == teamId && tm.PositionId == managementPosition.Id && tm.IsActive)
+            .ToList();
+
+        foreach (var member in managementMembers)
+        {
+            // به جای حذف کامل، می‌توانیم سمت را null کنیم یا عضویت را غیرفعال کنیم
+            member.PositionId = null;
+            member.MembershipType = 0; // عضو عادی
+            member.RoleDescription = "عضو";
+            member.LastUpdateDate = DateTime.Now;
+        }
+
+        _context.SaveChanges();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
 }
 
 #endregion

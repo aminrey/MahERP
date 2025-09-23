@@ -12,8 +12,8 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         public string FirstName { get; set; }// نام
 
         [Display(Name = " نام خانوادگی")]
-        //[Required(AllowEmptyStrings = false, ErrorMessage = "{0} وارد نشده است.")]
-        //[StringLength(maximumLength: 100, MinimumLength = 2, ErrorMessage = "{0} باید حداقل 2 و حداکثر 100 کاراکتر باشد.")]
+        [Required(AllowEmptyStrings = false, ErrorMessage = "{0} وارد نشده است.")]
+        [StringLength(maximumLength: 100, MinimumLength = 2, ErrorMessage = "{0} باید حداقل 2 و حداکثر 100 کاراکتر باشد.")]
         [RegularExpression(@"^[^\\/:*;\.\)\(]+$", ErrorMessage = "از کاراکترهای غیرمجاز استفاده نکنید.")]
         public string LastName { get; set; }// نام
 
@@ -27,7 +27,7 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         //[Required(AllowEmptyStrings = false, ErrorMessage = "{0} وارد نشده است.")]
         //[StringLength(maximumLength: 40, MinimumLength = 4, ErrorMessage = "{0} باید حداقل 4 و حداکثر 40 کاراکتر باشد.")]
         //[RegularExpression(@"^[^\\/:*;\)\(]+$", ErrorMessage = "از کاراکترهای غیرمجاز استفاده نکنید.")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Display(Name = "شماره همراه")]
         [Required(AllowEmptyStrings = false, ErrorMessage = "{0} وارد نشده است.")]

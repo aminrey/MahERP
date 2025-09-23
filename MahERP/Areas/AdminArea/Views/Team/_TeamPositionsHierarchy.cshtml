@@ -1,13 +1,9 @@
-﻿@model int
-@{
-    // دریافت سمت‌ها و اعضا از سرویس
-    var hierarchyData = ViewBag.TeamHierarchy as TeamHierarchyViewModel;
-}
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamHierarchyViewModel
 
 <div class="positions-hierarchy">
-    @if (hierarchyData?.Positions.Any() == true)
+    @if (Model?.Positions?.Any() == true)
     {
-        @foreach (var position in hierarchyData.Positions.OrderBy(p => p.PowerLevel))
+        @foreach (var position in Model.Positions.OrderBy(p => p.PowerLevel))
         {
             <div class="position-node mb-3" data-position-id="@position.Id">
                 <div class="card">
@@ -35,7 +31,7 @@
                             
                             <button type="button" class="btn btn-sm btn-outline-primary"
                                     data-toggle="modal-ajax"
-                                    href="@Url.Action("EditPositionModal", "TeamPosition", new { id = position.Id })"
+                                    href="@Url.Action("EditPositionModal", "Team", new { id = position.Id })"
                                     data-bs-toggle="tooltip" title="ویرایش سمت">
                                 <i class="fa fa-edit"></i>
                             </button>
@@ -44,26 +40,25 @@
                             {
                                 <button type="button" class="btn btn-sm btn-outline-success"
                                         data-toggle="modal-ajax"
-                                        href="@Url.Action("AddMemberToPositionModal", "Team", new { teamId = Model, positionId = position.Id })"
+                                        href="@Url.Action("AddMemberToPositionModal", "Team", new { teamId = Model.TeamId, positionId = position.Id })"
                                         data-bs-toggle="tooltip" title="اضافه کردن عضو به این سمت">
                                     <i class="fa fa-user-plus"></i>
                                 </button>
                             }
 
                             <button type="button" class="btn btn-sm btn-outline-danger"
-                                    data-toggle="modal-ajax"
-                                    href="@Url.Action("DeletePositionModal", "TeamPosition", new { id = position.Id })"
+                                    onclick="deletePosition(@position.Id, '@position.Title')"
                                     data-bs-toggle="tooltip" title="حذف سمت">
                                 <i class="fa fa-trash"></i>
                             </button>
                         </div>
                     </div>
                     
-                    @if (position.Members.Any())
+                    @if (position.Members?.Any() == true)
                     {
                         <div class="card-body">
                             <div class="row">
-                                @foreach (var member in position.Members.Where(m => m.IsActive))
+                                @foreach (var member in position.Members)
                                 {
                                     <div class="col-md-6 mb-2">
                                         <div class="d-flex align-items-center">
@@ -83,11 +78,10 @@
                                                     <i class="fa fa-edit"></i>
                                                 </button>
                                                 
-                                                <button type="button" class="btn btn-sm btn-outline-info"
-                                                        data-toggle="modal-ajax"
-                                                        href="@Url.Action("ManageMemberTaskViewersModal", "TaskViewer", new { memberId = member.Id })"
-                                                        data-bs-toggle="tooltip" title="مجوزهای مشاهده تسک">
-                                                    <i class="fa fa-eye"></i>
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        onclick="removeMemberFromPosition(@member.Id, '@member.UserFullName')"
+                                                        data-bs-toggle="tooltip" title="حذف از سمت">
+                                                    <i class="fa fa-user-times"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -101,6 +95,14 @@
                         <div class="card-body text-center text-muted">
                             <i class="fa fa-users fa-2x mb-2"></i>
                             <p>هیچ عضوی در این سمت قرار ندارد</p>
+                            @if (position.CanAddMember)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("AddMemberToPositionModal", "Team", new { teamId = Model.TeamId, positionId = position.Id })">
+                                    <i class="fa fa-user-plus me-1"></i> اضافه کردن عضو
+                                </button>
+                            }
                         </div>
                     }
                 </div>
@@ -115,25 +117,25 @@
             <p class="text-muted">برای شروع، اولین سمت تیم را تعریف کنید</p>
             <button type="button" class="btn btn-primary"
                     data-toggle="modal-ajax"
-                    href="@Url.Action("CreatePositionModal", "TeamPosition", new { teamId = Model })">
+                    href="@Url.Action("CreatePositionModal", "Team", new { teamId = Model.TeamId })">
                 <i class="fa fa-plus me-1"></i> تعریف اولین سمت
             </button>
         </div>
     }
 
-    @if (hierarchyData?.MembersWithoutPosition.Any() == true)
+    @if (Model?.MembersWithoutPosition?.Any() == true)
     {
         <div class="members-without-position mt-4">
             <div class="card">
                 <div class="card-header bg-warning-light">
                     <h6 class="mb-0">
                         <i class="fa fa-exclamation-triangle me-2 text-warning"></i>
-                        اعضای بدون سمت (@hierarchyData.MembersWithoutPosition.Count)
+                        اعضای بدون سمت (@Model.MembersWithoutPosition.Count)
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        @foreach (var member in hierarchyData.MembersWithoutPosition)
+                        @foreach (var member in Model.MembersWithoutPosition)
                         {
                             <div class="col-md-6 mb-2">
                                 <div class="d-flex align-items-center">
@@ -154,6 +156,42 @@
         </div>
     }
 </div>
+
+<script>
+function deletePosition(positionId, positionTitle) {
+    if (confirm(`آیا از حذف سمت "${positionTitle}" اطمینان دارید؟`)) {
+        $.post('@Url.Action("DeletePosition", "Team")', {
+            id: positionId,
+            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+        }, function(result) {
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('خطا: ' + result.message);
+            }
+        }).fail(function() {
+            alert('خطا در ارتباط با سرور');
+        });
+    }
+}
+
+function removeMemberFromPosition(memberId, memberName) {
+    if (confirm(`آیا از حذف "${memberName}" از این سمت اطمینان دارید؟`)) {
+        $.post('@Url.Action("RemoveMemberFromPosition", "Team")', {
+            memberId: memberId,
+            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+        }, function(result) {
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('خطا: ' + result.message);
+            }
+        }).fail(function() {
+            alert('خطا در ارتباط با سرور');
+        });
+    }
+}
+</script>
 
 <style>
 .positions-hierarchy .position-node {

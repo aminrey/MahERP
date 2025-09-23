@@ -8,7 +8,7 @@ namespace MahERP.DataModelLayer.Repository
     {
         // Team CRUD operations
         List<TeamViewModel> GetTeamsByBranchId(int branchId, bool includeInactive = false);
-        TeamViewModel GetTeamById(int teamId);
+        TeamViewModel GetTeamById(int teamId, bool includePositions = false, bool includeMembers = false);
         Team GetTeamEntityById(int teamId);
         int CreateTeam(Team team);
         bool UpdateTeam(Team team);
@@ -86,6 +86,32 @@ namespace MahERP.DataModelLayer.Repository
         /// بررسی تکراری نبودن سطح قدرت در تیم
         /// </summary>
         bool IsPowerLevelUnique(int teamId, int powerLevel, int? excludePositionId = null);
+
+        /// <summary>
+        /// بررسی تکراری نبودن سمت پیش‌فرض در تیم
+        /// فقط یک سمت در هر تیم می‌تواند پیش‌فرض باشد
+        /// </summary>
+        bool IsDefaultPositionUnique(int teamId, int? excludePositionId = null);
+
+        /// <summary>
+        /// ایجاد یا دریافت سمت "مدیریت تیم" برای یک تیم
+        /// </summary>
+        TeamPosition GetOrCreateManagementPosition(int teamId, string creatorUserId);
+
+        /// <summary>
+        /// دریافت سمت مدیریت تیم
+        /// </summary>
+        TeamPosition GetManagementPosition(int teamId);
+
+        /// <summary>
+        /// اضافه کردن مدیر تیم به سمت مدیریت
+        /// </summary>
+        bool AddManagerToManagementPosition(int teamId, string managerUserId, string assignedByUserId);
+
+        /// <summary>
+        /// حذف مدیر از سمت مدیریت (بدون حذف سمت)
+        /// </summary>
+        bool RemoveManagerFromManagementPosition(int teamId);
 
         #endregion
     }
