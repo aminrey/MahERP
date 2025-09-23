@@ -34,7 +34,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             _Context = context;
             _UserManager = userManager;
             _Mapper = Mapper;
-            _UserRepository = userRepository; // ✅ اصلاح شده
+            _UserRepository = userrepository; // ✅ اصلاح شده
         }
 
         /// <summary>
