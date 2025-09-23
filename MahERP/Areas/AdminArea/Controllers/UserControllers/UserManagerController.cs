@@ -25,7 +25,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             IUnitOfWork context, 
             UserManager<AppUsers> userManager, 
             IMapper Mapper, 
-            UserManagerRepository userrepository, // تصحیح نوع پارامتر
+            IUserManagerRepository userRepository, // ✅ اصلاح شده
             PersianDateHelper persianDateHelper, 
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger)
@@ -34,7 +34,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             _Context = context;
             _UserManager = userManager;
             _Mapper = Mapper;
-            _UserRepository = userrepository;
+            _UserRepository = userRepository; // ✅ اصلاح شده
         }
 
         /// <summary>
