@@ -17,65 +17,33 @@
                 <input type="hidden" asp-for="TeamId" />
                 <input type="hidden" asp-for="TeamTitle" />
 
+                <!-- سمت‌های پیشنهادی -->
+                <div class="mb-4">
+                    <h6 class="mb-3">
+                        <i class="fa fa-lightbulb text-warning me-1"></i>
+                        سمت‌های پیشنهادی
+                    </h6>
+                    <div class="row g-2" id="suggestedPositionsContainer">
+                        <!-- دکمه‌ها با JavaScript اضافه می‌شوند -->
+                    </div>
+                </div>
+
                 <div class="row">
                     <!-- عنوان سمت -->
                     <div class="col-md-6 mb-3">
-                        <label asp-for="Title" class="form-label">عنوان سمت</label>
+                        <label asp-for="Title" class="form-label required">عنوان سمت</label>
                         <input asp-for="Title" class="form-control" id="titleField"
-                               placeholder="خالی بگذارید برای استفاده از عنوان پیش‌فرض" />
-                        <small class="form-text text-info">
-                            <i class="fa fa-lightbulb me-1"></i>
-                            اگر خالی بگذارید، بر اساس سطح قدرت عنوان مناسب انتخاب می‌شود
-                        </small>
+                               placeholder="عنوان سمت را وارد کنید" />
                         <span asp-validation-for="Title" class="text-danger"></span>
                     </div>
 
                     <!-- سطح قدرت -->
                     <div class="col-md-6 mb-3">
-                        <label asp-for="PowerLevel" class="form-label">سطح قدرت</label>
-                        <select asp-for="PowerLevel" class="form-select" id="powerLevelSelect">
-                            <option value="0">0 - مدیر تیم</option>
-                            <option value="1">1 - معاون/سرپرست</option>
-                            <option value="2">2 - کارشناس ارشد</option>
-                            <option value="3">3 - کارشناس</option>
-                            <option value="4">4 - کارشناس مبتدی</option>
-                            <option value="5">5 - منشی/دستیار</option>
-                            <option value="6">6 - کارمند</option>
-                            <option value="CUSTOM">سطح دستی (عنوان دلخواه)</option>
-                        </select>
+                        <label asp-for="PowerLevel" class="form-label required">سطح قدرت</label>
+                        <input asp-for="PowerLevel" type="number" class="form-control" id="powerLevelField"
+                               min="0" max="999" placeholder="عدد سطح قدرت (0 = بالاترین)" />
                         <small class="form-text text-muted">عدد کمتر = قدرت بیشتر</small>
                         <span asp-validation-for="PowerLevel" class="text-danger"></span>
-                    </div>
-                </div>
-
-                <!-- فیلدهای سطح دستی -->
-                <div id="customLevelFields" style="display: none;">
-                    <div class="alert alert-warning">
-                        <i class="fa fa-cog me-2"></i>
-                        <strong>سطح دستی:</strong> می‌توانید سطح قدرت و عنوان دلخواه تعریف کنید
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="customPowerLevelInput" class="form-label required">سطح قدرت دستی</label>
-                            <input type="number" id="customPowerLevelInput" name="CustomPowerLevel"
-                                   class="form-control" min="0" max="100" placeholder="مثال: 7, 8, 9, ..." />
-                            <small class="form-text text-muted">عدد بین 0 تا 100</small>
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label for="customTitleInput" class="form-label required">عنوان دستی</label>
-                            <input type="text" id="customTitleInput" name="CustomTitle"
-                                   class="form-control" placeholder="مثال: مشاور، متخصص، ..." />
-                            <small class="form-text text-muted">عنوان دلخواه برای سمت</small>
-                        </div>
-                    </div>
-
-                    <div class="alert alert-info">
-                        <i class="fa fa-info-circle me-1"></i>
-                        <small>
-                            <strong>نکته:</strong> تغییر به سطح دستی ممکن است بر سلسله مراتب تیم تأثیر بگذارد.
-                        </small>
                     </div>
                 </div>
 
@@ -170,256 +138,129 @@
 }
 
 <script>
-    $(document).ready(function() {
-        var defaultTitles = {
-            '0': 'مدیر تیم',
-            '1': 'معاون',
-            '2': 'کارشناس ارشد',
-            '3': 'کارشناس',
-            '4': 'کارشناس مبتدی',
-            '5': 'منشی',
-            '6': 'کارمند'
-        };
+$(document).ready(function() {
+    // سمت‌های پیشنهادی
+    var suggestedPositions = [
+        { title: 'مدیر تیم', powerLevel: 0, description: 'مسئول کل تیم' },
+        { title: 'معاون', powerLevel: 1, description: 'کمک به مدیر' },
+        { title: 'سرپرست', powerLevel: 2, description: 'نظارت بر بخش خاص' },
+        { title: 'کارشناس ارشد', powerLevel: 3, description: 'کارهای تخصصی پیچیده' },
+        { title: 'کارشناس', powerLevel: 4, description: 'کارهای تخصصی معمولی' },
+        { title: 'کارشناس مبتدی', powerLevel: 5, description: 'یادگیری و کارهای ساده' },
+        { title: 'کارمند', powerLevel: 6, description: 'کارهای عمومی' },
+        { title: 'منشی', powerLevel: 7, description: 'پشتیبانی اداری' }
+    ];
 
-        // نمایش/مخفی کردن هشدار سمت پیش‌فرض
-        $('#isDefaultCheckbox').change(function() {
-            if ($(this).is(':checked')) {
-                $('#defaultWarning').slideDown();
-            } else {
-                $('#defaultWarning').slideUp();
-            }
+    // ایجاد دکمه‌های سمت‌های پیشنهادی
+    function createSuggestedButtons() {
+        var container = $('#suggestedPositionsContainer');
+        container.empty();
+
+        suggestedPositions.forEach(function(position, index) {
+            var button = $(`
+                <div class="col-md-3 col-sm-6">
+                    <div class="form-check form-block">
+                        <input class="form-check-input" id="suggested-${index}" name="suggested-position" type="radio" value="${index}"/>
+                        <label class="form-check-label" for="suggested-${index}">
+                            <span class="d-block fw-normal text-center py-2">
+                                <span class="fw-semibold d-block">${position.title}</span>
+                                <span class="fs-sm text-muted d-block">سطح ${position.powerLevel}</span>
+                                <span class="fs-xs text-muted">${position.description}</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            `);
+            container.append(button);
         });
 
-        // تنظیم وضعیت اولیه
-        function initializeForm() {
-            var currentPowerLevel = $('#powerLevelSelect').val();
+        // رویداد کلیک روی سمت‌های پیشنهادی
+        container.on('change', 'input[name="suggested-position"]', function() {
+            var index = parseInt($(this).val());
+            var position = suggestedPositions[index];
+            
+            $('#titleField').val(position.title);
+            $('#powerLevelField').val(position.powerLevel);
+            
+            // حذف انتخاب سمت پیشنهادی بعد از یک لحظه
+            setTimeout(function() {
+                $('input[name="suggested-position"]').prop('checked', false);
+            }, 200);
+        });
+    }
 
-            // اگر سطح قدرت فعلی در لیست پیش‌فرض نیست، آن را به عنوان سطح دستی نشان بدهیم
-            if (currentPowerLevel && !defaultTitles.hasOwnProperty(currentPowerLevel)) {
-                $('#powerLevelSelect').val('CUSTOM');
-                $('#customLevelFields').show();
-                $('#customPowerLevelInput').val(currentPowerLevel);
-                $('#customTitleInput').val($('#titleField').val());
-                // نمایش هشدار اگر checkbox چک شده
-                if ($('#isDefaultCheckbox').is(':checked')) {
-                    $('#defaultWarning').show();
-                }
-            }
-
-            updatePlaceholder();
+    // نمایش/مخفی کردن هشدار سمت پیش‌فرض
+    $('#isDefaultCheckbox').change(function() {
+        if ($(this).is(':checked')) {
+            $('#defaultWarning').slideDown();
+        } else {
+            $('#defaultWarning').slideUp();
         }
-
-        // نمایش پیش‌نمایش عنوان بر اساس سطح قدرت
-        function updatePlaceholder() {
-            var powerLevel = $('#powerLevelSelect').val();
-            var titleField = $('#titleField');
-
-            if (powerLevel !== 'CUSTOM' && titleField.val() === '') {
-                titleField.attr('placeholder', defaultTitles[powerLevel] || 'سمت سطح ' + powerLevel);
-            }
-        }
-
-        $('#powerLevelSelect').on('change', function() {
-            var selectedValue = $(this).val();
-
-            if (selectedValue === 'CUSTOM') {
-                $('#customLevelFields').slideDown();
-                $('#customPowerLevelInput').attr('required', true);
-                $('#customTitleInput').attr('required', true);
-
-                // پیشنهاد مقادیر پیش‌فرض
-                if (!$('#customPowerLevelInput').val()) {
-                    var currentPowerLevel = $('input[name="PowerLevel"]:hidden').val() || '7';
-                    $('#customPowerLevelInput').val(currentPowerLevel);
-                }
-                if (!$('#customTitleInput').val() && $('#titleField').val()) {
-                    $('#customTitleInput').val($('#titleField').val());
-                }
-            } else {
-                $('#customLevelFields').slideUp();
-                $('#customPowerLevelInput').removeAttr('required');
-                $('#customTitleInput').removeAttr('required');
-                updatePlaceholder();
-            }
-        });
-
-        // همگام‌سازی عنوان دستی با عنوان اصلی
-        $('#titleField').on('input', function() {
-            if ($('#powerLevelSelect').val() === 'CUSTOM') {
-                $('#customTitleInput').val($(this).val());
-            }
-        });
-
-        $('#customTitleInput').on('input', function() {
-            if ($('#powerLevelSelect').val() === 'CUSTOM') {
-                $('#titleField').val($(this).val());
-            }
-        });
-
-        // اعتبارسنجی پیشرفته
-        function validateCustomFields() {
-            var selectedPowerLevel = $('#powerLevelSelect').val();
-
-            if (selectedPowerLevel === 'CUSTOM') {
-                var customPowerLevel = parseInt($('#customPowerLevelInput').val());
-                var customTitle = $('#customTitleInput').val().trim();
-
-                if (!customPowerLevel || customPowerLevel < 0 || customPowerLevel > 100) {
-                    return {
-                        valid: false,
-                        message: 'لطفاً سطح قدرت معتبر (0 تا 100) وارد کنید.',
-                        field: '#customPowerLevelInput'
-                    };
-                }
-
-                if (!customTitle || customTitle.length < 2) {
-                    return {
-                        valid: false,
-                        message: 'لطفاً عنوان سمت را وارد کنید (حداقل 2 کاراکتر).',
-                        field: '#customTitleInput'
-                    };
-                }
-
-                // بررسی تکراری نبودن سطح قدرت در سطوح استاندارد
-                if (defaultTitles.hasOwnProperty(customPowerLevel.toString())) {
-                    return {
-                        valid: false,
-                        message: `سطح قدرت ${customPowerLevel} قبلاً به عنوان ${defaultTitles[customPowerLevel.toString()]} تعریف شده است. لطفاً سطح دیگری انتخاب کنید.`,
-                        field: '#customPowerLevelInput'
-                    };
-                }
-            }
-
-            return { valid: true };
-        }
-
-        // اعتبارسنجی فرم قبل از ارسال
-        $('form').on('submit', function(e) {
-            var validation = validateCustomFields();
-
-            if (!validation.valid) {
-                e.preventDefault();
-                alert(validation.message);
-                $(validation.field).focus();
-                return false;
-            }
-
-            var selectedPowerLevel = $('#powerLevelSelect').val();
-
-            if (selectedPowerLevel === 'CUSTOM') {
-                var customPowerLevel = $('#customPowerLevelInput').val();
-                var customTitle = $('#customTitleInput').val().trim();
-
-                // تنظیم مقادیر hidden fields برای ارسال
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'PowerLevel',
-                    value: customPowerLevel
-                }).appendTo('form');
-
-                $('#titleField').val(customTitle);
-            }
-        });
-
-        // اعتبارسنجی real-time برای فیلدهای دستی
-        $('#customPowerLevelInput').on('input', function() {
-            var value = parseInt($(this).val());
-            var $feedback = $(this).next('.invalid-feedback');
-
-            if ($feedback.length === 0) {
-                $feedback = $('<div class="invalid-feedback"></div>').insertAfter($(this));
-            }
-
-            if (value < 0 || value > 100) {
-                $(this).addClass('is-invalid');
-                $feedback.text('سطح قدرت باید بین 0 تا 100 باشد').show();
-            } else if (defaultTitles.hasOwnProperty(value.toString())) {
-                $(this).addClass('is-invalid');
-                $feedback.text(`سطح ${value} قبلاً به عنوان ${defaultTitles[value.toString()]} تعریف شده است`).show();
-            } else {
-                $(this).removeClass('is-invalid');
-                $feedback.hide();
-            }
-        });
-
-        $('#customTitleInput').on('input', function() {
-            var value = $(this).val().trim();
-            var $feedback = $(this).next('.invalid-feedback');
-
-            if ($feedback.length === 0) {
-                $feedback = $('<div class="invalid-feedback"></div>').insertAfter($(this));
-            }
-
-            if (value.length < 2) {
-                $(this).addClass('is-invalid');
-                $feedback.text('عنوان سمت باید حداقل 2 کاراکتر باشد').show();
-            } else {
-                $(this).removeClass('is-invalid');
-                $feedback.hide();
-            }
-        });
-
-        // تنظیم اولیه فرم
-        initializeForm();
     });
+
+    // اعتبارسنجی فرم
+    $('form').on('submit', function(e) {
+        var title = $('#titleField').val().trim();
+        var powerLevel = $('#powerLevelField').val();
+
+        if (!title) {
+            e.preventDefault();
+            alert('لطفاً عنوان سمت را وارد کنید.');
+            $('#titleField').focus();
+            return false;
+        }
+
+        if (!powerLevel || powerLevel < 0 || powerLevel > 999) {
+            e.preventDefault();
+            alert('لطفاً سطح قدرت معتبر (0 تا 999) وارد کنید.');
+            $('#powerLevelField').focus();
+            return false;
+        }
+    });
+
+    // تنظیم اولیه هشدار
+    if ($('#isDefaultCheckbox').is(':checked')) {
+        $('#defaultWarning').show();
+    }
+
+    // ایجاد دکمه‌های سمت‌های پیشنهادی
+    createSuggestedButtons();
+});
 </script>
 
 <style>
-    #customLevelFields {
-        border: 2px dashed #ffc107;
-        border-radius: 10px;
-        padding: 15px;
-        background-color: rgba(255, 193, 7, 0.05);
-        margin-bottom: 15px;
-        transition: all 0.3s ease;
+    .form-check.form-block {
+        margin-bottom: 10px;
     }
 
-        #customLevelFields:hover {
-            background-color: rgba(255, 193, 7, 0.1);
-            border-color: rgba(255, 193, 7, 0.8);
-        }
+    .form-check.form-block input[type="radio"]:checked + label {
+        background-color: rgba(255, 193, 7, 0.1);
+        border-color: #ffc107;
+        color: #856404;
+    }
 
-        #customLevelFields .alert-warning {
-            background-color: rgba(255, 193, 7, 0.1);
-            border-color: rgba(255, 193, 7, 0.2);
-            color: #856404;
-        }
+    .form-check.form-block label {
+        cursor: pointer;
+        border: 2px solid rgba(0,0,0,.125);
+        border-radius: 8px;
+        padding: 10px;
+        transition: all 0.2s ease;
+        background-color: white;
+        width: 100%;
+    }
 
-        #customLevelFields .alert-info {
-            background-color: rgba(13, 202, 240, 0.1);
-            border-color: rgba(13, 202, 240, 0.2);
-            color: #055160;
-            margin-bottom: 0;
-        }
+    .form-check.form-block label:hover {
+        border-color: rgba(255, 193, 7, 0.5);
+        background-color: rgba(255, 193, 7, 0.05);
+    }
 
-    .required {
+    .required::after {
+        content: " *";
         color: #dc3545;
     }
-
-        .required::after {
-            content: " *";
-            color: #dc3545;
-        }
 
     #defaultWarning {
         background-color: rgba(255, 193, 7, 0.1);
         border-color: rgba(255, 193, 7, 0.2);
     }
-
-    .is-invalid {
-        border-color: #dc3545;
-    }
-
-    .invalid-feedback {
-        display: none;
-        width: 100%;
-        margin-top: 0.25rem;
-        font-size: 0.875em;
-        color: #dc3545;
-    }
-
-        .invalid-feedback.show,
-        .is-invalid ~ .invalid-feedback {
-            display: block;
-        }
 </style>

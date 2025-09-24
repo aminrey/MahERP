@@ -256,9 +256,14 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.AccessLevelText, opt => opt.MapFrom(src => GetTeamAccessLevelText(src.AccessLevel)))
                 .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
                 .ForMember(dest => dest.LastUpdaterName, opt => opt.MapFrom(src => src.LastUpdater != null ? $"{src.LastUpdater.FirstName} {src.LastUpdater.LastName}" : null))
+                .ForMember(dest => dest.CreatorUserId, opt => opt.MapFrom(src => src.CreatorUserId))
                 .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
                 .ForMember(dest => dest.TeamMembers, opt => opt.Ignore())
-                .ForMember(dest => dest.Level, opt => opt.Ignore());
+                .ForMember(dest => dest.Level, opt => opt.Ignore())
+                
+                .ReverseMap()
+                                .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
+                                .ForMember(dest => dest.TeamMembers, opt => opt.Ignore());
 
             // TeamViewModel -> Team
             CreateMap<TeamViewModel, Team>()

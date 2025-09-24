@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MahERP.DataModelLayer.Entities.Organization;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -43,6 +45,7 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
 
         public DateTime CreateDate { get; set; }
         public string? CreatorName { get; set; }
+        public string? CreatorUserId { get; set; }
         public DateTime? LastUpdateDate { get; set; }
         public string? LastUpdaterName { get; set; }
 
@@ -242,4 +245,104 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public List<TeamMemberViewModel> MembersWithoutPosition { get; set; } = new();
     }
 
+    /// <summary>
+    /// داده‌های مورد نیاز برای مدیریت اعضای تیم
+    /// </summary>
+    public class TeamMemberManagementData
+    {
+        public List<UserSelectListItem> AvailableUsers { get; set; } = new();
+        public List<TeamPosition> AvailablePositions { get; set; } = new();
+        public int BranchId { get; set; }
+        public int TeamId { get; set; }
+    }
+
+    /// <summary>
+    /// فیلتر جستجوی اعضای تیم
+    /// </summary>
+    public class TeamMemberSearchFilter
+    {
+        public bool? IsActive { get; set; }
+        public int? PositionId { get; set; }
+        public byte? MembershipType { get; set; }
+        public string SearchText { get; set; }
+    }
+
+    /// <summary>
+    /// نتیجه عملیات ایجاد عضو
+    /// </summary>
+    public class CreateMemberResult : OperationResult
+    {
+        public int MemberId { get; set; }
+
+        public static CreateMemberResult Success(int memberId, string message)
+            => new() { IsSuccess = true, Message = message, MemberId = memberId };
+
+        public static CreateMemberResult Failed(string message)
+            => new() { IsSuccess = false, Message = message };
+    }
+
+    /// <summary>
+    /// نتیجه عملیات بروزرسانی عضو
+    /// </summary>
+    public class UpdateMemberResult : OperationResult
+    {
+        public static UpdateMemberResult Success(string message)
+            => new() { IsSuccess = true, Message = message };
+
+        public static UpdateMemberResult Failed(string message)
+            => new() { IsSuccess = false, Message = message };
+    }
+
+    /// <summary>
+    /// نتیجه عملیات حذف عضو
+    /// </summary>
+    public class DeleteMemberResult : OperationResult
+    {
+        public static DeleteMemberResult Success(string message)
+            => new() { IsSuccess = true, Message = message };
+
+        public static DeleteMemberResult Failed(string message)
+            => new() { IsSuccess = false, Message = message };
+    }
+
+    /// <summary>
+    /// نتیجه عملیات تغییر وضعیت عضو
+    /// </summary>
+    public class ToggleMemberStatusResult : OperationResult
+    {
+        public static ToggleMemberStatusResult Success(string message)
+            => new() { IsSuccess = true, Message = message };
+
+        public static ToggleMemberStatusResult Failed(string message)
+            => new() { IsSuccess = false, Message = message };
+    }
+
+    /// <summary>
+    /// کلاس پایه برای نتایج عملیات
+    /// </summary>
+    public abstract class OperationResult
+    {
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; }
+        public List<string> Errors { get; set; } = new();
+    }
+    /// <summary>
+     /// داده‌های ViewBag برای تیم
+     /// </summary>
+    public class TeamViewBagData
+    {
+        public List<SelectListItem> ParentTeams { get; set; } = new();
+        public List<SelectListItem> AvailableUsers { get; set; } = new();
+        public List<SelectListItem> AccessLevels { get; set; } = new();
+    }
+
+    /// <summary>
+    /// داده‌های ViewBag برای اعضای تیم
+    /// </summary>
+    public class TeamMemberViewBagData
+    {
+        public List<SelectListItem> AvailableUsers { get; set; } = new();
+        public List<SelectListItem> AvailablePositions { get; set; } = new();
+        public List<SelectListItem> MembershipTypes { get; set; } = new();
+    }
 }

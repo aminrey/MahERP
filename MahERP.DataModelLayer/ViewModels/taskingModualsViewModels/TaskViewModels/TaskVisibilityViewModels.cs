@@ -1,5 +1,8 @@
-﻿using System;
+﻿using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
 {
@@ -25,6 +28,71 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// آمار کلی
         /// </summary>
         public TaskVisibilityStatsViewModel Stats { get; set; } = new();
+    }
+
+    /// <summary>
+    /// ViewModel برای مدیریت تبصره‌های مشاهده تسک‌های تیم
+    /// </summary>
+    public class ManageTeamTaskViewersViewModel
+    {
+        public int TeamId { get; set; }
+        public string TeamTitle { get; set; }
+        public int BranchId { get; set; }
+
+        /// <summary>
+        /// اعضای فعال تیم
+        /// </summary>
+        public List<TeamMemberViewModel> TeamMembers { get; set; } = new();
+
+        /// <summary>
+        /// کاربران موجود در شعبه برای انتخاب به عنوان مبدا
+        /// </summary>
+        public List<UserViewModelFull> AvailableUsers { get; set; } = new();
+
+        /// <summary>
+        /// تیم‌های موجود در شعبه برای انتخاب به عنوان مقصد
+        /// </summary>
+        public List<TeamViewModel> AvailableTeams { get; set; } = new();
+
+        /// <summary>
+        /// تبصره‌های موجود برای این تیم
+        /// </summary>
+        public List<TaskViewerViewModel> ExistingViewers { get; set; } = new();
+    }
+
+    /// <summary>
+    /// ViewModel برای ایجاد تبصره جدید
+    /// </summary>
+    public class GrantSpecialPermissionViewModel
+    {
+        public int TeamId { get; set; }
+        
+        [Required(ErrorMessage = "انتخاب کاربر مبدا الزامی است")]
+        [Display(Name = "کاربر مبدا")]
+        public string GranteeUserId { get; set; }
+
+        [Required(ErrorMessage = "انتخاب نوع مجوز الزامی است")]
+        [Display(Name = "نوع مجوز")]
+        public byte PermissionType { get; set; }
+
+        [Display(Name = "کاربر مقصد")]
+        public string TargetUserId { get; set; }
+
+        [Display(Name = "تیم مقصد")]
+        public int? TargetTeamId { get; set; }
+
+        [Display(Name = "نوع دسترسی")]
+        public byte AccessType { get; set; } = 0; // مجوز خاص
+
+        [Display(Name = "تاریخ شروع")]
+        public DateTime? StartDate { get; set; }
+
+        [Display(Name = "تاریخ پایان")]
+        public DateTime? EndDate { get; set; }
+
+        [Display(Name = "توضیحات")]
+        [MaxLength(500, ErrorMessage = "توضیحات حداکثر 500 کاراکتر باشد")]
+        public string Description { get; set; }
     }
 
     /// <summary>

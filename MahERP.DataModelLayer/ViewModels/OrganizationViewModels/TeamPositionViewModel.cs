@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
 {
@@ -105,10 +106,13 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public bool IsActive { get; set; } = true;
     }
 
+    /// <summary>
+    /// ViewModel برای نمایش سلسله مراتب سمت‌ها
+    /// </summary>
     public class TeamPositionHierarchyViewModel
     {
         public int Id { get; set; }
-        public int TeamId { get; set; } // اضافه کردن این خط
+        public int TeamId { get; set; }
         public string Title { get; set; }
         public string? Description { get; set; }
         public int PowerLevel { get; set; }
@@ -118,6 +122,10 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public bool CanAddMember { get; set; }
         public List<TeamMemberViewModel> Members { get; set; } = new();
     }
+
+    /// <summary>
+    /// ViewModel برای تخصیص سمت به عضو
+    /// </summary>
     public class AssignPositionViewModel
     {
         public int MemberId { get; set; }
@@ -136,16 +144,28 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public bool CustomCanViewPeerTasks { get; set; } = false;
     }
 
-
+    /// <summary>
+    /// ViewModel برای اضافه کردن عضو به سمت خاص
+    /// </summary>
     public class AddMemberToPositionViewModel
-        {
-            public int TeamId { get; set; }
-            public int PositionId { get; set; }
-            public string? TeamTitle { get; set; }
-            public string? PositionTitle { get; set; }
+    {
+        public int TeamId { get; set; }
+        public int PositionId { get; set; }
+        public string? TeamTitle { get; set; }
+        public string? PositionTitle { get; set; }
 
-            [Required(ErrorMessage = "انتخاب عضو الزامی است")]
-            public int MemberId { get; set; }
-        
+        [Required(ErrorMessage = "انتخاب عضو الزامی است")]
+        public int MemberId { get; set; }
+    }
+    /// <summary>
+     /// کلاس برای سمت‌های پیشنهادی
+     /// </summary>
+    public class SuggestedPosition
+    {
+        public string Title { get; set; } = string.Empty;
+        public int PowerLevel { get; set; }
+        public string? Description { get; set; }
+        public bool CanViewSubordinateTasks => PowerLevel <= 2; // مدیر، معاون، کارشناس ارشد
+        public bool CanViewPeerTasks => PowerLevel <= 1; // فقط مدیر و معاون
     }
 }

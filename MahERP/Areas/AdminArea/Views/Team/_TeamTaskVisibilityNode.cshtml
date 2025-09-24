@@ -113,61 +113,33 @@
             </div>
         }
 
-        <!-- تبصره‌های خاص مربوط به این تیم -->
+        <!-- مجوزهای خاص مربوط به این تیم -->
         @if (Model.RelatedSpecialPermissions.Any())
         {
-            <div class="special-permissions mb-3">
-                <h6 class="mb-2 text-primary">
+            <div class="special-permissions">
+                <h6 class="mb-2 text-warning">
                     <i class="fa fa-key me-1"></i>
-                    تبصره‌های ویژه (@Model.RelatedSpecialPermissions.Count)
+                    مجوزهای خاص (@Model.RelatedSpecialPermissions.Count)
                 </h6>
-                <div class="special-permissions-container">
-                    @foreach (var permission in Model.RelatedSpecialPermissions.Take(3)) // فقط ۳ تای اول را نشان بده
-                    {
-                        <div class="mini-permission-card">
-                            <div class="mini-permission-user">
-                                <i class="fa fa-user me-1"></i>
-                                <strong>@permission.GranteeUserName</strong>
-                            </div>
-                            <div class="mini-permission-status">
-                                @if (permission.IsExpired)
-                                {
-                                    <span class="badge bg-danger badge-sm">منقضی</span>
-                                }
-                                else if (permission.IsActive)
-                                {
-                                    <span class="badge bg-success badge-sm">فعال</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary badge-sm">غیرفعال</span>
-                                }
-                            </div>
-                        </div>
-                    }
-                    @if (Model.RelatedSpecialPermissions.Count > 3)
-                    {
-                        <div class="mini-permission-card more-permissions">
-                            <small class="text-muted">
-                                <i class="fa fa-ellipsis-h me-1"></i>
-                                @(Model.RelatedSpecialPermissions.Count - 3) تبصره دیگر...
-                            </small>
-                        </div>
-                    }
-                </div>
+                @foreach (var permission in Model.RelatedSpecialPermissions)
+                {
+                    <div class="position-visibility-item" style="border-left-color: #ffc107;">
+                        <small>
+                            <strong>@permission.GranteeUserName</strong>
+                            - @permission.PermissionTypeText
+                            @if (permission.IsExpired)
+                            {
+                                <span class="badge bg-danger ms-1">منقضی</span>
+                            }
+                            else if (permission.IsActive)
+                            {
+                                <span class="badge bg-success ms-1">فعال</span>
+                            }
+                        </small>
+                    </div>
+                }
             </div>
         }
-
-        <!-- دکمه مدیریت تبصره‌ها -->
-        <div class="team-actions text-center">
-            <button type="button" class="btn btn-sm btn-outline-primary"
-                    data-toggle="modal-ajax"
-                    href="@Url.Action("ManageTaskViewersModal", "Team", new { teamId = Model.TeamId })"
-                    data-bs-toggle="tooltip" title="مدیریت تبصره‌های این تیم">
-                <i class="fa fa-eye me-1"></i>
-                مدیریت تبصره‌ها
-            </button>
-        </div>
     </div>
 
     <!-- زیرتیم‌ها -->
@@ -176,7 +148,7 @@
         <div class="child-teams-visibility">
             @foreach (var subTeam in Model.SubTeams)
             {
-                @await Html.PartialAsync("_TaskVisibilityTeamNode", subTeam)
+                @await Html.PartialAsync("_TeamTaskVisibilityNode", subTeam)
             }
         </div>
     }
@@ -195,42 +167,3 @@
             return "no-view-permission";
     }
 }
-
-<style>
-    .mini-permission-card {
-        background: rgba(0, 123, 255, 0.1);
-        border-radius: 6px;
-        padding: 6px 10px;
-        margin-bottom: 4px;
-        border-left: 3px solid #007bff;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .mini-permission-card.more-permissions {
-        background: rgba(108, 117, 125, 0.1);
-        border-left-color: #6c757d;
-        justify-content: center;
-    }
-
-    .mini-permission-user {
-        font-size: 0.85em;
-    }
-
-    .badge-sm {
-        font-size: 0.7em;
-        padding: 2px 6px;
-    }
-
-    .special-permissions-container {
-        max-height: 150px;
-        overflow-y: auto;
-    }
-
-    .team-actions {
-        margin-top: 15px;
-        padding-top: 10px;
-        border-top: 1px solid rgba(0, 0, 0, 0.1);
-    }
-</style>

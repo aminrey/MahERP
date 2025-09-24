@@ -1,8 +1,9 @@
 ﻿using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 
-namespace MahERP.DataModelLayer.Repository
+namespace MahERP.DataModelLayer.Services
 {
     public interface ITeamRepository
     {
@@ -35,6 +36,7 @@ namespace MahERP.DataModelLayer.Repository
         List<Team> GetTeamsByManagerId(string managerId);
         bool HasChildTeams(int teamId);
         bool CanDeleteTeam(int teamId);
+
         #region Team Position Methods
 
         /// <summary>
@@ -83,11 +85,6 @@ namespace MahERP.DataModelLayer.Repository
         bool IsPositionTitleUnique(int teamId, string title, int? excludePositionId = null);
 
         /// <summary>
-        /// بررسی تکراری نبودن سطح قدرت در تیم
-        /// </summary>
-        bool IsPowerLevelUnique(int teamId, int powerLevel, int? excludePositionId = null);
-
-        /// <summary>
         /// بررسی تکراری نبودن سمت پیش‌فرض در تیم
         /// فقط یک سمت در هر تیم می‌تواند پیش‌فرض باشد
         /// </summary>
@@ -113,6 +110,29 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         bool RemoveManagerFromManagementPosition(int teamId);
 
+        /// <summary>
+        /// دریافت سمت‌های پیشنهادی با سطوح قدرت استاندارد
+        /// </summary>
+        static List<SuggestedPosition> GetSuggestedPositions()
+        {
+            return new List<SuggestedPosition>
+            {
+                new() { Title = "مدیر تیم", PowerLevel = 0, Description = "مسئول کل تیم و تصمیم‌گیری‌های راهبردی" },
+                new() { Title = "معاون", PowerLevel = 1, Description = "کمک به مدیر و جانشینی در غیاب وی" },
+                new() { Title = "سرپرست", PowerLevel = 2, Description = "نظارت بر بخش خاص از کارهای تیم" },
+                new() { Title = "کارشناس ارشد", PowerLevel = 3, Description = "انجام کارهای تخصصی پیچیده" },
+                new() { Title = "کارشناس", PowerLevel = 4, Description = "انجام کارهای تخصصی معمولی" },
+                new() { Title = "کارشناس مبتدی", PowerLevel = 5, Description = "یادگیری و انجام کارهای ساده" },
+                new() { Title = "کارمند", PowerLevel = 6, Description = "انجام کارهای عمومی و پشتیبانی" },
+                new() { Title = "منشی", PowerLevel = 7, Description = "پشتیبانی اداری و ارتباطات" }
+            };
+        }
+
+        /// <summary>
+        /// دریافت پایین‌ترین سطح موجود در تیم + 1
+        /// </summary>
+        int GetNextLowestPowerLevel(int teamId);
+
         #endregion
 
         /// <summary>
@@ -124,5 +144,26 @@ namespace MahERP.DataModelLayer.Repository
         /// تخصیص عضو به سمت
         /// </summary>
         bool AssignMemberToPosition(int memberId, int positionId);
+
+        #region Advanced Team Member Management
+        TeamMemberManagementData PrepareTeamMemberData(int branchId, int teamId);
+        CreateMemberResult CreateTeamMemberWithValidation(TeamMemberViewModel model, string addedByUserId);
+        UpdateMemberResult UpdateTeamMemberWithValidation(TeamMemberViewModel model);
+        DeleteMemberResult DeleteTeamMemberWithValidation(int memberId);
+        ToggleMemberStatusResult ToggleMemberStatus(int memberId);
+        List<TeamMemberViewModel> SearchTeamMembers(int teamId, TeamMemberSearchFilter filter);
+        #endregion
+
+        #region ViewBag Preparation Methods
+        /// <summary>
+        /// آماده‌سازی داده‌های ViewBag برای تیم
+        /// </summary>
+        TeamViewBagData PrepareTeamViewBags(int branchId);
+
+        /// <summary>
+        /// آماده‌سازی داده‌های ViewBag برای اعضای تیم
+        /// </summary>
+        TeamMemberViewBagData PrepareTeamMemberViewBags(int branchId, int teamId);
+        #endregion
     }
 }

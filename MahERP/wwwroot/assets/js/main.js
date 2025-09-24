@@ -680,13 +680,37 @@ function SendResposeMessageInView(response) {
 }
 
 /**
- * Display response messages
- * @param {Object} messages - Array of message objects
+ * Helper function to convert single message to array format
+ * @param {string|Object|Array} message - Message in various formats
+ * @param {string} status - Default status if not provided
+ * @returns {Array} - Array of message objects
  */
-function SendResposeMessage(messages) {
-    if (!messages) return;
+function normalizeMessages(message, status = 'info') {
+    if (!message) return [];
+    
+    // اگر قبلاً آرایه است
+    if (Array.isArray(message)) {
+        return message;
+    }
+    
+    // اگر object با text و status است
+    if (typeof message === 'object' && message.text) {
+        return [message];
+    }
+    
+    // اگر string است
+    if (typeof message === 'string') {
+        return [{ status: status, text: message }];
+    }
+    
+    return [];
+}
 
-    $.each(messages, function (index, messagerow) {
+// بروزرسانی تابع موجود
+function SendResposeMessage(messages, defaultStatus = 'info') {
+    const normalizedMessages = normalizeMessages(messages, defaultStatus);
+    
+    $.each(normalizedMessages, function (index, messagerow) {
         const icons = {
             "success": 'fa fa-check',
             "warning": 'fa fa-exclamation-triangle',
@@ -701,15 +725,12 @@ function SendResposeMessage(messages) {
             "error": 'error'
         };
 
-        // Determine notification type based on status or default to 'info'
         const notificationType = notificationTypes[messagerow.status] || 'info';
-
-        // Determine icon based on status
         const icon = icons[messagerow.status] || 'fa fa-info';
 
         Dashmix.helpers('jq-notify', {
             type: notificationType,
-            icon: icon + ' me-1', // Add space to separate icon classes
+            icon: icon + ' me-1',
             message: messagerow.text
         });
     });

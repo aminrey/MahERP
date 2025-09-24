@@ -1,10 +1,16 @@
-﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamHierarchyViewModel
+﻿@model TeamHierarchyViewModel
 
 <div class="positions-org-chart">
     @if (Model?.Positions?.Any() == true)
     {
         <div class="positions-hierarchy-vertical">
             @{
+                // گروه‌بندی ترکیبی بر اساس PowerLevel و Title همزمان
+                var positionsByPowerLevelAndTitle = Model.Positions
+                .GroupBy(p => new { p.PowerLevel, p.Title })
+                .OrderBy(g => g.Key.PowerLevel)
+                .ThenBy(g => g.Key.Title) // مرتب‌سازی اول بر اساس PowerLevel، سپس Title
+                .ToList();
                 // گروه‌بندی سمت‌ها بر اساس سطح قدرت
                 var positionsByPowerLevel = Model.Positions
                     .GroupBy(p => p.PowerLevel)
@@ -22,14 +28,9 @@
                     <!-- عنوان سطح -->
                     <div class="level-header">
                         <div class="level-badge">
-                            سطح @(powerLevelGroup.Key): @(powerLevelGroup.Key switch
-                            {
-                                0 => "مدیریت",
-                                1 => "معاونت/سرپرستی",
-                                2 => "کارشناسی ارشد",
-                                3 => "کارشناسی",
-                                _ => $"سطح {powerLevelGroup.Key}"
-                            })
+
+                            سطح @positionsByPowerLevelAndTitle[i].Key.PowerLevel @positionsByPowerLevelAndTitle[i].Key.Title
+                         
                         </div>
                     </div>
 

@@ -1,16 +1,18 @@
-﻿@model SpecialTaskPermissionNode
+﻿@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
+@model SpecialTaskPermissionNode
 
 <div class="special-permission-card @(Model.IsActive ? "active" : "inactive") @(Model.IsExpired ? "expired" : "")">
+    <!-- Header کارت -->
     <div class="permission-header">
         <div class="permission-user">
-            <i class="fa fa-user-tag me-1"></i>
+            <i class="fa fa-user-tag me-2"></i>
             <strong>@Model.GranteeUserName</strong>
             @if (!string.IsNullOrEmpty(Model.GranteeTeamTitle))
             {
                 <small class="text-muted">(@Model.GranteeTeamTitle)</small>
             }
         </div>
-        
+
         <div class="permission-status">
             @if (Model.IsExpired)
             {
@@ -27,16 +29,17 @@
         </div>
     </div>
 
+    <!-- جزئیات تبصره -->
     <div class="permission-details">
         <div class="permission-type">
-            <i class="fa fa-key me-1"></i>
+            <i class="fa fa-key me-1 text-primary"></i>
             <span class="type-text">@Model.PermissionTypeText</span>
         </div>
         
         @if (!string.IsNullOrEmpty(Model.TargetTeamTitle))
         {
             <div class="permission-target">
-                <i class="fa fa-bullseye me-1"></i>
+                <i class="fa fa-bullseye me-1 text-info"></i>
                 <span class="target-text">هدف: @Model.TargetTeamTitle</span>
             </div>
         }
@@ -44,22 +47,21 @@
         @if (!string.IsNullOrEmpty(Model.TargetUserName))
         {
             <div class="permission-target">
-                <i class="fa fa-user-circle me-1"></i>
+                <i class="fa fa-user-circle me-1 text-info"></i>
                 <span class="target-text">کاربر هدف: @Model.TargetUserName</span>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="permission-description">
+                <i class="fa fa-comment me-1 text-warning"></i>
+                <span class="description-text">@Model.Description</span>
             </div>
         }
     </div>
 
-    @if (!string.IsNullOrEmpty(Model.Description))
-    {
-        <div class="permission-description">
-            <small class="text-muted">
-                <i class="fa fa-comment me-1"></i>
-                @Model.Description
-            </small>
-        </div>
-    }
-
+    <!-- اطلاعات متا -->
     <div class="permission-meta">
         <div class="meta-info">
             <small class="text-muted">
@@ -68,7 +70,7 @@
                 توسط @Model.AddedByUserName
             </small>
         </div>
-        
+
         @if (Model.EndDate.HasValue)
         {
             <div class="meta-info">
@@ -78,22 +80,348 @@
                 </small>
             </div>
         }
+        else
+        {
+            <div class="meta-info">
+                <small class="text-success">
+                    <i class="fa fa-infinity me-1"></i>
+                    بدون محدودیت زمانی
+                </small>
+            </div>
+        }
     </div>
 
+    <!-- دکمه‌های عملیات -->
     <div class="permission-actions">
         @if (Model.IsActive && !Model.IsExpired)
         {
             <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="revokePermission(@Model.ViewerId)">
+                    onclick="revokePermission(@Model.ViewerId)"
+                    data-bs-toggle="tooltip" title="لغو این تبصره">
                 <i class="fa fa-times me-1"></i> لغو
             </button>
         }
-        
+
         <button type="button" class="btn btn-sm btn-outline-info"
-                data-toggle="modal-ajax"
-                href="@(Url.Action("ViewPermissionDetailsModal", new { viewerId = Model.ViewerId }))">
-            <i class="fa fa-info-circle me-1"></i> 
-            جزئیات
+                onclick="showPermissionDetails(@Model.ViewerId, '@Model.GranteeUserName', '@Model.PermissionTypeText')"
+                data-bs-toggle="tooltip" title="مشاهده جزئیات کامل">
+            <i class="fa fa-info-circle me-1"></i> جزئیات
         </button>
+
+        @if (!Model.IsActive && !Model.IsExpired)
+        {
+            <button type="button" class="btn btn-sm btn-outline-success"
+                    onclick="reactivatePermission(@Model.ViewerId)"
+                    data-bs-toggle="tooltip" title="فعال‌سازی مجدد">
+                <i class="fa fa-check me-1"></i> فعال‌سازی
+            </button>
+        }
     </div>
 </div>
+
+<script>
+    function showPermissionDetails(viewerId, userName, permissionType) {
+        // نمایش جزئیات در modal یا alert
+        var details = `
+            شناسه تبصره: ${viewerId}
+            کاربر: ${userName}
+            نوع: ${permissionType}
+        `;
+        
+        // می‌توانید به جای alert از modal استفاده کنید
+        alert('جزئیات تبصره:\n' + details);
+    }
+
+    function reactivatePermission(viewerId) {
+        if (confirm('آیا از فعال‌سازی مجدد این تبصره اطمینان دارید؟')) {
+            $.post('@Url.Action("ReactivateTaskViewerPermission", "Team")', {
+                viewerId: viewerId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            }).done(function(response) {
+                if (response.success) {
+                    showMessage('success', 'تبصره با موفقیت فعال شد');
+                    // بروزرسانی صفحه یا بخش مربوطه
+                    location.reload();
+                } else {
+                    showMessage('error', 'خطا در فعال‌سازی تبصره: ' + response.message);
+                }
+            }).fail(function() {
+                showMessage('error', 'خطا در ارتباط با سرور');
+            });
+        }
+    }
+</script>
+
+<style>
+    .special-permission-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #28a745;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .special-permission-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #28a745, #20c997, #17a2b8);
+        opacity: 0.8;
+    }
+
+    .special-permission-card.active {
+        border-left-color: #28a745;
+        background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+    }
+
+    .special-permission-card.active::before {
+        background: linear-gradient(90deg, #28a745, #20c997, #17a2b8);
+    }
+
+    .special-permission-card.expired {
+        border-left-color: #dc3545;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+        opacity: 0.85;
+    }
+
+    .special-permission-card.expired::before {
+        background: linear-gradient(90deg, #dc3545, #fd7e14, #ffc107);
+    }
+
+    .special-permission-card.inactive {
+        border-left-color: #6c757d;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        opacity: 0.75;
+    }
+
+    .special-permission-card.inactive::before {
+        background: linear-gradient(90deg, #6c757d, #adb5bd, #dee2e6);
+    }
+
+    .special-permission-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Header */
+    .permission-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .permission-user {
+        display: flex;
+        align-items: center;
+        font-size: 1.05em;
+    }
+
+    .permission-user strong {
+        color: #2c3e50;
+    }
+
+    .permission-user small {
+        margin-right: 8px;
+        font-style: italic;
+    }
+
+    .permission-status .badge {
+        font-size: 0.8em;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+
+    /* جزئیات */
+    .permission-details {
+        margin-bottom: 12px;
+    }
+
+    .permission-details > div {
+        display: flex;
+        align-items: center;
+        margin-bottom: 6px;
+        padding: 4px 0;
+    }
+
+    .permission-type .type-text {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .permission-target .target-text {
+        color: #17a2b8;
+        font-weight: 500;
+    }
+
+    .permission-description {
+        background: rgba(255, 193, 7, 0.1);
+        border-radius: 6px;
+        padding: 8px;
+        margin-top: 8px;
+    }
+
+    .permission-description .description-text {
+        color: #856404;
+        font-style: italic;
+        font-size: 0.9em;
+    }
+
+    /* اطلاعات متا */
+    .permission-meta {
+        margin-bottom: 12px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .meta-info {
+        margin-bottom: 4px;
+    }
+
+    .meta-info small {
+        display: flex;
+        align-items: center;
+        font-size: 0.85em;
+    }
+
+    /* دکمه‌های عملیات */
+    .permission-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .permission-actions .btn {
+        font-size: 0.85em;
+        padding: 4px 12px;
+        border-radius: 15px;
+        transition: all 0.2s ease;
+    }
+
+    .permission-actions .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .permission-actions .btn-outline-danger:hover {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    .permission-actions .btn-outline-info:hover {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+        color: white;
+        box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    }
+
+    .permission-actions .btn-outline-success:hover {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 576px) {
+        .special-permission-card {
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .permission-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .permission-actions {
+            justify-content: center;
+            width: 100%;
+        }
+
+        .permission-actions .btn {
+            flex: 1;
+            min-width: auto;
+        }
+
+        .permission-user {
+            font-size: 1em;
+        }
+
+        .permission-details > div {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .permission-details i {
+            margin-bottom: 2px;
+        }
+    }
+
+    /* انیمیشن‌ها */
+    @keyframes fadeInCard {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .special-permission-card {
+        animation: fadeInCard 0.5s ease-out;
+    }
+
+    /* حالت بارگذاری */
+    .special-permission-card.loading {
+        opacity: 0.6;
+        pointer-events: none;
+        position: relative;
+    }
+
+    .special-permission-card.loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* تاکید بر تبصره‌های مهم */
+    .special-permission-card.highlighted {
+        border-left-width: 8px;
+        background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%);
+        box-shadow: 0 4px 15px rgba(255, 235, 59, 0.3);
+    }
+
+    .special-permission-card.highlighted::before {
+        background: linear-gradient(90deg, #ffd700, #ffeb3b, #fff176);
+        height: 3px;
+    }
+</style>

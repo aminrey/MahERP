@@ -9,71 +9,55 @@
 
         <form asp-action="AddMemberSubmit" method="post">
             @Html.AntiForgeryToken()
-            
+
             <div class="modal-body">
                 <input type="hidden" asp-for="TeamId" />
-                
+
                 <div class="mb-3">
-                    <label asp-for="UserId" class="form-label required"></label>
+                    <label asp-for="UserId" class="form-label required">انتخاب کاربر</label>
                     <select asp-for="UserId" class="form-select js-select2" asp-items="ViewBag.AvailableUsers" required>
                         <option value="">-- انتخاب کاربر --</option>
                     </select>
                     <span asp-validation-for="UserId" class="text-danger"></span>
                 </div>
 
-                <!-- انتخاب سمت - بخش جدید -->
                 <div class="mb-3">
                     <label asp-for="PositionId" class="form-label">سمت در تیم</label>
                     <select asp-for="PositionId" class="form-select" asp-items="ViewBag.AvailablePositions">
-                        <option value="">-- انتخاب سمت (اختیاری) --</option>
                     </select>
                     <span asp-validation-for="PositionId" class="text-danger"></span>
                     <div class="form-text">
                         <small class="text-info">
                             <i class="fa fa-info-circle me-1"></i>
-                            انتخاب سمت تأثیر بر مجوزهای مشاهده تسک خواهد داشت
+                            انتخاب سمت تأثیر بر مجوزهای مشاهده تسک خواهد داشت. در صورت عدم انتخاب، عضو بدون سمت رسمی اضافه می‌شود.
                         </small>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label asp-for="Position" class="form-label">عنوان سمت (دستی)</label>
-                            <input asp-for="Position" class="form-control" placeholder="سمت در تیم" />
-                            <span asp-validation-for="Position" class="text-danger"></span>
-                            <div class="form-text">
-                                <small class="text-muted">این فیلد در صورت عدم انتخاب سمت از لیست بالا استفاده می‌شود</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label asp-for="MembershipType" class="form-label"></label>
-                            <select asp-for="MembershipType" class="form-select" asp-items="ViewBag.MembershipTypes">
-                            </select>
-                            <span asp-validation-for="MembershipType" class="text-danger"></span>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="mb-3">
-                    <label asp-for="RoleDescription" class="form-label"></label>
-                    <textarea asp-for="RoleDescription" class="form-control" rows="2" placeholder="شرح نقش کاربر در تیم (اختیاری)"></textarea>
+                    <label asp-for="RoleDescription" class="form-label">شرح نقش در تیم</label>
+                    <textarea asp-for="RoleDescription" class="form-control" rows="3" placeholder="توضیحات مسئولیت‌ها و نقش کاربر در تیم (اختیاری)"></textarea>
                     <span asp-validation-for="RoleDescription" class="text-danger"></span>
+                    <div class="form-text">
+                        <small class="text-muted">این توضیحات به سایر اعضای تیم در مشاهده لیست اعضا نمایش داده خواهد شد</small>
+                    </div>
                 </div>
 
                 <div class="form-check">
                     <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
-                    <label asp-for="IsActive" class="form-check-label"></label>
+                    <label asp-for="IsActive" class="form-check-label">عضو فعال</label>
+                    <div class="form-text">
+                        <small class="text-muted">اعضای غیرفعال در لیست‌های اصلی نمایش داده نمی‌شوند</small>
+                    </div>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i> انصراف
+                </button>
                 <button type="submit" class="btn btn-primary" data-save="modal-ajax-save">
-                    <i class="fa fa-plus me-1"></i> اضافه کردن
+                    <i class="fa fa-plus me-1"></i> اضافه کردن عضو
                 </button>
             </div>
         </form>
@@ -81,15 +65,31 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    // هنگام تغییر انتخاب سمت، فیلد عنوان سمت دستی را غیرفعال کن
-    $('#PositionId').on('change', function() {
-        var selectedPosition = $(this).val();
-        if (selectedPosition) {
-            $('#Position').prop('disabled', true).val('');
-        } else {
-            $('#Position').prop('disabled', false);
-        }
+    $(document).ready(function() {
+        // فعال‌سازی Select2 برای dropdown کاربران
+        $('.js-select2').select2({
+            dropdownParent: $('.modal'),
+            placeholder: '-- انتخاب کاربر --',
+            allowClear: true,
+            language: {
+                noResults: function() {
+                    return "کاربری یافت نشد";
+                },
+                searching: function() {
+                    return "در حال جستجو...";
+                }
+            }
+        });
+
+        // فوکوس روی اولین فیلد هنگام باز شدن مودال
+        $('.modal').on('shown.bs.modal', function () {
+            $('#UserId').focus();
+        });
+
+        // پاک کردن فیلدهای فرم هنگام بسته شدن مودال (در صورت لغو)
+        $('.modal').on('hidden.bs.modal', function () {
+            $(this).find('form')[0].reset();
+            $('.js-select2').val(null).trigger('change');
+        });
     });
-});
 </script>

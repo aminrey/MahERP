@@ -429,7 +429,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 MembershipType = 0
             };
 
-            PrepareTeamMemberViewBags(team.BranchId);
+            PrepareTeamMemberViewBags(team.BranchId, teamId);
             return PartialView("_AddMemberModal", model);
         }
 
@@ -491,52 +491,35 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
         private void PrepareTeamViewBags(int branchId)
         {
-            // دریافت تیم‌های والد ممکن
-            var parentTeams = _teamRepository.GetTeamsByBranchId(branchId)
-                .Select(t => new SelectListItem
-                {
-                    Value = t.Id.ToString(),
-                    Text = t.Title
-                }).ToList();
-
-            parentTeams.Insert(0, new SelectListItem { Value = "", Text = "-- بدون تیم والد --" });
-            ViewBag.ParentTeams = parentTeams;
-
-            // دریافت کاربران موجود برای انتخاب مدیر
-            var availableUsers = _teamRepository.GetAvailableUsersForBranch(branchId)
-                .Select(u => new SelectListItem
-                {
-                    Value = u.UserId,
-                    Text = u.FullName + (string.IsNullOrEmpty(u.Position) ? "" : $" ({u.Position})")
-                }).ToList();
-
-            availableUsers.Insert(0, new SelectListItem { Value = "", Text = "-- انتخاب مدیر --" });
-            ViewBag.AvailableUsers = availableUsers;
-
-            ViewBag.AccessLevels = new SelectList(new[]
-            {
-                new { Value = 0, Text = "عمومی" },
-                new { Value = 1, Text = "محدود" }
-            }, "Value", "Text");
+            var data = _teamRepository.PrepareTeamViewBags(branchId);
+            
+            ViewBag.ParentTeams = data.ParentTeams;
+            ViewBag.AvailableUsers = data.AvailableUsers;
+            ViewBag.AccessLevels = data.AccessLevels;
         }
 
-        private void PrepareTeamMemberViewBags(int branchId)
+        private void PrepareTeamMemberViewBags(int branchId, int teamId)
         {
-            var availableUsers = _teamRepository.GetAvailableUsersForBranch(branchId)
-                .Select(u => new SelectListItem
-                {
-                    Value = u.UserId,
-                    Text = u.FullName + (string.IsNullOrEmpty(u.Position) ? "" : $" ({u.Position})")
-                }).ToList();
+            var data = _teamRepository.PrepareTeamMemberViewBags(branchId, teamId);
+            
+            ViewBag.AvailableUsers = data.AvailableUsers;
+            ViewBag.AvailablePositions = data.AvailablePositions;
+            ViewBag.MembershipTypes = data.MembershipTypes;
+        }
 
-            ViewBag.AvailableUsers = availableUsers;
-
-            ViewBag.MembershipTypes = new SelectList(new[]
-            {
-                new { Value = 0, Text = "عضو عادی" },
-                new { Value = 1, Text = "عضو ویژه" },
-                new { Value = 2, Text = "مدیر تیم" }
-            }, "Value", "Text");
+        /// <summary>
+        /// آماده‌سازی ViewBag برای ویرایش عضو
+        /// </summary>
+        private void PrepareEditMemberViewBags(int branchId, int teamId)
+        {
+            var data = _teamRepository.PrepareTeamMemberViewBags(branchId, teamId);
+            
+            ViewBag.AvailableUsers = data.AvailableUsers;
+            ViewBag.AvailablePositions = data.AvailablePositions;
+            
+            // فقط یک گزینه "بدون سمت" اضافه می‌کنیم
+            ViewBag.AvailablePositions.Insert(0, new SelectListItem { Value = "", Text = "-- بدون سمت --" });
+            ViewBag.MembershipTypes = data.MembershipTypes;
         }
 
         #endregion
@@ -577,7 +560,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     MembershipType = 0
                 };
 
-                PrepareTeamMemberViewBags(team.BranchId);
+                PrepareTeamMemberViewBags(team.BranchId, teamId);
                 return PartialView("_AddMemberModal", model);
             }
             catch (Exception ex)
@@ -597,49 +580,47 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             {
                 var errors = ModelState.Values
                     .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
+                    .Select(e => new { status = "error", text = e.ErrorMessage })
+                    .ToArray();
 
                 return Json(new
                 {
                     success = false,
-                    message = "داده‌های ورودی نامعتبر است.",
-                    errors = errors
+                    message = errors
                 });
             }
 
-            try
+            var currentUserId = _userManager.GetUserId(User);
+            var result = _teamRepository.CreateTeamMemberWithValidation(model, currentUserId);
+
+            if (result.IsSuccess)
             {
-                var member = _mapper.Map<TeamMember>(model);
-                member.AddedByUserId = _userManager.GetUserId(User);
-
-                var memberId = _teamRepository.AddTeamMember(member);
-
-                // بازگرداندن محتوای بروزرسانی شده برای جدول اعضا
-                var updatedTeam = _teamRepository.GetTeamById(model.TeamId);
-                updatedTeam.TeamMembers = _teamRepository.GetTeamMembers(model.TeamId);
-
                 return Json(new
                 {
                     success = true,
-                    message = "عضو با موفقیت به تیم اضافه شد.",
-                    status = "update-view",
-                    viewList = new[] {
-                new {
-                    elementId = "team-members-table",
-                    view = new {
-                        result = this.RenderViewToStringAsync("_TeamMembersTable", updatedTeam.TeamMembers)
-                    }
-                }
-            }
+                    message = new[] {
+                        new { status = "success", text = result.Message }
+                    },
+                    status = "redirect",
+                    redirectUrl = Url.Action("Details", new { id = model.TeamId })
                 });
             }
-            catch (Exception ex)
+            else
             {
+                var errorMessages = new List<object>
+                {
+                    new { status = "error", text = result.Message }
+                };
+
+                foreach (var error in result.Errors)
+                {
+                    errorMessages.Add(new { status = "error", text = error });
+                }
+
                 return Json(new
                 {
                     success = false,
-                    message = "خطا در اضافه کردن عضو: " + ex.Message
+                    message = errorMessages.ToArray()
                 });
             }
         }
@@ -985,7 +966,6 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 return BadRequest("خطا در بارگذاری فرم: " + ex.Message);
             }
         }
-
         /// <summary>
         /// ایجاد سمت جدید برای تیم
         /// </summary>
@@ -1024,22 +1004,10 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Json(new { success = false, message = "شما به این تیم دسترسی ندارید." });
                 }
 
-                // اگر عنوان خالی است، از عنوان پیش‌فرض استفاده کن
-                if (string.IsNullOrWhiteSpace(model.Title))
-                {
-                    model.Title = TeamRepository.GetDefaultPositionTitle(model.PowerLevel);
-                }
-
                 // بررسی تکراری نبودن عنوان
                 if (!_teamRepository.IsPositionTitleUnique(model.TeamId, model.Title))
                 {
                     return Json(new { success = false, message = "سمت با این عنوان قبلاً در این تیم تعریف شده است." });
-                }
-
-                // بررسی تکراری نبودن سطح قدرت
-                if (!_teamRepository.IsPowerLevelUnique(model.TeamId, model.PowerLevel))
-                {
-                    return Json(new { success = false, message = "سطح قدرت انتخاب شده قبلاً استفاده شده است." });
                 }
 
                 // بررسی تکراری نبودن سمت پیش‌فرض
@@ -1070,7 +1038,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     ActivityTypeEnum.Create,
                     "Team",
                     "CreatePositionSubmit",
-                    $"ایجاد سمت جدید: {position.Title} برای تیم: {team.Title}",
+                    $"ایجاد سمت جدید: {position.Title} با سطح قدرت {position.PowerLevel} برای تیم: {team.Title}",
                     recordId: positionId.ToString(),
                     entityType: "TeamPosition",
                     recordTitle: position.Title
@@ -1149,7 +1117,6 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 return BadRequest("خطا در بارگذاری فرم: " + ex.Message);
             }
         }
-
         /// <summary>
         /// ویرایش سمت
         /// </summary>
@@ -1175,16 +1142,9 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 }
 
                 var position = _teamRepository.GetTeamPositionById(id);
-
                 if (position == null)
                 {
                     return Json(new { success = false, message = "سمت مورد نظر یافت نشد." });
-                }
-
-                // اگر عنوان خالی است، از عنوان پیش‌فرض استفاده کن
-                if (string.IsNullOrWhiteSpace(model.Title))
-                {
-                    model.Title = TeamRepository.GetDefaultPositionTitle(model.PowerLevel);
                 }
 
                 // بررسی تکراری نبودن عنوان
@@ -1193,11 +1153,12 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Json(new { success = false, message = "سمت با این عنوان قبلاً در این تیم تعریف شده است." });
                 }
 
-                // ✅ بررسی تکراری نبودن سمت پیش‌فرض
+                // بررسی تکراری نبودن سمت پیش‌فرض
                 if (model.IsDefault && !_teamRepository.IsDefaultPositionUnique(model.TeamId, id))
                 {
                     return Json(new { success = false, message = "در این تیم قبلاً یک سمت پیش‌فرض تعریف شده است. لطفاً ابتدا آن را غیرفعال کنید." });
                 }
+
                 // بروزرسانی
                 position.Title = model.Title;
                 position.Description = model.Description;
@@ -1217,7 +1178,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                         ActivityTypeEnum.Edit,
                         "Team",
                         "EditPositionSubmit",
-                        $"ویرایش سمت: {position.Title}",
+                        $"ویرایش سمت: {position.Title} با سطح قدرت {position.PowerLevel}",
                         recordId: position.Id.ToString(),
                         entityType: "TeamPosition",
                         recordTitle: position.Title
@@ -1253,7 +1214,6 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 });
             }
         }
-
         /// <summary>
         /// حذف سمت
         /// </summary>
@@ -1349,10 +1309,9 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
         #endregion
 
-        #region Task Viewer Management
 
         /// <summary>
-        /// نمایش مودال مدیریت مجوزهای مشاهده تسک‌های تیم
+        /// نمایش مودال مدیریت تبصره‌های مشاهده تسک‌های تیم
         /// </summary>
         public async Task<IActionResult> ManageTaskViewersModal(int teamId)
         {
@@ -1376,7 +1335,8 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     BranchId = team.BranchId,
                     TeamMembers = _teamRepository.GetTeamMembers(teamId).Where(m => m.IsActive).ToList(),
                     ExistingViewers = new List<TaskViewerViewModel>(),
-                    AvailableUsers = _teamRepository.GetAvailableUsersForBranch(team.BranchId)
+                    AvailableUsers = _teamRepository.GetAvailableUsersForBranch(team.BranchId),
+                    AvailableTeams = _teamRepository.GetTeamsByBranchId(team.BranchId)
                 };
 
                 // دریافت مجوزهای موجود
@@ -1389,7 +1349,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                         UserId = tv.UserId,
                         UserFullName = tv.User != null ? $"{tv.User.FirstName} {tv.User.LastName}" : "نامشخص",
                         AccessType = tv.AccessType,
-                        AccessTypeText = GetAccessTypeText(tv.AccessType), // اضافه کردن این متد
+                        AccessTypeText = GetAccessTypeText(tv.AccessType),
                         Description = tv.Description,
                         AddedDate = tv.AddedDate,
                         IsActive = tv.IsActive
@@ -1400,7 +1360,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     ActivityTypeEnum.View,
                     "Team",
                     "ManageTaskViewersModal",
-                    $"نمایش مدیریت مجوزهای تسک برای تیم: {team.Title}",
+                    $"نمایش مدیریت تبصره‌های تسک برای تیم: {team.Title}",
                     recordId: teamId.ToString()
                 );
 
@@ -1411,7 +1371,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 await _activityLogger.LogErrorAsync(
                     "Team",
                     "ManageTaskViewersModal",
-                    "خطا در نمایش مدیریت مجوزهای تسک",
+                    "خطا در نمایش مدیریت تبصره‌های تسک",
                     ex,
                     recordId: teamId.ToString()
                 );
@@ -1457,7 +1417,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Json(new { success = false, message = "شما به این تیم دسترسی ندارید." });
                 }
 
-                // اعطای مجوز با استفاده از TaskViewerRepository (اگر در دسترس باشد)
+                // اعطای مجوز با استفاده از TaskViewerRepository (اگر در دسترسی باشد)
                 int createdCount = 0;
                 
                 // فعلاً از UnitOfWork استفاده می‌کنیم
@@ -1710,29 +1670,58 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 var member = _teamRepository.GetTeamMemberById(memberId);
                 if (member == null)
                 {
-                    return Json(new { success = false, message = "عضو مورد نظر یافت نشد." });
+                    return Json(new
+                    {
+                        success = false,
+                        message = new[] {
+                    new { status = "error", text = "عضو مورد نظر یافت نشد." }
+                }
+                    });
                 }
 
-                var success = _teamRepository.RemoveTeamMember(memberId);
+                var result = _teamRepository.DeleteTeamMemberWithValidation(memberId);
 
-                if (success)
+                if (result.IsSuccess)
                 {
                     return Json(new
                     {
                         success = true,
-                        message = "عضو با موفقیت از تیم حذف شد.",
+                        message = new[] {
+                    new { status = "success", text = result.Message }
+                },
                         status = "redirect",
                         redirectUrl = Url.Action("Details", new { id = member.TeamId })
                     });
                 }
                 else
                 {
-                    return Json(new { success = false, message = "خطا در حذف عضو از تیم." });
+                    var errorMessages = new List<object>
+                    {
+                        new { status = "error", text = result.Message }
+                    };
+
+                    // اضافه کردن خطاهای اضافی اگر وجود دارد
+                    foreach (var error in result.Errors)
+                    {
+                        errorMessages.Add(new { status = "error", text = error });
+                    }
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = errorMessages.ToArray()
+                    });
                 }
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "خطا: " + ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = new[] {
+                        new { status = "error", text = "خطا: " + ex.Message }
+                    }
+                });
             }
         }
 
@@ -1826,7 +1815,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Forbid();
 
                 // آماده‌سازی ViewBag ها
-                PrepareEditMemberViewBags(team.BranchId, member.TeamId);
+                PrepareTeamMemberViewBags(team.BranchId, member.TeamId);
 
                 return PartialView("_EditMemberModal", member);
             }
@@ -1847,44 +1836,49 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             {
                 var errors = ModelState.Values
                     .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
+                    .Select(e => new { status = "error", text = e.ErrorMessage })
+                    .ToArray();
 
                 return Json(new
                 {
                     success = false,
-                    message = "داده‌های ورودی نامعتبر است.",
-                    errors = errors
+                    message = errors
                 });
             }
 
-            try
-            {
-                var member = _mapper.Map<TeamMember>(model);
-                member.LastUpdateDate = DateTime.Now;
+            var result = _teamRepository.UpdateTeamMemberWithValidation(model);
 
-                var success = _teamRepository.UpdateTeamMember(member);
+    if (result.IsSuccess)
+    {
+        return Json(new
+        {
+            success = true,
+            message = new[] {
+                new { status = "success", text = result.Message }
+            },
+            status = "redirect",
+            redirectUrl = Url.Action("Details", new { id = model.TeamId })
+        });
+    }
+    else
+    {
+        var errorMessages = new List<object>
+        {
+            new { status = "error", text = result.Message }
+        };
 
-                if (success)
-                {
-                    return Json(new
-                    {
-                        success = true,
-                        message = "اطلاعات عضو با موفقیت بروزرسانی شد.",
-                        status = "redirect",
-                        redirectUrl = Url.Action("Details", new { id = model.TeamId })
-                    });
-                }
-                else
-                {
-                    return Json(new { success = false, message = "خطا در بروزرسانی اطلاعات عضو." });
-                }
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = "خطا: " + ex.Message });
-            }
+        foreach (var error in result.Errors)
+        {
+            errorMessages.Add(new { status = "error", text = error });
         }
+
+        return Json(new
+        {
+            success = false,
+            message = errorMessages.ToArray()
+        });
+    }
+}
 
         /// <summary>
         /// نمایش مودال تخصیص سمت به عضو
@@ -1941,10 +1935,8 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         [ValidateAntiForgeryToken]
         public IActionResult AssignPositionSubmit(AssignPositionViewModel model,
             string customTitle, int? customPowerLevel, string customDescription,
-            bool customCanViewSubordinateTasks = true, bool customCanViewPeerTasks = false)
+            bool customCanViewSubordinateTasks = true, bool customCanViewPeerTasks = false, int? customLevel = null)
         {
-            // حذف ModelState.IsValid چون برای این action غیرضروری است
-
             try
             {
                 int positionId;
@@ -1958,9 +1950,25 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                         return Json(new { success = false, message = "عنوان سمت الزامی است." });
                     }
 
-                    if (!customPowerLevel.HasValue)
+                    // اولویت با customLevel، سپس customPowerLevel
+                    int finalPowerLevel;
+                    if (customLevel.HasValue)
+                    {
+                        finalPowerLevel = customLevel.Value;
+                    }
+                    else if (customPowerLevel.HasValue)
+                    {
+                        finalPowerLevel = customPowerLevel.Value;
+                    }
+                    else
                     {
                         return Json(new { success = false, message = "سطح قدرت الزامی است." });
+                    }
+
+                    // بررسی محدوده سطح قدرت
+                    if (finalPowerLevel < 0 || finalPowerLevel > 100)
+                    {
+                        return Json(new { success = false, message = "سطح قدرت باید بین 0 تا 100 باشد." });
                     }
 
                     // بررسی تکراری نبودن عنوان
@@ -1975,13 +1983,13 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                         TeamId = model.TeamId,
                         Title = customTitle,
                         Description = customDescription ?? $"سمت دستی ایجاد شده برای {model.UserFullName}",
-                        PowerLevel = customPowerLevel.Value,
+                        PowerLevel = finalPowerLevel,
                         CanViewSubordinateTasks = customCanViewSubordinateTasks,
                         CanViewPeerTasks = customCanViewPeerTasks,
                         MaxMembers = 1, // فقط برای همین عضو
                         IsDefault = false,
                         IsActive = true,
-                        DisplayOrder = customPowerLevel.Value,
+                        DisplayOrder = finalPowerLevel,
                         CreatorUserId = _userManager.GetUserId(User)
                     };
 
@@ -1998,7 +2006,9 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 if (success)
                 {
                     var message = model.PositionId.ToString() == "CUSTOM"
-                        ? $"سمت جدید '{customTitle}' ایجاد شد و به عضو تخصیص یافت."
+                        ? $"سمت جدید '{customTitle}' با سطح قدرت " +
+                          (customLevel.HasValue ? $"{customLevel.Value} (سفارشی)" : $"{customPowerLevel.Value}") +
+                          " ایجاد شد و به عضو تخصیص یافت."
                         : "سمت با موفقیت تخصیص یافت.";
 
                     return Json(new
@@ -2105,39 +2115,74 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         }
 
         /// <summary>
-        /// آماده‌سازی ViewBag برای ویرایش عضو
+        /// فعال‌سازی مجدد تبصره غیرفعال
         /// </summary>
-        private void PrepareEditMemberViewBags(int branchId, int teamId)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReactivateTaskViewerPermission(int viewerId)
         {
-            var availableUsers = _teamRepository.GetAvailableUsersForBranch(branchId)
-                .Select(u => new SelectListItem
-                {
-                    Value = u.UserId,
-                    Text = u.FullName + (string.IsNullOrEmpty(u.Position) ? "" : $" ({u.Position})")
-                }).ToList();
-
-            ViewBag.AvailableUsers = availableUsers;
-
-            var availablePositions = _teamRepository.GetTeamPositions(teamId)
-                .Where(p => p.IsActive)
-                .Select(p => new SelectListItem
-                {
-                    Value = p.Id.ToString(),
-                    Text = $"{p.Title} (قدرت: {p.PowerLevel})"
-                }).ToList();
-
-            // فقط یک گزینه "بدون سمت" اضافه می‌کنیم
-            availablePositions.Insert(0, new SelectListItem { Value = "", Text = "-- بدون سمت --" });
-            ViewBag.AvailablePositions = availablePositions;
-
-            ViewBag.MembershipTypes = new SelectList(new[]
+            try
             {
-                new { Value = 0, Text = "عضو عادی" },
-                new { Value = 1, Text = "عضو ویژه" },
-                new { Value = 2, Text = "مدیر تیم" }
-            }, "Value", "Text");
-        }      
-        #endregion
+                var viewer = _uow.TaskViewerUW.GetById(viewerId);
+                if (viewer == null)
+                {
+                    return Json(new { success = false, message = "تبصره مورد نظر یافت نشد." });
+                }
+
+                // بررسی دسترسی
+                var team = _teamRepository.GetTeamById(viewer.TeamId ?? 0);
+                if (team == null)
+                {
+                    return Json(new { success = false, message = "تیم مرتبط یافت نشد." });
+                }
+
+                var currentUserId = _userManager.GetUserId(User);
+                var userBranches = _branchRepository.GetBrnachListByUserId(currentUserId);
+                if (!userBranches.Any(b => b.Id == team.BranchId))
+                {
+                    return Json(new { success = false, message = "شما به این عملیات دسترسی ندارید." });
+                }
+
+                // فعال‌سازی مجدد
+                viewer.IsActive = true;
+                viewer.LastUpdateDate = DateTime.Now;
+                viewer.LastUpdaterUserId = currentUserId;
+
+                _uow.TaskViewerUW.Update(viewer);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Edit,
+                    "Team",
+                    "ReactivateTaskViewerPermission",
+                    $"فعال‌سازی مجدد تبصره مشاهده تسک برای کاربر در تیم: {team.Title}",
+                    recordId: viewerId.ToString(),
+                    entityType: "TaskViewer"
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    message = "تبصره با موفقیت فعال شد."
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Team",
+                    "ReactivateTaskViewerPermission",
+                    "خطا در فعال‌سازی مجدد تبصره",
+                    ex,
+                    recordId: viewerId.ToString()
+                );
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در فعال‌سازی تبصره: " + ex.Message
+                });
+            }
+        }
 
         /// <summary>
         /// تکمیل شدن متد GetAccessTypeText که در TaskViewer استفاده می‌شود
@@ -2156,4 +2201,4 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             };
         }
     }
-}
+    }

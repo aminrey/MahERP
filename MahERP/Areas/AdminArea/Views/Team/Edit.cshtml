@@ -1,4 +1,4 @@
-﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamViewModel
+﻿@model TeamViewModel
 @{
     ViewData["Title"] = "ویرایش تیم - " + Model.Title;
 }
@@ -21,6 +21,7 @@
             <input type="hidden" asp-for="BranchId" />
             <input type="hidden" asp-for="CreateDate" />
             <input type="hidden" asp-for="CreatorName" />
+            <input type="hidden" asp-for="CreatorUserId" />
             
             <div class="row">
                 <div class="col-md-6">

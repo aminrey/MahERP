@@ -9,19 +9,40 @@
 
         <form asp-action="EditMemberSubmit" method="post">
             @Html.AntiForgeryToken()
-            
+
             <div class="modal-body">
                 <input type="hidden" asp-for="Id" />
                 <input type="hidden" asp-for="TeamId" />
                 <input type="hidden" asp-for="UserId" />
                 <input type="hidden" asp-for="AddedByUserId" />
-                
+
                 <!-- نمایش اطلاعات کاربر -->
                 <div class="alert alert-info d-flex align-items-center mb-3">
                     <i class="fa fa-info-circle me-2"></i>
                     <div>
                         <strong>تیم:</strong> @Model.TeamTitle<br>
                         <strong>عضو:</strong> @Model.UserFullName
+                        @if (!string.IsNullOrEmpty(Model.PositionTitle))
+                        {
+                            <br>
+                            <strong>سمت فعلی:</strong>
+
+                            <span class="badge bg-primary">@Model.PositionTitle</span>
+                        }
+                        else if (!string.IsNullOrEmpty(Model.Position))
+                        {
+                            <br>
+                            <strong>سمت فعلی:</strong>
+
+                            <span class="badge bg-secondary">@Model.Position</span>
+                        }
+                        else
+                        {
+                            <br>
+                            <strong>وضعیت:</strong>
+
+                            <span class="badge bg-light text-dark">بدون سمت رسمی</span>
+                        }
                     </div>
                 </div>
 
@@ -46,51 +67,54 @@
                     <div class="form-text">
                         <small class="text-info">
                             <i class="fa fa-info-circle me-1"></i>
-                            انتخاب سمت تأثیر بر مجوزهای مشاهده تسک خواهد داشت
+                            تغییر سمت تأثیر بر مجوزهای مشاهده تسک خواهد داشت. برای حذف از سمت، گزینه "بدون سمت" را انتخاب کنید.
                         </small>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <!-- عنوان سمت دستی -->
-                        <div class="mb-3">
-                            <label asp-for="Position" class="form-label">عنوان سمت (دستی)</label>
-                            <input asp-for="Position" class="form-control" placeholder="سمت در تیم" />
-                            <span asp-validation-for="Position" class="text-danger"></span>
-                            <div class="form-text">
-                                <small class="text-muted">این فیلد در صورت عدم انتخاب سمت از لیست بالا استفاده می‌شود</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <!-- نوع عضویت -->
-                        <div class="mb-3">
-                            <label asp-for="MembershipType" class="form-label">نوع عضویت</label>
-                            <select asp-for="MembershipType" class="form-select" asp-items="ViewBag.MembershipTypes">
-                            </select>
-                            <span asp-validation-for="MembershipType" class="text-danger"></span>
-                        </div>
                     </div>
                 </div>
 
                 <!-- شرح نقش -->
                 <div class="mb-3">
-                    <label asp-for="RoleDescription" class="form-label">شرح نقش</label>
-                    <textarea asp-for="RoleDescription" class="form-control" rows="2" placeholder="شرح نقش کاربر در تیم (اختیاری)"></textarea>
+                    <label asp-for="RoleDescription" class="form-label">شرح نقش در تیم</label>
+                    <textarea asp-for="RoleDescription" class="form-control" rows="3" placeholder="توضیحات مسئولیت‌ها و نقش کاربر در تیم (اختیاری)"></textarea>
                     <span asp-validation-for="RoleDescription" class="text-danger"></span>
+                    <div class="form-text">
+                        <small class="text-muted">این توضیحات به سایر اعضای تیم در مشاهده لیست اعضا نمایش داده خواهد شد</small>
+                    </div>
                 </div>
 
                 <!-- وضعیت فعال -->
                 <div class="form-check">
                     <input asp-for="IsActive" class="form-check-input" type="checkbox" />
                     <label asp-for="IsActive" class="form-check-label">عضویت فعال</label>
+                    <div class="form-text">
+                        <small class="text-muted">اعضای غیرفعال در لیست‌های اصلی نمایش داده نمی‌شوند</small>
+                    </div>
                 </div>
+
+                <!-- نمایش تاریخ عضویت -->
+                @if (Model.StartDate != DateTime.MinValue)
+                {
+                    <hr class="my-3" />
+                    <div class="row text-muted small">
+                        <div class="col-6">
+                            <i class="fa fa-calendar me-1"></i>
+                            <strong>تاریخ عضویت:</strong> @Model.StartDate.ToString("yyyy/MM/dd")
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.AddedByUserName))
+                        {
+                            <div class="col-6">
+                                <i class="fa fa-user me-1"></i>
+                                <strong>اضافه شده توسط:</strong> @Model.AddedByUserName
+                            </div>
+                        }
+                    </div>
+                }
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i> انصراف
+                </button>
                 <button type="submit" class="btn btn-primary" data-save="modal-ajax-save">
                     <i class="fa fa-save me-1"></i> ذخیره تغییرات
                 </button>
@@ -100,20 +124,28 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    // هنگام تغییر انتخاب سمت، فیلد عنوان سمت دستی را غیرفعال کن
-    $('#PositionId').on('change', function() {
-        var selectedPosition = $(this).val();
-        if (selectedPosition) {
-            $('#Position').prop('disabled', true).val('');
-        } else {
-            $('#Position').prop('disabled', false);
-        }
-    });
+    $(document).ready(function() {
+        // فوکوس روی اولین فیلد قابل ویرایش
+        $('.modal').on('shown.bs.modal', function () {
+            $('#PositionId').focus();
+        });
 
-    // اگر در ابتدا سمت انتخاب شده، فیلد دستی را غیرافعال کن
-    if ($('#PositionId').val()) {
-        $('#Position').prop('disabled', true);
-    }
-});
+        // نمایش هشدار تأیید هنگام تغییر سمت مدیر
+        $('#PositionId').on('change', function() {
+            var selectedOption = $(this).find('option:selected');
+            var selectedText = selectedOption.text();
+
+            // اگر سمت جدید شامل کلمه "مدیر" باشد، هشدار نمایش بده
+            if (selectedText.includes('مدیر') || selectedText.includes('مدیریت')) {
+                if (!confirm('آیا از تخصیص سمت مدیریتی به این عضو اطمینان دارید؟\nاین تغییر ممکن است بر دسترسی‌های سیستم تأثیر بگذارد.')) {
+                    // بازگرداندن به حالت قبلی
+                    $(this).val('@Model.PositionId').trigger('change');
+                    return;
+                }
+            }
+        });
+
+        // نمایش tooltip برای فیلدهای کمکی
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
 </script>

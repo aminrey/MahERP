@@ -22,15 +22,15 @@
         </div>
 
         <div class="team-actions">
-            <!-- مجوزهای مشاهده تسک - دکمه جدید -->
+            <!-- مجوزهای مشاهده تسک - دکمه اصلاح شده -->
             <button type="button" class="btn btn-sm btn-outline-light"
                     data-toggle="modal-ajax"
-                    href="@Url.Action("ManageTeamTaskViewersModal", "TaskViewer", new { teamId = Model.Id })"
-                    data-bs-toggle="tooltip" title="مدیریت مجوزهای مشاهده تسک‌های تیم">
+                    href="@Url.Action("ManageTaskViewersModal", "Team", new { teamId = Model.Id })"
+                    data-bs-toggle="tooltip" title="مدیریت تبصره‌های مشاهده تسک‌های تیم">
                 <i class="fa fa-eye"></i>
             </button>
 
-            <!-- انتخاب/تغییر مدیر -->
+            <!-- سایر دکمه‌ها... -->
             <button type="button" class="btn btn-sm btn-outline-light"
                     data-toggle="modal-ajax"
                     href="@Url.Action("AssignManagerModal", new { teamId = Model.Id })"
@@ -40,7 +40,6 @@
 
             @if (Model.HasManager)
             {
-                <!-- حذف مدیر -->
                 <button type="button" class="btn btn-sm btn-outline-light"
                         data-toggle="modal-ajax"
                         href="@Url.Action("RemoveManagerModal", new { teamId = Model.Id })"
@@ -49,7 +48,6 @@
                 </button>
             }
 
-            <!-- سایر دکمه‌ها... -->
             <a asp-action="Details" asp-route-id="@Model.Id"
                class="btn btn-sm btn-outline-light"
                data-bs-toggle="tooltip" title="مشاهده جزئیات تیم">

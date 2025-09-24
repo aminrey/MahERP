@@ -30,12 +30,15 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         public async Task<bool> CanUserViewTaskAsync(string userId, int taskId)
         {
+            var currentTime = DateTime.Now;
+
             // 1. بررسی مجوزهای مستقیم TaskViewer
             var directPermission = await _context.TaskViewer_Tbl
                 .AnyAsync(tv => tv.UserId == userId &&
                               tv.TaskId == taskId &&
                               tv.IsActive &&
-                              tv.IsValidAtTime(DateTime.Now));
+                              (tv.StartDate == null || tv.StartDate <= currentTime) &&
+                              (tv.EndDate == null || tv.EndDate > currentTime));
 
             if (directPermission) return true;
 
@@ -48,7 +51,7 @@ namespace MahERP.DataModelLayer.Repository
             // 3. بررسی انتساب به تسک
             var isAssigned = await _context.TaskAssignment_Tbl
                 .AnyAsync(ta => ta.TaskId == taskId &&
-                               ta.AssignedUserId == userId ); // اضافه کردن IsActive
+                               ta.AssignedUserId == userId);
 
             if (isAssigned) return true;
 
@@ -79,6 +82,7 @@ namespace MahERP.DataModelLayer.Repository
         public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId = null, int? teamId = null)
         {
             var visibleTaskIds = new HashSet<int>();
+            var currentTime = DateTime.Now; // محاسبه زمان فعلی یکبار
 
             // 1. تسک‌های مالکیت خود کاربر
             var ownTasks = await _context.Tasks_Tbl
@@ -94,12 +98,13 @@ namespace MahERP.DataModelLayer.Repository
                 .ToListAsync();
             visibleTaskIds.UnionWith(assignedTasks);
 
-            // 3. تسک‌های با مجوز مستقیم - اصلاح شده
+            // 3. تسک‌های با مجوز مستقیم - اصلاح شده با منطق زمان‌بندی
             var directPermissionTasks = await _context.TaskViewer_Tbl
                 .Where(tv => tv.UserId == userId &&
                             tv.TaskId > 0 && // بررسی اینکه TaskId مقدار داشته باشد
                             tv.IsActive &&
-                            tv.IsValidAtTime(DateTime.Now))
+                            (tv.StartDate == null || tv.StartDate <= currentTime) && // بررسی تاریخ شروع
+                            (tv.EndDate == null || tv.EndDate > currentTime)) // بررسی تاریخ پایان
                 .Select(tv => tv.TaskId)
                 .ToListAsync();
             visibleTaskIds.UnionWith(directPermissionTasks);
@@ -337,11 +342,14 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         public async Task<bool> HasSpecialPermissionAsync(string userId, Tasks task)
         {
+            var currentTime = DateTime.Now;
+
             var specialPermissions = await _context.TaskViewer_Tbl
                 .Where(tv => tv.UserId == userId &&
                             tv.AccessType == 0 && // مجوز خاص
                             tv.IsActive &&
-                            tv.IsValidAtTime(DateTime.Now))
+                            (tv.StartDate == null || tv.StartDate <= currentTime) &&
+                            (tv.EndDate == null || tv.EndDate > currentTime))
                 .ToListAsync();
 
             foreach (var permission in specialPermissions)
@@ -379,13 +387,15 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         public async Task<List<int>> GetSpecialPermissionTasksAsync(string userId)
         {
+            var currentTime = DateTime.Now;
             var visibleTasks = new List<int>();
 
             var specialPermissions = await _context.TaskViewer_Tbl
                 .Where(tv => tv.UserId == userId &&
                             tv.AccessType == 0 && // مجوز خاص
                             tv.IsActive &&
-                            tv.IsValidAtTime(DateTime.Now))
+                            (tv.StartDate == null || tv.StartDate <= currentTime) &&
+                            (tv.EndDate == null || tv.EndDate > currentTime))
                 .ToListAsync();
 
             foreach (var permission in specialPermissions)
@@ -738,12 +748,14 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         private async Task<List<SpecialTaskPermissionNode>> GetSpecialPermissionsAsync(int branchId)
         {
+            var currentTime = DateTime.Now;
+
             var permissions = await _context.TaskViewer_Tbl
                 .Include(tv => tv.User)
                 .Include(tv => tv.Team)
                 .Include(tv => tv.AddedByUser)
                 .Where(tv => tv.AccessType == 0 && // مجوز خاص
-                            tv.Team != null && tv.Team.BranchId == branchId)
+                    tv.Team != null && tv.Team.BranchId == branchId)
                 .ToListAsync();
 
             var permissionNodes = new List<SpecialTaskPermissionNode>();
@@ -763,7 +775,7 @@ namespace MahERP.DataModelLayer.Repository
                     StartDate = permission.StartDate,
                     EndDate = permission.EndDate,
                     IsActive = permission.IsActive,
-                    IsExpired = permission.EndDate.HasValue && permission.EndDate < DateTime.Now,
+                    IsExpired = permission.EndDate.HasValue && permission.EndDate < currentTime, // تغییر اینجا
                     Description = permission.Description,
                     AddedDate = permission.AddedDate,
                     AddedByUserName = $"{permission.AddedByUser.FirstName} {permission.AddedByUser.LastName}"

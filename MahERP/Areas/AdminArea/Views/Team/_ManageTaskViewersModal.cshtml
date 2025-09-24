@@ -1,31 +1,382 @@
-﻿@model ManageTeamTaskViewersViewModel
+﻿@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
+@using MahERP.DataModelLayer.ViewModels.OrganizationViewModels
+@using MahERP.DataModelLayer.ViewModels.UserViewModels
+@model ManageTeamTaskViewersViewModel
 
-<div class="modal-dialog modal-lg">
+<div class="modal-dialog modal-xl">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title">مدیریت مجوزهای مشاهده تسک‌ها - @Model.TeamTitle</h5>
+            <h5 class="modal-title">
+                <i class="fa fa-eye text-info me-2"></i>
+                مدیریت تبصره‌های مشاهده تسک - @Model.TeamTitle
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
         <div class="modal-body">
-            <div class="alert alert-info">
-                <h6><i class="fa fa-info-circle me-1"></i> اطلاعات تیم</h6>
-                <p><strong>تیم:</strong> @Model.TeamTitle</p>
-                <p><strong>تعداد اعضا:</strong> @Model.TeamMembers.Count()</p>
-                <p><strong>کاربران در دسترس:</strong> @Model.AvailableUsers.Count()</p>
-            </div>
+            <div class="row">
+                <!-- بخش ایجاد تبصره جدید -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="fa fa-plus me-1"></i>
+                                ایجاد تبصره جدید
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form asp-action="GrantSpecialPermissionSubmit" method="post" id="createPermissionForm">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="TeamId" value="@Model.TeamId" />
+                                
+                                <!-- کاربر مبدا -->
+                                <div class="mb-3">
+                                    <label class="form-label required">کاربر مبدا (دریافت‌کننده مجوز)</label>
+                                    <select name="GranteeUserId" class="form-select js-select2" required>
+                                        <option value="">-- انتخاب کاربر مبدا --</option>
+                                        @foreach (var user in Model.AvailableUsers)
+                                        {
+                                            <option value="@user.Id">@user.FullNamesString</option>
+                                        }
+                                    </select>
+                                    <small class="form-text text-muted">کاربری که قدرت مشاهده دریافت می‌کند</small>
+                                </div>
 
-            <!-- محتوای اصلی بعداً اضافه می‌شود -->
-            <div class="text-center">
-                <p class="text-muted">این بخش در حال توسعه است.</p>
-                <button type="button" class="btn btn-primary" onclick="alert('عملکرد تست - مودال باز شد!')">
-                    تست عملکرد
-                </button>
+                                <!-- نوع مجوز -->
+                                <div class="mb-3">
+                                    <label class="form-label required">نوع تبصره</label>
+                                    <select name="PermissionType" class="form-select" required id="permissionTypeSelect">
+                                        <option value="">-- انتخاب نوع --</option>
+                                        <option value="0">مشاهده تسک‌های کاربر خاص</option>
+                                        <option value="1">مشاهده تسک‌های تیم خاص</option>
+                                        <option value="2">مشاهده تسک‌های تیم و زیرتیم‌ها</option>
+                                    </select>
+                                </div>
+
+                                <!-- انتخاب مقصد -->
+                                <div id="targetSelectionContainer">
+                                    <!-- کاربر مقصد -->
+                                    <div class="mb-3" id="targetUserDiv" style="display: none;">
+                                        <label class="form-label">کاربر مقصد</label>
+                                        <select name="TargetUserId" class="form-select js-select2">
+                                            <option value="">-- انتخاب کاربر مقصد --</option>
+                                            @foreach (var user in Model.AvailableUsers)
+                                            {
+                                                <option value="@user.Id">@user.FullNamesString</option>
+                                            }
+                                        </select>
+                                        <small class="form-text text-muted">کاربری که تسک‌هایش مشاهده خواهد شد</small>
+                                    </div>
+
+                                    <!-- تیم مقصد -->
+                                    <div class="mb-3" id="targetTeamDiv" style="display: none;">
+                                        <label class="form-label">تیم مقصد</label>
+                                        <select name="TargetTeamId" class="form-select js-select2">
+                                            <option value="">-- انتخاب تیم مقصد --</option>
+                                            @foreach (var team in Model.AvailableTeams)
+                                            {
+                                                <option value="@team.Id">@team.Title</option>
+                                            }
+                                        </select>
+                                        <small class="form-text text-muted">تیمی که تسک‌هایش مشاهده خواهد شد</small>
+                                    </div>
+                                </div>
+
+                                <!-- محدوده زمانی -->
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">تاریخ شروع</label>
+                                        <input type="date" name="StartDate" class="form-control" />
+                                        <small class="form-text text-muted">خالی = بلافاصله</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">تاریخ پایان</label>
+                                        <input type="date" name="EndDate" class="form-control" />
+                                        <small class="form-text text-muted">خالی = بدون محدودیت</small>
+                                    </div>
+                                </div>
+
+                                <!-- توضیحات -->
+                                <div class="mb-3">
+                                    <label class="form-label">توضیحات</label>
+                                    <textarea name="Description" class="form-control" rows="3" 
+                                              placeholder="دلیل ایجاد این تبصره را شرح دهید..."></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fa fa-save me-1"></i> ایجاد تبصره
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- بخش تبصره‌های موجود -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">
+                                <i class="fa fa-list me-1"></i>
+                                تبصره‌های موجود (@Model.ExistingViewers.Count)
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.ExistingViewers.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>کاربر</th>
+                                                <th>نوع</th>
+                                                <th>وضعیت</th>
+                                                <th>عملیات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var viewer in Model.ExistingViewers)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <i class="fa fa-user me-1 text-primary"></i>
+                                                        <small>@viewer.UserFullName</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">@viewer.AccessTypeText</span>
+                                                    </td>
+                                                    <td>
+                                                        @if (viewer.IsActive)
+                                                        {
+                                                            <span class="badge bg-success">فعال</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-secondary">غیرفعال</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                                onclick="revokePermission(@viewer.Id)"
+                                                                data-bs-toggle="tooltip" title="لغو تبصره">
+                                                            <i class="fa fa-times"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted py-4">
+                                    <i class="fa fa-eye-slash fa-2x mb-3"></i>
+                                    <p>هیچ تبصره‌ای تعریف نشده است</p>
+                                    <small>برای شروع، اولین تبصره را از فرم سمت چپ ایجاد کنید</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- راهنمای سریع -->
+                    <div class="card mt-3">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0">
+                                <i class="fa fa-lightbulb me-1"></i>
+                                راهنمای سریع
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <small>
+                                <strong>تبصره چیست؟</strong><br>
+                                تبصره‌ها امکان دیدن تسک‌های کاربران یا تیم‌های خاص را فراتر از قوانین استاندارد سیستم فراهم می‌کنند.
+                                <hr>
+                                <strong>مثال:</strong> اگر کارمند A نیاز دارد تسک‌های مدیر B را ببیند، می‌توانید تبصره‌ای تعریف کنید که این امکان را فراهم کند.
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-1"></i> بستن
+            </button>
+            <button type="button" class="btn btn-info" onclick="refreshPermissions()">
+                <i class="fa fa-refresh me-1"></i> بروزرسانی
+            </button>
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        // Initialize Select2
+        $('.js-select2').select2({
+            width: '100%',
+            allowClear: true,
+            placeholder: function(){
+                return $(this).data('placeholder');
+            }
+        });
+
+        // مدیریت نمایش/مخفی کردن فیلدهای مقصد
+        $('#permissionTypeSelect').on('change', function() {
+            var selectedValue = $(this).val();
+            
+            if (selectedValue === '0') {
+                // مشاهده تسک‌های کاربر خاص
+                $('#targetUserDiv').show();
+                $('#targetTeamDiv').hide();
+                $('select[name="TargetUserId"]').attr('required', true);
+                $('select[name="TargetTeamId"]').removeAttr('required');
+            } else if (selectedValue === '1' || selectedValue === '2') {
+                // مشاهده تسک‌های تیم خاص یا تیم و زیرتیم‌ها
+                $('#targetUserDiv').hide();
+                $('#targetTeamDiv').show();
+                $('select[name="TargetUserId"]').removeAttr('required');
+                $('select[name="TargetTeamId"]').attr('required', true);
+            } else {
+                // هیچ انتخاب نشده
+                $('#targetUserDiv').hide();
+                $('#targetTeamDiv').hide();
+                $('select[name="TargetUserId"]').removeAttr('required');
+                $('select[name="TargetTeamId"]').removeAttr('required');
+            }
+        });
+
+        // ارسال فرم با Ajax
+        $('#createPermissionForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = $(this).serialize();
+            
+            $.post($(this).attr('action'), formData)
+                .done(function(response) {
+                    if (response.success) {
+                        // نمایش پیام موفقیت
+                        showMessage('success', response.message);
+                        
+                        // بازیابی مودال
+                        refreshPermissions();
+                        
+                        // پاک کردن فرم
+                        $('#createPermissionForm')[0].reset();
+                        $('.js-select2').val(null).trigger('change');
+                        $('#targetSelectionContainer > div').hide();
+                    } else {
+                        showMessage('error', response.message);
+                    }
+                })
+                .fail(function() {
+                    showMessage('error', 'خطا در ارتباط با سرور');
+                });
+        });
+
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
+
+    function revokePermission(viewerId) {
+        if (confirm('آیا از لغو این تبصره اطمینان دارید؟')) {
+            $.post('@Url.Action("RemoveTaskViewerPermission", "Team")', {
+                viewerId: viewerId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            }).done(function(response) {
+                if (response.success) {
+                    showMessage('success', 'تبصره با موفقیت لغو شد');
+                    refreshPermissions();
+                } else {
+                    showMessage('error', 'خطا در لغو تبصره: ' + response.message);
+                }
+            }).fail(function() {
+                showMessage('error', 'خطا در ارتباط با سرور');
+            });
+        }
+    }
+
+    function refreshPermissions() {
+        // بازیابی محتوای مودال
+        var currentUrl = '@Url.Action("ManageTaskViewersModal", "Team", new { teamId = Model.TeamId })';
+        
+        $.get(currentUrl)
+            .done(function(response) {
+                $('.modal-content').html($(response).find('.modal-content').html());
+            })
+            .fail(function() {
+                showMessage('error', 'خطا در بروزرسانی داده‌ها');
+            });
+    }
+
+    function showMessage(type, message) {
+        var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+        
+        var alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="fa ${iconClass} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // نمایش در بالای مودال
+        $('.modal-body').prepend(alertHtml);
+        
+        // خودکار حذف پس از 5 ثانیه
+        setTimeout(function() {
+            $('.alert').fadeOut();
+        }, 5000);
+    }
+</script>
+
+<style>
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .card-header {
+        border-bottom: 2px solid rgba(255,255,255,0.2);
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+    
+    .table td {
+        font-size: 0.9em;
+        vertical-align: middle;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+    
+    #targetSelectionContainer > div {
+        transition: all 0.3s ease;
+    }
+    
+    .modal-xl .modal-dialog {
+        max-width: 95%;
+    }
+    
+    @media (max-width: 768px) {
+        .modal-xl .modal-dialog {
+            margin: 10px;
+            max-width: none;
+        }
+        
+        .row > div {
+            margin-bottom: 20px;
+        }
+    }
+</style>
