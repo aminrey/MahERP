@@ -34,6 +34,23 @@
                     </div>
                 </div>
 
+                <!-- نوع عضویت -->
+                <div class="mb-3">
+                    <label asp-for="MembershipType" class="form-label">نوع عضویت</label>
+                    <select asp-for="MembershipType" class="form-select">
+                        <option value="0">عضو عادی</option>
+                        <option value="1">ناظر تیم</option>
+                    </select>
+                    <span asp-validation-for="MembershipType" class="text-danger"></span>
+                    <div class="form-text">
+                        <small class="text-muted">
+                            <i class="fa fa-users me-1"></i>
+                            <strong>عضو عادی:</strong> دسترسی معمولی به تیم و تسک‌ها<br>
+                            <strong>ناظر تیم:</strong> نظارت و پیگیری تسک افراد زیرمجموعه در تیم<br>
+                        </small>
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label asp-for="RoleDescription" class="form-label">شرح نقش در تیم</label>
                     <textarea asp-for="RoleDescription" class="form-control" rows="3" placeholder="توضیحات مسئولیت‌ها و نقش کاربر در تیم (اختیاری)"></textarea>
@@ -90,6 +107,26 @@
         $('.modal').on('hidden.bs.modal', function () {
             $(this).find('form')[0].reset();
             $('.js-select2').val(null).trigger('change');
+            // بازگردانی به مقدار پیش‌فرض نوع عضویت
+            $('#MembershipType').val('0');
+        });
+
+        // هشدار هنگام انتخاب نوع "مدیر تیم"
+        $('#MembershipType').on('change', function() {
+            var selectedValue = $(this).val();
+            if (selectedValue === '2') {
+                $('#managerWarning').remove(); // حذف هشدار قبلی
+                var warningHtml = `
+                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert" id="managerWarning">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <strong>توجه:</strong> انتخاب نوع "مدیر تیم" ممکن است بر دسترسی‌ها و مجوزهای سیستم تأثیر بگذارد.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                $(this).closest('.mb-3').append(warningHtml);
+            } else {
+                $('#managerWarning').remove();
+            }
         });
     });
 </script>

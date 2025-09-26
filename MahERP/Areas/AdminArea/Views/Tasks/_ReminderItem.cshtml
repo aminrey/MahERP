@@ -1,0 +1,124 @@
+﻿@model TaskReminderViewModel
+
+@{
+    var reminderId = ViewBag.ReminderId ?? DateTime.Now.Ticks;
+    
+    string typeText = Model.ReminderType switch
+    {
+        1 => "تکراری",
+        2 => "قبل از مهلت", 
+        0 => "یکبار",
+        _ => "نامشخص"
+    };
+    
+    string scheduleText = Model.ReminderType switch
+    {
+        1 => $"هر {Model.IntervalDays} روز",
+        2 => $"{Model.DaysBeforeDeadline} روز قبل",
+        0 => !string.IsNullOrEmpty(Model.StartDatePersian) ? $"در {Model.StartDatePersian}" : "در زمان مشخص",
+        _ => "نامشخص"
+    };
+    
+    // بررسی حالت append
+    bool isAppendMode = ViewData["AppendMode"] is true;
+}
+
+@* اگر در حالت append نیست، wrapper div اضافه کن *@
+@if (!isAppendMode)
+{
+    <div id="reminderItem-@reminderId">
+
+
+<div class="card border-warning mb-3" data-reminder-id="@reminderId">
+    <div class="card-header bg-warning-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="fa fa-bell-o me-1"></i>
+                @Model.Title
+            </h6>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeReminder(@reminderId)">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <p class="mb-2">@(Model.Description ?? "بدون پیام اضافی")</p>
+                <small class="text-muted">
+                    <i class="fa fa-clock me-1"></i>نوع: @typeText |
+                    <i class="fa fa-calendar me-1"></i>زمان‌بندی: @scheduleText |
+                    <i class="fa fa-bell me-1"></i>ساعت: @(Model.NotificationTime.ToString(@"hh\:mm"))
+                </small>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge bg-warning text-dark">سفارشی</span>
+                @if (isAppendMode)
+                {
+                    <span class="badge bg-info text-white ms-1">جدید</span>
+                }
+            </div>
+        </div>
+
+        <input type="hidden" class="reminder-data"
+               data-title="@Model.Title"
+               data-description="@(Model.Description ?? "")"
+               data-type="@Model.ReminderType"
+               data-time="@Model.NotificationTime.ToString(@"hh\:mm\:ss")"
+               data-interval="@(Model.IntervalDays ?? 0)"
+               data-days-before="@(Model.DaysBeforeDeadline ?? 0)"
+               data-start-date="@(Model.StartDatePersian ?? "")">
+    </div>
+</div>
+
+
+    </div>
+}
+
+else
+{
+
+
+<div class="card border-warning mb-3" data-reminder-id="@reminderId">
+    <div class="card-header bg-warning-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="fa fa-bell-o me-1"></i>
+                @Model.Title
+            </h6>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeReminder(@reminderId)">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <p class="mb-2">@(Model.Description ?? "بدون پیام اضافی")</p>
+                <small class="text-muted">
+                    <i class="fa fa-clock me-1"></i>نوع: @typeText |
+                    <i class="fa fa-calendar me-1"></i>زمان‌بندی: @scheduleText |
+                    <i class="fa fa-bell me-1"></i>ساعت: @(Model.NotificationTime.ToString(@"hh\:mm"))
+                </small>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge bg-warning text-dark">سفارشی</span>
+                @if (isAppendMode)
+                {
+                    <span class="badge bg-info text-white ms-1">جدید</span>
+                }
+            </div>
+        </div>
+
+        <input type="hidden" class="reminder-data"
+               data-title="@Model.Title"
+               data-description="@(Model.Description ?? "")"
+               data-type="@Model.ReminderType"
+               data-time="@Model.NotificationTime.ToString(@"hh\:mm\:ss")"
+               data-interval="@(Model.IntervalDays ?? 0)"
+               data-days-before="@(Model.DaysBeforeDeadline ?? 0)"
+               data-start-date="@(Model.StartDatePersian ?? "")">
+    </div>
+</div>
+
+}

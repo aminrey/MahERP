@@ -26,23 +26,28 @@
                         {
                             <br>
                             <strong>سمت فعلی:</strong>
-
                             <span class="badge bg-primary">@Model.PositionTitle</span>
                         }
                         else if (!string.IsNullOrEmpty(Model.Position))
                         {
                             <br>
                             <strong>سمت فعلی:</strong>
-
                             <span class="badge bg-secondary">@Model.Position</span>
                         }
                         else
                         {
                             <br>
                             <strong>وضعیت:</strong>
-
                             <span class="badge bg-light text-dark">بدون سمت رسمی</span>
                         }
+                        <br>
+                        <strong>نوع عضویت فعلی:</strong>
+                        <span class="badge @(Model.MembershipType switch {
+                            0 => "bg-secondary",
+                            1 => "bg-info", 
+                            2 => "bg-danger",
+                            _ => "bg-light text-dark"
+                        })">@Model.MembershipTypeDisplay</span>
                     </div>
                 </div>
 
@@ -68,6 +73,25 @@
                         <small class="text-info">
                             <i class="fa fa-info-circle me-1"></i>
                             تغییر سمت تأثیر بر مجوزهای مشاهده تسک خواهد داشت. برای حذف از سمت، گزینه "بدون سمت" را انتخاب کنید.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- نوع عضویت -->
+                <div class="mb-3">
+                    <label asp-for="MembershipType" class="form-label">نوع عضویت</label>
+                    <select asp-for="MembershipType" class="form-select">
+                        <option value="0">عضو عادی</option>
+                        <option value="1">ناظر تیم</option>
+
+                    </select>
+                    <span asp-validation-for="MembershipType" class="text-danger"></span>
+                    <div class="form-text">
+                        <small class="text-muted">
+                            <i class="fa fa-users me-1"></i>
+                            <strong>عضو عادی:</strong> دسترسی معمولی به تیم و تسک‌ها<br>
+                            <strong>ناظر تیم:</strong> نظارت و پیگیری تسک افراد زیرمجموعه در تیم<br>
+
                         </small>
                     </div>
                 </div>
@@ -142,6 +166,26 @@
                     $(this).val('@Model.PositionId').trigger('change');
                     return;
                 }
+            }
+        });
+
+        // هشدار هنگام تغییر نوع عضویت به "مدیر تیم"
+        $('#MembershipType').on('change', function() {
+            var selectedValue = $(this).val();
+            var currentValue = '@Model.MembershipType';
+            
+            if (selectedValue === '2' && currentValue !== '2') {
+                $('#membershipWarning').remove(); // حذف هشدار قبلی
+                var warningHtml = `
+                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert" id="membershipWarning">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <strong>توجه:</strong> تغییر نوع عضویت به "مدیر تیم" ممکن است بر دسترسی‌ها و مجوزهای سیستم تأثیر بگذارد.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                $(this).closest('.mb-3').append(warningHtml);
+            } else if (selectedValue !== '2') {
+                $('#membershipWarning').remove();
             }
         });
 

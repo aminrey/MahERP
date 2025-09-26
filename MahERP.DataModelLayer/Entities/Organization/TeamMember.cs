@@ -45,7 +45,7 @@ namespace MahERP.DataModelLayer.Entities.Organization
         /// <summary>
         /// نوع عضویت
         /// 0- عضو عادی
-        /// 1- عضو ویژه
+        /// 1- ناظر هم سطح و زیر دستان
         /// 2- مدیر تیم
         /// </summary>
         public byte MembershipType { get; set; }

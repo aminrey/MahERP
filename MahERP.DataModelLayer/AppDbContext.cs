@@ -66,8 +66,11 @@ namespace MahERP.DataModelLayer
         public DbSet<TaskViewer> TaskViewer_Tbl { get; set; }
         public DbSet<PredefinedCopyDescription> PredefinedCopyDescription_Tbl { get; set; }
         public DbSet<BranchTaskCategoryStakeholder> BranchTaskCategoryStakeholder_Tbl { get; set; }
+        public DbSet<TaskViewPermission> TaskViewPermission_Tbl { get; set; }
         // اضافه کردن TeamPosition - خط جدید
         public DbSet<TeamPosition> TeamPosition_Tbl { get; set; }
+        public DbSet<TaskReminderSchedule> TaskReminderSchedule_Tbl { get; set; }
+        public DbSet<TaskReminderEvent> TaskReminderEvent_Tbl { get; set; }
 
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }

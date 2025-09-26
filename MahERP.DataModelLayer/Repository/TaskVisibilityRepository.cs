@@ -66,7 +66,7 @@ namespace MahERP.DataModelLayer.Repository
             var canViewBasedOnPosition = await CanViewBasedOnPositionAsync(userId, task);
             if (canViewBasedOnPosition) return true;
 
-            // 6. بررسی مجوزهای خاص (تبصره‌ها)
+            // 6. بررسی مجوزهای خاص (تبصره‌ها) - استفاده از TaskViewPermission جدید
             var hasSpecialPermission = await HasSpecialPermissionAsync(userId, task);
             if (hasSpecialPermission) return true;
 
@@ -82,7 +82,7 @@ namespace MahERP.DataModelLayer.Repository
         public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId = null, int? teamId = null)
         {
             var visibleTaskIds = new HashSet<int>();
-            var currentTime = DateTime.Now; // محاسبه زمان فعلی یکبار
+            var currentTime = DateTime.Now;
 
             // 1. تسک‌های مالکیت خود کاربر
             var ownTasks = await _context.Tasks_Tbl
@@ -98,13 +98,13 @@ namespace MahERP.DataModelLayer.Repository
                 .ToListAsync();
             visibleTaskIds.UnionWith(assignedTasks);
 
-            // 3. تسک‌های با مجوز مستقیم - اصلاح شده با منطق زمان‌بندی
+            // 3. تسک‌های با مجوز مستقیم (فقط TaskViewer برای تسک‌های خاص)
             var directPermissionTasks = await _context.TaskViewer_Tbl
                 .Where(tv => tv.UserId == userId &&
-                            tv.TaskId > 0 && // بررسی اینکه TaskId مقدار داشته باشد
+                            tv.TaskId > 0 &&
                             tv.IsActive &&
-                            (tv.StartDate == null || tv.StartDate <= currentTime) && // بررسی تاریخ شروع
-                            (tv.EndDate == null || tv.EndDate > currentTime)) // بررسی تاریخ پایان
+                            (tv.StartDate == null || tv.StartDate <= currentTime) &&
+                            (tv.EndDate == null || tv.EndDate > currentTime))
                 .Select(tv => tv.TaskId)
                 .ToListAsync();
             visibleTaskIds.UnionWith(directPermissionTasks);
@@ -117,7 +117,7 @@ namespace MahERP.DataModelLayer.Repository
             var positionBasedTasks = await GetPositionBasedVisibleTasksAsync(userId, branchId, teamId);
             visibleTaskIds.UnionWith(positionBasedTasks);
 
-            // 6. تسک‌های با مجوز خاص
+            // 6. تسک‌های با مجوز خاص (از TaskViewPermission جدید)
             var specialPermissionTasks = await GetSpecialPermissionTasksAsync(userId);
             visibleTaskIds.UnionWith(specialPermissionTasks);
 
@@ -335,42 +335,44 @@ namespace MahERP.DataModelLayer.Repository
 
         #endregion
 
-        #region Special Permissions
+        #region Special Permissions - استفاده از TaskViewPermission جدید
 
         /// <summary>
-        /// بررسی مجوزهای خاص (تبصره‌ها)
+        /// بررسی مجوزهای خاص (تبصره‌ها) - بروزرسانی شده برای استفاده از TaskViewPermission
         /// </summary>
         public async Task<bool> HasSpecialPermissionAsync(string userId, Tasks task)
         {
             var currentTime = DateTime.Now;
 
-            var specialPermissions = await _context.TaskViewer_Tbl
-                .Where(tv => tv.UserId == userId &&
-                            tv.AccessType == 0 && // مجوز خاص
-                            tv.IsActive &&
-                            (tv.StartDate == null || tv.StartDate <= currentTime) &&
-                            (tv.EndDate == null || tv.EndDate > currentTime))
+            // استفاده از جدول TaskViewPermission جدید
+            var specialPermissions = await _context.TaskViewPermission_Tbl
+                .Include(tvp => tvp.TargetUser)
+                .Include(tvp => tvp.TargetTeam)
+                .Where(tvp => tvp.GranteeUserId == userId &&
+                             tvp.IsActive &&
+                             (tvp.StartDate == null || tvp.StartDate <= currentTime) &&
+                             (tvp.EndDate == null || tvp.EndDate > currentTime))
                 .ToListAsync();
 
             foreach (var permission in specialPermissions)
             {
-                switch (permission.SpecialPermissionType)
+                switch (permission.PermissionType)
                 {
                     case 0: // مشاهده تسک‌های یک کاربر خاص
-                        // اینجا باید target user مشخص شود در TaskViewer
-                        // فعلاً این فیلد موجود نیست، باید اضافه شود
+                        if (permission.TargetUserId == task.CreatorUserId)
+                            return true;
                         break;
 
                     case 1: // مشاهده تسک‌های یک تیم خاص
-                        if (permission.TeamId.HasValue && task.TeamId == permission.TeamId)
+                        if (permission.TargetTeamId.HasValue && task.TeamId == permission.TargetTeamId)
                             return true;
                         break;
 
                     case 2: // مشاهده تسک‌های تیم و زیرتیم‌ها
-                        if (permission.TeamId.HasValue)
+                        if (permission.TargetTeamId.HasValue)
                         {
-                            var allSubTeamIds = await GetAllSubTeamIdsAsync(permission.TeamId.Value);
-                            allSubTeamIds.Add(permission.TeamId.Value);
+                            var allSubTeamIds = await GetAllSubTeamIdsAsync(permission.TargetTeamId.Value);
+                            allSubTeamIds.Add(permission.TargetTeamId.Value);
 
                             if (task.TeamId.HasValue && allSubTeamIds.Contains(task.TeamId.Value))
                                 return true;
@@ -383,30 +385,43 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// دریافت تسک‌های با مجوز خاص
+        /// دریافت تسک‌های با مجوز خاص - بروزرسانی شده برای استفاده از TaskViewPermission
         /// </summary>
         public async Task<List<int>> GetSpecialPermissionTasksAsync(string userId)
         {
             var currentTime = DateTime.Now;
             var visibleTasks = new List<int>();
 
-            var specialPermissions = await _context.TaskViewer_Tbl
-                .Where(tv => tv.UserId == userId &&
-                            tv.AccessType == 0 && // مجوز خاص
-                            tv.IsActive &&
-                            (tv.StartDate == null || tv.StartDate <= currentTime) &&
-                            (tv.EndDate == null || tv.EndDate > currentTime))
+            // استفاده از جدول TaskViewPermission جدید
+            var specialPermissions = await _context.TaskViewPermission_Tbl
+                .Include(tvp => tvp.TargetUser)
+                .Include(tvp => tvp.TargetTeam)
+                .Where(tvp => tvp.GranteeUserId == userId &&
+                             tvp.IsActive &&
+                             (tvp.StartDate == null || tvp.StartDate <= currentTime) &&
+                             (tvp.EndDate == null || tvp.EndDate > currentTime))
                 .ToListAsync();
 
             foreach (var permission in specialPermissions)
             {
-                switch (permission.SpecialPermissionType)
+                switch (permission.PermissionType)
                 {
+                    case 0: // مشاهده تسک‌های یک کاربر خاص
+                        if (!string.IsNullOrEmpty(permission.TargetUserId))
+                        {
+                            var userTasks = await _context.Tasks_Tbl
+                                .Where(t => t.CreatorUserId == permission.TargetUserId && !t.IsDeleted)
+                                .Select(t => t.Id)
+                                .ToListAsync();
+                            visibleTasks.AddRange(userTasks);
+                        }
+                        break;
+
                     case 1: // مشاهده تسک‌های یک تیم خاص
-                        if (permission.TeamId.HasValue)
+                        if (permission.TargetTeamId.HasValue)
                         {
                             var teamTasks = await _context.Tasks_Tbl
-                                .Where(t => t.TeamId == permission.TeamId && !t.IsDeleted)
+                                .Where(t => t.TeamId == permission.TargetTeamId && !t.IsDeleted)
                                 .Select(t => t.Id)
                                 .ToListAsync();
                             visibleTasks.AddRange(teamTasks);
@@ -414,10 +429,10 @@ namespace MahERP.DataModelLayer.Repository
                         break;
 
                     case 2: // مشاهده تسک‌های تیم و زیرتیم‌ها
-                        if (permission.TeamId.HasValue)
+                        if (permission.TargetTeamId.HasValue)
                         {
-                            var allSubTeamIds = await GetAllSubTeamIdsAsync(permission.TeamId.Value);
-                            allSubTeamIds.Add(permission.TeamId.Value);
+                            var allSubTeamIds = await GetAllSubTeamIdsAsync(permission.TargetTeamId.Value);
+                            allSubTeamIds.Add(permission.TargetTeamId.Value);
 
                             var hierarchyTasks = await _context.Tasks_Tbl
                                 .Where(t => t.TeamId.HasValue &&
@@ -455,7 +470,7 @@ namespace MahERP.DataModelLayer.Repository
             // ایجاد ساختار سلسله مراتبی تیم‌ها
             chart.TeamHierarchy = await BuildTeamHierarchyAsync(branchId);
 
-            // دریافت مجوزهای خاص
+            // دریافت مجوزهای خاص - استفاده از TaskViewPermission جدید
             chart.SpecialPermissions = await GetSpecialPermissionsAsync(branchId);
 
             // محاسبه آمار
@@ -465,7 +480,7 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// محاسبه آمار چارت قدرت مشاهده
+        /// محاسبه آمار چارت قدرت مشاهده - بروزرسانی شده
         /// </summary>
         public async Task<TaskVisibilityStatsViewModel> CalculateVisibilityStatsAsync(int branchId)
         {
@@ -482,9 +497,10 @@ namespace MahERP.DataModelLayer.Repository
                 .Include(tp => tp.Team)
                 .CountAsync(tp => tp.Team.BranchId == branchId && tp.IsActive);
 
-            var specialPermissions = await _context.TaskViewer_Tbl
-                .Include(tv => tv.Team)
-                .Where(tv => tv.AccessType == 0 && tv.Team != null && tv.Team.BranchId == branchId)
+            // استفاده از TaskViewPermission جدید برای محاسبه آمار
+            var specialPermissions = await _context.TaskViewPermission_Tbl
+                .Include(tvp => tvp.Team)
+                .Where(tvp => tvp.Team != null && tvp.Team.BranchId == branchId)
                 .ToListAsync();
 
             stats.TotalSpecialPermissions = specialPermissions.Count;
@@ -509,7 +525,7 @@ namespace MahERP.DataModelLayer.Repository
         #region User Access Information
 
         /// <summary>
-        /// تشخیص منابع دسترسی کاربر
+        /// تشخیص منابع دسترسی کاربر - بروزرسانی شده
         /// </summary>
         public async Task<List<string>> GetUserAccessSourcesAsync(string userId)
         {
@@ -535,11 +551,9 @@ namespace MahERP.DataModelLayer.Repository
                     sources.Add($"مشاهده همسطح در {membership.Position.Title}");
             }
 
-            // بررسی مجوزهای خاص
-            var specialPermissionsCount = await _context.TaskViewer_Tbl
-                .CountAsync(tv => tv.UserId == userId &&
-                                 tv.AccessType == 0 &&
-                                 tv.IsActive);
+            // بررسی مجوزهای خاص - استفاده از TaskViewPermission جدید
+            var specialPermissionsCount = await _context.TaskViewPermission_Tbl
+                .CountAsync(tvp => tvp.GranteeUserId == userId && tvp.IsActive);
             if (specialPermissionsCount > 0)
                 sources.Add($"{specialPermissionsCount} مجوز خاص");
 
@@ -744,18 +758,20 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// دریافت مجوزهای خاص شعبه
+        /// دریافت مجوزهای خاص شعبه - بروزرسانی شده برای استفاده از TaskViewPermission
         /// </summary>
         private async Task<List<SpecialTaskPermissionNode>> GetSpecialPermissionsAsync(int branchId)
         {
             var currentTime = DateTime.Now;
 
-            var permissions = await _context.TaskViewer_Tbl
-                .Include(tv => tv.User)
-                .Include(tv => tv.Team)
-                .Include(tv => tv.AddedByUser)
-                .Where(tv => tv.AccessType == 0 && // مجوز خاص
-                    tv.Team != null && tv.Team.BranchId == branchId)
+            // استفاده از TaskViewPermission جدید به جای TaskViewer
+            var permissions = await _context.TaskViewPermission_Tbl
+                .Include(tvp => tvp.GranteeUser)
+                .Include(tvp => tvp.TargetUser)
+                .Include(tvp => tvp.TargetTeam)
+                .Include(tvp => tvp.Team)
+                .Include(tvp => tvp.AddedByUser)
+                .Where(tvp => tvp.Team != null && tvp.Team.BranchId == branchId)
                 .ToListAsync();
 
             var permissionNodes = new List<SpecialTaskPermissionNode>();
@@ -765,17 +781,19 @@ namespace MahERP.DataModelLayer.Repository
                 var node = new SpecialTaskPermissionNode
                 {
                     ViewerId = permission.Id,
-                    GranteeUserId = permission.UserId,
-                    GranteeUserName = $"{permission.User.FirstName} {permission.User.LastName}",
+                    GranteeUserId = permission.GranteeUserId,
+                    GranteeUserName = $"{permission.GranteeUser.FirstName} {permission.GranteeUser.LastName}",
                     GranteeTeamTitle = permission.Team?.Title,
-                    PermissionType = permission.SpecialPermissionType ?? 0,
-                    PermissionTypeText = GetPermissionTypeText(permission.SpecialPermissionType ?? 0),
-                    TargetTeamId = permission.TeamId,
-                    TargetTeamTitle = permission.Team?.Title,
+                    PermissionType = permission.PermissionType,
+                    PermissionTypeText = GetPermissionTypeText(permission.PermissionType),
+                    TargetUserId = permission.TargetUserId,
+                    TargetUserName = permission.TargetUser != null ? $"{permission.TargetUser.FirstName} {permission.TargetUser.LastName}" : null,
+                    TargetTeamId = permission.TargetTeamId,
+                    TargetTeamTitle = permission.TargetTeam?.Title,
                     StartDate = permission.StartDate,
                     EndDate = permission.EndDate,
                     IsActive = permission.IsActive,
-                    IsExpired = permission.EndDate.HasValue && permission.EndDate < currentTime, // تغییر اینجا
+                    IsExpired = permission.EndDate.HasValue && permission.EndDate < currentTime,
                     Description = permission.Description,
                     AddedDate = permission.AddedDate,
                     AddedByUserName = $"{permission.AddedByUser.FirstName} {permission.AddedByUser.LastName}"

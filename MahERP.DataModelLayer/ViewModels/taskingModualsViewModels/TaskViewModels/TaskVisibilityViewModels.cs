@@ -31,7 +31,47 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
     }
 
     /// <summary>
-    /// ViewModel برای مدیریت تبصره‌های مشاهده تسک‌های تیم
+    /// ViewModel برای نمایش مجوزهای موجود
+    /// </summary>
+    public class TaskViewPermissionViewModel
+    {
+        public int Id { get; set; }
+        public string GranteeUserId { get; set; }
+        public string UserFullName { get; set; }
+        public byte PermissionType { get; set; }
+        public string PermissionTypeText { get; set; }
+        public string? TargetUserId { get; set; }
+        public string? TargetUserFullName { get; set; }
+        public int? TargetTeamId { get; set; }
+        public string? TargetTeamTitle { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public bool IsActive { get; set; }
+        public string? Description { get; set; }
+        public DateTime AddedDate { get; set; }
+        public string AddedByUserName { get; set; }
+
+        /// <summary>
+        /// متن کامل نوع دسترسی برای نمایش
+        /// </summary>
+        public string AccessTypeText
+        {
+            get
+            {
+                return PermissionType switch
+                {
+                    0 => $"مشاهده تسک‌های {TargetUserFullName}",
+                    1 => $"مشاهده تسک‌های تیم {TargetTeamTitle}",
+                    2 => $"مشاهده تسک‌های تیم {TargetTeamTitle} و زیرتیم‌ها",
+                    _ => "نامشخص"
+                };
+            }
+        }
+    }
+
+    /// <summary>
+    /// ViewModel برای مدیریت مجوزهای مشاهده تسک‌های تیم
+    /// این کلاس واحد برای مدیریت تبصره‌های تسک
     /// </summary>
     public class ManageTeamTaskViewersViewModel
     {
@@ -47,17 +87,23 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// <summary>
         /// کاربران موجود در شعبه برای انتخاب به عنوان مبدا
         /// </summary>
-        public List<UserViewModelFull> AvailableUsers { get; set; } = new();
+        public List<UserSelectListItem> AvailableUsers { get; set; } = new();
 
         /// <summary>
         /// تیم‌های موجود در شعبه برای انتخاب به عنوان مقصد
         /// </summary>
-        public List<TeamViewModel> AvailableTeams { get; set; } = new();
+        public List<TeamSelectListItem> AvailableTeams { get; set; } = new();
 
         /// <summary>
-        /// تبصره‌های موجود برای این تیم
+        /// مجوزهای موجود برای این تیم (استفاده از TaskViewPermissionViewModel)
         /// </summary>
-        public List<TaskViewerViewModel> ExistingViewers { get; set; } = new();
+        public List<TaskViewPermissionViewModel> ExistingViewers { get; set; } = new();
+    }
+
+    public class TeamSelectListItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
     }
 
     /// <summary>
@@ -92,7 +138,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
         [Display(Name = "توضیحات")]
         [MaxLength(500, ErrorMessage = "توضیحات حداکثر 500 کاراکتر باشد")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
     }
 
     /// <summary>

@@ -36,7 +36,7 @@
                                         <option value="">-- انتخاب کاربر مبدا --</option>
                                         @foreach (var user in Model.AvailableUsers)
                                         {
-                                            <option value="@user.Id">@user.FullNamesString</option>
+                                            <option value="@user.UserId">@user.FullName</option>
                                         }
                                     </select>
                                     <small class="form-text text-muted">کاربری که قدرت مشاهده دریافت می‌کند</small>
@@ -62,7 +62,7 @@
                                             <option value="">-- انتخاب کاربر مقصد --</option>
                                             @foreach (var user in Model.AvailableUsers)
                                             {
-                                                <option value="@user.Id">@user.FullNamesString</option>
+                                                <option value="@user.UserId">@user.FullName</option>
                                             }
                                         </select>
                                         <small class="form-text text-muted">کاربری که تسک‌هایش مشاهده خواهد شد</small>
@@ -369,7 +369,7 @@
         max-width: 95%;
     }
     
-    @media (max-width: 768px) {
+    @@media (max-width: 768px) {
         .modal-xl .modal-dialog {
             margin: 10px;
             max-width: none;

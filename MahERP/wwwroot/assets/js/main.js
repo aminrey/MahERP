@@ -862,7 +862,6 @@ $(document).on('click', '[data-toggle="modal-ajax"]', function (event) {
 $(document).on('hidden.bs.modal', '.modal', function () {
     $(this).remove();
 });
-
 // Handle AJAX form submission inside modals
 $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
     event.preventDefault();
@@ -891,27 +890,57 @@ $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
         contentType: false,
         processData: false,
         success: function (response) {
+            console.log('AJAX Response:', response);
+
             if (response.status === "redirect") {
                 $(location).prop('href', response.redirectUrl);
             } else if (response.status === "update-view") {
-                // بروزرسانی view ها
+                // بستن مودال
                 $modal.find('[data-bs-dismiss="modal"]').click();
-            } else if (response.status === "temp-save") {
-                // پردازش temp-save
-                SendResposeMessageInView(response);
+
+                // بروزرسانی view ها
+                if (response.viewList && response.viewList.length > 0) {
+                    response.viewList.forEach(function (item) {
+                        if (item.elementId && item.view && item.view.result) {
+                            const $target = $('#' + item.elementId);
+                            if ($target.length > 0) {
+                                // بررسی حالت append
+                                if (item.appendMode === true) {
+                                    console.log('Appending content to:', item.elementId);
+                                    $target.append(item.view.result);
+                                } else {
+                                    console.log('Replacing content in:', item.elementId);
+                                    $target.html(item.view.result);
+                                }
+
+                                // بروزرسانی URLs و Select2
+                                ModalUtils.processUrlsInContainer($target);
+                                DynamicSelect2Manager.reinitializeSelect2InDiv($target);
+                            }
+                        }
+                    });
+
+                    // اطلاع‌رسانی موفقیت برای event listeners
+                    $button.trigger('ajaxSuccess', [response]);
+                }
+
+            } else if (response.status === "validation-error" || response.status === "error") {
+                // خطاها
+                $button.prop('disabled', false);
             }
 
+            // نمایش پیام‌ها
             if (response.message) {
                 SendResposeMessage(response.message);
             }
         },
         error: function (xhr) {
             $button.prop('disabled', false);
+            console.error('AJAX Error:', xhr);
             handleAjaxError(xhr);
         }
     });
 });
-
 // Submit a form inside a modal
 $(document).on('click', '[data-save="modal"]', function (event) {
     const $button = $(this);

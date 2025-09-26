@@ -33,9 +33,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public int OperationOrder { get; set; }
 
         /// <summary>
-        /// آیا عملیات تکمیل شده است؟
+        /// ستاره دار شدن عملیات
         /// </summary>
         public bool IsCompleted { get; set; }
+        /// <summary>
+        /// آیا عملیات تکمیل شده است؟
+        /// </summary>
+        public bool IsStarred { get; set; }
 
         /// <summary>
         /// تاریخ تکمیل عملیات
@@ -72,7 +76,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <summary>
         /// تاریخ ایجاد
         /// </summary>
-        public DateTime CreateDate { get; set; }
+        public DateTime CreatedDate { get; set; }
 
         /// <summary>
         /// کاربر ایجاد کننده

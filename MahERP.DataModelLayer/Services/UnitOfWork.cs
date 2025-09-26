@@ -68,7 +68,10 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<TaskTemplate> _taskTemplateRepository;
         private GenereicClass<TaskTemplateOperation> _taskTemplateOperationRepository;
         private GenereicClass<TaskViewer> _taskViewerRepository;
+        private GenereicClass<TaskViewPermission> _taskViewPermissionRepository;
         private GenereicClass<PredefinedCopyDescription> _predefinedCopyDescriptionRepository;
+        private GenereicClass<TaskReminderSchedule> _taskReminderScheduleRepository;
+        private GenereicClass<TaskReminderEvent> _taskReminderEventRepository;
         #endregion
 
         #region CRM Management
@@ -530,6 +533,18 @@ namespace MahERP.DataModelLayer.Services
             }
         }
 
+        public GenereicClass<TaskViewPermission> TaskViewPermissionUW
+        {
+            get
+            {
+                if (_taskViewPermissionRepository == null)
+                {
+                    _taskViewPermissionRepository = new GenereicClass<TaskViewPermission>(_Context);
+                }
+                return _taskViewPermissionRepository;
+            }
+        }
+
         public GenereicClass<PredefinedCopyDescription> PredefinedCopyDescriptionUW
         {
             get
@@ -541,6 +556,32 @@ namespace MahERP.DataModelLayer.Services
                 return _predefinedCopyDescriptionRepository;
             }
         }
+
+        public GenereicClass<TaskReminderSchedule> TaskReminderScheduleUW
+        {
+            get
+            {
+                if (_taskReminderScheduleRepository == null)
+                {
+                    _taskReminderScheduleRepository = new GenereicClass<TaskReminderSchedule>(_Context);
+                }
+                return _taskReminderScheduleRepository;
+            }
+        }
+
+        public GenereicClass<TaskReminderEvent> TaskReminderEventUW
+        {
+            get
+            {
+                if (_taskReminderEventRepository == null)
+                {
+                    _taskReminderEventRepository = new GenereicClass<TaskReminderEvent>(_Context);
+                }
+                return _taskReminderEventRepository;
+            }
+        }
+
+    
 
         #endregion
 

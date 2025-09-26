@@ -23,8 +23,9 @@ namespace MahERP.Extentions
         /// <param name="viewName">The view name to render</param>
         /// <param name="model">The model for the view</param>
         /// <param name="viewBag">Optional viewBag data</param>
+        /// <param name="appendMode">If true, the content will be appended instead of replaced</param>
         /// <returns>The rendered view as a string</returns>
-        public static async Task<string> RenderViewToStringAsync<TModel>(this Controller controller, string viewName, TModel model, dynamic viewBag = null)
+        public static async Task<string> RenderViewToStringAsync<TModel>(this Controller controller, string viewName, TModel model, dynamic viewBag = null, bool appendMode = false)
         {
             if (string.IsNullOrEmpty(viewName))
                 viewName = controller.ControllerContext.ActionDescriptor.ActionName;
@@ -46,6 +47,9 @@ namespace MahERP.Extentions
             {
                 Model = model
             };
+
+            // اضافه کردن اطلاعات append mode به ViewData
+            viewData["AppendMode"] = appendMode;
 
             // If viewbag is provided, add its properties to ViewData
             if (viewBag != null)

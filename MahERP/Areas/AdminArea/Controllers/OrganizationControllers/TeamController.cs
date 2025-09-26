@@ -1334,26 +1334,36 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     TeamTitle = team.Title,
                     BranchId = team.BranchId,
                     TeamMembers = _teamRepository.GetTeamMembers(teamId).Where(m => m.IsActive).ToList(),
-                    ExistingViewers = new List<TaskViewerViewModel>(),
+                    ExistingViewers = new List<TaskViewPermissionViewModel>(),
                     AvailableUsers = _teamRepository.GetAvailableUsersForBranch(team.BranchId),
                     AvailableTeams = _teamRepository.GetTeamsByBranchId(team.BranchId)
+                        .Where(t => t.Id != teamId) // تیم فعلی را حذف کن
+                        .Select(t => new TeamSelectListItem { Id = t.Id, Title = t.Title })
+                        .ToList()
                 };
 
                 // دریافت مجوزهای موجود
-                if (_uow.TaskViewerUW != null)
+                if (_uow.TaskViewPermissionUW != null)
                 {
-                    var existingViewers = _uow.TaskViewerUW.Get(tv => tv.TeamId == teamId && tv.IsActive);
-                    model.ExistingViewers = existingViewers.Select(tv => new TaskViewerViewModel
+                    var existingPermissions = _uow.TaskViewPermissionUW.Get(p => p.TeamId == teamId && p.IsActive);
+                    model.ExistingViewers = existingPermissions.Select(p => new TaskViewPermissionViewModel
                     {
-                        Id = tv.Id,
-                        UserId = tv.UserId,
-                        UserFullName = tv.User != null ? $"{tv.User.FirstName} {tv.User.LastName}" : "نامشخص",
-                        AccessType = tv.AccessType,
-                        AccessTypeText = GetAccessTypeText(tv.AccessType),
-                        Description = tv.Description,
-                        AddedDate = tv.AddedDate,
-                        IsActive = tv.IsActive
-                    }).ToList();
+                        Id = p.Id,
+                        GranteeUserId = p.GranteeUserId,
+                        UserFullName = p.GranteeUser != null ? $"{p.GranteeUser.FirstName} {p.GranteeUser.LastName}" : "نامشخص",
+                        PermissionType = p.PermissionType,
+                        PermissionTypeText = p.PermissionTypeText,
+                        TargetUserId = p.TargetUserId,
+                        TargetUserFullName = p.TargetUser != null ? $"{p.TargetUser.FirstName} {p.TargetUser.LastName}" : null,
+                        TargetTeamId = p.TargetTeamId,
+                        TargetTeamTitle = p.TargetTeam?.Title,
+                        StartDate = p.StartDate,
+                        EndDate = p.EndDate,
+                        IsActive = p.IsActive,
+                        Description = p.Description,
+                        AddedDate = p.AddedDate,
+                        AddedByUserName = p.AddedByUser != null ? $"{p.AddedByUser.FirstName} {p.AddedByUser.LastName}" : "نامشخص"
+                    }).OrderByDescending(p => p.AddedDate).ToList();
                 }
 
                 await _activityLogger.LogActivityAsync(
@@ -1417,16 +1427,39 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     return Json(new { success = false, message = "شما به این تیم دسترسی ندارید." });
                 }
 
-                // اعطای مجوز با استفاده از TaskViewerRepository (اگر در دسترسی باشد)
-                int createdCount = 0;
-                
-                // فعلاً از UnitOfWork استفاده می‌کنیم
-                var taskViewer = new TaskViewer
+                // بررسی تکراری نبودن مجوز - از UnitOfWork استفاده کنیم
+                var existingPermissions = _uow.TaskViewPermissionUW.Get()
+                    .Where(p => 
+                        p.GranteeUserId == model.GranteeUserId &&
+                        p.PermissionType == model.PermissionType &&
+                        p.TeamId == model.TeamId &&
+                        p.IsActive)
+                    .ToList();
+
+                // بررسی تکراری بودن بر اساس نوع مجوز
+                bool isDuplicate = false;
+                if (model.PermissionType == 0) // مشاهده تسک‌های کاربر خاص
                 {
+                    isDuplicate = existingPermissions.Any(p => p.TargetUserId == model.TargetUserId);
+                }
+                else // مشاهده تسک‌های تیم
+                {
+                    isDuplicate = existingPermissions.Any(p => p.TargetTeamId == model.TargetTeamId);
+                }
+
+                if (isDuplicate)
+                {
+                    return Json(new { success = false, message = "این مجوز قبلاً تعریف شده است." });
+                }
+
+                // ایجاد مجوز جدید با استفاده از UnitOfWork
+                var permission = new TaskViewPermission
+                {
+                    GranteeUserId = model.GranteeUserId,
+                    PermissionType = model.PermissionType,
+                    TargetUserId = model.PermissionType == 0 ? model.TargetUserId : null,
+                    TargetTeamId = model.PermissionType > 0 ? model.TargetTeamId : null,
                     TeamId = model.TeamId,
-                    UserId = model.GranteeUserId,
-                    AccessType = model.AccessType,
-                    SpecialPermissionType = model.PermissionType,
                     AddedByUserId = currentUserId,
                     AddedDate = DateTime.Now,
                     StartDate = model.StartDate,
@@ -1435,23 +1468,22 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     Description = model.Description
                 };
 
-                _uow.TaskViewerUW.Create(taskViewer);
+                _uow.TaskViewPermissionUW.Create(permission);
                 _uow.Save();
-                createdCount = 1;
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.Create,
                     "Team",
                     "GrantSpecialPermissionSubmit",
                     $"اعطای مجوز مشاهده تسک برای کاربر در تیم: {team.Title}",
-                    recordId: taskViewer.Id.ToString(),
-                    entityType: "TaskViewer"
+                    recordId: permission.Id.ToString(),
+                    entityType: "TaskViewPermission"
                 );
 
                 return Json(new
                 {
                     success = true,
-                    message = $"مجوز با موفقیت اعطا شد. {createdCount} مجوز ایجاد شد.",
+                    message = "مجوز با موفقیت اعطا شد.",
                     status = "refresh-modal",
                     refreshUrl = Url.Action("ManageTaskViewersModal", new { teamId = model.TeamId })
                 });
