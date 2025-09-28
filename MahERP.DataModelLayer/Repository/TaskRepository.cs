@@ -1,7 +1,9 @@
-﻿using MahERP.DataModelLayer.AcControl;
+﻿using MahERP.CommonLayer.PublicClasses;
+using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
@@ -665,7 +667,6 @@ namespace MahERP.DataModelLayer.Repository
                 await LoadSubTeamTasksRecursive(result, subTeam.Id, $"{parentTeamTitle} > {subTeam.Title}");
             }
         }
-
         /// <summary>
         /// تبدیل Task Entity به TaskViewModel
         /// </summary>
@@ -696,6 +697,7 @@ namespace MahERP.DataModelLayer.Repository
                 LastUpdateDate = task.LastUpdateDate,
                 TaskTypeInput = task.TaskTypeInput,
                 CreationMode = task.CreationMode,
+     
             };
         }
 
@@ -1074,7 +1076,7 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// بروزرسانی لیست دسته‌بندی‌ها بر اساس تغییر طرف حساب
+        /// بروzrسانی لیست دسته‌بندی‌ها بر اساس تغییر طرف حساب
         /// </summary>
         public async Task<List<TaskCategory>> GetTaskCategoriesForStakeholderChangeAsync(int branchId, int stakeholderId)
         {
@@ -1567,6 +1569,581 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         #endregion
+
+
+
+
+
+        #region Dashboard Methods Implementation
+
+        /// <summary>
+        /// دریافت داده‌های داشبورد تسک‌ها برای کاربر
+        /// </summary>
+        public async Task<TaskDashboardViewModel> GetTaskDashboardDataAsync(string userId)
+        {
+            try
+            {
+                // دریافت آمار کلی
+                var stats = await GetUserTaskStatsAsync(userId);
+
+                // دریافت تسک‌های فوری
+                var urgentTasks = await GetUrgentTasksAsync(userId, 10);
+
+                // دریافت فعالیت‌های اخیر
+                var recentActivities = await GetRecentTaskActivitiesAsync(userId, 10);
+
+                return new TaskDashboardViewModel
+                {
+                    UserStats = stats,
+                    UrgentTasks = urgentTasks,
+                    RecentActivities = recentActivities,
+                    CompletedThisWeek = await GetCompletedTasksCountThisWeekAsync(userId),
+                    InProgressThisWeek = await GetInProgressTasksCountThisWeekAsync(userId)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت داده‌های داشبورد: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تسک‌های واگذار شده توسط کاربر
+        /// </summary>
+        public async Task<TasksListViewModel> GetTasksAssignedByUserAsync(string userId, TaskFilterViewModel filters)
+        {
+            try
+            {
+                var query = _context.Tasks_Tbl
+                    .Where(t => t.CreatorUserId == userId && !t.IsDeleted)
+                    .Include(t => t.TaskAssignments)
+                        .ThenInclude(ta => ta.AssignedUser)
+                    .Include(t => t.TaskCategory)
+                    .AsQueryable();
+
+                // اعمال فیلترها
+                query = ApplyFiltersToQuery(query, filters);
+
+                var tasks = await query.OrderByDescending(t => t.CreateDate).ToListAsync();
+                var taskViewModels = tasks.Select(MapToTaskViewModel).ToList();
+
+                // محاسبه آمار
+                var stats = new TasksListStatsViewModel
+                {
+                    TotalCount = taskViewModels.Count,
+                    FilteredCount = taskViewModels.Count,
+                    NeedsAttentionCount = taskViewModels.Count(t =>
+                        (t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2) ||
+                        (t.DueDate.HasValue && t.DueDate.Value.Date <= DateTime.Now.Date.AddDays(1))),
+
+                    OverdueCount = taskViewModels.Count(t =>
+                        t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2),
+                    CompletedCount = taskViewModels.Count(t => t.Status == 2),
+                    InProgressCount = taskViewModels.Count(t => t.Status == 1)
+                };
+
+                return new TasksListViewModel
+                {
+                    Tasks = taskViewModels,
+                    Stats = stats,
+                    Filters = filters,
+                    TotalCount = stats.TotalCount,
+                    FilteredCount = stats.FilteredCount
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت تسک‌های واگذار شده: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تسک‌های تحت نظارت کاربر
+        /// </summary>
+        public async Task<TasksListViewModel> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters)
+        {
+            try
+            {
+                // دریافت تسک‌های قابل نظارت
+                var visibleTaskIds = await _taskVisibilityRepository.GetVisibleTaskIdsAsync(userId);
+
+                var query = _context.Tasks_Tbl
+                    .Where(t => visibleTaskIds.Contains(t.Id) &&
+                               t.CreatorUserId != userId &&
+                               !t.IsDeleted)
+                    .Include(t => t.TaskAssignments)
+                        .ThenInclude(ta => ta.AssignedUser)
+                    .Include(t => t.TaskCategory)
+                    .Include(t => t.Creator)
+                    .AsQueryable();
+
+                // اعمال فیلترها
+                query = ApplyFiltersToQuery(query, filters);
+
+                var tasks = await query.OrderByDescending(t => t.CreateDate).ToListAsync();
+                var taskViewModels = tasks.Select(MapToTaskViewModel).ToList();
+
+                // محاسبه آمار
+                var stats = new TasksListStatsViewModel
+                {
+                    TotalCount = taskViewModels.Count,
+                    FilteredCount = taskViewModels.Count,
+                    RequiresApprovalCount = taskViewModels.Count(t =>
+            t.Status == 2 && !t.SupervisorApprovedDate.HasValue),
+
+                    DelayedCount = taskViewModels.Count(t =>
+                        t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2),
+                    InProgressCount = taskViewModels.Count(t => t.Status == 1)
+                };
+
+                return new TasksListViewModel
+                {
+                    Tasks = taskViewModels,
+                    Stats = stats,
+                    Filters = filters,
+                    TotalCount = stats.TotalCount,
+                    FilteredCount = stats.FilteredCount
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت تسک‌های نظارتی: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت یادآوری‌های تسک برای کاربر
+        /// </summary>
+        public async Task<TaskRemindersViewModel> GetTaskRemindersAsync(string userId, TaskReminderFilterViewModel filters)
+        {
+            try
+            {
+                var query = _context.TaskReminderEvent_Tbl
+                    .Where(r => r.RecipientUserId == userId)
+                    .Include(r => r.Task)
+                    .AsQueryable();
+
+                // اعمال فیلترها
+                if (!string.IsNullOrEmpty(filters?.FilterType))
+                {
+                    switch (filters.FilterType.ToLower())
+                    {
+                        case "pending":
+                            query = query.Where(r => !r.IsSent && r.ScheduledDateTime <= DateTime.Now);
+                            break;
+                        case "sent":
+                            query = query.Where(r => r.IsSent);
+                            break;
+                        case "overdue":
+                            query = query.Where(r => !r.IsSent && r.ScheduledDateTime < DateTime.Now.AddDays(-1));
+                            break;
+                        case "today":
+                            query = query.Where(r => r.ScheduledDateTime.Date == DateTime.Now.Date);
+                            break;
+                    }
+                }
+
+                var reminders = await query.OrderByDescending(r => r.ScheduledDateTime).ToListAsync();
+
+                var reminderViewModels = reminders.Select(r => new TaskReminderItemViewModel
+                {
+                    Id = r.Id,
+                    Title = r.Title,
+                    Message = r.Message,
+                    TaskId = r.TaskId,
+                    TaskTitle = r.Task?.Title,
+                    TaskCode = r.Task?.TaskCode,
+                    ScheduledDateTime = r.ScheduledDateTime,
+                    ScheduledDatePersian = ConvertDateTime.ConvertMiladiToShamsi(r.ScheduledDateTime, "yyyy/MM/dd HH:mm"),
+                    IsSent = r.IsSent,
+                    IsRead = r.IsRead,
+                    Priority = r.Priority,
+                    EventTypeIcon = GetEventTypeIcon(r.EventType),
+                    EventTypeColor = GetEventTypeColor(r.EventType)
+                }).ToList();
+
+                // محاسبه آمار
+                var stats = new TaskRemindersStatsViewModel
+                {
+                    PendingCount = reminders.Count(r => !r.IsSent && r.ScheduledDateTime <= DateTime.Now),
+                    SentCount = reminders.Count(r => r.IsSent),
+                    OverdueCount = reminders.Count(r => !r.IsSent && r.ScheduledDateTime < DateTime.Now.AddDays(-1)),
+                    TodayCount = reminders.Count(r => r.ScheduledDateTime.Date == DateTime.Now.Date)
+                };
+
+                return new TaskRemindersViewModel
+                {
+                    Reminders = reminderViewModels,
+                    Stats = stats,
+                    Filters = filters,
+                    TotalCount = reminderViewModels.Count,
+                    CurrentPage = filters?.Page ?? 1,
+                    PageSize = filters?.PageSize ?? 20
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت یادآوری‌ها: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت آمار تسک‌ها برای کاربر
+        /// </summary>
+        public async Task<UserTaskStatsViewModel> GetUserTaskStatsAsync(string userId)
+        {
+            try
+            {
+                // تسک‌های من
+                var myTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: false);
+
+                // تسک‌های واگذار شده
+                var assignedByMe = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: false, includeCreated: true);
+
+                // تسک‌های نظارتی
+                var supervisedTasks = await GetVisibleTasksForUserAsync(userId);
+                supervisedTasks = supervisedTasks.Where(t => t.CreatorUserId != userId).ToList();
+
+                var today = DateTime.Now.Date;
+                var weekStart = today.AddDays(-(int)today.DayOfWeek);
+                var weekEnd = weekStart.AddDays(6);
+
+                return new UserTaskStatsViewModel
+                {
+                    MyTasksCount = myTasks.Count(t => !t.IsDeleted && t.Status != 2),
+                    AssignedByMeCount = assignedByMe.Count(t => !t.IsDeleted),
+                    SupervisedTasksCount = supervisedTasks.Count(t => !t.IsDeleted),
+                    TodayTasksCount = myTasks.Count(t => !t.IsDeleted && t.DueDate.HasValue && t.DueDate.Value.Date == today),
+                    OverdueTasksCount = myTasks.Count(t => !t.IsDeleted && t.DueDate.HasValue && t.DueDate.Value.Date < today && t.Status != 2),
+                    ThisWeekTasksCount = myTasks.Count(t => !t.IsDeleted && t.DueDate.HasValue && t.DueDate.Value.Date >= weekStart && t.DueDate.Value.Date <= weekEnd),
+                    RemindersCount = await GetActiveRemindersCountAsync(userId)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در محاسبه آمار کاربر: {ex.Message}", ex);
+            }
+        }
+
+        #endregion
+
+        #region Task Summary and Activities Implementation
+
+        /// <summary>
+        /// دریافت تسک‌های فوری کاربر
+        /// </summary>
+        public async Task<List<TaskSummaryViewModel>> GetUrgentTasksAsync(string userId, int take = 5)
+        {
+            try
+            {
+                var userTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: true);
+
+                var urgentTasks = userTasks.Where(t =>
+                    t.Priority == 2 || // فوری
+                    t.Important || // مهم
+                    (t.DueDate.HasValue && t.DueDate.Value.Date <= DateTime.Now.Date.AddDays(1)) // مهلت امروز یا فردا
+                ).OrderByDescending(t => t.Priority)
+                .ThenBy(t => t.DueDate)
+                .Take(take)
+                .Select(t => new TaskSummaryViewModel
+                {
+                    Id = t.Id,
+                    TaskCode = t.TaskCode,
+                    Title = t.Title,
+                    Priority = t.Priority,
+                    Important = t.Important,
+                    DueDate = t.DueDate,
+                    Status = t.Status,
+                    IsOverdue = t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2,
+                    StatusText = GetTaskStatusText(t.Status),
+                    StatusBadgeClass = GetTaskStatusBadgeClass(t.Status),
+                    StakeholderName = GetTaskStakeholderName(t.Id)
+                    // DaysUntilDue محاسبه خودکار توسط Property انجام می‌شود
+                }).ToList();
+
+                return urgentTasks;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت تسک‌های فوری: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت آخرین فعالیت‌های تسک کاربر
+        /// </summary>
+        public async Task<List<RecentActivityViewModel>> GetRecentTaskActivitiesAsync(string userId, int take = 10)
+        {
+            try
+            {
+                var recentTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: true);
+
+                var activities = recentTasks
+                    .Where(t => !t.IsDeleted)
+                    .OrderByDescending(t => t.LastUpdateDate ?? t.CreateDate)
+                    .Take(take)
+                    .Select(t => new RecentActivityViewModel
+                    {
+                        Title = GetActivityTitle(t.Status),
+                        Description = $"{t.Title} - {t.TaskCode}",
+                        Icon = GetActivityIcon(t.Status),
+                        IconClass = GetActivityIconClass(t.Status),
+                        ActivityDate = t.LastUpdateDate ?? t.CreateDate,
+                        TimeAgo = CalculateTimeAgo(t.LastUpdateDate ?? t.CreateDate),
+                        Url = $"/AdminArea/Tasks/Details/{t.Id}"
+                    }).ToList();
+
+                return activities;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت فعالیت‌های اخیر: {ex.Message}", ex);
+            }
+        }
+
+        #endregion
+
+        #region Reminder Management Implementation
+
+        /// <summary>
+        /// علامت‌گذاری یادآوری به عنوان خوانده شده
+        /// </summary>
+        public async Task MarkReminderAsReadAsync(int reminderId, string userId)
+        {
+            try
+            {
+                var reminder = await _context.TaskReminderEvent_Tbl
+                    .FirstOrDefaultAsync(r => r.Id == reminderId && r.RecipientUserId == userId);
+
+                if (reminder != null)
+                {
+                    reminder.IsRead = true;
+                    reminder.ReadDateTime = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در علامت‌گذاری یادآوری: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// علامت‌گذاری همه یادآوری‌ها به عنوان خوانده شده
+        /// </summary>
+        public async Task MarkAllRemindersAsReadAsync(string userId)
+        {
+            try
+            {
+                var reminders = await _context.TaskReminderEvent_Tbl
+                    .Where(r => r.RecipientUserId == userId && !r.IsRead)
+                    .ToListAsync();
+
+                foreach (var reminder in reminders)
+                {
+                    reminder.IsRead = true;
+                    reminder.ReadDateTime = DateTime.Now;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در علامت‌گذاری همه یادآوری‌ها: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// حذف یادآوری
+        /// </summary>
+        public async Task DeleteReminderAsync(int reminderId, string userId)
+        {
+            try
+            {
+                var reminder = await _context.TaskReminderEvent_Tbl
+                    .FirstOrDefaultAsync(r => r.Id == reminderId && r.RecipientUserId == userId);
+
+                if (reminder != null)
+                {
+                    _context.TaskReminderEvent_Tbl.Remove(reminder);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در حذف یادآوری: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// حذف یادآوری‌های خوانده شده
+        /// </summary>
+        public async Task DeleteReadRemindersAsync(string userId)
+        {
+            try
+            {
+                var readReminders = await _context.TaskReminderEvent_Tbl
+                    .Where(r => r.RecipientUserId == userId && r.IsRead)
+                    .ToListAsync();
+
+                _context.TaskReminderEvent_Tbl.RemoveRange(readReminders);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در حذف یادآوری‌های خوانده شده: {ex.Message}", ex);
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private async Task<int> GetActiveRemindersCountAsync(string userId)
+        {
+            try
+            {
+                var today = DateTime.Now.Date;
+                return await _context.TaskReminderEvent_Tbl
+                    .CountAsync(r => r.RecipientUserId == userId &&
+                                   r.ScheduledDateTime.Date <= today &&
+                                   !r.IsSent);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private async Task<int> GetCompletedTasksCountThisWeekAsync(string userId)
+        {
+            var weekStart = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek);
+            var weekEnd = weekStart.AddDays(6);
+
+            var myTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: false);
+            return myTasks.Count(t => !t.IsDeleted &&
+                                    t.CompletionDate.HasValue &&
+                                    t.CompletionDate.Value.Date >= weekStart &&
+                                    t.CompletionDate.Value.Date <= weekEnd);
+        }
+
+        private async Task<int> GetInProgressTasksCountThisWeekAsync(string userId)
+        {
+            var myTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: false);
+            return myTasks.Count(t => !t.IsDeleted && t.Status == 1);
+        }
+
+        private IQueryable<Tasks> ApplyFiltersToQuery(IQueryable<Tasks> query, TaskFilterViewModel filters)
+        {
+            if (filters == null) return query;
+
+            if (!string.IsNullOrEmpty(filters.SearchTerm))
+            {
+                query = query.Where(t => t.Title.Contains(filters.SearchTerm) ||
+                                       (t.Description != null && t.Description.Contains(filters.SearchTerm)) ||
+                                       t.TaskCode.Contains(filters.SearchTerm));
+            }
+
+            // سایر فیلترها...
+
+            return query;
+        }
+
+        private string GetTaskStakeholderName(int taskId)
+        {
+            var stakeholder = _context.Tasks_Tbl
+                .Where(t => t.Id == taskId)
+                .Include(t => t.Stakeholder)
+                .Select(t => t.Stakeholder)
+                .FirstOrDefault();
+
+            return stakeholder != null ? $"{stakeholder.FirstName} {stakeholder.LastName}" : "";
+        }
+
+        private string GetActivityTitle(byte status)
+        {
+            return status switch
+            {
+                0 => "تسک جدید ایجاد شد",
+                1 => "تسک در حال انجام",
+                2 => "تسک تکمیل شد",
+                3 => "تسک تأیید شد",
+                4 => "تسک رد شد",
+                _ => "تسک بروزرسانی شد"
+            };
+        }
+
+        private string GetActivityIcon(byte status)
+        {
+            return status switch
+            {
+                0 => "fa-plus-circle",
+                1 => "fa-clock",
+                2 => "fa-check-circle",
+                3 => "fa-thumbs-up",
+                4 => "fa-times-circle",
+                _ => "fa-edit"
+            };
+        }
+
+        private string GetActivityIconClass(byte status)
+        {
+            return status switch
+            {
+                0 => "primary",
+                1 => "warning",
+                2 => "success",
+                3 => "info",
+                4 => "danger",
+                _ => "secondary"
+            };
+        }
+
+        private string GetEventTypeIcon(byte eventType)
+        {
+            return eventType switch
+            {
+                0 => "fa-info-circle",
+                1 => "fa-bell",
+                2 => "fa-clock",
+                3 => "fa-play",
+                4 => "fa-stop",
+                5 => "fa-exclamation-triangle",
+                _ => "fa-bell"
+            };
+        }
+
+        private string GetEventTypeColor(byte eventType)
+        {
+            return eventType switch
+            {
+                0 => "info",
+                1 => "primary",
+                2 => "warning",
+                3 => "success",
+                4 => "danger",
+                5 => "warning",
+                _ => "secondary"
+            };
+        }
+
+        private string CalculateTimeAgo(DateTime activityDate)
+        {
+            var timeSpan = DateTime.Now - activityDate;
+
+            if (timeSpan.TotalMinutes < 1)
+                return "هم اکنون";
+            if (timeSpan.TotalMinutes < 60)
+                return $"{(int)timeSpan.TotalMinutes} دقیقه پیش";
+            if (timeSpan.TotalHours < 24)
+                return $"{(int)timeSpan.TotalHours} ساعت پیش";
+            if (timeSpan.TotalDays < 30)
+                return $"{(int)timeSpan.TotalDays} روز پیش";
+
+            return activityDate.ToString("yyyy/MM/dd");
+        }
+
+        #endregion
         #region Additional Missing Methods
 
         /// <summary>
@@ -1625,5 +2202,39 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         #endregion
+
+        /// <summary>
+        /// دریافت متن وضعیت تسک
+        /// </summary>
+        private string GetTaskStatusText(byte status)
+        {
+            return status switch
+            {
+                0 => "ایجاد شده",
+                1 => "در حال انجام",
+                2 => "تکمیل شده",
+                3 => "تأیید شده",
+                4 => "رد شده",
+                5 => "در انتظار",
+                _ => "نامشخص"
+            };
+        }
+
+        /// <summary>
+        /// دریافت کلاس badge برای وضعیت تسک
+        /// </summary>
+        private string GetTaskStatusBadgeClass(byte status)
+        {
+            return status switch
+            {
+                0 => "bg-secondary",
+                1 => "bg-warning",
+                2 => "bg-success",
+                3 => "bg-info",
+                4 => "bg-danger",
+                5 => "bg-primary",
+                _ => "bg-dark"
+            };
+        }
     }
 }

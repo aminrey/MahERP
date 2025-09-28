@@ -1,5 +1,235 @@
-﻿
+﻿@model DashboardViewModel
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "داشبورد";
 }
 
+<div class="content">
+    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center py-2 text-center text-md-start">
+        <div class="flex-grow-1 mb-1 mb-md-0">
+            <h1 class="h3 fw-bold mb-2">داشبورد</h1>
+            <h2 class="h6 fw-medium text-muted mb-0">خوش آمدید، @User.Identity.Name</h2>
+        </div>
+        <div class="mt-3 mt-md-0 ms-md-3">
+            <span class="fs-sm text-muted">آخرین بروزرسانی: @DateTime.Now.ToString("HH:mm")</span>
+        </div>
+    </div>
+</div>
+
+<!-- آمار کلی -->
+<div class="content">
+    <div class="row">
+        <!-- تسک‌های من -->
+        <div class="col-6 col-lg-3">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks">
+                <div class="block-content block-content-full">
+                    <div class="fs-2 fw-bold text-primary" id="myTasksCount">-</div>
+                    <div class="fs-sm fw-semibold text-uppercase text-muted">تسک‌های من</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- تسک‌های واگذار شده -->
+        <div class="col-6 col-lg-3">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="AssignedByMe">
+                <div class="block-content block-content-full">
+                    <div class="fs-2 fw-bold text-warning" id="assignedTasksCount">-</div>
+                    <div class="fs-sm fw-semibold text-uppercase text-muted">واگذار شده</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- تسک‌های نظارتی -->
+        <div class="col-6 col-lg-3">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="SupervisedTasks">
+                <div class="block-content block-content-full">
+                    <div class="fs-2 fw-bold text-info" id="supervisedTasksCount">-</div>
+                    <div class="fs-sm fw-semibold text-uppercase text-muted">تحت نظارت</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- یادآوری‌ها -->
+        <div class="col-6 col-lg-3">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
+                <div class="block-content block-content-full">
+                    <div class="fs-2 fw-bold text-success" id="remindersCount">-</div>
+                    <div class="fs-sm fw-semibold text-uppercase text-muted">یادآوری فعال</div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- محتوای اصلی -->
+<div class="content">
+    <div class="row">
+        <!-- تسک‌های فوری و مهم -->
+        <div class="col-lg-8">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-exclamation-triangle me-1 text-danger"></i>
+                        تسک‌های فوری
+                    </h3>
+                    <div class="block-options">
+                        <a class="btn-block-option" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks" asp-route-filter="urgent">
+                            مشاهده همه
+                        </a>
+                    </div>
+                </div>
+                <div class="block-content" id="urgentTasksContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- آمار و اطلاعات سریع -->
+        <div class="col-lg-4">
+            <!-- تسک‌های امروز -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-calendar-day me-1 text-primary"></i>
+                        امروز
+                    </h3>
+                </div>
+                <div class="block-content text-center">
+                    <div class="py-3">
+                        <div class="fs-1 fw-bold text-primary" id="todayTasksCount">-</div>
+                        <div class="fs-sm fw-semibold text-uppercase text-muted">تسک برای امروز</div>
+                    </div>
+                    <a asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks" asp-route-filter="today" class="btn btn-sm btn-primary">
+                        <i class="fa fa-eye me-1"></i> مشاهده
+                    </a>
+                </div>
+            </div>
+
+            <!-- تسک‌های عقب افتاده -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-exclamation-circle me-1 text-danger"></i>
+                        عقب افتاده
+                    </h3>
+                </div>
+                <div class="block-content text-center">
+                    <div class="py-3">
+                        <div class="fs-1 fw-bold text-danger" id="overdueTasksCount">-</div>
+                        <div class="fs-sm fw-semibold text-uppercase text-muted">تسک عقب افتاده</div>
+                    </div>
+                    <a asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks" asp-route-filter="overdue" class="btn btn-sm btn-danger">
+                        <i class="fa fa-eye me-1"></i> مشاهده
+                    </a>
+                </div>
+            </div>
+
+            <!-- دسترسی سریع -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-bolt me-1"></i>
+                        دسترسی سریع
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="d-grid gap-2">
+                        <a asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" class="btn btn-primary">
+                            <i class="fa fa-plus me-1"></i> تسک جدید
+                        </a>
+                        <a asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskCalendar" class="btn btn-alt-secondary">
+                            <i class="fa fa-calendar me-1"></i> تقویم تسک‌ها
+                        </a>
+                        <a asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskDashboard" class="btn btn-alt-secondary">
+                            <i class="fa fa-tachometer-alt me-1"></i> داشبورد تسک‌ها
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آخرین فعالیت‌ها -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-history me-1"></i>
+                آخرین فعالیت‌های تسک
+            </h3>
+            <div class="block-options">
+                <a class="btn-block-option" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
+                    مشاهده همه
+                </a>
+            </div>
+        </div>
+        <div class="block-content" id="recentActivitiesContent">
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">در حال بارگذاری...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // بارگذاری داده‌های داشبورد
+            loadDashboardData();
+
+            // بروزرسانی هر 60 ثانیه
+            setInterval(loadDashboardData, 60000);
+        });
+
+        function loadDashboardData() {
+            // بارگذاری آمار کلی
+            $.get('@Url.Action("GetDashboardStats", "Tasks", new { area = "AdminArea" })')
+                .done(function(response) {
+                    if (response.success) {
+                        $('#myTasksCount').text(response.myTasksCount);
+                        $('#assignedTasksCount').text(response.assignedByMeCount);
+                        $('#supervisedTasksCount').text(response.supervisedTasksCount);
+                        $('#remindersCount').text(response.remindersCount);
+                        $('#todayTasksCount').text(response.todayTasksCount);
+                        $('#overdueTasksCount').text(response.overdueTasksCount);
+
+                        // بروزرسانی badge های sidebar
+                        updateSidebarBadges(response);
+                    }
+                })
+                .fail(function() {
+                    $('.fs-2').text('خطا');
+                });
+
+            // بارگذاری تسک‌های فوری
+            $.get('@Url.Action("GetUrgentTasks", "Tasks", new { area = "AdminArea" })')
+                .done(function(data) {
+                    $('#urgentTasksContent').html(data);
+                })
+                .fail(function() {
+                    $('#urgentTasksContent').html('<div class="text-center py-4 text-muted">خطا در بارگذاری تسک‌ها</div>');
+                });
+
+            // بارگذاری آخرین فعالیت‌ها
+            $.get('@Url.Action("GetRecentTaskActivities", "Tasks", new { area = "AdminArea" })')
+                .done(function(data) {
+                    $('#recentActivitiesContent').html(data);
+                })
+                .fail(function() {
+                    $('#recentActivitiesContent').html('<div class="text-center py-4 text-muted">خطا در بارگذاری فعالیت‌ها</div>');
+                });
+        }
+
+        function updateSidebarBadges(stats) {
+            if (typeof window.updateTaskBadges === 'function') {
+                window.updateTaskBadges(stats);
+            }
+        }
+    </script>
+}

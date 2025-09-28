@@ -51,7 +51,16 @@ public class TaskViewModel
     /// </summary>
     [Display(Name = "تاریخ شروع پیشنهادی")]
     public DateTime? SuggestedStartDate { get; set; }
+    /// <summary>
+    /// آیا تسک عقب افتاده است؟
+    /// </summary>
+    public bool IsOverdue => !CompletionDate.HasValue && DueDate.HasValue && DateTime.Now > DueDate.Value;
 
+    /// <summary>
+    /// تاریخ تایید سرپرست
+    /// </summary>
+    [Display(Name = "تاریخ تایید سرپرست")]
+    public DateTime? SupervisorApproved => SupervisorApprovedDate;
     /// <summary>
     /// تاریخ شروع پیشنهادی به صورت شمسی
     /// </summary>

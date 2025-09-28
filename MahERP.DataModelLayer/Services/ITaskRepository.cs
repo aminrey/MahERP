@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
@@ -318,6 +319,73 @@ namespace MahERP.DataModelLayer.Repository
         /// دریافت آمار پروژه
         /// </summary>
         Task<ProjectStatsViewModel> GetProjectStatsAsync(int branchId, int? stakeholderId = null, int? categoryId = null);
+
+        #endregion
+
+        #region Dashboard Methods
+
+        /// <summary>
+        /// دریافت داده‌های داشبورد تسک‌ها برای کاربر
+        /// </summary>
+        Task<TaskDashboardViewModel> GetTaskDashboardDataAsync(string userId);
+
+        /// <summary>
+        /// دریافت تسک‌های واگذار شده توسط کاربر
+        /// </summary>
+        Task<TasksListViewModel> GetTasksAssignedByUserAsync(string userId, TaskFilterViewModel filters);
+
+        /// <summary>
+        /// دریافت تسک‌های تحت نظارت کاربر
+        /// </summary>
+        Task<TasksListViewModel> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters);
+
+        /// <summary>
+        /// دریافت یادآوری‌های تسک برای کاربر
+        /// </summary>
+        Task<TaskRemindersViewModel> GetTaskRemindersAsync(string userId, TaskReminderFilterViewModel filters);
+
+        /// <summary>
+        /// دریافت آمار تسک‌ها برای کاربر
+        /// </summary>
+        Task<UserTaskStatsViewModel> GetUserTaskStatsAsync(string userId);
+
+        #endregion
+
+        #region Task Summary and Activities
+
+        /// <summary>
+        /// دریافت تسک‌های فوری کاربر
+        /// </summary>
+        Task<List<TaskSummaryViewModel>> GetUrgentTasksAsync(string userId, int take = 5);
+
+        /// <summary>
+        /// دریافت آخرین فعالیت‌های تسک کاربر
+        /// </summary>
+        Task<List<RecentActivityViewModel>> GetRecentTaskActivitiesAsync(string userId, int take = 10);
+
+        #endregion
+
+        #region Reminder Management
+
+        /// <summary>
+        /// علامت‌گذاری یادآوری به عنوان خوانده شده
+        /// </summary>
+        Task MarkReminderAsReadAsync(int reminderId, string userId);
+
+        /// <summary>
+        /// علامت‌گذاری همه یادآوری‌ها به عنوان خوانده شده
+        /// </summary>
+        Task MarkAllRemindersAsReadAsync(string userId);
+
+        /// <summary>
+        /// حذف یادآوری
+        /// </summary>
+        Task DeleteReminderAsync(int reminderId, string userId);
+
+        /// <summary>
+        /// حذف یادآوری‌های خوانده شده
+        /// </summary>
+        Task DeleteReadRemindersAsync(string userId);
 
         #endregion
     }

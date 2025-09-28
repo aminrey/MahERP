@@ -7,6 +7,7 @@ using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.Extentions;
@@ -56,6 +57,148 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _taskCodeGenerator = taskCodeGenerator;
         }
 
+        #region Dashboard
+        /// <summary>
+        /// داشبورد تسک‌ها - نمای کلی و آمارها
+        /// </summary>
+        [Permission("Tasks", "TaskDashboard", 0)]
+        public async Task<IActionResult> TaskDashboard()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var model = await _taskRepository.GetTaskDashboardDataAsync(userId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "TaskDashboard", "مشاهده داشبورد تسک‌ها");
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "TaskDashboard", "خطا در نمایش داشبورد", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+        /// <summary>
+        /// تسک‌هایی که کاربر به دیگران واگذار کرده
+        /// </summary>
+        [Permission("Tasks", "AssignedByMe", 0)]
+        public async Task<IActionResult> AssignedByMe(TaskFilterViewModel filters = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                if (filters == null)
+                    filters = new TaskFilterViewModel { ViewType = TaskViewType.AssignedByMe };
+
+                var model = await _taskRepository.GetTasksForIndexAsync(userId, filters); // استفاده از همان متد
+
+                ViewBag.Title = "تسک‌های واگذار شده توسط من";
+                ViewBag.IsAssignedByMe = true;
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "AssignedByMe", "مشاهده تسک‌های واگذار شده");
+
+                return View("Index", model); // استفاده از همان Index view
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AssignedByMe", "خطا در دریافت تسک‌های واگذار شده", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// تسک‌هایی که کاربر ناظر آن‌هاست
+        /// </summary>
+        [Permission("Tasks", "SupervisedTasks", 0)]
+        public async Task<IActionResult> SupervisedTasks(TaskFilterViewModel filters = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                if (filters == null)
+                    filters = new TaskFilterViewModel { ViewType = TaskViewType.SupervisedTasks };
+
+                var model = await _taskRepository.GetTasksForIndexAsync(userId, filters); // استفاده از همان متد
+
+                ViewBag.Title = "تسک‌های تحت نظارت";
+                ViewBag.IsSupervisedTasks = true;
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "SupervisedTasks", "مشاهده تسک‌های تحت نظارت");
+
+                return View("Index", model); // استفاده از همان Index view
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "SupervisedTasks", "خطا در دریافت تسک‌های نظارتی", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// یادآوری‌های تسک
+        /// </summary>
+        [Permission("Tasks", "TaskReminders", 0)]
+        public async Task<IActionResult> TaskReminders(TaskReminderFilterViewModel filters = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                if (filters == null)
+                    filters = new TaskReminderFilterViewModel();
+
+                var model = await _taskRepository.GetTaskRemindersAsync(userId, filters);
+
+                ViewBag.Title = "یادآوری‌های تسک";
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "TaskReminders", "مشاهده یادآوری‌های تسک");
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "TaskReminders", "خطا در دریافت یادآوری‌ها", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// دریافت آمار داشبورد به صورت AJAX
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetDashboardStats()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var stats = await _taskRepository.GetUserTaskStatsAsync(userId);
+
+                return Json(new
+                {
+                    success = true,
+                    myTasksCount = stats.MyTasksCount,
+                    assignedByMeCount = stats.AssignedByMeCount,
+                    supervisedTasksCount = stats.SupervisedTasksCount,
+                    overdueTasksCount = stats.OverdueTasksCount,
+                    todayTasksCount = stats.TodayTasksCount,
+                    thisWeekTasksCount = stats.ThisWeekTasksCount,
+                    remindersCount = stats.RemindersCount
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetDashboardStats", "خطا در دریافت آمار", ex);
+                return Json(new { success = false, message = "خطا در دریافت آمار" });
+            }
+        }
+        #endregion
         #region Views Actions
 
         /// <summary>
@@ -246,6 +389,139 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         #endregion
+
+
+        /// <summary>
+        /// دریافت تسک‌های فوری برای داشبورد
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetUrgentTasks()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var urgentTasks = await _taskRepository.GetUrgentTasksAsync(userId, take: 5);
+
+                return PartialView("_UrgentTasksList", urgentTasks);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetUrgentTasks", "خطا در دریافت تسک‌های فوری", ex);
+                return PartialView("_UrgentTasksList", new List<TaskSummaryViewModel>());
+            }
+        }
+
+        /// <summary>
+        /// دریافت آخرین فعالیت‌های تسک
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetRecentTaskActivities()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var activities = await _taskRepository.GetRecentTaskActivitiesAsync(userId, take: 10);
+
+                return PartialView("_RecentTaskActivities", activities);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetRecentTaskActivities", "خطا در دریافت فعالیت‌ها", ex);
+                return PartialView("_RecentTaskActivities", new List<RecentActivityViewModel>());
+            }
+        }
+
+        /// <summary>
+        /// علامت‌گذاری یادآوری به عنوان خوانده شده
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkReminderAsRead(int id)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                await _taskRepository.MarkReminderAsReadAsync(id, userId);
+
+                return Json(new { success = true, message = "یادآوری به عنوان خوانده شده علامت‌گذاری شد" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "MarkReminderAsRead", "خطا در علامت‌گذاری یادآوری", ex);
+                return Json(new { success = false, message = "خطا در علامت‌گذاری یادآوری" });
+            }
+        }
+
+        /// <summary>
+        /// علامت‌گذاری همه یادآوری‌ها به عنوان خوانده شده
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllRemindersAsRead()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                await _taskRepository.MarkAllRemindersAsReadAsync(userId);
+
+                return Json(new { success = true, message = "همه یادآوری‌ها به عنوان خوانده شده علامت‌گذاری شدند" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "MarkAllRemindersAsRead", "خطا در علامت‌گذاری یادآوری‌ها", ex);
+                return Json(new { success = false, message = "خطا در علامت‌گذاری یادآوری‌ها" });
+            }
+        }
+
+        /// <summary>
+        /// حذف یادآوری
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteReminder(int id)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                await _taskRepository.DeleteReminderAsync(id, userId);
+
+                return Json(new { success = true, message = "یادآوری حذف شد" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "DeleteReminder", "خطا در حذف یادآوری", ex);
+                return Json(new { success = false, message = "خطا در حذف یادآوری" });
+            }
+        }
+
+        /// <summary>
+        /// حذف یادآوری‌های خوانده شده
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteReadReminders()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                await _taskRepository.DeleteReadRemindersAsync(userId);
+
+                return Json(new { success = true, message = "یادآوری‌های خوانده شده حذف شدند" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "DeleteReadReminders", "خطا در حذف یادآوری‌ها", ex);
+                return Json(new { success = false, message = "خطا در حذف یادآوری‌ها" });
+            }
+        }
+
+
+
+
+
+
+
+
 
         #region POST Actions
 
@@ -825,5 +1101,10 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         #endregion
+
+
+
+
+
     }
 }

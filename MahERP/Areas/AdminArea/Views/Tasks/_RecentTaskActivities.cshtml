@@ -1,0 +1,38 @@
+﻿@model List<RecentActivityViewModel>
+
+@if (Model?.Any() == true)
+{
+    <div class="timeline timeline-alt py-0">
+        @foreach (var activity in Model)
+        {
+            <div class="timeline-event">
+                <div class="timeline-event-icon bg-@activity.IconClass">
+                    <i class="fa @activity.Icon"></i>
+                </div>
+                <div class="timeline-event-block">
+                    <div class="timeline-event-header">
+                        <h4 class="timeline-event-title">@activity.Title</h4>
+                        <div class="timeline-event-time">@activity.TimeAgo</div>
+                    </div>
+                    <p class="fs-sm">@activity.Description</p>
+                    @if (!string.IsNullOrEmpty(activity.Url))
+                    {
+                        <div class="mt-2">
+                            <a href="@activity.Url" class="btn btn-xs btn-alt-primary">
+                                <i class="fa fa-eye me-1"></i>مشاهده
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="py-4 text-center">
+        <i class="fa fa-info-circle fa-2x text-muted"></i>
+        <h4 class="h5 fw-medium mt-3">بدون فعالیت اخیر</h4>
+        <p class="fs-sm text-muted">هنوز هیچ فعالیتی ثبت نشده است</p>
+    </div>
+}

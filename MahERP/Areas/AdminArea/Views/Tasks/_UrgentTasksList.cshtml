@@ -1,0 +1,92 @@
+﻿@model List<TaskSummaryViewModel>
+
+@if (Model?.Any() == true)
+{
+    <div class="table-responsive">
+        <table class="table table-vcenter">
+            <thead>
+                <tr>
+                    <th class="text-center" style="width: 50px;">#</th>
+                    <th>عنوان</th>
+                    <th class="text-center">وضعیت</th>
+                    <th class="text-center">مهلت</th>
+                    <th class="text-center">عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var task in Model)
+                {
+                    <tr class="@(task.IsOverdue ? "table-danger" : task.Priority == 2 ? "table-warning" : "")">
+                        <td class="text-center">
+                            <span class="badge @(task.IsOverdue ? "bg-danger" : task.Priority == 2 ? "bg-warning" : "bg-info")">
+                                @task.TaskCode
+                            </span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">
+                                <a asp-action="Details" asp-route-id="@task.Id" class="text-decoration-none">
+                                    @task.Title
+                                </a>
+                                @if (task.Important)
+                                {
+                                    <i class="fa fa-star text-warning ms-1" title="مهم"></i>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(task.StakeholderName))
+                            {
+                                <div class="fs-sm text-muted">@task.StakeholderName</div>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <span class="badge @task.StatusBadgeClass">@task.StatusText</span>
+                        </td>
+                        <td class="text-center">
+                            @if (task.DueDate.HasValue)
+                            {
+                                <div class="@(task.IsOverdue ? "text-danger fw-bold" : "")">
+                                    @ConvertDateTime.ConvertMiladiToShamsi(task.DueDate , "yyyy/MM/dddd")
+                                </div>
+                                @if (task.DaysUntilDue.HasValue)
+                                {
+                                    <div class="fs-xs text-muted">
+                                        @if (task.DaysUntilDue > 0)
+                                        {
+                                            <span>@task.DaysUntilDue روز مانده</span>
+                                        }
+                                        else if (task.DaysUntilDue < 0)
+                                        {
+                                            <span class="text-danger">@(Math.Abs(task.DaysUntilDue.Value)) روز تأخیر</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-warning">امروز</span>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">بدون مهلت</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-alt-secondary" title="مشاهده جزئیات">
+                                <i class="fa fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="py-4 text-center">
+        <div class="mb-3">
+            <i class="fa fa-check-circle fa-2x text-success"></i>
+        </div>
+        <h4 class="h5 fw-medium">بدون تسک فوری</h4>
+        <p class="fs-sm text-muted">در حال حاضر هیچ تسک فوری یا اولویت‌داری ندارید</p>
+    </div>
+}

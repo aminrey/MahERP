@@ -158,240 +158,321 @@
                 </li>
 
                 <li class="nav-main-heading">عملیاتها</li>
-
-                <!-- Task Management Section -->
+                <!-- Task Management Section - REORGANIZED -->
                 <li class="nav-main-item">
                     <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
                         <i class="nav-main-link-icon fa fa-tasks"></i>
                         <span class="nav-main-link-name">مدیریت تسک‌ها</span>
+                        <span class="nav-main-link-badge badge bg-primary rounded-pill ms-1" id="taskBadgeCount" style="display: none;">0</span>
                     </a>
                     <ul class="nav-main-submenu">
+                        <!-- 🎯 MAIN OVERVIEW SECTION -->
+                        <li class="nav-main-item nav-submenu-separator">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">نمای کلی</small>
+                            </div>
+                        </li>
+
+                        <!-- Dashboard - First Priority -->
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskDashboard">
+                                <i class="nav-main-link-icon fa fa-tachometer-alt text-primary"></i>
+                                <span class="nav-main-link-name">داشبورد تسک‌ها</span>
+                            </a>
+                        </li>
+
+                        <!-- All Tasks - General View -->
                         <li class="nav-main-item">
                             <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index">
-                                <i class="nav-main-link-icon fa fa-list"></i>
-                                <span class="nav-main-link-name">لیست تسک‌ها</span>
+                                <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                <span class="nav-main-link-name">همه تسک‌ها</span>
                             </a>
                         </li>
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks">
-                                <i class="nav-main-link-icon fa fa-clipboard-check"></i>
-                                <span class="nav-main-link-name">تسک‌های من</span>
-                            </a>
-                        </li>
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" asp-route-AddressRouteInComingUrl="side">
-                                <i class="nav-main-link-icon fa fa-plus-circle"></i>
-                                <span class="nav-main-link-name">تسک جدید</span>
-                            </a>
-                            <!-- Add this to your sidebar navigation where Tasks menu items are located -->
+
+                        <!-- Task Calendar -->
                         <li class="nav-main-item">
                             <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskCalendar">
-                                <i class="nav-main-link-icon fa fa-calendar"></i>
+                                <i class="nav-main-link-icon fa fa-calendar text-success"></i>
                                 <span class="nav-main-link-name">تقویم تسک‌ها</span>
                             </a>
                         </li>
-                </li>
-                <li class="nav-main-item">
-                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="TaskCategory" asp-action="Index">
-                        <i class="nav-main-link-icon fa fa-tag"></i>
-                        <span class="nav-main-link-name">دسته‌بندی‌ها</span>
-                    </a>
-                </li>
-                <li class="nav-main-item">
-                    <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
-                        <i class="nav-main-link-icon fa fa-search"></i>
-                        <span class="nav-main-link-name">جستجوی پیشرفته</span>
-                    </a>
-                </li>
-            </ul>
-            </li>
-            <!-- END Task Management Section -->
-            <!-- CRM Management Section -->
-            <li class="nav-main-item">
-                <a class="nav-main-link nav-main-link-submenu" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
-                    <i class="nav-main-link-icon fa fa-handshake"></i>
-                    <span class="nav-main-link-name">مدیریت مشتریان</span>
-                </a>
-                <ul class="nav-main-submenu">
-                    <li class="nav-main-item">
-                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Index">
-                            <i class="nav-main-link-icon fa fa-list"></i>
-                            <span class="nav-main-link-name">تعاملات CRM</span>
-                        </a>
-                    </li>
-                    <li class="nav-main-item">
-                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Create">
-                            <i class="nav-main-link-icon fa fa-plus-circle"></i>
-                            <span class="nav-main-link-name">افزودن تعامل جدید</span>
-                        </a>
-                    </li>
-                    <li class="nav-main-item">
-                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="MyInteractions">
-                            <i class="nav-main-link-icon fa fa-user-friends"></i>
-                            <span class="nav-main-link-name">تعاملات من</span>
-                        </a>
-                    </li>
-                    <li class="nav-main-item">
-                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Statistics">
-                            <i class="nav-main-link-icon fa fa-chart-bar"></i>
-                            <span class="nav-main-link-name">آمار و گزارشات</span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
 
-            <!-- User and Permission Management -->
-            @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
-            {
-                <li class="nav-main-heading">مدیریت کاربران و دسترسی</li>
+                        <!-- 📋 PERSONAL TASKS SECTION -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">تسک‌های شخصی</small>
+                            </div>
+                        </li>
 
-                <!-- Branch Management -->
-                <li class="nav-main-item">
-                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                        <i class="nav-main-link-icon fa fa-sitemap"></i>
-                        <span class="nav-main-link-name">مدیریت شعب</span>
-                    </a>
-                    <ul class="nav-main-submenu">
+                        <!-- My Tasks - Personal Active Tasks -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Branch" asp-action="Index">
-                                <i class="nav-main-link-icon fa fa-list"></i>
-                                <span class="nav-main-link-name">لیست شعب</span>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks">
+                                <i class="nav-main-link-icon fa fa-clipboard-check text-warning"></i>
+                                <span class="nav-main-link-name">تسک‌های من</span>
+                                <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" id="myTasksCount" style="display: none;">0</span>
                             </a>
                         </li>
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Branch" asp-action="AddBranch">
-                                <i class="nav-main-link-icon fa fa-plus-circle"></i>
-                                <span class="nav-main-link-name">افزودن شعبه جدید</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
 
-                <!-- Team Management Section - NEW -->
-                <li class="nav-main-item">
-                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                        <i class="nav-main-link-icon fa fa-users"></i>
-                        <span class="nav-main-link-name">مدیریت تیم‌ها</span>
-                    </a>
-                    <ul class="nav-main-submenu">
-                   
+                        <!-- Task Reminders - Personal Alerts -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Team" asp-action="OrganizationalChart">
-                                <i class="nav-main-link-icon fa fa-sitemap"></i>
-                                <span class="nav-main-link-name">چارت سازمانی</span>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
+                                <i class="nav-main-link-icon fa fa-bell text-orange"></i>
+                                <span class="nav-main-link-name">یادآوری‌های من</span>
+                                <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="remindersCount" style="display: none;">0</span>
                             </a>
                         </li>
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Team" asp-action="Create">
-                                <i class="nav-main-link-icon fa fa-plus-circle"></i>
-                                <span class="nav-main-link-name">ایجاد تیم جدید</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <!-- END Team Management Section -->
-                <!-- User Management -->
-                <li class="nav-main-item">
-                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                        <i class="nav-main-link-icon fa fa-user-friends"></i>
-                        <span class="nav-main-link-name">مدیریت کاربران</span>
-                    </a>
-                    <ul class="nav-main-submenu">
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
-                                <i class="nav-main-link-icon fa fa-list"></i>
-                                <span class="nav-main-link-name">لیست کاربران</span>
-                            </a>
-                        </li>
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="AddUser">
-                                <i class="nav-main-link-icon fa fa-user-plus"></i>
-                                <span class="nav-main-link-name">افزودن کاربر جدید</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
 
-                <!-- Permission Management -->
-                <li class="nav-main-item">
-                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                        <i class="nav-main-link-icon fa fa-shield-alt"></i>
-                        <span class="nav-main-link-name">مدیریت نقش‌ها</span>
-                    </a>
-                    <ul class="nav-main-submenu">
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="RolePattern" asp-action="Index">
-                                <i class="nav-main-link-icon fa fa-key"></i>
-                                <span class="nav-main-link-name">الگوهای نقش</span>
-                            </a>
+                        <!-- 👥 TEAM MANAGEMENT SECTION -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">مدیریت تیمی</small>
+                            </div>
                         </li>
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserPermission" asp-action="Index">
-                                <i class="nav-main-link-icon fa fa-users-cog"></i>
-                                <span class="nav-main-link-name">دسترسی کاربران</span>
-                            </a>
-                        </li>
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserPermission" asp-action="PermissionLogs">
-                                <i class="nav-main-link-icon fa fa-clipboard-list"></i>
-                                <span class="nav-main-link-name">لاگ دسترسی‌ها</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
 
-                <!-- User Activity Log Management -->
-                <li class="nav-main-item">
-                    <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                        <i class="nav-main-link-icon fas fa-history"></i>
-                        <span class="nav-main-link-name">لاگ فعالیت‌ها</span>
-                    </a>
-                    <ul class="nav-main-submenu">
+                        <!-- Assigned by Me - Tasks I Delegated -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
-                                <i class="nav-main-link-icon fas fa-list"></i>
-                                <span class="nav-main-link-name">لیست فعالیت‌ها</span>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="AssignedByMe">
+                                <i class="nav-main-link-icon fa fa-share-square text-info"></i>
+                                <span class="nav-main-link-name">تسک‌های واگذار شده</span>
+                                <span class="nav-main-link-badge badge bg-warning rounded-pill ms-1" id="assignedByMeCount" style="display: none;">0</span>
                             </a>
                         </li>
+
+                        <!-- Supervised Tasks - Tasks Under My Supervision -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Search">
-                                <i class="nav-main-link-icon fas fa-search"></i>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="SupervisedTasks">
+                                <i class="nav-main-link-icon fa fa-eye text-purple"></i>
+                                <span class="nav-main-link-name">تسک‌های نظارتی</span>
+                                <span class="nav-main-link-badge badge bg-info rounded-pill ms-1" id="supervisedTasksCount" style="display: none;">0</span>
+                            </a>
+                        </li>
+
+                        <!-- ⚡ QUICK ACTIONS SECTION -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">عملیات سریع</small>
+                            </div>
+                        </li>
+
+                        <!-- Create Task - Primary Action -->
+                        <li class="nav-main-item">
+                            <a class="nav-main-link nav-main-link-create" asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" asp-route-AddressRouteInComingUrl="side">
+                                <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                <span class="nav-main-link-name fw-semibold">ایجاد تسک جدید</span>
+                            </a>
+                        </li>
+
+                        <!-- Advanced Search -->
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
+                                <i class="nav-main-link-icon fa fa-search text-secondary"></i>
                                 <span class="nav-main-link-name">جستجوی پیشرفته</span>
                             </a>
                         </li>
+
+                        <!-- 🏷️ SYSTEM MANAGEMENT SECTION -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">مدیریت سیستم</small>
+                            </div>
+                        </li>
+
+                        <!-- Categories - System Configuration -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Statistics">
-                                <i class="nav-main-link-icon fas fa-chart-line"></i>
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="TaskCategory" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-tags text-secondary"></i>
+                                <span class="nav-main-link-name">دسته‌بندی‌ها</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- END Task Management Section -->
+                <!-- CRM Management Section -->
+                <li class="nav-main-item">
+                    <a class="nav-main-link nav-main-link-submenu" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
+                        <i class="nav-main-link-icon fa fa-handshake"></i>
+                        <span class="nav-main-link-name">مدیریت مشتریان</span>
+                    </a>
+                    <ul class="nav-main-submenu">
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Index">
+                                <i class="nav-main-link-icon fa fa-list"></i>
+                                <span class="nav-main-link-name">تعاملات CRM</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Create">
+                                <i class="nav-main-link-icon fa fa-plus-circle"></i>
+                                <span class="nav-main-link-name">افزودن تعامل جدید</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="MyInteractions">
+                                <i class="nav-main-link-icon fa fa-user-friends"></i>
+                                <span class="nav-main-link-name">تعاملات من</span>
+                            </a>
+                        </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="CRM" asp-action="Statistics">
+                                <i class="nav-main-link-icon fa fa-chart-bar"></i>
                                 <span class="nav-main-link-name">آمار و گزارشات</span>
                             </a>
                         </li>
                     </ul>
                 </li>
-            }
 
-            <!-- System Settings (Only for Admins) -->
-            @if (User.IsInRole("Admin"))
-            {
-                <li class="nav-main-heading">تنظیمات سیستم</li>
+                <!-- User and Permission Management -->
+                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                {
+                    <li class="nav-main-heading">مدیریت کاربران و دسترسی</li>
 
+                    <!-- Branch Management -->
+                    <li class="nav-main-item">
+                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-sitemap"></i>
+                            <span class="nav-main-link-name">مدیریت شعب</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="Branch" asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-list"></i>
+                                    <span class="nav-main-link-name">لیست شعب</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="Branch" asp-action="AddBranch">
+                                    <i class="nav-main-link-icon fa fa-plus-circle"></i>
+                                    <span class="nav-main-link-name">افزودن شعبه جدید</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Team Management Section - NEW -->
+                    <li class="nav-main-item">
+                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-users"></i>
+                            <span class="nav-main-link-name">مدیریت تیم‌ها</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                       
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="Team" asp-action="OrganizationalChart">
+                                    <i class="nav-main-link-icon fa fa-sitemap"></i>
+                                    <span class="nav-main-link-name">چارت سازمانی</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="Team" asp-action="Create">
+                                    <i class="nav-main-link-icon fa fa-plus-circle"></i>
+                                    <span class="nav-main-link-name">ایجاد تیم جدید</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- END Team Management Section -->
+                    <!-- User Management -->
+                    <li class="nav-main-item">
+                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-user-friends"></i>
+                            <span class="nav-main-link-name">مدیریت کاربران</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-list"></i>
+                                    <span class="nav-main-link-name">لیست کاربران</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserManager" asp-action="AddUser">
+                                    <i class="nav-main-link-icon fa fa-user-plus"></i>
+                                    <span class="nav-main-link-name">افزودن کاربر جدید</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Permission Management -->
+                    <li class="nav-main-item">
+                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-shield-alt"></i>
+                            <span class="nav-main-link-name">مدیریت نقش‌ها</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="RolePattern" asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-key"></i>
+                                    <span class="nav-main-link-name">الگوهای نقش</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserPermission" asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-users-cog"></i>
+                                    <span class="nav-main-link-name">دسترسی کاربران</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserPermission" asp-action="PermissionLogs">
+                                    <i class="nav-main-link-icon fa fa-clipboard-list"></i>
+                                    <span class="nav-main-link-name">لاگ دسترسی‌ها</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- User Activity Log Management -->
+                    <li class="nav-main-item">
+                        <a aria-expanded="false" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fas fa-history"></i>
+                            <span class="nav-main-link-name">لاگ فعالیت‌ها</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
+                                    <i class="nav-main-link-icon fas fa-list"></i>
+                                    <span class="nav-main-link-name">لیست فعالیت‌ها</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Search">
+                                    <i class="nav-main-link-icon fas fa-search"></i>
+                                    <span class="nav-main-link-name">جستجوی پیشرفته</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Statistics">
+                                    <i class="nav-main-link-icon fas fa-chart-line"></i>
+                                    <span class="nav-main-link-name">آمار و گزارشات</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
+
+                <!-- System Settings (Only for Admins) -->
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-main-heading">تنظیمات سیستم</li>
+
+                    <li class="nav-main-item">
+                        <a class="nav-main-link" asp-area="AdminArea" asp-controller="Settings" asp-action="Index">
+                            <i class="nav-main-link-icon fa fa-cogs"></i>
+                            <span class="nav-main-link-name">تنظیمات عمومی</span>
+                        </a>
+                    </li>
+                }
+
+                <!-- Logout -->
+                <li class="nav-main-heading">خروج</li>
                 <li class="nav-main-item">
-                    <a class="nav-main-link" asp-area="AdminArea" asp-controller="Settings" asp-action="Index">
-                        <i class="nav-main-link-icon fa fa-cogs"></i>
-                        <span class="nav-main-link-name">تنظیمات عمومی</span>
+                    <a class="nav-main-link" href="javascript:void(0)" onclick="document.getElementById('logoutForm').submit();">
+                        <i class="nav-main-link-icon fa fa-sign-out-alt"></i>
+                        <span class="nav-main-link-name">خروج از سیستم</span>
                     </a>
                 </li>
-            }
 
-            <!-- Logout -->
-            <li class="nav-main-heading">خروج</li>
-            <li class="nav-main-item">
-                <a class="nav-main-link" href="javascript:void(0)" onclick="document.getElementById('logoutForm').submit();">
-                    <i class="nav-main-link-icon fa fa-sign-out-alt"></i>
-                    <span class="nav-main-link-name">خروج از سیستم</span>
-                </a>
-            </li>
-
-            </ul>
+                </ul>
 
         </div>
         <!-- END Side Navigation -->

@@ -1,0 +1,90 @@
+﻿<div class="py-4 text-center">
+    <div class="mb-3">
+        <i class="fa fa-bell-slash fa-3x text-muted"></i>
+    </div>
+    <h4 class="h5 fw-medium">هیچ یادآوری‌ای وجود ندارد</h4>
+    <p class="fs-sm text-muted">در حال حاضر یادآوری فعالی برای شما تعریف نشده است</p>
+</div>
+            }
+</div>
+</div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterReminders(type) {
+            window.location.href = '@Url.Action("TaskReminders")?filter=' + type;
+        }
+
+        function markAsRead(reminderId) {
+            $.post('@Url.Action("MarkReminderAsRead")', { id: reminderId })
+                .done(function(response) {
+                    if (response.success) {
+                        location.reload();
+                    }
+                });
+        }
+
+        function markAllAsRead() {
+            Swal.fire({
+                title: 'علامت‌گذاری همه یادآوری‌ها',
+                text: 'آیا تمام یادآوری‌ها را به عنوان خوانده شده علامت‌گذاری می‌کنید؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله',
+                cancelButtonText: 'خیر'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("MarkAllRemindersAsRead")')
+                        .done(function(response) {
+                            if (response.success) {
+                                location.reload();
+                            }
+                        });
+                }
+            });
+        }
+
+        function deleteReminder(reminderId) {
+            Swal.fire({
+                title: 'حذف یادآوری',
+                text: 'آیا از حذف این یادآوری مطمئن هستید؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'حذف',
+                cancelButtonText: 'لغو',
+                confirmButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("DeleteReminder")', { id: reminderId })
+                        .done(function(response) {
+                            if (response.success) {
+                                location.reload();
+                            }
+                        });
+                }
+            });
+        }
+
+        function deleteReadReminders() {
+            Swal.fire({
+                title: 'حذف یادآوری‌های خوانده شده',
+                text: 'آیا از حذف تمام یادآوری‌های خوانده شده مطمئن هستید؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'حذف',
+                cancelButtonText: 'لغو',
+                confirmButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("DeleteReadReminders")')
+                        .done(function(response) {
+                            if (response.success) {
+                                location.reload();
+                            }
+                        });
+                }
+            });
+        }
+    </script>
+}

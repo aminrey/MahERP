@@ -1,0 +1,348 @@
+﻿@model TaskDashboardViewModel
+@{
+    ViewData["Title"] = "داشبورد تسک‌ها";
+}
+
+<div class="content">
+    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center py-2 text-center text-md-start">
+        <div class="flex-grow-1 mb-1 mb-md-0">
+            <h1 class="h3 fw-bold mb-2">داشبورد تسک‌ها</h1>
+            <h2 class="h6 fw-medium text-muted mb-0">مدیریت و نظارت بر تسک‌های شما</h2>
+        </div>
+        <div class="mt-3 mt-md-0 ms-md-3">
+            <a class="btn btn-sm btn-alt-secondary" asp-action="CreateNewTask">
+                <i class="fa fa-plus opacity-50 me-1"></i> تسک جدید
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- آمار کلی -->
+<div class="content">
+    <div class="row">
+        <!-- تسک‌های من -->
+        <div class="col-md-6 col-xl-3">
+            <div class="block block-rounded text-center d-flex flex-column h-100 mb-0">
+                <div class="block-content block-content-full flex-grow-1 d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <p class="fs-3 fw-bold text-primary mb-0">@Model.UserStats.MyTasksCount</p>
+                        <p class="text-muted mb-0">تسک‌های من</p>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fa fa-clipboard-check fa-2x text-primary-light"></i>
+                    </div>
+                </div>
+                <div class="block-content block-content-full block-content-sm bg-body-light fs-sm">
+                    <a asp-action="MyTasks" class="fw-medium d-inline-block">
+                        مشاهده همه
+                        <i class="fa fa-arrow-alt-circle-left ms-1 opacity-25"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- تسک‌های واگذار شده -->
+        <div class="col-md-6 col-xl-3">
+            <div class="block block-rounded text-center d-flex flex-column h-100 mb-0">
+                <div class="block-content block-content-full flex-grow-1 d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <p class="fs-3 fw-bold text-warning mb-0">@Model.UserStats.AssignedByMeCount</p>
+                        <p class="text-muted mb-0">واگذار شده</p>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fa fa-user-clock fa-2x text-warning-light"></i>
+                    </div>
+                </div>
+                <div class="block-content block-content-full block-content-sm bg-body-light fs-sm">
+                    <a asp-action="AssignedByMe" class="fw-medium d-inline-block">
+                        مشاهده همه
+                        <i class="fa fa-arrow-alt-circle-left ms-1 opacity-25"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- تسک‌های نظارتی -->
+        <div class="col-md-6 col-xl-3">
+            <div class="block block-rounded text-center d-flex flex-column h-100 mb-0">
+                <div class="block-content block-content-full flex-grow-1 d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <p class="fs-3 fw-bold text-info mb-0">@Model.UserStats.SupervisedTasksCount</p>
+                        <p class="text-muted mb-0">تحت نظارت</p>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fa fa-eye fa-2x text-info-light"></i>
+                    </div>
+                </div>
+                <div class="block-content block-content-full block-content-sm bg-body-light fs-sm">
+                    <a asp-action="SupervisedTasks" class="fw-medium d-inline-block">
+                        مشاهده همه
+                        <i class="fa fa-arrow-alt-circle-left ms-1 opacity-25"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- یادآوری‌ها -->
+        <div class="col-md-6 col-xl-3">
+            <div class="block block-rounded text-center d-flex flex-column h-100 mb-0">
+                <div class="block-content block-content-full flex-grow-1 d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <p class="fs-3 fw-bold text-success mb-0">@Model.UserStats.RemindersCount</p>
+                        <p class="text-muted mb-0">یادآوری فعال</p>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fa fa-bell fa-2x text-success-light"></i>
+                    </div>
+                </div>
+                <div class="block-content block-content-full block-content-sm bg-body-light fs-sm">
+                    <a asp-action="TaskReminders" class="fw-medium d-inline-block">
+                        مشاهده همه
+                        <i class="fa fa-arrow-alt-circle-left ms-1 opacity-25"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- محتوای اصلی -->
+<div class="content">
+    <div class="row">
+        <!-- تسک‌های اولویت‌دار -->
+        <div class="col-lg-8">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-exclamation-triangle me-1 text-warning"></i>
+                        تسک‌های اولویت‌دار
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn-block-option" data-toggle="block-option" data-action="refresh">
+                            <i class="si si-refresh"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content">
+                    @if (Model.UrgentTasks?.Any() == true)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-vcenter">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width: 50px;">#</th>
+                                        <th>عنوان</th>
+                                        <th class="text-center">وضعیت</th>
+                                        <th class="text-center">مهلت</th>
+                                        <th class="text-center">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var task in Model.UrgentTasks.Take(10))
+                                    {
+                                        <tr class="@(task.IsOverdue ? "table-danger" : "")">
+                                            <td class="text-center">
+                                                <span class="badge @(task.IsOverdue ? "bg-danger" : task.Priority == 2 ? "bg-warning" : "bg-info")">
+                                                    @task.TaskCode
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold">@task.Title</div>
+                                                @if (!string.IsNullOrEmpty(task.StakeholderName))
+                                                {
+                                                    <div class="fs-sm text-muted">@task.StakeholderName</div>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge @task.StatusBadgeClass">@task.StatusText</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @if (task.DueDate.HasValue)
+                                                {
+                                                    <div class="@(task.IsOverdue ? "text-danger fw-bold" : "")">
+                                                        @ConvertDateTime.ConvertMiladiToShamsi(task.DueDate , "yyyy/MM/dd")
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">بدون مهلت</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group" role="group" aria-label="عملیات">
+                                                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-alt-secondary" title="مشاهده جزئیات">
+                                                        <i class="fa fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="py-4 text-center">
+                            <div class="mb-3">
+                                <i class="fa fa-check-circle fa-2x text-success"></i>
+                            </div>
+                            <h4 class="h5 fw-medium">بدون تسک اولویت‌دار</h4>
+                            <p class="fs-sm text-muted">در حال حاضر هیچ تسک فوری یا اولویت‌داری ندارید</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- آمار تکمیلی -->
+        <div class="col-lg-4">
+            <!-- تسک‌های امروز -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-calendar-day me-1 text-primary"></i>
+                        تسک‌های امروز
+                    </h3>
+                </div>
+                <div class="block-content text-center">
+                    <div class="py-3">
+                        <div class="fs-1 fw-bold text-primary">@Model.UserStats.TodayTasksCount</div>
+                        <div class="fs-sm fw-semibold text-uppercase text-muted">تسک برای امروز</div>
+                    </div>
+                    @if (Model.UserStats.TodayTasksCount > 0)
+                    {
+                        <a asp-action="MyTasks" asp-route-filter="today" class="btn btn-sm btn-primary">
+                            <i class="fa fa-eye me-1"></i> مشاهده
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <!-- تسک‌های عقب افتاده -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-exclamation-circle me-1 text-danger"></i>
+                        عقب افتاده
+                    </h3>
+                </div>
+                <div class="block-content text-center">
+                    <div class="py-3">
+                        <div class="fs-1 fw-bold text-danger">@Model.UserStats.OverdueTasksCount</div>
+                        <div class="fs-sm fw-semibold text-uppercase text-muted">تسک عقب افتاده</div>
+                    </div>
+                    @if (Model.UserStats.OverdueTasksCount > 0)
+                    {
+                        <a asp-action="MyTasks" asp-route-filter="overdue" class="btn btn-sm btn-danger">
+                            <i class="fa fa-eye me-1"></i> مشاهده
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <!-- نمودار پیشرفت هفتگی -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-chart-line me-1 text-info"></i>
+                        پیشرفت هفته
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="py-3">
+                                <div class="fs-3 fw-bold text-success">@Model.CompletedThisWeek</div>
+                                <div class="fs-sm text-muted">تکمیل شده</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="py-3">
+                                <div class="fs-3 fw-bold text-warning">@Model.InProgressThisWeek</div>
+                                <div class="fs-sm text-muted">در جریان</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آخرین فعالیت‌ها -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-history me-1"></i>
+                آخرین فعالیت‌ها
+            </h3>
+        </div>
+        <div class="block-content">
+            @if (Model.RecentActivities?.Any() == true)
+            {
+                <div class="timeline timeline-alt py-0">
+                    @foreach (var activity in Model.RecentActivities.Take(10))
+                    {
+                        <div class="timeline-event">
+                            <div class="timeline-event-icon bg-@activity.IconClass">
+                                <i class="fa @activity.Icon"></i>
+                            </div>
+                            <div class="timeline-event-block">
+                                <div class="timeline-event-header">
+                                    <h4 class="timeline-event-title">@activity.Title</h4>
+                                    <div class="timeline-event-time">@activity.TimeAgo</div>
+                                </div>
+                                <p class="fs-sm">@activity.Description</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="py-4 text-center">
+                    <i class="fa fa-info-circle fa-2x text-muted"></i>
+                    <h4 class="h5 fw-medium mt-3">بدون فعالیت اخیر</h4>
+                    <p class="fs-sm text-muted">هنوز هیچ فعالیتی ثبت نشده است</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // بروزرسانی خودکار آمار هر 30 ثانیه
+            setInterval(function() {
+                updateDashboardStats();
+            }, 30000);
+
+            function updateDashboardStats() {
+                $.get('@Url.Action("GetDashboardStats")')
+                    .done(function(response) {
+                        if (response.success) {
+                            // بروزرسانی badge های sidebar
+                            updateSidebarBadges(response);
+                        }
+                    })
+                    .fail(function() {
+                        console.log('خطا در دریافت آمار');
+                    });
+            }
+
+            function updateSidebarBadges(stats) {
+                $('#taskBadgeCount').text(stats.myTasksCount + stats.assignedByMeCount).toggle(stats.myTasksCount + stats.assignedByMeCount > 0);
+                $('#myTasksCount').text(stats.myTasksCount).toggle(stats.myTasksCount > 0);
+                $('#assignedByMeCount').text(stats.assignedByMeCount).toggle(stats.assignedByMeCount > 0);
+                $('#supervisedTasksCount').text(stats.supervisedTasksCount).toggle(stats.supervisedTasksCount > 0);
+                $('#remindersCount').text(stats.remindersCount).toggle(stats.remindersCount > 0);
+            }
+
+            // فعال‌سازی tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

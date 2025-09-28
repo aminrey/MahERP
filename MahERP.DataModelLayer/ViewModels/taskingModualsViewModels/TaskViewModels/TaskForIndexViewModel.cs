@@ -121,7 +121,14 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         MyTasks = 2,
 
         [Display(Name = "منتصب به من")]
-        AssignedToMe = 3
+        AssignedToMe = 3,
+
+        // اضافه کردن مقادیر مفقود
+        [Display(Name = "واگذار شده توسط من")]
+        AssignedByMe = 4,
+
+        [Display(Name = "تحت نظارت")]
+        SupervisedTasks = 5
     }
 
     public enum TaskPriorityFilter

@@ -1,628 +1,942 @@
-﻿@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
-@model TaskListForIndexViewModel
+﻿@model TaskListForIndexViewModel
 @{
     ViewData["Title"] = ViewBag.Title ?? "مدیریت تسک‌ها";
     bool isMyTasks = ViewBag.IsMyTasks ?? false;
+    bool isAssignedByMe = ViewBag.IsAssignedByMe ?? false;
+    bool isSupervisedTasks = ViewBag.IsSupervisedTasks ?? false;
 }
 
-<div class="block block-rounded">
-    <div class="block-header block-header-default">
-        <h3 class="block-title">
-            @ViewData["Title"]
-            @if (Model.HasActiveFilters)
-            {
-                <small class="text-muted ms-2">
-                    <i class="fa fa-filter"></i>
-                    فیلتر شده
-                </small>
-            }
-        </h3>
-
-        <div class="block-options">
-            <a asp-action="CreateNewTask" class="btn btn-sm btn-alt-success">
-                <i class="fa fa-plus opacity-50 me-1"></i> تسک جدید
-            </a>
-            <a asp-action="TaskCalendar" class="btn btn-sm btn-alt-info">
-                <i class="fa fa-calendar opacity-50 me-1"></i> تقویم تسک‌ها
-            </a>
-            <button type="button" class="btn btn-sm text-white btn-alt-primary @(Model.HasActiveFilters ? "btn-success" : "")" data-bs-toggle="collapse" data-bs-target="#advanced-filters">
-                <i class="fa fa-filter opacity-50 me-1"></i> 
-                فیلترهای پیشرفته
-            </button>
+<!-- صفحه اصلی مدیریت تسک‌ها -->
+<div class="content">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center py-2 text-center text-md-start">
+        <div class="flex-grow-1 mb-1 mb-md-0">
+            <h1 class="h3 fw-bold mb-1">
+                @ViewData["Title"]
+                @if (Model.HasActiveFilters)
+                {
+                    <small class="text-muted ms-2">
+                        <i class="fa fa-filter"></i>
+                        فیلتر شده
+                    </small>
+                }
+                
+                @* نمایش badge بر اساس نوع لیست *@
+                @if (isAssignedByMe)
+                {
+                    <span class="badge bg-info ms-2">واگذار شده</span>
+                }
+                else if (isSupervisedTasks)
+                {
+                    <span class="badge bg-warning ms-2">نظارتی</span>
+                }
+                else if (isMyTasks)
+                {
+                    <span class="badge bg-primary ms-2">شخصی</span>
+                }
+            </h1>
+            <p class="text-muted mb-0">
+                مجموع @Model.Tasks.Count تسک 
+                @if (Model.Statistics.TotalTasks > Model.Tasks.Count)
+                {
+                    <span>از @Model.Statistics.TotalTasks تسک کل</span>
+                }
+            </p>
         </div>
-    </div>
-    
-    <!-- فیلترهای سریع - منتقل شده به بالا -->
-    <div class="block-content border-bottom">
-        <div class="row">
-            <div class="col-lg-12">
-                <!-- دکمه‌های نوع نمایش - با حذف فیلترهای پیشرفته -->
-                <div class="btn-group btn-group-sm mb-3" role="group">
-                    <a href="@Url.Action("Index", new { 
-                        ViewType = TaskViewType.AllTasks 
-                    })" 
-                       class="btn @(Model.Filters.ViewType == TaskViewType.AllTasks ? "btn-primary" : "btn-outline-primary")">
-                        <i class="fa fa-list me-1"></i>
-                        همه (@Model.Statistics.TotalTasks)
+        
+        <!-- Action Buttons -->
+        <div class="mt-3 mt-md-0 ms-md-3">
+            <div class="btn-group" role="group">
+                @if (!isSupervisedTasks)
+                {
+                    <a asp-action="CreateNewTask" class="btn btn-success">
+                        <i class="fa fa-plus me-1"></i> تسک جدید
                     </a>
-                    <a href="@Url.Action("Index", new { 
-                        ViewType = TaskViewType.MyTeamsHierarchy 
-                    })" 
-                       class="btn @(Model.Filters.ViewType == TaskViewType.MyTeamsHierarchy ? "btn-primary" : "btn-outline-primary")">
-                        <i class="fa fa-sitemap me-1"></i>
-                        من و تیم (@(Model.Statistics.MyTasks + Model.Statistics.TeamTasks + Model.Statistics.SubTeamTasks))
-                    </a>
-                    <a href="@Url.Action("Index", new { 
-                        ViewType = TaskViewType.MyTasks 
-                    })" 
-                       class="btn @(Model.Filters.ViewType == TaskViewType.MyTasks ? "btn-primary" : "btn-outline-primary")">
-                        <i class="fa fa-user me-1"></i>
-                        تسک‌های من (@Model.Statistics.MyTasks)
-                    </a>
-                    <a href="@Url.Action("Index", new { 
-                        ViewType = TaskViewType.AssignedToMe 
-                    })" 
-                       class="btn @(Model.Filters.ViewType == TaskViewType.AssignedToMe ? "btn-primary" : "btn-outline-primary")">
-                        <i class="fa fa-inbox me-1"></i>
-                        منتصب به من (@Model.Statistics.AssignedToMe)
-                    </a>
-                </div>
+                }
+                
+                <a asp-action="TaskCalendar" class="btn btn-outline-primary">
+                    <i class="fa fa-calendar me-1"></i> تقویم
+                </a>
+                
+                <button type="button" class="btn @(Model.HasActiveFilters ? "btn-warning" : "btn-outline-secondary")" 
+                        data-bs-toggle="collapse" data-bs-target="#advanced-filters" aria-expanded="@(Model.HasActiveFilters ? "true" : "false")">
+                    <i class="fa fa-filter me-1"></i> 
+                    فیلترها
+                    @if (Model.HasActiveFilters)
+                    {
+                        <span class="badge bg-light text-dark ms-1">فعال</span>
+                    }
+                </button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- فیلترهای پیشرفته -->
-    <div class="block-content border-bottom">
-        <div class="collapse @(Model.HasActiveFilters ? "show" : "")" id="advanced-filters">
-            <div class="bg-body-light p-3 rounded">
-                <form method="get" asp-action="Index" id="filterForm">
+<!-- Quick View Tabs -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-content p-0">
+            <div class="nav nav-tabs nav-tabs-alt" role="tablist">
+                @if (!isAssignedByMe && !isSupervisedTasks)
+                {
+                    <a href="@Url.Action("Index", new { ViewType = TaskViewType.AllTasks })" 
+                       class="nav-item nav-link @(Model.Filters.ViewType == TaskViewType.AllTasks ? "active" : "")" 
+                       role="tab">
+                        <i class="fa fa-list me-1"></i>
+                        همه تسک‌ها
+                        <span class="badge bg-primary-light text-primary ms-1">@Model.Statistics.TotalTasks</span>
+                    </a>
+                    <a href="@Url.Action("Index", new { ViewType = TaskViewType.MyTasks })" 
+                       class="nav-item nav-link @(Model.Filters.ViewType == TaskViewType.MyTasks ? "active" : "")" 
+                       role="tab">
+                        <i class="fa fa-user me-1"></i>
+                        تسک‌های من
+                        <span class="badge bg-primary-light text-primary ms-1">@Model.Statistics.MyTasks</span>
+                    </a>
+                    <a href="@Url.Action("Index", new { ViewType = TaskViewType.AssignedToMe })" 
+                       class="nav-item nav-link @(Model.Filters.ViewType == TaskViewType.AssignedToMe ? "active" : "")" 
+                       role="tab">
+                        <i class="fa fa-inbox me-1"></i>
+                        منتصب به من
+                        <span class="badge bg-primary-light text-primary ms-1">@Model.Statistics.AssignedToMe</span>
+                    </a>
+                    <a href="@Url.Action("Index", new { ViewType = TaskViewType.MyTeamsHierarchy })" 
+                       class="nav-item nav-link @(Model.Filters.ViewType == TaskViewType.MyTeamsHierarchy ? "active" : "")" 
+                       role="tab">
+                        <i class="fa fa-sitemap me-1"></i>
+                        تیمی
+                        <span class="badge bg-primary-light text-primary ms-1">@(Model.Statistics.TeamTasks + Model.Statistics.SubTeamTasks)</span>
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("Index")" class="nav-item nav-link" role="tab">
+                        <i class="fa fa-home me-1"></i> همه تسک‌ها
+                    </a>
+                    <a href="@Url.Action("AssignedByMe")" class="nav-item nav-link @(isAssignedByMe ? "active" : "")" role="tab">
+                        <i class="fa fa-share me-1"></i> واگذار شده
+                    </a>
+                    <a href="@Url.Action("SupervisedTasks")" class="nav-item nav-link @(isSupervisedTasks ? "active" : "")" role="tab">
+                        <i class="fa fa-eye me-1"></i> نظارتی
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Filters -->
+<div class="content">
+    <div class="collapse @(Model.HasActiveFilters ? "show" : "")" id="advanced-filters">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-filter me-1"></i>
+                    فیلترهای پیشرفته
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-bs-toggle="collapse" data-bs-target="#advanced-filters">
+                        <i class="si si-arrow-up"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="block-content">
+                <form method="get" asp-action="Index" id="filterForm" class="needs-validation" novalidate>
                     <input type="hidden" asp-for="Filters.ViewType" />
-                    <div class="row">
+                    
+                    <!-- Row 1: Basic Filters -->
+                    <div class="row g-3 mb-3">
                         <div class="col-md-3">
-                            <label class="form-label">شعبه</label>
+                            <label class="form-label fw-medium">شعبه</label>
                             <select asp-for="Filters.BranchId" class="form-select js-select2" 
                                     asp-items="@(new SelectList(Model.branchListInitial ?? new List<BranchViewModel>(), "Id", "Name", Model.Filters.BranchId))"
-                                    data-placeholder="همه شعبه‌ها">
+                                    data-placeholder="انتخاب شعبه">
                                 <option value="">همه شعبه‌ها</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">تیم</label>
+                            <label class="form-label fw-medium">تیم</label>
                             <select asp-for="Filters.TeamId" class="form-select js-select2" 
-                                    asp-items="@(new SelectList(Model.TeamsInitial , "Id", "Title", Model.Filters.TeamId))"
-                                    data-placeholder="همه تیم‌ها">
+                                    asp-items="@(new SelectList(Model.TeamsInitial ?? new List<TeamViewModel>(), "Id", "Title", Model.Filters.TeamId))"
+                                    data-placeholder="انتخاب تیم">
                                 <option value="">همه تیم‌ها</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">اولویت</label>
+                            <label class="form-label fw-medium">کاربر مسئول</label>
+                            <select asp-for="Filters.UserId" class="form-select js-select2" 
+                                    asp-items="@(new SelectList(Model.UsersInitial ?? new List<UserViewModelFull>(), "Id", "FullNamesString", Model.Filters.UserId))"
+                                    data-placeholder="انتخاب کاربر">
+                                <option value="">همه کاربران</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">دسته‌بندی</label>
+                            <select asp-for="Filters.CategoryId" class="form-select js-select2" 
+                                    asp-items="@(new SelectList(Model.TaskCategoryInitial ?? new List<TaskCategory>(), "Id", "Title", Model.Filters.CategoryId))"
+                                    data-placeholder="انتخاب دسته‌بندی">
+                                <option value="">همه دسته‌بندی‌ها</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Row 2: Status & Priority Filters -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">وضعیت تسک</label>
+                            <select asp-for="Filters.TaskStatus" class="form-select"
+                                    asp-items="Html.GetEnumSelectList<TaskStatusFilter>()">
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">اولویت</label>
                             <select asp-for="Filters.TaskPriority" class="form-select"
                                     asp-items="Html.GetEnumSelectList<TaskPriorityFilter>()">
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">وضعیت</label>
-                            <select asp-for="Filters.TaskStatus" class="form-select"
-                                    asp-items="Html.GetEnumSelectList<TaskStatusFilter>()">
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-3">
-                            <label class="form-label">دسته‌بندی</label>
-                            <select asp-for="Filters.CategoryId" class="form-select js-select2" 
-                                    asp-items="@(new SelectList(Model.TaskCategoryInitial ?? new List<TaskCategory>(), "Id", "Title", Model.Filters.CategoryId))"
-                                    data-placeholder="همه دسته‌بندی‌ها">
-                                <option value="">همه دسته‌بندی‌ها</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">کاربر</label>
-                            <select asp-for="Filters.UserId" class="form-select js-select2" 
-                                    asp-items="@(new SelectList(Model.UsersInitial ?? new List<UserViewModelFull>(), "Id", "FullNamesString", Model.Filters.UserId))"
-                                    data-placeholder="همه کاربران">
-                                <option value="">همه کاربران</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">طرف حساب</label>
+                            <label class="form-label fw-medium">طرف حساب</label>
                             <select asp-for="Filters.StakeholderId" class="form-select js-select2" 
                                     asp-items="@(new SelectList(Model.StakeholdersInitial ?? new List<StakeholderViewModel>(), "Id", "CompanyName", Model.Filters.StakeholderId))"
-                                    data-placeholder="همه طرف حساب‌ها">
+                                    data-placeholder="انتخاب طرف حساب">
                                 <option value="">همه طرف حساب‌ها</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">جستجو</label>
+                            <label class="form-label fw-medium">جستجو</label>
                             <div class="input-group">
-                                <input asp-for="Filters.SearchTerm" class="form-control" placeholder="جستجو در عنوان، توضیحات یا کد">
+                                <input asp-for="Filters.SearchTerm" class="form-control" 
+                                       placeholder="جستجو در عنوان، کد یا توضیحات..."
+                                       autocomplete="off">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fa fa-search"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col-md-12">
-                            <button type="submit" class="btn btn-primary me-2">
-                                <i class="fa fa-search me-1"></i> اعمال فیلتر
-                            </button>
-                            <a href="@Url.Action("Index", new { ViewType = Model.Filters.ViewType })" class="btn btn-outline-secondary">
-                                <i class="fa fa-times me-1"></i> پاک کردن فیلترها
-                            </a>
-                            @if (Model.HasActiveFilters)
-                            {
-                                <span class="badge bg-success ms-2">
-                                    <i class="fa fa-filter me-1"></i>
-                                    فیلترهای فعال
-                                </span>
-                            }
+                    
+                    <!-- Filter Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-search me-1"></i> اعمال فیلترها
+                                </button>
+                                <a href="@Url.Action("Index", new { ViewType = Model.Filters.ViewType })" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fa fa-times me-1"></i> پاک کردن
+                                </a>
+                                @if (Model.HasActiveFilters)
+                                {
+                                    <div class="badge bg-success">
+                                        <i class="fa fa-check me-1"></i>
+                                        فیلترهای فعال اعمال شده
+                                    </div>
+                                }
+                            </div>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="block-content">
-        <!-- آمار تسک‌ها - فیلتر ثانویه که می‌تواند روی هر دو نوع فیلتر اعمال شود -->
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <a href="@Url.Action("Index", new { 
-                    Model.Filters.BranchId, 
-                    Model.Filters.TeamId, 
-                    Model.Filters.UserId, 
-                    Model.Filters.CategoryId, 
-                    Model.Filters.StakeholderId, 
-                    Model.Filters.SearchTerm,
-                    ViewType = Model.Filters.ViewType,
-                    TaskPriority = (TaskPriorityFilter?)null,
-                    TaskStatus = (TaskStatusFilter?)null
-                })" class="text-decoration-none statistics-card">
-                    <div class="block block-rounded bg-primary-light @((!Model.Filters.TaskPriority.HasValue && !Model.Filters.TaskStatus.HasValue) ? "border border-primary" : "")">
-                        <div class="block-content py-3">
-                            <div class="fs-4 fw-semibold text-primary text-center">
-                                @Model.Statistics.TotalTasks
-                            </div>
-                            <div class="text-center">کل تسک‌ها</div>
-                        </div>
+<!-- Statistics Cards -->
+<div class="content">
+    <div class="row g-3 mb-4">
+        <!-- کل تسک‌ها -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="@Url.Action("Index", new { 
+                Model.Filters.BranchId, Model.Filters.TeamId, Model.Filters.UserId, 
+                Model.Filters.CategoryId, Model.Filters.StakeholderId, Model.Filters.SearchTerm,
+                ViewType = Model.Filters.ViewType, TaskPriority = (TaskPriorityFilter?)null, TaskStatus = (TaskStatusFilter?)null
+            })" class="text-decoration-none">
+                <div class="block block-rounded block-link-shadow text-center @((!Model.Filters.TaskPriority.HasValue && !Model.Filters.TaskStatus.HasValue) ? "border-primary" : "")">
+                    <div class="block-content">
+                        <div class="fs-2 fw-bold text-primary">@Model.Statistics.TotalTasks</div>
+                        <p class="text-muted mb-0">کل تسک‌ها</p>
                     </div>
-                </a>
-            </div>
-            <div class="col-md-2">
-                <a href="@Url.Action("Index", new { 
-                    Model.Filters.BranchId, 
-                    Model.Filters.TeamId, 
-                    Model.Filters.UserId, 
-                    Model.Filters.TaskPriority, 
-                    Model.Filters.CategoryId, 
-                    Model.Filters.StakeholderId, 
-                    Model.Filters.SearchTerm,
-                    ViewType = Model.Filters.ViewType,
-                    TaskStatus = TaskStatusFilter.Completed
-                })" class="text-decoration-none statistics-card">
-                    <div class="block block-rounded bg-success-light @((Model.Filters.TaskStatus == TaskStatusFilter.Completed) ? "border border-success" : "")">
-                        <div class="block-content py-3">
-                            <div class="fs-4 fw-semibold text-success text-center">
-                                @Model.Statistics.CompletedTasks
-                            </div>
-                            <div class="text-center">تکمیل شده</div>
-                        </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- تکمیل شده -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="@Url.Action("Index", new { 
+                Model.Filters.BranchId, Model.Filters.TeamId, Model.Filters.UserId, Model.Filters.TaskPriority, 
+                Model.Filters.CategoryId, Model.Filters.StakeholderId, Model.Filters.SearchTerm,
+                ViewType = Model.Filters.ViewType, TaskStatus = TaskStatusFilter.Completed
+            })" class="text-decoration-none">
+                <div class="block block-rounded block-link-shadow text-center @((Model.Filters.TaskStatus == TaskStatusFilter.Completed) ? "border-success" : "")">
+                    <div class="block-content">
+                        <div class="fs-2 fw-bold text-success">@Model.Statistics.CompletedTasks</div>
+                        <p class="text-muted mb-0">تکمیل شده</p>
                     </div>
-                </a>
-            </div>
-            <div class="col-md-2">
-                <a href="@Url.Action("Index", new { 
-                    Model.Filters.BranchId, 
-                    Model.Filters.TeamId, 
-                    Model.Filters.UserId, 
-                    Model.Filters.TaskPriority, 
-                    Model.Filters.CategoryId, 
-                    Model.Filters.StakeholderId, 
-                    Model.Filters.SearchTerm,
-                    ViewType = Model.Filters.ViewType,
-                    TaskStatus = TaskStatusFilter.Overdue
-                })" class="text-decoration-none statistics-card">
-                    <div class="block block-rounded bg-warning-light @((Model.Filters.TaskStatus == TaskStatusFilter.Overdue) ? "border border-warning" : "")">
-                        <div class="block-content py-3">
-                            <div class="fs-4 fw-semibold text-warning text-center">
-                                @Model.Statistics.OverdueTasks
-                            </div>
-                            <div class="text-center">تاخیردار</div>
-                        </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- در حال انجام -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="@Url.Action("Index", new { 
+                Model.Filters.BranchId, Model.Filters.TeamId, Model.Filters.UserId, Model.Filters.TaskPriority, 
+                Model.Filters.CategoryId, Model.Filters.StakeholderId, Model.Filters.SearchTerm,
+                ViewType = Model.Filters.ViewType, TaskStatus = TaskStatusFilter.InProgress
+            })" class="text-decoration-none">
+                <div class="block block-rounded block-link-shadow text-center @((Model.Filters.TaskStatus == TaskStatusFilter.InProgress) ? "border-info" : "")">
+                    <div class="block-content">
+                        <div class="fs-2 fw-bold text-info">@Model.Statistics.InProgressTasks</div>
+                        <p class="text-muted mb-0">در حال انجام</p>
                     </div>
-                </a>
-            </div>
-            <div class="col-md-2">
-                <a href="@Url.Action("Index", new { 
-                    Model.Filters.BranchId, 
-                    Model.Filters.TeamId, 
-                    Model.Filters.UserId, 
-                    Model.Filters.TaskPriority, 
-                    Model.Filters.CategoryId, 
-                    Model.Filters.StakeholderId, 
-                    Model.Filters.SearchTerm,
-                    ViewType = Model.Filters.ViewType,
-                    TaskStatus = TaskStatusFilter.InProgress
-                })" class="text-decoration-none statistics-card">
-                    <div class="block block-rounded bg-info-light @((Model.Filters.TaskStatus == TaskStatusFilter.InProgress) ? "border border-info" : "")">
-                        <div class="block-content py-3">
-                            <div class="fs-4 fw-semibold text-info text-center">
-                                @Model.Statistics.InProgressTasks
-                            </div>
-                            <div class="text-center">در حال انجام</div>
-                        </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- تأخیردار -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="@Url.Action("Index", new { 
+                Model.Filters.BranchId, Model.Filters.TeamId, Model.Filters.UserId, Model.Filters.TaskPriority, 
+                Model.Filters.CategoryId, Model.Filters.StakeholderId, Model.Filters.SearchTerm,
+                ViewType = Model.Filters.ViewType, TaskStatus = TaskStatusFilter.Overdue
+            })" class="text-decoration-none">
+                <div class="block block-rounded block-link-shadow text-center @((Model.Filters.TaskStatus == TaskStatusFilter.Overdue) ? "border-warning" : "")">
+                    <div class="block-content">
+                        <div class="fs-2 fw-bold text-warning">@Model.Statistics.OverdueTasks</div>
+                        <p class="text-muted mb-0">تأخیردار</p>
                     </div>
-                </a>
-            </div>
-            <div class="col-md-2">
-                <a href="@Url.Action("Index", new { 
-                    Model.Filters.BranchId, 
-                    Model.Filters.TeamId, 
-                    Model.Filters.UserId, 
-                    Model.Filters.CategoryId, 
-                    Model.Filters.TaskStatus, 
-                    Model.Filters.StakeholderId, 
-                    Model.Filters.SearchTerm,
-                    ViewType = Model.Filters.ViewType,
-                    TaskPriority = TaskPriorityFilter.Important
-                })" class="text-decoration-none statistics-card">
-                    <div class="block block-rounded bg-orange-light @((Model.Filters.TaskPriority == TaskPriorityFilter.Important) ? "border border-orange" : "")">
-                        <div class="block-content py-3">
-                            <div class="fs-4 fw-semibold text-orange text-center">
-                                @Model.Statistics.ImportantTasks
-                            </div>
-                            <div class="text-center">مهم</div>
-                        </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- مهم -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="@Url.Action("Index", new { 
+                Model.Filters.BranchId, Model.Filters.TeamId, Model.Filters.UserId, 
+                Model.Filters.CategoryId, Model.Filters.TaskStatus, Model.Filters.StakeholderId, Model.Filters.SearchTerm,
+                ViewType = Model.Filters.ViewType, TaskPriority = TaskPriorityFilter.Important
+            })" class="text-decoration-none">
+                <div class="block block-rounded block-link-shadow text-center @((Model.Filters.TaskPriority == TaskPriorityFilter.Important) ? "border-orange" : "")">
+                    <div class="block-content">
+                        <div class="fs-2 fw-bold text-orange">@Model.Statistics.ImportantTasks</div>
+                        <p class="text-muted mb-0">مهم</p>
                     </div>
-                </a>
-            </div>
-            <div class="col-md-2">
-                <a href="@Url.Action("Index", new { 
-                    Model.Filters.BranchId, 
-                    Model.Filters.TeamId, 
-                    Model.Filters.UserId, 
-                    Model.Filters.CategoryId, 
-                    Model.Filters.TaskStatus, 
-                    Model.Filters.StakeholderId, 
-                    Model.Filters.SearchTerm,
-                    ViewType = Model.Filters.ViewType,
-                    TaskPriority = TaskPriorityFilter.Urgent
-                })" class="text-decoration-none statistics-card">
-                    <div class="block block-rounded bg-danger-light @((Model.Filters.TaskPriority == TaskPriorityFilter.Urgent) ? "border border-danger" : "")">
-                        <div class="block-content py-3">
-                            <div class="fs-4 fw-semibold text-danger text-center">
-                                @Model.Statistics.UrgentTasks
-                            </div>
-                            <div class="text-center">فوری</div>
-                        </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- فوری -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="@Url.Action("Index", new { 
+                Model.Filters.BranchId, Model.Filters.TeamId, Model.Filters.UserId, 
+                Model.Filters.CategoryId, Model.Filters.TaskStatus, Model.Filters.StakeholderId, Model.Filters.SearchTerm,
+                ViewType = Model.Filters.ViewType, TaskPriority = TaskPriorityFilter.Urgent
+            })" class="text-decoration-none">
+                <div class="block block-rounded block-link-shadow text-center @((Model.Filters.TaskPriority == TaskPriorityFilter.Urgent) ? "border-danger" : "")">
+                    <div class="block-content">
+                        <div class="fs-2 fw-bold text-danger">@Model.Statistics.UrgentTasks</div>
+                        <p class="text-muted mb-0">فوری</p>
                     </div>
-                </a>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-tasks me-1"></i>
+                لیست تسک‌ها
+                @if (Model.Tasks.Count > 0)
+                {
+                    <small class="text-muted ms-2">(@Model.Tasks.Count تسک)</small>
+                }
+            </h3>
+            
+            <div class="block-options">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-cog me-1"></i> گزینه‌ها
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <h6 class="dropdown-header">نمایش</h6>
+                        <button class="dropdown-item" onclick="toggleView('card')">
+                            <i class="fa fa-th me-1"></i> نمای کارت
+                        </button>
+                        <button class="dropdown-item" onclick="toggleView('table')">
+                            <i class="fa fa-list me-1"></i> نمای جدول
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <h6 class="dropdown-header">عملیات</h6>
+                        <button class="dropdown-item" onclick="selectAllTasks()">
+                            <i class="fa fa-check-square me-1"></i> انتخاب همه
+                        </button>
+                        <button class="dropdown-item" onclick="exportTasks()">
+                            <i class="fa fa-download me-1"></i> دانلود Excel
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <!-- نمایش تسک‌ها بر اساس نوع انتخاب شده -->
-        @if (Model.Filters.ViewType == TaskViewType.MyTeamsHierarchy)
-        {
-            <!-- نمایش سلسله مراتبی -->
-            <div class="hierarchy-container">
-                @if (Model.GroupedTasks.MyTasks.Any())
+        
+        <div class="block-content">
+            <!-- نمایش بر اساس نوع انتخاب شده -->
+            @if (Model.Filters.ViewType == TaskViewType.MyTeamsHierarchy)
+            {
+                <!-- نمایش سلسله مراتبی -->
+                @await Html.PartialAsync("_HierarchicalTaskView", Model.GroupedTasks)
+            }
+            else
+            {
+                @if (Model.Tasks.Any())
                 {
-                    <div class="task-group mb-4">
-                        <div class="group-header">
-                            <h5 class="text-primary border-bottom pb-2">
-                                <i class="fa fa-user me-2"></i>
-                                تسک‌های من (@Model.GroupedTasks.MyTasks.Count)
-                            </h5>
-                        </div>
-                        <div class="group-content">
-                            @await Html.PartialAsync("_TasksTable", Model.GroupedTasks.MyTasks)
+                    <!-- نمای جدول -->
+                    <div id="table-view">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-vcenter" id="tasks-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 40px;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="select-all">
+                                            </div>
+                                        </th>
+                                        <th>تسک</th>
+                                        <th class="text-center d-none d-md-table-cell">دسته‌بندی</th>
+                                        <th class="text-center d-none d-lg-table-cell">مسئول</th>
+                                        <th class="text-center">وضعیت</th>
+                                        <th class="text-center d-none d-sm-table-cell">مهلت</th>
+                                        <th class="text-center">پیشرفت</th>
+                                        <th class="text-center" style="width: 120px;">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var task in Model.Tasks)
+                                    {
+                                        <tr class="@(task.IsOverdue && !task.CompletionDate.HasValue ? "table-warning" : "") task-row" data-task-id="@task.Id">
+                                            <td>
+                                                <div class="form-check">
+                                                    <input class="form-check-input task-checkbox" type="checkbox" value="@task.Id">
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="me-2">
+                                                        @if (task.Priority == 2)
+                                                        {
+                                                            <i class="fa fa-exclamation-triangle text-danger" title="فوری"></i>
+                                                        }
+                                                        else if (task.Important)
+                                                        {
+                                                            <i class="fa fa-star text-warning" title="مهم"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fa fa-circle text-muted"></i>
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <a asp-action="Details" asp-route-id="@task.Id" class="fw-bold text-primary text-decoration-none">
+                                                            @task.Title
+                                                        </a>
+                                                        <div class="text-muted small">
+                                                            کد: @task.TaskCode
+                                                            @if (!string.IsNullOrEmpty(task.Description) && task.Description.Length > 50)
+                                                            {
+                                                                <span class="ms-2" data-bs-toggle="tooltip" title="@task.Description">
+                                                                    @task.Description.Substring(0, 50)...
+                                                                </span>
+                                                            }
+                                                            else if (!string.IsNullOrEmpty(task.Description))
+                                                            {
+                                                                <span class="ms-2">@task.Description</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center d-none d-md-table-cell">
+                                                @if (!string.IsNullOrEmpty(task.CategoryTitle))
+                                                {
+                                                    <span class="badge bg-secondary">@task.CategoryTitle</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="text-center d-none d-lg-table-cell">
+                                                @if (task.AssignmentsTaskUser != null && task.AssignmentsTaskUser.Any())
+                                                {
+                                                    <div class="avatar-group">
+                                                        @foreach (var assignment in task.AssignmentsTaskUser.Take(3))
+                                                        {
+                                                            <div class="avatar avatar-sm" data-bs-toggle="tooltip" title="@assignment.AssignedUserName">
+                                                                <img class="img-avatar" src="/assets/media/avatars/default.jpg" alt="">
+                                                            </div>
+                                                        }
+                                                        @if (task.AssignmentsTaskUser.Count > 3)
+                                                        {
+                                                            <div class="avatar avatar-sm">
+                                                                <span class="img-avatar bg-primary">+@(task.AssignmentsTaskUser.Count - 3)</span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @{
+                                                    var statusClass = task.Status switch
+                                                    {
+                                                        0 => "bg-secondary",
+                                                        1 => "bg-warning",
+                                                        2 => "bg-success",
+                                                        3 => "bg-info",
+                                                        4 => "bg-danger",
+                                                        _ => "bg-dark"
+                                                    };
+                                                    var statusText = task.Status switch
+                                                    {
+                                                        0 => "ایجاد شده",
+                                                        1 => "در حال انجام",
+                                                        2 => "تکمیل شده",
+                                                        3 => "تأیید شده",
+                                                        4 => "رد شده",
+                                                        _ => "نامشخص"
+                                                    };
+                                                }
+                                                <span class="badge @statusClass">@statusText</span>
+                                            </td>
+                                            <td class="text-center d-none d-sm-table-cell">
+                                                @if (task.DueDate.HasValue)
+                                                {
+                                                    var persianDate = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd");
+                                                    var isOverdue = task.DueDate.Value.Date < DateTime.Now.Date && !task.CompletionDate.HasValue;
+                                                    <span class="@(isOverdue ? "text-danger fw-bold" : "")">
+                                                        @persianDate
+                                                    </span>
+                                                    @if (isOverdue)
+                                                    {
+                                                        <div class="text-danger small">تأخیردار</div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="progress progress-sm">
+                                                    <div class="progress-bar @(task.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                                                         role="progressbar" style="width: @task.ProgressPercentage%" 
+                                                         aria-valuenow="@task.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
+                                                        @if (task.ProgressPercentage > 20)
+                                                        {
+                                                            <span class="small">@task.ProgressPercentage%</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                @if (task.ProgressPercentage <= 20)
+                                                {
+                                                    <small class="text-muted">@task.ProgressPercentage%</small>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a asp-action="Details" asp-route-id="@task.Id" 
+                                                       class="btn btn-outline-primary" title="مشاهده جزئیات">
+                                                        <i class="fa fa-eye"></i>
+                                                    </a>
+                                                    <a asp-action="Edit" asp-route-id="@task.Id" 
+                                                       class="btn btn-outline-secondary" title="ویرایش">
+                                                        <i class="fa fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-outline-danger" 
+                                                            onclick="confirmDelete(@task.Id, '@task.Title')" title="حذف">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                }
-
-                @if (Model.GroupedTasks.TeamMemberTasks.Any())
-                {
-                    <div class="task-group mb-4">
-                        <div class="group-header">
-                            <h5 class="text-info border-bottom pb-2">
-                                <i class="fa fa-users me-2"></i>
-                                اعضای تیم من (@Model.GroupedTasks.TeamMemberTasks.Values.SelectMany(v => v).Count())
-                            </h5>
-                        </div>
-                        <div class="group-content">
-                            @foreach (var teamMember in Model.GroupedTasks.TeamMemberTasks)
+                    
+                    <!-- نمای کارت (مخفی به صورت پیش‌فرض) -->
+                    <div id="card-view" style="display: none;">
+                        <div class="row g-3">
+                            @foreach (var task in Model.Tasks)
                             {
-                                @if (teamMember.Value.Any())
-                                {
-                                    <div class="member-group ms-3 mb-3">
-                                        <h6 class="text-muted mb-2">
-                                            <i class="fa fa-user-circle me-1"></i>
-                                            @teamMember.Key
-                                            <span class="badge bg-secondary ms-2">@teamMember.Value.Count تسک</span>
-                                        </h6>
-                                        <div class="member-tasks">
-                                            @await Html.PartialAsync("_TasksTable", teamMember.Value)
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card h-100 @(task.IsOverdue && !task.CompletionDate.HasValue ? "border-warning" : "")">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <div>
+                                                @if (task.Priority == 2)
+                                                {
+                                                    <i class="fa fa-exclamation-triangle text-danger me-1"></i>
+                                                }
+                                                else if (task.Important)
+                                                {
+                                                    <i class="fa fa-star text-warning me-1"></i>
+                                                }
+                                                <small class="text-muted">@task.TaskCode</small>
+                                            </div>
+                                            <span class="badge @(task.Status switch {
+                                                0 => "bg-secondary",
+                                                1 => "bg-warning",
+                                                2 => "bg-success",
+                                                3 => "bg-info", 
+                                                4 => "bg-danger",
+                                                _ => "bg-dark" })">
+                                                @(task.Status switch {
+                                                    0 => "ایجاد شده",
+                                                    1 => "در حال انجام", 
+                                                    2 => "تکمیل شده",
+                                                    3 => "تأیید شده",
+                                                    4 => "رد شده",
+                                                    _ => "نامشخص" })
+                                            </span>
                                         </div>
-                                    </div>
-                                }
-                            }
-                        </div>
-                    </div>
-                }
-
-                @if (Model.GroupedTasks.SubTeamTasks.Any())
-                {
-                    <div class="task-group mb-4">
-                        <div class="group-header">
-                            <h5 class="text-success border-bottom pb-2">
-                                <i class="fa fa-sitemap me-2"></i>
-                                تیم‌های زیرمجموعه (@Model.GroupedTasks.SubTeamTasks.Values.SelectMany(v => v).Count())
-                            </h5>
-                        </div>
-                        <div class="group-content">
-                            @foreach (var subTeam in Model.GroupedTasks.SubTeamTasks)
-                            {
-                                @if (subTeam.Value.Any())
-                                {
-                                    <div class="subteam-group ms-3 mb-3">
-                                        <h6 class="text-muted mb-2">
-                                            <i class="fa fa-users me-1"></i>
-                                            @subTeam.Key
-                                            <span class="badge bg-secondary ms-2">@subTeam.Value.Count تسک</span>
-                                        </h6>
-                                        <div class="subteam-tasks">
-                                            @await Html.PartialAsync("_TasksTable", subTeam.Value)
+                                        <div class="card-body">
+                                            <h5 class="card-title">
+                                                <a asp-action="Details" asp-route-id="@task.Id" class="text-decoration-none">
+                                                    @task.Title
+                                                </a>
+                                            </h5>
+                                            @if (!string.IsNullOrEmpty(task.Description))
+                                            {
+                                                <p class="card-text text-muted">
+                                                    @(task.Description.Length > 100 ? task.Description.Substring(0, 100) + "..." : task.Description)
+                                                </p>
+                                            }
+                                            
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar @(task.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                                                     role="progressbar" style="width: @task.ProgressPercentage%">
+                                                    <small>@task.ProgressPercentage%</small>
+                                                </div>
+                                            </div>
+                                            
+                                            @if (task.DueDate.HasValue)
+                                            {
+                                                <small class="text-muted">
+                                                    مهلت: @ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd")
+                                                </small>
+                                            }
                                         </div>
-                                    </div>
-                                }
-                            }
-                        </div>
-                    </div>
-                }
-
-                @if (!Model.GroupedTasks.MyTasks.Any() && !Model.GroupedTasks.TeamMemberTasks.Any() && !Model.GroupedTasks.SubTeamTasks.Any())
-                {
-                    <div class="text-center py-5">
-                        <i class="fa fa-tasks fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">هیچ تسکی یافت نشد</h5>
-                        <p class="text-muted">در حال حاضر هیچ تسکی در سلسله مراتب تیمی شما وجود ندارد</p>
-                        <a asp-action="CreateNewTask" class="btn btn-primary">
-                            <i class="fa fa-plus me-1"></i>
-                            ایجاد تسک جدید
-                        </a>
-                    </div>
-                }
-            </div>
-        }
-        else
-        {
-            <!-- نمایش جدول ساده -->
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive">
-                    <thead>
-                        <tr>
-                            <th class="text-center" style="width: 100px;">کد تسک</th>
-                            <th class="text-center">عنوان</th>
-                            <th class="text-center">دسته‌بندی</th>
-                            <th class="text-center" style="width: 120px;">اولویت</th>
-                            <th class="text-center" style="width: 120px;">مهلت انجام</th>
-                            <th class="text-center" style="width: 120px;">وضعیت</th>
-                            <th class="text-center" style="width: 120px;">پیشرفت</th>
-                            <th class="text-center" style="width: 180px;">عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.Tasks.Any())
-                        {
-                            @foreach (var item in Model.Tasks)
-                            {
-                                <tr>
-                                    <td class="text-center">
-                                        <span class="badge bg-primary">@item.TaskCode</span>
-                                    </td>
-                                    <td class="text-start">
-                                        <a asp-action="Details" asp-route-id="@item.Id" class="fw-semibold">@item.Title</a>
-                                        @if (!string.IsNullOrEmpty(item.Description))
-                                        {
-                                            <small class="d-block text-muted">@(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)</small>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        @if (!string.IsNullOrEmpty(item.CategoryTitle))
-                                        {
-                                            <span class="badge bg-secondary">@item.CategoryTitle</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">بدون دسته‌بندی</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        @switch (item.TaskType)
-                                        {
-                                            case 0:
-                                                <span class="badge bg-light text-dark">
-                                                    <i class="fa fa-tasks me-1"></i>عادی
-                                                </span>
-                                                break;
-                                            case 1:
-                                                <span class="badge bg-warning">
-                                                    <i class="fa fa-exclamation-circle me-1"></i>مهم
-                                                </span>
-                                                break;
-                                            case 2:
-                                                <span class="badge bg-danger">
-                                                    <i class="fa fa-fire me-1"></i>فوری
-                                                </span>
-                                                break;
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        @if (item.DueDate.HasValue)
-                                        {
-                                            var persianDate = ConvertDateTime.ConvertMiladiToShamsi(item.DueDate, "yyyy/MM/dd");
-                                            if (item.DueDate.Value < DateTime.Now && !item.CompletionDate.HasValue)
-                                            {
-                                                <span class="text-danger fw-bold">@persianDate</span>
-                                                <small class="d-block text-danger">تاخیردار</small>
-                                            }
-                                            else
-                                            {
-                                                <span>@persianDate</span>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">تعیین نشده</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        @if (item.IsDeleted)
-                                        {
-                                            <span class="badge bg-danger">حذف شده</span>
-                                        }
-                                        else if (!item.IsActive)
-                                        {
-                                            <span class="badge bg-warning">غیرفعال</span>
-                                        }
-                                        else if (item.CompletionDate.HasValue && item.ManagerApprovedDate.HasValue)
-                                        {
-                                            <span class="badge bg-success">تکمیل و تایید شده</span>
-                                        }
-                                        else if (item.CompletionDate.HasValue && item.SupervisorApprovedDate.HasValue)
-                                        {
-                                            <span class="badge bg-info">تایید سرپرست</span>
-                                        }
-                                        else if (item.CompletionDate.HasValue)
-                                        {
-                                            <span class="badge bg-primary">تکمیل شده</span>
-                                        }
-                                        else if (item.DueDate.HasValue && DateTime.Now > item.DueDate.Value)
-                                        {
-                                            <span class="badge bg-danger">تاخیر</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-info">در حال انجام</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="progress push mb-0">
-                                            <div class="progress-bar progress-bar-striped @(item.ProgressPercentage == 100 ? " bg-success" : "bg-primary")" role="progressbar"
-                                                 style="width: @item.ProgressPercentage%" aria-valuenow="@item.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
-                                                <span class="fs-sm fw-semibold">@item.ProgressPercentage%</span>
+                                        <div class="card-footer">
+                                            <div class="btn-group w-100" role="group">
+                                                <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fa fa-eye me-1"></i> جزئیات
+                                                </a>
+                                                <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fa fa-edit me-1"></i> ویرایش
+                                                </a>
                                             </div>
                                         </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="جزئیات">
-                                            <i class="fa fa-eye"></i>
-                                        </a>
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="ویرایش">
-                                            <i class="fa fa-pencil-alt"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip"
-                                                title="@(item.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")"
-                                                href="@Url.Action("ToggleActiveStatus", new { id = item.Id })" data-toggle="modal-ajax">
-                                            <i class="fa @(item.IsActive ? "fa-ban" : "fa-check")"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف"
-                                                href="@Url.Action("DeleteConfirmModal", new { id = item.Id })" data-toggle="modal-ajax">
-                                            <i class="fa fa-times"></i>
-                                        </button>
-                                    </td>
-                                </tr>
+                                    </div>
+                                </div>
                             }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- حالت خالی -->
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fa fa-tasks fa-4x text-muted"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">هیچ تسکی یافت نشد</h4>
+                        @if (Model.HasActiveFilters)
+                        {
+                            <p class="text-muted mb-4">فیلترهای انتخابی هیچ تسکی را نشان نمی‌دهد.</p>
+                            <a href="@Url.Action("Index", new { ViewType = Model.Filters.ViewType })" class="btn btn-outline-primary">
+                                <i class="fa fa-times me-1"></i> پاک کردن فیلترها
+                            </a>
                         }
                         else
                         {
-                            <tr>
-                                <td colspan="8" class="text-center py-4">
-                                    <div class="text-muted">
-                                        <i class="fa fa-inbox fa-2x mb-2"></i>
-                                        <p>هیچ تسکی با فیلترهای انتخاب شده یافت نشد</p>
-                                        <a href="@Url.Action("Index", new { ViewType = Model.Filters.ViewType })" class="btn btn-sm btn-outline-primary">
-                                            <i class="fa fa-times me-1"></i> پاک کردن فیلترها
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
+                            <p class="text-muted mb-4">هنوز هیچ تسکی ایجاد نشده است.</p>
+                            @if (!isSupervisedTasks)
+                            {
+                                <a asp-action="CreateNewTask" class="btn btn-primary">
+                                    <i class="fa fa-plus me-1"></i> ایجاد اولین تسک
+                                </a>
+                            }
                         }
-                    </tbody>
-                </table>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions (نمایش زمانی که تسک انتخاب شده باشد) -->
+<div id="bulk-actions" class="position-fixed bottom-0 start-50 translate-middle-x mb-3" style="display: none; z-index: 1000;">
+    <div class="card shadow">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center gap-2">
+                <span id="selected-count" class="fw-bold">0</span>
+                <span>تسک انتخاب شده</span>
+                <div class="vr"></div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-success" onclick="bulkAction('complete')">
+                        <i class="fa fa-check me-1"></i> تکمیل
+                    </button>
+                    <button type="button" class="btn btn-sm btn-warning" onclick="bulkAction('assign')">
+                        <i class="fa fa-user me-1"></i> انتساب
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="bulkAction('delete')">
+                        <i class="fa fa-trash me-1"></i> حذف
+                    </button>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">
+                    <i class="fa fa-times"></i>
+                </button>
             </div>
-        }
+        </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Initialize tooltips and Select2
-        $(function () {
-            $('[data-bs-toggle="tooltip"]').tooltip();
+        $(document).ready(function() {
+            initializeTasksPage();
+        });
+
+        function initializeTasksPage() {
+            // Initialize Select2
             $('.js-select2').select2({
                 width: '100%',
-                allowClear: true
+                allowClear: true,
+                language: {
+                    noResults: function() { return "نتیجه‌ای یافت نشد"; },
+                    searching: function() { return "در حال جستجو..."; }
+                }
             });
-        });
-        
-        // نمایش loading state برای کارت‌های آماری
-        $('.statistics-card').on('click', function() {
-            $(this).find('.block-content').append('<div class="spinner-border spinner-border-sm ms-2" role="status"></div>');
-        });
-        
-        // Override DataTable settings to disable pagination
-        $(document).ready(function() {
-            // Wait for DataTable to be initialized by Dashmix
-            setTimeout(function() {
-                $('.js-dataTable-responsive').each(function() {
-                    if ($.fn.DataTable.isDataTable(this)) {
-                        // Destroy existing DataTable
-                        $(this).DataTable().destroy();
+
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // Initialize DataTable if needed
+            if ($('#tasks-table tbody tr').length > 10) {
+                $('#tasks-table').DataTable({
+                    responsive: true,
+                    pageLength: 25,
+                    order: [[1, 'asc']],
+                    language: {
+                        url: '/assets/js/plugins/datatables/Persian.json'
                     }
-                    
-                    // Reinitialize with custom settings
-                    $(this).DataTable({
-                        responsive: true,
-                        paging: false,           // Disable pagination
-                        info: false,            // Hide info text
-                        lengthChange: false,    // Hide length change dropdown
-                        searching: true,        // Keep search
-                        ordering: true,         // Keep sorting
-                        autoWidth: false,
-                        language: {
-                            search: "جستجو:",
-                            searchPlaceholder: "جستجو در تسک‌ها...",
-                            emptyTable: "هیچ تسکی یافت نشد",
-                            zeroRecords: "هیچ نتیجه‌ای یافت نشد"
-                        }
-                    });
                 });
-            }, 100);
-        });
-
-        // تغییر فوری فیلترها - فقط برای فیلترهای پیشرفته
-        $('.js-select2').on('change', function() {
-            // ارسال خودکار فرم پس از تغییر فیلتر
-            setTimeout(function() {
-                $('#filterForm').submit();
-            }, 300);
-        });
-
-        // جستجوی فوری
-        $('input[name="Filters.SearchTerm"]').on('keypress', function(e) {
-            if (e.which === 13) { // Enter key
-                $('#filterForm').submit();
             }
-        });
 
-        // نمایش فیلترهای فعال
+            // Auto-submit filters on change
+            $('.js-select2').on('change', function() {
+                if ($(this).val() !== '') {
+                    setTimeout(() => $('#filterForm').submit(), 300);
+                }
+            });
+
+            // Checkbox selection
+            initializeCheckboxSelection();
+
+            // Search on enter
+            $('input[name="Filters.SearchTerm"]').on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('#filterForm').submit();
+                }
+            });
+        }
+
+        function initializeCheckboxSelection() {
+            // Select all checkbox
+            $('#select-all').on('change', function() {
+                $('.task-checkbox').prop('checked', this.checked);
+                updateBulkActions();
+            });
+
+            // Individual checkboxes
+            $('.task-checkbox').on('change', function() {
+                updateBulkActions();
+                
+                // Update select all checkbox
+                var totalCheckboxes = $('.task-checkbox').length;
+                var checkedCheckboxes = $('.task-checkbox:checked').length;
+                
+                $('#select-all').prop('indeterminate', checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes);
+                $('#select-all').prop('checked', checkedCheckboxes === totalCheckboxes);
+            });
+        }
+
+        function updateBulkActions() {
+            var selectedCount = $('.task-checkbox:checked').length;
+            $('#selected-count').text(selectedCount);
+            
+            if (selectedCount > 0) {
+                $('#bulk-actions').fadeIn();
+            } else {
+                $('#bulk-actions').fadeOut();
+            }
+        }
+
+        function clearSelection() {
+            $('.task-checkbox, #select-all').prop('checked', false);
+            $('#select-all').prop('indeterminate', false);
+            updateBulkActions();
+        }
+
+        function toggleView(viewType) {
+            if (viewType === 'card') {
+                $('#table-view').hide();
+                $('#card-view').show();
+                localStorage.setItem('tasksViewType', 'card');
+            } else {
+                $('#card-view').hide();
+                $('#table-view').show();
+                localStorage.setItem('tasksViewType', 'table');
+            }
+        }
+
+        function confirmDelete(taskId, taskTitle) {
+            Swal.fire({
+                title: 'حذف تسک',
+                text: `آیا مطمئن هستید که می‌خواهید تسک "${taskTitle}" را حذف کنید؟`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    deleteTask(taskId);
+                }
+            });
+        }
+
+        function deleteTask(taskId) {
+            $.ajax({
+                url: '@Url.Action("Delete")',
+                type: 'POST',
+                data: { id: taskId },
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $(`.task-row[data-task-id="${taskId}"]`).fadeOut(function() {
+                            $(this).remove();
+                        });
+                        
+                        Swal.fire({
+                            title: 'حذف شد!',
+                            text: 'تسک با موفقیت حذف شد.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire('خطا!', response.message || 'خطا در حذف تسک', 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('خطا!', 'خطا در ارتباط با سرور', 'error');
+                }
+            });
+        }
+
+        function bulkAction(action) {
+            var selectedIds = $('.task-checkbox:checked').map(function() {
+                return $(this).val();
+            }).get();
+
+            if (selectedIds.length === 0) {
+                return;
+            }
+
+            var actionText = '';
+            var confirmText = '';
+            
+            switch(action) {
+                case 'complete':
+                    actionText = 'تکمیل';
+                    confirmText = `آیا مطمئن هستید که می‌خواهید ${selectedIds.length} تسک انتخاب شده را تکمیل کنید؟`;
+                    break;
+                case 'assign':
+                    // نمایش مودال انتساب
+                    showBulkAssignModal(selectedIds);
+                    return;
+                case 'delete':
+                    actionText = 'حذف';
+                    confirmText = `آیا مطمئن هستید که می‌خواهید ${selectedIds.length} تسک انتخاب شده را حذف کنید؟`;
+                    break;
+            }
+
+            Swal.fire({
+                title: actionText + ' گروهی',
+                text: confirmText,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    performBulkAction(action, selectedIds);
+                }
+            });
+        }
+
+        function performBulkAction(action, taskIds) {
+            $.ajax({
+                url: '@Url.Action("BulkAction")',
+                type: 'POST',
+                data: { 
+                    action: action, 
+                    taskIds: taskIds 
+                },
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        Swal.fire('خطا!', response.message || 'خطا در انجام عملیات', 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('خطا!', 'خطا در ارتباط با سرور', 'error');
+                }
+            });
+        }
+
+        function selectAllTasks() {
+            $('#select-all').prop('checked', true).trigger('change');
+        }
+
+        function exportTasks() {
+            var exportUrl = '@Url.Action("ExportToExcel")';
+            var currentFilters = $('#filterForm').serialize();
+            window.open(exportUrl + '?' + currentFilters, '_blank');
+        }
+
+        // Load saved view type
         $(document).ready(function() {
-            var hasActiveFilters = @(Model.HasActiveFilters.ToString().ToLower());
-            if (hasActiveFilters) {
-                // اضافه کردن badge به دکمه فیلتر
-                $('[data-bs-target="#advanced-filters"]').append(' <span class="badge bg-success ms-1">فعال</span>');
+            var savedViewType = localStorage.getItem('tasksViewType');
+            if (savedViewType === 'card') {
+                toggleView('card');
             }
         });
     </script>
@@ -630,90 +944,85 @@
 
 @section Styles {
     <style>
-        /* استایل برای کارت‌های آماری قابل کلیک */
-        .statistics-card {
-            transition: all 0.3s ease;
-            cursor: pointer;
+        .block-link-shadow {
+            transition: all 0.2s ease-in-out;
         }
         
-        .statistics-card:hover {
+        .block-link-shadow:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        
-        .statistics-card.active {
-            border-width: 2px !important;
-            transform: scale(1.02);
-        }
-        
-        /* استایل برای border فیلترهای فعال */
-        .border-primary { border-color: #0d6efd !important; }
-        .border-success { border-color: #198754 !important; }
-        .border-warning { border-color: #ffc107 !important; }
-        .border-info { border-color: #0dcaf0 !important; }
-        .border-orange { border-color: #fd7e14 !important; }
-        .border-danger { border-color: #dc3545 !important; }
 
-        /* استایل برای نمایش فیلترهای فعال */
-        .btn.btn-success {
-            background-color: #198754;
-            border-color: #157347;
-        }
-        
-        .btn.btn-success:hover {
-            background-color: #157347;
-            border-color: #146c43;
+        .avatar-group {
+            display: flex;
+            margin-right: -8px;
         }
 
-        /* نمایش بهتر badge در دکمه */
-        .badge.bg-white {
-            color: #198754 !important;
+        .avatar-group .avatar {
+            border: 2px solid #fff;
+            margin-right: -8px;
+            z-index: 1;
         }
 
-        /* استایل‌های جدید برای نمایش سلسله مراتبی */
-        .hierarchy-container .task-group {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
+        .avatar-group .avatar:hover {
+            z-index: 2;
+            transform: scale(1.1);
         }
 
-        .hierarchy-container .group-header h5 {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+        .progress-sm {
+            height: 6px;
         }
 
-        .hierarchy-container .member-group,
-        .hierarchy-container .subteam-group {
-            background: white;
-            border-radius: 6px;
-            padding: 12px;
-            border-left: 4px solid #17a2b8;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .task-row {
+            transition: all 0.2s ease;
         }
 
-        .hierarchy-container .member-group h6,
-        .hierarchy-container .subteam-group h6 {
-            color: #495057;
-            font-weight: 600;
+        .task-row:hover {
+            background-color: rgba(0,123,255,.05);
         }
 
-        .hierarchy-container .badge {
-            font-size: 0.7em;
+        .nav-tabs-alt .nav-link {
+            border: none;
+            border-radius: 0;
+            border-bottom: 2px solid transparent;
         }
 
-        .hierarchy-container .member-tasks,
-        .hierarchy-container .subteam-tasks {
-            margin-top: 10px;
+        .nav-tabs-alt .nav-link.active {
+            background: none;
+            border-bottom-color: #0d6efd;
         }
 
-        /* رسپانسیو بودن */
         @@media (max-width: 768px) {
-            .hierarchy-container .member-group,
-            .hierarchy-container .subteam-group {
-                margin-left: 0 !important;
-                margin-right: 0 !important;
+            .nav-tabs-alt {
+                flex-wrap: wrap;
             }
+            
+            .nav-tabs-alt .nav-link {
+                flex: 1 1 auto;
+                text-align: center;
+                font-size: 0.9rem;
+            }
+
+            .statistics-card .fs-2 {
+                font-size: 1.5rem !important;
+            }
+        }
+
+        .text-orange {
+            color: #fd7e14 !important;
+        }
+
+        .border-orange {
+            border-color: #fd7e14 !important;
+        }
+
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        #bulk-actions .card {
+            border-radius: 15px;
         }
     </style>
 }
