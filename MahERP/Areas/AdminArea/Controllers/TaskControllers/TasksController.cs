@@ -287,7 +287,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         }
                     };
                 }
-
+                ViewBag.currentUserId = GetUserId();
                 var model = await _taskRepository.GetTasksForIndexAsync(userId, filters);
 
                 await _activityLogger.LogActivityAsync(
@@ -893,10 +893,219 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 });
             }
         }
+
+        /// <summary>
+        /// نمایش مودال تنظیم تاریخ‌های شخصی
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> SetPersonalDatesModal(int taskId)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // بررسی دسترسی کاربر به تسک از طریق Repository
+                var assignment = await _taskRepository.GetTaskAssignmentForPersonalDatesAsync(taskId, userId);
+
+                if (assignment == null)
+                {
+                    return BadRequest("شما به این تسک دسترسی ندارید");
+                }
+
+                var task = assignment.Task;
+                var model = new TaskPersonalDatesViewModel
+                {
+                    TaskId = taskId,
+                    TaskAssignmentId = assignment.Id,
+                    TaskTitle = task.Title,
+                    TaskCode = task.TaskCode,
+                    OriginalStartDatePersian = task.CreateDate != null ? ConvertDateTime.ConvertMiladiToShamsi(task.CreateDate, "yyyy/MM/dd") : null,
+                    OriginalDueDatePersian = task.DueDate != null ?  ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd") : null,
+                    PersonalStartDatePersian = assignment.PersonalStartDate != null ? ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalStartDate, "yyyy/MM/dd") : null,
+                    PersonalEndDatePersian = assignment.PersonalEndDate  != null ? ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalEndDate, "yyyy/MM/dd") : null,
+                    PersonalTimeNote = assignment.PersonalTimeNote,
+                    AssignedUserName = assignment.AssignedUser?.FirstName + " " + assignment.AssignedUser?.LastName,
+                    LastUpdated = assignment.PersonalDatesUpdatedDate,
+                    CanModifyDates = assignment.Status < 3 // فقط قبل از تکمیل
+                };
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "SetPersonalDatesModal",
+                    $"نمایش مودال تنظیم تاریخ‌های شخصی برای تسک {task.TaskCode}");
+
+                return PartialView("_SetPersonalDatesModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "SetPersonalDatesModal", "خطا در نمایش مودال", ex);
+                return BadRequest("خطا در بارگذاری مودال");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره تاریخ‌های شخصی کاربر
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SavePersonalDates(TaskPersonalDatesViewModel model)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // بررسی دسترسی کاربر از طریق Repository
+                var assignment = await _taskRepository.GetTaskAssignmentByIdForPersonalDatesAsync(model.TaskAssignmentId, userId);
+
+                if (assignment == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما به این تسک دسترسی ندارید" } }
+                    });
+                }
+
+                if (assignment.Status >= 3)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "امکان تغییر تاریخ‌ها وجود ندارد" } }
+                    });
+                }
+
+                // تبدیل تاریخ‌های شمسی به میلادی
+                DateTime? personalStartDate = null;
+                DateTime? personalEndDate = null;
+
+                if (!string.IsNullOrEmpty(model.PersonalStartDatePersian))
+                {
+                    personalStartDate = ConvertDateTime.ConvertShamsiToMiladi(model.PersonalStartDatePersian);
+                }
+
+                if (!string.IsNullOrEmpty(model.PersonalEndDatePersian))
+                {
+                    personalEndDate = ConvertDateTime.ConvertShamsiToMiladi(model.PersonalEndDatePersian);
+                }
+
+                // بروزرسانی از طریق Repository
+                var updateResult = await _taskRepository.UpdatePersonalDatesAsync(
+                    model.TaskAssignmentId, 
+                    userId, 
+                    personalStartDate, 
+                    personalEndDate, 
+                    model.PersonalTimeNote);
+
+                if (!updateResult)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "خطا در بروزرسانی تاریخ‌ها" } }
+                    });
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Update, "Tasks", "SavePersonalDates",
+                    $"بروزرسانی تاریخ‌های شخصی تسک {assignment.Task.TaskCode}",
+                    recordId: assignment.TaskId.ToString(), entityType: "Tasks", recordTitle: assignment.Task.Title);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[] { new { status = "success", text = "تاریخ‌های شخصی با موفقیت ذخیره شد" } }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "SavePersonalDates", "خطا در ذخیره تاریخ‌های شخصی", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در ذخیره تاریخ‌ها: " + ex.Message } }
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت رویدادهای شخصی کاربران برای یک تسک
+        /// </summary>
+        private async Task<List<object>> GetPersonalTaskEventsAsync(int taskId, string currentUserId)
+        {
+            var personalEvents = new List<object>();
+
+            // استفاده از Repository به جای UnitOfWork مستقیم
+            var assignments = await _taskRepository.GetTaskAssignmentsWithPersonalDatesAsync(taskId);
+
+            foreach (var assignment in assignments)
+            {
+                var isMyAssignment = assignment.AssignedUserId == currentUserId;
+                // استفاده از Repository متد به جای متد محلی
+                var userInitials = _taskRepository.GetUserInitials(assignment.AssignedUser?.FirstName, assignment.AssignedUser?.LastName);
+
+                // رویداد شروع شخصی
+                if (assignment.PersonalStartDate.HasValue)
+                {
+                    personalEvents.Add(new
+                    {
+                        id = $"personal-start-{assignment.Id}",
+                        title = $"[شروع {userInitials}] {assignment.Task.Title}",
+                        start = ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalStartDate, "yyyy-MM-dd"),
+                        backgroundColor = isMyAssignment ? "#4CAF50" : "#81C784", // سبز تیره/روشن
+                        borderColor = isMyAssignment ? "#388E3C" : "#66BB6A",
+                        textColor = "#ffffff",
+                        classNames = new[] { "personal-start-event", isMyAssignment ? "my-event" : "other-event" },
+                        extendedProps = new
+                        {
+                            taskId = taskId,
+                            assignmentId = assignment.Id,
+                            eventType = "personal-start",
+                            taskCode = assignment.Task.TaskCode ?? "",
+                            assignedUserName = assignment.AssignedUser?.FirstName + " " + assignment.AssignedUser?.LastName,
+                            isMyEvent = isMyAssignment,
+                            personalNote = assignment.PersonalTimeNote,
+                            detailUrl = Url.Action("Details", "Tasks", new { id = taskId, area = "AdminArea" }),
+                            editUrl = isMyAssignment ? Url.Action("SetPersonalDatesModal", "Tasks", new { taskId = taskId, area = "AdminArea" }) : null
+                        }
+                    });
+                }
+
+                // رویداد پایان شخصی
+                if (assignment.PersonalEndDate.HasValue)
+                {
+                    personalEvents.Add(new
+                    {
+                        id = $"personal-end-{assignment.Id}",
+                        title = $"[پایان {userInitials}] {assignment.Task.Title}",
+                        start = ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalEndDate, "yyyy-MM-dd"),
+                        backgroundColor = isMyAssignment ? "#FF9800" : "#FFB74D", // نارنجی تیره/روشن
+                        borderColor = isMyAssignment ? "#F57C00" : "#FFA726",
+                        textColor = "#ffffff",
+                        classNames = new[] { "personal-end-event", isMyAssignment ? "my-event" : "other-event" },
+                        extendedProps = new
+                        {
+                            taskId = taskId,
+                            assignmentId = assignment.Id,
+                            eventType = "personal-end",
+                            taskCode = assignment.Task.TaskCode ?? "",
+                            assignedUserName = assignment.AssignedUser?.FirstName + " " + assignment.AssignedUser?.LastName,
+                            isMyEvent = isMyAssignment,
+                            personalNote = assignment.PersonalTimeNote,
+                            detailUrl = Url.Action("Details", "Tasks", new { id = taskId, area = "AdminArea" }),
+                            editUrl = isMyAssignment ? Url.Action("SetPersonalDatesModal", "Tasks", new { taskId = taskId, area = "AdminArea" }) : null
+                        }
+                    });
+                }
+            }
+
+            return personalEvents;
+        }
+
         #endregion
 
         #region Private Helper Methods
 
+   
         private async Task<bool> ValidateTaskModel(TaskViewModel model, string userId)
         {
             var isValid = true;
@@ -1012,21 +1221,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             var teamUserIds = await _taskRepository.GetUsersFromTeamsAsync(assignedTeamIds);
             var allAssignedUserIds = assignedUserIds.Union(teamUserIds).Distinct().ToList();
 
-            // اختصاص به سازنده اگر در لیست نیست
-            if (!allAssignedUserIds.Contains(currentUserId))
-            {
-                var selfAssignment = new TaskAssignment
-                {
-                    TaskId = task.Id,
-                    AssignedUserId = currentUserId,
-                    AssignerUserId = currentUserId,
-                    AssignmentType = 1,
-                    AssignmentDate = DateTime.Now,
-                    Description = "سازنده تسک"
-                };
-                _uow.TaskAssignmentUW.Create(selfAssignment);
-            }
-
+           
             // اختصاص به سایرین
             foreach (var assignedUserId in allAssignedUserIds)
             {

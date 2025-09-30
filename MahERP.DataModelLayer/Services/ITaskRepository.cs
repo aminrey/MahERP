@@ -387,12 +387,24 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         Task DeleteReadRemindersAsync(string userId);
 
+        /// <summary>
+        /// دریافت انتصاب‌های تسک همراه با تاریخ‌های شخصی
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <returns>لیست انتصاب‌های تسک با تاریخ‌های شخصی</returns>
+        Task<List<TaskAssignment>> GetTaskAssignmentsWithPersonalDatesAsync(int taskId);
+
+        /// <summary>
+        /// دریافت حروف اول نام کاربر
+        /// </summary>
+        /// <param name="firstName">نام</param>
+        /// <param name="lastName">نام خانوادگی</param>
+        /// <returns>حروف اول نام</returns>
+        string GetUserInitials(string firstName, string lastName);
+
         #endregion
 
         #region Missing Methods - Added from TaskRepository Implementation
-
-      
-
 
         /// <summary>
         /// دریافت متن وضعیت تسک - پیاده‌سازی شده در TaskRepository
@@ -404,6 +416,37 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         string GetTaskStatusBadgeClass(byte status);
 
+        #endregion
+
+        #region Personal Dates Management Methods
+
+        /// <summary>
+        /// دریافت انتصاب تسک برای تنظیم تاریخ‌های شخصی
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>انتصاب تسک همراه با اطلاعات تسک</returns>
+        Task<TaskAssignment> GetTaskAssignmentForPersonalDatesAsync(int taskId, string userId);
+
+        /// <summary>
+        /// دریافت انتصاب تسک بر اساس شناسه انتصاب برای تنظیم تاریخ‌های شخصی
+        /// </summary>
+        /// <param name="assignmentId">شناسه انتصاب</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>انتصاب تسک همراه با اطلاعات تسک</returns>
+        Task<TaskAssignment> GetTaskAssignmentByIdForPersonalDatesAsync(int assignmentId, string userId);
+
+        /// <summary>
+        /// بروزرسانی تاریخ‌های شخصی انتصاب تسک
+        /// </summary>
+        /// <param name="assignmentId">شناسه انتساب</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="personalStartDate">تاریخ شروع شخصی</param>
+        /// <param name="personalEndDate">تاریخ پایان شخصی</param>
+        /// <param name="personalTimeNote">یادداشت زمان‌بندی شخصی</param>
+        /// <returns>True در صورت موفقیت</returns>
+        Task<bool> UpdatePersonalDatesAsync(int assignmentId, string userId, DateTime? personalStartDate, DateTime? personalEndDate, string personalTimeNote);
+     
         #endregion
     }
 }

@@ -29,5 +29,18 @@ namespace MahERP.Areas.AdminArea.Controllers.BaseControllers
             _memoryCache = memoryCache;
             _activityLogger = activityLogger;
         }
+
+
+        public string GetUserId()
+        {
+            string userId = null;
+
+            if (User.Identity.IsAuthenticated)
+            {
+                userId = _userManager.GetUserId(HttpContext.User);
+            }
+            return userId;
+        }
+
     }
 }

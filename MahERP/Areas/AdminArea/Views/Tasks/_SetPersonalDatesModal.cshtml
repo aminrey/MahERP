@@ -1,0 +1,272 @@
+﻿@model TaskPersonalDatesViewModel
+
+@{
+    Layout = null;
+}
+
+<style>
+    .modal {
+        --bs-modal-width: 70%;
+        transition: 0.3s;
+    }
+    
+    .date-comparison {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .original-date {
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+    
+    .personal-date-input {
+        border: 2px solid #e3f2fd;
+        border-radius: 6px;
+    }
+    
+    .personal-date-input:focus {
+        border-color: #2196f3;
+        box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+    }
+</style>
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
+            <div class="block-header bg-primary-dark">
+                <h3 class="block-title">
+                    <i class="fa fa-calendar-alt me-2"></i>
+                    تنظیم تاریخ‌های شخصی
+                </h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="personalDatesForm" asp-action="SavePersonalDates" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="TaskId" />
+                <input type="hidden" asp-for="TaskAssignmentId" />
+
+                <div class="block block-themed block-rounded mt-1">
+                    <div class="block-header bg-primary-light">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle me-1"></i>
+                            اطلاعات تسک
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>عنوان تسک:</strong>
+                                <span class="text-primary">@Model.TaskTitle</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>کد تسک:</strong>
+                                <span class="text-muted">@Model.TaskCode</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="block block-themed block-rounded mt-1">
+                    <div class="block-header bg-info-light">
+                        <h3 class="block-title">مقایسه تاریخ‌ها</h3>
+                    </div>
+                    <div class="block-content">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- مقایسه تاریخ شروع -->
+                        <div class="date-comparison mb-4">
+                            <h6 class="mb-3">
+                                <i class="fa fa-play-circle text-success me-1"></i>
+                                تاریخ شروع
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">تاریخ پیشنهادی سازنده</label>
+                                    <div class="original-date p-2 bg-light rounded">
+                                        @if (!string.IsNullOrEmpty(Model.OriginalStartDatePersian))
+                                        {
+                                            <i class="fa fa-calendar me-1"></i>@Model.OriginalStartDatePersian
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-minus me-1"></i>
+                                            <span>
+                                                تعیین نشده
+
+                                            </span>
+                                            
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input asp-for="PersonalStartDatePersian"
+                                               class="form-control personal-date-input js-flatpickr"
+                                               id="PersonalStartDatePersian"
+                                               placeholder="انتخاب تاریخ شروع شخصی">
+                                        <label asp-for="PersonalStartDatePersian" class="form-label input-label">
+                                            تاریخ شروع من
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="PersonalStartDatePersian" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- مقایسه تاریخ پایان -->
+                        <div class="date-comparison mb-4">
+                            <h6 class="mb-3">
+                                <i class="fa fa-flag-checkered text-warning me-1"></i>
+                                تاریخ پایان
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">مهلت اصلی</label>
+                                    <div class="original-date p-2 bg-light rounded">
+                                        @if (!string.IsNullOrEmpty(Model.OriginalDueDatePersian))
+                                        {
+                                            <i class="fa fa-calendar me-1"></i>@Model.OriginalDueDatePersian
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-minus me-1"></i>
+                                            <span>
+                                                تعیین نشده
+
+
+                                            </span>
+
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input asp-for="PersonalEndDatePersian"
+                                               class="form-control personal-date-input js-flatpickr"
+                                               id="PersonalEndDatePersian"
+                                               placeholder="انتخاب تاریخ پایان شخصی">
+                                        <label asp-for="PersonalEndDatePersian" class="form-label input-label">
+                                            تاریخ پایان من
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="PersonalEndDatePersian" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- یادداشت شخصی -->
+                        <div class="mb-4">
+                            <div class="form-floating">
+                                <textarea asp-for="PersonalTimeNote" 
+                                          class="form-control" 
+                                          id="PersonalTimeNote" 
+                                          rows="3" 
+                                          placeholder="یادداشت‌های شخصی در مورد زمان‌بندی..."></textarea>
+                                <label asp-for="PersonalTimeNote" class="form-label input-label">
+                                    یادداشت زمان‌بندی شخصی
+                                </label>
+                            </div>
+                            <span asp-validation-for="PersonalTimeNote" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-sticky-note me-1"></i>
+                                توضیحات اضافی برای زمان‌بندی شخصی خود
+                            </small>
+                        </div>
+
+                        <!-- راهنمای استفاده -->
+                        <div class="alert alert-info">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fa fa-lightbulb fa-2x text-info"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>راهنمای استفاده:</h6>
+                                    <ul class="mb-0 small">
+                                        <li><strong>تاریخ‌های شخصی:</strong> مستقل از تاریخ‌های اصلی تسک هستند</li>
+                                        <li><strong>قابل تغییر:</strong> در هر زمان می‌توانید آن‌ها را بروزرسانی کنید</li>
+                                        <li><strong>نمایش در تقویم:</strong> هر دو تاریخ در تقویم با رنگ‌های متفاوت نمایش داده می‌شوند</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.LastUpdated.HasValue)
+                        {
+                            <div class="alert alert-success">
+                                <i class="fa fa-info-circle me-1"></i>
+                                <small>
+                                    آخرین بروزرسانی: @ConvertDateTime.ConvertMiladiToShamsi(Model.LastUpdated, "yyyy/MM/dd HH:mm")
+                                </small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="block-content block-content-full text-end bg-body">
+            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">
+                <i class="fa fa-times me-1"></i> انصراف
+            </button>
+            <button class="btn btn-sm btn-primary" data-save="modal-ajax-save" type="button">
+                <i class="fa fa-save me-1"></i> ذخیره تاریخ‌ها
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    Dashmix.helpersOnLoad(['js-flatpickr']);
+</script>
+
+<script>
+    $(document).ready(function () {
+        console.log('راه‌اندازی مودال تنظیم تاریخ‌های شخصی');
+
+        // تنظیم فوکوس روی اولین فیلد
+        $('#PersonalStartDatePersian').focus();
+
+        // Event handler برای موفقیت
+        $('[data-save="modal-ajax-save"]').on('ajaxFormSuccess', function (event, response) {
+            if (response && response.success) {
+                if (response.message && response.message.length > 0) {
+                    toastr.success(response.message[0].text);
+                }
+                $('.modal').modal('hide');
+                
+                // بروزرسانی لیست تسک‌ها
+                if (typeof updateTaskList === 'function') {
+                    updateTaskList();
+                }
+                
+                // بروزرسانی تقویم
+                if (typeof refreshCalendar === 'function') {
+                    refreshCalendar();
+                }
+            }
+        });
+
+        // اعتبارسنجی تاریخ‌ها
+        $('#PersonalStartDatePersian, #PersonalEndDatePersian').on('change', function() {
+            validatePersonalDates();
+        });
+    });
+
+    function validatePersonalDates() {
+        const startDate = $('#PersonalStartDatePersian').val();
+        const endDate = $('#PersonalEndDatePersian').val();
+        
+        if (startDate && endDate) {
+            // اینجا می‌توانید validation اضافی انجام دهید
+            console.log('Validating dates:', startDate, endDate);
+        }
+    }
+</script>

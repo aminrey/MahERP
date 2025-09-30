@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250930055201_mig5assignedTeam")]
+    partial class mig5assignedTeam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2491,19 +2494,6 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime?>("PersonalDatesUpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("PersonalEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("PersonalStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PersonalTimeNote")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int?>("PredefinedCopyDescriptionId")
                         .HasColumnType("int");

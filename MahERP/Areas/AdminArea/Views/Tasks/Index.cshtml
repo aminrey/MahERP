@@ -554,14 +554,30 @@
                                                        class="btn btn-outline-primary" title="مشاهده جزئیات">
                                                         <i class="fa fa-eye"></i>
                                                     </a>
-                                                    <a asp-action="Edit" asp-route-id="@task.Id" 
+                                                @*     <a asp-action="Edit" asp-route-id="@task.Id" 
                                                        class="btn btn-outline-secondary" title="ویرایش">
                                                         <i class="fa fa-edit"></i>
                                                     </a>
                                                     <button type="button" class="btn btn-outline-danger" 
                                                             onclick="confirmDelete(@task.Id, '@task.Title')" title="حذف">
                                                         <i class="fa fa-trash"></i>
-                                                    </button>
+                                                    </button> *@
+                                                       @{
+                                                        var currentUserId = ViewBag.currentUserId ;
+                                                        bool isAssignedToCurrentUser = task.AssignmentsTaskUser != null && 
+                                                                                      task.AssignmentsTaskUser.Any(a => a.AssignedUserId == currentUserId);
+                                                    }
+                                                    @if (task.AssignmentsTaskUser != null && task.AssignmentsTaskUser.Any(a => a.AssignedUserId == currentUserId))
+                                                    {
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-outline-primary" 
+                                                                data-toggle="modal-ajax"
+                                                                href="@Url.Action("SetPersonalDatesModal", "Tasks", new { taskId = task.Id })"
+                                                                title="تنظیم تاریخ‌های شخصی">
+                                                            <i class="far fa-calendar-days"></i>
+                                                        </button>
+                                                    }
+
                                                 </div>
                                             </td>
                                         </tr>

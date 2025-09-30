@@ -99,6 +99,34 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public DateTime? CompletionDate { get; set; }
 
         /// <summary>
+        /// تاریخ شروع شخصی که کاربر برای خود تعیین کرده است
+        /// <para>کاربر می‌تواند مستقل از تاریخ پیشنهادی سازنده، تاریخ شروع شخصی خود را تعیین کند</para>
+        /// </summary>
+        [Display(Name = "تاریخ شروع شخصی")]
+        public DateTime? PersonalStartDate { get; set; }
+
+        /// <summary>
+        /// تاریخ پایان شخصی که کاربر برای خود تعیین کرده است
+        /// <para>کاربر می‌تواند مستقل از ددلاین اصلی، تاریخ پایان شخصی خود را تعیین کند</para>
+        /// </summary>
+        [Display(Name = "تاریخ پایان شخصی")]
+        public DateTime? PersonalEndDate { get; set; }
+
+        /// <summary>
+        /// یادداشت شخصی کاربر در مورد زمان‌بندی
+        /// <para>کاربر می‌تواند توضیحات در مورد زمان‌بندی شخصی خود ارائه دهد</para>
+        /// </summary>
+        [Display(Name = "یادداشت زمان‌بندی شخصی")]
+        [MaxLength(500)]
+        public string? PersonalTimeNote { get; set; }
+
+        /// <summary>
+        /// تاریخ آخرین بروزرسانی تاریخ‌های شخصی
+        /// <para>زمانی که کاربر تاریخ‌های شخصی خود را تغییر می‌دهد، این فیلد بروزرسانی می‌شود</para>
+        /// </summary>
+        public DateTime? PersonalDatesUpdatedDate { get; set; }
+
+        /// <summary>
         /// 0- تخصیص داده شده
         /// 1- مشاهده شده
         /// 2- در حال انجام

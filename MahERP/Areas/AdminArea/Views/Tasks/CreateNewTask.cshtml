@@ -2,7 +2,55 @@
 @{
     ViewData["Title"] = "افزودن تسک جدید";
 }
+<style>
+    .select2-invalid .select2-selection {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
 
+    .select2-validation .select2-selection {
+        border: 1px solid #ced4da;
+    }
+
+    .select2-validation.select2-invalid .select2-selection {
+        border-color: #dc3545;
+    }
+
+    /* استایل‌های جدید برای لیست کارها */
+    .js-task {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6 !important;
+    }
+
+        .js-task:hover {
+            border-color: #007bff !important;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+        }
+
+        .js-task .js-task-content {
+            color: #495057;
+            line-height: 1.4;
+        }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .animated.fadeIn {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+</style>
 <!-- Hero -->
 <div class="bg-body-light">
     <div class="content content-full">
@@ -611,7 +659,6 @@
                                 </ul>
                             </div>
 
-                            <!-- فرم اضافه کردن کار جدید - راه حل صحیح -->
                             <div class="mb-4">
                                 <div class="input-group input-group-lg">
                                     <input class="form-control form-control-lg fs-base border-2"
@@ -619,8 +666,7 @@
                                            name="js-task-input"
                                            placeholder="یک کار جدید اضافه کنید و Enter را فشار دهید..."
                                            type="text"
-                                           autocomplete="off"
-                                           onkeypress="return handleTaskInputEnter(event)" />
+                                           autocomplete="off" />
                                     <button class="btn btn-primary btn-lg" type="button" id="addTaskBtn">
                                         <i class="fa fa-plus"></i>
                                     </button>
@@ -772,16 +818,15 @@
         
     </form>
 </div>
-
 @section Scripts {
     <script>
         Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-maxlength', 'jq-select2', 'jq-rangeslider', 'jq-masked-inputs', 'jq-pw-strength']);
     </script>
 
     <script>
-        // متغیرهای کمکی
+        // متغیرهای کمکی - اصلاح شده
         let operationsCounter = 0;
-        let operationsList = [];
+        let operationsArray = []; // تغییر نام متغیر
         let remindersCounter = 0;
         let remindersList = [];
 
@@ -789,17 +834,12 @@
             console.log('Document ready - شروع بارگذاری فرم');
             initializeForm();
             setupEventHandlers();
-            initializeTasksManagement(); // راه‌اندازی مدیریت کارها
+            initializeTasksManagement();
         });
 
         function initializeTasksManagement() {
-            // راه‌اندازی سادۀ مدیریت کارها
             console.log('راه‌اندازی سیستم مدیریت کارها');
-
-            // نمایش/مخفی کردن لیست خالی
             updateOperationsDisplay();
-
-            // شمارش اولیه
             updateOperationsCount();
         }
 
@@ -831,50 +871,42 @@
                 }
             });
 
-            generateTaskCode();
             $('#createTaskForm').attr('novalidate', 'novalidate');
-
             console.log('راه‌اندازی فرم کامل شد');
         }
 
         function setupEventHandlers() {
             console.log('شروع تنظیم event handlers');
 
-            // مدیریت Enter key برای اضافه کردن کار - اصلاح شده
-            $('#js-task-input').on('keypress', function(e) {
-                if (e.which === 13 || e.keyCode === 13) { // Enter key
-                    e.preventDefault(); // جلوگیری از submit فرم
-                    e.stopPropagation(); // جلوگیری از انتشار رویداد
-                    addNewTask();
-                    return false; // تضمین عدم ادامه رویداد
-                }
-            });
-
-            // مدیریت keydown هم برای اطمینان بیشتر
-            $('#js-task-input').on('keydown', function(e) {
-                if (e.which === 13 || e.keyCode === 13) { // Enter key
+            // مدیریت Enter key - اصلاح کامل
+            $('#js-task-input').off('keypress keydown keyup').on('keypress', function(e) {
+                console.log('Key pressed:', e.which, e.keyCode);
+                if (e.which === 13 || e.keyCode === 13) {
+                    console.log('Enter detected - calling addNewTask');
                     e.preventDefault();
                     e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    addNewTask();
                     return false;
                 }
             });
 
-            // مدیریت کلیک دکمه اضافه کردن
-            $('#addTaskBtn').on('click', function(e) {
+            // مدیریت کلیک دکمه‌ها
+            $('#addTaskBtn').off('click').on('click', function(e) {
+                console.log('Add button clicked');
                 e.preventDefault();
                 addNewTask();
                 return false;
             });
 
-            // مدیریت کلیک دکمه آلترناتیو
-            $('#addOperationBtn').on('click', function(e) {
+            $('#addOperationBtn').off('click').on('click', function(e) {
+                console.log('Add operation button clicked');
                 e.preventDefault();
                 addNewTask();
                 return false;
             });
 
-       
-
+            // سایر event handler ها...
             $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds').on('change', function() {
                 updateViewersList();
             });
@@ -898,11 +930,9 @@
 
             $('#createTaskForm').on('submit', function(e) {
                 e.preventDefault();
-
                 if (!validateFormBeforeSubmit()) {
                     return false;
                 }
-
                 updateAllHiddenInputs();
                 this.submit();
             });
@@ -912,7 +942,6 @@
                 if (targetTab === '#viewers') {
                     updateViewersList();
                 }
-
                 if (targetTab === '#project-info') {
                     checkProjectTabRequirements();
                 }
@@ -949,27 +978,14 @@
             console.log('تنظیم event handlers کامل شد');
         }
 
-                // تابع بروزرسانی شمارش یادآوری‌ها - اصلاح شده
-        function updateRemindersCount() {
-            let count = 0;
-
-            // شمارش یادآوری پیش‌فرض
-            if ($('#defaultReminder').is(':checked')) {
-                count++;
-            }
-
-            // شمارش یادآوری‌های سفارشی
-            count += $('#customRemindersList .card').length;
-
-            $('#reminders-count').text(count);
-
-            // Debug
-            console.log('تعداد کل یادآوری‌ها:', count);
-        }
-        // تابع اضافه کردن کار جدید
+        // تابع اضافه کردن کار جدید - کاملاً اصلاح شده
         function addNewTask() {
+            console.log('addNewTask called');
+
             const taskInput = $('#js-task-input');
             const taskText = taskInput.val().trim();
+
+            console.log('Task text:', taskText);
 
             if (!taskText) {
                 console.log('متن کار خالی است');
@@ -977,46 +993,26 @@
                 return false;
             }
 
-            console.log('اضافه کردن کار:', taskText);
-
             operationsCounter++;
             const taskId = operationsCounter;
 
+            console.log('اضافه کردن کار:', taskText, 'با ID:', taskId);
+
+            // HTML ساده بدون چک‌باکس و ستاره
             const taskHtml = `
-                <div class="js-task block block-rounded mb-2 animated fadeIn"
-                     data-task-completed="false"
-                     data-task-id="${taskId}"
-                     data-task-starred="false">
-                    <table class="table table-borderless table-vcenter mb-0">
-                        <tr>
-                            <td class="text-center pe-0" style="width: 38px;">
-                                <div class="js-task-status form-check">
-                                    <input class="form-check-input"
-                                           id="task-cb-${taskId}"
-                                           type="checkbox"
-                                           onchange="toggleTaskCompletion(${taskId})">
-                                    <label class="form-check-label" for="task-cb-${taskId}"></label>
-                                </div>
-                            </td>
-                            <td class="js-task-content fw-semibold ps-0">
-                                ${taskText}
-                            </td>
-                            <td class="text-end" style="width: 100px;">
-                                <button class="btn btn-sm btn-link text-warning"
-                                        type="button"
-                                        onclick="toggleTaskStar(${taskId})"
-                                        title="ستاره‌دار کردن">
-                                    <i class="far fa-star fa-fw"></i>
-                                </button>
-                                <button class="btn btn-sm btn-link text-danger"
-                                        type="button"
-                                        onclick="removeTask(${taskId})"
-                                        title="حذف کار">
-                                    <i class="fa fa-times fa-fw"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </table>
+                <div class="js-task border rounded p-3 mb-2 bg-light animated fadeIn"
+                     data-task-id="${taskId}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="js-task-content fw-medium">
+                            ${taskText}
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger"
+                                type="button"
+                                onclick="removeTask(${taskId})"
+                                title="حذف کار">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
                 </div>
             `;
 
@@ -1028,105 +1024,83 @@
             // بروزرسانی نمایش
             updateOperationsDisplay();
             updateOperationsCount();
-
-            // ⭐ فوری بروزرسانی داده‌های مخفی
             extractOperationsData();
 
             // فوکوس مجدد
             taskInput.focus();
 
-            console.log(`کار "${taskText}" با موفقیت اضافه شد`);
-            
-            // Debug: چاپ محتوای JSON
-            console.log('محتوای فعلی TaskOperationsJson:', $('#taskOperationsData').val());
-            
+            console.log(`کار "${taskText}" با موفقیت اضافه شد. تعداد کل: ${operationsCounter}`);
             return false;
         }
 
-        // تابع حذف کار - بهبود یافته
+        // تابع حذف کار - اصلاح شده
         function removeTask(taskId) {
             if (confirm('آیا از حذف این کار اطمینان دارید؟')) {
                 $(`[data-task-id="${taskId}"]`).remove();
                 updateOperationsDisplay();
                 updateOperationsCount();
-                
-                // ⭐ فوری بروزرسانی داده‌های مخفی
                 extractOperationsData();
-                
-                // Debug
-                console.log('پس از حذف - محتوای TaskOperationsJson:', $('#taskOperationsData').val());
             }
         }
 
-        // تابع تغییر وضعیت تکمیل - بهبود یافته
-        function toggleTaskCompletion(taskId) {
-            const $task = $(`[data-task-id="${taskId}"]`);
-            const $checkbox = $task.find('.form-check-input');
-            const isCompleted = $checkbox.is(':checked');
-
-            $task.attr('data-task-completed', isCompleted);
-
-            if (isCompleted) {
-                $task.find('.table').addClass('bg-body');
-                $task.find('.js-task-content').wrapInner('<del></del>');
-            } else {
-                $task.find('.table').removeClass('bg-body');
-                $task.find('.js-task-content del').contents().unwrap();
-            }
-            
-            // ⭐ فوری بروزرسانی داده‌های مخفی
-            extractOperationsData();
-        }
-
-        // تابع تغییر وضعیت ستاره - بهبود یافته
-        function toggleTaskStar(taskId) {
-            const $task = $(`[data-task-id="${taskId}"]`);
-            const $starBtn = $task.find('.btn-link.text-warning');
-            const $starIcon = $starBtn.find('i');
-            const isStarred = $starIcon.hasClass('fa');
-
-            if (isStarred) {
-                $starIcon.removeClass('fa fa-star').addClass('far fa-star');
-                $task.attr('data-task-starred', 'false');
-            } else {
-                $starIcon.removeClass('far fa-star').addClass('fa fa-star');
-                $task.attr('data-task-starred', 'true');
-            }
-            
-            // ⭐ فوری بروزرسانی داده‌های مخفی
-            extractOperationsData();
-        }
-
-        // استخراج داده‌های کارها - بهبود یافته
+        // استخراج داده‌های کارها - اصلاح شده
         function extractOperationsData() {
-            const operationsList = [];
+            const currentOperations = []; // تغییر نام متغیر محلی
 
             $('#operationsList .js-task').each(function(index) {
                 const $task = $(this);
                 const title = $task.find('.js-task-content').text().trim();
-                const isCompleted = $task.attr('data-task-completed') === 'true';
-                const isStarred = $task.attr('data-task-starred') === 'true';
 
                 if (title) {
-                    operationsList.push({
+                    currentOperations.push({
                         Title: title,
                         OperationOrder: index + 1,
-                        IsCompleted: isCompleted,
-                        IsStarred: isStarred,
+                        IsCompleted: false,
+                        IsStarred: false,
                         EstimatedHours: null
                     });
                 }
             });
 
-            const jsonData = JSON.stringify(operationsList);
-            $('#taskOperationsData').val(jsonData);      
+            const jsonData = JSON.stringify(currentOperations);
+            $('#taskOperationsData').val(jsonData);
+
+            console.log('عملیات‌ها استخراج شد:', currentOperations);
+            console.log('JSON داده:', jsonData);
         }
 
-  
+        // تابع بروزرسانی نمایش
+        function updateOperationsDisplay() {
+            const tasksCount = $('#operationsList .js-task').length;
+
+            if (tasksCount === 0) {
+                $('#emptyOperationsList').show();
+                $('#operationsList').hide();
+            } else {
+                $('#emptyOperationsList').hide();
+                $('#operationsList').show();
+            }
+        }
+
+        // تابع بروزرسانی شمارش
+        function updateOperationsCount() {
+            const tasksCount = $('#operationsList .js-task').length;
+            $('#operations-count').text(tasksCount);
+            $('#operationsBadge').text(tasksCount);
+        }
+
+        // باقی توابع بدون تغییر...
+        function updateRemindersCount() {
+            let count = 0;
+            if ($('#defaultReminder').is(':checked')) {
+                count++;
+            }
+            count += $('#customRemindersList .card').length;
+            $('#reminders-count').text(count);
+        }
 
         function toggleTaskCodeInput() {
             const isManual = $('#toggleManualCode').is(':checked');
-
             if (isManual) {
                 $('#automaticCodeDiv').hide();
                 $('#manualCodeDiv').show();
@@ -1134,13 +1108,11 @@
             } else {
                 $('#automaticCodeDiv').show();
                 $('#manualCodeDiv').hide();
-                generateTaskCode();
             }
         }
 
         function validateMainInfo() {
             let hasErrors = false;
-
             const title = $('#Title').val().trim();
             if (!title) {
                 $('#Title').addClass('is-invalid').removeClass('is-valid');
@@ -1164,7 +1136,6 @@
             } else {
                 $('#main-info-error').addClass('d-none');
             }
-
             return !hasErrors;
         }
 
@@ -1221,7 +1192,6 @@
 
             if (!isValid) {
                 let errorMessage = 'لطفاً خطاهای زیر را رفع کنید:\n\n' + errors.join('\n');
-
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         title: 'خطا در اعتبارسنجی',
@@ -1232,21 +1202,17 @@
                 } else {
                     alert(errorMessage);
                 }
-
                 $('#main-info-tab').tab('show');
             }
-
             return isValid;
         }
 
         function updateBranchDependentSelects() {
             const branchId = $('#BranchIdSelected').val();
-
             if (!branchId) {
                 $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
                 return;
             }
-
             $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds, #StakeholderId').prop('disabled', false);
         }
 
@@ -1270,7 +1236,6 @@
 
         function checkTaskCodeUniqueness() {
             const taskCode = $('#manualTaskCode').val().trim();
-
             if (!taskCode || !validateManualTaskCode()) {
                 return;
             }
@@ -1286,7 +1251,6 @@
                 },
                 success: function(response) {
                     $('#manualTaskCode').removeClass('is-loading');
-
                     if (response.success && response.isUnique) {
                         $('#manualTaskCode').addClass('is-valid').removeClass('is-invalid');
                         $('#taskCodeMessages').html('<small class="text-success"><i class="fa fa-check me-1"></i>کد تسک معتبر و منحصر به فرد است</small>');
@@ -1316,7 +1280,6 @@
                         const taskCategoriesUpdate = response.viewList.find(v => v.elementId === 'TaskCategoriesDiv');
                         if (taskCategoriesUpdate) {
                             $('#TaskCategoriesDiv').html(taskCategoriesUpdate.view.result);
-
                             $('#TaskCategoriesDiv .js-select2').select2({
                                 width: '100%',
                                 allowClear: true,
@@ -1342,19 +1305,15 @@
             }
 
             let previewHtml = '<div class="row">';
-
             if (startDate) {
                 previewHtml += `<div class="col-sm-4"><strong>شروع:</strong> ${startDate}</div>`;
             }
-
             if (dueDate) {
                 previewHtml += `<div class="col-sm-4"><strong>مهلت:</strong> ${dueDate}</div>`;
             }
-
             if (estimatedHours) {
                 previewHtml += `<div class="col-sm-4"><strong>مدت تخمینی:</strong> ${estimatedHours} ساعت</div>`;
             }
-
             previewHtml += '</div>';
 
             $('#timePreviewContent').html(previewHtml);
@@ -1393,7 +1352,6 @@
 
         function checkProjectTabRequirements() {
             const branchId = $('#BranchIdSelected').val();
-
             if (!branchId) {
                 $('#project-branch-warning').show();
             } else {
@@ -1401,16 +1359,13 @@
             }
         }
 
-      
-        // حذف تابع دستی addReminderFromModal و جایگزینی با event handler - اصلاح شده
         $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
             const $button = $(this);
             const $modal = $button.closest('.modal');
             const $form = $modal.find('#customReminderForm');
-            
-            // بررسی اینکه آیا این فرم یادآوری است
+
             if ($form.length === 0) return;
-            
+
             event.preventDefault();
             $button.prop('disabled', true);
 
@@ -1423,18 +1378,11 @@
                 contentType: false,
                 processData: false,
                 success: function (response) {
-                    console.log('Response از مودال:', response);
-                    
                     if (response.status === "temp-save") {
-                        // اضافه کردن یادآوری به لیست
                         addReminderToList(response.data);
-                        
-                        // بستن مودال
                         $modal.find('[data-bs-dismiss="modal"]').click();
-                        
-                        // نمایش پیام موفقیت
+
                         if (response.message && response.message.length > 0) {
-                            // استفاده از toastr به جای SendResposeMessage
                             response.message.forEach(msg => {
                                 if (typeof toastr !== 'undefined') {
                                     toastr.success(msg.text);
@@ -1444,7 +1392,6 @@
                             });
                         }
                     } else if (response.status === "validation-error") {
-                        // نمایش خطاهای اعتبارسنجی
                         if (response.message && response.message.length > 0) {
                             response.message.forEach(msg => {
                                 if (typeof toastr !== 'undefined') {
@@ -1456,7 +1403,6 @@
                         }
                         $button.prop('disabled', false);
                     } else if (response.status === "error") {
-                        // نمایش خطا
                         if (response.message && response.message.length > 0) {
                             response.message.forEach(msg => {
                                 if (typeof toastr !== 'undefined') {
@@ -1472,7 +1418,7 @@
                 error: function (xhr) {
                     $button.prop('disabled', false);
                     console.error('خطا در AJAX:', xhr);
-                    
+
                     if (typeof toastr !== 'undefined') {
                         toastr.error('خطا در ارتباط با سرور');
                     } else {
@@ -1482,12 +1428,8 @@
             });
         });
 
-                // تابع اضافه کردن یادآوری به لیست - بهبود یافته
         function addReminderToList(reminderData) {
-            console.log('اضافه کردن یادآوری:', reminderData);
-
             const reminderId = Date.now();
-
             let typeText = '';
             let scheduleText = '';
 
@@ -1550,16 +1492,11 @@
             $('#customRemindersList').append(reminderHtml);
             updateRemindersCount();
             updateRemindersData();
-
-            // Debug log
-            console.log('یادآوری اضافه شد، محتوای JSON:', $('#taskRemindersData').val());
         }
 
-        // تابع بروزرسانی داده‌های یادآوری‌ها - بهبود یافته
         function updateRemindersData() {
             remindersList = [];
 
-            // یادآوری پیش‌فرض
             if ($('#defaultReminder').is(':checked')) {
                 remindersList.push({
                     Title: 'یادآوری پیش‌فرض سیستم',
@@ -1569,10 +1506,8 @@
                 });
             }
 
-            // یادآوری‌های سفارشی
             $('#customRemindersList .reminder-data').each(function() {
                 const data = $(this).data();
-
                 const reminderObj = {
                     Title: data.title,
                     Description: data.description,
@@ -1580,7 +1515,6 @@
                     NotificationTime: data.time
                 };
 
-                // اضافه کردن فیلدهای اختیاری
                 if (data.interval) {
                     reminderObj.IntervalDays = parseInt(data.interval);
                 }
@@ -1596,25 +1530,16 @@
 
             const jsonData = JSON.stringify(remindersList);
             $('#taskRemindersData').val(jsonData);
-            
-            // Debug
-            console.log('داده‌های یادآوری بروزرسانی شد:', remindersList);
-            console.log('JSON نهایی:', jsonData);
         }
 
-        // تابع حذف یادآوری - بهبود یافته
         function removeReminder(reminderId) {
             if (confirm('آیا از حذف این یادآوری اطمینان دارید؟')) {
                 $(`[data-reminder-id="${reminderId}"]`).remove();
                 updateRemindersCount();
                 updateRemindersData();
-                
-                // Debug
-                console.log('یادآوری حذف شد، محتوای JSON:', $('#taskRemindersData').val());
             }
         }
 
-        // تابع بروزرسانی لیست ناظرین
         function updateViewersList() {
             const selectedUsers = $('#AssignmentsSelectedTaskUserArraysString').val() || [];
             const selectedTeams = $('#AssignmentsSelectedTeamIds').val() || [];
@@ -1627,7 +1552,6 @@
             }
 
             let viewersCount = selectedUsers.length;
-
             selectedTeams.forEach(function(teamId) {
                 viewersCount += 5;
             });
@@ -1646,25 +1570,9 @@
             `);
         }
 
-        // تابع بروزرسانی همه ورودی‌های مخفی قبل از ارسال فرم
         function updateAllHiddenInputs() {
             updateRemindersData();
             extractOperationsData();
         }
     </script>
-
-    <style>
-        .select2-invalid .select2-selection {
-            border-color: #dc3545 !important;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
-        }
-
-        .select2-validation .select2-selection {
-            border: 1px solid #ced4da;
-        }
-
-        .select2-validation.select2-invalid .select2-selection {
-            border-color: #dc3545;
-        }
-    </style>
 }

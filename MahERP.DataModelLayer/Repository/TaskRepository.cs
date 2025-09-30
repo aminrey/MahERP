@@ -341,6 +341,9 @@ namespace MahERP.DataModelLayer.Repository
 
         #region Calendar Methods
 
+        /// <summary>
+        /// دریافت تسک‌ها برای نمایش تقویم - اصلاح شده
+        /// </summary>
         public List<TaskCalendarViewModel> GetTasksForCalendarView(
             string userId,
             int? branchId = null,
@@ -349,108 +352,9 @@ namespace MahERP.DataModelLayer.Repository
             List<string> assignedUserIds = null,
             int? stakeholderId = null)
         {
-            try
-            {
-                var query = _context.Tasks_Tbl
-                    .Where(t => !t.IsDeleted &&
-                               t.IsActive &&
-                               t.DueDate.HasValue)
-                    .Include(t => t.TaskCategory)
-                    .Include(t => t.Stakeholder)
-                    .Include(t => t.TaskAssignments)
-                        .ThenInclude(ta => ta.AssignedUser)
-                    .AsQueryable();
-
-                if (startDate.HasValue)
-                {
-                    query = query.Where(t => t.DueDate >= startDate.Value);
-                }
-
-                if (endDate.HasValue)
-                {
-                    query = query.Where(t => t.DueDate <= endDate.Value);
-                }
-
-                if (branchId.HasValue)
-                {
-                    query = query.Where(t =>
-                        t.TaskAssignments.Any(ta =>
-                            _context.BranchUser_Tbl.Any(bu =>
-                                bu.UserId == ta.AssignedUserId &&
-                                bu.BranchId == branchId.Value &&
-                                bu.IsActive)) ||
-                        (t.StakeholderId.HasValue &&
-                         _context.StakeholderBranch_Tbl.Any(sb =>
-                            sb.StakeholderId == t.StakeholderId &&
-                            sb.BranchId == branchId.Value))
-                    );
-                }
-                else
-                {
-                    query = query.Where(t =>
-                        t.CreatorUserId == userId ||
-                        t.TaskAssignments.Any(ta => ta.AssignedUserId == userId));
-                }
-
-                if (assignedUserIds != null && assignedUserIds.Any())
-                {
-                    query = query.Where(t =>
-                        t.TaskAssignments.Any(ta => assignedUserIds.Contains(ta.AssignedUserId)));
-                }
-
-                if (stakeholderId.HasValue)
-                {
-                    query = query.Where(t => t.StakeholderId == stakeholderId.Value);
-                }
-
-                var tasksData = query.Select(t => new
-                {
-                    t.Id,
-                    t.Title,
-                    t.Description,
-                    t.TaskCode,
-                    t.DueDate,
-                    t.CompletionDate,
-                    t.CreateDate,
-                    t.CreatorUserId,
-                    t.StakeholderId,
-                    StakeholderFirstName = t.Stakeholder != null ? t.Stakeholder.FirstName : null,
-                    StakeholderLastName = t.Stakeholder != null ? t.Stakeholder.LastName : null,
-                    CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : null
-                }).ToList();
-
-                var tasks = tasksData.Select(t => new TaskCalendarViewModel
-                {
-                    Id = t.Id,
-                    Title = t.Title ?? string.Empty,
-                    Description = t.Description,
-                    TaskCode = t.TaskCode,
-                    DueDate = t.DueDate,
-                    IsCompleted = t.CompletionDate.HasValue,
-                    IsOverdue = !t.CompletionDate.HasValue && t.DueDate < DateTime.Now,
-                    StakeholderId = t.StakeholderId,
-                    StakeholderName = t.StakeholderFirstName != null && t.StakeholderLastName != null ?
-                        $"{t.StakeholderFirstName} {t.StakeholderLastName}" : "ندارد",
-                    CategoryTitle = t.CategoryTitle ?? "ندارد",
-                    BranchName = "ندارد",
-                    CalendarColor = t.CompletionDate.HasValue ? "#28a745" :
-                                   (!t.CompletionDate.HasValue && t.DueDate < DateTime.Now) ? "#dc3545" :
-                                   "#007bff",
-                    StatusText = t.CompletionDate.HasValue ? "تکمیل شده" :
-                                (!t.CompletionDate.HasValue && t.DueDate < DateTime.Now) ? "عقب افتاده" :
-                                "در حال انجام",
-                    CreateDate = t.CreateDate,
-                    CreatorUserId = t.CreatorUserId ?? string.Empty
-                })
-                .OrderBy(t => t.DueDate)
-                .ToList();
-
-                return tasks;
-            }
-            catch (Exception ex)
-            {
-                return new List<TaskCalendarViewModel>();
-            }
+            // استفاده از نسخه Async
+            var result = GetCalendarEventsAsync(userId, startDate, endDate, branchId, assignedUserIds, stakeholderId);
+            return result.Result; // فقط برای سازگاری با کدهای قدیمی
         }
 
         #endregion
@@ -668,7 +572,7 @@ namespace MahERP.DataModelLayer.Repository
             }
         }
         /// <summary>
-        /// تبدیل Task Entity به TaskViewModel - اصلاح شده
+        /// تبدیل Task Entity به TaskViewModel - اصلاح شده برای گروه‌بندی صحیح assignments
         /// </summary>
         private TaskViewModel MapToTaskViewModel(Tasks task)
         {
@@ -712,21 +616,22 @@ namespace MahERP.DataModelLayer.Repository
                     (!string.IsNullOrEmpty(stakeholder.CompanyName) ? stakeholder.CompanyName : $"{stakeholder.FirstName} {stakeholder.LastName}")
                     : null,
 
-                // اضافه کردن انتساب‌ها - این قسمت مهم بود که گم شده بود
-                AssignmentsTaskUser = assignments.Select(a => new TaskAssignmentViewModel
-                {
-                    Id = a.Id,
-                    TaskId = a.TaskId,
-                    AssignedUserId = a.AssignedUserId,
-                    AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : "نامشخص",
-                    AssignerUserId = a.AssignerUserId,
-                    AssignDate = a.AssignmentDate,
-                    CompletionDate = a.CompletionDate,
-                    Description = a.Description
-                }).ToList()
+                // ⭐ اصلاح شده: ذخیره همه assignments به صورت کامل 
+                AssignmentsTaskUser = assignments
+                    .Where(a => !string.IsNullOrEmpty(a.AssignedUserId)) // فقط assignments معتبر
+                    .Select(a => new TaskAssignmentViewModel
+                    {
+                        Id = a.Id,
+                        TaskId = a.TaskId,
+                        AssignedUserId = a.AssignedUserId,
+                        AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : "نامشخص",
+                        AssignerUserId = a.AssignerUserId, // ⭐ کلیدی: ذخیره AssignerUserId
+                        AssignDate = a.AssignmentDate,
+                        CompletionDate = a.CompletionDate,
+                        Description = a.Description
+                    }).ToList()
             };
         }
-
         #endregion
 
         #region Team Helper Methods
@@ -867,7 +772,6 @@ namespace MahERP.DataModelLayer.Repository
         #endregion
 
         #region Statistics and Filter Methods
-
         /// <summary>
         /// محاسبه آمار تسک‌ها بر اساس سطح دسترسی کاربر - اصلاح شده
         /// </summary>
@@ -898,26 +802,31 @@ namespace MahERP.DataModelLayer.Repository
                     break;
             }
 
+            // ⭐ حذف تسک‌های تکراری در محاسبه آمار
+            var uniqueAllTasks = allAvailableTasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
+            var uniqueFilteredTasks = filteredTasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
+
             var statistics = new TaskStatisticsViewModel
             {
                 // آمار کل (بر اساس سطح دسترسی)
-                TotalTasks = allAvailableTasks.Count,
+                TotalTasks = uniqueAllTasks.Count,
 
+      
                 // تسک‌های منتصب به من - اصلاح شده
-                AssignedToMe = allAvailableTasks.Count(t =>
+                AssignedToMe = uniqueAllTasks.Count(t =>
                     t.AssignmentsTaskUser != null &&
                     t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId) &&
                     t.CreatorUserId != userId), // فقط تسک‌هایی که خودم نساخته‌ام
 
                 // تسک‌های واگذار شده توسط من
-                AssignedByMe = allAvailableTasks.Count(t => t.CreatorUserId == userId),
+                AssignedByMe = uniqueAllTasks.Count(t => t.CreatorUserId == userId),
 
                 // آمار فیلتر شده فعلی
-                CompletedTasks = filteredTasks.Count(t => t.CompletionDate.HasValue),
-                OverdueTasks = filteredTasks.Count(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && t.DueDate < DateTime.Now),
-                InProgressTasks = filteredTasks.Count(t => !t.CompletionDate.HasValue && t.IsActive),
-                ImportantTasks = filteredTasks.Count(t => t.Important || t.Priority == 1),
-                UrgentTasks = filteredTasks.Count(t => t.Priority == 2),
+                CompletedTasks = uniqueFilteredTasks.Count(t => t.CompletionDate.HasValue),
+                OverdueTasks = uniqueFilteredTasks.Count(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && t.DueDate < DateTime.Now),
+                InProgressTasks = uniqueFilteredTasks.Count(t => !t.CompletionDate.HasValue && t.IsActive),
+                ImportantTasks = uniqueFilteredTasks.Count(t => t.Important || t.Priority == 1),
+                UrgentTasks = uniqueFilteredTasks.Count(t => t.Priority == 2),
 
                 // آمار تیمی (در صورت نیاز)
                 TeamTasks = 0, // باید پیاده‌سازی شود
@@ -1221,7 +1130,7 @@ namespace MahERP.DataModelLayer.Repository
         #region Missing Implementation Methods
 
         /// <summary>
-        /// دریافت رویدادهای تقویم (نسخه Async)
+        /// دریافت رویدادهای تقویم (نسخه Async) - اصلاح شده برای حل مشکل DataReader
         /// </summary>
         public async Task<List<TaskCalendarViewModel>> GetCalendarEventsAsync(
             string userId,
@@ -1231,9 +1140,223 @@ namespace MahERP.DataModelLayer.Repository
             List<string> assignedUserIds = null,
             int? stakeholderId = null)
         {
-            return GetTasksForCalendarView(userId, branchId, start, end, assignedUserIds, stakeholderId);
+            try
+            {
+                // مرحله اول: دریافت تسک‌های اصلی
+                var tasksQuery = _context.Tasks_Tbl
+                    .Where(t => !t.IsDeleted).Include(t=>t.TaskAssignments).Include(t=> t.Stakeholder)
+                    .AsQueryable();
+
+                // اعمال فیلترهای تاریخ
+                if (start.HasValue)
+                {
+                    tasksQuery = tasksQuery.Where(t => t.DueDate >= start.Value);
+                }
+
+                if (end.HasValue)
+                {
+                    tasksQuery = tasksQuery.Where(t => t.DueDate <= end.Value);
+                }
+
+                // فیلتر شعبه
+                if (branchId.HasValue)
+                {
+                    tasksQuery = tasksQuery.Where(t =>
+                         t.TaskAssignments.Any(ta =>
+                            ta.TaskId == t.Id &&
+                            _context.BranchUser_Tbl.Any(bu =>
+                                bu.UserId == ta.AssignedUserId &&
+                                bu.BranchId == branchId.Value &&
+                                bu.IsActive)) ||
+                        (t.StakeholderId.HasValue &&
+                         _context.StakeholderBranch_Tbl.Any(sb =>
+                            sb.StakeholderId == t.StakeholderId &&
+                            sb.BranchId == branchId.Value))
+                    );
+                }
+                else
+                {
+                    // محدود کردن به تسک‌های مرتبط با کاربر
+                    tasksQuery = tasksQuery.Where(t =>
+                        t.CreatorUserId == userId ||
+                        _context.TaskAssignment_Tbl.Any(ta => ta.TaskId == t.Id && ta.AssignedUserId == userId));
+                }
+
+                // فیلتر کاربران انتصاب
+                if (assignedUserIds != null && assignedUserIds.Any())
+                {
+                    tasksQuery = tasksQuery.Where(t =>
+                        t.TaskAssignments.Any(ta => ta.TaskId == t.Id && assignedUserIds.Contains(ta.AssignedUserId)));
+                }
+
+                // فیلتر طرف حساب
+                if (stakeholderId.HasValue)
+                {
+                    tasksQuery = tasksQuery.Where(t => t.StakeholderId == stakeholderId.Value);
+                }
+
+                // مرحله دوم: دریافت فقط فیلدهای اصلی تسک‌ها
+                var basicTasks =  tasksQuery.Select(t => new
+                {
+                    t.Id,
+                    t.Title,
+                    t.Description,
+                    t.TaskCode,
+                    t.DueDate,
+                    t.CompletionDate,
+                    t.CreateDate,
+                    t.CreatorUserId,
+                    t.StakeholderId,
+                    t.TaskCategoryId,
+                    t.Status,
+                    t.Priority,
+                    t.Important
+                }).ToList();
+
+                var taskIds = basicTasks.Select(t => t.Id).ToList();
+
+                // مرحله سوم: دریافت اطلاعات تکمیلی به صورت جداگانه
+                var stakeholders = await _context.Stakeholder_Tbl
+                    .Where(s => basicTasks.Any(t => t.StakeholderId == s.Id))
+                    .ToDictionaryAsync(s => s.Id, s => new { s.FirstName, s.LastName, s.CompanyName });
+
+                var categories = await _context.TaskCategory_Tbl
+                    .Where(c => basicTasks.Any(t => t.TaskCategoryId == c.Id))
+                    .ToDictionaryAsync(c => c.Id, c => c.Title);
+
+                // مرحله چهارم: تولید نتیجه نهایی
+                var result = new List<TaskCalendarViewModel>();
+
+                foreach (var task in basicTasks)
+                {
+                    // دریافت اطلاعات طرف حساب
+                    string stakeholderName = "ندارد";
+                    if (task.StakeholderId.HasValue && stakeholders.ContainsKey(task.StakeholderId.Value))
+                    {
+                        var s = stakeholders[task.StakeholderId.Value];
+                        stakeholderName = !string.IsNullOrEmpty(s.CompanyName) ? s.CompanyName : $"{s.FirstName} {s.LastName}";
+                    }
+
+                    // دریافت عنوان دسته‌بندی
+                    string categoryTitle = task.TaskCategoryId.HasValue && categories.ContainsKey(task.TaskCategoryId.Value)
+                        ? categories[task.TaskCategoryId.Value] : "ندارد";
+
+                    // تعیین رنگ و وضعیت
+                    bool isCompleted = task.CompletionDate.HasValue;
+                    bool isOverdue = !isCompleted && task.DueDate.HasValue && task.DueDate < DateTime.Now;
+
+                    string calendarColor = isCompleted ? "#28a745" :
+                                         isOverdue ? "#dc3545" :
+                                         "#007bff";
+
+                    string statusText = isCompleted ? "تکمیل شده" :
+                                      isOverdue ? "عقب افتاده" :
+                                      "در حال انجام";
+
+                    result.Add(new TaskCalendarViewModel
+                    {
+                        Id = task.Id,
+                        Title = task.Title ?? string.Empty,
+                        Description = task.Description,
+                        TaskCode = task.TaskCode,
+                        DueDate = task.DueDate,
+                        IsCompleted = isCompleted,
+                        IsOverdue = isOverdue,
+                        StakeholderId = task.StakeholderId,
+                        StakeholderName = stakeholderName,
+                        CategoryTitle = categoryTitle,
+                        BranchName = "ندارد", // TODO: اضافه کردن منطق شعبه در صورت نیاز
+                        CalendarColor = calendarColor,
+                        StatusText = statusText,
+                        CreateDate = task.CreateDate,
+                        CreatorUserId = task.CreatorUserId ?? string.Empty
+                    });
+                }
+
+                // مرحله پنجم: اضافه کردن تاریخ‌های شخصی
+                await AddPersonalEventsToCalendar(result, taskIds, userId);
+
+                return result.OrderBy(t => t.DueDate).ToList();
+            }
+            catch (Exception ex)
+            {
+                // لاگ کردن خطا
+                Console.WriteLine($"Error in GetCalendarEventsAsync: {ex.Message}");
+                return new List<TaskCalendarViewModel>();
+            }
         }
 
+        /// <summary>
+        /// اضافه کردن رویدادهای تاریخ‌های شخصی به تقویم
+        /// </summary>
+        private async Task AddPersonalEventsToCalendar(List<TaskCalendarViewModel> calendarEvents, List<int> taskIds, string userId)
+        {
+            try
+            {
+                var personalAssignments = await _context.TaskAssignment_Tbl
+                    .Include(ta => ta.AssignedUser)
+                    .Include(ta => ta.Task)
+                    .Where(ta => taskIds.Contains(ta.TaskId) &&
+                               (ta.PersonalStartDate.HasValue || ta.PersonalEndDate.HasValue))
+                    .ToListAsync();
+
+                foreach (var assignment in personalAssignments)
+                {
+                    var isMyAssignment = assignment.AssignedUserId == userId;
+                    var userInitials = GetUserInitials(assignment.AssignedUser?.FirstName, assignment.AssignedUser?.LastName);
+
+                    // رویداد شروع شخصی
+                    if (assignment.PersonalStartDate.HasValue)
+                    {
+                        calendarEvents.Add(new TaskCalendarViewModel
+                        {
+                            Id = assignment.TaskId,
+                            Title = $"[شروع {userInitials}] {assignment.Task.Title}",
+                            Description = assignment.PersonalTimeNote,
+                            TaskCode = assignment.Task.TaskCode,
+                            DueDate = assignment.PersonalStartDate,
+                            IsCompleted = false,
+                            IsOverdue = false,
+                            CalendarColor = isMyAssignment ? "#4CAF50" : "#81C784",
+                            StatusText = isMyAssignment ? "شروع شخصی من" : "شروع شخصی همکار",
+                            CreateDate = assignment.Task.CreateDate,
+                            CreatorUserId = assignment.Task.CreatorUserId ?? string.Empty,
+                            CategoryTitle = "تاریخ شخصی",
+                            StakeholderName = assignment.AssignedUser != null ?
+                                $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}" : "نامشخص",
+                            BranchName = "ندارد"
+                        });
+                    }
+
+                    // رویداد پایان شخصی
+                    if (assignment.PersonalEndDate.HasValue)
+                    {
+                        calendarEvents.Add(new TaskCalendarViewModel
+                        {
+                            Id = assignment.TaskId,
+                            Title = $"[پایان {userInitials}] {assignment.Task.Title}",
+                            Description = assignment.PersonalTimeNote,
+                            TaskCode = assignment.Task.TaskCode,
+                            DueDate = assignment.PersonalEndDate,
+                            IsCompleted = false,
+                            IsOverdue = false,
+                            CalendarColor = isMyAssignment ? "#FF9800" : "#FFB74D",
+                            StatusText = isMyAssignment ? "پایان شخصی من" : "پایان شخصی همکار",
+                            CreateDate = assignment.Task.CreateDate,
+                            CreatorUserId = assignment.Task.CreatorUserId ?? string.Empty,
+                            CategoryTitle = "تاریخ شخصی",
+                            StakeholderName = assignment.AssignedUser != null ?
+                                $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}" : "نامشخص",
+                            BranchName = "ندارد"
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding personal events: {ex.Message}");
+            }
+        }
         /// <summary>
         /// دریافت تسک‌ها برای Index با فیلترها (نسخه Async جدید) - اصلاح شده
         /// </summary>
@@ -1506,7 +1629,7 @@ namespace MahERP.DataModelLayer.Repository
             model.Tasks = tasks.Select(MapToTaskViewModel).ToList();
         }
         /// <summary>
-        /// بارگذاری تسک‌های من با گروه‌بندی خاص
+        /// بارگذاری تسک‌های من با گروه‌بندی خاص - منطق کاملاً اصلاح شده
         /// </summary>
         private async Task LoadMyTasksGroupedAsync(TaskListForIndexViewModel model, string userId)
         {
@@ -1518,24 +1641,35 @@ namespace MahERP.DataModelLayer.Repository
                 if (model.GroupedTasks.MyTasksGrouped == null)
                     model.GroupedTasks.MyTasksGrouped = new MyTasksGroupedViewModel();
 
-                // تسک‌های دریافتی (منتصب به من)
+                // ⭐ تسک‌های دریافتی (منتصب به من)
+                // شامل: تسک‌هایی که من در AssignmentsTaskUser با AssignedUserId من هستم
                 var assignedToMe = model.Tasks.Where(t =>
                     t.AssignmentsTaskUser != null &&
-                    t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId) &&
-                    t.CreatorUserId != userId).ToList();
+                    t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId)).ToList();
 
                 model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = assignedToMe;
 
-                // تسک‌های واگذار شده (گروه‌بندی بر اساس انجام‌دهنده)
+                // ⭐ تسک‌های واگذار شده (ایجاد شده توسط من)
+                // شامل: تسک‌هایی که من سازنده آنها هستم
                 var assignedByMe = model.Tasks.Where(t => t.CreatorUserId == userId).ToList();
 
                 var assignedByMeGrouped = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
 
+                // برای هر تسک که ایجاد کرده‌ام
                 foreach (var task in assignedByMe)
                 {
                     if (task.AssignmentsTaskUser != null)
                     {
-                        foreach (var assignment in task.AssignmentsTaskUser)
+                        // ⭐ گروه‌بندی بر اساس AssignedUserId (نه AssignerUserId)
+                        // فیلتر کردن self-assignment برای نمایش در "واگذار شده"
+                        var assignees = task.AssignmentsTaskUser
+                            .Where(a => !string.IsNullOrEmpty(a.AssignedUserId)) // فقط assignments معتبر
+                            .Where(a => a.AssignedUserId != userId) // ⭐ حذف self-assignment از "واگذار شده"
+                            .GroupBy(a => a.AssignedUserId) // گروه‌بندی بر اساس AssignedUserId
+                            .Select(g => g.First()) // فقط اولین assignment هر کاربر
+                            .ToList();
+
+                        foreach (var assignment in assignees)
                         {
                             var assigneeInfo = new AssigneeInfo
                             {
@@ -1545,18 +1679,37 @@ namespace MahERP.DataModelLayer.Repository
                                 IsTeam = false
                             };
 
+                            // ⭐ ایجاد گروه اگر وجود ندارد
                             if (!assignedByMeGrouped.ContainsKey(assigneeInfo))
+                            {
                                 assignedByMeGrouped[assigneeInfo] = new List<TaskViewModel>();
+                            }
 
-                            assignedByMeGrouped[assigneeInfo].Add(task);
+                            // ⭐ اضافه کردن تسک فقط یکبار برای هر کاربر
+                            if (!assignedByMeGrouped[assigneeInfo].Any(t => t.Id == task.Id))
+                            {
+                                assignedByMeGrouped[assigneeInfo].Add(task);
+                            }
                         }
                     }
                 }
 
                 model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = assignedByMeGrouped;
+
+                // ⭐ لاگ برای debug
+                Console.WriteLine($"Debug: Total assigned to me tasks: {assignedToMe.Count}");
+                Console.WriteLine($"Debug: Total created by me tasks: {assignedByMe.Count}");
+                Console.WriteLine($"Debug: Unique assignee groups (excluding self): {assignedByMeGrouped.Count}");
+
+                foreach (var group in assignedByMeGrouped)
+                {
+                    Console.WriteLine($"Debug: Assignee {group.Key.FullName} ({group.Key.Id}) has {group.Value.Count} tasks");
+                }
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error in LoadMyTasksGroupedAsync: {ex.Message}");
+
                 // در صورت خطا، گروه‌بندی خالی
                 if (model.GroupedTasks?.MyTasksGrouped != null)
                 {
@@ -2266,6 +2419,115 @@ namespace MahERP.DataModelLayer.Repository
                 return $"{(int)(timeSpan.TotalDays / 30)} ماه پیش";
             
             return $"{(int)(timeSpan.TotalDays / 365)} سال پیش";
+        }
+
+        #endregion
+
+        #region Personal Dates Management Implementation
+
+        /// <summary>
+        /// دریافت انتصاب تسک برای تنظیم تاریخ‌های شخصی
+        /// </summary>
+        public async Task<TaskAssignment> GetTaskAssignmentForPersonalDatesAsync(int taskId, string userId)
+        {
+            try
+            {
+                return await _context.TaskAssignment_Tbl
+                    .Include(ta => ta.Task)
+                    .Include(ta => ta.AssignedUser)
+                    .FirstOrDefaultAsync(ta => ta.TaskId == taskId && ta.AssignedUserId == userId);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت انتصاب تسک برای تاریخ‌های شخصی: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت انتصاب تسک بر اساس شناسه انتصاب برای تنظیم تاریخ‌های شخصی
+        /// </summary>
+        public async Task<TaskAssignment> GetTaskAssignmentByIdForPersonalDatesAsync(int assignmentId, string userId)
+        {
+            try
+            {
+                return await _context.TaskAssignment_Tbl
+                    .Include(ta => ta.Task)
+                    .Include(ta => ta.AssignedUser)
+                    .FirstOrDefaultAsync(ta => ta.Id == assignmentId && ta.AssignedUserId == userId);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت انتصاب تسک بر اساس شناسه: {ex.Message}", ex);
+            }
+        }
+        /// <summary>
+        /// بروزرسانی تاریخ‌های شخصی انتصاب تسک
+        /// </summary>
+        public async Task<bool> UpdatePersonalDatesAsync(int assignmentId, string userId, DateTime? personalStartDate, DateTime? personalEndDate, string personalTimeNote)
+        {
+            try
+            {
+                var assignment = await _context.TaskAssignment_Tbl
+                    .Include(ta => ta.Task)
+                    .FirstOrDefaultAsync(ta => ta.Id == assignmentId && ta.AssignedUserId == userId);
+
+                if (assignment == null)
+                {
+                    return false;
+                }
+
+                // بررسی امکان تغییر تاریخ‌ها (فقط قبل از تکمیل)
+                if (assignment.Status >= 3)
+                {
+                    return false;
+                }
+
+                assignment.PersonalStartDate = personalStartDate;
+                assignment.PersonalEndDate = personalEndDate;
+                assignment.PersonalTimeNote = personalTimeNote;
+                assignment.PersonalDatesUpdatedDate = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در بروزرسانی تاریخ‌های شخصی: {ex.Message}", ex);
+            }
+        }
+
+        #endregion
+
+        #region Additional Missing Interface Methods
+        /// <summary>
+        /// دریافت انتصاب‌های تسک همراه با تاریخ‌های شخصی
+        /// </summary>
+        public async Task<List<TaskAssignment>> GetTaskAssignmentsWithPersonalDatesAsync(int taskId)
+        {
+            try
+            {
+                return await _context.TaskAssignment_Tbl
+                    .Include(ta => ta.AssignedUser)
+                    .Include(ta => ta.Task)
+                    .Where(ta => ta.TaskId == taskId &&
+                               (ta.PersonalStartDate.HasValue || ta.PersonalEndDate.HasValue))
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت انتصاب‌های تسک با تاریخ‌های شخصی: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت حروف اول نام کاربر
+        /// </summary>
+        public string GetUserInitials(string firstName, string lastName)
+        {
+            var initials = "";
+            if (!string.IsNullOrEmpty(firstName)) initials += firstName[0];
+            if (!string.IsNullOrEmpty(lastName)) initials += lastName[0];
+            return string.IsNullOrEmpty(initials) ? "کاربر" : initials;
         }
 
         #endregion

@@ -150,6 +150,8 @@
                             <h3 class="block-title">راهنمای رنگ‌ها</h3>
                         </div>
                         <div class="block-content">
+                            <!-- تسک‌های اصلی -->
+                            <h6 class="text-muted mb-2">تاریخ‌های اصلی تسک:</h6>
                             <div class="mb-2">
                                 <span class="badge" style="background-color: #28a745; color: white;">■</span>
                                 <span class="ms-2">تکمیل شده</span>
@@ -158,9 +160,28 @@
                                 <span class="badge" style="background-color: #dc3545; color: white;">■</span>
                                 <span class="ms-2">عقب افتاده</span>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <span class="badge" style="background-color: #007bff; color: white;">■</span>
                                 <span class="ms-2">در حال انجام</span>
+                            </div>
+                            
+                            <!-- تاریخ‌های شخصی -->
+                            <h6 class="text-muted mb-2">تاریخ‌های شخصی:</h6>
+                            <div class="mb-2">
+                                <span class="badge" style="background-color: #4CAF50; color: white;">■</span>
+                                <span class="ms-2">شروع شخصی من</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge" style="background-color: #81C784; color: white;">■</span>
+                                <span class="ms-2">شروع شخصی دیگران</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge" style="background-color: #FF9800; color: white;">■</span>
+                                <span class="ms-2">پایان شخصی من</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge" style="background-color: #FFB74D; color: white;">■</span>
+                                <span class="ms-2">پایان شخصی دیگران</span>
                             </div>
                         </div>
                     </div>
@@ -273,7 +294,13 @@
                         });
                 },
                 eventClick: function(info) {
-                    showTaskDetails(info.event);
+                    const eventType = info.event.extendedProps.eventType;
+                    
+                    if (eventType === 'personal-start' || eventType === 'personal-end') {
+                        showPersonalEventDetails(info.event);
+                    } else {
+                        showTaskDetails(info.event);
+                    }
                 },
                 eventDidMount: function(info) {
                     // افزودن tooltip
@@ -412,6 +439,94 @@
                 modalElement.show();
             }
 
+            // تابع نمایش جزئیات رویدادهای شخصی
+            function showPersonalEventDetails(event) {
+                // حذف مودال قبلی در صورت وجود
+                var existingModal = document.getElementById('personalEventModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
+                const props = event.extendedProps;
+                const eventTypeText = props.eventType === 'personal-start' ? 'تاریخ شروع شخصی' : 'تاریخ پایان شخصی';
+
+                var modal = `
+                    <div class="modal fade" id="personalEventModal" tabindex="-1" role="dialog" aria-labelledby="personalEventModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="personalEventModalLabel">
+                                        <i class="fa fa-user-clock me-1"></i>
+                                        ${eventTypeText}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <strong>عنوان تسک:</strong> <span>${event.title || 'ندارد'}</span>
+                                        </div>
+                                        <div class="col-12 mb-3">
+                                            <strong>کد تسک:</strong> <span>${props.taskCode || 'ندارد'}</span>
+                                        </div>
+                                        <div class="col-12 mb-3">
+                                            <strong>کاربر:</strong> <span>${props.assignedUserName || 'ندارد'}</span>
+                                        </div>
+                                        <div class="col-12 mb-3">
+                                            <strong>تاریخ:</strong> <span>${event.startStr || 'ندارد'}</span>
+                                        </div>
+                                        ${props.personalNote ? 
+                                            `<div class="col-12 mb-3">
+                                                <strong>یادداشت شخصی:</strong> <span>${props.personalNote}</span>
+                                            </div>` : ''
+                                        }
+                                        <div class="col-12 mb-3">
+                                            <span class="badge ${props.isMyEvent ? 'bg-success' : 'bg-info'}">
+                                                ${props.isMyEvent ? 'تاریخ شخصی من' : 'تاریخ شخصی همکار'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    ${props.detailUrl ?
+                                        `<a href="${props.detailUrl}" class="btn btn-primary">
+                                            <i class="fa fa-eye me-1"></i> مشاهده جزئیات تسک
+                                        </a>` : ''
+                                    }
+                                    ${props.editUrl && props.isMyEvent ?
+                                        `<button type="button" class="btn btn-warning" onclick="editPersonalDates(${props.taskId})">
+                                            <i class="fa fa-edit me-1"></i> ویرایش تاریخ‌های شخصی
+                                        </button>` : ''
+                                    }
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="fa fa-times me-1"></i> بستن
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // افزودن مودال جدید
+                document.body.insertAdjacentHTML('beforeend', modal);
+
+                // نمایش مودال
+                var modalElement = new bootstrap.Modal(document.getElementById('personalEventModal'));
+                modalElement.show();
+            }
+
+            // تابع ویرایش تاریخ‌های شخصی
+            function editPersonalDates(taskId) {
+                $('#personalEventModal').modal('hide');
+                const editUrl = `@Url.Action("SetPersonalDatesModal", "Tasks")?taskId=${taskId}`;
+                createAndShowModal(editUrl);
+            }
+
+            // تابع global کردن توابع
+            window.showTaskDetails = showTaskDetails;
+            window.showPersonalEventDetails = showPersonalEventDetails;
+            window.editPersonalDates = editPersonalDates;
+
             // مدیریت فیلترهای cascade
             // رویداد تغییر شعبه - بروزرسانی کاربران و طرف حساب‌ها
             $(document).on('change', '#FilterBranchId', function() {
@@ -468,10 +583,8 @@
                 console.log('کانفیگ‌های فیلتر TaskCalendar به DynamicSelect2Manager اضافه شد');
             }
 
-            // تابع global کردن showTaskDetails
-            window.showTaskDetails = showTaskDetails;
-
             console.log('TaskCalendar با فیلترهای جدید آماده شد');
         });
     </script>
 }
+

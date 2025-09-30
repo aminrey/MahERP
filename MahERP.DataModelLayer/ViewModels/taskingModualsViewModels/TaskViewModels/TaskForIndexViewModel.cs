@@ -197,10 +197,6 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
     }
 
 
-
-    /// <summary>
-    /// اطلاعات انجام‌دهنده تسک
-    /// </summary>
     public class AssigneeInfo
     {
         public string Id { get; set; }
@@ -211,16 +207,24 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public override bool Equals(object obj)
         {
             if (obj is AssigneeInfo other)
+            {
+                // ⭐ اصلاح: فقط بر اساس Id و Type مقایسه کن
                 return Id == other.Id && Type == other.Type;
+            }
             return false;
         }
 
         public override int GetHashCode()
         {
+            // ⭐ اصلاح: HashCode بر اساس Id و Type
             return HashCode.Combine(Id, Type);
         }
-    }
 
+        public override string ToString()
+        {
+            return $"{Type}:{Id}:{FullName}";
+        }
+    }
 
 
     public class TaskSummaryViewModel
