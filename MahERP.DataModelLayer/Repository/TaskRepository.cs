@@ -668,10 +668,20 @@ namespace MahERP.DataModelLayer.Repository
             }
         }
         /// <summary>
-        /// تبدیل Task Entity به TaskViewModel
+        /// تبدیل Task Entity به TaskViewModel - اصلاح شده
         /// </summary>
         private TaskViewModel MapToTaskViewModel(Tasks task)
         {
+            // دریافت انتساب‌های تسک
+            var assignments = _context.TaskAssignment_Tbl
+                .Include(ta => ta.AssignedUser)
+                .Where(ta => ta.TaskId == task.Id)
+                .ToList();
+
+            // دریافت اطلاعات دسته‌بندی و طرف حساب
+            var category = _context.TaskCategory_Tbl.FirstOrDefault(c => c.Id == task.TaskCategoryId);
+            var stakeholder = _context.Stakeholder_Tbl.FirstOrDefault(s => s.Id == task.StakeholderId);
+
             return new TaskViewModel
             {
                 Id = task.Id,
@@ -690,6 +700,7 @@ namespace MahERP.DataModelLayer.Repository
                 StakeholderId = task.StakeholderId,
                 TaskType = task.TaskType,
                 CategoryId = task.TaskCategoryId,
+                CategoryTitle = category?.Title,
                 Priority = task.Priority,
                 Important = task.Important,
                 Status = task.Status,
@@ -697,7 +708,22 @@ namespace MahERP.DataModelLayer.Repository
                 LastUpdateDate = task.LastUpdateDate,
                 TaskTypeInput = task.TaskTypeInput,
                 CreationMode = task.CreationMode,
-     
+                StakeholderName = stakeholder != null ?
+                    (!string.IsNullOrEmpty(stakeholder.CompanyName) ? stakeholder.CompanyName : $"{stakeholder.FirstName} {stakeholder.LastName}")
+                    : null,
+
+                // اضافه کردن انتساب‌ها - این قسمت مهم بود که گم شده بود
+                AssignmentsTaskUser = assignments.Select(a => new TaskAssignmentViewModel
+                {
+                    Id = a.Id,
+                    TaskId = a.TaskId,
+                    AssignedUserId = a.AssignedUserId,
+                    AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : "نامشخص",
+                    AssignerUserId = a.AssignerUserId,
+                    AssignDate = a.AssignmentDate,
+                    CompletionDate = a.CompletionDate,
+                    Description = a.Description
+                }).ToList()
             };
         }
 
@@ -843,7 +869,7 @@ namespace MahERP.DataModelLayer.Repository
         #region Statistics and Filter Methods
 
         /// <summary>
-        /// محاسبه آمار تسک‌ها بر اساس سطح دسترسی کاربر
+        /// محاسبه آمار تسک‌ها بر اساس سطح دسترسی کاربر - اصلاح شده
         /// </summary>
         public async Task<TaskStatisticsViewModel> CalculateTaskStatisticsAsync(string userId, int dataAccessLevel, List<TaskViewModel> filteredTasks)
         {
@@ -855,18 +881,18 @@ namespace MahERP.DataModelLayer.Repository
                     var personalTasks = GetTasksByUser(userId, includeAssigned: true, includeCreated: true);
                     allAvailableTasks = personalTasks.Select(MapToTaskViewModel).ToList();
                     break;
-                    
+
                 case 1: // Branch
                     var userBranchId = GetUserBranchId(userId);
                     var branchTasks = GetTasksByBranch(userBranchId);
                     allAvailableTasks = branchTasks.Select(MapToTaskViewModel).ToList();
                     break;
-                    
+
                 case 2: // All
                     var systemTasks = GetTasks(includeDeleted: false);
                     allAvailableTasks = systemTasks.Select(MapToTaskViewModel).ToList();
                     break;
-                    
+
                 default:
                     allAvailableTasks = filteredTasks;
                     break;
@@ -876,15 +902,26 @@ namespace MahERP.DataModelLayer.Repository
             {
                 // آمار کل (بر اساس سطح دسترسی)
                 TotalTasks = allAvailableTasks.Count,
-                MyTasks = allAvailableTasks.Count(t => t.CreatorUserId == userId),
-                AssignedToMe = allAvailableTasks.Count(t => t.AssignmentsTaskUser != null && t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId)),
-                
+
+                // تسک‌های منتصب به من - اصلاح شده
+                AssignedToMe = allAvailableTasks.Count(t =>
+                    t.AssignmentsTaskUser != null &&
+                    t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId) &&
+                    t.CreatorUserId != userId), // فقط تسک‌هایی که خودم نساخته‌ام
+
+                // تسک‌های واگذار شده توسط من
+                AssignedByMe = allAvailableTasks.Count(t => t.CreatorUserId == userId),
+
                 // آمار فیلتر شده فعلی
                 CompletedTasks = filteredTasks.Count(t => t.CompletionDate.HasValue),
                 OverdueTasks = filteredTasks.Count(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && t.DueDate < DateTime.Now),
                 InProgressTasks = filteredTasks.Count(t => !t.CompletionDate.HasValue && t.IsActive),
-                ImportantTasks = filteredTasks.Count(t => t.TaskType == 1),
-                UrgentTasks = filteredTasks.Count(t => t.TaskType == 2)
+                ImportantTasks = filteredTasks.Count(t => t.Important || t.Priority == 1),
+                UrgentTasks = filteredTasks.Count(t => t.Priority == 2),
+
+                // آمار تیمی (در صورت نیاز)
+                TeamTasks = 0, // باید پیاده‌سازی شود
+                SubTeamTasks = 0 // باید پیاده‌سازی شود
             };
 
             return statistics;
@@ -1198,7 +1235,7 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// دریافت تسک‌ها برای Index با فیلترها (نسخه Async جدید)
+        /// دریافت تسک‌ها برای Index با فیلترها (نسخه Async جدید) - اصلاح شده
         /// </summary>
         public async Task<TaskListForIndexViewModel> GetTasksForIndexAsync(string userId, TaskFilterViewModel filters)
         {
@@ -1213,8 +1250,17 @@ namespace MahERP.DataModelLayer.Repository
                 // پر کردن لیست‌های فیلتر
                 await PopulateFilterListsAsync(model, userId);
 
+                // تنظیم HasActiveFilters
+                model.HasActiveFilters = HasActiveFilters(model.Filters);
+
                 // دریافت تسک‌ها بر اساس فیلتر
                 await LoadTasksByFilterAsync(model, userId);
+
+                // اگر نوع نمایش MyTasks باشد، گروه‌بندی خاص انجام بده
+                if (model.Filters.ViewType == TaskViewType.MyTasks && model.Tasks.Any())
+                {
+                    await LoadMyTasksGroupedAsync(model, userId);
+                }
 
                 // محاسبه آمار
                 model.Statistics = await CalculateTaskStatisticsAsync(userId, 0, model.Tasks);
@@ -1230,7 +1276,8 @@ namespace MahERP.DataModelLayer.Repository
                     Filters = filters ?? new TaskFilterViewModel(),
                     Tasks = new List<TaskViewModel>(),
                     Statistics = new TaskStatisticsViewModel(),
-                    GroupedTasks = new TaskGroupedViewModel()
+                    GroupedTasks = new TaskGroupedViewModel(),
+                    HasActiveFilters = false
                 };
             }
         }
@@ -1439,7 +1486,7 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// بارگذاری تسک‌های شخصی
+        /// بارگذاری تسک‌های شخصی (همه تسک‌های مرتبط با کاربر)
         /// </summary>
         private async Task LoadMyTasksAsync(TaskListForIndexViewModel model, string userId)
         {
@@ -1448,14 +1495,76 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// بارگذاری تسک‌های منتصب شده
+        /// بارگذاری تسک‌های منتصب شده (فقط تسک‌های واگذار شده از طرف دیگران)
         /// </summary>
         private async Task LoadAssignedToMeTasksAsync(TaskListForIndexViewModel model, string userId)
         {
-            var tasks = GetTasksByUser(userId, includeAssigned: true, includeCreated: false);
+            // فقط تسک‌هایی که کاربر سازنده آن‌ها نیست ولی منتصب شده
+            var tasks = GetTasksByUser(userId, includeAssigned: true, includeCreated: false)
+                .Where(t => t.CreatorUserId != userId) // اضافه کردن این شرط
+                .ToList();
             model.Tasks = tasks.Select(MapToTaskViewModel).ToList();
         }
+        /// <summary>
+        /// بارگذاری تسک‌های من با گروه‌بندی خاص
+        /// </summary>
+        private async Task LoadMyTasksGroupedAsync(TaskListForIndexViewModel model, string userId)
+        {
+            try
+            {
+                if (model.GroupedTasks == null)
+                    model.GroupedTasks = new TaskGroupedViewModel();
 
+                if (model.GroupedTasks.MyTasksGrouped == null)
+                    model.GroupedTasks.MyTasksGrouped = new MyTasksGroupedViewModel();
+
+                // تسک‌های دریافتی (منتصب به من)
+                var assignedToMe = model.Tasks.Where(t =>
+                    t.AssignmentsTaskUser != null &&
+                    t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId) &&
+                    t.CreatorUserId != userId).ToList();
+
+                model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = assignedToMe;
+
+                // تسک‌های واگذار شده (گروه‌بندی بر اساس انجام‌دهنده)
+                var assignedByMe = model.Tasks.Where(t => t.CreatorUserId == userId).ToList();
+
+                var assignedByMeGrouped = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
+
+                foreach (var task in assignedByMe)
+                {
+                    if (task.AssignmentsTaskUser != null)
+                    {
+                        foreach (var assignment in task.AssignmentsTaskUser)
+                        {
+                            var assigneeInfo = new AssigneeInfo
+                            {
+                                Id = assignment.AssignedUserId,
+                                FullName = assignment.AssignedUserName,
+                                Type = "User",
+                                IsTeam = false
+                            };
+
+                            if (!assignedByMeGrouped.ContainsKey(assigneeInfo))
+                                assignedByMeGrouped[assigneeInfo] = new List<TaskViewModel>();
+
+                            assignedByMeGrouped[assigneeInfo].Add(task);
+                        }
+                    }
+                }
+
+                model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = assignedByMeGrouped;
+            }
+            catch (Exception ex)
+            {
+                // در صورت خطا، گروه‌بندی خالی
+                if (model.GroupedTasks?.MyTasksGrouped != null)
+                {
+                    model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = new List<TaskViewModel>();
+                    model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
+                }
+            }
+        }
         /// <summary>
         /// تکمیل داده‌های مدل ایجاد تسک
         /// </summary>
@@ -1597,8 +1706,7 @@ namespace MahERP.DataModelLayer.Repository
                     UserStats = stats,
                     UrgentTasks = urgentTasks,
                     RecentActivities = recentActivities,
-                    CompletedThisWeek = await GetCompletedTasksCountThisWeekAsync(userId),
-                    InProgressThisWeek = await GetInProgressTasksCountThisWeekAsync(userId)
+                  
                 };
             }
             catch (Exception ex)
@@ -1608,7 +1716,7 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// دریافت تسک‌های واگذار شده توسط کاربر
+        /// دریافت تسک‌های واگذارشده توسط کاربر
         /// </summary>
         public async Task<TasksListViewModel> GetTasksAssignedByUserAsync(string userId, TaskFilterViewModel filters)
         {
@@ -1619,6 +1727,7 @@ namespace MahERP.DataModelLayer.Repository
                     .Include(t => t.TaskAssignments)
                         .ThenInclude(ta => ta.AssignedUser)
                     .Include(t => t.TaskCategory)
+                    .Include(t => t.Stakeholder)
                     .AsQueryable();
 
                 // اعمال فیلترها
@@ -1635,7 +1744,6 @@ namespace MahERP.DataModelLayer.Repository
                     NeedsAttentionCount = taskViewModels.Count(t =>
                         (t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2) ||
                         (t.DueDate.HasValue && t.DueDate.Value.Date <= DateTime.Now.Date.AddDays(1))),
-
                     OverdueCount = taskViewModels.Count(t =>
                         t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2),
                     CompletedCount = taskViewModels.Count(t => t.Status == 2),
@@ -1724,7 +1832,7 @@ namespace MahERP.DataModelLayer.Repository
                     .AsQueryable();
 
                 // اعمال فیلترها
-                if (!string.IsNullOrEmpty(filters?.FilterType))
+                if (!string.IsNullOrEmpty(filters?.FilterType) && filters.FilterType != "all")
                 {
                     switch (filters.FilterType.ToLower())
                     {
@@ -1758,24 +1866,27 @@ namespace MahERP.DataModelLayer.Repository
                     IsSent = r.IsSent,
                     IsRead = r.IsRead,
                     Priority = r.Priority,
-                    EventTypeIcon = GetEventTypeIcon(r.EventType),
-                    EventTypeColor = GetEventTypeColor(r.EventType)
+             
                 }).ToList();
 
-                // محاسبه آمار
+                // محاسبه آمار (روی کل داده‌ها، نه فقط فیلتر شده)
+                var allReminders = await _context.TaskReminderEvent_Tbl
+                    .Where(r => r.RecipientUserId == userId)
+                    .ToListAsync();
+
                 var stats = new TaskRemindersStatsViewModel
                 {
-                    PendingCount = reminders.Count(r => !r.IsSent && r.ScheduledDateTime <= DateTime.Now),
-                    SentCount = reminders.Count(r => r.IsSent),
-                    OverdueCount = reminders.Count(r => !r.IsSent && r.ScheduledDateTime < DateTime.Now.AddDays(-1)),
-                    TodayCount = reminders.Count(r => r.ScheduledDateTime.Date == DateTime.Now.Date)
+                    PendingCount = allReminders.Count(r => !r.IsSent && r.ScheduledDateTime <= DateTime.Now),
+                    SentCount = allReminders.Count(r => r.IsSent),
+                    OverdueCount = allReminders.Count(r => !r.IsSent && r.ScheduledDateTime < DateTime.Now.AddDays(-1)),
+                    TodayCount = allReminders.Count(r => r.ScheduledDateTime.Date == DateTime.Now.Date)
                 };
 
                 return new TaskRemindersViewModel
                 {
                     Reminders = reminderViewModels,
                     Stats = stats,
-                    Filters = filters,
+                    Filters = filters ?? new TaskReminderFilterViewModel { FilterType = "all" },
                     TotalCount = reminderViewModels.Count,
                     CurrentPage = filters?.Page ?? 1,
                     PageSize = filters?.PageSize ?? 20
@@ -1786,7 +1897,6 @@ namespace MahERP.DataModelLayer.Repository
                 throw new Exception($"خطا در دریافت یادآوری‌ها: {ex.Message}", ex);
             }
         }
-
         /// <summary>
         /// دریافت آمار تسک‌ها برای کاربر
         /// </summary>
@@ -1795,7 +1905,7 @@ namespace MahERP.DataModelLayer.Repository
             try
             {
                 // تسک‌های من
-                var myTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: false);
+                var myTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: true);
 
                 // تسک‌های واگذار شده
                 var assignedByMe = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: false, includeCreated: true);
@@ -1886,8 +1996,6 @@ namespace MahERP.DataModelLayer.Repository
                     {
                         Title = GetActivityTitle(t.Status),
                         Description = $"{t.Title} - {t.TaskCode}",
-                        Icon = GetActivityIcon(t.Status),
-                        IconClass = GetActivityIconClass(t.Status),
                         ActivityDate = t.LastUpdateDate ?? t.CreateDate,
                         TimeAgo = CalculateTimeAgo(t.LastUpdateDate ?? t.CreateDate),
                         Url = $"/AdminArea/Tasks/Details/{t.Id}"
@@ -1997,154 +2105,172 @@ namespace MahERP.DataModelLayer.Repository
 
         #endregion
 
-        #region Helper Methods
+        #region Missing Helper Methods Implementation
 
+        /// <summary>
+        /// اعمال فیلترها روی IQueryable تسک‌ها
+        /// </summary>
+        private IQueryable<Tasks> ApplyFiltersToQuery(IQueryable<Tasks> query, TaskFilterViewModel filters)
+        {
+            if (filters == null) return query;
+
+            // فیلتر شعبه
+            if (filters.BranchId.HasValue)
+            {
+                query = query.Where(t => t.BranchId == filters.BranchId.Value);
+            }
+
+            // فیلتر دسته‌بندی
+            if (filters.CategoryId.HasValue)
+            {
+                query = query.Where(t => t.TaskCategoryId == filters.CategoryId.Value);
+            }
+
+            // فیلتر وضعیت
+            if (filters.TaskStatus.HasValue && filters.TaskStatus != TaskStatusFilter.All)
+            {
+                switch (filters.TaskStatus.Value)
+                {
+                    case TaskStatusFilter.Completed:
+                        query = query.Where(t => t.CompletionDate.HasValue);
+                        break;
+                    case TaskStatusFilter.InProgress:
+                        query = query.Where(t => !t.CompletionDate.HasValue && t.IsActive);
+                        break;
+                    case TaskStatusFilter.Overdue:
+                        query = query.Where(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && t.DueDate < DateTime.Now);
+                        break;
+                    case TaskStatusFilter.Created:
+                        query = query.Where(t => t.Status == 0);
+                        break;
+                    case TaskStatusFilter.Approved:
+                        query = query.Where(t => t.Status == 3);
+                        break;
+                    case TaskStatusFilter.Rejected:
+                        query = query.Where(t => t.Status == 4);
+                        break;
+                }
+            }
+
+            // فیلتر اولویت
+            if (filters.TaskPriority.HasValue && filters.TaskPriority != TaskPriorityFilter.All)
+            {
+                switch (filters.TaskPriority.Value)
+                {
+                    case TaskPriorityFilter.Normal:
+                        query = query.Where(t => t.Priority == 0 && !t.Important);
+                        break;
+                    case TaskPriorityFilter.Important:
+                        query = query.Where(t => t.Important || t.Priority == 1);
+                        break;
+                    case TaskPriorityFilter.Urgent:
+                        query = query.Where(t => t.Priority == 2);
+                        break;
+                }
+            }
+
+            // فیلتر طرف حساب
+            if (filters.StakeholderId.HasValue)
+            {
+                query = query.Where(t => t.StakeholderId == filters.StakeholderId.Value);
+            }
+
+            // فیلتر جستجو در متن
+            if (!string.IsNullOrEmpty(filters.SearchTerm))
+            {
+                query = query.Where(t => 
+                    t.Title.Contains(filters.SearchTerm) ||
+                    (t.Description != null && t.Description.Contains(filters.SearchTerm)) ||
+                    t.TaskCode.Contains(filters.SearchTerm));
+            }
+
+            return query;
+        }
+
+        /// <summary>
+        /// دریافت تعداد یادآوری‌های فعال کاربر
+        /// </summary>
         private async Task<int> GetActiveRemindersCountAsync(string userId)
         {
             try
             {
-                var today = DateTime.Now.Date;
                 return await _context.TaskReminderEvent_Tbl
-                    .CountAsync(r => r.RecipientUserId == userId &&
-                                   r.ScheduledDateTime.Date <= today &&
-                                   !r.IsSent);
+                    .Where(r => r.RecipientUserId == userId && 
+                               !r.IsRead && 
+                               r.ScheduledDateTime <= DateTime.Now)
+                    .CountAsync();
             }
-            catch
+            catch (Exception)
             {
                 return 0;
             }
         }
 
-        private async Task<int> GetCompletedTasksCountThisWeekAsync(string userId)
-        {
-            var weekStart = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek);
-            var weekEnd = weekStart.AddDays(6);
-
-            var myTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: false);
-            return myTasks.Count(t => !t.IsDeleted &&
-                                    t.CompletionDate.HasValue &&
-                                    t.CompletionDate.Value.Date >= weekStart &&
-                                    t.CompletionDate.Value.Date <= weekEnd);
-        }
-
-        private async Task<int> GetInProgressTasksCountThisWeekAsync(string userId)
-        {
-            var myTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: false);
-            return myTasks.Count(t => !t.IsDeleted && t.Status == 1);
-        }
-
-        private IQueryable<Tasks> ApplyFiltersToQuery(IQueryable<Tasks> query, TaskFilterViewModel filters)
-        {
-            if (filters == null) return query;
-
-            if (!string.IsNullOrEmpty(filters.SearchTerm))
-            {
-                query = query.Where(t => t.Title.Contains(filters.SearchTerm) ||
-                                       (t.Description != null && t.Description.Contains(filters.SearchTerm)) ||
-                                       t.TaskCode.Contains(filters.SearchTerm));
-            }
-
-            // سایر فیلترها...
-
-            return query;
-        }
-
+        /// <summary>
+        /// دریافت نام طرف حساب تسک
+        /// </summary>
         private string GetTaskStakeholderName(int taskId)
         {
-            var stakeholder = _context.Tasks_Tbl
-                .Where(t => t.Id == taskId)
-                .Include(t => t.Stakeholder)
-                .Select(t => t.Stakeholder)
-                .FirstOrDefault();
+            try
+            {
+                var stakeholderName = _context.Tasks_Tbl
+                    .Where(t => t.Id == taskId)
+                    .Join(_context.Stakeholder_Tbl,
+                          t => t.StakeholderId,
+                          s => s.Id,
+                          (t, s) => new { s.FirstName, s.LastName, s.CompanyName })
+                    .Select(s => !string.IsNullOrEmpty(s.CompanyName) ? s.CompanyName : $"{s.FirstName} {s.LastName}")
+                    .FirstOrDefault();
 
-            return stakeholder != null ? $"{stakeholder.FirstName} {stakeholder.LastName}" : "";
+                return stakeholderName ?? "ندارد";
+            }
+            catch (Exception)
+            {
+                return "ندارد";
+            }
         }
 
+        /// <summary>
+        /// دریافت عنوان فعالیت بر اساس وضعیت
+        /// </summary>
         private string GetActivityTitle(byte status)
         {
             return status switch
             {
-                0 => "تسک جدید ایجاد شد",
-                1 => "تسک در حال انجام",
+                0 => "تسک ایجاد شد",
+                1 => "تسک در حال انجام است",
                 2 => "تسک تکمیل شد",
-                3 => "تسک تأیید شد",
+                3 => "تسک تایید شد",
                 4 => "تسک رد شد",
-                _ => "تسک بروزرسانی شد"
+                5 => "تسک در انتظار است",
+                _ => "وضعیت تسک تغییر کرد"
             };
         }
 
-        private string GetActivityIcon(byte status)
+        /// <summary>
+        /// محاسبه زمان گذشته از تاریخ
+        /// </summary>
+        private string CalculateTimeAgo(DateTime dateTime)
         {
-            return status switch
-            {
-                0 => "fa-plus-circle",
-                1 => "fa-clock",
-                2 => "fa-check-circle",
-                3 => "fa-thumbs-up",
-                4 => "fa-times-circle",
-                _ => "fa-edit"
-            };
-        }
-
-        private string GetActivityIconClass(byte status)
-        {
-            return status switch
-            {
-                0 => "primary",
-                1 => "warning",
-                2 => "success",
-                3 => "info",
-                4 => "danger",
-                _ => "secondary"
-            };
-        }
-
-        private string GetEventTypeIcon(byte eventType)
-        {
-            return eventType switch
-            {
-                0 => "fa-info-circle",
-                1 => "fa-bell",
-                2 => "fa-clock",
-                3 => "fa-play",
-                4 => "fa-stop",
-                5 => "fa-exclamation-triangle",
-                _ => "fa-bell"
-            };
-        }
-
-        private string GetEventTypeColor(byte eventType)
-        {
-            return eventType switch
-            {
-                0 => "info",
-                1 => "primary",
-                2 => "warning",
-                3 => "success",
-                4 => "danger",
-                5 => "warning",
-                _ => "secondary"
-            };
-        }
-
-        private string CalculateTimeAgo(DateTime activityDate)
-        {
-            var timeSpan = DateTime.Now - activityDate;
+            var timeSpan = DateTime.Now - dateTime;
 
             if (timeSpan.TotalMinutes < 1)
-                return "هم اکنون";
+                return "اکنون";
             if (timeSpan.TotalMinutes < 60)
                 return $"{(int)timeSpan.TotalMinutes} دقیقه پیش";
             if (timeSpan.TotalHours < 24)
                 return $"{(int)timeSpan.TotalHours} ساعت پیش";
             if (timeSpan.TotalDays < 30)
                 return $"{(int)timeSpan.TotalDays} روز پیش";
-
-            return activityDate.ToString("yyyy/MM/dd");
+            if (timeSpan.TotalDays < 365)
+                return $"{(int)(timeSpan.TotalDays / 30)} ماه پیش";
+            
+            return $"{(int)(timeSpan.TotalDays / 365)} سال پیش";
         }
 
         #endregion
-        #region Additional Missing Methods
+
+        #region Additional Missing Interface Methods
 
         /// <summary>
         /// بررسی یکتایی کد تسک (نسخه Async)
@@ -2165,8 +2291,6 @@ namespace MahERP.DataModelLayer.Repository
         /// <summary>
         /// ذخیره عملیات‌های تسک در دیتابیس
         /// </summary>
-        /// <param name="taskId">شناسه تسک</param>
-        /// <param name="operations">لیست عملیات‌ها</param>
         public void SaveTaskOperations(int taskId, List<TaskOperationViewModel> operations)
         {
             try
@@ -2184,9 +2308,9 @@ namespace MahERP.DataModelLayer.Repository
                         Title = operation.Title,
                         OperationOrder = operation.OperationOrder,
                         IsRequired = operation.IsRequired,
-                        IsCompleted = operation.IsCompleted ,
+                        IsCompleted = operation.IsCompleted,
                         EstimatedHours = operation.EstimatedHours,
-                        IsStarred = operation.IsStarred ,
+                        IsStarred = operation.IsStarred,
                         CreatedDate = DateTime.Now
                     };
 
@@ -2201,12 +2325,10 @@ namespace MahERP.DataModelLayer.Repository
             }
         }
 
-        #endregion
-
         /// <summary>
-        /// دریافت متن وضعیت تسک
+        /// دریافت متن وضعیت تسک - تبدیل به public
         /// </summary>
-        private string GetTaskStatusText(byte status)
+        public string GetTaskStatusText(byte status)
         {
             return status switch
             {
@@ -2221,9 +2343,9 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// دریافت کلاس badge برای وضعیت تسک
+        /// دریافت کلاس badge برای وضعیت تسک - تبدیل به public
         /// </summary>
-        private string GetTaskStatusBadgeClass(byte status)
+        public string GetTaskStatusBadgeClass(byte status)
         {
             return status switch
             {
@@ -2236,5 +2358,7 @@ namespace MahERP.DataModelLayer.Repository
                 _ => "bg-dark"
             };
         }
+
+        #endregion
     }
 }

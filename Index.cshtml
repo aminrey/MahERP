@@ -1,0 +1,385 @@
+﻿@model TaskListForIndexViewModel
+@{
+    ViewData["Title"] = ViewBag.Title ?? "مدیریت تسک‌ها";
+    bool isMyTasks = ViewBag.IsMyTasks ?? false;
+    bool isAssignedByMe = ViewBag.IsAssignedByMe ?? false;
+    bool isSupervisedTasks = ViewBag.IsSupervisedTasks ?? false;
+    bool showFilterRequired = (Model.Filters.ViewType == TaskViewType.AllTasks) && !Model.HasActiveFilters;
+}
+
+<!-- صفحه اصلی مدیریت تسک‌ها -->
+<div class="content">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center py-2 text-center text-md-start">
+        <div class="flex-grow-1 mb-1 mb-md-0">
+            <h1 class="h3 fw-bold mb-1">
+                @ViewData["Title"]
+                @if (Model.HasActiveFilters)
+                {
+                    <small class="text-muted ms-2">
+                        <i class="fa fa-filter"></i>
+                        فیلتر شده
+                    </small>
+                }
+                
+                @* نمایش badge بر اساس نوع لیست *@
+                @if (isAssignedByMe)
+                {
+                    <span class="badge bg-info ms-2">واگذار شده</span>
+                }
+                else if (isSupervisedTasks)
+                {
+                    <span class="badge bg-warning ms-2">نظارتی</span>
+                }
+                else if (isMyTasks)
+                {
+                    <span class="badge bg-primary ms-2">شخصی</span>
+                }
+            </h1>
+            <p class="text-muted mb-0">
+                @if (showFilterRequired)
+                {
+                    <span class="text-warning">برای مشاهده تسک‌ها ابتدا فیلترهای مورد نظر را انتخاب کنید</span>
+                }
+                else
+                {
+                    <span>مجموع @Model.Tasks.Count تسک</span>
+                    @if (Model.Statistics.TotalTasks > Model.Tasks.Count)
+                    {
+                        <span>از @Model.Statistics.TotalTasks تسک کل</span>
+                    }
+                }
+            </p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="mt-3 mt-md-0 ms-md-3">
+            <div class="btn-group" role="group">
+                @if (!isSupervisedTasks)
+                {
+                    <a asp-action="CreateNewTask" class="btn btn-success">
+                        <i class="fa fa-plus me-1"></i> تسک جدید
+                    </a>
+                }
+                
+                <a asp-action="TaskCalendar" class="btn btn-outline-primary">
+                    <i class="fa fa-calendar me-1"></i> تقویم
+                </a>
+                
+                <button type="button" class="btn @(Model.HasActiveFilters ? "btn-warning" : "btn-outline-secondary")" 
+                        data-bs-toggle="collapse" data-bs-target="#advanced-filters" aria-expanded="@(Model.HasActiveFilters ? "true" : "false")">
+                    <i class="fa fa-filter me-1"></i> 
+                    فیلترها
+                    @if (Model.HasActiveFilters)
+                    {
+                        <span class="badge bg-light text-dark ms-1">فعال</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick View Tabs -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-content p-0">
+            <div class="nav nav-tabs nav-tabs-alt" role="tablist">
+                @if (!isAssignedByMe && !isSupervisedTasks)
+                {
+                    <a href="@Url.Action("Index", new { ViewType = TaskViewType.AllTasks })" 
+                       class="nav-item nav-link @(Model.Filters.ViewType == TaskViewType.AllTasks ? "active" : "")" 
+                       role="tab">
+                        <i class="fa fa-list me-1"></i>
+                        همه تسک‌ها
+                        <span class="badge bg-primary-light text-primary ms-1">@Model.Statistics.TotalTasks</span>
+                    </a>
+                    <a href="@Url.Action("Index", new { ViewType = TaskViewType.MyTasks })" 
+                       class="nav-item nav-link @(Model.Filters.ViewType == TaskViewType.MyTasks ? "active" : "")" 
+                       role="tab">
+                        <i class="fa fa-user me-1"></i>
+                        تسک‌های من
+                        <span class="badge bg-primary-light text-primary ms-1">@Model.Statistics.MyTasks</span>
+                    </a>
+                    <a href="@Url.Action("Index", new { ViewType = TaskViewType.AssignedToMe })" 
+                       class="nav-item nav-link @(Model.Filters.ViewType == TaskViewType.AssignedToMe ? "active" : "")" 
+                       role="tab">
+                        <i class="fa fa-inbox me-1"></i>
+                        منتصب به من
+                        <span class="badge bg-primary-light text-primary ms-1">@Model.Statistics.AssignedToMe</span>
+                    </a>
+                    <a href="@Url.Action("Index", new { ViewType = TaskViewType.MyTeamsHierarchy })" 
+                       class="nav-item nav-link @(Model.Filters.ViewType == TaskViewType.MyTeamsHierarchy ? "active" : "")" 
+                       role="tab">
+                        <i class="fa fa-sitemap me-1"></i>
+                        تیمی
+                        <span class="badge bg-primary-light text-primary ms-1">@(Model.Statistics.TeamTasks + Model.Statistics.SubTeamTasks)</span>
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("Index")" class="nav-item nav-link" role="tab">
+                        <i class="fa fa-home me-1"></i> همه تسک‌ها
+                    </a>
+                    <a href="@Url.Action("AssignedByMe")" class="nav-item nav-link @(isAssignedByMe ? "active" : "")" role="tab">
+                        <i class="fa fa-share me-1"></i> واگذار شده
+                    </a>
+                    <a href="@Url.Action("SupervisedTasks")" class="nav-item nav-link @(isSupervisedTasks ? "active" : "")" role="tab">
+                        <i class="fa fa-eye me-1"></i> نظارتی
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Filters -->
+<div class="content">
+    <div class="collapse @(Model.HasActiveFilters || showFilterRequired ? "show" : "")" id="advanced-filters">
+        <div class="block block-rounded @(showFilterRequired ? "border-warning" : "")">
+            <div class="block-header block-header-default @(showFilterRequired ? "bg-warning-light" : "")">
+                <h3 class="block-title">
+                    <i class="fa fa-filter me-1"></i>
+                    @if (showFilterRequired)
+                    {
+                        <span class="text-warning">فیلترهای مورد نیاز</span>
+                    }
+                    else
+                    {
+                        <span>فیلترهای پیشرفته</span>
+                    }
+                </h3>
+                <div class="block-options">
+                    @if (!showFilterRequired)
+                    {
+                        <button type="button" class="btn-block-option" data-bs-toggle="collapse" data-bs-target="#advanced-filters">
+                            <i class="si si-arrow-up"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="block-content">
+                @if (showFilterRequired)
+                {
+                    <div class="alert alert-warning mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fa fa-exclamation-triangle fa-2x me-3"></i>
+                            <div>
+                                <h5 class="mb-1">نیاز به فیلتر</h5>
+                                <p class="mb-0">برای مشاهده تسک‌ها در این بخش، لطفاً حداقل یکی از فیلترهای زیر را انتخاب کنید:</p>
+                                <ul class="mt-2 mb-0">
+                                    <li>شعبه یا تیم خاص</li>
+                                    <li>کاربر مسئول</li>
+                                    <li>دسته‌بندی یا طرف حساب</li>
+                                    <li>وضعیت یا اولویت خاص</li>
+                                    <li>جستجو در متن</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                }
+                
+                <!-- فرم فیلترها - کد موجود... -->
+                <form method="get" asp-action="Index" id="filterForm" class="needs-validation" novalidate>
+                    <input type="hidden" asp-for="Filters.ViewType" />
+                    
+                    <!-- Row 1: Basic Filters -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium @(showFilterRequired ? "text-warning" : "")">شعبه</label>
+                            <select asp-for="Filters.BranchId" class="form-select js-select2 @(showFilterRequired ? "border-warning" : "")" 
+                                    asp-items="@(new SelectList(Model.branchListInitial ?? new List<BranchViewModel>(), "Id", "Name", Model.Filters.BranchId))"
+                                    data-placeholder="انتخاب شعبه">
+                                <option value="">همه شعبه‌ها</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium @(showFilterRequired ? "text-warning" : "")">تیم</label>
+                            <select asp-for="Filters.TeamId" class="form-select js-select2 @(showFilterRequired ? "border-warning" : "")" 
+                                    asp-items="@(new SelectList(Model.TeamsInitial ?? new List<TeamViewModel>(), "Id", "Title", Model.Filters.TeamId))"
+                                    data-placeholder="انتخاب تیم">
+                                <option value="">همه تیم‌ها</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium @(showFilterRequired ? "text-warning" : "")">کاربر مسئول</label>
+                            <select asp-for="Filters.UserId" class="form-select js-select2 @(showFilterRequired ? "border-warning" : "")" 
+                                    asp-items="@(new SelectList(Model.UsersInitial ?? new List<UserViewModelFull>(), "Id", "FullNamesString", Model.Filters.UserId))"
+                                    data-placeholder="انتخاب کاربر">
+                                <option value="">همه کاربران</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium @(showFilterRequired ? "text-warning" : "")">دسته‌بندی</label>
+                            <select asp-for="Filters.CategoryId" class="form-select js-select2 @(showFilterRequired ? "border-warning" : "")" 
+                                    asp-items="@(new SelectList(Model.TaskCategoryInitial ?? new List<TaskCategory>(), "Id", "Title", Model.Filters.CategoryId))"
+                                    data-placeholder="انتخاب دسته‌بندی">
+                                <option value="">همه دسته‌بندی‌ها</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Row 2: Status & Priority Filters -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium @(showFilterRequired ? "text-warning" : "")">وضعیت تسک</label>
+                            <select asp-for="Filters.TaskStatus" class="form-select @(showFilterRequired ? "border-warning" : "")"
+                                    asp-items="Html.GetEnumSelectList<TaskStatusFilter>()">
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium @(showFilterRequired ? "text-warning" : "")">اولویت</label>
+                            <select asp-for="Filters.TaskPriority" class="form-select @(showFilterRequired ? "border-warning" : "")"
+                                    asp-items="Html.GetEnumSelectList<TaskPriorityFilter>()">
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium @(showFilterRequired ? "text-warning" : "")">طرف حساب</label>
+                            <select asp-for="Filters.StakeholderId" class="form-select js-select2 @(showFilterRequired ? "border-warning" : "")" 
+                                    asp-items="@(new SelectList(Model.StakeholdersInitial ?? new List<StakeholderViewModel>(), "Id", "CompanyName", Model.Filters.StakeholderId))"
+                                    data-placeholder="انتخاب طرف حساب">
+                                <option value="">همه طرف حساب‌ها</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium @(showFilterRequired ? "text-warning" : "")">جستجو</label>
+                            <div class="input-group">
+                                <input asp-for="Filters.SearchTerm" class="form-control @(showFilterRequired ? "border-warning" : "")" 
+                                       placeholder="جستجو در عنوان، کد یا توضیحات..."
+                                       autocomplete="off">
+                                <button type="submit" class="btn btn-@(showFilterRequired ? "warning" : "primary")">
+                                    <i class="fa fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <button type="submit" class="btn btn-@(showFilterRequired ? "warning" : "primary")">
+                                    <i class="fa fa-search me-1"></i> 
+                                    @(showFilterRequired ? "اعمال فیلتر و نمایش تسک‌ها" : "اعمال فیلترها")
+                                </button>
+                                <a href="@Url.Action("Index", new { ViewType = Model.Filters.ViewType })" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fa fa-times me-1"></i> پاک کردن
+                                </a>
+                                @if (Model.HasActiveFilters)
+                                {
+                                    <div class="badge bg-success">
+                                        <i class="fa fa-check me-1"></i>
+                                        فیلترهای فعال اعمال شده
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+@if (!showFilterRequired)
+{
+    <!-- کد کارت‌های آماری موجود... -->
+}
+
+<!-- Tasks Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-tasks me-1"></i>
+                @if (showFilterRequired)
+                {
+                    <span>لیست تسک‌ها - نیاز به فیلتر</span>
+                }
+                else
+                {
+                    <span>لیست تسک‌ها</span>
+                    @if (Model.Tasks.Count > 0)
+                    {
+                        <small class="text-muted ms-2">(@Model.Tasks.Count تسک)</small>
+                    }
+                }
+            </h3>
+            
+            @if (!showFilterRequired)
+            {
+                <!-- Options dropdown - کد موجود... -->
+            }
+        </div>
+        
+        <div class="block-content">
+            @if (showFilterRequired)
+            {
+                <!-- نمایش پیام نیاز به فیلتر -->
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fa fa-filter fa-4x text-warning"></i>
+                    </div>
+                    <h4 class="text-warning mb-3">برای دیدن تسک‌ها ابتدا فیلتر کنید</h4>
+                    <p class="text-muted mb-4">برای مشاهده تسک‌ها در این بخش، لطفاً از فیلترهای بالا استفاده کنید.</p>
+                    <button type="button" class="btn btn-warning" onclick="$('#advanced-filters').collapse('show'); $('select.js-select2:first').focus();">
+                        <i class="fa fa-filter me-1"></i> انتخاب فیلتر
+                    </button>
+                </div>
+            }
+            else
+            {
+                <!-- نمایش بر اساس نوع انتخاب شده -->
+                @if (Model.Filters.ViewType == TaskViewType.MyTeamsHierarchy)
+                {
+                    <!-- نمایش سلسله مراتبی -->
+                    @await Html.PartialAsync("_TasksHierarchyView", Model)
+                }
+                else if (Model.Filters.ViewType == TaskViewType.MyTasks && Model.GroupedTasks?.MyTasksGrouped != null)
+                {
+                    <!-- نمایش گروه‌بندی شده برای "تسک‌های من" -->
+                    @await Html.PartialAsync("_MyTasksGroupedView", Model)
+                }
+                else
+                {
+                    <!-- نمایش عادی -->
+                    @if (Model.Tasks.Any())
+                    {
+                        <!-- کد جدول و کارت موجود... -->
+                    }
+                    else
+                    {
+                        <!-- حالت خالی -->
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="fa fa-tasks fa-4x text-muted"></i>
+                            </div>
+                            <h4 class="text-muted mb-3">هیچ تسکی یافت نشد</h4>
+                            @if (Model.HasActiveFilters)
+                            {
+                                <p class="text-muted mb-4">فیلترهای انتخابی هیچ تسکی را نشان نمی‌دهد.</p>
+                                <a href="@Url.Action("Index", new { ViewType = Model.Filters.ViewType })" class="btn btn-outline-primary">
+                                    <i class="fa fa-times me-1"></i> پاک کردن فیلترها
+                                </a>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-4">هنوز هیچ تسکی ایجاد نشده است.</p>
+                                @if (!isSupervisedTasks)
+                                {
+                                    <a asp-action="CreateNewTask" class="btn btn-primary">
+                                        <i class="fa fa-plus me-1"></i> ایجاد اولین تسک
+                                    </a>
+                                }
+                            }
+                        </div>
+                    }
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ادامه کد... -->

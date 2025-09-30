@@ -388,5 +388,22 @@ namespace MahERP.DataModelLayer.Repository
         Task DeleteReadRemindersAsync(string userId);
 
         #endregion
+
+        #region Missing Methods - Added from TaskRepository Implementation
+
+      
+
+
+        /// <summary>
+        /// دریافت متن وضعیت تسک - پیاده‌سازی شده در TaskRepository
+        /// </summary>
+        string GetTaskStatusText(byte status);
+
+        /// <summary>
+        /// دریافت کلاس CSS برای وضعیت تسک - پیاده‌سازی شده در TaskRepository
+        /// </summary>
+        string GetTaskStatusBadgeClass(byte status);
+
+        #endregion
     }
 }

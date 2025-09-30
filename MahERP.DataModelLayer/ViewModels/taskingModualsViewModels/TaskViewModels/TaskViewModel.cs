@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 
@@ -613,4 +614,22 @@ public class ProjectStatsViewModel
 {
     public int StakeholderTasksCount { get; set; }
     public int CategoryTasksCount { get; set; }
+}
+
+
+
+/// <summary>
+/// گروه‌بندی ویژه برای صفحه "تسک‌های من"
+/// </summary>
+public class MyTasksGroupedViewModel
+{
+    /// <summary>
+    /// تسک‌های دریافتی (واگذار شده به من)
+    /// </summary>
+    public List<TaskViewModel> TasksAssignedToMe { get; set; } = new List<TaskViewModel>();
+
+    /// <summary>
+    /// تسک‌های واگذار شده (گروه‌بندی شده بر اساس انجام‌دهنده)
+    /// </summary>
+    public Dictionary<AssigneeInfo, List<TaskViewModel>> TasksAssignedByMe { get; set; } = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -48,34 +49,5 @@ namespace MahERP.DataModelLayer.ViewModels.Core
         public int NewThisMonth { get; set; }
     }
 
-    public class RecentActivityViewModel
-    {
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public string Icon { get; set; }
-        public string IconClass { get; set; }
-        public DateTime ActivityDate { get; set; }
-        public string TimeAgo { get; set; }
-        public string Url { get; set; }
-    }
 
-    public class TaskSummaryViewModel
-    {
-        public int Id { get; set; }
-        public string TaskCode { get; set; }
-        public string Title { get; set; }
-        public byte Priority { get; set; }
-        public bool Important { get; set; }
-        public DateTime? DueDate { get; set; }
-        public byte Status { get; set; }
-        public bool IsOverdue { get; set; }
-        public string StatusText { get; set; }
-        public string StatusBadgeClass { get; set; }
-        public string StakeholderName { get; set; }
-
-        /// <summary>
-        /// تعداد روزهای مانده تا مهلت (منفی = تأخیر، صفر = امروز، مثبت = مانده)
-        /// </summary>
-        public int? DaysUntilDue => DueDate?.Date.Subtract(DateTime.Now.Date).Days;
-    }
 }

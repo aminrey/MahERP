@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Organization;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -21,6 +22,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public string? AssignedUserId { get; set; }
         [ForeignKey("AssignedUserId")]
         public virtual AppUsers? AssignedUser { get; set; }
+        /// <summary>
+        /// تیم هایی که این تسک به آن‌ها تخصیص داده شده است.
+        /// <para>این ویژگی شناسه تیمی را که تسک به او اختصاص داده شده نگهداری می‌کند.</para>
+        /// </summary>
+        public int? AssignedTeamId { get; set; }
+        [ForeignKey("AssignedTeamId")]
+        public virtual Team? AssignedTeam { get; set; }
 
         /// <summary>
         /// کاربری که این تسک را به کاربر دیگر تخصیص داده است.

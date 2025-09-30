@@ -28,16 +28,20 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         // گروه‌بندی تسک‌ها بر اساس نوع نمایش
         public TaskGroupedViewModel GroupedTasks { get; set; } = new TaskGroupedViewModel();
 
-        // خاصیت برای تشخیص وجود فیلتر فعال
-        public bool HasActiveFilters => 
-            Filters.BranchId.HasValue ||
-            Filters.TeamId.HasValue ||
-            !string.IsNullOrEmpty(Filters.UserId) ||
-            Filters.CategoryId.HasValue ||
-            Filters.StakeholderId.HasValue ||
-            !string.IsNullOrEmpty(Filters.SearchTerm) ||
-            (Filters.TaskPriority.HasValue && Filters.TaskPriority != TaskPriorityFilter.All) ||
-            (Filters.TaskStatus.HasValue && Filters.TaskStatus != TaskStatusFilter.All);
+        /// <summary>
+        /// آیا فیلترهای فعالی وجود دارد
+        /// </summary>
+        public bool HasActiveFilters { get; set; } = false;
+
+        /// <summary>
+        /// تسک‌های دریافتی (واگذار شده به من)
+        /// </summary>
+        public List<TaskViewModel> TasksAssignedToMe { get; set; } = new List<TaskViewModel>();
+
+        /// <summary>
+        /// تسک‌های واگذار شده (گروه‌بندی شده بر اساس انجام‌دهنده)
+        /// </summary>
+        public Dictionary<string, List<TaskViewModel>> TasksAssignedByMeGrouped { get; set; } = new Dictionary<string, List<TaskViewModel>>();
     }
 
     public class TaskFilterViewModel
@@ -90,8 +94,22 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
     public class TaskStatisticsViewModel
     {
         public int TotalTasks { get; set; }
-        public int MyTasks { get; set; }
+        
+        /// <summary>
+        /// تسک‌هایی که به من واگذار شده‌اند
+        /// </summary>
         public int AssignedToMe { get; set; }
+        
+        /// <summary>
+        /// تسک‌هایی که من به دیگران واگذار کرده‌ام
+        /// </summary>
+        public int AssignedByMe { get; set; }
+        
+        /// <summary>
+        /// مجموع تسک‌های من = دریافتی + واگذار شده
+        /// </summary>
+        public int MyTasks => AssignedToMe + AssignedByMe;
+        
         public int CompletedTasks { get; set; }
         public int OverdueTasks { get; set; }
         public int InProgressTasks { get; set; }
@@ -107,6 +125,11 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public List<TaskViewModel> AssignedToMe { get; set; } = new List<TaskViewModel>();
         public Dictionary<string, List<TaskViewModel>> TeamMemberTasks { get; set; } = new Dictionary<string, List<TaskViewModel>>();
         public Dictionary<string, List<TaskViewModel>> SubTeamTasks { get; set; } = new Dictionary<string, List<TaskViewModel>>();
+        
+        /// <summary>
+        /// گروه‌بندی ویژه برای صفحه "تسک‌های من"
+        /// </summary>
+        public MyTasksGroupedViewModel MyTasksGrouped { get; set; } = new MyTasksGroupedViewModel();
     }
 
     public enum TaskViewType
@@ -172,4 +195,70 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         [Display(Name = "تاخیردار")]
         Overdue = 99
     }
+
+
+
+    /// <summary>
+    /// اطلاعات انجام‌دهنده تسک
+    /// </summary>
+    public class AssigneeInfo
+    {
+        public string Id { get; set; }
+        public string FullName { get; set; }
+        public string Type { get; set; } // "User" یا "Team"
+        public bool IsTeam { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is AssigneeInfo other)
+                return Id == other.Id && Type == other.Type;
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, Type);
+        }
+    }
+
+
+
+    public class TaskSummaryViewModel
+    {
+        public int Id { get; set; }
+        public string TaskCode { get; set; }
+        public string Title { get; set; }
+        public byte Priority { get; set; }
+        public bool Important { get; set; }
+        public DateTime? DueDate { get; set; }
+        public byte Status { get; set; }
+        public bool IsOverdue { get; set; }
+        public string StatusText { get; set; }
+        public string StatusBadgeClass { get; set; }
+        public string StakeholderName { get; set; }
+        
+        /// <summary>
+        /// تعداد روزهای باقی‌مانده تا مهلت
+        /// </summary>
+        public int? DaysUntilDue 
+        {
+            get 
+            {
+                if (!DueDate.HasValue) return null;
+                return (DueDate.Value.Date - DateTime.Now.Date).Days;
+            }
+        }
+    }
+
+    public class RecentActivityViewModel
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Icon { get; set; }
+        public string IconClass { get; set; }
+        public DateTime ActivityDate { get; set; }
+        public string TimeAgo { get; set; }
+        public string Url { get; set; }
+    }
+
 }

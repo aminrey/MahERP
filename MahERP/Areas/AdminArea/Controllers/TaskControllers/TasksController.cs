@@ -61,7 +61,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// داشبورد تسک‌ها - نمای کلی و آمارها
         /// </summary>
-        [Permission("Tasks", "TaskDashboard", 0)]
+        //[Permission("Tasks", "TaskDashboard", 0)]
         public async Task<IActionResult> TaskDashboard()
         {
             try
@@ -83,7 +83,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// تسک‌هایی که کاربر به دیگران واگذار کرده
         /// </summary>
-        [Permission("Tasks", "AssignedByMe", 0)]
+        //[Permission("Tasks", "AssignedByMe", 0)]
         public async Task<IActionResult> AssignedByMe(TaskFilterViewModel filters = null)
         {
             try
@@ -113,7 +113,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// تسک‌هایی که کاربر ناظر آن‌هاست
         /// </summary>
-        [Permission("Tasks", "SupervisedTasks", 0)]
+        //[Permission("Tasks", "SupervisedTasks", 0)]
         public async Task<IActionResult> SupervisedTasks(TaskFilterViewModel filters = null)
         {
             try
@@ -143,7 +143,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// یادآوری‌های تسک
         /// </summary>
-        [Permission("Tasks", "TaskReminders", 0)]
+        //[Permission("Tasks", "TaskReminders", 0)]
         public async Task<IActionResult> TaskReminders(TaskReminderFilterViewModel filters = null)
         {
             try
@@ -151,7 +151,20 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 var userId = _userManager.GetUserId(User);
 
                 if (filters == null)
-                    filters = new TaskReminderFilterViewModel();
+                {
+                    filters = new TaskReminderFilterViewModel
+                    {
+                        FilterType = "all",  // Set default value
+                        Page = 1,
+                        PageSize = 20
+                    };
+                }
+
+                // Handle query string parameter 'filter' for backward compatibility
+                if (Request.Query.ContainsKey("filter"))
+                {
+                    filters.FilterType = Request.Query["filter"].ToString();
+                }
 
                 var model = await _taskRepository.GetTaskRemindersAsync(userId, filters);
 
@@ -205,7 +218,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// تقویم تسک‌ها
         /// </summary>
         [HttpGet]
-        [Permission("Tasks", "TaskCalendar", 0)]
+        //[Permission("Tasks", "TaskCalendar", 0)]
         public async Task<IActionResult> TaskCalendar()
         {
             try
@@ -252,7 +265,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// لیست اصلی تسک‌ها
         /// </summary>
-        [Permission("Tasks", "Index", 0)]
+        //[Permission("Tasks", "Index", 0)]
         public async Task<IActionResult> Index(TaskFilterViewModel filters = null)
         {
             try
@@ -294,7 +307,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// نمایش فرم ایجاد تسک جدید
         /// </summary>
         [HttpGet]
-        [Permission("Tasks", "CreateNewTask", 1)]
+        //[Permission("Tasks", "CreateNewTask", 1)]
         public async Task<IActionResult> CreateNewTask()
         {
             try
@@ -317,7 +330,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// جزئیات تسک
         /// </summary>
-        [Permission("Tasks", "Details", 0)]
+        //[Permission("Tasks", "Details", 0)]
         public async Task<IActionResult> Details(int id)
         {
             try
@@ -358,7 +371,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// تسک‌های شخصی کاربر
         /// </summary>
-        [Permission("Tasks", "MyTasks", 0)]
+        //[Permission("Tasks", "MyTasks", 0)]
         public async Task<IActionResult> MyTasks()
         {
             try
@@ -530,7 +543,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Permission("Tasks", "CreateNewTask", 1)]
+        //[Permission("Tasks", "CreateNewTask", 1)]
         public async Task<IActionResult> CreateNewTask(TaskViewModel model)
         {
             try

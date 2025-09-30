@@ -384,10 +384,10 @@
         
         <div class="block-content">
             <!-- نمایش بر اساس نوع انتخاب شده -->
-            @if (Model.Filters.ViewType == TaskViewType.MyTeamsHierarchy)
+                      @if (Model.Filters.ViewType == TaskViewType.MyTeamsHierarchy)
             {
                 <!-- نمایش سلسله مراتبی -->
-                @await Html.PartialAsync("_HierarchicalTaskView", Model.GroupedTasks)
+                @await Html.PartialAsync("_TasksHierarchyView", Model)
             }
             else
             {
@@ -638,9 +638,7 @@
                                                 <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-outline-primary btn-sm">
                                                     <i class="fa fa-eye me-1"></i> جزئیات
                                                 </a>
-                                                <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-outline-secondary btn-sm">
-                                                    <i class="fa fa-edit me-1"></i> ویرایش
-                                                </a>
+                                             
                                             </div>
                                         </div>
                                     </div>
@@ -1025,4 +1023,262 @@
             border-radius: 15px;
         }
     </style>
+}
+
+@if (Model.Filters.ViewType == TaskViewType.MyTasks)
+{
+    <!-- نمایش ویژه برای تسک‌های من -->
+    <div class="row">
+        <!-- تسک‌های دریافتی -->
+        <div class="col-lg-6 mb-4">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-inbox text-primary me-1"></i>
+                        تسک‌های دریافتی
+                        <span class="badge bg-primary ms-2">@Model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe.Count</span>
+                    </h3>
+                </div>
+                <div class="block-content p-0">
+                    @if (Model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-vcenter table-striped mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>تسک</th>
+                                        <th class="text-center d-none d-md-table-cell">وضعیت</th>
+                                        <th class="text-center d-none d-sm-table-cell">مهلت</th>
+                                        <th class="text-center">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var task in Model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe)
+                                    {
+                                        <tr class="@(task.IsOverdue && !task.CompletionDate.HasValue ? "table-warning" : "")">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="me-2">
+                                                        @if (task.Priority == 2)
+                                                        {
+                                                            <i class="fa fa-exclamation-triangle text-danger" title="فوری"></i>
+                                                        }
+                                                        else if (task.Important)
+                                                        {
+                                                            <i class="fa fa-star text-warning" title="مهم"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fa fa-circle text-muted"></i>
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <a asp-action="Details" asp-route-id="@task.Id" class="fw-bold text-primary text-decoration-none">
+                                                            @task.Title
+                                                        </a>
+                                                        <div class="text-muted small">کد: @task.TaskCode</div>
+                                                        @if (!string.IsNullOrEmpty(task.StakeholderName))
+                                                        {
+                                                            <div class="text-muted small">@task.StakeholderName</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center d-none d-md-table-cell">
+                                                @{
+                                                    var statusClass = task.Status switch
+                                                    {
+                                                        0 => "bg-secondary",
+                                                        1 => "bg-warning",
+                                                        2 => "bg-success",
+                                                        3 => "bg-info",
+                                                        4 => "bg-danger",
+                                                        _ => "bg-dark"
+                                                    };
+                                                    var statusText = task.Status switch
+                                                    {
+                                                        0 => "ایجاد شده",
+                                                        1 => "در حال انجام",
+                                                        2 => "تکمیل شده",
+                                                        3 => "تأیید شده",
+                                                        4 => "رد شده",
+                                                        _ => "نامشخص"
+                                                    };
+                                                }
+                                                <span class="badge @statusClass">@statusText</span>
+                                            </td>
+                                            <td class="text-center d-none d-sm-table-cell">
+                                                @if (task.DueDate.HasValue)
+                                                {
+                                                    var persianDate = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd");
+                                                    var isOverdue = task.DueDate.Value.Date < DateTime.Now.Date && !task.CompletionDate.HasValue;
+                                                    <span class="@(isOverdue ? "text-danger fw-bold" : "")">
+                                                        @persianDate
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a asp-action="Details" asp-route-id="@task.Id" 
+                                                       class="btn btn-outline-primary btn-sm" title="مشاهده جزئیات">
+                                                        <i class="fa fa-eye"></i>
+                                                    </a>
+                                                    <a asp-action="Edit" asp-route-id="@task.Id" 
+                                                       class="btn btn-outline-secondary btn-sm" title="ویرایش">
+                                                        <i class="fa fa-edit"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fa fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">هیچ تسک دریافتی ندارید</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <!-- تسک‌های واگذار شده -->
+        <div class="col-lg-6 mb-4">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-share text-info me-1"></i>
+                        تسک‌های واگذار شده
+                        <span class="badge bg-info ms-2">@Model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe.Sum(kvp => kvp.Value.Count)</span>
+                    </h3>
+                </div>
+                <div class="block-content p-0">
+                    @if (Model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe.Any())
+                    {
+                        @foreach (var assigneeGroup in Model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe)
+                        {
+                            <div class="mb-3 border-bottom">
+                                <!-- هدر گروه انجام‌دهنده -->
+                                <div class="d-flex align-items-center justify-content-between p-3 bg-light">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa @(assigneeGroup.Key.IsTeam ? "fa-users" : "fa-user") text-primary me-2"></i>
+                                        <h6 class="mb-0">
+                                            @assigneeGroup.Key.FullName
+                                            <small class="text-muted">(@(assigneeGroup.Key.IsTeam ? "تیم" : "فرد"))</small>
+                                        </h6>
+                                    </div>
+                                    <span class="badge bg-secondary">@assigneeGroup.Value.Count تسک</span>
+                                </div>
+                                
+                                <!-- جدول تسک‌های این انجام‌دهنده -->
+                                <div class="table-responsive">
+                                    <table class="table table-vcenter table-sm mb-0">
+                                        <tbody>
+                                            @foreach (var task in assigneeGroup.Value.Take(5)) 
+                                            {
+                                                <tr class="@(task.IsOverdue && !task.CompletionDate.HasValue ? "table-warning" : "")">
+                                                    <td style="width: 40px;">
+                                                        @if (task.Priority == 2)
+                                                        {
+                                                            <i class="fa fa-exclamation-triangle text-danger" title="فوری"></i>
+                                                        }
+                                                        else if (task.Important)
+                                                        {
+                                                            <i class="fa fa-star text-warning" title="مهم"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fa fa-circle text-muted"></i>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <div>
+                                                            <a asp-action="Details" asp-route-id="@task.Id" class="fw-semibold text-primary text-decoration-none">
+                                                                @task.Title
+                                                            </a>
+                                                            <div class="text-muted small">کد: @task.TaskCode</div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center" style="width: 100px;">
+                                                        @{
+                                                            var statusClass = task.Status switch
+                                                            {
+                                                                0 => "bg-secondary",
+                                                                1 => "bg-warning",
+                                                                2 => "bg-success",
+                                                                3 => "bg-info",
+                                                                4 => "bg-danger",
+                                                                _ => "bg-dark"
+                                                            };
+                                                        }
+                                                        <span class="badge @statusClass badge-sm">
+                                                            @(task.Status switch {
+                                                                0 => "ایجاد",
+                                                                1 => "انجام",
+                                                                2 => "تکمیل",
+                                                                3 => "تأیید",
+                                                                4 => "رد",
+                                                                _ => "؟"
+                                                            })
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center" style="width: 80px;">
+                                                        @if (task.DueDate.HasValue)
+                                                        {
+                                                            var isOverdue = task.DueDate.Value.Date < DateTime.Now.Date && !task.CompletionDate.HasValue;
+                                                            <small class="@(isOverdue ? "text-danger fw-bold" : "text-muted")">
+                                                                @ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "MM/dd")
+                                                            </small>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center" style="width: 80px;">
+                                                        <a asp-action="Details" asp-route-id="@task.Id" 
+                                                           class="btn btn-outline-primary btn-xs" title="جزئیات">
+                                                            <i class="fa fa-eye"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            @if (assigneeGroup.Value.Count > 5)
+                                            {
+                                                <tr>
+                                                    <td colspan="5" class="text-center">
+                                                        <a href="@Url.Action("AssignedByMe", new { assigneeId = assigneeGroup.Key.Id, assigneeType = assigneeGroup.Key.Type })" 
+                                                           class="btn btn-outline-info btn-sm">
+                                                            مشاهده @(assigneeGroup.Value.Count - 5) تسک دیگر
+                                                            <i class="fa fa-arrow-left ms-1"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fa fa-share fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">هیچ تسک واگذار شده‌ای ندارید</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- نمایش عادی برای سایر حالت‌ها -->
+    <!-- کد موجود... -->
 }

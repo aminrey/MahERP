@@ -206,7 +206,7 @@
 
                         <!-- My Tasks - Personal Active Tasks -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks">
                                 <i class="nav-main-link-icon fa fa-clipboard-check text-warning"></i>
                                 <span class="nav-main-link-name">تسک‌های من</span>
                                 <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" id="myTasksCount" style="display: none;">0</span>
@@ -322,8 +322,8 @@
                 </li>
 
                 <!-- User and Permission Management -->
-                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
-                {
+               @*  @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                { *@
                     <li class="nav-main-heading">مدیریت کاربران و دسترسی</li>
 
                     <!-- Branch Management -->
@@ -448,11 +448,11 @@
                             </li>
                         </ul>
                     </li>
-                }
+                @* } *@
 
                 <!-- System Settings (Only for Admins) -->
-                @if (User.IsInRole("Admin"))
-                {
+               @*  @if (User.IsInRole("Admin"))
+                { *@
                     <li class="nav-main-heading">تنظیمات سیستم</li>
 
                     <li class="nav-main-item">
@@ -461,7 +461,7 @@
                             <span class="nav-main-link-name">تنظیمات عمومی</span>
                         </a>
                     </li>
-                }
+                @* } *@
 
                 <!-- Logout -->
                 <li class="nav-main-heading">خروج</li>

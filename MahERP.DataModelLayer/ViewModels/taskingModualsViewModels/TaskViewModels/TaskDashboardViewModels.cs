@@ -88,7 +88,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
     public class TaskReminderFilterViewModel
     {
-        public string FilterType { get; set; }
+        public string FilterType { get; set; } = "all"; 
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }

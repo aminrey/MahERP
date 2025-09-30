@@ -1,6 +1,7 @@
 ﻿using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.Core;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
