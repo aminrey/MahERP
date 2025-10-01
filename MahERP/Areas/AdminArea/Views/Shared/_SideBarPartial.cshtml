@@ -270,6 +270,15 @@
                             </a>
                         </li>
 
+                        <!-- تسک‌های امروز من - اضافه شده -->
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyDayTasks">
+                                <i class="nav-main-link-icon fa fa-calendar-day text-success"></i>
+                                <span class="nav-main-link-name">تسک‌های امروز من</span>
+                                <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="myDayCount" style="display: none;">0</span>
+                            </a>
+                        </li>
+
                         <!-- 🏷️ SYSTEM MANAGEMENT SECTION -->
                         <li class="nav-main-item nav-submenu-separator mt-2">
                             <div class="nav-submenu-title">
@@ -685,6 +694,26 @@
             window.location.href = '@Url.Action("Details", "Notification", new { area = "AdminArea" })' + '?id=' + notificationId;
         }
     });
+
+        // Update My Day count on page load
+    $(document).ready(function() {
+        updateMyDayCount();
+
+        // Update every 2 minutes
+        setInterval(updateMyDayCount, 120000);
+    });
+
+    function updateMyDayCount() {
+        $.get('@Url.Action("GetMyDayTasksCount", "Tasks", new { area = "AdminArea" })').done(function(data) {
+            if (data.success) {
+                if (data.count > 0) {
+                    $('#myDayCount').text(data.count).show();
+                } else {
+                    $('#myDayCount').hide();
+                }
+            }
+        });
+    }
 </script>
 
 <style>

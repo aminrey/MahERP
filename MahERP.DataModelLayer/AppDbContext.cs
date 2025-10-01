@@ -71,6 +71,7 @@ namespace MahERP.DataModelLayer
         public DbSet<TeamPosition> TeamPosition_Tbl { get; set; }
         public DbSet<TaskReminderSchedule> TaskReminderSchedule_Tbl { get; set; }
         public DbSet<TaskReminderEvent> TaskReminderEvent_Tbl { get; set; }
+        public DbSet<TaskMyDay> TaskMyDay_Tbl { get; set; } // اضافه شده
 
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }

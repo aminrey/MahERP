@@ -72,6 +72,7 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<PredefinedCopyDescription> _predefinedCopyDescriptionRepository;
         private GenereicClass<TaskReminderSchedule> _taskReminderScheduleRepository;
         private GenereicClass<TaskReminderEvent> _taskReminderEventRepository;
+        private GenereicClass<TaskMyDay> _taskMyDayRepository;
         #endregion
 
         #region CRM Management
@@ -581,7 +582,17 @@ namespace MahERP.DataModelLayer.Services
             }
         }
 
-    
+        public GenereicClass<TaskMyDay> TaskMyDayUW
+        {
+            get
+            {
+                if (_taskMyDayRepository == null)
+                {
+                    _taskMyDayRepository = new GenereicClass<TaskMyDay>(_Context);
+                }
+                return _taskMyDayRepository;
+            }
+        }
 
         #endregion
 

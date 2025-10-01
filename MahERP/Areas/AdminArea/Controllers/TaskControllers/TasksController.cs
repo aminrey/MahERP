@@ -919,7 +919,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     TaskAssignmentId = assignment.Id,
                     TaskTitle = task.Title,
                     TaskCode = task.TaskCode,
-                    OriginalStartDatePersian = task.CreateDate != null ? ConvertDateTime.ConvertMiladiToShamsi(task.CreateDate, "yyyy/MM/dd") : null,
+                    OriginalStartDatePersian = task.StartDate != null ? ConvertDateTime.ConvertMiladiToShamsi(task.StartDate, "yyyy/MM/dd") : null,
                     OriginalDueDatePersian = task.DueDate != null ?  ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd") : null,
                     PersonalStartDatePersian = assignment.PersonalStartDate != null ? ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalStartDate, "yyyy/MM/dd") : null,
                     PersonalEndDatePersian = assignment.PersonalEndDate  != null ? ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalEndDate, "yyyy/MM/dd") : null,
@@ -1163,9 +1163,15 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             task.BranchId = model.BranchIdSelected;
 
             // تبدیل تاریخ‌های شمسی
-            if (!string.IsNullOrEmpty(model.DueDatePersian))
+            if (!string.IsNullOrEmpty(model.SuggestedStartDatePersian))
             {
-                task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.DueDatePersian);
+                task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.SuggestedStartDatePersian);
+            }
+      
+            // تبدیل تاریخ‌های شمسی
+            if (!string.IsNullOrEmpty(model.StartDatePersian))
+            {
+                task.StartDate = ConvertDateTime.ConvertShamsiToMiladi(model.StartDatePersian);
             }
       
 
@@ -1309,7 +1315,262 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         #endregion
+        // اضافه کردن این متدها به TasksController
 
+        /// <summary>
+        /// صفحه "تسک‌های امروز من"
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> MyDayTasks(string date = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                DateTime? selectedDate = null;
+
+                if (!string.IsNullOrEmpty(date))
+                {
+                    selectedDate = ConvertDateTime.ConvertShamsiToMiladi(date);
+                }
+
+                var model = await _taskRepository.GetMyDayTasksAsync(userId, selectedDate);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "MyDayTasks", "مشاهده تسک‌های روز من");
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "MyDayTasks", "خطا در دریافت تسک‌های روز من", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// نمایش مودال اضافه کردن تسک به "روز من"
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddToMyDayModal(int taskId)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var task = _taskRepository.GetTaskById(taskId);
+
+                if (task == null)
+                {
+                    return BadRequest("تسک یافت نشد");
+                }
+
+                var model = new TaskMyDayViewModel
+                {
+                    TaskId = taskId,
+                    TaskTitle = task.Title,
+                    TaskCode = task.TaskCode,
+                    PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd"),
+                    IsAlreadyInMyDay = await _taskRepository.IsTaskInMyDayAsync(taskId, userId)
+                };
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "AddToMyDayModal",
+                    $"نمایش مودال اضافه به روز من برای تسک {task.TaskCode}");
+
+                return PartialView("_AddToMyDayModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AddToMyDayModal", "خطا در نمایش مودال", ex);
+                return BadRequest("خطا در بارگذاری مودال");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره تسک در "روز من"
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddToMyDay(TaskMyDayViewModel model)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var plannedDate = ConvertDateTime.ConvertShamsiToMiladi(model.PlannedDatePersian);
+
+                var result = await _taskRepository.AddTaskToMyDayAsync(
+                    model.TaskId, userId, plannedDate, model.PlanNote);
+
+                if (result)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create, "Tasks", "AddToMyDay",
+                        $"اضافه کردن تسک {model.TaskCode} به روز من",
+                        recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
+
+                    return Json(new
+                    {
+                        status = "success",
+                        message = new[] { new { status = "success", text = "تسک با موفقیت به روز شما اضافه شد" } }
+                    });
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "خطا در اضافه کردن تسک" } }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AddToMyDay", "خطا در اضافه کردن به روز من", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در ذخیره: " + ex.Message } }
+                });
+            }
+        }
+
+        /// <summary>
+        /// نمایش مودال ثبت کار انجام شده
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> LogWorkModal(int taskId)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var task = _taskRepository.GetTaskById(taskId);
+
+                if (task == null)
+                {
+                    return BadRequest("تسک یافت نشد");
+                }
+
+                var model = new TaskWorkLogViewModel
+                {
+                    TaskId = taskId,
+                    TaskTitle = task.Title,
+                    TaskCode = task.TaskCode,
+                    IsAlreadyWorkedOn = await _taskRepository.IsTaskInMyDayAsync(taskId, userId)
+                };
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "LogWorkModal",
+                    $"نمایش مودال ثبت کار برای تسک {task.TaskCode}");
+
+                return PartialView("_LogWorkModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "LogWorkModal", "خطا در نمایش مودال", ex);
+                return BadRequest("خطا در بارگذاری مودال");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره کار انجام شده روی تسک
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LogWork(TaskWorkLogViewModel model)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                var result = await _taskRepository.LogTaskWorkAsync(
+                    model.TaskId, userId, model.WorkNote, model.WorkDurationMinutes);
+
+                if (result)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Update, "Tasks", "LogWork",
+                        $"ثبت کار انجام شده روی تسک {model.TaskCode}",
+                        recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
+
+                    return Json(new
+                    {
+                        status = "success",
+                        message = new[] { new { status = "success", text = "کار انجام شده با موفقیت ثبت شد" } }
+                    });
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "خطا در ثبت کار انجام شده" } }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "LogWork", "خطا در ثبت کار", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در ذخیره: " + ex.Message } }
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد تسک‌های "روز من" برای نمایش در sidebar
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetMyDayTasksCount()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var count = await _taskRepository.GetMyDayTasksCountAsync(userId);
+
+                return Json(new { success = true, count = count });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetMyDayTasksCount", "خطا در دریافت تعداد", ex);
+                return Json(new { success = false, count = 0 });
+            }
+        }
+
+        /// <summary>
+        /// حذف تسک از "روز من"
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveFromMyDay(int taskId, string date = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                DateTime? targetDate = null;
+
+                if (!string.IsNullOrEmpty(date))
+                {
+                    targetDate = ConvertDateTime.ConvertShamsiToMiladi(date);
+                }
+
+                var result = await _taskRepository.RemoveTaskFromMyDayAsync(taskId, userId, targetDate);
+
+                if (result)
+                {
+                    return Json(new { success = true, message = "تسک از روز شما حذف شد" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "خطا در حذف تسک" });
+                }
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "RemoveFromMyDay", "خطا در حذف از روز من", ex);
+                return Json(new { success = false, message = "خطا در حذف تسک" });
+            }
+        }
 
 
 

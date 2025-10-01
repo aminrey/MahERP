@@ -1,0 +1,369 @@
+﻿@model MyDayTasksViewModel
+@{
+    ViewData["Title"] = "تسک‌های امروز من";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-calendar-day text-primary me-2"></i>
+                تسک‌های امروز من
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">تسک‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">روز من</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content">
+    <!-- Date Selection and Stats -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-calendar text-primary me-1"></i>
+                        @Model.SelectedDatePersian
+                    </h3>
+                    <div class="block-options">
+                        <input type="text" id="dateSelector" class="form-control form-control-sm js-flatpickr"
+                               value="@Model.SelectedDatePersian" placeholder="انتخاب تاریخ" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <div class="py-3">
+                                <div class="fs-1 fw-bold text-primary">@Model.Stats.TotalPlannedTasks</div>
+                                <div class="fw-semibold text-muted text-uppercase">برنامه‌ریزی شده</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="py-3">
+                                <div class="fs-1 fw-bold text-success">@Model.Stats.WorkedTasks</div>
+                                <div class="fw-semibold text-muted text-uppercase">کار شده</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="py-3">
+                                <div class="fs-1 fw-bold text-info">@Model.Stats.CompletedTasks</div>
+                                <div class="fw-semibold text-muted text-uppercase">تکمیل شده</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="py-3">
+                                <div class="fs-1 fw-bold text-warning">@Model.Stats.TotalWorkTimeFormatted</div>
+                                <div class="fw-semibold text-muted text-uppercase">زمان کل</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="block block-rounded h-100">
+                <div class="block-content d-flex flex-column justify-content-center text-center h-100">
+                    <div class="mb-3">
+                        <i class="fa fa-lightbulb fa-3x text-warning"></i>
+                    </div>
+                    <h5>نکته روز</h5>
+                    <p class="text-muted mb-0">
+                        برنامه‌ریزی موثر کلید موفقیت در انجام تسک‌هاست.
+                        روز خود را با اولویت‌بندی شروع کنید.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- تسک‌های برنامه‌ریزی شده -->
+        <div class="col-lg-6">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-clock text-primary me-1"></i>
+                        برنامه‌ریزی شده
+                        <span class="badge bg-primary ms-2">@Model.PlannedTasks.Count</span>
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshTasks()">
+                            <i class="fa fa-refresh"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content p-0">
+                    @if (Model.PlannedTasks.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var task in Model.PlannedTasks.OrderBy(x => x.TaskPriority).ThenBy(x => x.CreatedDate))
+                            {
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                @if (task.TaskPriority == 2)
+                                                {
+                                                    <i class="fa fa-exclamation-triangle text-danger me-2" title="فوری"></i>
+                                                }
+                                                else if (task.IsImportant)
+                                                {
+                                                    <i class="fa fa-star text-warning me-2" title="مهم"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="fa fa-circle text-muted me-2"></i>
+                                                }
+
+                                                <h6 class="mb-0">
+                                                    <a asp-action="Details" asp-route-id="@task.TaskId" class="text-decoration-none">
+                                                        @task.TaskTitle
+                                                    </a>
+                                                </h6>
+
+                                                <span class="badge bg-secondary ms-2">@task.TaskCode</span>
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(task.CategoryTitle))
+                                            {
+                                                <small class="text-muted">
+                                                    <i class="fa fa-tag me-1"></i>@task.CategoryTitle
+                                                </small>
+                                            }
+
+                                            @if (!string.IsNullOrEmpty(task.PlanNote))
+                                            {
+                                                <div class="mt-2">
+                                                    <small class="text-info">
+                                                        <i class="fa fa-sticky-note me-1"></i>
+                                                        @task.PlanNote
+                                                    </small>
+                                                </div>
+                                            }
+
+                                            <div class="progress progress-sm mt-2">
+                                                <div class="progress-bar bg-primary" role="progressbar"
+                                                     style="width: @task.ProgressPercentage%"
+                                                     aria-valuenow="@task.ProgressPercentage"
+                                                     aria-valuemin="0" aria-valuemax="100">
+                                                    @if (task.ProgressPercentage > 15)
+                                                    {
+                                                        <span class="small">@task.ProgressPercentage%</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="ms-3">
+                                            <div class="btn-group-vertical btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-success"
+                                                        onclick="logWork(@task.TaskId)" title="ثبت کار انجام شده">
+                                                    <i class="fa fa-play"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger"
+                                                        onclick="removeFromMyDay(@task.TaskId)" title="حذف از روز من">
+                                                    <i class="fa fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fa fa-calendar-plus fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">هیچ تسکی برنامه‌ریزی نشده</h5>
+                            <p class="text-muted">
+                                از طریق لیست تسک‌ها، تسک‌های مورد نظر را به روز خود اضافه کنید.
+                            </p>
+                            <a asp-action="Index" class="btn btn-primary">
+                                <i class="fa fa-plus me-1"></i> افزودن تسک
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- تسک‌های انجام شده -->
+        <div class="col-lg-6">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-check-circle text-success me-1"></i>
+                        کار شده
+                        <span class="badge bg-success ms-2">@Model.WorkedTasks.Count</span>
+                    </h3>
+                </div>
+                <div class="block-content p-0">
+                    @if (Model.WorkedTasks.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var task in Model.WorkedTasks.OrderByDescending(x => x.WorkStartDate))
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <i class="fa fa-check-circle text-success me-2"></i>
+
+                                                <h6 class="mb-0">
+                                                    <a asp-action="Details" asp-route-id="@task.TaskId" class="text-decoration-none">
+                                                        @task.TaskTitle
+                                                    </a>
+                                                </h6>
+
+                                                <span class="badge bg-secondary ms-2">@task.TaskCode</span>
+
+                                                @if (task.WorkDurationMinutes.HasValue)
+                                                {
+                                                    <span class="badge bg-info ms-1">
+                                                        @(task.WorkDurationMinutes.Value > 60 ?
+                                                                                                    $"{task.WorkDurationMinutes.Value / 60}:{task.WorkDurationMinutes.Value % 60:D2}" :
+                                                                                                    $"{task.WorkDurationMinutes.Value}د")
+                                        </span>
+                                                                                }
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(task.WorkNote))
+                                            {
+                                                <div class="mt-2">
+                                                    <small class="text-success">
+                                                        <i class="fa fa-comment me-1"></i>
+                                                        @(task.WorkNote.Length > 100 ? task.WorkNote.Substring(0, 100) + "..." : task.WorkNote)
+                                                    </small>
+                                                </div>
+                                            }
+
+                                            @if (task.WorkStartDate.HasValue)
+                                            {
+                                                <div class="mt-1">
+                                                    <small class="text-muted">
+                                                        <i class="fa fa-clock me-1"></i>
+                                                        @task.WorkStartDate.Value.ToString("HH:mm")
+                                                    </small>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div class="ms-3">
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                    onclick="logWork(@task.TaskId)" title="بروزرسانی کار">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fa fa-clock fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">هنوز کاری انجام نشده</h5>
+                            <p class="text-muted">
+                                وقتی روی تسک‌هایتان کار کردید، اینجا نمایش داده می‌شوند.
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize Flatpickr for date selector
+            Dashmix.helpersOnLoad(['js-flatpickr']);
+
+            // Handle date change
+            $('#dateSelector').on('change', function() {
+                var selectedDate = $(this).val();
+                if (selectedDate) {
+                    window.location.href = '@Url.Action("MyDayTasks")' + '?date=' + encodeURIComponent(selectedDate);
+                }
+            });
+
+            // Auto-refresh every 5 minutes
+            setInterval(function() {
+                refreshTasks();
+            }, 300000);
+        });
+
+        function refreshTasks() {
+            location.reload();
+        }
+
+        function logWork(taskId) {
+            var url = '@Url.Action("LogWorkModal")' + '?taskId=' + taskId;
+
+            // Use existing modal system
+            $.get(url, function(data) {
+                var modal = $('<div class="modal fade" tabindex="-1" role="dialog">' + data + '</div>');
+                $('body').append(modal);
+                modal.modal('show');
+
+                modal.on('hidden.bs.modal', function() {
+                    modal.remove();
+                });
+            });
+        }
+
+        function removeFromMyDay(taskId) {
+            if (confirm('آیا مطمئن هستید که می‌خواهید این تسک را از روز خود حذف کنید؟')) {
+                $.post('@Url.Action("RemoveFromMyDay")', {
+                    taskId: taskId,
+                    date: '@Model.SelectedDatePersian',
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                }).done(function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + response.message);
+                    }
+                }).fail(function() {
+                    alert('خطا در ارتباط با سرور');
+                });
+            }
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        .list-group-item-action:hover {
+            background-color: rgba(0,123,255,.05);
+        }
+
+        .progress-sm {
+            height: 8px;
+        }
+
+        .btn-group-vertical .btn {
+            margin-bottom: 2px;
+        }
+
+            .btn-group-vertical .btn:last-child {
+                margin-bottom: 0;
+            }
+
+        .timeline-event-time {
+            font-size: 0.8rem;
+        }
+    </style>
+}

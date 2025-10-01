@@ -1128,13 +1128,12 @@ namespace MahERP.DataModelLayer.Repository
         #endregion
 
         #region Missing Implementation Methods
-
         /// <summary>
-        /// دریافت رویدادهای تقویم (نسخه Async) - اصلاح شده برای حل مشکل DataReader
+        /// دریافت رویدادهای تقویم (نسخه Async) - بازنویسی کامل برای نمایش تسک‌های چند روزه
         /// </summary>
         public async Task<List<TaskCalendarViewModel>> GetCalendarEventsAsync(
             string userId,
-            DateTime? start = null,
+            DateTime? start = null, 
             DateTime? end = null,
             int? branchId = null,
             List<string> assignedUserIds = null,
@@ -1142,36 +1141,54 @@ namespace MahERP.DataModelLayer.Repository
         {
             try
             {
-                // مرحله اول: دریافت تسک‌های اصلی
+                // مرحله اول: ساخت کوئری اصلی تسک‌ها
                 var tasksQuery = _context.Tasks_Tbl
-                    .Where(t => !t.IsDeleted).Include(t=>t.TaskAssignments).Include(t=> t.Stakeholder)
+                    .Where(t => !t.IsDeleted)
                     .AsQueryable();
 
-                // اعمال فیلترهای تاریخ
-                if (start.HasValue)
+                // ⭐ بهبود فیلتر تاریخ برای نمایش تسک‌های چند روزه
+                if (start.HasValue || end.HasValue)
                 {
-                    tasksQuery = tasksQuery.Where(t => t.DueDate >= start.Value);
-                }
-
-                if (end.HasValue)
-                {
-                    tasksQuery = tasksQuery.Where(t => t.DueDate <= end.Value);
+                    // تسک‌هایی که در بازه زمانی مورد نظر قرار دارند
+                    // شامل: تسک‌هایی که شروع یا پایان آن‌ها در این بازه است یا کل بازه را می‌پوشاند
+                    if (start.HasValue && end.HasValue)
+                    {
+                        tasksQuery = tasksQuery.Where(t =>
+                            // تسک‌هایی که CreateDate در بازه است
+                            (t.CreateDate >= start.Value && t.CreateDate <= end.Value) ||
+                            // تسک‌هایی که DueDate در بازه است
+                            (t.DueDate.HasValue && t.DueDate.Value >= start.Value && t.DueDate.Value <= end.Value) ||
+                            // تسک‌هایی که کل بازه را می‌پوشانند
+                            (t.CreateDate <= start.Value && t.DueDate.HasValue && t.DueDate.Value >= end.Value)
+                        );
+                    }
+                    else if (start.HasValue)
+                    {
+                        tasksQuery = tasksQuery.Where(t =>
+                            t.CreateDate >= start.Value ||
+                            (t.DueDate.HasValue && t.DueDate.Value >= start.Value)
+                        );
+                    }
+                    else if (end.HasValue)
+                    {
+                        tasksQuery = tasksQuery.Where(t =>
+                            t.CreateDate <= end.Value ||
+                            (t.DueDate.HasValue && t.DueDate.Value <= end.Value)
+                        );
+                    }
                 }
 
                 // فیلتر شعبه
                 if (branchId.HasValue)
                 {
                     tasksQuery = tasksQuery.Where(t =>
-                         t.TaskAssignments.Any(ta =>
+                        t.BranchId == branchId.Value ||
+                        _context.TaskAssignment_Tbl.Any(ta =>
                             ta.TaskId == t.Id &&
                             _context.BranchUser_Tbl.Any(bu =>
                                 bu.UserId == ta.AssignedUserId &&
                                 bu.BranchId == branchId.Value &&
-                                bu.IsActive)) ||
-                        (t.StakeholderId.HasValue &&
-                         _context.StakeholderBranch_Tbl.Any(sb =>
-                            sb.StakeholderId == t.StakeholderId &&
-                            sb.BranchId == branchId.Value))
+                                bu.IsActive))
                     );
                 }
                 else
@@ -1179,14 +1196,17 @@ namespace MahERP.DataModelLayer.Repository
                     // محدود کردن به تسک‌های مرتبط با کاربر
                     tasksQuery = tasksQuery.Where(t =>
                         t.CreatorUserId == userId ||
-                        _context.TaskAssignment_Tbl.Any(ta => ta.TaskId == t.Id && ta.AssignedUserId == userId));
+                        _context.TaskAssignment_Tbl.Any(ta => ta.TaskId == t.Id && ta.AssignedUserId == userId)
+                    );
                 }
 
                 // فیلتر کاربران انتصاب
                 if (assignedUserIds != null && assignedUserIds.Any())
                 {
                     tasksQuery = tasksQuery.Where(t =>
-                        t.TaskAssignments.Any(ta => ta.TaskId == t.Id && assignedUserIds.Contains(ta.AssignedUserId)));
+                        _context.TaskAssignment_Tbl.Any(ta =>
+                            ta.TaskId == t.Id && assignedUserIds.Contains(ta.AssignedUserId))
+                    );
                 }
 
                 // فیلتر طرف حساب
@@ -1195,104 +1215,134 @@ namespace MahERP.DataModelLayer.Repository
                     tasksQuery = tasksQuery.Where(t => t.StakeholderId == stakeholderId.Value);
                 }
 
-                // مرحله دوم: دریافت فقط فیلدهای اصلی تسک‌ها
-                var basicTasks =  tasksQuery.Select(t => new
-                {
-                    t.Id,
-                    t.Title,
-                    t.Description,
-                    t.TaskCode,
-                    t.DueDate,
-                    t.CompletionDate,
-                    t.CreateDate,
-                    t.CreatorUserId,
-                    t.StakeholderId,
-                    t.TaskCategoryId,
-                    t.Status,
-                    t.Priority,
-                    t.Important
-                }).ToList();
-
-                var taskIds = basicTasks.Select(t => t.Id).ToList();
-
-                // مرحله سوم: دریافت اطلاعات تکمیلی به صورت جداگانه
-                var stakeholders = await _context.Stakeholder_Tbl
-                    .Where(s => basicTasks.Any(t => t.StakeholderId == s.Id))
-                    .ToDictionaryAsync(s => s.Id, s => new { s.FirstName, s.LastName, s.CompanyName });
-
-                var categories = await _context.TaskCategory_Tbl
-                    .Where(c => basicTasks.Any(t => t.TaskCategoryId == c.Id))
-                    .ToDictionaryAsync(c => c.Id, c => c.Title);
-
-                // مرحله چهارم: تولید نتیجه نهایی
-                var result = new List<TaskCalendarViewModel>();
-
-                foreach (var task in basicTasks)
-                {
-                    // دریافت اطلاعات طرف حساب
-                    string stakeholderName = "ندارد";
-                    if (task.StakeholderId.HasValue && stakeholders.ContainsKey(task.StakeholderId.Value))
+                // مرحله دوم: اجرای کوئری و دریافت داده‌های خام
+                var rawTasks = await tasksQuery
+                    .Include(t => t.Stakeholder)
+                    .Include(t => t.TaskCategory)
+                    .Include(t => t.TaskAssignments)
+                    .Select(t => new
                     {
-                        var s = stakeholders[task.StakeholderId.Value];
-                        stakeholderName = !string.IsNullOrEmpty(s.CompanyName) ? s.CompanyName : $"{s.FirstName} {s.LastName}";
-                    }
+                        t.Id,
+                        t.Title,
+                        t.Description,
+                        t.TaskCode,
+                        t.CreateDate,
+                        t.StartDate,
+                        t.DueDate,
+                        t.CompletionDate,
+                        t.CreatorUserId,
+                        t.StakeholderId,
+                        t.TaskCategoryId,
+                        t.Status,
+                        t.Priority,
+                        t.Important,
+                        t.BranchId,
+                     
+                        // اطلاعات طرف حساب
+                        StakeholderFirstName = t.Stakeholder != null ? t.Stakeholder.FirstName : null,
+                        StakeholderLastName = t.Stakeholder != null ? t.Stakeholder.LastName : null,
+                        StakeholderCompanyName = t.Stakeholder != null ? t.Stakeholder.CompanyName : null,
+                        // اطلاعات دسته‌بندی
+                        CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : null
+                    })
+                    .ToListAsync();
 
-                    // دریافت عنوان دسته‌بندی
-                    string categoryTitle = task.TaskCategoryId.HasValue && categories.ContainsKey(task.TaskCategoryId.Value)
-                        ? categories[task.TaskCategoryId.Value] : "ندارد";
+                // مرحله سوم: تولید رویدادهای تقویم
+                var calendarEvents = new List<TaskCalendarViewModel>();
+
+                foreach (var task in rawTasks)
+                {
+                    // تعیین نام طرف حساب
+                    string stakeholderName = "ندارد";
+                    if (!string.IsNullOrEmpty(task.StakeholderCompanyName))
+                    {
+                        stakeholderName = task.StakeholderCompanyName;
+                    }
+                    else if (!string.IsNullOrEmpty(task.StakeholderFirstName) || !string.IsNullOrEmpty(task.StakeholderLastName))
+                    {
+                        stakeholderName = $"{task.StakeholderFirstName} {task.StakeholderLastName}".Trim();
+                    }
 
                     // تعیین رنگ و وضعیت
                     bool isCompleted = task.CompletionDate.HasValue;
                     bool isOverdue = !isCompleted && task.DueDate.HasValue && task.DueDate < DateTime.Now;
 
-                    string calendarColor = isCompleted ? "#28a745" :
-                                         isOverdue ? "#dc3545" :
-                                         "#007bff";
+                    string calendarColor = isCompleted ? "#28a745" :    // سبز برای تکمیل شده
+                                          isOverdue ? "#dc3545" :       // قرمز برای عقب افتاده
+                                          task.Important ? "#ff6b35" :  // نارنجی برای مهم
+                                          task.Priority == 2 ? "#e74c3c" : // قرمز تیره برای فوری
+                                          "#007bff";                     // آبی برای عادی
 
                     string statusText = isCompleted ? "تکمیل شده" :
                                       isOverdue ? "عقب افتاده" :
+                                      task.Important ? "مهم" :
+                                      task.Priority == 2 ? "فوری" :
                                       "در حال انجام";
 
-                    result.Add(new TaskCalendarViewModel
+                    // ⭐ تعیین تاریخ شروع و پایان برای نمایش چند روزه
+                    DateTime startDate = task.StartDate ?? task.CreateDate;
+                    DateTime? endDate = task.DueDate ?? task.CreateDate.AddDays(1);
+
+                    // اطمینان از اینکه تاریخ پایان بعد از تاریخ شروع است
+                    if (endDate <= startDate)
+                    {
+                        endDate = startDate != null ? startDate.AddDays(1) : null;
+                    }
+
+                    // ایجاد رویداد تقویم
+                    var calendarEvent = new TaskCalendarViewModel
                     {
                         Id = task.Id,
                         Title = task.Title ?? string.Empty,
                         Description = task.Description,
                         TaskCode = task.TaskCode,
+                        CreateDate = task.CreateDate,
                         DueDate = task.DueDate,
+                        StartDate = startDate,  // ⭐ تاریخ شروع
+                        EndDate = endDate,      // ⭐ تاریخ پایان
                         IsCompleted = isCompleted,
                         IsOverdue = isOverdue,
                         StakeholderId = task.StakeholderId,
                         StakeholderName = stakeholderName,
-                        CategoryTitle = categoryTitle,
+                        CategoryTitle = task.CategoryTitle ?? "ندارد",
                         BranchName = "ندارد", // TODO: اضافه کردن منطق شعبه در صورت نیاز
                         CalendarColor = calendarColor,
                         StatusText = statusText,
-                        CreateDate = task.CreateDate,
                         CreatorUserId = task.CreatorUserId ?? string.Empty
-                    });
+                    };
+
+                    calendarEvents.Add(calendarEvent);
                 }
 
-                // مرحله پنجم: اضافه کردن تاریخ‌های شخصی
-                await AddPersonalEventsToCalendar(result, taskIds, userId);
+                // مرحله چهارم: اضافه کردن رویدادهای تاریخ‌های شخصی
+                var taskIds = rawTasks.Select(t => t.Id).ToList();
+                await AddPersonalEventsToCalendarAsync(calendarEvents, taskIds, userId);
 
-                return result.OrderBy(t => t.DueDate).ToList();
+                // مرحله پنجم: مرتب‌سازی نتایج
+                return calendarEvents
+                    .OrderBy(e => e.StartDate)
+                    .ThenBy(e => e.Title)
+                    .ToList();
             }
             catch (Exception ex)
             {
                 // لاگ کردن خطا
                 Console.WriteLine($"Error in GetCalendarEventsAsync: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return new List<TaskCalendarViewModel>();
             }
         }
 
+
         /// <summary>
-        /// اضافه کردن رویدادهای تاریخ‌های شخصی به تقویم
+        /// اضافه کردن رویدادهای تاریخ‌های شخصی به تقویم - بازنویسی شده
         /// </summary>
-        private async Task AddPersonalEventsToCalendar(List<TaskCalendarViewModel> calendarEvents, List<int> taskIds, string userId)
+        private async Task AddPersonalEventsToCalendarAsync(List<TaskCalendarViewModel> calendarEvents, List<int> taskIds, string userId)
         {
             try
             {
+                if (!taskIds.Any()) return;
+
                 var personalAssignments = await _context.TaskAssignment_Tbl
                     .Include(ta => ta.AssignedUser)
                     .Include(ta => ta.Task)
@@ -1308,47 +1358,55 @@ namespace MahERP.DataModelLayer.Repository
                     // رویداد شروع شخصی
                     if (assignment.PersonalStartDate.HasValue)
                     {
-                        calendarEvents.Add(new TaskCalendarViewModel
+                        var personalStartEvent = new TaskCalendarViewModel
                         {
                             Id = assignment.TaskId,
                             Title = $"[شروع {userInitials}] {assignment.Task.Title}",
                             Description = assignment.PersonalTimeNote,
                             TaskCode = assignment.Task.TaskCode,
+                            CreateDate = assignment.Task.CreateDate,
                             DueDate = assignment.PersonalStartDate,
+                            StartDate = assignment.PersonalStartDate.Value,
+                            EndDate = assignment.PersonalStartDate.Value.AddHours(1), // رویداد یک ساعته
                             IsCompleted = false,
                             IsOverdue = false,
                             CalendarColor = isMyAssignment ? "#4CAF50" : "#81C784",
                             StatusText = isMyAssignment ? "شروع شخصی من" : "شروع شخصی همکار",
-                            CreateDate = assignment.Task.CreateDate,
                             CreatorUserId = assignment.Task.CreatorUserId ?? string.Empty,
                             CategoryTitle = "تاریخ شخصی",
                             StakeholderName = assignment.AssignedUser != null ?
                                 $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}" : "نامشخص",
                             BranchName = "ندارد"
-                        });
+                        };
+
+                        calendarEvents.Add(personalStartEvent);
                     }
 
                     // رویداد پایان شخصی
                     if (assignment.PersonalEndDate.HasValue)
                     {
-                        calendarEvents.Add(new TaskCalendarViewModel
+                        var personalEndEvent = new TaskCalendarViewModel
                         {
                             Id = assignment.TaskId,
                             Title = $"[پایان {userInitials}] {assignment.Task.Title}",
                             Description = assignment.PersonalTimeNote,
                             TaskCode = assignment.Task.TaskCode,
+                            CreateDate = assignment.Task.CreateDate,
                             DueDate = assignment.PersonalEndDate,
+                            StartDate = assignment.PersonalEndDate.Value,
+                            EndDate = assignment.PersonalEndDate.Value.AddHours(1), // رویداد یک ساعته
                             IsCompleted = false,
                             IsOverdue = false,
                             CalendarColor = isMyAssignment ? "#FF9800" : "#FFB74D",
                             StatusText = isMyAssignment ? "پایان شخصی من" : "پایان شخصی همکار",
-                            CreateDate = assignment.Task.CreateDate,
                             CreatorUserId = assignment.Task.CreatorUserId ?? string.Empty,
                             CategoryTitle = "تاریخ شخصی",
                             StakeholderName = assignment.AssignedUser != null ?
                                 $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}" : "نامشخص",
                             BranchName = "ندارد"
-                        });
+                        };
+
+                        calendarEvents.Add(personalEndEvent);
                     }
                 }
             }
@@ -1357,6 +1415,7 @@ namespace MahERP.DataModelLayer.Repository
                 Console.WriteLine($"Error adding personal events: {ex.Message}");
             }
         }
+
         /// <summary>
         /// دریافت تسک‌ها برای Index با فیلترها (نسخه Async جدید) - اصلاح شده
         /// </summary>
@@ -2620,7 +2679,235 @@ namespace MahERP.DataModelLayer.Repository
                 _ => "bg-dark"
             };
         }
+        // اضافه کردن این متدها به کلاس TaskRepository
 
+        /// <summary>
+        /// اضافه کردن تسک به "روز من"
+        /// </summary>
+        public async Task<bool> AddTaskToMyDayAsync(int taskId, string userId, DateTime plannedDate, string? planNote = null)
+        {
+            try
+            {
+                // بررسی اینکه آیا قبلاً در این تاریخ وجود دارد
+                var existingRecord = await _context.TaskMyDay_Tbl
+                    .FirstOrDefaultAsync(x => x.TaskId == taskId &&
+                                            x.UserId == userId &&
+                                            x.PlannedDate.Date == plannedDate.Date &&
+                                            x.IsActive);
+
+                if (existingRecord != null)
+                {
+                    // اگر وجود دارد، فقط یادداشت را بروزرسانی کن
+                    existingRecord.PlanNote = planNote;
+                    _context.TaskMyDay_Tbl.Update(existingRecord);
+                }
+                else
+                {
+                    // ایجاد رکورد جدید
+                    var newRecord = new TaskMyDay
+                    {
+                        TaskId = taskId,
+                        UserId = userId,
+                        PlannedDate = plannedDate.Date,
+                        PlanNote = planNote,
+                        CreatedDate = DateTime.Now,
+                        IsWorkedOn = false,
+                        IsActive = true
+                    };
+
+                    await _context.TaskMyDay_Tbl.AddAsync(newRecord);
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// ثبت کار انجام شده روی تسک
+        /// </summary>
+        public async Task<bool> LogTaskWorkAsync(int taskId, string userId, string? workNote = null, int? workDurationMinutes = null)
+        {
+            try
+            {
+                var today = DateTime.Now.Date;
+
+                // پیدا کردن یا ایجاد رکورد "روز من"
+                var myDayRecord = await _context.TaskMyDay_Tbl
+                    .FirstOrDefaultAsync(x => x.TaskId == taskId &&
+                                            x.UserId == userId &&
+                                            x.PlannedDate.Date == today &&
+                                            x.IsActive);
+
+                if (myDayRecord == null)
+                {
+                    // اگر در "روز من" نیست، ایجاد کن
+                    myDayRecord = new TaskMyDay
+                    {
+                        TaskId = taskId,
+                        UserId = userId,
+                        PlannedDate = today,
+                        CreatedDate = DateTime.Now,
+                        IsActive = true
+                    };
+                    await _context.TaskMyDay_Tbl.AddAsync(myDayRecord);
+                }
+
+                // بروزرسانی اطلاعات کار
+                myDayRecord.IsWorkedOn = true;
+                myDayRecord.WorkStartDate = DateTime.Now;
+                myDayRecord.WorkNote = workNote;
+                myDayRecord.WorkDurationMinutes = workDurationMinutes;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// دریافت تسک‌های "روز من" برای کاربر
+        /// </summary>
+        public async Task<MyDayTasksViewModel> GetMyDayTasksAsync(string userId, DateTime? selectedDate = null)
+        {
+            var targetDate = selectedDate?.Date ?? DateTime.Now.Date;
+
+            var myDayTasks = await _context.TaskMyDay_Tbl
+                .Include(x => x.Task)
+                    .ThenInclude(x => x.TaskCategory)
+                .Include(x => x.Task)
+                    .ThenInclude(x => x.Stakeholder)
+                .Where(x => x.UserId == userId &&
+                           x.PlannedDate.Date == targetDate &&
+                           x.IsActive)
+                .OrderBy(x => x.CreatedDate)
+                .ToListAsync();
+
+            var result = new MyDayTasksViewModel
+            {
+                SelectedDate = targetDate,
+                SelectedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(targetDate, "yyyy/MM/dd"),
+                PlannedTasks = new List<MyDayTaskItemViewModel>(),
+                WorkedTasks = new List<MyDayTaskItemViewModel>()
+            };
+
+            foreach (var item in myDayTasks)
+            {
+                var taskItem = new MyDayTaskItemViewModel
+                {
+                    TaskId = item.TaskId,
+                    TaskCode = item.Task.TaskCode,
+                    TaskTitle = item.Task.Title,
+                    TaskDescription = item.Task.Description,
+                    CategoryTitle = item.Task.TaskCategory?.Title,
+                    StakeholderName = item.Task.Stakeholder?.CompanyName,
+                    TaskPriority = item.Task.Priority,
+                    IsImportant = item.Task.Important,
+                    PlanNote = item.PlanNote,
+                    WorkNote = item.WorkNote,
+                    WorkDurationMinutes = item.WorkDurationMinutes,
+                    IsWorkedOn = item.IsWorkedOn,
+                    WorkStartDate = item.WorkStartDate,
+                    CreatedDate = item.CreatedDate,
+                    TaskStatus = item.Task.Status,
+                    ProgressPercentage = CalculateTaskProgress(item.Task)
+                };
+
+                if (item.IsWorkedOn)
+                    result.WorkedTasks.Add(taskItem);
+                else
+                    result.PlannedTasks.Add(taskItem);
+            }
+
+            // محاسبه آمار
+            result.Stats = new MyDayStatsViewModel
+            {
+                TotalPlannedTasks = result.PlannedTasks.Count + result.WorkedTasks.Count,
+                WorkedTasks = result.WorkedTasks.Count,
+                CompletedTasks = result.WorkedTasks.Count(x => x.TaskStatus >= 2),
+                TotalWorkTimeMinutes = result.WorkedTasks.Sum(x => x.WorkDurationMinutes ?? 0)
+            };
+
+            return result;
+        }
+
+        /// <summary>
+        /// بررسی اینکه آیا تسک در "روز من" وجود دارد
+        /// </summary>
+        public async Task<bool> IsTaskInMyDayAsync(int taskId, string userId, DateTime? targetDate = null)
+        {
+            var checkDate = targetDate?.Date ?? DateTime.Now.Date;
+
+            return await _context.TaskMyDay_Tbl
+                .AnyAsync(x => x.TaskId == taskId &&
+                              x.UserId == userId &&
+                              x.PlannedDate.Date == checkDate &&
+                              x.IsActive);
+        }
+
+        /// <summary>
+        /// حذف تسک از "روز من"
+        /// </summary>
+        public async Task<bool> RemoveTaskFromMyDayAsync(int taskId, string userId, DateTime? targetDate = null)
+        {
+            try
+            {
+                var checkDate = targetDate?.Date ?? DateTime.Now.Date;
+
+                var record = await _context.TaskMyDay_Tbl
+                    .FirstOrDefaultAsync(x => x.TaskId == taskId &&
+                                            x.UserId == userId &&
+                                            x.PlannedDate.Date == checkDate &&
+                                            x.IsActive);
+
+                if (record != null)
+                {
+                    record.IsActive = false;
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// محاسبه درصد پیشرفت تسک
+        /// </summary>
+        private int CalculateTaskProgress(Tasks task)
+        {
+            if (task.Status >= 2) return 100; // تکمیل شده یا بالاتر
+
+            var totalOperations = task.TaskOperations?.Count ?? 0;
+            if (totalOperations == 0) return task.Status * 25; // 0%, 25%, 50%, 75% بر اساس وضعیت
+
+            var completedOperations = task.TaskOperations?.Count(x => x.IsCompleted) ?? 0;
+            return (int)((double)completedOperations / totalOperations * 100);
+        }
+
+        /// <summary>
+        /// دریافت تعداد تسک‌های "روز من" برای کاربر
+        /// </summary>
+        public async Task<int> GetMyDayTasksCountAsync(string userId, DateTime? targetDate = null)
+        {
+            var checkDate = targetDate?.Date ?? DateTime.Now.Date;
+
+            return await _context.TaskMyDay_Tbl
+                .CountAsync(x => x.UserId == userId &&
+                                x.PlannedDate.Date == checkDate &&
+                                x.IsActive);
+        }
         #endregion
     }
 }

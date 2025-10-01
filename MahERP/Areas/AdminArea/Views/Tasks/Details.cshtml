@@ -24,11 +24,12 @@
     </div>
 </div>
 <!-- END Hero -->
+
 <!-- Page Content -->
 <div class="content">
-    <!-- Quick Actions -->
+    <!-- Quick Actions - بروزرسانی شده -->
     <div class="row push">
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0" asp-action="Edit" asp-route-id="@Model.Id">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold text-primary mb-1">
@@ -40,7 +41,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("CompleteTask", new { id = Model.Id })" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold text-@(Model.CompletionDate.HasValue ? "warning" : "success") mb-1">
@@ -52,21 +53,58 @@
                 </div>
             </a>
         </div>
-        <div class="col-sm-6 col-xl-3">
-            <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+        
+        <!-- دکمه جدید: افزودن به روز من -->
+        @if (isAssignedToCurrentUser)
+        {
+            <div class="col-sm-6 col-xl-2">
+                <a class="block block-rounded block-link-shadow text-center h-100 mb-0" 
+                   href="@Url.Action("AddToMyDayModal", new { taskId = Model.Id })" 
+                   data-toggle="modal-ajax">
+                    <div class="block-content py-5">
+                        <div class="fs-3 fw-semibold text-info mb-1">
+                            <i class="fa fa-calendar-plus"></i>
+                        </div>
+                        <p class="fw-semibold fs-sm text-info text-uppercase mb-0">
+                            افزودن به روز من
+                        </p>
+                    </div>
+                </a>
+            </div>
+        }
+
+        <!-- دکمه جدید: ثبت کار انجام شده -->
+        @if (isAssignedToCurrentUser)
+        {
+            <div class="col-sm-6 col-xl-2">
+                <a class="block block-rounded block-link-shadow text-center h-100 mb-0" 
+                   href="@Url.Action("LogWorkModal", new { taskId = Model.Id })" 
+                   data-toggle="modal-ajax">
+                    <div class="block-content py-5">
+                        <div class="fs-3 fw-semibold text-success mb-1">
+                            <i class="fa fa-clock"></i>
+                        </div>
+                        <p class="fw-semibold fs-sm text-success text-uppercase mb-0">
+                            ثبت کار انجام شده
+                        </p>
+                    </div>
+                </a>
+            </div>
+        }
+
+        <div class="col-sm-6 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddOperation", new { taskId = Model.Id })" data-toggle="modal-ajax">
                 <div class="block-content py-5">
-                    <div class="fs-3 fw-semibold text-info mb-1">
+                    <div class="fs-3 fw-semibold text-warning mb-1">
                         <i class="fa fa-plus-circle"></i>
                     </div>
-                    <p class="fw-semibold fs-sm text-info text-uppercase mb-0">
+                    <p class="fw-semibold fs-sm text-warning text-uppercase mb-0">
                         افزودن عملیات
                     </p>
                 </div>
             </a>
         </div>
-        <div class="col-sm-6 col-xl-3">
-            <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
+        <div class="col-sm-6 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AssignTask", new { taskId = Model.Id })" data-toggle="modal-ajax">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold text-dark mb-1">
@@ -548,7 +586,6 @@
                 data: { id: operationId },
                 success: function (result) {
                     if (result.success) {
-                        // Reload the page to show updated state
                         location.reload();
                     } else {
                         alert('خطا: ' + result.message);
@@ -567,7 +604,6 @@
                 data: { id: taskId },
                 success: function (result) {
                     if (result.success) {
-                        // Reload the page to show updated state
                         location.reload();
                     } else {
                         alert('خطا: ' + result.message);
@@ -586,7 +622,6 @@
                 data: { id: taskId },
                 success: function (result) {
                     if (result.success) {
-                        // Reload the page to show updated state
                         location.reload();
                     } else {
                         alert('خطا: ' + result.message);
@@ -598,7 +633,6 @@
             });
         }
 
-        // Initialize DataTable and tooltips
         $(document).ready(function() {
             $('.js-dataTable-responsive').DataTable({
                 language: {
@@ -608,10 +642,8 @@
                 responsive: true
             });
 
-            // Initialize tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
 
-            // Event handler برای بستن خودکار modal و refresh صفحه
             $(document).on('modalClosed', function(event, response) {
                 if (response && response.success && response.refreshPage) {
                     location.reload();

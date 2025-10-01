@@ -41,6 +41,11 @@ public class TaskViewModel
     [Display(Name = "تسک بالادست")]
     public int? ParentTaskId { get; set; }
 
+    [Display(Name = "شروع تاریخ مهلت انجام")]
+    public DateTime? StartDate { get; set; }
+
+    [Display(Name = "شروع تاریخ مهلت انجام")]
+    public string? StartDatePersian { get; set; }
     [Display(Name = "تاریخ مهلت انجام")]
     public DateTime? DueDate { get; set; }
 

@@ -29,9 +29,25 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public string? TaskCode { get; set; }
 
         /// <summary>
-        /// تاریخ مهلت انجام
+        /// تاریخ شروع تسک (تاریخ ایجاد)
+        /// </summary>
+        public DateTime CreateDate { get; set; }
+
+
+        /// <summary>
+        /// تاریخ مهلت انجام (تاریخ پایان)
         /// </summary>
         public DateTime? DueDate { get; set; }
+
+        /// <summary>
+        /// تاریخ شروع مؤثر برای نمایش در تقویم
+        /// </summary>
+        public DateTime StartDate { get; set; }
+
+        /// <summary>
+        /// تاریخ پایان مؤثر برای نمایش در تقویم
+        /// </summary>
+        public DateTime? EndDate { get; set; }
 
         /// <summary>
         /// آیا تسک تکمیل شده است؟
@@ -74,14 +90,19 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public string StatusText { get; set; }
 
         /// <summary>
-        /// تاریخ ایجاد تسک
-        /// </summary>
-        public DateTime CreateDate { get; set; }
-
-        /// <summary>
         /// شناسه کاربر سازنده تسک
         /// </summary>
         public string CreatorUserId { get; set; }
+
+        /// <summary>
+        /// آیا تسک چند روزه است؟
+        /// </summary>
+        public bool IsMultiDay => EndDate.HasValue && StartDate.Date != EndDate.Value.Date;
+
+        /// <summary>
+        /// مدت زمان تسک بر حسب روز
+        /// </summary>
+        public int DurationInDays => EndDate.HasValue ? (int)(EndDate.Value.Date - StartDate.Date).TotalDays + 1 : 1;
 
         /// <summary>
         /// سازنده پیش‌فرض
@@ -92,6 +113,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
             CalendarColor = "#007bff"; // رنگ پیش‌فرض آبی
             StatusText = "نامشخص";
             CreatorUserId = string.Empty;
+            StartDate = DateTime.Now;
         }
     }
 }

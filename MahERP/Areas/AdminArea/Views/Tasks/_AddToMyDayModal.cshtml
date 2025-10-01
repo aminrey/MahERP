@@ -1,0 +1,185 @@
+﻿@model TaskMyDayViewModel
+
+@{
+    Layout = null;
+}
+
+<style>
+    .modal {
+        --bs-modal-width: 60%;
+        transition: 0.3s;
+    }
+
+    .plan-input {
+        border: 2px solid #e3f2fd;
+        border-radius: 6px;
+    }
+
+        .plan-input:focus {
+            border-color: #2196f3;
+            box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+        }
+</style>
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
+            <div class="block-header bg-primary-dark">
+                <h3 class="block-title">
+                    <i class="fa fa-calendar-plus me-2"></i>
+                    افزودن به روز من
+                </h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="addToMyDayForm" asp-action="AddToMyDay" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="TaskId" />
+
+                <div class="block block-themed block-rounded mt-1">
+                    <div class="block-header bg-primary-light">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle me-1"></i>
+                            اطلاعات تسک
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>عنوان تسک:</strong>
+                                <span class="text-primary">@Model.TaskTitle</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>کد تسک:</strong>
+                                <span class="text-muted">@Model.TaskCode</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="block block-themed block-rounded mt-1">
+                    <div class="block-header bg-success-light">
+                        <h3 class="block-title">برنامه‌ریزی</h3>
+                    </div>
+                    <div class="block-content">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- تاریخ برنامه‌ریزی -->
+                        <div class="mb-4">
+                            <div class="form-floating">
+                                <input asp-for="PlannedDatePersian"
+                                       class="form-control plan-input js-flatpickr"
+                                       id="PlannedDatePersian"
+                                       placeholder="انتخاب تاریخ برنامه‌ریزی">
+                                <label asp-for="PlannedDatePersian" class="form-label input-label">
+                                    تاریخ برنامه‌ریزی
+                                </label>
+                            </div>
+                            <span asp-validation-for="PlannedDatePersian" class="text-danger"></span>
+                        </div>
+
+                        <!-- یادداشت برنامه‌ریزی -->
+                        <div class="mb-4">
+                            <div class="form-floating">
+                                <textarea asp-for="PlanNote"
+                                          class="form-control plan-input"
+                                          id="PlanNote"
+                                          rows="3"
+                                          placeholder="یادداشت‌های برنامه‌ریزی..."></textarea>
+                                <label asp-for="PlanNote" class="form-label input-label">
+                                    یادداشت برنامه‌ریزی (اختیاری)
+                                </label>
+                            </div>
+                            <span asp-validation-for="PlanNote" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-lightbulb me-1"></i>
+                                چه کاری قصد انجام در این تسک دارید؟
+                            </small>
+                        </div>
+
+                        @if (Model.IsAlreadyInMyDay)
+                        {
+                            <div class="alert alert-info">
+                                <i class="fa fa-info-circle me-1"></i>
+                                این تسک قبلاً در روز شما قرار دارد. با ذخیره، اطلاعات بروزرسانی می‌شود.
+                            </div>
+                        }
+
+                        <!-- راهنمای استفاده -->
+                        <div class="alert alert-success">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fa fa-calendar-check fa-2x text-success"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>راهنما:</h6>
+                                    <ul class="mb-0 small">
+                                        <li>با افزودن تسک به "روز من" می‌توانید برنامه‌ریزی روزانه داشته باشید</li>
+                                        <li>تسک‌های اضافه شده در صفحه "تسک‌های امروز من" قابل مشاهده هستند</li>
+                                        <li>می‌توانید برای تسک‌های مختلف روزهای مختلف انتخاب کنید</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="block-content block-content-full text-end bg-body">
+            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">
+                <i class="fa fa-times me-1"></i> انصراف
+            </button>
+            <button class="btn btn-sm btn-success" data-save="modal-ajax-save" type="button">
+                <i class="fa fa-calendar-plus me-1"></i> افزودن به روز من
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    Dashmix.helpersOnLoad(['js-flatpickr']);
+</script>
+
+<script>
+    $(document).ready(function () {
+        console.log('راه‌اندازی مودال افزودن به روز من');
+
+        // تنظیم فوکوس روی اولین فیلد
+        $('#PlannedDatePersian').focus();
+
+        // Event handler برای موفقیت
+        $('[data-save="modal-ajax-save"]').on('ajaxFormSuccess', function (event, response) {
+            if (response && response.success) {
+                if (response.message && response.message.length > 0) {
+                    toastr.success(response.message[0].text);
+                }
+                $('.modal').modal('hide');
+
+                // بروزرسانی آمار sidebar
+                updateMyDayCount();
+
+                // بروزرسانی لیست تسک‌ها در صورت وجود
+                if (typeof updateTaskList === 'function') {
+                    updateTaskList();
+                }
+            }
+        });
+    });
+
+    function updateMyDayCount() {
+        $.get('@Url.Action("GetMyDayTasksCount")').done(function(data) {
+            if (data.success) {
+                if (data.count > 0) {
+                    $('#myDayCount').text(data.count).show();
+                } else {
+                    $('#myDayCount').hide();
+                }
+            }
+        });
+    }
+</script>

@@ -64,6 +64,7 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<TaskViewPermission> TaskViewPermissionUW { get; }
         GenereicClass<TaskReminderSchedule> TaskReminderScheduleUW { get; }
         GenereicClass<TaskReminderEvent> TaskReminderEventUW { get; }
+        GenereicClass<TaskMyDay> TaskMyDayUW { get; }
         #endregion
 
         #region CRM Management
