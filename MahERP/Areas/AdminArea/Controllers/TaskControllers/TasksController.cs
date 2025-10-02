@@ -1317,36 +1317,33 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         #endregion
         // اضافه کردن این متدها به TasksController
 
+        
         /// <summary>
-        /// صفحه "تسک‌های امروز من"
+        /// صفحه تسک‌های "روز من"
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> MyDayTasks(string date = null)
+        public async Task<IActionResult> MyDayTasks()
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
-                DateTime? selectedDate = null;
 
-                if (!string.IsNullOrEmpty(date))
-                {
-                    selectedDate = ConvertDateTime.ConvertShamsiToMiladi(date);
-                }
+            
 
-                var model = await _taskRepository.GetMyDayTasksAsync(userId, selectedDate);
+                var model = await _taskRepository.GetMyDayTasksAsync(userId);
 
                 await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "MyDayTasks", "مشاهده تسک‌های روز من");
+                    ActivityTypeEnum.View, "Tasks", "MyDayTasks",
+                    "مشاهده تسک‌های روز من");
 
                 return View(model);
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("Tasks", "MyDayTasks", "خطا در دریافت تسک‌های روز من", ex);
-                return RedirectToAction("ErrorView", "Home");
+                return BadRequest("خطا در بارگذاری تسک‌های روز من");
             }
         }
-
         /// <summary>
         /// نمایش مودال اضافه کردن تسک به "روز من"
         /// </summary>

@@ -2772,22 +2772,23 @@ namespace MahERP.DataModelLayer.Repository
             }
         }
 
+    
         /// <summary>
-        /// دریافت تسک‌های "روز من" برای کاربر
+        /// دریافت تسک‌های "روز من" برای کاربر - اصلاح شده برای نمایش همه تاریخ‌ها
         /// </summary>
         public async Task<MyDayTasksViewModel> GetMyDayTasksAsync(string userId, DateTime? selectedDate = null)
         {
             var targetDate = selectedDate?.Date ?? DateTime.Now.Date;
 
+            // ⭐ حذف فیلتر تاریخ - نمایش همه تسک‌های MyDay
             var myDayTasks = await _context.TaskMyDay_Tbl
                 .Include(x => x.Task)
                     .ThenInclude(x => x.TaskCategory)
                 .Include(x => x.Task)
                     .ThenInclude(x => x.Stakeholder)
-                .Where(x => x.UserId == userId &&
-                           x.PlannedDate.Date == targetDate &&
-                           x.IsActive)
-                .OrderBy(x => x.CreatedDate)
+                .Where(x => x.UserId == userId && x.IsActive)
+                .OrderBy(x => x.PlannedDate)
+                .ThenBy(x => x.CreatedDate)
                 .ToListAsync();
 
             var result = new MyDayTasksViewModel
@@ -2795,7 +2796,9 @@ namespace MahERP.DataModelLayer.Repository
                 SelectedDate = targetDate,
                 SelectedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(targetDate, "yyyy/MM/dd"),
                 PlannedTasks = new List<MyDayTaskItemViewModel>(),
-                WorkedTasks = new List<MyDayTaskItemViewModel>()
+                WorkedTasks = new List<MyDayTaskItemViewModel>(),
+                // ⭐ اضافه کردن گروه‌بندی بر اساس تاریخ
+                TasksByDate = new Dictionary<string, List<MyDayTaskItemViewModel>>()
             };
 
             foreach (var item in myDayTasks)
@@ -2807,7 +2810,9 @@ namespace MahERP.DataModelLayer.Repository
                     TaskTitle = item.Task.Title,
                     TaskDescription = item.Task.Description,
                     CategoryTitle = item.Task.TaskCategory?.Title,
-                    StakeholderName = item.Task.Stakeholder?.CompanyName,
+                    StakeholderName = item.Task.Stakeholder?.CompanyName ??
+                                   (string.IsNullOrEmpty(item.Task.Stakeholder?.FirstName) ? "ندارد" :
+                                    $"{item.Task.Stakeholder.FirstName} {item.Task.Stakeholder.LastName}"),
                     TaskPriority = item.Task.Priority,
                     IsImportant = item.Task.Important,
                     PlanNote = item.PlanNote,
@@ -2817,16 +2822,28 @@ namespace MahERP.DataModelLayer.Repository
                     WorkStartDate = item.WorkStartDate,
                     CreatedDate = item.CreatedDate,
                     TaskStatus = item.Task.Status,
-                    ProgressPercentage = CalculateTaskProgress(item.Task)
+                    ProgressPercentage = CalculateTaskProgress(item.Task),
+                    // ⭐ اضافه کردن تاریخ برنامه‌ریزی
+                    PlannedDate = item.PlannedDate,
+                    PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(item.PlannedDate, "yyyy/MM/dd")
                 };
 
+                // گروه‌بندی بر اساس تاریخ
+                var dateKey = taskItem.PlannedDatePersian;
+                if (!result.TasksByDate.ContainsKey(dateKey))
+                {
+                    result.TasksByDate[dateKey] = new List<MyDayTaskItemViewModel>();
+                }
+                result.TasksByDate[dateKey].Add(taskItem);
+
+                // همچنان نگهداری لیست‌های قدیمی برای سازگاری
                 if (item.IsWorkedOn)
                     result.WorkedTasks.Add(taskItem);
                 else
                     result.PlannedTasks.Add(taskItem);
             }
 
-            // محاسبه آمار
+            // محاسبه آمار کلی
             result.Stats = new MyDayStatsViewModel
             {
                 TotalPlannedTasks = result.PlannedTasks.Count + result.WorkedTasks.Count,

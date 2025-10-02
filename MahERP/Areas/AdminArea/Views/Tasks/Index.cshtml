@@ -548,36 +548,30 @@
                                                     <small class="text-muted">@task.ProgressPercentage%</small>
                                                 }
                                             </td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <a asp-action="Details" asp-route-id="@task.Id" 
-                                                       class="btn btn-outline-primary" title="مشاهده جزئیات">
+                                            <td class="text-center" data-task-id="@task.Id">
+                                                <div class="btn-group" role="group">
+                                                    <!-- دکمه‌های موجود -->
+                                                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-alt-secondary" title="جزئیات">
                                                         <i class="fa fa-eye"></i>
                                                     </a>
-                                                @*     <a asp-action="Edit" asp-route-id="@task.Id" 
-                                                       class="btn btn-outline-secondary" title="ویرایش">
-                                                        <i class="fa fa-edit"></i>
-                                                    </a>
-                                                    <button type="button" class="btn btn-outline-danger" 
-                                                            onclick="confirmDelete(@task.Id, '@task.Title')" title="حذف">
-                                                        <i class="fa fa-trash"></i>
-                                                    </button> *@
-                                                       @{
-                                                        var currentUserId = ViewBag.currentUserId ;
-                                                        bool isAssignedToCurrentUser = task.AssignmentsTaskUser != null && 
-                                                                                      task.AssignmentsTaskUser.Any(a => a.AssignedUserId == currentUserId);
-                                                    }
-                                                    @if (task.AssignmentsTaskUser != null && task.AssignmentsTaskUser.Any(a => a.AssignedUserId == currentUserId))
-                                                    {
-                                                        <button type="button" 
-                                                                class="btn btn-sm btn-outline-primary" 
-                                                                data-toggle="modal-ajax"
-                                                                href="@Url.Action("SetPersonalDatesModal", "Tasks", new { taskId = task.Id })"
-                                                                title="تنظیم تاریخ‌های شخصی">
-                                                            <i class="far fa-calendar-days"></i>
-                                                        </button>
-                                                    }
 
+                                                    <!-- دکمه اضافه به روز من -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-primary btn-add-to-myday" 
+                                                            data-toggle="modal-ajax" 
+                                                            href="@Url.Action("AddToMyDayModal", new { taskId = task.Id })"
+                                                            title="اضافه به روز من">
+                                                        <i class="fa fa-calendar-plus"></i>
+                                                    </button>
+
+                                                    <!-- دکمه ثبت کار -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-success btn-log-work" 
+                                                            data-toggle="modal-ajax" 
+                                                            href="@Url.Action("LogWorkModal", new { taskId = task.Id })"
+                                                            title="ثبت کار انجام شده">
+                                                        <i class="fa fa-clock"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -654,7 +648,7 @@
                                                 <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-outline-primary btn-sm">
                                                     <i class="fa fa-eye me-1"></i> جزئیات
                                                 </a>
-                                             
+                                            
                                             </div>
                                         </div>
                                     </div>

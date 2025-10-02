@@ -431,13 +431,13 @@ namespace MahERP.DataModelLayer.Repository
         /// <summary>
         /// دریافت انتصاب تسک بر اساس شناسه انتصاب برای تنظیم تاریخ‌های شخصی
         /// </summary>
-        /// <param name="assignmentId">شناسه انتصاب</param>
+        /// <param name="assignmentId">شناسه انتساب</param>
         /// <param name="userId">شناسه کاربر</param>
         /// <returns>انتصاب تسک همراه با اطلاعات تسک</returns>
         Task<TaskAssignment> GetTaskAssignmentByIdForPersonalDatesAsync(int assignmentId, string userId);
 
         /// <summary>
-        /// بروزرسانی تاریخ‌های شخصی انتصاب تسک
+        /// بروزرسانی تاریخ‌های شخصی انتساب تسک
         /// </summary>
         /// <param name="assignmentId">شناسه انتساب</param>
         /// <param name="userId">شناسه کاربر</param>
@@ -447,6 +447,40 @@ namespace MahERP.DataModelLayer.Repository
         /// <returns>True در صورت موفقیت</returns>
         Task<bool> UpdatePersonalDatesAsync(int assignmentId, string userId, DateTime? personalStartDate, DateTime? personalEndDate, string personalTimeNote);
      
+        #endregion
+
+        #region TaskMyDay Methods
+
+        /// <summary>
+        /// اضافه کردن تسک به "روز من"
+        /// </summary>
+        Task<bool> AddTaskToMyDayAsync(int taskId, string userId, DateTime plannedDate, string? planNote = null);
+
+        /// <summary>
+        /// ثبت کار انجام شده روی تسک
+        /// </summary>
+        Task<bool> LogTaskWorkAsync(int taskId, string userId, string? workNote = null, int? workDurationMinutes = null);
+
+        /// <summary>
+        /// دریافت تسک‌های "روز من" برای کاربر
+        /// </summary>
+        Task<MyDayTasksViewModel> GetMyDayTasksAsync(string userId, DateTime? selectedDate = null);
+
+        /// <summary>
+        /// بررسی اینکه آیا تسک در "روز من" وجود دارد
+        /// </summary>
+        Task<bool> IsTaskInMyDayAsync(int taskId, string userId, DateTime? targetDate = null);
+
+        /// <summary>
+        /// حذف تسک از "روز من"
+        /// </summary>
+        Task<bool> RemoveTaskFromMyDayAsync(int taskId, string userId, DateTime? targetDate = null);
+
+        /// <summary>
+        /// دریافت تعداد تسک‌های "روز من" برای کاربر
+        /// </summary>
+        Task<int> GetMyDayTasksCountAsync(string userId, DateTime? targetDate = null);
+
         #endregion
     }
 }

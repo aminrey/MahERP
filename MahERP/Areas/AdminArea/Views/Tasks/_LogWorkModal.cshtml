@@ -1,223 +1,107 @@
 ﻿@model TaskWorkLogViewModel
 
-@{
-    Layout = null;
-}
-
-<style>
-    .modal {
-        --bs-modal-width: 60%;
-        transition: 0.3s;
-    }
-
-    .work-input {
-        border: 2px solid #e8f5e8;
-        border-radius: 6px;
-    }
-
-        .work-input:focus {
-            border-color: #4caf50;
-            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
-        }
-
-    .time-input {
-        width: 120px;
-    }
-</style>
-
-<div class="modal-dialog" role="document">
+<div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-        <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
-            <div class="block-header bg-success-dark">
-                <h3 class="block-title">
-                    <i class="fa fa-clock me-2"></i>
-                    ثبت کار انجام شده
-                </h3>
-                <div class="block-options">
-                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
-                        <i class="fa fa-fw fa-times"></i>
-                    </button>
-                </div>
+        <form id="logWorkForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="TaskId" />
+            <input type="hidden" asp-for="TaskCode" />
+            <input type="hidden" asp-for="TaskTitle" />
+
+            <div class="modal-header">
+                <h4 class="modal-title">
+                    <i class="fa fa-clock me-2"></i>ثبت کار انجام شده
+                </h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
 
-            <form id="logWorkForm" asp-action="LogWork" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="TaskId" />
-
-                <div class="block block-themed block-rounded mt-1">
-                    <div class="block-header bg-primary-light">
-                        <h3 class="block-title">
-                            <i class="fa fa-info-circle me-1"></i>
-                            اطلاعات تسک
-                        </h3>
-                    </div>
-                    <div class="block-content">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>عنوان تسک:</strong>
-                                <span class="text-primary">@Model.TaskTitle</span>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>کد تسک:</strong>
-                                <span class="text-muted">@Model.TaskCode</span>
-                            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-info-circle me-1"></i>تسک: @Model.TaskTitle
+                            </h6>
+                            <p class="mb-0">کد: <strong>@Model.TaskCode</strong></p>
                         </div>
                     </div>
                 </div>
 
-                <div class="block block-themed block-rounded mt-1">
-                    <div class="block-header bg-success-light">
-                        <h3 class="block-title">جزئیات کار انجام شده</h3>
-                    </div>
-                    <div class="block-content">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-                        <!-- مدت زمان کار -->
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input asp-for="WorkDurationMinutes"
-                                           class="form-control work-input time-input"
-                                           id="WorkDurationMinutes"
-                                           type="number"
-                                           min="1"
-                                           max="480"
-                                           placeholder="مدت زمان به دقیقه">
-                                    <label asp-for="WorkDurationMinutes" class="form-label input-label">
-                                        مدت زمان کار (دقیقه)
-                                    </label>
-                                </div>
-                                <span asp-validation-for="WorkDurationMinutes" class="text-danger"></span>
-                                <small class="form-text text-muted">
-                                    <i class="fa fa-clock me-1"></i>
-                                    چند دقیقه روی این تسک کار کردید؟
-                                </small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mt-2">
-                                    <h6>راهنمای زمان:</h6>
-                                    <small class="text-muted">
-                                        • 30 دقیقه = نیم ساعت<br>
-                                        • 60 دقیقه = یک ساعت<br>
-                                        • 120 دقیقه = دو ساعت<br>
-                                        • 240 دقیقه = چهار ساعت
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- توضیحات کار -->
+                <div class="row">
+                    <div class="col-lg-8">
                         <div class="mb-4">
-                            <div class="form-floating">
-                                <textarea asp-for="WorkNote"
-                                          class="form-control work-input"
-                                          id="WorkNote"
-                                          rows="4"
-                                          placeholder="توضیحات کار انجام شده..."></textarea>
-                                <label asp-for="WorkNote" class="form-label input-label">
-                                    توضیحات کار انجام شده
-                                </label>
-                            </div>
+                            <label asp-for="WorkNote" class="form-label">
+                                <i class="fa fa-comment me-1"></i>توضیحات کار انجام شده
+                            </label>
+                            <textarea asp-for="WorkNote" 
+                                    class="form-control" 
+                                    rows="4" 
+                                    placeholder="توضیح مختصری از کاری که انجام دادید..."></textarea>
                             <span asp-validation-for="WorkNote" class="text-danger"></span>
-                            <small class="form-text text-muted">
-                                <i class="fa fa-pen me-1"></i>
-                                چه کاری انجام دادید؟ چه پیشرفتی حاصل شد؟
-                            </small>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="mb-4">
+                            <label asp-for="WorkDurationMinutes" class="form-label">
+                                <i class="fa fa-clock me-1"></i>مدت زمان کار (دقیقه)
+                            </label>
+                            <input asp-for="WorkDurationMinutes" 
+                                   type="number" 
+                                   class="form-control" 
+                                   min="1" 
+                                   max="480" 
+                                   placeholder="مثال: 30" />
+                            <span asp-validation-for="WorkDurationMinutes" class="text-danger"></span>
+                            <div class="form-text">حداکثر 8 ساعت (480 دقیقه)</div>
                         </div>
 
                         @if (Model.IsAlreadyWorkedOn)
                         {
                             <div class="alert alert-warning">
                                 <i class="fa fa-exclamation-triangle me-1"></i>
-                                قبلاً برای این تسک کار ثبت شده است. با ذخیره، اطلاعات بروزرسانی می‌شود.
+                                قبلاً روی این تسک کار کرده‌اید
                             </div>
                         }
-
-                        <!-- راهنمای استفاده -->
-                        <div class="alert alert-info">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0">
-                                    <i class="fa fa-lightbulb fa-2x text-info"></i>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6>نکات مهم:</h6>
-                                    <ul class="mb-0 small">
-                                        <li><strong>ثبت کار ≠ تکمیل تسک:</strong> این عملیات تسک را تکمیل نمی‌کند</li>
-                                        <li>فقط گزارش پیشرفت و زمان صرف شده ثبت می‌شود</li>
-                                        <li>این اطلاعات در گزارش‌های عملکرد نمایش داده می‌شود</li>
-                                        <li>می‌توانید چندین بار برای یک تسک کار ثبت کنید</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
-            </form>
-        </div>
+            </div>
 
-        <div class="block-content block-content-full text-end bg-body">
-            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">
-                <i class="fa fa-times me-1"></i> انصراف
-            </button>
-            <button class="btn btn-sm btn-success" data-save="modal-ajax-save" type="button">
-                <i class="fa fa-save me-1"></i> ثبت کار انجام شده
-            </button>
-        </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>انصراف
+                </button>
+                <button type="button" class="btn btn-success" data-save="modal-ajax-save" data-url="@Url.Action("LogWork")">
+                    <i class="fa fa-check me-1"></i>ثبت کار انجام شده
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-    $(document).ready(function () {
-        console.log('راه‌اندازی مودال ثبت کار');
+$(document).ready(function() {
+    // فوکوس روی فیلد اول
+    $('#WorkNote').focus();
 
-        // تنظیم فوکوس روی فیلد مدت زمان
-        $('#WorkDurationMinutes').focus();
-
-        // Event handler برای موفقیت
-        $('[data-save="modal-ajax-save"]').on('ajaxFormSuccess', function (event, response) {
-            if (response && response.success) {
-                if (response.message && response.message.length > 0) {
-                    toastr.success(response.message[0].text);
-                }
-                $('.modal').modal('hide');
-
-                // بروزرسانی لیست تسک‌ها در صورت وجود
-                if (typeof updateTaskList === 'function') {
-                    updateTaskList();
-                }
-
-                // بروزرسانی صفحه جزئیات در صورت وجود
-                if (window.location.href.includes('/Details/')) {
-                    setTimeout(() => location.reload(), 1000);
-                }
-            }
-        });
-
-        // محاسبه خودکار بر اساس ساعت و دقیقه
-        $('#WorkDurationMinutes').on('input', function() {
-            var minutes = parseInt($(this).val()) || 0;
-            var hours = Math.floor(minutes / 60);
-            var remainingMinutes = minutes % 60;
-
-            if (minutes > 0) {
-                var timeText = '';
-                if (hours > 0) {
-                    timeText += hours + ' ساعت';
-                    if (remainingMinutes > 0) {
-                        timeText += ' و ' + remainingMinutes + ' دقیقه';
-                    }
-                } else {
-                    timeText = remainingMinutes + ' دقیقه';
-                }
-
-                // نمایش متن تبدیل شده
-                if (!$('#timeDisplay').length) {
-                    $('#WorkDurationMinutes').after('<div id="timeDisplay" class="mt-1 small text-success"></div>');
-                }
-                $('#timeDisplay').text('≈ ' + timeText);
-            } else {
-                $('#timeDisplay').remove();
-            }
-        });
+    // اضافه کردن event listener برای دکمه ثبت
+    $('[data-save="modal-ajax-save"]').on('ajaxSuccess', function(event, response) {
+        // بستن مودال در صورت موفقیت
+        $('#@Model.TaskId').find('.btn-close').click();
+        
+        // بروزرسانی وضعیت دکمه در صورت نیاز
+        updateTaskButtons(@Model.TaskId, true);
     });
+
+    function updateTaskButtons(taskId, isWorkedOn) {
+        const $taskRow = $(`[data-task-id="${taskId}"]`);
+        if ($taskRow.length) {
+            const $logWorkBtn = $taskRow.find('.btn-log-work');
+            if (isWorkedOn) {
+                $logWorkBtn.removeClass('btn-outline-success').addClass('btn-success');
+                $logWorkBtn.html('<i class="fa fa-check me-1"></i>کار ثبت شده');
+            }
+        }
+    }
+});
 </script>

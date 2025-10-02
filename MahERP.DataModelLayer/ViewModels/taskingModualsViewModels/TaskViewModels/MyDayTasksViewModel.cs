@@ -1,41 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
 {
     /// <summary>
-    /// ViewModel برای صفحه "تسک‌های امروز من"
+    /// ViewModel برای صفحه "تسک‌های امروز من" - اصلاح شده
     /// </summary>
     public class MyDayTasksViewModel
     {
+        /// <summary>
+        /// تاریخ انتخاب شده
+        /// </summary>
+        public DateTime SelectedDate { get; set; } = DateTime.Now.Date;
+
         /// <summary>
         /// تاریخ انتخاب شده (شمسی)
         /// </summary>
         public string SelectedDatePersian { get; set; } = string.Empty;
 
         /// <summary>
-        /// تاریخ انتخاب شده (میلادی)
-        /// </summary>
-        public DateTime SelectedDate { get; set; }
-
-        /// <summary>
-        /// تسک‌های برنامه‌ریزی شده
+        /// تسک‌های برنامه‌ریزی شده (برای سازگاری)
         /// </summary>
         public List<MyDayTaskItemViewModel> PlannedTasks { get; set; } = new();
 
         /// <summary>
-        /// تسک‌هایی که روی آن‌ها کار شده
+        /// تسک‌هایی که روی آن‌ها کار شده (برای سازگاری)
         /// </summary>
         public List<MyDayTaskItemViewModel> WorkedTasks { get; set; } = new();
+
+        /// <summary>
+        /// ⭐ تسک‌ها گروه‌بندی شده بر اساس تاریخ
+        /// </summary>
+        public Dictionary<string, List<MyDayTaskItemViewModel>> TasksByDate { get; set; } = new();
 
         /// <summary>
         /// آمار کلی
         /// </summary>
         public MyDayStatsViewModel Stats { get; set; } = new();
+
+        /// <summary>
+        /// تاریخ‌های موجود (مرتب شده)
+        /// </summary>
+        public List<string> AvailableDates => TasksByDate.Keys.OrderByDescending(x => x).ToList();
     }
 
     /// <summary>
-    /// آیتم تسک در "روز من"
+    /// ViewModel برای هر آیتم تسک در "روز من" - اصلاح شده
     /// </summary>
     public class MyDayTaskItemViewModel
     {
@@ -55,6 +66,26 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public DateTime CreatedDate { get; set; }
         public byte TaskStatus { get; set; }
         public int ProgressPercentage { get; set; }
+
+        /// <summary>
+        /// ⭐ تاریخ برنامه‌ریزی
+        /// </summary>
+        public DateTime PlannedDate { get; set; }
+
+        /// <summary>
+        /// ⭐ تاریخ برنامه‌ریزی (شمسی)
+        /// </summary>
+        public string PlannedDatePersian { get; set; } = string.Empty;
+
+        /// <summary>
+        /// آیا تسک امروز است؟
+        /// </summary>
+        public bool IsToday => PlannedDate.Date == DateTime.Now.Date;
+
+        /// <summary>
+        /// آیا تسک گذشته است؟
+        /// </summary>
+        public bool IsOverdue => PlannedDate.Date < DateTime.Now.Date && !IsWorkedOn;
     }
 
     /// <summary>
