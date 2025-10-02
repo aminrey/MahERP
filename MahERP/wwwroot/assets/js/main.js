@@ -862,6 +862,7 @@ $(document).on('click', '[data-toggle="modal-ajax"]', function (event) {
 $(document).on('hidden.bs.modal', '.modal', function () {
     $(this).remove();
 });
+
 // Handle AJAX form submission inside modals
 $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
     event.preventDefault();

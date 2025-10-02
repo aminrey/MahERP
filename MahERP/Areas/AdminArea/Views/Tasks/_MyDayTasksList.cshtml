@@ -1,0 +1,350 @@
+﻿@model MyDayTasksViewModel
+
+@if (Model.TasksByDate.Any())
+{
+    var today = DateTime.Now.Date;
+    
+    // سورت کردن تاریخ‌ها: امروز اول، فردا دوم، دیروز آخر
+    var sortedDateGroups = Model.TasksByDate
+        .OrderBy(x => {
+            var hasToday = x.Value.Any(t => t.IsToday);
+            if (hasToday) return 0; // امروز اولویت اول
+            
+            // تبدیل تاریخ شمسی به میلادی برای مقایسه
+            var groupDate = today; // پیش‌فرض
+            var firstTask = x.Value.FirstOrDefault();
+            if (firstTask != null && !string.IsNullOrEmpty(firstTask.PlannedDatePersian))
+            {
+                try 
+                {
+                    groupDate = ConvertDateTime.ConvertShamsiToMiladi(firstTask.PlannedDatePersian);
+                }
+                catch 
+                {
+                    // در صورت خطا، از تاریخ امروز استفاده می‌کنیم
+                }
+            }
+            
+            if (groupDate > today) return 1; // فردا (روزهای آینده)
+            return 2; // دیروز (روزهای گذشته)
+        });
+
+    @foreach (var dateGroup in sortedDateGroups)
+    {
+        var isToday = dateGroup.Value.Any(t => t.IsToday);
+        var hasOverdue = dateGroup.Value.Any(t => t.IsOverdue);
+        
+        // ⭐ تغییر: فقط تسک‌های برنامه‌ریزی شده و کار شده (بدون تکمیل شده)
+        var plannedTasks = dateGroup.Value.Where(t => !t.IsWorkedOn).ToList();
+        var workedTasks = dateGroup.Value.Where(t => t.IsWorkedOn && t.TaskStatus < 2).ToList(); // فقط کار شده، نه تکمیل شده
+        
+        // تعیین label تاریخ
+        var dateLabel = dateGroup.Key;
+        var todayPersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now.Date, "yyyy/MM/dd");
+        var yesterdayPersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now.Date.AddDays(-1), "yyyy/MM/dd");
+        var tomorrowPersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now.Date.AddDays(1), "yyyy/MM/dd");
+        
+        if (dateGroup.Key == todayPersian)
+        {
+            dateLabel = $"امروز - {dateGroup.Key}";
+        }
+        else if (dateGroup.Key == yesterdayPersian)
+        {
+            dateLabel = $"دیروز - {dateGroup.Key}";
+        }
+        else if (dateGroup.Key == tomorrowPersian)
+        {
+            dateLabel = $"فردا - {dateGroup.Key}";
+        }
+
+        <div class="block block-rounded @(isToday ? "block-themed" : "") @(hasOverdue ? "border-danger" : "")">
+            <div class="block-header @(isToday ? "bg-primary text-white" : "bg-xdream-lighter")">
+                <h3 class="block-title">
+                    <i class="fa @(isToday ? "fa-calendar-day" : "fa-calendar") me-2"></i>
+                    @dateLabel
+                    @if (hasOverdue)
+                    {
+                        <span class="badge bg-danger ms-2">
+                            <i class="fa fa-exclamation-triangle me-1"></i>عقب افتاده
+                        </span>
+                    }
+                </h3>
+                <div class="block-options">
+                    <span class="badge @(isToday ? "bg-light text-primary" : "bg-secondary") rounded-pill">
+                        @(plannedTasks.Count + workedTasks.Count) تسک
+                    </span>
+                </div>
+            </div>
+
+            <div class="block-content p-0">
+                <!-- ⭐ تغییر چیدمان: استفاده از row و col برای قرار دادن جداول کنار هم -->
+                <div class="row g-0">
+                    <!-- کار شده ها - سمت چپ -->
+                    <div class="col-lg-6">
+                        @if (workedTasks.Any())
+                        {
+                            <div class="bg-success-light">
+                                <div class="p-3 border-bottom">
+                                    <h5 class="fw-bold text-success mb-0">
+                                        <i class="fa fa-check-circle me-2"></i>
+                                        کار شده
+                                        <span class="badge bg-success ms-2">@workedTasks.Count</span>
+                                    </h5>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-borderless table-striped table-vcenter fs-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>عنوان تسک</th>
+                                            <th class="text-center" style="width: 80px;">مدت زمان</th>
+                                            <th class="text-center" style="width: 60px;">عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var task in workedTasks.OrderByDescending(x => x.WorkStartDate))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <a asp-action="Details" asp-route-id="@task.TaskId" class="fw-semibold link-fx">
+                                                        @task.TaskTitle
+                                                    </a>
+                                                    <div class="fs-sm text-muted">
+                                                        کد: <strong>@task.TaskCode</strong>
+                                                        @if (task.WorkStartDate.HasValue)
+                                                        {
+                                                            <span class="ms-2">
+                                                                <i class="fa fa-clock me-1"></i>@task.WorkStartDate.Value.ToString("HH:mm")
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(task.WorkNote))
+                                                    {
+                                                        <div class="fs-sm text-success mt-1">
+                                                            <i class="fa fa-comment me-1"></i>
+                                                            @(task.WorkNote.Length > 60 ? task.WorkNote.Substring(0, 60) + "..." : task.WorkNote)
+                                                        </div>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (task.WorkDurationMinutes.HasValue)
+                                                    {
+                                                        <strong class="text-success">
+                                                            @(task.WorkDurationMinutes.Value > 60 ?
+                                                                $"{task.WorkDurationMinutes.Value / 60}:{task.WorkDurationMinutes.Value % 60:D2}" :
+                                                                $"{task.WorkDurationMinutes.Value}د")
+                                                        </strong>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center fs-sm">
+                                                    <a class="btn btn-sm btn-alt-secondary" 
+                                                       href="javascript:void(0)" 
+                                                       onclick="logWork(@task.TaskId)" 
+                                                       title="بروزرسانی کار">
+                                                        <i class="fa fa-fw fa-edit text-primary"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 bg-body-light">
+                                <i class="fa fa-clock fa-2x text-muted mb-2"></i>
+                                <div class="text-muted">هنوز کاری انجام نشده</div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- برنامه‌ریزی شده - سمت راست -->
+                    <div class="col-lg-6 border-start">
+                        @if (plannedTasks.Any())
+                        {
+                            <div class="bg-body-light">
+                                <div class="p-3 border-bottom">
+                                    <h5 class="fw-bold text-muted mb-0">
+                                        <i class="fa fa-clock text-primary me-2"></i>
+                                        برنامه‌ریزی شده
+                                        <span class="badge bg-primary ms-2">@plannedTasks.Count</span>
+                                    </h5>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-borderless table-striped table-vcenter fs-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width: 80px;">وضعیت</th>
+                                            <th>عنوان تسک</th>
+                                            <th class="text-center" style="width: 80px;">پیشرفت</th>
+                                            <th class="text-center" style="width: 100px;">عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var task in plannedTasks.OrderBy(x => x.TaskPriority).ThenBy(x => x.CreatedDate))
+                                        {
+                                            <tr class="@(task.IsOverdue ? "table-danger" : "")">
+                                                <td class="text-center">
+                                                    @if (task.TaskPriority == 2)
+                                                    {
+                                                        <span class="badge bg-danger">فوری</span>
+                                                    }
+                                                    else if (task.IsImportant)
+                                                    {
+                                                        <span class="badge bg-warning">مهم</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">عادی</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <a asp-action="Details" asp-route-id="@task.TaskId" class="fw-semibold link-fx">
+                                                        @task.TaskTitle
+                                                    </a>
+                                                    <div class="fs-sm text-muted">
+                                                        کد: <strong>@task.TaskCode</strong>
+                                                        @if (!string.IsNullOrEmpty(task.CategoryTitle))
+                                                        {
+                                                            <span class="ms-2">
+                                                                <i class="fa fa-tag me-1"></i>@task.CategoryTitle
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(task.PlanNote))
+                                                    {
+                                                        <div class="fs-sm text-info mt-1">
+                                                            <i class="fa fa-sticky-note me-1"></i>
+                                                            @(task.PlanNote.Length > 60 ? task.PlanNote.Substring(0, 60) + "..." : task.PlanNote)
+                                                        </div>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="progress progress-sm mb-1">
+                                                        <div class="progress-bar @(task.ProgressPercentage >= 100 ? "bg-success" : "bg-primary")" 
+                                                             role="progressbar"
+                                                             style="width: @task.ProgressPercentage%"
+                                                             aria-valuenow="@task.ProgressPercentage"
+                                                             aria-valuemin="0" aria-valuemax="100">
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted">@task.ProgressPercentage%</small>
+                                                </td>
+                                                <td class="text-center fs-sm">
+                                                    <a class="btn btn-sm btn-alt-secondary me-1" 
+                                                       href="javascript:void(0)" 
+                                                       onclick="logWork(@task.TaskId)" 
+                                                       title="ثبت کار انجام شده">
+                                                        <i class="fa fa-fw fa-play text-success"></i>
+                                                    </a>
+                                                    <a class="btn btn-sm btn-alt-secondary" 
+                                                       href="javascript:void(0)" 
+                                                       onclick="removeFromMyDay(@task.TaskId, '@task.PlannedDatePersian')" 
+                                                       title="حذف از روز من">
+                                                        <i class="fa fa-fw fa-times text-danger"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 bg-body-light">
+                                <i class="fa fa-clock fa-2x text-muted mb-2"></i>
+                                <div class="text-muted">هیچ تسک برنامه‌ریزی نشده‌ای ندارید</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- اگر هیچ تسکی نباشد -->
+                @if (!plannedTasks.Any() && !workedTasks.Any())
+                {
+                    <div class="block-content text-center py-5">
+                        <div class="mb-3">
+                            <i class="fa fa-calendar-times fa-3x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted">هیچ تسکی برای این تاریخ ندارید</h5>
+                        <p class="text-muted mb-0">تسک‌های جدید را از لیست اصلی به روز خود اضافه کنید.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+else
+{
+    <!-- صفحه خالی -->
+    <div class="block block-rounded">
+        <div class="block-content text-center py-5">
+            <div class="mb-4">
+                <i class="fa fa-calendar-plus fa-4x text-muted"></i>
+            </div>
+            <h4 class="text-muted mb-3">هیچ تسکی در برنامه روزانه شما نیست</h4>
+            <p class="text-muted mb-4">
+                از طریق لیست تسک‌ها، تسک‌های مورد نظر را به روزهای مختلف اضافه کنید.
+            </p>
+            <a asp-action="Index" class="btn btn-primary">
+                <i class="fa fa-plus me-2"></i>مشاهده لیست تسک‌ها
+            </a>
+        </div>
+    </div>
+}
+
+<script>
+// تابع حذف از روز من
+function removeFromMyDay(taskId, plannedDate) {
+    if (confirm('آیا مطمئن هستید که می‌خواهید این تسک را از روز خود حذف کنید؟')) {
+        var formData = new FormData();
+        formData.append('taskId', taskId);
+        formData.append('date', plannedDate);
+        formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+
+        fetch('@Url.Action("RemoveFromMyDay", "Tasks")', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // نمایش پیام موفقیت
+                showNotification('success', data.message);
+                
+                // بروزرسانی صفحه
+                location.reload();
+            } else {
+                showNotification('error', data.message || 'خطا در حذف تسک');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('error', 'خطا در ارتباط با سرور');
+        });
+    }
+}
+
+// تابع نمایش نوتیفیکیشن
+function showNotification(type, message) {
+    // پیاده‌سازی با toast یا notification library
+    console.log(type + ': ' + message);
+    
+    // یا می‌توانید از SweetAlert استفاده کنید:
+    // Swal.fire({
+    //     icon: type === 'success' ? 'success' : 'error',
+    //     title: message,
+    //     showConfirmButton: false,
+    //     timer: 3000
+    // });
+}
+</script>

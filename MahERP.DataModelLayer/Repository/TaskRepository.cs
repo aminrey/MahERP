@@ -2774,19 +2774,26 @@ namespace MahERP.DataModelLayer.Repository
 
     
         /// <summary>
-        /// دریافت تسک‌های "روز من" برای کاربر - اصلاح شده برای نمایش همه تاریخ‌ها
+        /// دریافت تسک‌های "روز من" برای کاربر - اصلاح شده برای نمایش امروز، فردا و دیروز
         /// </summary>
         public async Task<MyDayTasksViewModel> GetMyDayTasksAsync(string userId, DateTime? selectedDate = null)
         {
             var targetDate = selectedDate?.Date ?? DateTime.Now.Date;
+            var today = DateTime.Now.Date;
+            var yesterday = today.AddDays(-1);
+            var tomorrow = today.AddDays(1);
 
-            // ⭐ حذف فیلتر تاریخ - نمایش همه تسک‌های MyDay
+            // ⭐ فیلتر کردن برای نمایش فقط دیروز، امروز و فردا
             var myDayTasks = await _context.TaskMyDay_Tbl
                 .Include(x => x.Task)
                     .ThenInclude(x => x.TaskCategory)
                 .Include(x => x.Task)
                     .ThenInclude(x => x.Stakeholder)
-                .Where(x => x.UserId == userId && x.IsActive)
+                .Where(x => x.UserId == userId && 
+                           x.IsActive &&
+                           (x.PlannedDate.Date == yesterday || 
+                            x.PlannedDate.Date == today || 
+                            x.PlannedDate.Date == tomorrow))
                 .OrderBy(x => x.PlannedDate)
                 .ThenBy(x => x.CreatedDate)
                 .ToListAsync();
@@ -2797,7 +2804,6 @@ namespace MahERP.DataModelLayer.Repository
                 SelectedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(targetDate, "yyyy/MM/dd"),
                 PlannedTasks = new List<MyDayTaskItemViewModel>(),
                 WorkedTasks = new List<MyDayTaskItemViewModel>(),
-                // ⭐ اضافه کردن گروه‌بندی بر اساس تاریخ
                 TasksByDate = new Dictionary<string, List<MyDayTaskItemViewModel>>()
             };
 
@@ -2823,9 +2829,9 @@ namespace MahERP.DataModelLayer.Repository
                     CreatedDate = item.CreatedDate,
                     TaskStatus = item.Task.Status,
                     ProgressPercentage = CalculateTaskProgress(item.Task),
-                    // ⭐ اضافه کردن تاریخ برنامه‌ریزی
                     PlannedDate = item.PlannedDate,
-                    PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(item.PlannedDate, "yyyy/MM/dd")
+                    PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(item.PlannedDate, "yyyy/MM/dd"),
+                 
                 };
 
                 // گروه‌بندی بر اساس تاریخ

@@ -2,7 +2,7 @@
 
 <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-        <form id="logWorkForm">
+        <form id="logWorkForm" asp-action="LogWork" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="TaskId" />
             <input type="hidden" asp-for="TaskCode" />
@@ -71,7 +71,7 @@
                 <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
                     <i class="fa fa-times me-1"></i>انصراف
                 </button>
-                <button type="button" class="btn btn-success" data-save="modal-ajax-save" data-url="@Url.Action("LogWork")">
+                <button type="button" class="btn btn-success" data-save="modal-ajax-save">
                     <i class="fa fa-check me-1"></i>ثبت کار انجام شده
                 </button>
             </div>
@@ -86,22 +86,59 @@ $(document).ready(function() {
 
     // اضافه کردن event listener برای دکمه ثبت
     $('[data-save="modal-ajax-save"]').on('ajaxSuccess', function(event, response) {
-        // بستن مودال در صورت موفقیت
-        $('#@Model.TaskId').find('.btn-close').click();
+        console.log('LogWork AJAX Success:', response);
         
-        // بروزرسانی وضعیت دکمه در صورت نیاز
+        // اگر در صفحه MyDayTasks هستیم، نیازی به بستن دستی مودال نیست
+        // چون main.js در صورت update-view مودال را می‌بندد
+        
+        // بروزرسانی دکمه‌های تسک در صورت نیاز
         updateTaskButtons(@Model.TaskId, true);
+        
+        // نمایش پیام موفقیت اضافی در صورت نیاز
+        if (typeof Dashmix !== 'undefined') {
+            Dashmix.helpers('jq-notify', {
+                type: 'success',
+                icon: 'fa fa-check me-1',
+                message: 'کار با موفقیت ثبت شد و صفحه بروزرسانی شد'
+            });
+        }
+    });
+
+    // اضافه کردن event listener برای خطا
+    $('[data-save="modal-ajax-save"]').on('ajaxError', function(event, xhr, status, error) {
+        console.error('LogWork AJAX Error:', { xhr, status, error });
+        
+        // نمایش پیام خطا
+        if (typeof Dashmix !== 'undefined') {
+            Dashmix.helpers('jq-notify', {
+                type: 'danger',
+                icon: 'fa fa-times me-1',
+                message: 'خطا در ثبت کار انجام شده'
+            });
+        }
     });
 
     function updateTaskButtons(taskId, isWorkedOn) {
-        const $taskRow = $(`[data-task-id="${taskId}"]`);
-        if ($taskRow.length) {
-            const $logWorkBtn = $taskRow.find('.btn-log-work');
-            if (isWorkedOn) {
-                $logWorkBtn.removeClass('btn-outline-success').addClass('btn-success');
-                $logWorkBtn.html('<i class="fa fa-check me-1"></i>کار ثبت شده');
+        // بروزرسانی دکمه‌های تسک در صفحات مختلف
+        const $taskElements = $(`[data-task-id="${taskId}"]`);
+        
+        $taskElements.each(function() {
+            const $taskElement = $(this);
+            const $logWorkBtn = $taskElement.find('.btn-log-work, button[onclick*="logWork(' + taskId + ')"]');
+            
+            if ($logWorkBtn.length && isWorkedOn) {
+                $logWorkBtn.removeClass('btn-outline-success btn-success').addClass('btn-success');
+                
+                // تغییر متن دکمه اگر نیاز باشد
+                const currentHtml = $logWorkBtn.html();
+                if (currentHtml.indexOf('fa-play') !== -1) {
+                    $logWorkBtn.html('<i class="fa fa-check me-1"></i>کار ثبت شده');
+                } else if (currentHtml.indexOf('fa-edit') === -1) {
+                    $logWorkBtn.html('<i class="fa fa-edit me-1"></i>ویرایش کار');
+                }
             }
-        }
-    }
-});
-</script>
+        });
+
+        // بروزرسانی نشانگرهای بصری دیگر
+        const $progressBars = $(`[data-task-id="${taskId}"] .progress-bar`);
+        $progressBars.addClass('bg-success

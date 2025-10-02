@@ -1470,6 +1470,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         /// <summary>
         /// ذخیره کار انجام شده روی تسک
         /// </summary>
+        /// <summary>
+        /// ذخیره کار انجام شده روی تسک
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LogWork(TaskWorkLogViewModel model)
@@ -1488,9 +1491,29 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         $"ثبت کار انجام شده روی تسک {model.TaskCode}",
                         recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
 
+                    // دریافت داده‌های بروزرسانی شده
+                    var updatedModel = await _taskRepository.GetMyDayTasksAsync(userId);
+
+                    // رندر کردن partial views
+                    var statsHtml = await this.RenderViewToStringAsync("_MyDayStats", updatedModel);
+                    var tasksListHtml = await this.RenderViewToStringAsync("_MyDayTasksList", updatedModel);
+
                     return Json(new
                     {
-                        status = "success",
+                        status = "update-view",
+                        viewList = new[]
+                        {
+                    new
+                    {
+                        elementId = "myDayStatsContainer",
+                        view = new { result = statsHtml }
+                    },
+                    new
+                    {
+                        elementId = "myDayTasksContainer",
+                        view = new { result = tasksListHtml }
+                    }
+                },
                         message = new[] { new { status = "success", text = "کار انجام شده با موفقیت ثبت شد" } }
                     });
                 }
