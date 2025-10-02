@@ -23,6 +23,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         private readonly ITaskRepository _taskRepository;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
+        protected readonly IUserManagerRepository _userRepository;
 
         public BranchTaskCategoryController(
             IUnitOfWork uow,
@@ -32,13 +33,15 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            ActivityLoggerService activityLogger,
+            IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _uow = uow;
             _branchRepository = branchRepository;
             _taskRepository = taskRepository;
             _userManager = userManager;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
 
         /// <summary>

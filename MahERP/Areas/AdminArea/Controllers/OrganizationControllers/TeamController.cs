@@ -41,7 +41,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             IBranchRepository branchRepository,
             IUserManagerRepository userRepository,
             IMapper mapper,
-            ITaskVisibilityRepository taskVisibilityRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            ITaskVisibilityRepository taskVisibilityRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _teamRepository = teamRepository;
             _branchRepository = branchRepository;

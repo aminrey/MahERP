@@ -21,6 +21,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         private readonly IRoleRepository _roleRepository;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
+        protected readonly IUserManagerRepository _userRepository;
 
         public UserPermissionController(
             IUnitOfWork uow,
@@ -29,12 +30,14 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            ActivityLoggerService activityLogger,
+            IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _uow = uow;
             _roleRepository = roleRepository;
             _userManager = userManager;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
 
         // لیست کاربران با دسترسی‌ها

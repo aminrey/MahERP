@@ -3,37 +3,67 @@
     ViewData["Title"] = "داشبورد";
 }
 
-<div class="content">
-    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center py-2 text-center text-md-start">
-        <div class="flex-grow-1 mb-1 mb-md-0">
-            <h1 class="h3 fw-bold mb-2">داشبورد</h1>
-            <h2 class="h6 fw-medium text-muted mb-0">خوش آمدید، @User.Identity.Name</h2>
-        </div>
-        <div class="mt-3 mt-md-0 ms-md-3">
-            <span class="fs-sm text-muted">آخرین بروزرسانی: @DateTime.Now.ToString("HH:mm")</span>
+<!-- Hero Banner Section -->
+<div class="bg-image" style="background-image: url('/assets/media/photos/photo12@2x.jpg');">
+    <div class="bg-black-75">
+        <div class="content content-boxed content-full py-5">
+            <div class="row">
+                <div class="col-md-8 d-flex align-items-center py-3">
+                    <div class="w-100 text-center text-md-start">
+                        <h1 class="h2 text-white mb-2">داشبورد</h1>
+                        <h2 class="h4 fs-sm text-uppercase fw-semibold text-white-75">خوش آمدید، @User.Identity.Name</h2>
+                        <div class="text-white-50 fs-sm">آخرین بروزرسانی: @DateTime.Now.ToString("HH:mm")</div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-center">
+                    <div class="block block-rounded block-link-shadow block-transparent bg-black-50 text-center mb-0 mx-auto">
+                        <div class="block-content block-content-full px-4 py-3">
+                            <div class="d-grid gap-2">
+                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="MyDayTasks" class="btn btn-primary">
+                                    <i class="fa fa-calendar-day me-1"></i> تسک‌های امروز من
+                                </a>
+                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskCalendar" class="btn btn-alt-secondary">
+                                    <i class="fa fa-calendar me-1"></i> تقویم تسک‌ها
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- آمار کلی -->
+<!-- آمار کلی - ردیف دوم -->
 <div class="content">
     <div class="row">
         <!-- تسک‌های من -->
         <div class="col-6 col-lg-3">
-            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="MyTasks">
                 <div class="block-content block-content-full">
-                    <div class="fs-2 fw-bold text-primary" id="myTasksCount">-</div>
-                    <div class="fs-sm fw-semibold text-uppercase text-muted">تسک‌های من</div>
+                    <div class="fs-2 fw-bold text-primary" id="mytasks">-</div>
+                    <div class="fs-sm fw-semibold text-uppercase text-muted">تسک‌های فعال من</div>
+                    <div class="fs-xs text-muted">ساخته‌شده + واگذارشده</div>
                 </div>
             </a>
         </div>
 
-        <!-- تسک‌های واگذار شده -->
+        <!-- تسک‌های به موقع -->
         <div class="col-6 col-lg-3">
-            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="AssignedByMe">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="ontime">
                 <div class="block-content block-content-full">
-                    <div class="fs-2 fw-bold text-warning" id="assignedTasksCount">-</div>
-                    <div class="fs-sm fw-semibold text-uppercase text-muted">واگذار شده</div>
+                    <div class="fs-2 fw-bold text-success" id="onTimeTasksCount">-</div>
+                    <div class="fs-sm fw-semibold text-uppercase text-muted">به موقع</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- تسک‌های عقب افتاده -->
+        <div class="col-6 col-lg-3">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="overdue">
+                <div class="block-content block-content-full">
+                    <div class="fs-2 fw-bold text-danger" id="overdueTasksCount">-</div>
+                    <div class="fs-sm fw-semibold text-uppercase text-muted">عقب افتاده</div>
                 </div>
             </a>
         </div>
@@ -42,188 +72,392 @@
         <div class="col-6 col-lg-3">
             <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="SupervisedTasks">
                 <div class="block-content block-content-full">
-                    <div class="fs-2 fw-bold text-info" id="supervisedTasksCount">-</div>
+                    <div class="fs-2 fw-bold text-info" id="supervisedtasks">-</div>
                     <div class="fs-sm fw-semibold text-uppercase text-muted">تحت نظارت</div>
                 </div>
             </a>
         </div>
-
-        <!-- یادآوری‌ها -->
-        <div class="col-6 col-lg-3">
-            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
-                <div class="block-content block-content-full">
-                    <div class="fs-2 fw-bold text-success" id="remindersCount">-</div>
-                    <div class="fs-sm fw-semibold text-uppercase text-muted">یادآوری فعال</div>
-                </div>
-            </a>
-        </div>
     </div>
 </div>
 
-<!-- محتوای اصلی -->
+<!-- آخرین تسک‌ها - ردیف سوم -->
 <div class="content">
     <div class="row">
-        <!-- تسک‌های فوری و مهم -->
-        <div class="col-lg-8">
+        <div class="col-xl-6">
+            <!-- تسک‌های دریافتی -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">آخرین تسک‌های دریافتی</h3>
+                    <div class="block-options">
+                        <button class="btn-block-option" data-action="state_toggle" data-action-mode="demo" data-toggle="block-option" type="button">
+                            <i class="si si-refresh" onclick="loadRecentTasks()"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <table class="table table-borderless table-striped table-vcenter fs-sm" id="receivedTasksTable">
+                        <tbody>
+                            <!-- داده‌ها از طریق AJAX بارگذاری می‌شوند -->
+                            <tr>
+                                <td class="text-center">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">در حال بارگذاری...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- END تسک‌های دریافتی -->
+        </div>
+        <div class="col-xl-6">
+            <!-- تسک‌های واگذار شده -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">آخرین تسک‌های واگذار شده</h3>
+                    <div class="block-options">
+                        <button class="btn-block-option" data-action="state_toggle" data-action-mode="demo" data-toggle="block-option" type="button">
+                            <i class="si si-refresh" onclick="loadRecentTasks()"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <table class="table table-borderless table-striped table-vcenter fs-sm" id="assignedTasksTable">
+                        <tbody>
+                            <!-- داده‌ها از طریق AJAX بارگذاری می‌شوند -->
+                            <tr>
+                                <td class="text-center">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">در حال بارگذاری...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- END تسک‌های واگذار شده -->
+        </div>
+    </div>
+</div>
+<!-- END آخرین تسک‌ها -->
+<!-- یادآوری‌ها - ردیف چهارم -->
+<div class="content">
+    <div class="row">
+        <div class="col-12">
+            <!-- جدول یادآوری‌ها -->
             <div class="block block-rounded">
                 <div class="block-header block-header-default">
                     <h3 class="block-title">
-                        <i class="fa fa-exclamation-triangle me-1 text-danger"></i>
-                        تسک‌های فوری
+                        <i class="fa fa-bell text-warning me-2"></i>یادآوری‌های مهم
                     </h3>
                     <div class="block-options">
-                        <a class="btn-block-option" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks" asp-route-filter="urgent">
-                            مشاهده همه
-                        </a>
-                    </div>
-                </div>
-                <div class="block-content" id="urgentTasksContent">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        <button class="btn-block-option" data-action="state_toggle" data-action-mode="demo" data-toggle="block-option" type="button">
+                            <i class="si si-refresh" onclick="loadReminders()"></i>
+                        </button>
+                        <div class="dropdown">
+                            <button type="button" class="btn-block-option dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="si si-options"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <a class="dropdown-item" href="#" onclick="markAllRemindersAsRead()">
+                                    <i class="fa fa-check me-1"></i> علامت‌گذاری همه به عنوان خوانده شده
+                                </a>
+                                <a class="dropdown-item" href="/AdminArea/Tasks/Reminders">
+                                    <i class="fa fa-list me-1"></i> مشاهده همه یادآوری‌ها
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- آمار و اطلاعات سریع -->
-        <div class="col-lg-4">
-            <!-- تسک‌های امروز -->
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-calendar-day me-1 text-primary"></i>
-                        امروز
-                    </h3>
-                </div>
-                <div class="block-content text-center">
-                    <div class="py-3">
-                        <div class="fs-1 fw-bold text-primary" id="todayTasksCount">-</div>
-                        <div class="fs-sm fw-semibold text-uppercase text-muted">تسک برای امروز</div>
-                    </div>
-                    <a asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks" asp-route-filter="today" class="btn btn-sm btn-primary">
-                        <i class="fa fa-eye me-1"></i> مشاهده
-                    </a>
-                </div>
-            </div>
-
-            <!-- تسک‌های عقب افتاده -->
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-exclamation-circle me-1 text-danger"></i>
-                        عقب افتاده
-                    </h3>
-                </div>
-                <div class="block-content text-center">
-                    <div class="py-3">
-                        <div class="fs-1 fw-bold text-danger" id="overdueTasksCount">-</div>
-                        <div class="fs-sm fw-semibold text-uppercase text-muted">تسک عقب افتاده</div>
-                    </div>
-                    <a asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks" asp-route-filter="overdue" class="btn btn-sm btn-danger">
-                        <i class="fa fa-eye me-1"></i> مشاهده
-                    </a>
-                </div>
-            </div>
-
-            <!-- دسترسی سریع -->
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-bolt me-1"></i>
-                        دسترسی سریع
-                    </h3>
-                </div>
                 <div class="block-content">
-                    <div class="d-grid gap-2">
-                        <a asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" class="btn btn-primary">
-                            <i class="fa fa-plus me-1"></i> تسک جدید
-                        </a>
-                        <a asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskCalendar" class="btn btn-alt-secondary">
-                            <i class="fa fa-calendar me-1"></i> تقویم تسک‌ها
-                        </a>
-                        <a asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskDashboard" class="btn btn-alt-secondary">
-                            <i class="fa fa-tachometer-alt me-1"></i> داشبورد تسک‌ها
-                        </a>
-                    </div>
+                    <table class="table table-borderless table-striped table-vcenter fs-sm" id="remindersTable">
+                        <tbody>
+                            <!-- داده‌ها از طریق AJAX بارگذاری می‌شوند -->
+                            <tr>
+                                <td class="text-center">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">در حال بارگذاری یادآوری‌ها...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
+            <!-- END جدول یادآوری‌ها -->
         </div>
     </div>
 </div>
-
-<!-- آخرین فعالیت‌ها -->
-<div class="content">
-    <div class="block block-rounded">
-        <div class="block-header block-header-default">
-            <h3 class="block-title">
-                <i class="fa fa-history me-1"></i>
-                آخرین فعالیت‌های تسک
-            </h3>
-            <div class="block-options">
-                <a class="btn-block-option" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
-                    مشاهده همه
-                </a>
-            </div>
-        </div>
-        <div class="block-content" id="recentActivitiesContent">
-            <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">در حال بارگذاری...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- END یادآوری‌ها -->
 @section Scripts {
+
+    
     <script>
         $(document).ready(function() {
             // بارگذاری داده‌های داشبورد
             loadDashboardData();
+            loadRecentTasks();
+            loadReminders();
 
             // بروزرسانی هر 60 ثانیه
-            setInterval(loadDashboardData, 60000);
+            setInterval(function() {
+                loadDashboardData();
+                loadRecentTasks();
+                loadReminders();
+            }, 60000);
         });
 
         function loadDashboardData() {
             // بارگذاری آمار کلی
-            $.get('@Url.Action("GetDashboardStats", "Tasks", new { area = "AdminArea" })')
+            $.get('@Url.Action("GetDashboardSummary", "Dashboard", new { area = "AdminArea" })')
                 .done(function(response) {
                     if (response.success) {
-                        $('#myTasksCount').text(response.myTasksCount);
-                        $('#assignedTasksCount').text(response.assignedByMeCount);
-                        $('#supervisedTasksCount').text(response.supervisedTasksCount);
-                        $('#remindersCount').text(response.remindersCount);
-                        $('#todayTasksCount').text(response.todayTasksCount);
-                        $('#overdueTasksCount').text(response.overdueTasksCount);
+                        $('#mytasks').text(response.tasksStats.activePersonalTasksCount || response.tasksStats.myTasksCount || 0);
+                        $('#onTimeTasksCount').text(response.tasksStats.onTimeTasksCount || 0);
+                        $('#overdueTasksCount').text(response.tasksStats.overdueTasksCount);
+                        $('#supervisedtasks').text(response.tasksStats.supervisedTasksCount);
 
                         // بروزرسانی badge های sidebar
-                        updateSidebarBadges(response);
+                        updateSidebarBadges(response.tasksStats);
                     }
                 })
                 .fail(function() {
                     $('.fs-2').text('خطا');
                 });
+        }
 
-            // بارگذاری تسک‌های فوری
-            $.get('@Url.Action("GetUrgentTasks", "Tasks", new { area = "AdminArea" })')
-                .done(function(data) {
-                    $('#urgentTasksContent').html(data);
+        function loadRecentTasks() {
+            // بارگذاری تسک‌های دریافتی
+            $.get('@Url.Action("GetRecentReceivedTasks", "Dashboard", new { area = "AdminArea" })')
+                .done(function(response) {
+                    if (response.success && response.tasks) {
+                        populateTaskTable('#receivedTasksTable', response.tasks, 'received');
+                    }
                 })
                 .fail(function() {
-                    $('#urgentTasksContent').html('<div class="text-center py-4 text-muted">خطا در بارگذاری تسک‌ها</div>');
+                    $('#receivedTasksTable tbody').html('<tr><td colspan="4" class="text-center text-muted">خطا در بارگذاری</td></tr>');
                 });
 
-            // بارگذاری آخرین فعالیت‌ها
-            $.get('@Url.Action("GetRecentTaskActivities", "Tasks", new { area = "AdminArea" })')
-                .done(function(data) {
-                    $('#recentActivitiesContent').html(data);
+            // بارگذاری تسک‌های واگذار شده
+            $.get('@Url.Action("GetRecentAssignedTasks", "Dashboard", new { area = "AdminArea" })')
+                .done(function(response) {
+                    if (response.success && response.tasks) {
+                        populateTaskTable('#assignedTasksTable', response.tasks, 'assigned');
+                    }
                 })
                 .fail(function() {
-                    $('#recentActivitiesContent').html('<div class="text-center py-4 text-muted">خطا در بارگذاری فعالیت‌ها</div>');
+                    $('#assignedTasksTable tbody').html('<tr><td colspan="4" class="text-center text-muted">خطا در بارگذاری</td></tr>');
                 });
+        }
+
+        // ⭐ تابع جدید برای بارگذاری یادآوری‌ها
+        function loadReminders() {
+            $.get('@Url.Action("GetDashboardReminders", "Dashboard", new { area = "AdminArea" })')
+                .done(function(response) {
+                    if (response.success && response.reminders) {
+                        populateRemindersTable(response.reminders);
+                    }
+                })
+                .fail(function() {
+                    $('#remindersTable tbody').html('<tr><td colspan="5" class="text-center text-muted">خطا در بارگذاری یادآوری‌ها</td></tr>');
+                });
+        }
+
+        // ⭐ تابع پر کردن جدول یادآوری‌ها
+        function populateRemindersTable(reminders) {
+            const tbody = $('#remindersTable tbody');
+            tbody.empty();
+
+            if (!reminders || reminders.length === 0) {
+                tbody.html('<tr><td colspan="5" class="text-center text-muted"><i class="fa fa-check-circle text-success me-1"></i>همه یادآوری‌ها خوانده شده!</td></tr>');
+                return;
+            }
+
+            reminders.forEach(function(reminder) {
+                const statusBadge = getReminderStatusBadge(reminder.status);
+                const priorityIcon = reminder.priority === 1 ? '<i class="fa fa-exclamation-triangle text-warning me-1"></i>' : '';
+                const taskLink = reminder.taskId ? `/AdminArea/Tasks/Details/${reminder.taskId}` : '#';
+
+                // ⭐ تشخیص یادآوری جدید
+                const isNewReminder = !reminder.isRead && reminder.status !== 'read';
+                const newReminderClass = isNewReminder ? 'table-warning notification-blink' : '';
+
+                const row = `
+                    <tr class="reminder-row ${reminder.status} ${newReminderClass}" data-reminder-id="${reminder.id}">
+                        <td class="text-center" style="width: 60px;">
+                            ${statusBadge}
+                            ${isNewReminder ? '<span class="badge bg-success ms-1">جدید</span>' : ''}
+                        </td>
+                        <td>
+                            <div class="fw-medium mb-1">
+                                ${priorityIcon}${reminder.title}
+                            </div>
+                            <div class="fs-xs text-muted mb-1">${reminder.message || ''}</div>
+                            ${reminder.taskTitle ? `<div class="fs-xs"><span class="text-muted">تسک:</span> <a href="${taskLink}" class="text-decoration-none">${reminder.taskCode} - ${reminder.taskTitle}</a></div>` : ''}
+                        </td>
+                        <td class="d-none d-sm-table-cell text-center" style="width: 100px;">
+                            <div class="fs-xs text-muted">${reminder.timeInfo}</div>
+                        </td>
+                        <td class="d-none d-lg-table-cell text-center" style="width: 120px;">
+                            <div class="fs-xs text-muted">${reminder.scheduledDatePersian}</div>
+                        </td>
+                        <td class="text-center" style="width: 80px;">
+                            <div class="btn-group btn-group-sm" role="group">
+                                ${!reminder.isRead ? `<button type="button" class="btn btn-sm btn-outline-success" onclick="markReminderAsRead(${reminder.id})" title="علامت‌گذاری به عنوان خوانده شده"><i class="fa fa-check"></i></button>` : ''}
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteReminder(${reminder.id})" title="حذف یادآوری"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        // ⭐ تابع دریافت badge وضعیت یادآوری
+        function getReminderStatusBadge(status) {
+            switch (status) {
+                case 'overdue':
+                    return '<span class="badge bg-danger" title="عقب افتاده"><i class="fa fa-clock"></i></span>';
+                case 'upcoming':
+                    return '<span class="badge bg-warning" title="آینده نزدیک"><i class="fa fa-bell"></i></span>';
+                case 'unread':
+                    return '<span class="badge bg-info" title="ارسال شده"><i class="fa fa-envelope"></i></span>';
+                case 'read':
+                    return '<span class="badge bg-success" title="خوانده شده"><i class="fa fa-check"></i></span>';
+                default:
+                    return '<span class="badge bg-secondary"><i class="fa fa-bell"></i></span>';
+            }
+        }
+
+        // ⭐ علامت‌گذاری یادآوری به عنوان خوانده شده
+        function markReminderAsRead(reminderId) {
+            $.post('@Url.Action("MarkReminderAsRead", "Tasks", new { area = "AdminArea" })', { reminderId: reminderId })
+                .done(function(response) {
+                    if (response.success) {
+                        loadReminders(); // بروزرسانی جدول
+                        loadDashboardData(); // بروزرسانی آمار
+                    }
+                })
+                .fail(function() {
+                    alert('خطا در علامت‌گذاری یادآوری');
+                });
+        }
+
+        // ⭐ علامت‌گذاری همه یادآوری‌ها به عنوان خوانده شده
+        function markAllRemindersAsRead() {
+            if (confirm('آیا مطمئنید که می‌خواهید همه یادآوری‌ها را به عنوان خوانده شده علامت‌گذاری کنید؟')) {
+                $.post('@Url.Action("MarkAllRemindersAsRead", "Tasks", new { area = "AdminArea" })')
+                    .done(function(response) {
+                        if (response.success) {
+                            loadReminders(); // بروزرسانی جدول
+                            loadDashboardData(); // بروزرسانی آمار
+                        }
+                    })
+                    .fail(function() {
+                        alert('خطا در علامت‌گذاری یادآوری‌ها');
+                    });
+            }
+        }
+
+        // ⭐ حذف یادآوری
+        function deleteReminder(reminderId) {
+            if (confirm('آیا مطمئنید که می‌خواهید این یادآوری را حذف کنید؟')) {
+                $.post('@Url.Action("DeleteReminder", "Tasks", new { area = "AdminArea" })', { reminderId: reminderId })
+                    .done(function(response) {
+                        if (response.success) {
+                            loadReminders(); // بروزرسانی جدول
+                            loadDashboardData(); // بروزرسانی آمار
+                        }
+                    })
+                    .fail(function() {
+                        alert('خطا در حذف یادآوری');
+                    });
+            }
+        }
+
+        // اصلاح تابع populateTaskTable برای اضافه کردن data attributes
+        function populateTaskTable(tableSelector, tasks, type) {
+            const tbody = $(tableSelector + ' tbody');
+            tbody.empty();
+
+            if (!tasks || tasks.length === 0) {
+                tbody.html('<tr><td colspan="4" class="text-center text-muted">تسکی یافت نشد</td></tr>');
+                return;
+            }
+
+            tasks.forEach(function(task) {
+                const priorityBadge = getPriorityBadge(task.priority, task.important);
+                const startDate = task.startDate || task.createDate;
+                const formattedDate = formatDate(startDate);
+                const shortDescription = truncateText(task.description || '', 5);
+                
+                // ⭐ تشخیص تسک جدید (اگر در 10 دقیقه گذشته ایجاد شده)
+                const isNewTask = new Date(task.createDate) > new Date(Date.now() - 10 * 60 * 1000);
+                const newTaskClass = isNewTask ? 'table-warning notification-blink' : '';
+
+                let userInfo, userLabel;
+                if (type === 'received') {
+                    userInfo = task.creatorName || 'نامشخص';
+                    userLabel = 'از:';
+                } else {
+                    userInfo = task.assignedToName || 'نامشخص';
+                    userLabel = 'به:';
+                }
+
+                const row = `
+                    <tr>
+                        <td class="text-center" style="width: 80px;">
+                            <a class="fw-semibold" href="/AdminArea/Tasks/Details/${task.id}">${task.taskCode || 'بدون کد'}</a>
+                        </td>
+                        <td>
+                            <div class="fw-medium mb-1">
+                                <a href="/AdminArea/Tasks/Details/${task.id}">${task.title}</a>
+                            </div>
+                            <div class="fs-xs text-muted mb-1">${shortDescription}</div>
+                            <div class="fs-xs">
+                                <span class="text-muted">${userLabel}</span>
+                                <span class="fw-medium">${userInfo}</span>
+                            </div>
+                        </td>
+                        <td class="d-none d-sm-table-cell text-center" style="width: 80px;">
+                            ${priorityBadge}
+                        </td>
+                        <td class="d-none d-sm-table-cell text-end text-nowrap" style="width: 90px;">
+                            <div class="fs-xs text-muted">${formattedDate}</div>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function getPriorityBadge(priority, important) {
+            if (important || priority === 2) {
+                return '<span class="badge bg-danger">فوری</span>';
+            } else if (priority === 1) {
+                return '<span class="badge bg-warning">مهم</span>';
+            } else {
+                return '<span class="badge bg-secondary">عادی</span>';
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fa-IR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        function truncateText(text, wordLimit) {
+            if (!text) return '';
+            const words = text.split(' ');
+            if (words.length <= wordLimit) return text;
+            return words.slice(0, wordLimit).join(' ') + '...';
         }
 
         function updateSidebarBadges(stats) {

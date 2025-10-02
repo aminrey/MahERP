@@ -1,18 +1,22 @@
 ﻿@model TaskRemindersViewModel
 @{
-    ViewData["Title"] = ViewBag.Title ?? "یادآوری‌های تسک";
+    ViewData["Title"] = "یادآوری‌های تسک";
 }
 
-<!-- صفحه یادآوری‌های تسک -->
+<!-- Header Section -->
 <div class="content">
-    <!-- Header Section -->
     <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center py-2 text-center text-md-start">
         <div class="flex-grow-1 mb-1 mb-md-0">
             <h1 class="h3 fw-bold mb-1">
+                <i class="fa fa-bell me-2 text-warning"></i>
                 @ViewData["Title"]
             </h1>
             <p class="text-muted mb-0">
                 مجموع @Model.TotalCount یادآوری
+                @if (Model.Stats.UnreadCount > 0)
+                {
+                    <span class="badge bg-danger ms-2">@Model.Stats.UnreadCount خوانده نشده</span>
+                }
             </p>
         </div>
         
@@ -32,6 +36,10 @@
                         <i class="fa fa-trash me-1"></i> حذف یادآوری‌های خوانده شده
                     </button>
                 }
+                
+                <a href="@Url.Action("Index", "Dashboard", new { area = "AdminArea" })" class="btn btn-outline-secondary">
+                    <i class="fa fa-arrow-right me-1"></i> بازگشت به داشبورد
+                </a>
             </div>
         </div>
     </div>
@@ -40,82 +48,70 @@
 <!-- Statistics Cards -->
 <div class="content">
     <div class="row g-3 mb-4">
-        <div class="col-md-3 col-sm-6">
+        <div class="col-md-2 col-sm-6">
+            <a href="javascript:filterReminders('all')" class="text-decoration-none">
+                <div class="block block-rounded block-link-shadow text-center @((Model.Filters.FilterType == "all") ? "border-primary" : "")">
+                    <div class="block-content">
+                        <div class="fs-3 fw-bold text-primary">@Model.TotalCount</div>
+                        <p class="text-muted mb-0 fs-sm">همه</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-2 col-sm-6">
+            <a href="javascript:filterReminders('unread')" class="text-decoration-none">
+                <div class="block block-rounded block-link-shadow text-center @((Model.Filters.FilterType == "unread") ? "border-danger" : "")">
+                    <div class="block-content">
+                        <div class="fs-3 fw-bold text-danger">@Model.Stats.UnreadCount</div>
+                        <p class="text-muted mb-0 fs-sm">خوانده نشده</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-2 col-sm-6">
             <a href="javascript:filterReminders('pending')" class="text-decoration-none">
                 <div class="block block-rounded block-link-shadow text-center @((Model.Filters.FilterType == "pending") ? "border-warning" : "")">
                     <div class="block-content">
-                        <div class="fs-2 fw-bold text-warning">@Model.Stats.PendingCount</div>
-                        <p class="text-muted mb-0">در انتظار ارسال</p>
+                        <div class="fs-3 fw-bold text-warning">@Model.Stats.PendingCount</div>
+                        <p class="text-muted mb-0 fs-sm">در انتظار</p>
                     </div>
                 </div>
             </a>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-md-2 col-sm-6">
             <a href="javascript:filterReminders('sent')" class="text-decoration-none">
                 <div class="block block-rounded block-link-shadow text-center @((Model.Filters.FilterType == "sent") ? "border-success" : "")">
                     <div class="block-content">
-                        <div class="fs-2 fw-bold text-success">@Model.Stats.SentCount</div>
-                        <p class="text-muted mb-0">ارسال شده</p>
+                        <div class="fs-3 fw-bold text-success">@Model.Stats.SentCount</div>
+                        <p class="text-muted mb-0 fs-sm">ارسال شده</p>
                     </div>
                 </div>
             </a>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-md-2 col-sm-6">
             <a href="javascript:filterReminders('overdue')" class="text-decoration-none">
                 <div class="block block-rounded block-link-shadow text-center @((Model.Filters.FilterType == "overdue") ? "border-danger" : "")">
                     <div class="block-content">
-                        <div class="fs-2 fw-bold text-danger">@Model.Stats.OverdueCount</div>
-                        <p class="text-muted mb-0">عقب افتاده</p>
+                        <div class="fs-3 fw-bold text-danger">@Model.Stats.OverdueCount</div>
+                        <p class="text-muted mb-0 fs-sm">عقب افتاده</p>
                     </div>
                 </div>
             </a>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-md-2 col-sm-6">
             <a href="javascript:filterReminders('today')" class="text-decoration-none">
                 <div class="block block-rounded block-link-shadow text-center @((Model.Filters.FilterType == "today") ? "border-info" : "")">
                     <div class="block-content">
-                        <div class="fs-2 fw-bold text-info">@Model.Stats.TodayCount</div>
-                        <p class="text-muted mb-0">امروز</p>
+                        <div class="fs-3 fw-bold text-info">@Model.Stats.TodayCount</div>
+                        <p class="text-muted mb-0 fs-sm">امروز</p>
                     </div>
                 </div>
             </a>
-        </div>
-    </div>
-</div>
-
-<!-- Filter Tabs -->
-<div class="content">
-    <div class="block block-rounded">
-        <div class="block-content p-0">
-            <div class="nav nav-tabs nav-tabs-alt" role="tablist">
-                <a href="javascript:filterReminders('all')" 
-                   class="nav-item nav-link @(Model.Filters.FilterType == "all" || string.IsNullOrEmpty(Model.Filters.FilterType) ? "active" : "")" 
-                   role="tab">
-                    <i class="fa fa-list me-1"></i> همه یادآوری‌ها
-                    <span class="badge bg-primary-light text-primary ms-1">@Model.TotalCount</span>
-                </a>
-                <a href="javascript:filterReminders('pending')" 
-                   class="nav-item nav-link @(Model.Filters.FilterType == "pending" ? "active" : "")" 
-                   role="tab">
-                    <i class="fa fa-clock me-1"></i> در انتظار
-                    <span class="badge bg-warning-light text-warning ms-1">@Model.Stats.PendingCount</span>
-                </a>
-                <a href="javascript:filterReminders('sent')" 
-                   class="nav-item nav-link @(Model.Filters.FilterType == "sent" ? "active" : "")" 
-                   role="tab">
-                    <i class="fa fa-check me-1"></i> ارسال شده
-                    <span class="badge bg-success-light text-success ms-1">@Model.Stats.SentCount</span>
-                </a>
-                <a href="javascript:filterReminders('today')" 
-                   class="nav-item nav-link @(Model.Filters.FilterType == "today" ? "active" : "")" 
-                   role="tab">
-                    <i class="fa fa-calendar-day me-1"></i> امروز
-                    <span class="badge bg-info-light text-info ms-1">@Model.Stats.TodayCount</span>
-                </a>
-            </div>
         </div>
     </div>
 </div>
@@ -125,13 +121,32 @@
     <div class="block block-rounded">
         <div class="block-header block-header-default">
             <h3 class="block-title">
-                <i class="fa fa-bell me-1"></i>
-                یادآوری‌ها
+                <i class="fa fa-list me-1"></i>
+                لیست یادآوری‌ها
                 @if (Model.Reminders.Any())
                 {
-                    <small class="text-muted ms-2">(@Model.Reminders.Count یادآوری)</small>
+                    <small class="text-muted ms-2">(@Model.Reminders.Count مورد)</small>
                 }
             </h3>
+            <div class="block-options">
+                <div class="dropdown">
+                    <button type="button" class="btn-block-option dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="si si-options"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item" href="javascript:filterReminders('all')">
+                            <i class="fa fa-list me-2"></i> همه یادآوری‌ها
+                        </a>
+                        <a class="dropdown-item" href="javascript:filterReminders('unread')">
+                            <i class="fa fa-eye-slash me-2"></i> خوانده نشده‌ها
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="javascript:location.reload()">
+                            <i class="fa fa-refresh me-2"></i> بروزرسانی
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="block-content">
@@ -141,7 +156,7 @@
                     @foreach (var reminder in Model.Reminders)
                     {
                         <div class="col-12 mb-3">
-                            <div class="card reminder-card @(reminder.IsRead ? "border-light bg-light" : "border-primary")">
+                            <div class="card reminder-card @(reminder.IsRead ? "border-light bg-light" : "border-primary") @(reminder.Priority >= 4 ? "border-danger" : "")">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
@@ -150,44 +165,68 @@
                                                 <h5 class="card-title mb-0 @(reminder.IsRead ? "text-muted" : "")">
                                                     @reminder.Title
                                                 </h5>
-                                                @if (!reminder.IsRead)
+                                                
+                                                <!-- وضعیت یادآوری -->
+                                                @if (!reminder.IsRead && reminder.IsSent)
                                                 {
-                                                    <span class="badge bg-primary ms-2">جدید</span>
+                                                    <span class="badge bg-danger ms-2 pulse">جدید</span>
+                                                }
+                                                else if (!reminder.IsRead && !reminder.IsSent)
+                                                {
+                                                    <span class="badge bg-warning ms-2">در انتظار</span>
+                                                }
+                                                else if (reminder.IsRead)
+                                                {
+                                                    <span class="badge bg-success ms-2">خوانده شده</span>
+                                                }
+                                                
+                                                <!-- اولویت -->
+                                                @if (reminder.Priority >= 4)
+                                                {
+                                                    <span class="badge bg-danger ms-2">فوری</span>
+                                                }
+                                                else if (reminder.Priority == 3)
+                                                {
+                                                    <span class="badge bg-warning ms-2">مهم</span>
                                                 }
                                             </div>
                                             
                                             @if (!string.IsNullOrEmpty(reminder.Message))
                                             {
-                                                <p class="card-text @(reminder.IsRead ? "text-muted" : "")">
+                                                <p class="card-text @(reminder.IsRead ? "text-muted" : "") mb-2">
                                                     @reminder.Message
                                                 </p>
                                             }
                                             
                                             <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+                                                <!-- اطلاعات تسک -->
                                                 @if (!string.IsNullOrEmpty(reminder.TaskCode))
                                                 {
-                                                    <span class="badge bg-secondary">
+                                                    <a href="@Url.Action("Details", "Tasks", new { id = reminder.TaskId })" 
+                                                       class="badge bg-secondary text-decoration-none">
                                                         <i class="fa fa-tasks me-1"></i>
-                                                        @reminder.TaskCode
-                                                    </span>
+                                                        @reminder.TaskCode - @reminder.TaskTitle
+                                                    </a>
                                                 }
                                                 
+                                                <!-- زمان برنامه‌ریزی شده -->
                                                 <small class="text-muted">
                                                     <i class="fa fa-calendar me-1"></i>
                                                     @reminder.ScheduledDatePersian
                                                 </small>
                                                 
-                                                @if (reminder.IsSent)
+                                                <!-- زمان خواندن -->
+                                                @if (reminder.IsRead && reminder.ReadDateTime.HasValue)
                                                 {
-                                                    <span class="badge bg-success">ارسال شده</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-warning">در انتظار</span>
+                                                    <small class="text-success">
+                                                        <i class="fa fa-check me-1"></i>
+                                                        خوانده شده در @reminder.ReadDateTime.Value.ToString("yyyy/MM/dd HH:mm")
+                                                    </small>
                                                 }
                                             </div>
                                         </div>
                                         
+                                        <!-- عملیات -->
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
                                                     type="button" data-bs-toggle="dropdown">
@@ -198,7 +237,7 @@
                                                 {
                                                     <li>
                                                         <a class="dropdown-item" href="javascript:markAsRead(@reminder.Id)">
-                                                            <i class="fa fa-check me-2"></i>
+                                                            <i class="fa fa-check me-2 text-success"></i>
                                                             علامت‌گذاری به عنوان خوانده شده
                                                         </a>
                                                     </li>
@@ -209,7 +248,7 @@
                                                     <li>
                                                         <a class="dropdown-item" 
                                                            href="@Url.Action("Details", "Tasks", new { id = reminder.TaskId })">
-                                                            <i class="fa fa-eye me-2"></i>
+                                                            <i class="fa fa-eye me-2 text-primary"></i>
                                                             مشاهده تسک
                                                         </a>
                                                     </li>
@@ -232,6 +271,21 @@
                         </div>
                     }
                 </div>
+                
+                <!-- صفحه‌بندی -->
+                @if (Model.TotalCount > Model.PageSize)
+                {
+                    <nav aria-label="صفحه‌بندی یادآوری‌ها">
+                        <ul class="pagination justify-content-center">
+                            @for (int i = 1; i <= Math.Ceiling((double)Model.TotalCount / Model.PageSize); i++)
+                            {
+                                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("TaskReminders", new { FilterType = Model.Filters.FilterType, page = i })">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
             }
             else
             {
@@ -239,8 +293,20 @@
                     <div class="mb-3">
                         <i class="fa fa-bell-slash fa-3x text-muted"></i>
                     </div>
-                    <h4 class="h5 fw-medium">هیچ یادآوری‌ای وجود ندارد</h4>
-                    <p class="fs-sm text-muted">در حال حاضر یادآوری فعالی برای شما تعریف نشده است</p>
+                    <h4 class="h5 fw-medium">هیچ یادآوری‌ای یافت نشد</h4>
+                    <p class="fs-sm text-muted">
+                        @if (!string.IsNullOrEmpty(Model.Filters.FilterType) && Model.Filters.FilterType != "all")
+                        {
+                            <text>در فیلتر انتخابی یادآوری‌ای وجود ندارد.</text>
+                        }
+                        else
+                        {
+                            <text>در حال حاضر یادآوری فعالی برای شما تعریف نشده است.</text>
+                        }
+                    </p>
+                    <a href="@Url.Action("TaskReminders", new { FilterType = "all" })" class="btn btn-primary">
+                        <i class="fa fa-list me-1"></i> مشاهده همه یادآوری‌ها
+                    </a>
                 </div>
             }
         </div>
@@ -258,7 +324,15 @@
             $.post('@Url.Action("MarkReminderAsRead")', { id: reminderId })
                 .done(function(response) {
                     if (response.success) {
-                        location.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'موفق!',
+                            text: response.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
                     } else {
                         Swal.fire('خطا!', response.message || 'خطا در علامت‌گذاری یادآوری', 'error');
                     }
@@ -274,7 +348,7 @@
                 text: 'آیا تمام یادآوری‌ها را به عنوان خوانده شده علامت‌گذاری می‌کنید؟',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'بله',
+                confirmButtonText: 'بله، علامت‌گذاری کن',
                 cancelButtonText: 'خیر',
                 reverseButtons: true
             }).then((result) => {
@@ -282,7 +356,15 @@
                     $.post('@Url.Action("MarkAllRemindersAsRead")')
                         .done(function(response) {
                             if (response.success) {
-                                location.reload();
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفق!',
+                                    text: response.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
                             } else {
                                 Swal.fire('خطا!', response.message || 'خطا در علامت‌گذاری یادآوری‌ها', 'error');
                             }
@@ -311,7 +393,7 @@
                             if (response.success) {
                                 Swal.fire({
                                     title: 'حذف شد!',
-                                    text: 'یادآوری با موفقیت حذف شد.',
+                                    text: response.message,
                                     icon: 'success',
                                     timer: 2000,
                                     showConfirmButton: false
@@ -335,7 +417,7 @@
                 text: 'آیا از حذف تمام یادآوری‌های خوانده شده مطمئن هستید؟',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'حذف',
+                confirmButtonText: 'حذف همه',
                 cancelButtonText: 'لغو',
                 confirmButtonColor: '#d33',
                 reverseButtons: true
@@ -346,7 +428,7 @@
                             if (response.success) {
                                 Swal.fire({
                                     title: 'حذف شد!',
-                                    text: 'یادآوری‌های خوانده شده با موفقیت حذف شدند.',
+                                    text: response.message,
                                     icon: 'success',
                                     timer: 2000,
                                     showConfirmButton: false
@@ -377,40 +459,25 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
-        .block-link-shadow {
-            transition: all 0.2s ease-in-out;
+        .pulse {
+            animation: pulse 2s infinite;
         }
-        
+
+        @@keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
         .block-link-shadow:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .nav-tabs-alt .nav-link {
-            border: none;
-            border-radius: 0;
-            border-bottom: 2px solid transparent;
-        }
-
-        .nav-tabs-alt .nav-link.active {
-            background: none;
-            border-bottom-color: #0d6efd;
-        }
-
-        .bg-primary-light {
-            background-color: rgba(13, 110, 253, 0.1) !important;
-        }
-        
-        .bg-success-light {
-            background-color: rgba(25, 135, 84, 0.1) !important;
-        }
-        
-        .bg-warning-light {
-            background-color: rgba(255, 193, 7, 0.1) !important;
-        }
-        
-        .bg-info-light {
-            background-color: rgba(13, 202, 240, 0.1) !important;
         }
     </style>
 }

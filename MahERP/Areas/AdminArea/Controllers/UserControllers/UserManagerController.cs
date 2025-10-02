@@ -28,8 +28,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             IUserManagerRepository userrepository, // تصحیح نوع پارامتر
             PersianDateHelper persianDateHelper, 
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger)
-            : base(context, userManager, persianDateHelper, memoryCache, activityLogger)
+            ActivityLoggerService activityLogger )
+            : base(context, userManager, persianDateHelper, memoryCache, activityLogger , userrepository)
         {
             _Context = context;
             _UserManager = userManager;

@@ -5,6 +5,8 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.Hubs;
+using MahERP.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -38,6 +40,9 @@ builder.Services.AddScoped<TaskCodeGenerator>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IMainDashboardRepository, MainDashboardRepository>();
 builder.Services.AddScoped<ITaskVisibilityRepository, TaskVisibilityRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHostedService<NotificationBackgroundService>();
+builder.Services.AddSignalR();
 // Activity Logger Service
 builder.Services.AddScoped<ActivityLoggerService>(); // اضافه شده
 builder.Services.AddScoped<TaskNotificationService>(); // سرویس نوتیفیکیشن تسک‌ها
@@ -109,7 +114,7 @@ app.UseWebOptimizer();
 
 app.UseRouting();
 app.UseSession();
-
+app.MapHub<NotificationHub>("/notificationHub");
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -537,6 +537,16 @@ public class TaskAssignmentViewModel
 
     [Display(Name = "تاریخ تخصیص")]
     public DateTime AssignDate { get; set; }
+
+    /// <summary>
+    /// ⭐ متد کمکی: آیا این assignment برای خود سازنده است؟
+    /// </summary>
+    public bool IsSelfAssignment => AssignedUserId == AssignerUserId;
+
+    /// <summary>
+    /// ⭐ متد کمکی: آیا این یک assignment واقعی است؟ (نه self-assignment)
+    /// </summary>
+    public bool IsActualAssignment => !IsSelfAssignment && !string.IsNullOrEmpty(AssignedUserId);
 }
 
 public class TaskCategoryViewModel
@@ -621,8 +631,6 @@ public class ProjectStatsViewModel
     public int CategoryTasksCount { get; set; }
 }
 
-
-
 /// <summary>
 /// گروه‌بندی ویژه برای صفحه "تسک‌های من"
 /// </summary>
@@ -637,4 +645,54 @@ public class MyTasksGroupedViewModel
     /// تسک‌های واگذار شده (گروه‌بندی شده بر اساس انجام‌دهنده)
     /// </summary>
     public Dictionary<AssigneeInfo, List<TaskViewModel>> TasksAssignedByMe { get; set; } = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
+}
+
+/// <summary>
+/// ViewModel جامع برای نمایش تسک‌های کاربر به تفکیک نوع
+/// </summary>
+public class UserTasksComprehensiveViewModel
+{
+    /// <summary>
+    /// تسک‌های ایجاد شده توسط کاربر
+    /// </summary>
+    public List<TaskViewModel> CreatedTasks { get; set; } = new List<TaskViewModel>();
+
+    /// <summary>
+    /// تسک‌های منتصب شده به کاربر
+    /// </summary>
+    public List<TaskViewModel> AssignedTasks { get; set; } = new List<TaskViewModel>();
+
+    /// <summary>
+    /// تسک‌های تحت نظارت کاربر
+    /// </summary>
+    public List<TaskViewModel> SupervisedTasks { get; set; } = new List<TaskViewModel>();
+
+    /// <summary>
+    /// تسک‌های حذف شده مرتبط با کاربر
+    /// </summary>
+    public List<TaskViewModel> DeletedTasks { get; set; } = new List<TaskViewModel>();
+
+    /// <summary>
+    /// تعداد کل تسک‌ها (بدون حذف‌شده‌ها)
+    /// </summary>
+    public int TotalActiveTasksCount => CreatedTasks.Count + AssignedTasks.Count + SupervisedTasks.Count;
+
+    /// <summary>
+    /// آمار کلی
+    /// </summary>
+    public UserTasksStatsViewModel Stats { get; set; } = new UserTasksStatsViewModel();
+}
+
+/// <summary>
+/// آمار تفصیلی تسک‌های کاربر
+/// </summary>
+public class UserTasksStatsViewModel
+{
+    public int CreatedTasksCount { get; set; }
+    public int AssignedTasksCount { get; set; }
+    public int SupervisedTasksCount { get; set; }
+    public int DeletedTasksCount { get; set; }
+    public int CompletedTasksCount { get; set; }
+    public int OverdueTasksCount { get; set; }
+    public int TodayTasksCount { get; set; }
 }

@@ -1,4 +1,4 @@
-using MahERP.DataModelLayer.ViewModels.Core;
+﻿using MahERP.DataModelLayer.ViewModels.Core;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
 {
@@ -67,29 +67,168 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public int SentCount { get; set; }
         public int OverdueCount { get; set; }
         public int TodayCount { get; set; }
+        public int UnreadCount { get; set; }          // ⭐ خوانده نشده‌ها
+        public int UpcomingCount { get; set; }        // آینده نزدیک
+        public int TotalCount { get; set; }           // کل
+        public int ReadCount { get; set; }            // ⭐ خوانده شده‌ها
+        public int ActiveCount { get; set; }          // تعداد فعال
     }
 
+    /// <summary>
+    /// ViewModel برای نمایش یک یادآوری در لیست
+    /// </summary>
     public class TaskReminderItemViewModel
     {
         public int Id { get; set; }
         public string Title { get; set; }
-        public string Message { get; set; }
+        public string? Message { get; set; }
         public int? TaskId { get; set; }
-        public string TaskTitle { get; set; }
-        public string TaskCode { get; set; }
+        public string? TaskTitle { get; set; }
+        public string? TaskCode { get; set; }
         public DateTime ScheduledDateTime { get; set; }
         public string ScheduledDatePersian { get; set; }
         public bool IsSent { get; set; }
         public bool IsRead { get; set; }
+        public DateTime? ReadDateTime { get; set; }
         public byte Priority { get; set; }
-        public string EventTypeIcon { get; set; }
-        public string EventTypeColor { get; set; }
-    }
+        public byte EventType { get; set; }
+        public string NotificationChannel { get; set; }
 
+        /// <summary>
+        /// آیکون نوع رویداد
+        /// </summary>
+        public string EventTypeIcon => EventType switch
+        {
+            0 => "fa fa-clock",
+            1 => "fa fa-repeat",
+            2 => "fa fa-exclamation-triangle",
+            3 => "fa fa-play",
+            4 => "fa fa-flag-checkered",
+            5 => "fa fa-user",
+            _ => "fa fa-bell"
+        };
+
+        /// <summary>
+        /// رنگ نوع رویداد
+        /// </summary>
+        public string EventTypeColor => EventType switch
+        {
+            0 => "primary",
+            1 => "info",
+            2 => "warning",
+            3 => "success",
+            4 => "danger",
+            5 => "secondary",
+            _ => "muted"
+        };
+
+        /// <summary>
+        /// وضعیت یادآوری برای نمایش
+        /// </summary>
+        public string StatusText => (IsSent, IsRead) switch
+        {
+            (false, _) => "در انتظار ارسال",
+            (true, false) => "ارسال شده - خوانده نشده",
+            (true, true) => "خوانده شده"
+            // ⭐ حذف pattern اضافی: _ => "نامشخص" چون تمام حالات bool پوشش داده شده
+        };
+    }
     public class TaskReminderFilterViewModel
     {
+        // فیلترهای اصلی
         public string FilterType { get; set; } = "all"; 
+        
+        // فیلترهای جدید برای داشبورد
+        public bool IncludeOverdueReminders { get; set; } = false;     // یادآوری‌های عقب افتاده
+        public bool IncludeUpcomingReminders { get; set; } = false;    // یادآوری‌های آینده نزدیک
+        public bool IncludeUnreadSent { get; set; } = false;           // ارسال شده ولی خوانده نشده
+        public bool IncludeTodayReminders { get; set; } = false;       // یادآوری‌های امروز
+        
+        // فیلترهای زمانی
+        public DateTime? FromDate { get; set; }                        // از تاریخ
+        public DateTime? ToDate { get; set; }                          // تا تاریخ
+        public int? DaysAhead { get; set; }                           // چند روز آینده
+        public int? DaysBehind { get; set; }                          // چند روز گذشته
+        
+        // فیلترهای وضعیت
+        public bool? IsSent { get; set; }                             // ارسال شده
+        public bool? IsRead { get; set; }                             // خوانده شده
+        public byte? Priority { get; set; }                           // اولویت
+        
+        // فیلترهای تسک
+        public int? TaskId { get; set; }                              // شناسه تسک خاص
+        public List<int>? TaskIds { get; set; }                       // شناسه تسک‌های خاص
+        public string? TaskTitle { get; set; }                        // عنوان تسک
+        
+        // تنظیمات صفحه‌بندی
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
+        
+        // تنظیمات مرتب‌سازی
+        public string SortBy { get; set; } = "ScheduledDateTime";      // فیلد مرتب‌سازی
+        public string SortDirection { get; set; } = "desc";           // جهت مرتب‌سازی
+        
+        // فیلتر خاص برای داشبورد
+        public bool ForDashboard { get; set; } = false;               // حالت داشبورد
+        public int? DashboardLimit { get; set; } = 10;                // محدودیت تعداد در داشبورد
+        
+        /// <summary>
+        /// تنظیمات پیش‌فرض برای داشبورد
+        /// </summary>
+        public static TaskReminderFilterViewModel ForDashboardReminders(int maxResults = 10, int daysAhead = 1)
+        {
+            return new TaskReminderFilterViewModel
+            {
+                ForDashboard = true,
+                DashboardLimit = maxResults,
+                DaysAhead = daysAhead,
+                IncludeOverdueReminders = true,
+                IncludeUpcomingReminders = true,
+                IncludeUnreadSent = true,
+                SortBy = "ScheduledDateTime",
+                SortDirection = "asc"
+            };
+        }
+        
+        /// <summary>
+        /// تنظیمات پیش‌فرض برای یادآوری‌های عقب افتاده
+        /// </summary>
+        public static TaskReminderFilterViewModel ForOverdueReminders()
+        {
+            return new TaskReminderFilterViewModel
+            {
+                FilterType = "overdue",
+                IncludeOverdueReminders = true,
+                IsSent = false
+            };
+        }
+        
+        /// <summary>
+        /// تنظیمات پیش‌فرض برای یادآوری‌های آینده نزدیک
+        /// </summary>
+        public static TaskReminderFilterViewModel ForUpcomingReminders(int daysAhead = 1)
+        {
+            return new TaskReminderFilterViewModel
+            {
+                FilterType = "upcoming",
+                IncludeUpcomingReminders = true,
+                DaysAhead = daysAhead,
+                IsSent = false
+            };
+        }
+        
+        /// <summary>
+        /// تنظیمات پیش‌فرض برای یادآوری‌های خوانده نشده
+        /// </summary>
+        public static TaskReminderFilterViewModel ForUnreadReminders()
+        {
+            return new TaskReminderFilterViewModel
+            {
+                FilterType = "unread",
+                IncludeUnreadSent = true,
+                IsSent = true,
+                IsRead = false
+            };
+        }
     }
 }

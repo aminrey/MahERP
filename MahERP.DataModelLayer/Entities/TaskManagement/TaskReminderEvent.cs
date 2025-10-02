@@ -1,4 +1,4 @@
-using MahERP.DataModelLayer.Entities.AcControl;
+﻿using MahERP.DataModelLayer.Entities.AcControl;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -75,12 +75,12 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public DateTime? SentDateTime { get; set; }
 
         /// <summary>
-        /// ??? ??????? ?????? ????
+        /// آیا یادآوری خوانده شده
         /// </summary>
         public bool IsRead { get; set; }
 
         /// <summary>
-        /// ???? ??????
+        /// تاریخ خواندن
         /// </summary>
         public DateTime? ReadDateTime { get; set; }
 

@@ -28,6 +28,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         private readonly IStakeholderRepository _stakeholderRepository;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
+        protected readonly IUserManagerRepository _userRepository;
 
         public StakeholderController(
             IUnitOfWork uow,
@@ -36,12 +37,14 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            ActivityLoggerService activityLogger,
+            IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger , userRepository)
         {
             _uow = uow;
             _stakeholderRepository = stakeholderRepository;
             _userManager = userManager;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
 
         // لیست طرف حساب‌ها

@@ -24,6 +24,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CRMControllers
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        protected readonly IUserManagerRepository _userRepository;
 
         public CRMController(
             IUnitOfWork uow,
@@ -34,7 +35,8 @@ namespace MahERP.Areas.AdminArea.Controllers.CRMControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             IWebHostEnvironment webHostEnvironment,
-            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            ActivityLoggerService activityLogger,
+            IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _uow = uow;
             _crmRepository = crmRepository;
@@ -42,6 +44,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CRMControllers
             _userManager = userManager;
             _mapper = mapper;
             _webHostEnvironment = webHostEnvironment;
+            _userRepository = userRepository;
         }
 
         // لیست تعاملات CRM

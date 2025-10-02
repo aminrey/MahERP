@@ -174,8 +174,9 @@ namespace MahERP.DataModelLayer.Repository
         /// <summary>
         /// دریافت تسک‌های کاربر با در نظر گیری مجوزهای جدید (نسخه Async)
         /// </summary>
-        Task<List<Tasks>> GetTasksByUserWithPermissionsAsync(string userId, bool includeAssigned = true, 
-            bool includeCreated = false, bool includeDeleted = false);
+        Task<List<Tasks>> GetTasksByUserWithPermissionsAsync(string userId, bool includeAssigned = true, bool includeCreated = false,
+            bool includeDeleted = false, bool includeSupervisedTasks = false);
+
 
         /// <summary>
         /// دریافت تسک‌های شعبه با در نظر گیری مجوزهای جدید (نسخه Async)
@@ -482,5 +483,14 @@ namespace MahERP.DataModelLayer.Repository
         Task<int> GetMyDayTasksCountAsync(string userId, DateTime? targetDate = null);
 
         #endregion
+        Task<UserTasksComprehensiveViewModel> GetUserTasksComprehensiveAsync(
+           string userId,
+           bool includeCreatedTasks = true,
+           bool includeAssignedTasks = true,
+           bool includeSupervisedTasks = false,
+           bool includeDeletedTasks = false);
+        Task<List<TaskReminderItemViewModel>> GetDashboardRemindersAsync(string userId, int maxResults = 10, int daysAhead = 1);
+
     }
+
 }

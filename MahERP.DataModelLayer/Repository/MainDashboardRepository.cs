@@ -93,49 +93,77 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// محاسبه آمار تسک‌ها - اصلاح شده
+        /// محاسبه آمار تسک‌ها - بازنویسی شده با استفاده از متد جامع
         /// </summary>
         public async Task<TasksStatsViewModel> CalculateTaskStatsAsync(string userId)
         {
             try
             {
-                // ✅ استفاده از ITaskRepository
-                var myTasks = await _taskRepository.GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: false);
-                var assignedByMeTasks = await _taskRepository.GetTasksByUserWithPermissionsAsync(userId, includeAssigned: false, includeCreated: true);
-                var allVisibleTasks = await _taskRepository.GetVisibleTasksForUserAsync(userId);
+
+                // ⭐ استفاده از متد جامع برای دریافت همه انواع تسک‌ها
+                var userTasks = await _taskRepository.GetUserTasksComprehensiveAsync(
+                    userId,
+                    includeCreatedTasks: true,     // تسک‌های ایجاد شده توسط من
+                    includeAssignedTasks: true,    // تسک‌های واگذار شده به من
+                    includeSupervisedTasks: true,  // تسک‌های تحت نظارت
+                    includeDeletedTasks: false     // بدون تسک‌های حذف شده
+                );
+
 
                 var today = DateTime.Now.Date;
 
-                return new TasksStatsViewModel
+                // ⭐ فیلتر کردن تسک‌های ناتمام از تسک‌های ایجاد شده
+                var incompleteCreatedTasks = userTasks.CreatedTasks
+                    .Where(t => !t.IsDeleted && t.Status != 2)
+                    .ToList();
+
+                // ⭐ فیلتر کردن تسک‌های ناتمام از تسک‌های واگذار شده
+                var incompleteAssignedTasks = userTasks.AssignedTasks
+                    .Where(t => !t.IsDeleted && t.Status != 2)
+                    .ToList();
+
+                // ⭐ ترکیب همه تسک‌های فعال کاربر برای محاسبه آمار زمانی
+                var allActiveTasks = userTasks.CreatedTasks
+                    .Concat(userTasks.AssignedTasks)
+                    .Where(t => !t.IsDeleted)
+                    .ToList();
+
+                var result = new TasksStatsViewModel
                 {
-                    // تسک‌های من (منتصب شده به من)
-                    MyTasksCount = myTasks?.Count(t => !t.IsDeleted && t.Status != 2) ?? 0,
+                    // ⭐ تسک‌های شخصی فعال: تسک‌های ناتمام ایجاد شده + واگذار شده
+                    MyTasksCount = incompleteCreatedTasks.Count + incompleteAssignedTasks.Count,
 
-                    // تسک‌هایی که من ایجاد کرده‌ام
-                    AssignedByMeCount = assignedByMeTasks?.Count(t => !t.IsDeleted) ?? 0,
+                    // ⭐ تسک‌های واگذار شده توسط من (ناتمام)
+                    AssignedByMeCount = incompleteCreatedTasks.Count,
 
-                    // تسک‌های تحت نظارت (تسک‌هایی که من سازنده نیستم ولی می‌توانم ببینم)
-                    SupervisedTasksCount = allVisibleTasks?.Count(t =>
-                        !t.IsDeleted &&
-                        t.CreatorUserId != userId &&
-                        !myTasks.Any(mt => mt.Id == t.Id)) ?? 0,
+                    // ⭐ تسک‌های تحت نظارت (فعال)
+                    SupervisedTasksCount = userTasks.SupervisedTasks
+                        .Count(t => !t.IsDeleted),
 
-                    // تسک‌های امروز
-                    TodayTasksCount = myTasks?.Count(t =>
-                        !t.IsDeleted &&
+                    // ⭐ تسک‌های امروز (از همه تسک‌های فعال)
+                    TodayTasksCount = allActiveTasks.Count(t =>
                         t.DueDate.HasValue &&
-                        t.DueDate.Value.Date == today) ?? 0,
+                        t.DueDate.Value.Date == today &&
+                        t.Status != 2),
 
-                    // تسک‌های عقب افتاده
-                    OverdueTasksCount = myTasks?.Count(t =>
-                        !t.IsDeleted &&
+                    // ⭐ تسک‌های عقب افتاده (از همه تسک‌های فعال)
+                    OverdueTasksCount = allActiveTasks.Count(t =>
                         t.DueDate.HasValue &&
                         t.DueDate.Value.Date < today &&
-                        t.Status != 2) ?? 0,
+                        t.Status != 2),
 
-                    // یادآوری‌ها
+                    // ⭐ تسک‌های به موقع (از همه تسک‌های فعال)
+                    OnTimeTasksCount = allActiveTasks.Count(t =>
+                        (!t.DueDate.HasValue || t.DueDate.Value.Date >= today || t.Status == 2) &&
+                        t.Status != 2),
+
+                    // ⭐ یادآوری‌ها (بدون تغییر)
                     RemindersCount = await CalculateActiveRemindersCountAsync(userId)
                 };
+
+
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -143,7 +171,6 @@ namespace MahERP.DataModelLayer.Repository
                 return new TasksStatsViewModel();
             }
         }
-
         /// <summary>
         /// محاسبه آمار قراردادها
         /// </summary>

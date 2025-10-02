@@ -381,7 +381,7 @@ namespace MahERP.DataModelLayer.Repository
         /// <summary>
         /// دریافت تسک‌های کاربر با در نظر گیری سیستم مجوزهای جدید
         /// </summary>
-        public async Task<List<Tasks>> GetTasksByUserWithPermissionsAsync(string userId, bool includeAssigned = true, bool includeCreated = false, bool includeDeleted = false)
+        public async Task<List<Tasks>> GetTasksByUserWithPermissionsAsync(string userId, bool includeAssigned = true, bool includeCreated = false, bool includeDeleted = false, bool includeSupervisedTasks = false)
         {
             var visibleTaskIds = await _taskVisibilityRepository.GetVisibleTaskIdsAsync(userId);
             var query = _context.Tasks_Tbl.AsQueryable();
@@ -389,27 +389,138 @@ namespace MahERP.DataModelLayer.Repository
             if (!includeDeleted)
                 query = query.Where(t => !t.IsDeleted);
 
+            // ⭐ اضافه کردن تسک‌های نظارتی اگر درخواست شده باشد
+            var supervisedTaskIds = new List<int>();
+            if (includeSupervisedTasks)
+            {
+                supervisedTaskIds = await GetSupervisedTaskIdsAsync(userId);
+            }
+
             if (includeAssigned && includeCreated)
             {
                 query = query.Where(t =>
                     visibleTaskIds.Contains(t.Id) || // تسک‌های قابل مشاهده
                     _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId) ||
-                    t.CreatorUserId == userId);
+                    t.CreatorUserId == userId ||
+                    (includeSupervisedTasks && supervisedTaskIds.Contains(t.Id))); // ⭐ تسک‌های نظارتی
             }
             else if (includeAssigned)
             {
                 query = query.Where(t =>
                     visibleTaskIds.Contains(t.Id) || // تسک‌های قابل مشاهده
-                    _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId));
+                    _context.TaskAssignment_Tbl.Any(a => a.TaskId == t.Id && a.AssignedUserId == userId) ||
+                    (includeSupervisedTasks && supervisedTaskIds.Contains(t.Id))); // ⭐ تسک‌های نظارتی
             }
             else if (includeCreated)
             {
-                query = query.Where(t => t.CreatorUserId == userId);
+                query = query.Where(t =>
+                    t.CreatorUserId == userId ||
+                    (includeSupervisedTasks && supervisedTaskIds.Contains(t.Id))); // ⭐ تسک‌های نظارتی
+            }
+            else if (includeSupervisedTasks)
+            {
+                // ⭐ فقط تسک‌های نظارتی
+                query = query.Where(t => supervisedTaskIds.Contains(t.Id));
             }
 
             return await query.OrderByDescending(t => t.CreateDate).ToListAsync();
         }
 
+        /// <summary>
+        /// دریافت شناسه تسک‌هایی که کاربر ناظر آن‌هاست - متد کمکی
+        /// </summary>
+        private async Task<List<int>> GetSupervisedTaskIdsAsync(string userId)
+        {
+            try
+            {
+                var supervisedTaskIds = new HashSet<int>();
+
+                // 1. نظارت بر اساس سمت (CanViewSubordinateTasks = true)
+                var supervisoryPositions = await _context.TeamMember_Tbl
+                    .Include(tm => tm.Position)
+                    .Where(tm => tm.UserId == userId &&
+                                tm.IsActive &&
+                                tm.Position != null &&
+                                tm.Position.CanViewSubordinateTasks)
+                    .ToListAsync();
+
+                foreach (var supervisoryPosition in supervisoryPositions)
+                {
+                    // دریافت اعضای با سمت پایین‌تر در همان تیم
+                    var subordinateMembers = await _context.TeamMember_Tbl
+                        .Include(tm => tm.Position)
+                        .Where(tm => tm.TeamId == supervisoryPosition.TeamId &&
+                                   tm.IsActive &&
+                                   tm.UserId != userId &&
+                                   tm.Position != null &&
+                                   tm.Position.PowerLevel > supervisoryPosition.Position.PowerLevel)
+                        .Select(tm => tm.UserId)
+                        .ToListAsync();
+
+                    // دریافت تسک‌های منتصب شده به افراد تحت نظارت
+                    var assignedTaskIds = await _context.TaskAssignment_Tbl
+                        .Where(ta => subordinateMembers.Contains(ta.AssignedUserId))
+                        .Select(ta => ta.TaskId)
+                        .ToListAsync();
+
+                    // دریافت تسک‌های ایجاد شده توسط افراد تحت نظارت
+                    var createdTaskIds = await _context.Tasks_Tbl
+                        .Where(t => subordinateMembers.Contains(t.CreatorUserId))
+                        .Select(t => t.Id)
+                        .ToListAsync();
+
+                    // اضافه کردن به مجموعه
+                    foreach (var taskId in assignedTaskIds.Union(createdTaskIds))
+                    {
+                        supervisedTaskIds.Add(taskId);
+                    }
+                }
+
+                // 2. نظارت بر اساس MembershipType = 1 (ناظر هم سطح و زیر دستان)
+                var supervisoryMemberships = await _context.TeamMember_Tbl
+                    .Where(tm => tm.UserId == userId &&
+                                tm.IsActive &&
+                                tm.MembershipType == 1) // ناظر
+                    .ToListAsync();
+
+                foreach (var supervisoryMembership in supervisoryMemberships)
+                {
+                    // دریافت اعضای عادی تیم
+                    var ordinaryMembers = await _context.TeamMember_Tbl
+                        .Where(tm => tm.TeamId == supervisoryMembership.TeamId &&
+                                   tm.IsActive &&
+                                   tm.UserId != userId &&
+                                   tm.MembershipType == 0) // عضو عادی
+                        .Select(tm => tm.UserId)
+                        .ToListAsync();
+
+                    // دریافت تسک‌های منتصب شده به اعضای عادی
+                    var assignedTaskIds = await _context.TaskAssignment_Tbl
+                        .Where(ta => ordinaryMembers.Contains(ta.AssignedUserId))
+                        .Select(ta => ta.TaskId)
+                        .ToListAsync();
+
+                    // دریافت تسک‌های ایجاد شده توسط اعضای عادی
+                    var createdTaskIds = await _context.Tasks_Tbl
+                        .Where(t => ordinaryMembers.Contains(t.CreatorUserId))
+                        .Select(t => t.Id)
+                        .ToListAsync();
+
+                    // اضافه کردن به مجموعه
+                    foreach (var taskId in assignedTaskIds.Union(createdTaskIds))
+                    {
+                        supervisedTaskIds.Add(taskId);
+                    }
+                }
+
+                return supervisedTaskIds.ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetSupervisedTaskIdsAsync: {ex.Message}");
+                return new List<int>();
+            }
+        }
         /// <summary>
         /// دریافت تسک‌های شعبه با در نظر گیری سیستم مجوزهای جدید
         /// </summary>
@@ -572,7 +683,7 @@ namespace MahERP.DataModelLayer.Repository
             }
         }
         /// <summary>
-        /// تبدیل Task Entity به TaskViewModel - اصلاح شده برای گروه‌بندی صحیح assignments
+        /// تبدیل Task Entity به TaskViewModel - اصلاح شده برای جداسازی صحیح assignments
         /// </summary>
         private TaskViewModel MapToTaskViewModel(Tasks task)
         {
@@ -616,7 +727,7 @@ namespace MahERP.DataModelLayer.Repository
                     (!string.IsNullOrEmpty(stakeholder.CompanyName) ? stakeholder.CompanyName : $"{stakeholder.FirstName} {stakeholder.LastName}")
                     : null,
 
-                // ⭐ اصلاح شده: ذخیره همه assignments به صورت کامل 
+                // ⭐ اصلاح شده: ذخیره همه assignments به صورت دقیق‌تر
                 AssignmentsTaskUser = assignments
                     .Where(a => !string.IsNullOrEmpty(a.AssignedUserId)) // فقط assignments معتبر
                     .Select(a => new TaskAssignmentViewModel
@@ -2030,40 +2141,167 @@ namespace MahERP.DataModelLayer.Repository
                 throw new Exception($"خطا در دریافت تسک‌های نظارتی: {ex.Message}", ex);
             }
         }
-
         /// <summary>
-        /// دریافت یادآوری‌های تسک برای کاربر
+        /// دریافت یادآوری‌های تسک برای کاربر - اصلاح شده برای حل مشکل LINQ Translation
         /// </summary>
         public async Task<TaskRemindersViewModel> GetTaskRemindersAsync(string userId, TaskReminderFilterViewModel filters)
         {
             try
             {
+                var now = DateTime.Now;
+                var today = now.Date;
+
                 var query = _context.TaskReminderEvent_Tbl
                     .Where(r => r.RecipientUserId == userId)
                     .Include(r => r.Task)
                     .AsQueryable();
 
-                // اعمال فیلترها
-                if (!string.IsNullOrEmpty(filters?.FilterType) && filters.FilterType != "all")
+                // ⭐ اصلاح شده: اعمال فیلترها به صورت مستقیم بدون Expression پیچیده
+                if (filters != null)
                 {
-                    switch (filters.FilterType.ToLower())
+                    // فیلتر قدیمی (برای سازگاری)
+                    if (!string.IsNullOrEmpty(filters.FilterType) && filters.FilterType != "all")
                     {
-                        case "pending":
-                            query = query.Where(r => !r.IsSent && r.ScheduledDateTime <= DateTime.Now);
-                            break;
-                        case "sent":
-                            query = query.Where(r => r.IsSent);
-                            break;
-                        case "overdue":
-                            query = query.Where(r => !r.IsSent && r.ScheduledDateTime < DateTime.Now.AddDays(-1));
-                            break;
-                        case "today":
-                            query = query.Where(r => r.ScheduledDateTime.Date == DateTime.Now.Date);
-                            break;
+                        switch (filters.FilterType.ToLower())
+                        {
+                            case "pending":
+                                query = query.Where(r => !r.IsSent && r.ScheduledDateTime <= now);
+                                break;
+                            case "sent":
+                                query = query.Where(r => r.IsSent);
+                                break;
+                            case "overdue":
+                                query = query.Where(r => !r.IsSent && r.ScheduledDateTime < now);
+                                break;
+                            case "today":
+                                query = query.Where(r => r.ScheduledDateTime.Date == today);
+                                break;
+                            case "upcoming":
+                                var maxDate = now.AddDays(filters.DaysAhead ?? 1);
+                                query = query.Where(r => !r.IsSent && r.ScheduledDateTime >= now && r.ScheduledDateTime <= maxDate);
+                                break;
+                            case "unread":
+                                query = query.Where(r => r.IsSent && !r.IsRead);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        // ⭐ فیلترهای جدید - حل شده برای مشکل LINQ
+                        bool hasFilter = false;
+                        IQueryable<TaskReminderEvent> filteredQuery = null;
+
+                        // یادآوری‌های عقب افتاده
+                        if (filters.IncludeOverdueReminders == true)
+                        {
+                            var overdueQuery = _context.TaskReminderEvent_Tbl
+                                .Where(r => r.RecipientUserId == userId && !r.IsSent && r.ScheduledDateTime < now)
+                                .Include(r => r.Task);
+
+                            filteredQuery = hasFilter ? filteredQuery.Union(overdueQuery) : overdueQuery;
+                            hasFilter = true;
+                        }
+
+                        // یادآوری‌های آینده نزدیک
+                        if (filters.IncludeUpcomingReminders == true)
+                        {
+                            var maxDate = now.AddDays(filters.DaysAhead ?? 1);
+                            var upcomingQuery = _context.TaskReminderEvent_Tbl
+                                .Where(r => r.RecipientUserId == userId && !r.IsSent && r.ScheduledDateTime >= now && r.ScheduledDateTime <= maxDate)
+                                .Include(r => r.Task);
+
+                            filteredQuery = hasFilter ? filteredQuery.Union(upcomingQuery) : upcomingQuery;
+                            hasFilter = true;
+                        }
+
+                        // یادآوری‌های ارسال شده ولی خوانده نشده
+                        if (filters.IncludeUnreadSent == true)
+                        {
+                            var unreadQuery = _context.TaskReminderEvent_Tbl
+                                .Where(r => r.RecipientUserId == userId && r.IsSent && !r.IsRead)
+                                .Include(r => r.Task);
+
+                            filteredQuery = hasFilter ? filteredQuery.Union(unreadQuery) : unreadQuery;
+                            hasFilter = true;
+                        }
+
+                        // یادآوری‌های امروز
+                        if (filters.IncludeTodayReminders == true)
+                        {
+                            var todayQuery = _context.TaskReminderEvent_Tbl
+                                .Where(r => r.RecipientUserId == userId && r.ScheduledDateTime.Date == today)
+                                .Include(r => r.Task);
+
+                            filteredQuery = hasFilter ? filteredQuery.Union(todayQuery) : todayQuery;
+                            hasFilter = true;
+                        }
+
+                        // اگر فیلتری اعمال شده، کوئری اصلی را جایگزین کن
+                        if (hasFilter)
+                        {
+                            query = filteredQuery;
+                        }
+                    }
+
+                    // فیلترهای زمانی
+                    if (filters.FromDate.HasValue)
+                    {
+                        query = query.Where(r => r.ScheduledDateTime >= filters.FromDate.Value);
+                    }
+
+                    if (filters.ToDate.HasValue)
+                    {
+                        query = query.Where(r => r.ScheduledDateTime <= filters.ToDate.Value);
+                    }
+
+                    // فیلترهای وضعیت
+                    if (filters.IsSent.HasValue)
+                    {
+                        query = query.Where(r => r.IsSent == filters.IsSent.Value);
+                    }
+
+                    if (filters.IsRead.HasValue)
+                    {
+                        query = query.Where(r => r.IsRead == filters.IsRead.Value);
+                    }
+
+                    if (filters.Priority.HasValue)
+                    {
+                        query = query.Where(r => r.Priority == filters.Priority.Value);
+                    }
+
+                    // فیلترهای تسک
+                    if (filters.TaskId.HasValue)
+                    {
+                        query = query.Where(r => r.TaskId == filters.TaskId.Value);
+                    }
+
+                    if (filters.TaskIds?.Any() == true)
+                    {
+                        query = query.Where(r => filters.TaskIds.Contains(r.TaskId));
+                    }
+
+                    if (!string.IsNullOrEmpty(filters.TaskTitle))
+                    {
+                        query = query.Where(r => r.Task != null && r.Task.Title.Contains(filters.TaskTitle));
                     }
                 }
 
-                var reminders = await query.OrderByDescending(r => r.ScheduledDateTime).ToListAsync();
+                // مرتب‌سازی
+                query = ApplyReminderSorting(query, filters);
+
+                // صفحه‌بندی یا محدودیت داشبورد
+                if (filters?.ForDashboard == true && filters.DashboardLimit.HasValue)
+                {
+                    query = query.Take(filters.DashboardLimit.Value);
+                }
+                else
+                {
+                    var skip = ((filters?.Page ?? 1) - 1) * (filters?.PageSize ?? 20);
+                    query = query.Skip(skip).Take(filters?.PageSize ?? 20);
+                }
+
+                var reminders = await query.ToListAsync();
 
                 var reminderViewModels = reminders.Select(r => new TaskReminderItemViewModel
                 {
@@ -2078,20 +2316,18 @@ namespace MahERP.DataModelLayer.Repository
                     IsSent = r.IsSent,
                     IsRead = r.IsRead,
                     Priority = r.Priority,
-             
                 }).ToList();
 
-                // محاسبه آمار (روی کل داده‌ها، نه فقط فیلتر شده)
-                var allReminders = await _context.TaskReminderEvent_Tbl
-                    .Where(r => r.RecipientUserId == userId)
-                    .ToListAsync();
-
+                // محاسبه آمار (روی کل داده‌ها)
+                var statsQuery = _context.TaskReminderEvent_Tbl.Where(r => r.RecipientUserId == userId);
                 var stats = new TaskRemindersStatsViewModel
                 {
-                    PendingCount = allReminders.Count(r => !r.IsSent && r.ScheduledDateTime <= DateTime.Now),
-                    SentCount = allReminders.Count(r => r.IsSent),
-                    OverdueCount = allReminders.Count(r => !r.IsSent && r.ScheduledDateTime < DateTime.Now.AddDays(-1)),
-                    TodayCount = allReminders.Count(r => r.ScheduledDateTime.Date == DateTime.Now.Date)
+                    PendingCount = await statsQuery.CountAsync(r => !r.IsSent && r.ScheduledDateTime <= now),
+                    SentCount = await statsQuery.CountAsync(r => r.IsSent),
+                    OverdueCount = await statsQuery.CountAsync(r => !r.IsSent && r.ScheduledDateTime < now),
+                    TodayCount = await statsQuery.CountAsync(r => r.ScheduledDateTime.Date == today),
+                    UnreadCount = await statsQuery.CountAsync(r => r.IsSent && !r.IsRead),
+                    UpcomingCount = await statsQuery.CountAsync(r => !r.IsSent && r.ScheduledDateTime >= now && r.ScheduledDateTime <= now.AddDays(1))
                 };
 
                 return new TaskRemindersViewModel
@@ -2108,6 +2344,73 @@ namespace MahERP.DataModelLayer.Repository
             {
                 throw new Exception($"خطا در دریافت یادآوری‌ها: {ex.Message}", ex);
             }
+        }
+        /// <summary>
+        /// دریافت یادآوری‌های داشبورد - نسخه ساده و بهینه
+        /// </summary>
+        public async Task<List<TaskReminderItemViewModel>> GetDashboardRemindersAsync(string userId, int maxResults = 10, int daysAhead = 1)
+        {
+            try
+            {
+                var now = DateTime.Now;
+                var maxDate = now.AddDays(daysAhead);
+
+                // دریافت یادآوری‌های مهم برای داشبورد
+                var reminders = await _context.TaskReminderEvent_Tbl
+                    .Where(r => r.RecipientUserId == userId &&
+                               (
+                                   // عقب افتاده
+                                   (!r.IsSent && r.ScheduledDateTime < now) ||
+                                   // آینده نزدیک
+                                   (!r.IsSent && r.ScheduledDateTime >= now && r.ScheduledDateTime <= maxDate) ||
+                                   // ارسال شده ولی خوانده نشده
+                                   (r.IsSent && !r.IsRead)
+                               ))
+                    .Include(r => r.Task)
+                    .OrderBy(r => r.ScheduledDateTime)
+                    .Take(maxResults)
+                    .ToListAsync();
+
+                return reminders.Select(r => new TaskReminderItemViewModel
+                {
+                    Id = r.Id,
+                    Title = r.Title,
+                    Message = r.Message,
+                    TaskId = r.TaskId,
+                    TaskTitle = r.Task?.Title,
+                    TaskCode = r.Task?.TaskCode,
+                    ScheduledDateTime = r.ScheduledDateTime,
+                    ScheduledDatePersian = ConvertDateTime.ConvertMiladiToShamsi(r.ScheduledDateTime, "yyyy/MM/dd HH:mm"),
+                    IsSent = r.IsSent,
+                    IsRead = r.IsRead,
+                    Priority = r.Priority,
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت یادآوری‌های داشبورد: {ex.Message}", ex);
+            }
+        }
+        /// <summary>
+        /// اعمال مرتب‌سازی بر روی کوئری یادآوری‌ها
+        /// </summary>
+        private IQueryable<TaskReminderEvent> ApplyReminderSorting(IQueryable<TaskReminderEvent> query, TaskReminderFilterViewModel filters)
+        {
+            if (filters == null) return query.OrderByDescending(r => r.ScheduledDateTime);
+
+            var sortBy = filters.SortBy?.ToLower() ?? "scheduleddatetime";
+            var isDescending = filters.SortDirection?.ToLower() == "desc";
+
+            return sortBy switch
+            {
+                "scheduleddatetime" => isDescending ? query.OrderByDescending(r => r.ScheduledDateTime) : query.OrderBy(r => r.ScheduledDateTime),
+                "title" => isDescending ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title),
+                "priority" => isDescending ? query.OrderByDescending(r => r.Priority) : query.OrderBy(r => r.Priority),
+                "issent" => isDescending ? query.OrderByDescending(r => r.IsSent) : query.OrderBy(r => r.IsSent),
+                "isread" => isDescending ? query.OrderByDescending(r => r.IsRead) : query.OrderBy(r => r.IsRead),
+                "tasktitle" => isDescending ? query.OrderByDescending(r => r.Task.Title) : query.OrderBy(r => r.Task.Title),
+                _ => isDescending ? query.OrderByDescending(r => r.ScheduledDateTime) : query.OrderBy(r => r.ScheduledDateTime)
+            };
         }
         /// <summary>
         /// دریافت آمار تسک‌ها برای کاربر
@@ -2931,6 +3234,103 @@ namespace MahERP.DataModelLayer.Repository
                                 x.PlannedDate.Date == checkDate &&
                                 x.IsActive);
         }
+        #endregion
+
+        #region Comprehensive User Tasks
+
+        /// <summary>
+        /// دریافت همه انواع تسک‌های کاربر به تفکیک نوع - نسخه انتخابی
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="includeCreatedTasks">شامل تسک‌های ایجاد شده توسط کاربر</param>
+        /// <param name="includeAssignedTasks">شامل تسک‌های منتصب شده به کاربر</param>
+        /// <param name="includeSupervisedTasks">شامل تسک‌های تحت نظارت کاربر</param>
+        /// <param name="includeDeletedTasks">شامل تسک‌های حذف شده</param>
+        /// <returns>ViewModel جامع حاوی انواع تسک‌های انتخاب شده</returns>
+        public async Task<UserTasksComprehensiveViewModel> GetUserTasksComprehensiveAsync(
+            string userId,
+            bool includeCreatedTasks = true,
+            bool includeAssignedTasks = true,
+            bool includeSupervisedTasks = false,
+            bool includeDeletedTasks = false)
+        {
+            try
+            {
+                var result = new UserTasksComprehensiveViewModel();
+
+                // 1. دریافت تسک‌های ایجاد شده توسط کاربر (اختیاری)
+                if (includeCreatedTasks)
+                {
+                    var createdTasks = await GetTasksByUserWithPermissionsAsync(userId,
+                        includeAssigned: false, includeCreated: true, includeDeleted: includeDeletedTasks);
+                    result.CreatedTasks = createdTasks.Select(MapToTaskViewModel).ToList();
+                }
+
+                // 2. دریافت تسک‌های منتصب شده به کاربر (اختیاری)
+                if (includeAssignedTasks)
+                {
+                    var assignedTasks = await GetTasksByUserWithPermissionsAsync(userId,
+                        includeAssigned: true, includeCreated: false, includeDeleted: includeDeletedTasks);
+                    var filteredAssignedTasks = assignedTasks.Where(t => t.CreatorUserId != userId).ToList();
+                    result.AssignedTasks = filteredAssignedTasks.Select(MapToTaskViewModel).ToList();
+                }
+
+                // 3. دریافت تسک‌های تحت نظارت (اختیاری)
+                if (includeSupervisedTasks)
+                {
+                    var supervisedTasks = await GetTasksByUserWithPermissionsAsync(userId,
+                        includeAssigned: false, includeCreated: false, includeDeleted: includeDeletedTasks, includeSupervisedTasks: true);
+                    result.SupervisedTasks = supervisedTasks.Select(MapToTaskViewModel).ToList();
+                }
+
+                // 4. دریافت تسک‌های حذف شده (اختیاری)
+                if (includeDeletedTasks)
+                {
+                    var deletedTasks = await GetTasksByUserWithPermissionsAsync(userId,
+                        includeAssigned: true, includeCreated: true, includeDeleted: true, includeSupervisedTasks: includeSupervisedTasks);
+                    result.DeletedTasks = deletedTasks.Where(t => t.IsDeleted).Select(MapToTaskViewModel).ToList();
+                }
+
+                // 5. محاسبه آمار
+                result.Stats = CalculateUserTasksStats(result);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetUserTasksComprehensiveAsync: {ex.Message}");
+                return new UserTasksComprehensiveViewModel();
+            }
+        }
+
+        /// <summary>
+        /// محاسبه آمار تفصیلی تسک‌های کاربر
+        /// </summary>
+        private UserTasksStatsViewModel CalculateUserTasksStats(UserTasksComprehensiveViewModel data)
+        {
+            var today = DateTime.Now.Date;
+            var allActiveTasks = data.CreatedTasks
+                .Concat(data.AssignedTasks)
+                .Concat(data.SupervisedTasks)
+                .ToList();
+
+            return new UserTasksStatsViewModel
+            {
+                CreatedTasksCount = data.CreatedTasks.Count,
+                AssignedTasksCount = data.AssignedTasks.Count,
+                SupervisedTasksCount = data.SupervisedTasks.Count,
+                DeletedTasksCount = data.DeletedTasks.Count,
+                CompletedTasksCount = allActiveTasks.Count(t => t.CompletionDate.HasValue),
+                OverdueTasksCount = allActiveTasks.Count(t => 
+                    !t.CompletionDate.HasValue && 
+                    t.DueDate.HasValue && 
+                    t.DueDate.Value.Date < today),
+                TodayTasksCount = allActiveTasks.Count(t => 
+                    t.DueDate.HasValue && 
+                    t.DueDate.Value.Date == today)
+            };
+        }
+
         #endregion
     }
 }

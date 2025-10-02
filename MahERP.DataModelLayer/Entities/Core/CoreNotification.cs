@@ -79,7 +79,7 @@ namespace MahERP.DataModelLayer.Entities.Core
         /// متن پیام نوتیفیکیشن
         /// </summary>
         [Required]
-        [MaxLength(500)]
+        [MaxLength(1000)]
         public string Message { get; set; }
 
         /// <summary>

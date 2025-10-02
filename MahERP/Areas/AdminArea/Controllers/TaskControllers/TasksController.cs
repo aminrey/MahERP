@@ -31,6 +31,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly TaskNotificationService _taskNotificationService;
         private readonly TaskCodeGenerator _taskCodeGenerator;
+        protected readonly IUserManagerRepository _userRepository;
 
         public TasksController(
             IUnitOfWork uow,
@@ -44,8 +45,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             IWebHostEnvironment webHostEnvironment,
             ActivityLoggerService activityLogger,
             TaskNotificationService taskNotificationService,
-            TaskCodeGenerator taskCodeGenerator) 
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            TaskCodeGenerator taskCodeGenerator,
+            IUserManagerRepository userRepository)
+            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _taskRepository = taskRepository;
             _stakeholderRepository = stakeholderRepository;
@@ -55,6 +57,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _webHostEnvironment = webHostEnvironment;
             _taskNotificationService = taskNotificationService;
             _taskCodeGenerator = taskCodeGenerator;
+            _userRepository = userRepository;
         }
 
         #region Dashboard

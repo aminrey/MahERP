@@ -25,6 +25,8 @@ namespace MahERP.Areas.AdminArea.Controllers.CoreControllers
         private readonly TaskNotificationService _taskNotificationService;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
+        protected readonly IUserManagerRepository _userRepository;
+
 
         public NotificationController(
             IUnitOfWork uow,
@@ -34,12 +36,14 @@ namespace MahERP.Areas.AdminArea.Controllers.CoreControllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger)
+            ActivityLoggerService activityLogger,
+            IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _coreNotificationRepository = coreNotificationRepository;
             _taskNotificationService = taskNotificationService;
             _userManager = userManager;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
 
         /// <summary>

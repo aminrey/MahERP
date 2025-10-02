@@ -1,0 +1,78 @@
+﻿/* انیمیشن چشمک زدن برای ردیف‌های جدید */
+.notification-blink {
+    animation: blinkHighlight 2s infinite;
+}
+
+@keyframes blinkHighlight {
+    0%, 50% {
+        background-color: rgba(255, 193, 7, 0.3);
+        border-left: 4px solid #ffc107;
+    }
+    100% {
+        background-color: transparent;
+        border-left: none;
+    }
+}
+
+/* استایل نوتیفیکیشن‌های خوانده نشده */
+.notification-unread {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-right: 3px solid #0d6efd;
+}
+
+.notification-read {
+    opacity: 0.7;
+}
+
+/* انیمیشن‌های اولویت */
+.priority-urgent {
+    border-right-color: #dc3545 !important;
+    animation: urgentPulse 1.5s infinite;
+}
+
+.priority-high {
+    border-right-color: #fd7e14 !important;
+}
+
+@keyframes urgentPulse {
+    0% {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    50% {
+        background-color: rgba(220, 53, 69, 0.3);
+    }
+    100% {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+}
+
+/* استایل نوتیفیکیشن items */
+.notification-item {
+    border-bottom: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* انیمیشن badge */
+#headerNotificationBadge {
+    animation: badgePulse 2s infinite;
+}
+
+@keyframes badgePulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

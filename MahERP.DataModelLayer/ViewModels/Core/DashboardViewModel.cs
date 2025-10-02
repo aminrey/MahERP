@@ -35,6 +35,13 @@ namespace MahERP.DataModelLayer.ViewModels.Core
         public int TodayTasksCount { get; set; }
         public int OverdueTasksCount { get; set; }
         public int RemindersCount { get; set; }
+        
+        // ⭐ اضافه کردن خاصیت‌های مورد نیاز
+        public int OnTimeTasksCount { get; set; }
+        public int InProgressTasksCount { get; set; }
+        public int CompletedTasksCount { get; set; }
+        public int ActivePersonalTasksCount { get; set; }
+
     }
 
     public class ContractsStatsViewModel
