@@ -22,6 +22,7 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public string? Province { get; set; }
         public string? PersonalCode { get; set; }
         public string? PositionName { get; set; }
+        public string? ProfileImagePath { get; set; }
         
         /// <summary>
         /// کاربر بالادست (مدیر مستقیم)

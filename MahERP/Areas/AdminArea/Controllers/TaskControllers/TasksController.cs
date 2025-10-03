@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;

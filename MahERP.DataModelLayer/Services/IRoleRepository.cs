@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using MahERP.DataModelLayer.Entities.AcControl;
 
 namespace MahERP.DataModelLayer.Services
@@ -34,5 +35,16 @@ namespace MahERP.DataModelLayer.Services
         List<AppUsers> GetUsersWithoutRolePattern();
         List<AppUsers> GetUsersByRolePattern(int rolePatternId);
         Dictionary<string, string> GetControllerActions();
+
+        // 🆕 سرویس‌های کمکی جدید (بدون DataAccessLevel)
+        Task<bool> CanAccessAsync(string userId, string controller, string action = "General");
+        Task<bool> IsAdminOrManagerAsync(string userId);
+        Task<List<string>> GetUserActivePermissionsAsync(string userId);
+        Task<bool> HasAnyRolePatternAsync(string userId);
+        bool CanAccessController(string userId, string controller);
+        bool CanCreateInController(string userId, string controller);
+        bool CanEditInController(string userId, string controller);
+        bool CanDeleteInController(string userId, string controller);
+        bool CanApproveInController(string userId, string controller);
     }
 }

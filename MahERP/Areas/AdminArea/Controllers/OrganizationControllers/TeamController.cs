@@ -1,10 +1,14 @@
 ﻿using AutoMapper;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Organization;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,14 +18,13 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Linq;
-using MahERP.Extentions;
-using MahERP.DataModelLayer.Entities.TaskManagement;
-using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 
 namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("Team")]
+
     public class TeamController : BaseController
     {
         private readonly ITeamRepository _teamRepository;

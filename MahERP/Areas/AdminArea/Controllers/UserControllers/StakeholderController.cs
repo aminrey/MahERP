@@ -1,27 +1,30 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Caching.Memory;
+using ClosedXML.Excel;
+using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
+using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.StaticClasses;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MahERP.Areas.AdminArea.Controllers.BaseControllers;
-using ClosedXML.Excel;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using MahERP.DataModelLayer.Services;
-using MahERP.DataModelLayer.StaticClasses;
-using MahERP.DataModelLayer.Entities.TaskManagement;
-using MahERP.CommonLayer.PublicClasses;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("Stakeholder")]
+
     public class StakeholderController : BaseController
     {
         private readonly IUnitOfWork _uow;

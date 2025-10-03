@@ -1,5 +1,19 @@
 ﻿@{
     var errors = ViewData.ModelState.Values.SelectMany(v => v.Errors);
+    // دریافت پیام‌های ResponseMessage از TempData
+    List<MahERP.CommonLayer.ViewModels.WebResponseMessageViewModel> responseMessages = null;
+    if (TempData["ResponseMessages"] != null)
+    {
+        var jsonString = TempData["ResponseMessages"].ToString();
+        try
+        {
+            responseMessages = System.Text.Json.JsonSerializer.Deserialize<List<MahERP.CommonLayer.ViewModels.WebResponseMessageViewModel>>(jsonString);
+        }
+        catch
+        {
+            // در صورت خطا در deserialize، نادیده گرفته می‌شود
+        }
+    }
 }
 
 <!DOCTYPE html>
@@ -29,7 +43,6 @@
     <link href="/assets/media/favicons/favicon-192x192.png" rel="icon" sizes="192x192" type="image/png" />
     <link href="/assets/media/favicons/apple-touch-icon-180x180.png" rel="apple-touch-icon" sizes="180x180" />
     <!-- END Icons -->
-    
     <!-- Stylesheets -->
     <!-- Page JS Plugins CSS -->
     <link href="/assets/js/plugins/datatables-bs5/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
@@ -61,27 +74,22 @@
         <!-- Side Overlay-->
         <partial name="_SideOverlay" />
         <!-- END Side Overlay -->
-        
         <!-- Sidebar -->
         <partial name="_SideBarPartial" />
         <!-- END Sidebar -->
-        
         <!-- Header -->
         <partial name="_Headerpartial" />
         <!-- END Header -->
-        
         <!-- Main Container -->
         <main id="main-container" class="content-top-padding">
             @RenderBody()
         </main>
         <!-- END Main Container -->
-        
         <!-- Footer -->
         <partial name="_FooterPartial" />
         <!-- END Footer -->
     </div>
     <!-- END Page Container -->
-    
     <!--
       Dashmix JS
       Core libraries and functionality
@@ -89,7 +97,7 @@
     <script src="/assets/js/dashmix.app.min.js"></script>
     <script src="/assets/js/lib/jquery.min.js"></script>
     <script src="/assets/js/main.js"></script>
-    
+
     <!-- Page JS Plugins -->
     <script src="/assets/js/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
     <script src="/assets/js/plugins/select2/js/select2.full.min.js"></script>
@@ -109,7 +117,7 @@
     <script src="/assets/js/plugins/datatables-buttons/buttons.html5.min.js"></script>
     <script src="/assets/js/plugins/raty-js/jquery.raty.js"></script>
     <script src="/assets/js/plugins/flatpickr/flatpickr.min.js"></script>
-    
+
     <!-- Page JS Code -->
     <script src="/assets/js/pages/be_tables_datatables.min.js"></script>
     <script src="/assets/js/pages/be_comp_rating.min.js"></script>
@@ -118,21 +126,52 @@
     <script>
         Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-select2', 'dm-table-tools-sections', 'jq-slick', 'bs-tooltip', 'jq-notify']);
     </script>
-    
-    <!-- Error notifications -->
+
+    <!-- Error notifications from ModelState -->
     <script>
         @foreach (var item in errors)
         {
-            <text>
-                Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: "@Html.Raw(item.ErrorMessage) " });
-            </text>
+                <text>
+                    Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: "@Html.Raw(item.ErrorMessage) " });
+                </text>
+        }
+    </script>
+
+    <!-- Response Messages from TempData -->
+    <script>
+        @if (responseMessages != null && responseMessages.Any())
+        {
+                foreach (var message in responseMessages)
+                {
+                        var notificationType = message.status switch
+                        {
+                                "success" => "success",
+                                "warning" => "warning",
+                                "info" => "info",
+                                "error" => "danger",
+                                _ => "info"
+                        };
+
+                        var icon = message.status switch
+                        {
+                                "success" => "fa fa-check me-1",
+                                "warning" => "fa fa-exclamation-triangle me-1",
+                                "info" => "fa fa-info me-1",
+                                "error" => "fa fa-times me-1",
+                                _ => "fa fa-info me-1"
+                        };
+
+                        <text>
+                            Dashmix.helpers('jq-notify', { type: '@notificationType', icon: '@icon', message: "@Html.Raw(message.text)" });
+                        </text>
+                }
         }
     </script>
 
     <script>
         // جلوگیری از نمایش خطاهای DataTable
         $.fn.dataTable.ext.errMode = 'none';
-        
+
         window.reinitDataTable = function(tableId, options) {
             try {
                 if ($.fn.DataTable.isDataTable('#' + tableId)) {

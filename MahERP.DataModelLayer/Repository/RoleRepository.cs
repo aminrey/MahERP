@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MahERP.DataModelLayer.Repository
 {
@@ -278,6 +279,156 @@ namespace MahERP.DataModelLayer.Repository
 
         #endregion
 
+        #region 🆕 سرویس‌های کمکی جدید (بدون DataAccessLevel)
+
+        /// <summary>
+        /// بررسی دسترسی async کاربر به کنترلر و اکشن
+        /// </summary>
+        public async Task<bool> CanAccessAsync(string userId, string controller, string action = "General")
+        {
+            if (string.IsNullOrEmpty(userId))
+                return false;
+
+            try
+            {
+                // بررسی Admin
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user?.IsAdmin == true)
+                    return true;
+
+                // بررسی نقش‌های سیستمی
+                var systemRoles = await _context.UserRoles
+                    .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
+                    .Where(x => x.UserId == userId && (x.Name == "Admin" || x.Name == "Manager"))
+                    .AnyAsync();
+
+                if (systemRoles)
+                    return true;
+
+                // بررسی الگوهای نقش
+                return HasPermission(userId, controller, action, 0); // 0 = Read
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// بررسی اینکه کاربر Admin یا Manager است
+        /// </summary>
+        public async Task<bool> IsAdminOrManagerAsync(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                return false;
+
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user?.IsAdmin == true)
+                    return true;
+
+                return await _context.UserRoles
+                    .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
+                    .Where(x => x.UserId == userId && (x.Name == "Admin" || x.Name == "Manager"))
+                    .AnyAsync();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست دسترسی‌های فعال کاربر به صورت async
+        /// </summary>
+        public async Task<List<string>> GetUserActivePermissionsAsync(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                return new List<string>();
+
+            try
+            {
+                // اگر Admin است، همه دسترسی‌ها
+                if (await IsAdminOrManagerAsync(userId))
+                {
+                    return new List<string> { "*.*.*" }; // دسترسی کامل
+                }
+
+                return GetUserPermissions(userId);
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
+        /// بررسی اینکه کاربر حداقل یک الگوی نقش دارد
+        /// </summary>
+        public async Task<bool> HasAnyRolePatternAsync(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                return false;
+
+            try
+            {
+                return await _context.UserRolePattern_Tbl
+                    .Where(urp => urp.UserId == userId && 
+                                  urp.IsActive && 
+                                  urp.RolePattern.IsActive &&
+                                  (urp.StartDate == null || urp.StartDate <= DateTime.Now) &&
+                                  (urp.EndDate == null || urp.EndDate >= DateTime.Now))
+                    .AnyAsync();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// بررسی دسترسی مشاهده به کنترلر
+        /// </summary>
+        public bool CanAccessController(string userId, string controller)
+        {
+            return HasPermission(userId, controller, "General", 0); // Read
+        }
+
+        /// <summary>
+        /// بررسی دسترسی ایجاد در کنترلر
+        /// </summary>
+        public bool CanCreateInController(string userId, string controller)
+        {
+            return HasPermission(userId, controller, "General", 1); // Create
+        }
+
+        /// <summary>
+        /// بررسی دسترسی ویرایش در کنترلر
+        /// </summary>
+        public bool CanEditInController(string userId, string controller)
+        {
+            return HasPermission(userId, controller, "General", 2); // Edit
+        }
+
+        /// <summary>
+        /// بررسی دسترسی حذف در کنترلر
+        /// </summary>
+        public bool CanDeleteInController(string userId, string controller)
+        {
+            return HasPermission(userId, controller, "General", 3); // Delete
+        }
+
+        /// <summary>
+        /// بررسی دسترسی تایید در کنترلر
+        /// </summary>
+        public bool CanApproveInController(string userId, string controller)
+        {
+            return HasPermission(userId, controller, "General", 4); // Approve
+        }
+
+        #endregion
+
         #region Permission Logging
 
         public List<PermissionLog> GetPermissionLogs(string userId = null, DateTime? fromDate = null, DateTime? toDate = null)
@@ -345,35 +496,68 @@ namespace MahERP.DataModelLayer.Repository
 
         public Dictionary<string, string> GetControllerActions()
         {
-            // این متد باید کنترلرها و اکشن‌های موجود در سیستم را برگرداند
-            // می‌توان از Reflection استفاده کرد یا لیست ثابتی تعریف کرد
+            // بروزرسانی شده با کنترلرهای جدید سیستم
             return new Dictionary<string, string>
             {
-                {"Tasks", "تسک‌ها"},
-                {"Tasks.Index", "لیست تسک‌ها"},
-                {"Tasks.CreateNewTask", "ایجاد تسک"},
-                {"Tasks.Edit", "ویرایش تسک"},
-                {"Tasks.Delete", "حذف تسک"},
-                {"Tasks.Details", "جزئیات تسک"},
-                {"Tasks.MyTasks", "تسک‌های من"},
-                {"CRM", "مدیریت ارتباط با مشتری"},
-                {"CRM.Index", "لیست تعاملات CRM"},
-                {"CRM.Create", "ایجاد تعامل CRM"},
-                {"CRM.Edit", "ویرایش تعامل CRM"},
-                {"CRM.Delete", "حذف تعامل CRM"},
-                {"Stakeholder", "طرف‌های حساب"},
-                {"Stakeholder.Index", "لیست طرف‌های حساب"},
-                {"Stakeholder.Create", "ایجاد طرف حساب"},
-                {"Stakeholder.Edit", "ویرایش طرف حساب"},
-                {"Stakeholder.Delete", "حذف طرف حساب"},
+                // تعاریف اولیه تسک‌ینگ
+                {"TaskInitialSettings", "تعاریف اولیه تسک‌ینگ"},
+                {"TaskInitialSettings.General", "دسترسی کلی تعاریف اولیه"},
+                
+                // داشبورد
+                {"Dashboard", "داشبورد و گزارشات"},
+                {"Dashboard.General", "دسترسی کلی داشبورد"},
+                
+                // تسک‌ها
+                {"Tasks", "عملیات تسک‌ها"},
+                {"Tasks.General", "دسترسی کلی تسک‌ها"},
+                
+                // مدیریت شعب
+                {"Branch", "مدیریت شعب"},
+                {"Branch.General", "دسترسی کلی شعب"},
+                
+                // کاربران شعب
+                {"BranchUser", "کاربران شعب"},
+                {"BranchUser.General", "دسترسی کلی کاربران شعب"},
+                
+                // تیم‌ها
+                {"Team", "مدیریت تیم‌ها"},
+                {"Team.General", "دسترسی کلی تیم‌ها"},
+                
+                // مدیریت کاربران
+                {"UserManager", "مدیریت کاربران"},
+                {"UserManager.General", "دسترسی کلی کاربران"},
+                
+                // الگوهای نقش
+                {"RolePattern", "مدیریت نقش‌ها"},
+                {"RolePattern.General", "دسترسی کلی نقش‌ها"},
+                
+                // دسترسی کاربران
+                {"UserPermission", "دسترسی کاربران"},
+                {"UserPermission.General", "دسترسی کلی تنظیم دسترسی"},
+                
+                // طرف حساب‌ها
+                {"Stakeholder", "طرف حساب‌ها"},
+                {"Stakeholder.General", "دسترسی کلی طرف حساب‌ها"},
+                
+                // قراردادها
                 {"Contract", "قراردادها"},
-                {"Contract.Index", "لیست قراردادها"},
-                {"Contract.Create", "ایجاد قرارداد"},
-                {"Contract.Edit", "ویرایش قرارداد"},
-                {"Contract.Delete", "حذف قرارداد"},
-                {"User", "مدیریت کاربران"},
-                {"Role", "مدیریت نقش‌ها"},
-                {"RolePattern", "مدیریت الگوهای نقش"}
+                {"Contract.General", "دسترسی کلی قراردادها"},
+                
+                // CRM
+                {"CRM", "مدیریت CRM"},
+                {"CRM.General", "دسترسی کلی CRM"},
+                
+                // لاگ فعالیت‌ها
+                {"UserActivityLog", "لاگ فعالیت‌ها"},
+                {"UserActivityLog.General", "دسترسی کلی لاگ‌ها"},
+                
+                // نوتیفیکیشن‌ها
+                {"Notification", "نوتیفیکیشن‌ها"},
+                {"Notification.General", "دسترسی کلی نوتیفیکیشن‌ها"},
+                
+                // تنظیمات
+                {"Settings", "تنظیمات سیستم"},
+                {"Settings.General", "دسترسی کلی تنظیمات"}
             };
         }
 

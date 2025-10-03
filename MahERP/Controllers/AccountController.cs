@@ -159,20 +159,20 @@ namespace MahERP.Controllers
                     if (result.Succeeded)
                     {
                         var ThisUser = await _UserManager.FindByNameAsync(model.UserName);
-                        if (ThisUser.IsAdmin == false)
-                        {
-                            await _signInManager.SignOutAsync();
+                        //if (ThisUser.IsAdmin == false)
+                        //{
+                        //    await _signInManager.SignOutAsync();
 
-                            // ثبت لاگ تلاش ورود کاربر غیرمجاز
-                            await _activityLogger.LogLoginAsync(
-                                false, 
-                                model.UserName, 
-                                "کاربر دسترسی مدیریت ندارد"
-                            );
+                        //    // ثبت لاگ تلاش ورود کاربر غیرمجاز
+                        //    await _activityLogger.LogLoginAsync(
+                        //        false, 
+                        //        model.UserName, 
+                        //        "کاربر دسترسی مدیریت ندارد"
+                        //    );
 
-                            ModelState.AddModelError("UserName", "اطلاعات ورود صحیح نیست");
-                            return View(model);
-                        }
+                        //    ModelState.AddModelError("UserName", "اطلاعات ورود صحیح نیست");
+                        //    return View(model);
+                        //}
 
                         // ثبت لاگ ورود موفق
                         await _activityLogger.LogLoginAsync(true, ThisUser.UserName);

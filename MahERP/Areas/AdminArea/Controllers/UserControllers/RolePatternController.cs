@@ -1,13 +1,14 @@
 ﻿using AutoMapper;
+using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
+using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
-using MahERP.Areas.AdminArea.Controllers.BaseControllers;
-using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Services;
-using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,9 @@ using System.Linq;
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
     [Area("AdminArea")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize]
+
+    [PermissionRequired("RolePattern")]
     public class RolePatternController : BaseController
     {
         private readonly IUnitOfWork _uow;
@@ -245,52 +248,68 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         private List<ControllerInfo> GetAvailableControllers()
         {
             return new List<ControllerInfo>
-            {
-                new ControllerInfo { Name = "Task", DisplayName = "مدیریت تسک‌ها", Actions = new[]
-                {
-                    new ActionInfo { Name = "Index", DisplayName = "لیست تسک‌ها" },
-                    new ActionInfo { Name = "Create", DisplayName = "ایجاد تسک" },
-                    new ActionInfo { Name = "Edit", DisplayName = "ویرایش تسک" },
-                    new ActionInfo { Name = "Delete", DisplayName = "حذف تسک" },
-                    new ActionInfo { Name = "Details", DisplayName = "جزئیات تسک" },
-                    new ActionInfo { Name = "MyTasks", DisplayName = "تسک‌های من" }
-                }},
-                new ControllerInfo { Name = "CRM", DisplayName = "مدیریت ارتباط با مشتری", Actions = new[]
-                {
-                    new ActionInfo { Name = "Index", DisplayName = "لیست تعاملات" },
-                    new ActionInfo { Name = "Create", DisplayName = "ایجاد تعامل" },
-                    new ActionInfo { Name = "Edit", DisplayName = "ویرایش تعامل" },
-                    new ActionInfo { Name = "Delete", DisplayName = "حذف تعامل" }
-                }},
-                new ControllerInfo { Name = "Stakeholder", DisplayName = "مدیریت طرف‌های حساب", Actions = new[]
-                {
-                    new ActionInfo { Name = "Index", DisplayName = "لیست طرف‌های حساب" },
-                    new ActionInfo { Name = "Create", DisplayName = "ایجاد طرف حساب" },
-                    new ActionInfo { Name = "Edit", DisplayName = "ویرایش طرف حساب" },
-                    new ActionInfo { Name = "Delete", DisplayName = "حذف طرف حساب" }
-                }},
-                new ControllerInfo { Name = "Contract", DisplayName = "مدیریت قراردادها", Actions = new[]
-                {
-                    new ActionInfo { Name = "Index", DisplayName = "لیست قراردادها" },
-                    new ActionInfo { Name = "Create", DisplayName = "ایجاد قرارداد" },
-                    new ActionInfo { Name = "Edit", DisplayName = "ویرایش قرارداد" },
-                    new ActionInfo { Name = "Delete", DisplayName = "حذف قرارداد" }
-                }},
-                new ControllerInfo { Name = "User", DisplayName = "مدیریت کاربران", Actions = new[]
-                {
-                    new ActionInfo { Name = "Index", DisplayName = "لیست کاربران" },
-                    new ActionInfo { Name = "Create", DisplayName = "ایجاد کاربر" },
-                    new ActionInfo { Name = "Edit", DisplayName = "ویرایش کاربر" },
-                    new ActionInfo { Name = "Delete", DisplayName = "حذف کاربر" }
-                }},
-                new ControllerInfo { Name = "RolePattern", DisplayName = "مدیریت الگوهای نقش", Actions = new[]
-                {
-                    new ActionInfo { Name = "Index", DisplayName = "لیست الگوهای نقش" },
-                    new ActionInfo { Name = "Create", DisplayName = "ایجاد الگوی نقش" },
-                    new ActionInfo { Name = "Edit", DisplayName = "ویرایش الگوی نقش" },
-                    new ActionInfo { Name = "Delete", DisplayName = "حذف الگوی نقش" }
-                }}
-            };
+    {
+        new ControllerInfo { Name = "TaskInitialSettings", DisplayName = "تعاریف اولیه تسک‌ینگ", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "شامل دسته‌بندی تسک و اتصال به شعب" }
+        }},
+        new ControllerInfo { Name = "Dashboard", DisplayName = "📊 داشبورد و گزارشات", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به داشبورد و گزارشات" }
+        }},
+        new ControllerInfo { Name = "Tasks", DisplayName = "📋 عملیات تسک‌ها", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به عملیات تسک‌ها" }
+        }},
+        new ControllerInfo { Name = "Branch", DisplayName = "🏢 مدیریت شعب", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به مدیریت شعب" }
+        }},
+        new ControllerInfo { Name = "BranchUser", DisplayName = "👥 کاربران شعب", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به کاربران شعب" }
+        }},
+        new ControllerInfo { Name = "Team", DisplayName = "👥 مدیریت تیم‌ها", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به مدیریت تیم‌ها" }
+        }},
+        new ControllerInfo { Name = "UserManager", DisplayName = "👤 مدیریت کاربران", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به مدیریت کاربران" }
+        }},
+        new ControllerInfo { Name = "RolePattern", DisplayName = "🔑 مدیریت نقش‌ها", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به مدیریت نقش‌ها" }
+        }},
+        new ControllerInfo { Name = "UserPermission", DisplayName = "🔐 دسترسی کاربران", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به تنظیم دسترسی کاربران" }
+        }},
+        new ControllerInfo { Name = "Stakeholder", DisplayName = "🤝 طرف حساب‌ها", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به طرف حساب‌ها" }
+        }},
+        new ControllerInfo { Name = "Contract", DisplayName = "📄 قراردادها", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به قراردادها" }
+        }},
+        new ControllerInfo { Name = "CRM", DisplayName = "📊 مدیریت CRM", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به مدیریت CRM" }
+        }},
+        new ControllerInfo { Name = "UserActivityLog", DisplayName = "📊 لاگ فعالیت‌ها", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به لاگ فعالیت‌ها" }
+        }},
+        new ControllerInfo { Name = "Notification", DisplayName = "🔔 نوتیفیکیشن‌ها", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به نوتیفیکیشن‌ها" }
+        }},
+        new ControllerInfo { Name = "Settings", DisplayName = "⚙️ تنظیمات سیستم", Actions = new[]
+        {
+            new ActionInfo { Name = "General", DisplayName = "دسترسی به تنظیمات سیستم" }
+        }}
+    };
         }
     }
 

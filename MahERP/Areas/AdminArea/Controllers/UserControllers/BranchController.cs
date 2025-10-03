@@ -1,21 +1,24 @@
 ﻿using AutoMapper;
+using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
+using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
-using MahERP.Areas.AdminArea.Controllers.BaseControllers;
-using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Repository;
-using MahERP.DataModelLayer.Services;
 using System;
 using System.Linq;
-using MahERP.DataModelLayer.ViewModels.UserViewModels;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("Branch")]
+
     public class BranchController : BaseController
     {
         private readonly IUnitOfWork _uow;

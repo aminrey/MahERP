@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
+using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.Core.NotificationViewModels;
-using MahERP.CommonLayer.PublicClasses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,8 @@ namespace MahERP.Areas.AdminArea.Controllers.CoreControllers
     /// </summary>
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("Notification")]
+
     public class NotificationController : BaseController
     {
         private readonly ICoreNotificationRepository _coreNotificationRepository;

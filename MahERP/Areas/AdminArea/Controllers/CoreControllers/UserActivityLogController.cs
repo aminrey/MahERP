@@ -1,4 +1,5 @@
-﻿using MahERP.DataModelLayer.Services;
+﻿using MahERP.Attributes;
+using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,8 @@ namespace MahERP.Areas.AdminArea.Controllers.CoreControllers
     /// </summary>
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("UserActivityLog")]
+
     public class UserActivityLogController : Controller
     {
         private readonly IUserActivityLogRepository _logRepository;

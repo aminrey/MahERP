@@ -35,6 +35,8 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         [RegularExpression(@"^[^\\/:*;\.\)\(]+$", ErrorMessage = "از کاراکترهای غیرمجاز استفاده نکنید.")]
         public string PhoneNumber { get; set; }
         public bool IsActive { get; set; }
+        public bool IsAdmin { get; set; }
+
         public DateTime RegisterDate { get; set; }
 
         [Display(Name = "کد ملی")]
@@ -119,7 +121,34 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
 
     public class UserViewModelFull : EditUserViewModel
     {
-        public string FullNamesString { get; set; }
-    } 
+        public string? FullNamesString { get; set; }
+        public DateTime RegisterDate { get; set; }
 
+        /// <summary>
+        /// مسیر تصویر پروفایل کاربر
+        /// </summary>
+        public string? ProfileImagePath { get; set; }
+    }
+    /// <summary>
+    /// مدل تغییر رمز عبور کاربر
+    /// </summary>
+    public class ChangePasswordViewModel
+    {
+        [Required(ErrorMessage = "رمز عبور فعلی الزامی است")]
+        [DataType(DataType.Password)]
+        [Display(Name = "رمز عبور فعلی")]
+        public string CurrentPassword { get; set; }
+
+        [Required(ErrorMessage = "رمز عبور جدید الزامی است")]
+        [DataType(DataType.Password)]
+        [MinLength(6, ErrorMessage = "رمز عبور حداقل باید 6 کاراکتر باشد")]
+        [Display(Name = "رمز عبور جدید")]
+        public string NewPassword { get; set; }
+
+        [Required(ErrorMessage = "تکرار رمز عبور الزامی است")]
+        [DataType(DataType.Password)]
+        [Compare("NewPassword", ErrorMessage = "رمز عبور جدید و تکرار آن باید یکسان باشند")]
+        [Display(Name = "تکرار رمز عبور جدید")]
+        public string ConfirmPassword { get; set; }
+    }
 }
