@@ -265,12 +265,7 @@
                                         <span class="nav-main-link-name">چارت سازمانی</span>
                                     </a>
                                 </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Team", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Team" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-list"></i>
-                                        <span class="nav-main-link-name">لیست تیم‌ها</span>
-                                    </a>
-                                </li>
+                          
                                 @if (Html.CanAccess("Team", 1) || isAdminOrManager) 
                                 {
                                     <li class="nav-main-item">
@@ -295,8 +290,14 @@
                             <ul class="nav-main-submenu">
                                 <li class="nav-main-item">
                                     <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserManager", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-list"></i>
-                                        <span class="nav-main-link-name">لیست کاربران</span>
+                                        <i class="nav-main-link-icon fa fa-user-shield"></i>
+                                        <span class="nav-main-link-name">مدیران سیستم</span>
+                                    </a>
+                                </li>
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserManager", "Users") ? "active" : "")" asp-area="AdminArea" asp-controller="UserManager" asp-action="Users">
+                                        <i class="nav-main-link-icon fa fa-users"></i>
+                                        <span class="nav-main-link-name">کاربران</span>
                                     </a>
                                 </li>
                                 @if (Html.CanAccess("UserManager", 1) || isAdminOrManager) 
@@ -576,7 +577,7 @@
                 <!-- ============== 🚪 LOGOUT ============== -->
                 <li class="nav-main-heading">خروج</li>
                 <li class="nav-main-item">
-                    <a class="nav-main-link logout-link" href="javascript:void(0)" onclick="document.getElementById('logoutForm').submit();">
+                    <a class="nav-main-link logout-link"  href="/Account/LogOut">
                         <i class="nav-main-link-icon fa fa-sign-out-alt text-danger"></i>
                         <span class="nav-main-link-name">خروج از سیستم</span>
                     </a>
@@ -590,10 +591,6 @@
 </nav>
 <!-- END Sidebar -->
 
-<!-- Hidden Logout Form -->
-<form id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post" class="d-none">
-    @Html.AntiForgeryToken()
-</form>
 
 <!-- Modal Advanced Search -->
 <div class="modal fade" id="modal-advanced-search" tabindex="-1" role="dialog" aria-labelledby="modal-advanced-search" aria-hidden="true">

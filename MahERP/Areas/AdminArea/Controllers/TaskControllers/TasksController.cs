@@ -371,7 +371,179 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleOperationStar(int id)
+        {
+            try
+            {
+                var operation = await _context.TaskOperations.FindAsync(id);
+                if (operation == null)
+                {
+                    return Json(new { success = false, message = "عملیات یافت نشد" });
+                }
 
+                // بررسی دسترسی کاربر
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var hasAccess = await _taskPermissionService.HasOperationAccessAsync(currentUserId, operation.TaskId);
+
+                if (!hasAccess)
+                {
+                    return Json(new { success = false, message = "شما مجاز به انجام این عملیات نیستید" });
+                }
+
+                operation.IsStarred = !operation.IsStarred;
+                await _context.SaveChangesAsync();
+
+                var message = operation.IsStarred ? "عملیات ستاره‌دار شد" : "ستاره عملیات حذف شد";
+                return Json(new { success = true, message = message });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "خطا در تغییر وضعیت ستاره" });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleOperationCompletion(int id)
+        {
+            try
+            {
+                var operation = await _context.TaskOperations.FindAsync(id);
+                if (operation == null)
+                {
+                    return Json(new { success = false, message = "عملیات یافت نشد" });
+                }
+
+                // بررسی دسترسی کاربر
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var hasAccess = await _taskPermissionService.HasOperationAccessAsync(currentUserId, operation.TaskId);
+
+                if (!hasAccess)
+                {
+                    return Json(new { success = false, message = "شما مجاز به انجام این عملیات نیستید" });
+                }
+
+                operation.IsCompleted = !operation.IsCompleted;
+
+                if (operation.IsCompleted)
+                {
+                    operation.CompletionDate = DateTime.Now;
+                    operation.CompletedByUserId = currentUserId;
+                }
+                else
+                {
+                    operation.CompletionDate = null;
+                    operation.CompletedByUserId = null;
+                    operation.CompletionNote = null; // پاک کردن گزارش در صورت بازگشت
+                }
+
+                await _context.SaveChangesAsync();
+
+                var message = operation.IsCompleted ? "عملیات تکمیل شد" : "عملیات به حالت انتظار برگشت";
+                return Json(new { success = true, message = message });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "خطا در تغییر وضعیت تکمیل" });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AddOperationNote(int operationId)
+        {
+            try
+            {
+                var operation = await _context.TaskOperations
+                    .Include(o => o.Task)
+                    .FirstOrDefaultAsync(o => o.Id == operationId);
+
+                if (operation == null)
+                {
+                    return Json(new { status = "error", message = new[] { new { text = "عملیات یافت نشد" } } });
+                }
+
+                // بررسی دسترسی
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var hasAccess = await _taskPermissionService.HasOperationAccessAsync(currentUserId, operation.TaskId);
+
+                if (!hasAccess)
+                {
+                    return Json(new { status = "error", message = new[] { new { text = "شما مجاز به انجام این عملیات نیستید" } } });
+                }
+
+                var model = new OperationNoteViewModel
+                {
+                    OperationId = operationId,
+                    OperationTitle = operation.Title,
+                    TaskTitle = operation.Task.Title,
+                    CompletionNote = operation.CompletionNote,
+                    IsCompleted = operation.IsCompleted
+                };
+
+                return PartialView("_AddOperationNoteModal", model);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { status = "error", message = new[] { new { text = "خطا در بارگذاری فرم" } } });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddOperationNote(OperationNoteViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => new { text = e.ErrorMessage })
+                        .ToArray();
+                    return Json(new { status = "validation-error", message = errors });
+                }
+
+                var operation = await _context.TaskOperations.FindAsync(model.OperationId);
+                if (operation == null)
+                {
+                    return Json(new { status = "error", message = new[] { new { text = "عملیات یافت نشد" } } });
+                }
+
+                // بررسی دسترسی
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var hasAccess = await _taskPermissionService.HasOperationAccessAsync(currentUserId, operation.TaskId);
+
+                if (!hasAccess)
+                {
+                    return Json(new { status = "error", message = new[] { new { text = "شما مجاز به انجام این عملیات نیستید" } } });
+                }
+
+                operation.CompletionNote = model.CompletionNote?.Trim();
+
+                // اگر گزارش اضافه شد، عملیات را تکمیل کن
+                if (!string.IsNullOrEmpty(operation.CompletionNote) && !operation.IsCompleted)
+                {
+                    operation.IsCompleted = true;
+                    operation.CompletionDate = DateTime.Now;
+                    operation.CompletedByUserId = currentUserId;
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    status = "success",
+                    message = new[] { new { text = "گزارش با موفقیت ثبت شد" } },
+                    refreshPage = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { status = "error", message = new[] { new { text = "خطا در ثبت گزارش" } } });
+            }
+        }
         /// <summary>
         /// تسک‌های شخصی کاربر
         /// </summary>

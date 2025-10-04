@@ -7,37 +7,64 @@
     <div class="block-header block-header-default">
         <h3 class="block-title">@ViewData["Title"]</h3>
         <div class="block-options">
-            <div class="dropdown">
-                <button type="button" class="btn btn-sm btn-alt-primary dropdown-toggle" id="branchDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fa fa-building me-1"></i> @Model.BranchName
-                </button>
-                <div class="dropdown-menu" aria-labelledby="branchDropdown">
-                    @foreach (var branch in ViewBag.UserBranches as SelectList)
-                    {
-                        <a class="dropdown-item" href="@Url.Action("OrganizationalChart", new { branchId = branch.Value })">
-                            @branch.Text
-                        </a>
-                    }
+            @if (!string.IsNullOrEmpty(ViewBag.NoBranchMessage as string))
+            {
+                <!-- در صورت عدم وجود شعبه، دکمه‌ها نمایش داده نمی‌شوند -->
+            }
+            else
+            {
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm btn-alt-primary dropdown-toggle" id="branchDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-building me-1"></i> @Model.BranchName
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="branchDropdown">
+                        @foreach (var branch in ViewBag.UserBranches as SelectList)
+                        {
+                            <a class="dropdown-item" href="@Url.Action("OrganizationalChart", new { branchId = branch.Value })">
+                                @branch.Text
+                            </a>
+                        }
+                    </div>
                 </div>
-            </div>
 
-            <!-- دکمه جدید برای چارت قدرت مشاهده -->
-            <a asp-action="TaskVisibilityChart" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-info">
-                <i class="fa fa-eye opacity-50 me-1"></i> چارت قدرت مشاهده تسک‌ها
-            </a>
+                <!-- دکمه جدید برای چارت قدرت مشاهده -->
+                <a asp-action="TaskVisibilityChart" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-info">
+                    <i class="fa fa-eye opacity-50 me-1"></i> چارت قدرت مشاهده تسک‌ها
+                </a>
 
-            <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-success">
-                <i class="fa fa-plus opacity-50 me-1"></i> تیم جدید
-            </a>
+                <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-sm btn-alt-success">
+                    <i class="fa fa-plus opacity-50 me-1"></i> تیم جدید
+                </a>
+            }
         </div>
     </div>
     
-    <!-- باقی کد بدون تغییر -->
     <div class="block-content">
         <div class="row">
             <div class="col-12">
                 <div id="org-chart-container" class="text-center">
-                    @if (Model.RootTeams.Any())
+                    @if (!string.IsNullOrEmpty(ViewBag.NoBranchMessage as string))
+                    {
+                        <!-- نمایش پیام عدم وجود شعبه -->
+                        <div class="no-branch-state py-5">
+                            <i class="fa fa-building fa-4x text-warning mb-4"></i>
+                            <h3 class="text-warning mb-3">عدم دسترسی به شعبه</h3>
+                            <p class="text-muted fs-5 mb-4">@ViewBag.NoBranchMessage</p>
+                            <div class="alert alert-info mx-auto" style="max-width: 600px;">
+                                <i class="fa fa-info-circle me-2"></i>
+                                <strong>راهنمایی:</strong> برای مشاهده چارت سازمانی، ابتدا باید به حداقل یک شعبه دسترسی داشته باشید.
+                            </div>
+                            <div class="mt-4">
+                                <a href="@Url.Action("Index", "Branch")" class="btn btn-primary me-2">
+                                    <i class="fa fa-list me-1"></i> مشاهده شعب
+                                </a>
+                                <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">
+                                    <i class="fa fa-home me-1"></i> بازگشت به داشبورد
+                                </a>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.RootTeams.Any())
                     {
                         @foreach (var rootTeam in Model.RootTeams)
                         {
@@ -105,6 +132,23 @@
             background-color: #138496;
             border-color: #117a8b;
             color: white;
+        }
+
+        /* استایل جدید برای حالت عدم وجود شعبه */
+        .no-branch-state {
+            background: white;
+            border-radius: 12px;
+            border: 2px dashed #ffc107;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .no-branch-state .alert {
+            border-radius: 8px;
+            text-align: right;
         }
 
         /* باقی CSS بدون تغییر */
@@ -219,6 +263,14 @@
 
             .child-teams::after {
                 display: none;
+            }
+
+            .no-branch-state {
+                padding: 2rem 1rem;
+            }
+
+            .no-branch-state .alert {
+                margin: 0 1rem;
             }
         }
 
