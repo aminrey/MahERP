@@ -865,11 +865,11 @@ namespace MahERP.DataModelLayer
                 new Branch
                 {
                     Id = 1,
-                    Name = "دفتر مرکزی",
-                    Description = "شعبه اصلی سازمان",
+                    Name = "شعبه رسنا",
+                    Description = "شعبه برند رسنا",
                     IsActive = true,
                     IsMainBranch = true,
-                    CreateDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                    CreateDate = new DateTime(2025, 10, 5, 0, 0, 0, 0, DateTimeKind.Unspecified)
                 }
             );
         }
@@ -930,14 +930,13 @@ namespace MahERP.DataModelLayer
             modelBuilder.Entity<TaskCategory>().HasData(
                 new TaskCategory { Id = 1, Title = "عمومی", Description = "دسته‌بندی عمومی برای تسک‌ها", DisplayOrder = 1, IsActive = true },
                 new TaskCategory { Id = 2, Title = "اداری", Description = "تسک‌های مربوط به امور اداری", DisplayOrder = 2, IsActive = true },
-                new TaskCategory { Id = 3, Title = "فنی", Description = "تسک‌های فنی و تخصصی", DisplayOrder = 3, IsActive = true },
-                new TaskCategory { Id = 4, Title = "فروش", Description = "تسک‌های مربوط به فروش", DisplayOrder = 4, IsActive = true },
-                new TaskCategory { Id = 5, Title = "خدمات", Description = "تسک‌های مربوط به خدمات مشتریان", DisplayOrder = 5, IsActive = true },
+                new TaskCategory { Id = 3, Title = "فروش", Description = "تسک‌های مربوط به فروش", DisplayOrder = 4, IsActive = true },
+                new TaskCategory { Id = 4, Title = "خدمات حضوری", Description = "تسک‌های مربوط به خدمات مشتریان غیر حضوری", DisplayOrder = 5, IsActive = true },
+                new TaskCategory { Id = 5, Title = "خدمات  غیر حضوری", Description = "تسک‌های مربوط به خدمات مشتریان حضوری", DisplayOrder = 5, IsActive = true },
                 new TaskCategory { Id = 6, Title = "بازاریابی", Description = "تسک‌های بازاریابی و تبلیغات", DisplayOrder = 6, IsActive = true },
                 new TaskCategory { Id = 7, Title = "مالی", Description = "تسک‌های مربوط به امور مالی", DisplayOrder = 7, IsActive = true },
                 new TaskCategory { Id = 8, Title = "منابع انسانی", Description = "تسک‌های مربوط به HR", DisplayOrder = 8, IsActive = true },
-                new TaskCategory { Id = 9, Title = "پروژه", Description = "تسک‌های پروژه‌ای", DisplayOrder = 9, IsActive = true },
-                new TaskCategory { Id = 10, Title = "فوری", Description = "تسک‌های فوری و اضطراری", DisplayOrder = 10, IsActive = true }
+                new TaskCategory { Id = 9, Title = "فوری", Description = "تسک‌های فوری و اضطراری", DisplayOrder = 10, IsActive = true }
             );
         }
 
