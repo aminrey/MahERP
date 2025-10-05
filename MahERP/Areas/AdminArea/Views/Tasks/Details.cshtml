@@ -327,17 +327,38 @@
                 </div>
             </div>
             <!-- END Task Details -->
-            <!-- Task Operations -->
+                    <!-- Task Operations -->
             <div class="block block-rounded">
                 <div class="block-header block-header-default">
                     <h3 class="block-title">
                         <i class="fa fa-cogs text-muted me-1"></i> عملیات‌های تسک
                     </h3>
                     <div class="block-options">
-                        <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
-                        <button type="button" class="btn btn-sm btn-alt-primary" data-toggle="modal-ajax" href="@Url.Action("AddOperation", new { taskId = Model.Id })">
-                            <i class="fa fa-plus opacity-50 me-1"></i> افزودن عملیات
-                        </button>
+                        @if (isAssignedToCurrentUser)
+                        {
+                            <button type="button" class="btn btn-sm btn-alt-primary me-2" data-toggle="modal-ajax" href="@Url.Action("AddOperation", new { taskId = Model.Id })">
+                                <i class="fa fa-plus opacity-50 me-1"></i> افزودن عملیات
+                            </button>
+                        }
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown">
+                                <i class="fa fa-filter me-1"></i> فیلتر
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <a class="dropdown-item" href="#" onclick="filterOperations('all')">
+                                    <i class="fa fa-list me-1"></i> همه عملیات
+                                </a>
+                                <a class="dropdown-item" href="#" onclick="filterOperations('starred')">
+                                    <i class="fa fa-star text-warning me-1"></i> ستاره‌دار
+                                </a>
+                                <a class="dropdown-item" href="#" onclick="filterOperations('completed')">
+                                    <i class="fa fa-check text-success me-1"></i> تکمیل شده
+                                </a>
+                                <a class="dropdown-item" href="#" onclick="filterOperations('pending')">
+                                    <i class="fa fa-clock text-warning me-1"></i> در انتظار
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="block-content block-content-full">
@@ -349,61 +370,175 @@
                     }
                     else
                     {
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover table-vcenter js-dataTable-responsive">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center" style="width: 80px;">ردیف</th>
-                                        <th class="text-center">عنوان عملیات</th>
-                                        <th class="text-center d-none d-md-table-cell">توضیحات</th>
-                                        <th class="text-center" style="width: 120px;">وضعیت</th>
-                                        <th class="text-center d-none d-lg-table-cell" style="width: 150px;">تاریخ تکمیل</th>
-                                        <th class="text-center" style="width: 120px;">عملیات</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var operation in Model.Operations.OrderBy(o => o.OperationOrder))
-                                    {
-                                        <tr>
-                                            <td class="text-center fs-sm">
-                                                <strong>@operation.OperationOrder</strong>
-                                            </td>
-                                            <td class="text-center fw-semibold fs-sm">
-                                                @operation.Title
-                                            </td>
-                                            <td class="text-center d-none d-md-table-cell fs-sm">
-                                                @(string.IsNullOrEmpty(operation.Description) ? "-" : (operation.Description.Length > 100 ? operation.Description.Substring(0, 97) + "..." : operation.Description))
-                                            </td>
-                                            <td class="text-center">
-                                                @if (operation.IsCompleted)
-                                                {
-                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-success-light text-success">تکمیل شده</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-warning-light text-warning">در انتظار</span>
-                                                }
-                                            </td>
-                                            <td class="text-center d-none d-lg-table-cell fs-sm">
-                                                @(operation.CompletionDate.HasValue? ConvertDateTime.ConvertMiladiToShamsi(operation.CompletionDate, "yyyy/MM/dd") : "-")
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-sm btn-alt-secondary me-1" onclick="toggleOperationCompletion(@operation.Id)" data-bs-toggle="tooltip" title="@(operation.IsCompleted ? "بازگشت به حالت در انتظار" : "تکمیل عملیات")">
-                                                    <i class="fa fa-fw @(operation.IsCompleted ? "fa-undo text-warning" : "fa-check text-success")"></i>
-                                                </button>
-                                                <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
-                                                <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-toggle="modal-ajax" href="@Url.Action("EditOperation", new { id = operation.Id })" data-bs-toggle="tooltip" title="ویرایش">
-                                                    <i class="fa fa-fw fa-pencil-alt"></i>
-                                                </button>
-                                                <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
-                                                <button type="button" class="btn btn-sm btn-alt-danger" data-toggle="modal-ajax" href="@Url.Action("DeleteOperation", new { id = operation.Id })" data-bs-toggle="tooltip" title="حذف">
-                                                    <i class="fa fa-fw fa-trash-alt"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                        <!-- آمار سریع عملیات -->
+                        <div class="row mb-4">
+                            <div class="col-6 col-md-3">
+                                <div class="bg-primary-light p-3 rounded text-center">
+                                    <div class="fs-3 fw-bold text-primary">@Model.Operations.Count()</div>
+                                    <div class="fs-sm text-muted">کل عملیات</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="bg-success-light p-3 rounded text-center">
+                                    <div class="fs-3 fw-bold text-success">@Model.Operations.Count(o => o.IsCompleted)</div>
+                                    <div class="fs-sm text-muted">تکمیل شده</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="bg-warning-light p-3 rounded text-center">
+                                    <div class="fs-3 fw-bold text-warning">@Model.Operations.Count(o => o.IsStarred)</div>
+                                    <div class="fs-sm text-muted">ستاره‌دار</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="bg-info-light p-3 rounded text-center">
+                                    <div class="fs-3 fw-bold text-info">@Model.Operations.Count(o => !string.IsNullOrEmpty(o.CompletionNote))</div>
+                                    <div class="fs-sm text-muted">با گزارش</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- لیست عملیات با کارت‌ها -->
+                        <div class="row" id="operationsList">
+                            @{
+                                // مرتب‌سازی: ابتدا ستاره‌دار، سپس بر اساس ترتیب
+                                var sortedOperations = Model.Operations
+                                    .OrderByDescending(o => o.IsStarred)
+                                    .ThenBy(o => o.OperationOrder)
+                                    .ToList();
+                            }
+                            
+                            @foreach (var operation in sortedOperations)
+                            {
+                                <div class="col-12 mb-3 operation-item" 
+                                     data-starred="@operation.IsStarred.ToString().ToLower()" 
+                                     data-completed="@operation.IsCompleted.ToString().ToLower()">
+                                    <div class="card @(operation.IsStarred ? "border-warning" : "") @(operation.IsCompleted ? "bg-light" : "")">
+                                        
+                                        <!-- Header کارت -->
+                                        <div class="card-header py-2 @(operation.IsStarred ? "bg-warning-light" : "bg-body-light")">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <!-- شماره ترتیب -->
+                                                    <span class="badge @(operation.IsCompleted ? "bg-success" : "bg-secondary") me-2">
+                                                        @operation.OperationOrder
+                                                    </span>
+                                                    
+                                                    <!-- ستاره -->
+                                                    @if (operation.IsStarred)
+                                                    {
+                                                        <i class="fa fa-star text-warning me-2" title="ستاره‌دار"></i>
+                                                    }
+                                                    
+                                                    <!-- عنوان -->
+                                                    <h6 class="mb-0 @(operation.IsCompleted ? "text-decoration-line-through text-muted" : "")">
+                                                        @operation.Title
+                                                    </h6>
+                                                </div>
+                                                
+                                                <!-- وضعیت -->
+                                                <div>
+                                                    @if (operation.IsCompleted)
+                                                    {
+                                                        <span class="badge bg-success">
+                                                            <i class="fa fa-check me-1"></i>تکمیل شده
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-warning">
+                                                            <i class="fa fa-clock me-1"></i>در انتظار
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- محتوای کارت -->
+                                        <div class="card-body py-3">
+                                            <!-- توضیحات عملیات -->
+                                            @if (!string.IsNullOrEmpty(operation.Description))
+                                            {
+                                                <p class="text-muted mb-2 @(operation.IsCompleted ? "text-decoration-line-through" : "")">
+                                                    @operation.Description
+                                                </p>
+                                            }
+                                            
+                                            <!-- اطلاعات تکمیل -->
+                                            @if (operation.IsCompleted && operation.CompletionDate.HasValue)
+                                            {
+                                                <div class="alert alert-success mb-2 py-2">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-6">
+                                                            <small>
+                                                                <i class="fa fa-calendar-check me-1"></i>
+                                                                تکمیل شده در: @ConvertDateTime.ConvertMiladiToShamsi(operation.CompletionDate.Value, "yyyy/MM/dd HH:mm")
+                                                            </small>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(operation.CompletedByUserId))
+                                                        {
+                                                            <div class="col-md-6">
+                                                                <small>
+                                                                    <i class="fa fa-user me-1"></i>
+                                                                    توسط: @(operation.CompletedByUserName)
+                                                                </small>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                            
+                                            <!-- گزارش تکمیل -->
+                                            @if (!string.IsNullOrEmpty(operation.CompletionNote))
+                                            {
+                                                <div class="alert alert-info mb-2 py-2">
+                                                    <small class="fw-bold">گزارش:</small>
+                                                    <div class="mt-1">@operation.CompletionNote</div>
+                                                </div>
+                                            }
+                                            
+                                            <!-- دکمه‌های عملیات -->
+                                            @if (isAssignedToCurrentUser)
+                                            {
+                                                <div class="d-flex gap-1 flex-wrap">
+                                                    
+                                                    <!-- دکمه ستاره -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm @(operation.IsStarred ? "btn-warning" : "btn-outline-warning")" 
+                                                            onclick="toggleOperationStar(@operation.Id)"
+                                                            data-bs-toggle="tooltip" 
+                                                            title="@(operation.IsStarred ? "حذف ستاره" : "ستاره‌دار کردن")">
+                                                        <i class="fa @(operation.IsStarred ? "fa-star" : "fa-star-o")"></i>
+                                                    </button>
+                                                    
+                                                    <!-- دکمه تکمیل/بازگشت -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm @(operation.IsCompleted ? "btn-outline-secondary" : "btn-success")" 
+                                                            onclick="toggleOperationCompletion(@operation.Id)"
+                                                            data-bs-toggle="tooltip" 
+                                                            title="@(operation.IsCompleted ? "بازگشت به حالت انتظار" : "تکمیل عملیات")">
+                                                        <i class="fa @(operation.IsCompleted ? "fa-undo" : "fa-check")"></i>
+                                                        @(operation.IsCompleted ? "بازگشت" : "تکمیل")
+                                                    </button>
+                                                    
+                                                    <!-- دکمه گزارش -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm @(string.IsNullOrEmpty(operation.CompletionNote) ? "btn-outline-info" : "btn-info")" 
+                                                            data-toggle="modal-ajax" 
+                                                            href="@Url.Action("AddOperationNote", new { operationId = operation.Id })"
+                                                            data-bs-toggle="tooltip" 
+                                                            title="@(string.IsNullOrEmpty(operation.CompletionNote) ? "افزودن گزارش" : "ویرایش گزارش")">
+                                                        <i class="fa @(string.IsNullOrEmpty(operation.CompletionNote) ? "fa-comment-slash text-danger" : "fa-comment")"></i>
+                                                        گزارش
+                                                    </button>
+                                                    
+
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     }
                 </div>
@@ -576,41 +711,148 @@
         </div>
     </div>
 </div>
-<!-- END Page Content -->
 @section Scripts {
     <script>
+        // تابع تغییر وضعیت تکمیل عملیات
         function toggleOperationCompletion(operationId) {
             $.ajax({
                 url: '@Url.Action("ToggleOperationCompletion")',
                 type: 'POST',
-                data: { id: operationId },
+                data: { 
+                    id: operationId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
                 success: function (result) {
                     if (result.success) {
+                        // نمایش پیام موفقیت
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(result.message || 'وضعیت عملیات با موفقیت تغییر کرد');
+                        }
+                        // بروزرسانی صفحه
                         location.reload();
                     } else {
-                        alert('خطا: ' + result.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message || 'خطا در تغییر وضعیت عملیات');
+                        } else {
+                            alert('خطا: ' + (result.message || 'خطا در تغییر وضعیت عملیات'));
+                        }
                     }
                 },
                 error: function () {
-                    alert('خطا در ارتباط با سرور');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در ارتباط با سرور');
+                    } else {
+                        alert('خطا در ارتباط با سرور');
+                    }
                 }
             });
         }
 
+        // تابع تغییر وضعیت ستاره عملیات
+        function toggleOperationStar(operationId) {
+            $.ajax({
+                url: '@Url.Action("ToggleOperationStar")',
+                type: 'POST',
+                data: { 
+                    id: operationId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function (result) {
+                    if (result.success) {
+                        // نمایش پیام موفقیت
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(result.message || 'وضعیت ستاره عملیات تغییر کرد');
+                        }
+                        // بروزرسانی صفحه
+                        location.reload();
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message || 'خطا در تغییر وضعیت ستاره');
+                        } else {
+                            alert('خطا: ' + (result.message || 'خطا در تغییر وضعیت ستاره'));
+                        }
+                    }
+                },
+                error: function () {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در ارتباط با سرور');
+                    } else {
+                        alert('خطا در ارتباط با سرور');
+                    }
+                }
+            });
+        }
+
+        // تابع فیلتر عملیات
+        function filterOperations(filterType) {
+            const operations = $('.operation-item');
+            
+            operations.show();
+            
+            switch(filterType) {
+                case 'starred':
+                    operations.filter('[data-starred="false"]').hide();
+                    break;
+                case 'completed':
+                    operations.filter('[data-completed="false"]').hide();
+                    break;
+                case 'pending':
+                    operations.filter('[data-completed="true"]').hide();
+                    break;
+                case 'all':
+                default:
+                    // همه نمایش داده می‌شوند
+                    break;
+            }
+            
+            // بروزرسانی متن فیلتر
+            updateFilterButtonText(filterType);
+        }
+
+        // بروزرسانی متن دکمه فیلتر
+        function updateFilterButtonText(filterType) {
+            const filterButton = $('.btn:contains("فیلتر")');
+            const filterTexts = {
+                'all': 'همه عملیات',
+                'starred': 'ستاره‌دار',
+                'completed': 'تکمیل شده',
+                'pending': 'در انتظار'
+            };
+            
+            if (filterTexts[filterType]) {
+                filterButton.html('<i class="fa fa-filter me-1"></i> ' + filterTexts[filterType]);
+            }
+        }
+
+        // سایر توابع موجود
         function approveBySupervisor(taskId) {
             $.ajax({
                 url: '@Url.Action("ApproveTaskBySupervisor")',
                 type: 'POST',
-                data: { id: taskId },
+                data: { 
+                    id: taskId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
                 success: function (result) {
                     if (result.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('تسک با موفقیت تایید شد');
+                        }
                         location.reload();
                     } else {
-                        alert('خطا: ' + result.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message || 'خطا در تایید تسک');
+                        } else {
+                            alert('خطا: ' + (result.message || 'خطا در تایید تسک'));
+                        }
                     }
                 },
                 error: function () {
-                    alert('خطا در ارتباط با سرور');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در ارتباط با سرور');
+                    } else {
+                        alert('خطا در ارتباط با سرور');
+                    }
                 }
             });
         }
@@ -619,36 +861,54 @@
             $.ajax({
                 url: '@Url.Action("ApproveTaskByManager")',
                 type: 'POST',
-                data: { id: taskId },
+                data: { 
+                    id: taskId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
                 success: function (result) {
                     if (result.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('تسک با موفقیت تایید شد');
+                        }
                         location.reload();
                     } else {
-                        alert('خطا: ' + result.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message || 'خطا در تایید تسک');
+                        } else {
+                            alert('خطا: ' + (result.message || 'خطا در تایید تسک'));
+                        }
                     }
                 },
                 error: function () {
-                    alert('خطا در ارتباط با سرور');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در ارتباط با سرور');
+                    } else {
+                        alert('خطا در ارتباط با سرور');
+                    }
                 }
             });
         }
 
         $(document).ready(function() {
-            $('.js-dataTable-responsive').DataTable({
-                language: {
-                    url: '/assets/js/plugins/datatables/i18n/fa.json'
-                },
-                autoWidth: false,
-                responsive: true
-            });
-
+            // راه‌اندازی tooltip ها
             $('[data-bs-toggle="tooltip"]').tooltip();
 
+            // مدیریت بسته شدن modal
             $(document).on('modalClosed', function(event, response) {
                 if (response && response.success && response.refreshPage) {
                     location.reload();
                 }
             });
+
+            // اضافه کردن انیمیشن hover برای کارت‌ها
+            $('.operation-item .card').hover(
+                function() {
+                    $(this).addClass('shadow-sm');
+                },
+                function() {
+                    $(this).removeClass('shadow-sm');
+                }
+            );
         });
     </script>
 }

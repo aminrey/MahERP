@@ -98,7 +98,64 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
+        /// <summary>
+        /// صفحه لیست کاربران غیر ادمین - نمایش کاربران عادی سیستم
+        /// </summary>
+        /// <param name="showArchived">نمایش کاربران بایگانی شده</param>
+        /// <returns>لیست کاربران غیر ادمین</returns>
+        public async Task<IActionResult> Users(bool showArchived = false)
+        {
+            try
+            {
+                // بررسی اینکه کاربر جاری ادمین است یا نه
+                var currentUser = await _UserManager.GetUserAsync(User);
+                bool isCurrentUserAdmin = currentUser?.IsAdmin == true;
 
+                List<AppUsers> model;
+
+                if (showArchived && isCurrentUserAdmin)
+                {
+                    // نمایش کاربران غیر ادمین بایگانی شده فقط برای ادمین
+                    model = _Context.UserManagerUW.Get()
+                        .Where(c => !c.IsAdmin && c.IsRemoveUser && !c.IsCompletelyDeleted)
+                        .ToList();
+                }
+                else
+                {
+                    // نمایش کاربران غیر ادمین فعال
+                    model = _Context.UserManagerUW.Get()
+                        .Where(c => !c.IsAdmin && c.IsActive && !c.IsRemoveUser && !c.IsCompletelyDeleted)
+                        .ToList();
+                }
+
+                // ارسال اطلاعات برای نمایش در ویو
+                ViewBag.IsCurrentUserAdmin = isCurrentUserAdmin;
+                ViewBag.ShowArchived = showArchived;
+                ViewBag.ArchivedUsersCount = isCurrentUserAdmin ?
+                    _Context.UserManagerUW.Get().Count(c => !c.IsAdmin && c.IsRemoveUser && !c.IsCompletelyDeleted) : 0;
+
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "UserManager",
+                    "Users",
+                    showArchived ? "مشاهده لیست کاربران غیر ادمین بایگانی شده" : "مشاهده لیست کاربران غیر ادمین"
+                );
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "UserManager",
+                    "Users",
+                    "خطا در دریافت لیست کاربران غیر ادمین",
+                    ex
+                );
+
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
         [HttpGet]
         public async Task<IActionResult> AddUser()
         {

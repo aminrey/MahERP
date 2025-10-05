@@ -8,6 +8,7 @@ using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using MahERP.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -68,6 +69,21 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             if (branchId == 0)
                 branchId = userBranches.FirstOrDefault()?.Id ?? 0;
 
+            // اگر هیچ شعبه‌ای برای کاربر تعریف نشده باشد
+            if (!userBranches.Any())
+            {
+                var emptyModel = new OrganizationalChartViewModel
+                {
+                    BranchId = 0,
+                    BranchName = "بدون شعبه",
+                    RootTeams = new List<TeamViewModel>()
+                };
+
+                ViewBag.UserBranches = new SelectList(new List<BranchViewModel>(), "Id", "Name");
+                ViewBag.NoBranchMessage = "برای شما هیچ شعبه‌ای ثبت نشده است. لطفاً با مدیر سیستم تماس بگیرید.";
+                return View(emptyModel);
+            }
+
             if (branchId == 0 || !userBranches.Any(b => b.Id == branchId))
                 return RedirectToAction("ErrorView", "Home");
 
@@ -76,7 +92,6 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
             return View(chart);
         }
-
         /// <summary>
         /// نمایش چارت قدرت مشاهده تسک‌ها
         /// </summary>

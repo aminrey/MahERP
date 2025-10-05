@@ -1,0 +1,247 @@
+﻿@model OperationNoteViewModel
+
+@{
+    Layout = null;
+}
+
+<style>
+    .modal {
+        --bs-modal-width: 70%;
+        transition: 0.3s;
+    }
+</style>
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
+            <div class="block-header bg-primary-dark">
+                <h3 class="block-title">
+                    <i class="fa fa-comment me-2"></i>
+                    @(string.IsNullOrEmpty(Model.CompletionNote) ? "افزودن گزارش عملیات" : "ویرایش گزارش عملیات")
+                </h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="operationNoteForm" asp-action="AddOperationNote" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="OperationId" />
+
+                <div class="block block-themed block-rounded mt-1">
+                    <div class="block-header bg-primary-light">
+                        <h3 class="block-title">اطلاعات عملیات</h3>
+                    </div>
+                    <div class="block-content">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="row justify-content-center">
+                            <div class="col-12">
+
+                                <!-- اطلاعات عملیات -->
+                                <div class="alert alert-info mb-4">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-info-circle fa-2x text-info"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-2">اطلاعات عملیات:</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <small class="text-muted fw-bold">تسک:</small>
+                                                    <div class="fw-bold text-primary">@Model.TaskTitle</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted fw-bold">عملیات:</small>
+                                                    <div class="fw-bold text-success">@Model.OperationTitle</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- وضعیت فعلی -->
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-3 fw-bold">وضعیت فعلی:</span>
+                                            @if (Model.IsCompleted)
+                                            {
+                                                <span class="badge bg-success fs-6 px-3 py-2">
+                                                    <i class="fa fa-check me-1"></i>تکمیل شده
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning fs-6 px-3 py-2">
+                                                    <i class="fa fa-clock me-1"></i>در انتظار
+                                                </span>
+                                            }
+                                        </div>
+                                        @if (Model.IsCompleted)
+                                        {
+                                            <div class="text-success">
+                                                <i class="fa fa-check-circle me-1"></i>
+                                                <small>عملیات تکمیل شده</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- فرم گزارش -->
+                                <div class="form-floating mb-3">
+                                    <textarea asp-for="CompletionNote"
+                                              class="form-control @(ViewData.ModelState["CompletionNote"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                              id="CompletionNote"
+                                              rows="6"
+                                              style="height: 120px;"
+                                              placeholder="گزارش مفصلی از کار انجام شده، مشکلات احتمالی، نتایج حاصل و توضیحات اضافی را بنویسید..."
+                                              maxlength="1000"></textarea>
+                                    <label asp-for="CompletionNote" class="form-label input-label" for="CompletionNote">گزارش انجام کار *</label>
+                                    <span asp-validation-for="CompletionNote" class="invalid-feedback"></span>
+                                </div>
+
+                                <!-- شمارنده کاراکتر -->
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="text-muted small">
+                                        <i class="fa fa-lightbulb text-warning me-1"></i>
+                                        گزارش دقیق و مفصل به بهبود کیفیت کار و ارتباطات تیم کمک می‌کند
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">
+                                            <span id="charCount">@(Model.CompletionNote?.Length ?? 0)</span> / 1000 کاراکتر
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- نکته مهم -->
+                                @if (!Model.IsCompleted)
+                                {
+                                    <div class="alert alert-warning">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="fa fa-exclamation-triangle fa-2x text-warning"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-2">توجه مهم:</h6>
+                                                <p class="mb-0">
+                                                    با ثبت گزارش، این عملیات به طور خودکار به عنوان <strong>"تکمیل شده"</strong> علامت‌گذاری می‌شود.
+                                                    <br>
+                                                    <small class="text-muted">می‌توانید بعداً از طریق صفحه جزئیات تسک، وضعیت عملیات را تغییر دهید.</small>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-success">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="fa fa-check-circle fa-2x text-success"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-2">عملیات تکمیل شده:</h6>
+                                                <p class="mb-0">
+                                                    این عملیات قبلاً تکمیل شده است. می‌توانید گزارش آن را بروزرسانی کنید.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                <!-- راهنمای نوشتن گزارش -->
+                                <div class="alert alert-info">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-info-circle fa-2x text-info"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6>راهنمای نوشتن گزارش مؤثر:</h6>
+                                            <ul class="mb-0 small">
+                                                <li><strong>کارهای انجام شده:</strong> فهرست دقیق کارهایی که انجام داده‌اید</li>
+                                                <li><strong>نتایج حاصل:</strong> خروجی‌ها و دستاوردهای به دست آمده</li>
+                                                <li><strong>مشکلات و چالش‌ها:</strong> موانع پیش آمده و نحوه حل آن‌ها</li>
+                                                <li><strong>پیشنهادات:</strong> بهبودهای پیشنهادی برای آینده</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="block-content block-content-full text-end bg-body">
+            <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">
+                <i class="fa fa-times me-1"></i> انصراف
+            </button>
+            <button class="btn btn-sm btn-primary" data-save="modal-ajax-save" type="button">
+                <i class="fa fa-save me-1"></i>
+                @(string.IsNullOrEmpty(Model.CompletionNote) ? "ثبت گزارش" : "بروزرسانی گزارش")
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        console.log('راه‌اندازی مودال گزارش عملیات');
+
+        // تنظیم فوکوس روی textarea
+        $('#CompletionNote').focus();
+
+        // شمارنده کاراکتر
+        $('#CompletionNote').on('input', function() {
+            const currentLength = $(this).val().length;
+            $('#charCount').text(currentLength);
+
+            // رنگ‌بندی بر اساس تعداد کاراکتر
+            if (currentLength > 900) {
+                $('#charCount').addClass('text-warning').removeClass('text-muted text-danger');
+            } else if (currentLength >= 1000) {
+                $('#charCount').addClass('text-danger').removeClass('text-muted text-warning');
+            } else {
+                $('#charCount').addClass('text-muted').removeClass('text-warning text-danger');
+            }
+        });
+
+        // اولین بار شمارنده را بروزرسانی کن
+        $('#CompletionNote').trigger('input');
+
+        // Event handler برای موفقیت (سازگار با main.js)
+        $('[data-save="modal-ajax-save"]').on('ajaxSuccess', function (event, response) {
+            if (response && response.success) {
+                if (response.message && response.message.length > 0) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message[0].text);
+                    }
+                }
+                $('.modal').modal('hide');
+            }
+        });
+
+        // کلیدهای میانبر
+        $('#CompletionNote').on('keydown', function(e) {
+            // Ctrl+Enter برای ذخیره
+            if (e.ctrlKey && e.keyCode === 13) {
+                e.preventDefault();
+                $('[data-save="modal-ajax-save"]').click();
+            }
+            // Escape برای انصراف
+            if (e.keyCode === 27) {
+                e.preventDefault();
+                $('[data-bs-dismiss="modal"]').click();
+            }
+        });
+
+        // نمایش tooltip برای راهنمای کلیدهای میانبر
+        $('#CompletionNote').attr('title', 'Ctrl+Enter: ذخیره | Escape: انصراف')
+                           .tooltip();
+    });
+</script>

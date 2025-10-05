@@ -10,12 +10,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 
-namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
-
+namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
+{
 public class TaskViewModel
 {
     public int Id { get; set; }
-    
+
     public string? TaskCode { get; set; }
 
     [Required(ErrorMessage = "عنوان تسک الزامی است و نمی‌تواند خالی باشد")]
@@ -228,12 +228,12 @@ public class TaskViewModel
     /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
     /// </summary>
     public List<string>? AssignmentsSelectedCopyCarbonUsersArraysString { get; set; }
-    
+
     [Display(Name = "شعبه")]
     public int BranchIdSelected { get; set; }
-    
+
     [Display(Name = "دسته‌بندی")]
-    public int? TaskCategoryIdSelected { get; set; } 
+    public int? TaskCategoryIdSelected { get; set; }
 
     /// <summary>
     /// نشان‌دهنده اینکه آیا کاربر می‌خواهد کد را دستی وارد کند
@@ -391,7 +391,7 @@ public class TaskOperationViewModel
     /// <summary>
     /// کلاس CSS برای نمایش وضعیت
     /// </summary>
-    public string StatusClass => IsCompleted ? "text-success" : 
+    public string StatusClass => IsCompleted ? "text-success" :
                                IsRequired ? "text-danger" : "text-muted";
 }
 
@@ -695,4 +695,22 @@ public class UserTasksStatsViewModel
     public int CompletedTasksCount { get; set; }
     public int OverdueTasksCount { get; set; }
     public int TodayTasksCount { get; set; }
+}
+public class OperationNoteViewModel
+{
+    public int OperationId { get; set; }
+
+    [Display(Name = "عنوان عملیات")]
+    public string OperationTitle { get; set; }
+
+    [Display(Name = "عنوان تسک")]
+    public string TaskTitle { get; set; }
+
+    [Display(Name = "گزارش انجام")]
+    [StringLength(1000, ErrorMessage = "گزارش نمی‌تواند بیش از 1000 کاراکتر باشد")]
+    public string? CompletionNote { get; set; }
+
+    [Display(Name = "وضعیت تکمیل")]
+    public bool IsCompleted { get; set; }
+}
 }
