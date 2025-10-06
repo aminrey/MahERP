@@ -377,7 +377,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
-                var operation = await _context.TaskOperations.FindAsync(id);
+                var operation = _taskRepository.GetTaskOperationById(id);
                 if (operation == null)
                 {
                     return Json(new { success = false, message = "عملیات یافت نشد" });
@@ -385,7 +385,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
                 // بررسی دسترسی کاربر
                 var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var hasAccess = await _taskPermissionService.HasOperationAccessAsync(currentUserId, operation.TaskId);
+                var hasAccess = _taskRepository.IsUserRelatedToTask(currentUserId, operation.TaskId);
 
                 if (!hasAccess)
                 {
@@ -393,7 +393,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 }
 
                 operation.IsStarred = !operation.IsStarred;
-                await _context.SaveChangesAsync();
+                _uow.TaskOperationUW.Update(operation);
+                _uow.Save();
 
                 var message = operation.IsStarred ? "عملیات ستاره‌دار شد" : "ستاره عملیات حذف شد";
                 return Json(new { success = true, message = message });
@@ -410,7 +411,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
-                var operation = await _context.TaskOperations.FindAsync(id);
+                var operation = _taskRepository.GetTaskOperationById(id);
                 if (operation == null)
                 {
                     return Json(new { success = false, message = "عملیات یافت نشد" });
@@ -418,7 +419,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
                 // بررسی دسترسی کاربر
                 var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var hasAccess = await _taskPermissionService.HasOperationAccessAsync(currentUserId, operation.TaskId);
+                var hasAccess = _taskRepository.IsUserRelatedToTask(currentUserId, operation.TaskId);
 
                 if (!hasAccess)
                 {
@@ -439,7 +440,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     operation.CompletionNote = null; // پاک کردن گزارش در صورت بازگشت
                 }
 
-                await _context.SaveChangesAsync();
+                _uow.TaskOperationUW.Update(operation);
+                _uow.Save();
 
                 var message = operation.IsCompleted ? "عملیات تکمیل شد" : "عملیات به حالت انتظار برگشت";
                 return Json(new { success = true, message = message });
@@ -455,10 +457,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
-                var operation = await _context.TaskOperations
-                    .Include(o => o.Task)
-                    .FirstOrDefaultAsync(o => o.Id == operationId);
-
+                var operation = _taskRepository.GetTaskOperationById(operationId);
                 if (operation == null)
                 {
                     return Json(new { status = "error", message = new[] { new { text = "عملیات یافت نشد" } } });
@@ -466,18 +465,21 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
                 // بررسی دسترسی
                 var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var hasAccess = await _taskPermissionService.HasOperationAccessAsync(currentUserId, operation.TaskId);
+                var hasAccess = _taskRepository.IsUserRelatedToTask(currentUserId, operation.TaskId);
 
                 if (!hasAccess)
                 {
                     return Json(new { status = "error", message = new[] { new { text = "شما مجاز به انجام این عملیات نیستید" } } });
                 }
 
+                // دریافت اطلاعات تسک از طریق Repository
+                var task = _taskRepository.GetTaskById(operation.TaskId);
+
                 var model = new OperationNoteViewModel
                 {
                     OperationId = operationId,
                     OperationTitle = operation.Title,
-                    TaskTitle = operation.Task.Title,
+                    TaskTitle = task.Title,
                     CompletionNote = operation.CompletionNote,
                     IsCompleted = operation.IsCompleted
                 };
@@ -505,7 +507,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     return Json(new { status = "validation-error", message = errors });
                 }
 
-                var operation = await _context.TaskOperations.FindAsync(model.OperationId);
+                var operation = _taskRepository.GetTaskOperationById(model.OperationId);
                 if (operation == null)
                 {
                     return Json(new { status = "error", message = new[] { new { text = "عملیات یافت نشد" } } });
@@ -513,7 +515,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
                 // بررسی دسترسی
                 var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var hasAccess = await _taskPermissionService.HasOperationAccessAsync(currentUserId, operation.TaskId);
+                var hasAccess = _taskRepository.IsUserRelatedToTask(currentUserId, operation.TaskId);
 
                 if (!hasAccess)
                 {
@@ -530,7 +532,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     operation.CompletedByUserId = currentUserId;
                 }
 
-                await _context.SaveChangesAsync();
+                _uow.TaskOperationUW.Update(operation);
+                _uow.Save();
 
                 return Json(new
                 {

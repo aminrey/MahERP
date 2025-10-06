@@ -26,6 +26,10 @@ namespace MahERP.DataModelLayer
         public DbSet<BranchUser> BranchUser_Tbl { get; set; }
         public DbSet<Team> Team_Tbl { get; set; }
         public DbSet<TeamMember> TeamMember_Tbl { get; set; }
+        public DbSet<TeamPosition> TeamPosition_Tbl { get; set; }
+        public DbSet<TaskReminderSchedule> TaskReminderSchedule_Tbl { get; set; }
+        public DbSet<TaskReminderEvent> TaskReminderEvent_Tbl { get; set; }
+        public DbSet<TaskMyDay> TaskMyDay_Tbl { get; set; } // اضافه شده
 
         // Account Control
         public DbSet<Stakeholder> Stakeholder_Tbl { get; set; }
@@ -67,12 +71,7 @@ namespace MahERP.DataModelLayer
         public DbSet<PredefinedCopyDescription> PredefinedCopyDescription_Tbl { get; set; }
         public DbSet<BranchTaskCategoryStakeholder> BranchTaskCategoryStakeholder_Tbl { get; set; }
         public DbSet<TaskViewPermission> TaskViewPermission_Tbl { get; set; }
-        // اضافه کردن TeamPosition - خط جدید
-        public DbSet<TeamPosition> TeamPosition_Tbl { get; set; }
-        public DbSet<TaskReminderSchedule> TaskReminderSchedule_Tbl { get; set; }
-        public DbSet<TaskReminderEvent> TaskReminderEvent_Tbl { get; set; }
-        public DbSet<TaskMyDay> TaskMyDay_Tbl { get; set; } // اضافه شده
-
+    
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
         public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }

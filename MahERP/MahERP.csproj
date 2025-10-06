@@ -5,20 +5,22 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 	  <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+	  <HotReloadAutoRestart>true</HotReloadAutoRestart>
 
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="Areas\AdminArea\Views\CRM\_DeleteCRMInteraction.cshtml" />
-    <Content Remove="wwwroot\Source\be_comp_calendar.html" />
+	  <Content Remove="Areas\AdminArea\Views\CRM\_DeleteCRMInteraction.cshtml" />
+	  <Content Remove="wwwroot\Source\be_comp_calendar.html" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Areas\AdminArea\Views\CRM\_DeleteCRMInteraction.cshtml" />
-    <None Include="wwwroot\Source\be_comp_calendar.html" />
+	  <None Include="Areas\AdminArea\Views\CRM\_DeleteCRMInteraction.cshtml" />
+	  <None Include="wwwroot\Source\be_comp_calendar.html" />
   </ItemGroup>
 
-  <ItemGroup>
+
+	<ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="LigerShark.WebOptimizer.Core" Version="3.0.436" />
