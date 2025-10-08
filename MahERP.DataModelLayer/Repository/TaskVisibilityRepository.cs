@@ -2,6 +2,7 @@
 using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -30,107 +31,190 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         public async Task<bool> CanUserViewTaskAsync(string userId, int taskId)
         {
-            var currentTime = DateTime.Now;
-
-            // 1. بررسی مجوزهای مستقیم TaskViewer
-            var directPermission = await _context.TaskViewer_Tbl
-                .AnyAsync(tv => tv.UserId == userId &&
-                              tv.TaskId == taskId &&
-                              tv.IsActive &&
-                              (tv.StartDate == null || tv.StartDate <= currentTime) &&
-                              (tv.EndDate == null || tv.EndDate > currentTime));
-
-            if (directPermission) return true;
-
-            // 2. بررسی مالکیت تسک
-            var task = await _context.Tasks_Tbl.FindAsync(taskId);
-            if (task == null) return false;
-
-            if (task.CreatorUserId == userId) return true;
-
-            // 3. بررسی انتساب به تسک
-            var isAssigned = await _context.TaskAssignment_Tbl
-                .AnyAsync(ta => ta.TaskId == taskId &&
-                               ta.AssignedUserId == userId);
-
-            if (isAssigned) return true;
-
-            // 4. بررسی مدیریت تیم
-            if (task.TeamId.HasValue)
+            try
             {
-                var isTeamManager = await IsUserTeamManagerAsync(userId, task.TeamId.Value);
-                if (isTeamManager) return true;
+                var currentTime = DateTime.Now;
+                
+                // دریافت تسک
+                var task = await _context.Tasks_Tbl.FirstOrDefaultAsync(t => t.Id == taskId);
+                if (task == null || task.IsDeleted) return false;
+
+                // ⭐ بررسی تسک خصوصی
+                if (task.IsPrivate || task.VisibilityLevel == 1)
+                {
+                    // فقط سازنده و افراد منتصب شده می‌توانند ببینند
+                    if (task.CreatorUserId == userId) return true;
+                    
+                    var isAssigned = await _context.TaskAssignment_Tbl
+                        .AnyAsync(ta => ta.TaskId == taskId && ta.AssignedUserId == userId);
+                    
+                    return isAssigned;
+                }
+
+                // برای تسک‌های عمومی، ادامه منطق قبلی
+                // 1. بررسی مجوزهای مستقیم TaskViewer
+                var directPermission = await _context.TaskViewer_Tbl
+                    .AnyAsync(tv => tv.UserId == userId &&
+                                    tv.TaskId == taskId &&
+                                    tv.IsActive &&
+                                    (tv.StartDate == null || tv.StartDate <= currentTime) &&
+                                    (tv.EndDate == null || tv.EndDate > currentTime));
+
+                if (directPermission) return true;
+
+                // 2. بررسی مالکیت تسک
+                if (task.CreatorUserId == userId) return true;
+
+                // 3. بررسی انتساب به تسک
+                var isAssignedPublic = await _context.TaskAssignment_Tbl
+                    .AnyAsync(ta => ta.TaskId == taskId &&
+                                    ta.AssignedUserId == userId);
+
+                if (isAssignedPublic) return true;
+
+                // 4. بررسی مدیریت تیم
+                if (task.TeamId.HasValue)
+                {
+                    var isTeamManager = await IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                    if (isTeamManager) return true;
+                }
+
+                // 5. بررسی عضویت در تیم و قدرت سمت
+                var canViewBasedOnPosition = await CanViewBasedOnPositionAsync(userId, task);
+                if (canViewBasedOnPosition) return true;
+
+                // 6. بررسی مجوزهای خاص (تبصره‌ها)
+                var hasSpecialPermission = await HasSpecialPermissionAsync(userId, task);
+                if (hasSpecialPermission) return true;
+
+                // 7. بررسی سطح عمومی بودن تسک
+                if (task.VisibilityLevel >= 3) return true;
+
+                return false;
             }
-
-            // 5. بررسی عضویت در تیم و قدرت سمت
-            var canViewBasedOnPosition = await CanViewBasedOnPositionAsync(userId, task);
-            if (canViewBasedOnPosition) return true;
-
-            // 6. بررسی مجوزهای خاص (تبصره‌ها) - استفاده از TaskViewPermission جدید
-            var hasSpecialPermission = await HasSpecialPermissionAsync(userId, task);
-            if (hasSpecialPermission) return true;
-
-            // 7. بررسی سطح عمومی بودن تسک
-            if (task.VisibilityLevel >= 3) return true;
-
-            return false;
+            catch
+            {
+                return false;
+            }
         }
-
         /// <summary>
-        /// دریافت لیست شناسه تسک‌هایی که کاربر می‌تواند مشاهده کند
+        /// دریافت لیست شناسه تسک‌هایی که کاربر می‌تواند مشاهده کند - اصلاح شده برای چند شعبه
         /// </summary>
         public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId = null, int? teamId = null)
         {
             var visibleTaskIds = new HashSet<int>();
             var currentTime = DateTime.Now;
 
-            // 1. تسک‌های مالکیت خود کاربر
+            // ⭐⭐⭐ 0. دریافت همه شعبه‌های کاربر (اگر مشخص نشده)
+            List<int> userBranchIds;
+            if (branchId.HasValue)
+            {
+                userBranchIds = new List<int> { branchId.Value };
+            }
+            else
+            {
+                // ⭐ اصلاح شده: دریافت همه شعبه‌ها
+                userBranchIds = await _context.BranchUser_Tbl
+                    .Where(bu => bu.UserId == userId && bu.IsActive)
+                    .Select(bu => bu.BranchId)
+                    .Distinct()
+                    .ToListAsync();
+
+                if (!userBranchIds.Any())
+                {
+                    userBranchIds = new List<int> { 1 }; // شعبه پیش‌فرض
+                }
+            }
+
+            // ⭐⭐⭐ 1. همه تسک‌های غیرخصوصی همه شعبه‌های کاربر
+            var branchTasks = await _context.Tasks_Tbl
+                .Where(t => userBranchIds.Contains(t.BranchId ?? 0) &&
+                           !t.IsDeleted &&
+                           !t.IsPrivate &&
+                           t.VisibilityLevel >= 2) // سطح تیمی یا بالاتر
+                .Select(t => t.Id)
+                .ToListAsync();
+            visibleTaskIds.UnionWith(branchTasks);
+
+            // ⭐ 2. تسک‌های خصوصی که کاربر دسترسی دارد
+            var privateTasksCreated = await _context.Tasks_Tbl
+                .Where(t => (t.IsPrivate || t.VisibilityLevel == 1) &&
+                            t.CreatorUserId == userId &&
+                            !t.IsDeleted)
+                .Select(t => t.Id)
+                .ToListAsync();
+            visibleTaskIds.UnionWith(privateTasksCreated);
+
+            var privateTasksAssigned = await _context.TaskAssignment_Tbl
+                .Where(ta => ta.AssignedUserId == userId &&
+                            (ta.Task.IsPrivate || ta.Task.VisibilityLevel == 1))
+                .Select(ta => ta.TaskId)
+                .ToListAsync();
+            visibleTaskIds.UnionWith(privateTasksAssigned);
+
+            // 3. تسک‌های مالکیت خود کاربر (غیر خصوصی)
             var ownTasks = await _context.Tasks_Tbl
-                .Where(t => t.CreatorUserId == userId && !t.IsDeleted)
+                .Where(t => t.CreatorUserId == userId &&
+                            !t.IsDeleted &&
+                            !t.IsPrivate &&
+                            t.VisibilityLevel != 1)
                 .Select(t => t.Id)
                 .ToListAsync();
             visibleTaskIds.UnionWith(ownTasks);
 
-            // 2. تسک‌های منتصب شده
+            // 4. تسک‌های منتصب شده (غیر خصوصی)
             var assignedTasks = await _context.TaskAssignment_Tbl
-                .Where(ta => ta.AssignedUserId == userId)
+                .Where(ta => ta.AssignedUserId == userId &&
+                            !ta.Task.IsPrivate &&
+                            ta.Task.VisibilityLevel != 1)
                 .Select(ta => ta.TaskId)
                 .ToListAsync();
             visibleTaskIds.UnionWith(assignedTasks);
 
-            // 3. تسک‌های با مجوز مستقیم (فقط TaskViewer برای تسک‌های خاص)
+            // 5. تسک‌های با مجوز مستقیم (غیر خصوصی)
             var directPermissionTasks = await _context.TaskViewer_Tbl
                 .Where(tv => tv.UserId == userId &&
                             tv.TaskId > 0 &&
                             tv.IsActive &&
                             (tv.StartDate == null || tv.StartDate <= currentTime) &&
-                            (tv.EndDate == null || tv.EndDate > currentTime))
+                            (tv.EndDate == null || tv.EndDate > currentTime) &&
+                            !tv.Task.IsPrivate &&
+                            tv.Task.VisibilityLevel != 1)
                 .Select(tv => tv.TaskId)
                 .ToListAsync();
             visibleTaskIds.UnionWith(directPermissionTasks);
 
-            // 4. تسک‌های تیم‌های تحت مدیریت
-            var managedTeamTasks = await GetManagedTeamTasksAsync(userId, branchId);
-            visibleTaskIds.UnionWith(managedTeamTasks);
+            // 6. تسک‌های تیم‌های تحت مدیریت مستقیم (برای همه شعبه‌ها)
+            foreach (var branchIdItem in userBranchIds)
+            {
+                var managedTeamTasks = await GetManagedTeamTasksAsync(userId, branchIdItem);
+                visibleTaskIds.UnionWith(managedTeamTasks);
+            }
 
-            // 5. تسک‌های قابل مشاهده بر اساس سمت
-            var positionBasedTasks = await GetPositionBasedVisibleTasksAsync(userId, branchId, teamId);
-            visibleTaskIds.UnionWith(positionBasedTasks);
+            // 7. تسک‌های قابل مشاهده بر اساس سمت (برای همه شعبه‌ها)
+            foreach (var branchIdItem in userBranchIds)
+            {
+                var positionBasedTasks = await GetPositionBasedVisibleTasksAsync(userId, branchIdItem, teamId);
+                visibleTaskIds.UnionWith(positionBasedTasks);
+            }
 
-            // 6. تسک‌های با مجوز خاص (از TaskViewPermission جدید)
+            // 8. تسک‌های با مجوز خاص (غیر خصوصی)
             var specialPermissionTasks = await GetSpecialPermissionTasksAsync(userId);
             visibleTaskIds.UnionWith(specialPermissionTasks);
 
-            // 7. تسک‌های عمومی
+            // 9. تسک‌های عمومی (غیر خصوصی)
             var publicTasks = await _context.Tasks_Tbl
-                .Where(t => t.VisibilityLevel >= 3 && !t.IsDeleted)
+                .Where(t => t.VisibilityLevel >= 3 &&
+                            !t.IsDeleted &&
+                            !t.IsPrivate)
                 .Select(t => t.Id)
                 .ToListAsync();
             visibleTaskIds.UnionWith(publicTasks);
 
+            Console.WriteLine($"✅ GetVisibleTaskIdsAsync: شعبه‌ها={string.Join(", ", userBranchIds)}, مجموع تسک‌ها={visibleTaskIds.Count}");
+
             return visibleTaskIds.ToList();
         }
-
         #endregion
 
         #region Position-Based Visibility
@@ -203,14 +287,14 @@ namespace MahERP.DataModelLayer.Repository
 
             foreach (var membership in memberships.Where(m => m.Position != null))
             {
-                // تسک‌های زیردستان
+                // تسک‌های زیردستان (غیر خصوصی)
                 if (membership.Position.CanViewSubordinateTasks)
                 {
                     var subordinateTasks = await GetSubordinateTasksAsync(membership);
                     visibleTasks.AddRange(subordinateTasks);
                 }
 
-                // تسک‌های همسطح
+                // تسک‌های همسطح (غیر خصوصی)
                 if (membership.Position.CanViewPeerTasks)
                 {
                     var peerTasks = await GetPeerTasksAsync(membership);
@@ -220,9 +304,8 @@ namespace MahERP.DataModelLayer.Repository
 
             return visibleTasks.Distinct().ToList();
         }
-
         /// <summary>
-        /// دریافت تسک‌های زیردستان
+        /// دریافت تسک‌های زیردستان - اصلاح شده با بررسی شعبه
         /// </summary>
         private async Task<List<int>> GetSubordinateTasksAsync(TeamMember membership)
         {
@@ -237,14 +320,38 @@ namespace MahERP.DataModelLayer.Repository
 
             if (!subordinateUserIds.Any()) return new List<int>();
 
-            return await _context.Tasks_Tbl
-                .Where(t => subordinateUserIds.Contains(t.CreatorUserId) && !t.IsDeleted)
-                .Select(t => t.Id)
-                .ToListAsync();
-        }
+            // ⭐⭐⭐ دریافت BranchId تیم
+            var teamBranchId = await _context.Team_Tbl
+                .Where(t => t.Id == membership.TeamId)
+                .Select(t => t.BranchId)
+                .FirstOrDefaultAsync();
 
+            // ⭐⭐⭐ اصلاح شده: اضافه کردن فیلتر شعبه
+            var taskIds = await _context.Tasks_Tbl
+                .Where(t => !t.IsDeleted &&
+                            !t.IsPrivate &&
+                            t.VisibilityLevel != 1 &&
+                            t.BranchId == teamBranchId && // ⭐⭐⭐ فیلتر شعبه
+                            (
+                                // تسک‌های ساخته شده توسط زیردستان
+                                subordinateUserIds.Contains(t.CreatorUserId) ||
+
+                                // تسک‌های منتصب شده به زیردستان
+                                _context.TaskAssignment_Tbl.Any(ta =>
+                                    ta.TaskId == t.Id &&
+                                    subordinateUserIds.Contains(ta.AssignedUserId)) ||
+
+                                // تسک‌های مربوط به تیم در همان شعبه
+                                (t.TeamId.HasValue && t.TeamId == membership.TeamId)
+                            ))
+                .Select(t => t.Id)
+                .Distinct()
+                .ToListAsync();
+
+            return taskIds;
+        }
         /// <summary>
-        /// دریافت تسک‌های همسطح
+        /// دریافت تسک‌های همسطح - اصلاح شده با بررسی شعبه
         /// </summary>
         private async Task<List<int>> GetPeerTasksAsync(TeamMember membership)
         {
@@ -260,12 +367,36 @@ namespace MahERP.DataModelLayer.Repository
 
             if (!peerUserIds.Any()) return new List<int>();
 
-            return await _context.Tasks_Tbl
-                .Where(t => peerUserIds.Contains(t.CreatorUserId) && !t.IsDeleted)
-                .Select(t => t.Id)
-                .ToListAsync();
-        }
+            // ⭐⭐⭐ دریافت BranchId تیم
+            var teamBranchId = await _context.Team_Tbl
+                .Where(t => t.Id == membership.TeamId)
+                .Select(t => t.BranchId)
+                .FirstOrDefaultAsync();
 
+            // ⭐⭐⭐ اصلاح شده: اضافه کردن فیلتر شعبه
+            var taskIds = await _context.Tasks_Tbl
+                .Where(t => !t.IsDeleted &&
+                            !t.IsPrivate &&
+                            t.VisibilityLevel != 1 &&
+                            t.BranchId == teamBranchId && // ⭐⭐⭐ فیلتر شعبه
+                            (
+                                // تسک‌های ساخته شده توسط همسطحان
+                                peerUserIds.Contains(t.CreatorUserId) ||
+
+                                // تسک‌های منتصب شده به همسطحان
+                                _context.TaskAssignment_Tbl.Any(ta =>
+                                    ta.TaskId == t.Id &&
+                                    peerUserIds.Contains(ta.AssignedUserId)) ||
+
+                                // تسک‌های مربوط به تیم در همان شعبه
+                                (t.TeamId.HasValue && t.TeamId == membership.TeamId)
+                            ))
+                .Select(t => t.Id)
+                .Distinct()
+                .ToListAsync();
+
+            return taskIds;
+        }
         #endregion
 
         #region Team Management Visibility
@@ -280,11 +411,11 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// دریافت تسک‌های تیم‌های تحت مدیریت
+        /// دریافت تسک‌های تیم‌های تحت مدیریت - بدون زیرتیم‌ها
         /// </summary>
         public async Task<List<int>> GetManagedTeamTasksAsync(string userId, int? branchId = null)
         {
-            // دریافت تیم‌های تحت مدیریت مستقیم
+            // دریافت تیم‌های تحت مدیریت مستقیم (بدون زیرتیم‌ها)
             var managedTeamIds = await _context.Team_Tbl
                 .Where(t => t.ManagerUserId == userId && t.IsActive)
                 .Where(t => !branchId.HasValue || t.BranchId == branchId)
@@ -293,44 +424,57 @@ namespace MahERP.DataModelLayer.Repository
 
             if (!managedTeamIds.Any()) return new List<int>();
 
-            // دریافت تمام زیرتیم‌ها
-            var allSubTeamIds = new HashSet<int>(managedTeamIds);
-            foreach (var teamId in managedTeamIds)
-            {
-                var subTeamIds = await GetAllSubTeamIdsAsync(teamId);
-                allSubTeamIds.UnionWith(subTeamIds);
-            }
-
-            // دریافت تسک‌های این تیم‌ها
+            // ⭐ فقط تسک‌های تیم‌های مستقیم (بدون زیرتیم‌ها)
             return await _context.Tasks_Tbl
                 .Where(t => t.TeamId.HasValue &&
-                           allSubTeamIds.Contains(t.TeamId.Value) &&
-                           !t.IsDeleted)
+                           managedTeamIds.Contains(t.TeamId.Value) &&
+                           !t.IsDeleted &&
+                           !t.IsPrivate &&
+                           t.VisibilityLevel != 1)
                 .Select(t => t.Id)
                 .ToListAsync();
         }
 
         /// <summary>
-        /// دریافت تمام شناسه زیرتیم‌ها
+        /// دریافت تسک‌های زیرتیم‌ها به صورت گروه‌بندی شده - متد جدید
         /// </summary>
-        public async Task<List<int>> GetAllSubTeamIdsAsync(int parentTeamId)
+        public async Task<Dictionary<int, List<int>>> GetSubTeamTasksGroupedAsync(string userId, int? branchId = null)
         {
-            var subTeamIds = new List<int>();
+            var result = new Dictionary<int, List<int>>();
 
-            var directSubTeams = await _context.Team_Tbl
-                .Where(t => t.ParentTeamId == parentTeamId && t.IsActive)
+            // دریافت تیم‌های تحت مدیریت مستقیم
+            var managedTeamIds = await _context.Team_Tbl
+                .Where(t => t.ManagerUserId == userId && t.IsActive)
+                .Where(t => !branchId.HasValue || t.BranchId == branchId)
                 .Select(t => t.Id)
                 .ToListAsync();
 
-            subTeamIds.AddRange(directSubTeams);
+            if (!managedTeamIds.Any()) return result;
 
-            foreach (var subTeamId in directSubTeams)
+            // برای هر تیم، زیرتیم‌ها و تسک‌هایشان را دریافت کن
+            foreach (var teamId in managedTeamIds)
             {
-                var nestedSubTeams = await GetAllSubTeamIdsAsync(subTeamId);
-                subTeamIds.AddRange(nestedSubTeams);
+                var subTeamIds = await GetAllSubTeamIdsAsync(teamId);
+                
+                if (subTeamIds.Any())
+                {
+                    var subTeamTasks = await _context.Tasks_Tbl
+                        .Where(t => t.TeamId.HasValue &&
+                                   subTeamIds.Contains(t.TeamId.Value) &&
+                                   !t.IsDeleted &&
+                                   !t.IsPrivate &&
+                                   t.VisibilityLevel != 1)
+                        .Select(t => t.Id)
+                        .ToListAsync();
+
+                    if (subTeamTasks.Any())
+                    {
+                        result[teamId] = subTeamTasks;
+                    }
+                }
             }
 
-            return subTeamIds;
+            return result;
         }
 
         #endregion
@@ -409,8 +553,12 @@ namespace MahERP.DataModelLayer.Repository
                     case 0: // مشاهده تسک‌های یک کاربر خاص
                         if (!string.IsNullOrEmpty(permission.TargetUserId))
                         {
+                            // ⭐ فقط تسک‌های غیر خصوصی
                             var userTasks = await _context.Tasks_Tbl
-                                .Where(t => t.CreatorUserId == permission.TargetUserId && !t.IsDeleted)
+                                .Where(t => t.CreatorUserId == permission.TargetUserId && 
+                                            !t.IsDeleted &&
+                                            !t.IsPrivate &&
+                                            t.VisibilityLevel != 1)
                                 .Select(t => t.Id)
                                 .ToListAsync();
                             visibleTasks.AddRange(userTasks);
@@ -420,8 +568,12 @@ namespace MahERP.DataModelLayer.Repository
                     case 1: // مشاهده تسک‌های یک تیم خاص
                         if (permission.TargetTeamId.HasValue)
                         {
+                            // ⭐ فقط تسک‌های غیر خصوصی
                             var teamTasks = await _context.Tasks_Tbl
-                                .Where(t => t.TeamId == permission.TargetTeamId && !t.IsDeleted)
+                                .Where(t => t.TeamId == permission.TargetTeamId && 
+                                            !t.IsDeleted &&
+                                            !t.IsPrivate &&
+                                            t.VisibilityLevel != 1)
                                 .Select(t => t.Id)
                                 .ToListAsync();
                             visibleTasks.AddRange(teamTasks);
@@ -434,10 +586,13 @@ namespace MahERP.DataModelLayer.Repository
                             var allSubTeamIds = await GetAllSubTeamIdsAsync(permission.TargetTeamId.Value);
                             allSubTeamIds.Add(permission.TargetTeamId.Value);
 
+                            // ⭐ فقط تسک‌های غیر خصوصی
                             var hierarchyTasks = await _context.Tasks_Tbl
                                 .Where(t => t.TeamId.HasValue &&
                                            allSubTeamIds.Contains(t.TeamId.Value) &&
-                                           !t.IsDeleted)
+                                           !t.IsDeleted &&
+                                           !t.IsPrivate &&
+                                           t.VisibilityLevel != 1)
                                 .Select(t => t.Id)
                                 .ToListAsync();
                             visibleTasks.AddRange(hierarchyTasks);
@@ -813,6 +968,166 @@ namespace MahERP.DataModelLayer.Repository
                 1 => "مشاهده تسک‌های تیم خاص",
                 2 => "مشاهده تسک‌های تیم و زیرتیم‌ها",
                 _ => "نامشخص"
+            };
+        }
+
+        #endregion
+        #region Team Management Visibility
+
+        
+
+        /// <summary>
+        /// دریافت تمام شناسه زیرتیم‌ها - متد بازگشتی
+        /// </summary>
+        public async Task<List<int>> GetAllSubTeamIdsAsync(int parentTeamId)
+        {
+            var subTeamIds = new List<int>();
+
+            // دریافت زیرتیم‌های مستقیم
+            var directSubTeams = await _context.Team_Tbl
+                .Where(t => t.ParentTeamId == parentTeamId && t.IsActive)
+                .Select(t => t.Id)
+                .ToListAsync();
+
+            // اضافه کردن زیرتیم‌های مستقیم
+            subTeamIds.AddRange(directSubTeams);
+
+            // بازگشتی: دریافت زیرتیم‌های هر زیرتیم
+            foreach (var subTeamId in directSubTeams)
+            {
+                var nestedSubTeams = await GetAllSubTeamIdsAsync(subTeamId);
+                subTeamIds.AddRange(nestedSubTeams);
+            }
+
+            return subTeamIds;
+        }
+
+        #endregion
+        #region جدید - پیاده‌سازی جزئیات دریافت تسک‌های زیرتیم‌ها
+
+        /// <summary>
+        /// دریافت تسک‌های زیرتیم‌ها به صورت کاملاً گروه‌بندی شده
+        /// </summary>
+        public async Task<SubTeamTasksGroupedViewModel> GetSubTeamTasksGroupedDetailedAsync(string userId, int? branchId = null)
+        {
+            var result = new SubTeamTasksGroupedViewModel();
+
+            // دریافت تیم‌های تحت مدیریت مستقیم
+            var managedTeams = await _context.Team_Tbl
+                .Where(t => t.ManagerUserId == userId && t.IsActive)
+                .Where(t => !branchId.HasValue || t.BranchId == branchId)
+                .ToListAsync();
+
+            if (!managedTeams.Any()) return result;
+
+            // برای هر تیم اصلی
+            foreach (var parentTeam in managedTeams)
+            {
+                var teamGroup = new SubTeamGroupViewModel
+                {
+                    ParentTeamId = parentTeam.Id,
+                    ParentTeamName = parentTeam.Title
+                };
+
+                // دریافت زیرتیم‌ها به صورت سلسله مراتبی
+                await LoadSubTeamsRecursiveAsync(teamGroup, parentTeam.Id, 1);
+
+                if (teamGroup.SubTeams.Any())
+                {
+                    teamGroup.TotalTasks = teamGroup.SubTeams.Values.Sum(st => st.TotalTasks);
+                    result.TeamGroups[parentTeam.Id] = teamGroup;
+                    result.TotalSubTeamTasks += teamGroup.TotalTasks;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// بارگذاری بازگشتی زیرتیم‌ها و تسک‌های آن‌ها
+        /// </summary>
+        private async Task LoadSubTeamsRecursiveAsync(SubTeamGroupViewModel teamGroup, int parentTeamId, int level)
+        {
+            var subTeams = await _context.Team_Tbl
+                .Where(t => t.ParentTeamId == parentTeamId && t.IsActive)
+                .ToListAsync();
+
+            foreach (var subTeam in subTeams)
+            {
+                // دریافت تسک‌های این زیرتیم
+                var tasks = await _context.Tasks_Tbl
+                    .Where(t => t.TeamId == subTeam.Id &&
+                               !t.IsDeleted &&
+                               !t.IsPrivate &&
+                               t.VisibilityLevel != 1)
+                    .Include(t => t.Creator)
+                    .Include(t => t.TaskAssignments)
+                    .Include(t => t.TaskCategory)
+                    .ToListAsync();
+
+                if (tasks.Any())
+                {
+                    var subTeamViewModel = new SubTeamTasksViewModel
+                    {
+                        SubTeamId = subTeam.Id,
+                        SubTeamName = subTeam.Title,
+                        Level = level
+                    };
+
+                    // گروه‌بندی بر اساس کاربر سازنده
+                    var tasksByUser = tasks
+                        .GroupBy(t => t.CreatorUserId)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => new UserTasksGroupViewModel
+                            {
+                                UserId = g.Key,
+                                UserFullName = g.First().Creator != null 
+                                    ? $"{g.First().Creator.FirstName} {g.First().Creator.LastName}"
+                                    : "نامشخص",
+                                Tasks = g.Select(MapTaskToViewModel).ToList()
+                            });
+
+                    subTeamViewModel.TasksByUser = tasksByUser;
+                    subTeamViewModel.TotalTasks = tasks.Count;
+
+                    teamGroup.SubTeams[subTeam.Id] = subTeamViewModel;
+                }
+
+                // بارگذاری زیرتیم‌های بعدی (بازگشتی)
+                await LoadSubTeamsRecursiveAsync(teamGroup, subTeam.Id, level + 1);
+            }
+        }
+
+        /// <summary>
+        /// تبدیل Task Entity به TaskViewModel
+        /// </summary>
+        private TaskViewModel MapTaskToViewModel(Tasks task)
+        {
+            return new TaskViewModel
+            {
+                Id = task.Id,
+                Title = task.Title,
+                Description = task.Description,
+                TaskCode = task.TaskCode,
+                CreateDate = task.CreateDate,
+                DueDate = task.DueDate,
+                CompletionDate = task.CompletionDate,
+                IsActive = task.IsActive,
+                Priority = task.Priority,
+                Important = task.Important,
+                Status = task.Status,
+                CreatorUserId = task.CreatorUserId,
+                CategoryId = task.TaskCategoryId,
+                CategoryTitle = task.TaskCategory?.Title,
+                AssignmentsTaskUser = task.TaskAssignments?
+                    .Select(a => new TaskAssignmentViewModel
+                    {
+                        AssignedUserId = a.AssignedUserId,
+                        AssignedUserName = a.AssignedUser != null 
+                            ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
+                            : "نامشخص"
+                    }).ToList() ?? new List<TaskAssignmentViewModel>()
             };
         }
 

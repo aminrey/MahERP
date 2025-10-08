@@ -1,0 +1,47 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.TeamViewModel>
+
+<select class="form-select form-select-sm team-select js-select2" 
+        data-placeholder="انتخاب تیم..." 
+        style="width: 100%;">
+    @if (Model == null || !Model.Any())
+    {
+        <!-- ⭐ نسخه بهبود یافته با استایل بهتر -->
+        <option value="0" class="text-warning">
+            <i class="fa fa-user"></i> بدون تیم 
+        </option>
+    }
+    else
+    {
+        <option value="">انتخاب تیم...</option>
+        
+        @foreach (var team in Model)
+        {
+            <option value="@team.Id">
+                <i class="fa fa-users"></i> @team.Title
+            </option>
+        }
+        
+        <option value="0" class="text-muted fst-italic" style="border-top: 1px solid #ddd;">
+            <i class="fa fa-user-alt"></i> بدون تیم (انجام فردی)
+        </option>
+    }
+</select>
+
+@if (Model != null && Model.Any())
+{
+    <small class="form-text text-muted d-block mt-1">
+        <i class="fa fa-info-circle me-1"></i>
+        @Model.Count تیم یافت شد
+        @if (Model.Count == 1)
+        {
+            <span class="text-success">- تیم به صورت خودکار انتخاب می‌شود</span>
+        }
+    </small>
+}
+else
+{
+    <small class="form-text text-warning d-block mt-1">
+        <i class="fa fa-exclamation-triangle me-1"></i>
+        این کاربر در هیچ تیمی عضو نیست - تسک به صورت فردی انجام می‌شود
+    </small>
+}

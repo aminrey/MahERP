@@ -5,7 +5,6 @@ using MahERP.Attributes;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
-using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.StaticClasses;
@@ -15,16 +14,18 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
+using MahERP.Extentions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
     [Area("AdminArea")]
     [Authorize]
     [PermissionRequired("Stakeholder")]
-
     public class StakeholderController : BaseController
     {
         private readonly IUnitOfWork _uow;
@@ -41,7 +42,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger , userRepository)
+            IUserManagerRepository userRepository)
+            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _uow = uow;
             _stakeholderRepository = stakeholderRepository;
@@ -50,36 +52,31 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             _userRepository = userRepository;
         }
 
+        // ==================== STAKEHOLDER CRUD ====================
+
         // لیست طرف حساب‌ها
-        public async Task<IActionResult> Index(int? type = null, bool includeDeleted = false)
+        public async Task<IActionResult> Index(byte? personType = null, int? type = null, bool includeDeleted = false)
         {
             try
             {
-                var stakeholders = _stakeholderRepository.GetStakeholders(includeDeleted, type);
+                var stakeholders = _stakeholderRepository.GetStakeholders(includeDeleted, type, personType);
 
-                // اضافه کردن اطلاعات به ViewBag برای نمایش در View
                 ViewBag.IncludeDeleted = includeDeleted;
                 ViewBag.CurrentType = type;
+                ViewBag.PersonType = personType;
 
-                // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Stakeholders",
                     "Index",
-                    $"مشاهده لیست طرف حساب‌ها - نوع: {type?.ToString() ?? "همه"}, شامل حذف شده: {includeDeleted}"
+                    $"مشاهده لیست طرف حساب‌ها - نوع شخص: {personType?.ToString() ?? "همه"}, نوع: {type?.ToString() ?? "همه"}"
                 );
 
                 return View(stakeholders);
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync(
-                    "Stakeholders",
-                    "Index",
-                    "خطا در دریافت لیست طرف حساب‌ها",
-                    ex
-                );
-                
+                await _activityLogger.LogErrorAsync("Stakeholders", "Index", "خطا در دریافت لیست", ex);
                 return RedirectToAction("ErrorView", "Home");
             }
         }
@@ -89,7 +86,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         {
             try
             {
-                var stakeholder = _stakeholderRepository.GetStakeholderById(id, true, true, true, true);
+                var stakeholder = _stakeholderRepository.GetStakeholderById(id, true, true, true, true, true);
                 if (stakeholder == null)
                 {
                     await _activityLogger.LogActivityAsync(
@@ -102,50 +99,33 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     return RedirectToAction("ErrorView", "Home");
                 }
 
-                var stakeholderCRM = _stakeholderRepository.GetStakeholderCRMById(id);
-
                 var viewModel = _mapper.Map<StakeholderViewModel>(stakeholder);
-                if (stakeholderCRM != null)
-                {
-                    viewModel.CRMInfo = _mapper.Map<StakeholderCRMViewModel>(stakeholderCRM);
-                }
 
-                // اضافه کردن اطلاعات کانتکت‌ها به ViewBag - همه کانتکت‌ها (فعال و غیرفعال)
-                ViewBag.Contacts = _stakeholderRepository.GetStakeholderContacts(id, true); // true برای شامل شدن غیرفعال‌ها
-
-                // اضافه کردن سایر اطلاعات مرتبط
+                ViewBag.Contacts = _stakeholderRepository.GetStakeholderContacts(id, true);
                 ViewBag.Contracts = stakeholder.Contracts?.ToList() ?? new List<Contract>();
                 ViewBag.Tasks = stakeholder.TaskList?.ToList() ?? new List<Tasks>();
-                ViewBag.CRMInteractions = new List<CRMInteraction>(); // نیاز به پیاده‌سازی در repository
+                ViewBag.Organizations = _stakeholderRepository.GetStakeholderOrganizations(id, false);
 
-                // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Stakeholders",
                     "Details",
-                    $"مشاهده جزئیات طرف حساب: {stakeholder.FirstName} {stakeholder.LastName}",
+                    $"مشاهده جزئیات طرف حساب: {stakeholder.DisplayName}",
                     recordId: id.ToString(),
                     entityType: "Stakeholder",
-                    recordTitle: $"{stakeholder.FirstName} {stakeholder.LastName}"
+                    recordTitle: stakeholder.DisplayName
                 );
 
                 return View(viewModel);
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync(
-                    "Stakeholders",
-                    "Details",
-                    "خطا در دریافت جزئیات طرف حساب",
-                    ex,
-                    recordId: id.ToString()
-                );
-                
+                await _activityLogger.LogErrorAsync("Stakeholders", "Details", "خطا در دریافت جزئیات", ex, recordId: id.ToString());
                 return RedirectToAction("ErrorView", "Home");
             }
         }
 
-        // افزودن طرف حساب جدید - نمایش فرم
+        // افزودن طرف حساب - نمایش فرم
         [HttpGet]
         public async Task<IActionResult> AddStakeholder()
         {
@@ -156,7 +136,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
                     "Id", "FullName");
 
-                // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Stakeholders",
@@ -164,103 +143,103 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     "مشاهده فرم افزودن طرف حساب جدید"
                 );
 
-                return View(new StakeholderViewModel { IsActive = true });
+                return View(new StakeholderViewModel { IsActive = true, PersonType = 0 });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync(
-                    "Stakeholders",
-                    "AddStakeholder",
-                    "خطا در نمایش فرم افزودن طرف حساب",
-                    ex
-                );
-                
+                await _activityLogger.LogErrorAsync("Stakeholders", "AddStakeholder", "خطا در نمایش فرم", ex);
                 return RedirectToAction("ErrorView", "Home");
             }
         }
 
-        // افزودن طرف حساب جدید - پردازش فرم
+        // افزودن طرف حساب - پردازش فرم
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddStakeholder(StakeholderViewModel model)
         {
+            // اعتبارسنجی بر اساس نوع شخص
+            if (model.PersonType == 0) // شخص حقیقی
+            {
+                if (string.IsNullOrEmpty(model.FirstName))
+                    ModelState.AddModelError("FirstName", "نام الزامی است");
+                if (string.IsNullOrEmpty(model.LastName))
+                    ModelState.AddModelError("LastName", "نام خانوادگی الزامی است");
+            }
+            else if (model.PersonType == 1) // شخص حقوقی
+            {
+                if (string.IsNullOrEmpty(model.CompanyName))
+                    ModelState.AddModelError("CompanyName", "نام شرکت الزامی است");
+            }
+
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // بررسی یکتا بودن کد ملی و ایمیل
-                    if (!string.IsNullOrEmpty(model.NationalCode) && !_stakeholderRepository.IsNationalCodeUnique(model.NationalCode))
+                    // بررسی یکتا بودن
+                    if (model.PersonType == 0 && !string.IsNullOrEmpty(model.NationalCode))
                     {
-                        ModelState.AddModelError("NationalCode", "کد ملی وارد شده قبلاً ثبت شده است");
-                        ViewBag.SalesReps = new SelectList(_userManager.Users
-                            .Where(u => u.IsActive && !u.IsRemoveUser)
-                            .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                            "Id", "FullName");
-                        return View(model);
+                        if (!_stakeholderRepository.IsNationalCodeUnique(model.NationalCode))
+                        {
+                            ModelState.AddModelError("NationalCode", "کد ملی تکراری است");
+                            PrepareViewBag();
+                            return View(model);
+                        }
+                    }
+                    else if (model.PersonType == 1)
+                    {
+                        if (!string.IsNullOrEmpty(model.RegistrationNumber) &&
+                            !_stakeholderRepository.IsRegistrationNumberUnique(model.RegistrationNumber))
+                        {
+                            ModelState.AddModelError("RegistrationNumber", "شماره ثبت تکراری است");
+                            PrepareViewBag();
+                            return View(model);
+                        }
+
+                        if (!string.IsNullOrEmpty(model.EconomicCode) &&
+                            !_stakeholderRepository.IsEconomicCodeUnique(model.EconomicCode))
+                        {
+                            ModelState.AddModelError("EconomicCode", "کد اقتصادی تکراری است");
+                            PrepareViewBag();
+                            return View(model);
+                        }
                     }
 
                     if (!string.IsNullOrEmpty(model.Email) && !_stakeholderRepository.IsEmailUnique(model.Email))
                     {
-                        ModelState.AddModelError("Email", "ایمیل وارد شده قبلاً ثبت شده است");
-                        ViewBag.SalesReps = new SelectList(_userManager.Users
-                            .Where(u => u.IsActive && !u.IsRemoveUser)
-                            .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                            "Id", "FullName");
+                        ModelState.AddModelError("Email", "ایمیل تکراری است");
+                        PrepareViewBag();
                         return View(model);
                     }
 
-                    // ایجاد طرف حساب جدید
                     var stakeholder = _mapper.Map<Stakeholder>(model);
                     stakeholder.CreateDate = DateTime.Now;
                     stakeholder.CreatorUserId = _userManager.GetUserId(User);
                     stakeholder.IsActive = true;
                     stakeholder.IsDeleted = false;
 
-                    // ذخیره در دیتابیس
                     _uow.StakeholderUW.Create(stakeholder);
                     _uow.Save();
 
-                    // اگر اطلاعات CRM وجود داشته باشد، آنها را هم ذخیره می‌کنیم
-                    if (model.CRMInfo != null)
-                    {
-                        var stakeholderCRM = _mapper.Map<StakeholderCRM>(model.CRMInfo);
-                        stakeholderCRM.StakeholderId = stakeholder.Id;
-                        stakeholderCRM.CreateDate = DateTime.Now;
-
-                        _uow.StakeholderCRMUW.Create(stakeholderCRM);
-                        _uow.Save();
-                    }
-
-                    // ثبت لاگ موفقیت
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Create,
                         "Stakeholders",
                         "AddStakeholder",
-                        $"ایجاد طرف حساب جدید: {stakeholder.FirstName} {stakeholder.LastName}",
+                        $"ایجاد طرف حساب جدید: {stakeholder.DisplayName}",
                         recordId: stakeholder.Id.ToString(),
                         entityType: "Stakeholder",
-                        recordTitle: $"{stakeholder.FirstName} {stakeholder.LastName}"
+                        recordTitle: stakeholder.DisplayName
                     );
 
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    await _activityLogger.LogErrorAsync(
-                        "Stakeholders",
-                        "AddStakeholder",
-                        "خطا در ایجاد طرف حساب جدید",
-                        ex
-                    );
-                    
-                    ModelState.AddModelError("", "خطایی در ثبت طرف حساب رخ داد: " + ex.Message);
+                    await _activityLogger.LogErrorAsync("Stakeholders", "AddStakeholder", "خطا در ایجاد", ex);
+                    ModelState.AddModelError("", "خطا در ثبت: " + ex.Message);
                 }
             }
-            
-            ViewBag.SalesReps = new SelectList(_userManager.Users
-                .Where(u => u.IsActive && !u.IsRemoveUser)
-                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                "Id", "FullName");
+
+            PrepareViewBag();
             return View(model);
         }
 
@@ -284,42 +263,23 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 }
 
                 var viewModel = _mapper.Map<StakeholderViewModel>(stakeholder);
+                PrepareViewBag();
 
-                // دریافت اطلاعات CRM اگر وجود داشته باشد
-                var stakeholderCRM = _stakeholderRepository.GetStakeholderCRMById(id);
-                if (stakeholderCRM != null)
-                {
-                    viewModel.CRMInfo = _mapper.Map<StakeholderCRMViewModel>(stakeholderCRM);
-                }
-
-                ViewBag.SalesReps = new SelectList(_userManager.Users
-                    .Where(u => u.IsActive && !u.IsRemoveUser)
-                    .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                    "Id", "FullName");
-
-                // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Stakeholders",
                     "EditStakeholder",
-                    $"مشاهده فرم ویرایش طرف حساب: {stakeholder.FirstName} {stakeholder.LastName}",
+                    $"مشاهده فرم ویرایش طرف حساب: {stakeholder.DisplayName}",
                     recordId: id.ToString(),
                     entityType: "Stakeholder",
-                    recordTitle: $"{stakeholder.FirstName} {stakeholder.LastName}"
+                    recordTitle: stakeholder.DisplayName
                 );
 
                 return View(viewModel);
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync(
-                    "Stakeholders",
-                    "EditStakeholder",
-                    "خطا در نمایش فرم ویرایش طرف حساب",
-                    ex,
-                    recordId: id.ToString()
-                );
-                
+                await _activityLogger.LogErrorAsync("Stakeholders", "EditStakeholder", "خطا در نمایش فرم", ex, recordId: id.ToString());
                 return RedirectToAction("ErrorView", "Home");
             }
         }
@@ -329,274 +289,136 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditStakeholder(StakeholderViewModel model)
         {
+            // اعتبارسنجی مشابه AddStakeholder
+            if (model.PersonType == 0)
+            {
+                if (string.IsNullOrEmpty(model.FirstName))
+                    ModelState.AddModelError("FirstName", "نام الزامی است");
+                if (string.IsNullOrEmpty(model.LastName))
+                    ModelState.AddModelError("LastName", "نام خانوادگی الزامی است");
+            }
+            else if (model.PersonType == 1)
+            {
+                if (string.IsNullOrEmpty(model.CompanyName))
+                    ModelState.AddModelError("CompanyName", "نام شرکت الزامی است");
+            }
+
             if (ModelState.IsValid)
             {
-                // بررسی یکتا بودن کد ملی و ایمیل
-                if (!string.IsNullOrEmpty(model.NationalCode) &&
-                    !_stakeholderRepository.IsNationalCodeUnique(model.NationalCode, model.Id))
-                {
-                    ModelState.AddModelError("NationalCode", "کد ملی وارد شده قبلاً ثبت شده است");
-                    ViewBag.SalesReps = new SelectList(_userManager.Users
-                        .Where(u => u.IsActive && !u.IsRemoveUser)
-                        .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                        "Id", "FullName");
-                    return View(model);
-                }
-
-                if (!string.IsNullOrEmpty(model.Email) &&
-                    !_stakeholderRepository.IsEmailUnique(model.Email, model.Id))
-                {
-                    ModelState.AddModelError("Email", "ایمیل وارد شده قبلاً ثبت شده است");
-                    ViewBag.SalesReps = new SelectList(_userManager.Users
-                        .Where(u => u.IsActive && !u.IsRemoveUser)
-                        .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                        "Id", "FullName");
-                    return View(model);
-                }
-
                 try
                 {
-                    // دریافت طرف حساب از دیتابیس
-                    var stakeholder = _uow.StakeholderUW.GetById(model.Id);
-                    if (stakeholder == null)
+                    // بررسی یکتا بودن با excludeId
+                    if (model.PersonType == 0 && !string.IsNullOrEmpty(model.NationalCode))
                     {
-                        await _activityLogger.LogActivityAsync(
-                            ActivityTypeEnum.Edit,
-                            "Stakeholders",
-                            "EditStakeholder",
-                            "تلاش برای ویرایش طرف حساب غیرموجود",
-                            recordId: model.Id.ToString()
-                        );
-                        return RedirectToAction("ErrorView", "Home");
+                        if (!_stakeholderRepository.IsNationalCodeUnique(model.NationalCode, model.Id))
+                        {
+                            ModelState.AddModelError("NationalCode", "کد ملی تکراری است");
+                            PrepareViewBag();
+                            return View(model);
+                        }
+                    }
+                    else if (model.PersonType == 1)
+                    {
+                        if (!string.IsNullOrEmpty(model.RegistrationNumber) &&
+                            !_stakeholderRepository.IsRegistrationNumberUnique(model.RegistrationNumber, model.Id))
+                        {
+                            ModelState.AddModelError("RegistrationNumber", "شماره ثبت تکراری است");
+                            PrepareViewBag();
+                            return View(model);
+                        }
+
+                        if (!string.IsNullOrEmpty(model.EconomicCode) &&
+                            !_stakeholderRepository.IsEconomicCodeUnique(model.EconomicCode, model.Id))
+                        {
+                            ModelState.AddModelError("EconomicCode", "کد اقتصادی تکراری است");
+                            PrepareViewBag();
+                            return View(model);
+                        }
                     }
 
-                    // ذخیره مقادیر قبلی برای لاگ
+                    if (!string.IsNullOrEmpty(model.Email) && !_stakeholderRepository.IsEmailUnique(model.Email, model.Id))
+                    {
+                        ModelState.AddModelError("Email", "ایمیل تکراری است");
+                        PrepareViewBag();
+                        return View(model);
+                    }
+
+                    var stakeholder = _uow.StakeholderUW.GetById(model.Id);
+                    if (stakeholder == null)
+                        return RedirectToAction("ErrorView", "Home");
+
                     var oldValues = new
                     {
+                        stakeholder.PersonType,
                         stakeholder.FirstName,
                         stakeholder.LastName,
                         stakeholder.CompanyName,
-                        stakeholder.Phone,
-                        stakeholder.Mobile,
-                        stakeholder.Email,
-                        stakeholder.NationalCode,
                         stakeholder.IsActive
                     };
 
-                    // حفظ مقادیر اصلی که نباید تغییر کنند
                     var originalCreateDate = stakeholder.CreateDate;
                     var originalCreatorUserId = stakeholder.CreatorUserId;
 
-                    // به‌روزرسانی اطلاعات
                     _mapper.Map(model, stakeholder);
 
-                    // بازگردانی مقادیر اصلی
                     stakeholder.CreateDate = originalCreateDate;
                     stakeholder.CreatorUserId = originalCreatorUserId;
+                    stakeholder.LastUpdateDate = DateTime.Now;
+                    stakeholder.LastUpdaterUserId = _userManager.GetUserId(User);
 
                     _uow.StakeholderUW.Update(stakeholder);
                     _uow.Save();
 
-                    // به‌روزرسانی اطلاعات CRM
-                    if (model.CRMInfo != null)
-                    {
-                        var stakeholderCRM = _uow.StakeholderCRMUW.Get(c => c.StakeholderId == model.Id).FirstOrDefault();
-
-                        if (stakeholderCRM == null)
-                        {
-                            // ایجاد رکورد جدید اگر وجود نداشته باشد
-                            stakeholderCRM = new StakeholderCRM
-                            {
-                                StakeholderId = model.Id,
-                                CreateDate = DateTime.Now
-                            };
-                            _mapper.Map(model.CRMInfo, stakeholderCRM);
-                            _uow.StakeholderCRMUW.Create(stakeholderCRM);
-                        }
-                        else
-                        {
-                            // حفظ مقادیر اصلی CRM
-                            var originalCRMCreateDate = stakeholderCRM.CreateDate;
-                            var originalStakeholderId = stakeholderCRM.StakeholderId;
-
-                            // بروزرسانی رکورد موجود
-                            _mapper.Map(model.CRMInfo, stakeholderCRM);
-
-                            // بازگردانی مقادیر اصلی
-                            stakeholderCRM.CreateDate = originalCRMCreateDate;
-                            stakeholderCRM.StakeholderId = originalStakeholderId;
-                            stakeholderCRM.LastUpdateDate = DateTime.Now;
-
-                            _uow.StakeholderCRMUW.Update(stakeholderCRM);
-                        }
-
-                        _uow.Save();
-                    }
-
-                    // مقادیر جدید برای لاگ
                     var newValues = new
                     {
+                        stakeholder.PersonType,
                         stakeholder.FirstName,
                         stakeholder.LastName,
                         stakeholder.CompanyName,
-                        stakeholder.Phone,
-                        stakeholder.Mobile,
-                        stakeholder.Email,
-                        stakeholder.NationalCode,
                         stakeholder.IsActive
                     };
 
-                    // ثبت لاگ تغییرات
                     await _activityLogger.LogChangeAsync(
                         ActivityTypeEnum.Edit,
                         "Stakeholders",
                         "EditStakeholder",
-                        $"ویرایش طرف حساب: {stakeholder.FirstName} {stakeholder.LastName}",
+                        $"ویرایش طرف حساب: {stakeholder.DisplayName}",
                         oldValues,
                         newValues,
                         recordId: stakeholder.Id.ToString(),
                         entityType: "Stakeholder",
-                        recordTitle: $"{stakeholder.FirstName} {stakeholder.LastName}"
+                        recordTitle: stakeholder.DisplayName
                     );
 
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    await _activityLogger.LogErrorAsync(
-                        "Stakeholders",
-                        "EditStakeholder",
-                        "خطا در ویرایش طرف حساب",
-                        ex,
-                        recordId: model.Id.ToString()
-                    );
-                    
-                    // لاگ کردن خطای دقیق‌تر
-                    ModelState.AddModelError("", $"خطا در ذخیره اطلاعات: {ex.Message}");
-
-                    // اگر خطای Inner Exception وجود دارد
-                    if (ex.InnerException != null)
-                    {
-                        ModelState.AddModelError("", $"جزئیات خطا: {ex.InnerException.Message}");
-                    }
+                    await _activityLogger.LogErrorAsync("Stakeholders", "EditStakeholder", "خطا در ویرایش", ex, recordId: model.Id.ToString());
+                    ModelState.AddModelError("", $"خطا در ذخیره: {ex.Message}");
                 }
             }
 
-            // در صورت وجود خطا، ViewBag را دوباره تنظیم کنید
+            PrepareViewBag();
+            return View(model);
+        }
+
+        // متد کمکی برای تنظیم ViewBag
+        private void PrepareViewBag()
+        {
             ViewBag.SalesReps = new SelectList(_userManager.Users
                 .Where(u => u.IsActive && !u.IsRemoveUser)
                 .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
                 "Id", "FullName");
-            return View(model);
         }
 
-        // ویرایش اطلاعات CRM طرف حساب - نمایش فرم
+       
+
+        /// <summary>
+        /// فعال/غیرفعال کردن طرف حساب - نمایش مودال تأیید
+        /// </summary>
         [HttpGet]
-        public IActionResult EditCRM(int id)
-        {
-            var stakeholder = _stakeholderRepository.GetStakeholderById(id);
-            if (stakeholder == null)
-                return RedirectToAction("ErrorView", "Home");
-
-            var viewModel = _mapper.Map<StakeholderViewModel>(stakeholder);
-
-            // دریافت اطلاعات CRM اگر وجود داشته باشد
-            var stakeholderCRM = _stakeholderRepository.GetStakeholderCRMById(id);
-            if (stakeholderCRM != null)
-            {
-                viewModel.CRMInfo = _mapper.Map<StakeholderCRMViewModel>(stakeholderCRM);
-            }
-            else
-            {
-                // اگر اطلاعات CRM وجود نداشته باشد، یک نمونه جدید ایجاد می‌کنیم
-                viewModel.CRMInfo = new StakeholderCRMViewModel();
-            }
-
-            ViewBag.SalesReps = new SelectList(_userManager.Users
-                .Where(u => u.IsActive && !u.IsRemoveUser)
-                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                "Id", "FullName", viewModel.CRMInfo.SalesRepUserId);
-
-            return View(viewModel);
-        }
-
-        // ویرایش اطلاعات CRM طرف حساب - پردازش فرم
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult EditCRM(StakeholderViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    // دریافت طرف حساب از دیتابیس
-                    var stakeholder = _uow.StakeholderUW.GetById(model.Id);
-                    if (stakeholder == null)
-                        return RedirectToAction("ErrorView", "Home");
-
-                    // به‌روزرسانی اطلاعات CRM
-                    if (model.CRMInfo != null)
-                    {
-                        var stakeholderCRM = _uow.StakeholderCRMUW.Get(c => c.StakeholderId == model.Id).FirstOrDefault();
-
-                        if (stakeholderCRM == null)
-                        {
-                            // ایجاد رکورد جدید اگر وجود نداشته باشد
-                            stakeholderCRM = new StakeholderCRM
-                            {
-                                StakeholderId = model.Id,
-                                CreateDate = DateTime.Now
-                            };
-                            _mapper.Map(model.CRMInfo, stakeholderCRM);
-                            _uow.StakeholderCRMUW.Create(stakeholderCRM);
-                        }
-                        else
-                        {
-                            // حفظ مقادیر اصلی CRM
-                            var originalCRMCreateDate = stakeholderCRM.CreateDate;
-                            var originalStakeholderId = stakeholderCRM.StakeholderId;
-
-                            // بروزرسانی رکورد موجود
-                            _mapper.Map(model.CRMInfo, stakeholderCRM);
-
-                            // بازگردانی مقادیر اصلی
-                            stakeholderCRM.CreateDate = originalCRMCreateDate;
-                            stakeholderCRM.StakeholderId = originalStakeholderId;
-                            stakeholderCRM.LastUpdateDate = DateTime.Now;
-
-                            _uow.StakeholderCRMUW.Update(stakeholderCRM);
-                        }
-
-                        _uow.Save();
-                    }
-
-                    return RedirectToAction("Details", new { id = model.Id });
-                }
-                catch (Exception ex)
-                {
-                    // لاگ کردن خطای دقیق‌تر
-                    ModelState.AddModelError("", $"خطا در ذخیره اطلاعات CRM: {ex.Message}");
-
-                    // اگر خطای Inner Exception وجود دارد
-                    if (ex.InnerException != null)
-                    {
-                        ModelState.AddModelError("", $"جزئیات خطا: {ex.InnerException.Message}");
-                    }
-                }
-            }
-
-            // در صورت وجود خطا، ViewBag را دوباره تنظیم کنید
-            ViewBag.SalesReps = new SelectList(_userManager.Users
-                .Where(u => u.IsActive && !u.IsRemoveUser)
-                .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName }),
-                "Id", "FullName", model.CRMInfo?.SalesRepUserId);
-            
-            return View(model);
-        }
-
-        // فعال/غیرفعال کردن طرف حساب - نمایش مودال تأیید
-        [HttpGet]
-        public async Task<IActionResult> ActiveOrDeactiveStakeholder(int id)
+        public async Task<IActionResult> ActiveOrDeactiveStakeholder(int id, string returnUrl = "Index")
         {
             try
             {
@@ -615,7 +437,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     ViewBag.ModalTitle = "فعال کردن طرف حساب";
                 }
 
-                // ثبت لاگ
+                ViewBag.ReturnUrl = returnUrl; // ✅ ذخیره مقصد بازگشت
+
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Stakeholders",
@@ -637,15 +460,17 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     ex,
                     recordId: id.ToString()
                 );
-                
+
                 return RedirectToAction("ErrorView", "Home");
             }
         }
 
-        // فعال/غیرفعال کردن طرف حساب - پردازش درخواست
+        /// <summary>
+        /// فعال/غیرفعال کردن طرف حساب - پردازش درخواست
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ActiveOrDeactiveStakeholderPost(int Id, bool IsActive)
+        public async Task<IActionResult> ActiveOrDeactiveStakeholderPost(int Id, bool IsActive, string returnUrl = "Index")
         {
             try
             {
@@ -654,20 +479,12 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     return RedirectToAction("ErrorView", "Home");
 
                 var oldStatus = stakeholder.IsActive;
-                
-                if (IsActive == true)
-                {
-                    stakeholder.IsActive = false;
-                }
-                else
-                {
-                    stakeholder.IsActive = true;
-                }
+
+                stakeholder.IsActive = !IsActive; // Toggle status
 
                 _uow.StakeholderUW.Update(stakeholder);
                 _uow.Save();
 
-                // ثبت لاگ
                 await _activityLogger.LogChangeAsync(
                     ActivityTypeEnum.Edit,
                     "Stakeholders",
@@ -679,8 +496,16 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     entityType: "Stakeholder",
                     recordTitle: $"{stakeholder.FirstName} {stakeholder.LastName}"
                 );
-                
-                return RedirectToAction("Index");
+
+                // ✅ بازگشت بر اساس returnUrl
+                if (returnUrl == "Details")
+                {
+                    return RedirectToAction("Details", new { id = Id });
+                }
+                else
+                {
+                    return RedirectToAction("Index");
+                }
             }
             catch (Exception ex)
             {
@@ -691,14 +516,16 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     ex,
                     recordId: Id.ToString()
                 );
-                
+
                 return RedirectToAction("ErrorView", "Home");
             }
         }
 
-        // حذف طرف حساب - نمایش مودال تأیید
+        /// <summary>
+        /// حذف طرف حساب - نمایش مودال تأیید
+        /// </summary>
         [HttpGet]
-        public async Task<IActionResult> DeleteStakeholder(int id)
+        public async Task<IActionResult> DeleteStakeholder(int id, string returnUrl = "Index")
         {
             try
             {
@@ -709,8 +536,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 ViewBag.ButonClass = "btn rounded-0 btn-hero btn-danger";
                 ViewBag.themeclass = "bg-gd-fruit";
                 ViewBag.ViewTitle = "حذف طرف حساب";
+                ViewBag.ReturnUrl = returnUrl; // ✅ ذخیره مقصد بازگشت
 
-                // ثبت لاگ
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Stakeholders",
@@ -732,15 +559,17 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     ex,
                     recordId: id.ToString()
                 );
-                
+
                 return RedirectToAction("ErrorView", "Home");
             }
         }
 
-        // حذف طرف حساب - پردازش درخواست
+        /// <summary>
+        /// حذف طرف حساب - پردازش درخواست
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteStakeholderPost(int id)
+        public async Task<IActionResult> DeleteStakeholderPost(int id, string returnUrl = "Index")
         {
             try
             {
@@ -753,7 +582,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 _uow.StakeholderUW.Update(stakeholder);
                 _uow.Save();
 
-                // ثبت لاگ حذف
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.Delete,
                     "Stakeholders",
@@ -764,7 +592,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     recordTitle: stakeholderName
                 );
 
-                // بررسی اینکه درخواست AJAX است یا نه
+                // ✅ بازگشت بر اساس returnUrl - حذف شده پس فقط Index
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return Json(new
@@ -774,7 +602,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     });
                 }
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
@@ -785,277 +613,12 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     ex,
                     recordId: id.ToString()
                 );
-                
+
                 return RedirectToAction("ErrorView", "Home");
             }
         }
 
-        // خروجی اکسل از طرف حساب‌ها
-        public async Task<IActionResult> ExportToExcel(StakeholderSearchViewModel model)
-        {
-            try
-            {
-                // اجرای دوباره جستجو برای بدست آوردن نتایج
-                var query = _uow.StakeholderUW.Get().AsQueryable();
 
-                // فیلتر وضعیت حذف شده
-                if (!model.IncludeDeleted)
-                {
-                    query = query.Where(s => !s.IsDeleted);
-                }
-
-                // فیلتر وضعیت فعال
-                if (model.IsActive.HasValue)
-                {
-                    query = query.Where(s => s.IsActive == model.IsActive.Value);
-                }
-
-                // سایر فیلترها مشابه متد Search
-                // ...
-
-                var stakeholders = query.OrderByDescending(s => s.CreateDate).ToList();
-
-                // ثبت لاگ
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Download,
-                    "Stakeholders",
-                    "ExportToExcel",
-                    $"دانلود فایل اکسل طرف حساب‌ها - تعداد رکورد: {stakeholders.Count}"
-                );
-
-                // ایجاد فایل اکسل
-                using (var workbook = new XLWorkbook())
-                {
-                    var worksheet = workbook.Worksheets.Add("طرف حساب‌ها");
-
-                    // سرستون‌ها
-                    worksheet.Cell(1, 1).Value = "ردیف";
-                    worksheet.Cell(1, 2).Value = "نام";
-                    worksheet.Cell(1, 3).Value = "نام خانوادگی";
-                    worksheet.Cell(1, 4).Value = "نام شرکت";
-                    worksheet.Cell(1, 5).Value = "تلفن ثابت";
-                    worksheet.Cell(1, 6).Value = "تلفن همراه";
-                    worksheet.Cell(1, 7).Value = "ایمیل";
-                    worksheet.Cell(1, 8).Value = "کد ملی";
-                    worksheet.Cell(1, 9).Value = "نوع طرف حساب";
-                    worksheet.Cell(1, 10).Value = "وضعیت";
-                    worksheet.Cell(1, 11).Value = "آدرس";
-                    worksheet.Cell(1, 12).Value = "تاریخ ثبت";
-
-                    // استایل هدر
-                    var headerRow = worksheet.Row(1);
-                    headerRow.Style.Font.Bold = true;
-                    headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
-                    headerRow.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-
-                    // ترتیب ردیف
-                    int row = 2;
-                    foreach (var item in stakeholders)
-                    {
-                        worksheet.Cell(row, 1).Value = (row - 1);
-                        worksheet.Cell(row, 2).Value = item.FirstName;
-                        worksheet.Cell(row, 3).Value = item.LastName;
-                        worksheet.Cell(row, 4).Value = item.CompanyName;
-                        worksheet.Cell(row, 5).Value = item.Phone;
-                        worksheet.Cell(row, 6).Value = item.Mobile;
-                        worksheet.Cell(row, 7).Value = item.Email;
-                        worksheet.Cell(row, 8).Value = item.NationalCode;
-
-                        // نوع طرف حساب
-                        string stakeholderType = item.StakeholderType switch
-                        {
-                            0 => "مشتری",
-                            1 => "تامین کننده",
-                            2 => "همکار",
-                            3 => "سایر",
-                            _ => "نامشخص"
-                        };
-                        worksheet.Cell(row, 9).Value = stakeholderType;
-
-                        // وضعیت
-                        string status = item.IsDeleted ? "حذف شده" : (item.IsActive ? "فعال" : "غیرفعال");
-                        worksheet.Cell(row, 10).Value = status;
-
-                        worksheet.Cell(row, 11).Value = item.Address;
-                        worksheet.Cell(row, 12).Value = ConvertDateTime.ConvertMiladiToShamsi(item.CreateDate,"yyyy/MM/dd");
-
-                        row++;
-                    }
-
-                    // تنظیم عرض ستون‌ها
-                    worksheet.Columns().AdjustToContents();
-
-                    // ذخیره به حافظه
-                    using (var stream = new MemoryStream())
-                    {
-                        workbook.SaveAs(stream);
-                        stream.Flush();
-
-                        return new FileContentResult(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                        {
-                            FileDownloadName = $"Stakeholders_{DateTime.Now:yyyy_MM_dd}.xlsx"
-                        };
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync(
-                    "Stakeholders",
-                    "ExportToExcel",
-                    "خطا در دانلود فایل اکسل",
-                    ex
-                );
-                
-                return RedirectToAction("Index");
-            }
-        }
-
-        // جستجوی پیشرفته - نمایش فرم
-        [HttpGet]
-        public async Task<IActionResult> AdvancedSearch()
-        {
-            try
-            {
-                // دریافت لیست کارشناسان فروش برای dropdown
-                ViewBag.SalesReps = _userManager.Users
-                    .Where(u => u.IsActive && !u.IsRemoveUser)
-                    .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
-                    .ToList();
-
-                ViewBag.Users = _userManager.Users
-                    .Where(u => u.IsActive && !u.IsRemoveUser)
-                    .Select(u => new { Id = u.Id, FullName = u.FirstName + " " + u.LastName })
-                    .ToList();
-
-                // ثبت لاگ
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View,
-                    "Stakeholders",
-                    "AdvancedSearch",
-                    "مشاهده فرم جستجوی پیشرفته طرف حساب‌ها"
-                );
-
-                return PartialView("_AdvancedSearch", new StakeholderSearchViewModel());
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync(
-                    "Stakeholders",
-                    "AdvancedSearch",
-                    "خطا در نمایش فرم جستجوی پیشرفته",
-                    ex
-                );
-                
-                return PartialView("_AdvancedSearch", new StakeholderSearchViewModel());
-            }
-        }
-
-        // جستجوی پیشرفته - پردازش جستجو
-        [HttpPost]
-        public async Task<IActionResult> Search(StakeholderSearchViewModel model)
-        {
-            try
-            {
-                var query = _uow.StakeholderUW.Get().AsQueryable();
-
-                // فیلتر وضعیت حذف شده
-                if (!model.IncludeDeleted)
-                {
-                    query = query.Where(s => !s.IsDeleted);
-                }
-
-                // فیلتر وضعیت فعال
-                if (model.IsActive.HasValue)
-                {
-                    query = query.Where(s => s.IsActive == model.IsActive.Value);
-                }
-
-                // فیلتر نوع طرف حساب
-                if (model.StakeholderType.HasValue)
-                {
-                    query = query.Where(s => s.StakeholderType == model.StakeholderType.Value);
-                }
-
-                // جستجو در نام و نام خانوادگی
-                if (!string.IsNullOrWhiteSpace(model.Name))
-                {
-                    query = query.Where(s => s.FirstName.Contains(model.Name) || s.LastName.Contains(model.Name));
-                }
-
-                // جستجو در نام شرکت
-                if (!string.IsNullOrWhiteSpace(model.CompanyName))
-                {
-                    query = query.Where(s => s.CompanyName.Contains(model.CompanyName));
-                }
-
-                // جستجو در تلفن
-                if (!string.IsNullOrWhiteSpace(model.Phone))
-                {
-                    query = query.Where(s => s.Phone.Contains(model.Phone) || s.Mobile.Contains(model.Phone));
-                }
-
-                // جستجو در ایمیل
-                if (!string.IsNullOrWhiteSpace(model.Email))
-                {
-                    query = query.Where(s => s.Email.Contains(model.Email));
-                }
-
-                // جستجو در کد ملی
-                if (!string.IsNullOrWhiteSpace(model.NationalCode))
-                {
-                    query = query.Where(s => s.NationalCode.Contains(model.NationalCode));
-                }
-
-                // فیلتر تاریخ ایجاد
-                if (!string.IsNullOrWhiteSpace(model.FromDate))
-                {
-                    DateTime fromDate = ConvertDateTime.ConvertShamsiToMiladi(model.FromDate);
-                    query = query.Where(s => s.CreateDate >= fromDate);
-                }
-
-                if (!string.IsNullOrWhiteSpace(model.ToDate))
-                {
-                    DateTime toDate = ConvertDateTime.ConvertShamsiToMiladi(model.ToDate).AddDays(1);
-                    query = query.Where(s => s.CreateDate <= toDate);
-                }
-
-                // مرتب‌سازی بر اساس تاریخ ایجاد (نزولی)
-                var stakeholders = query.OrderByDescending(s => s.CreateDate).ToList();
-
-                // ثبت لاگ جستجو
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Search,
-                    "Stakeholders",
-                    "Search",
-                    $"جستجوی پیشرفته طرف حساب‌ها - کلمه کلیدی: {model.Name ?? "خالی"}, تعداد نتایج: {stakeholders.Count}"
-                );
-
-                // بررسی اینکه درخواست AJAX است یا نه
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new
-                    {
-                        status = "redirect",
-                        redirectUrl = Url.Action("SearchResults", "Stakeholder", model)
-                    });
-                }
-
-                ViewBag.SearchModel = model;
-                return View("SearchResults", stakeholders);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync(
-                    "Stakeholders",
-                    "Search",
-                    "خطا در جستجوی پیشرفته طرف حساب‌ها",
-                    ex
-                );
-                
-                return View("SearchResults", new List<Stakeholder>());
-            }
-        }
 
         // افزودن تماس مرتبط - نمایش فرم
         [HttpGet]
@@ -1096,7 +659,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     ex,
                     recordId: stakeholderId.ToString()
                 );
-                
+
                 return RedirectToAction("ErrorView", "Home");
             }
         }
@@ -1181,7 +744,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     ex,
                     recordId: model.StakeholderId.ToString()
                 );
-                
+
                 // لاگ کردن خطای دقیق
                 Console.WriteLine($"Error in AddContact: {ex.Message}");
                 if (ex.InnerException != null)
@@ -1315,5 +878,909 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
             return RedirectToAction("Details", new { id = contact.StakeholderId });
         }
+
+        // ==================== STAKEHOLDER ORGANIZATION CHART ====================
+
+        /// <summary>
+        /// نمایش چارت سازمانی طرف حساب (فقط برای شخص حقوقی)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> OrganizationChart(int stakeholderId)
+        {
+            try
+            {
+                var stakeholder = _stakeholderRepository.GetStakeholderById(stakeholderId, includeOrganizations: true);
+
+                if (stakeholder == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                // بررسی اینکه طرف حساب باید شخص حقوقی باشد
+                if (stakeholder.PersonType != 1)
+                {
+                    TempData["ErrorMessage"] = "چارت سازمانی فقط برای اشخاص حقوقی قابل نمایش است";
+                    return RedirectToAction("Details", new { id = stakeholderId });
+                }
+
+                var organizations = _stakeholderRepository.GetStakeholderOrganizations(stakeholderId, false);
+                var rootOrganizations = organizations.Where(o => o.ParentOrganizationId == null).ToList();
+
+                var viewModel = new StakeholderOrganizationChartViewModel
+                {
+                    StakeholderId = stakeholderId,
+                    StakeholderName = stakeholder.DisplayName,
+                    RootOrganizations = _mapper.Map<List<StakeholderOrganizationViewModel>>(rootOrganizations)
+                };
+
+                // پر کردن اطلاعات تودرتو
+                foreach (var org in viewModel.RootOrganizations)
+                {
+                    PopulateOrganizationChildren(org, organizations);
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "StakeholderOrganization",
+                    "OrganizationChart",
+                    $"مشاهده چارت سازمانی: {stakeholder.DisplayName}",
+                    recordId: stakeholderId.ToString()
+                );
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "OrganizationChart",
+                    "خطا در نمایش چارت",
+                    ex,
+                    recordId: stakeholderId.ToString()
+                );
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// متد کمکی برای پر کردن زیرمجموعه‌های سازمانی
+        /// </summary>
+        private void PopulateOrganizationChildren(StakeholderOrganizationViewModel parent, List<StakeholderOrganization> allOrganizations)
+        {
+            var children = allOrganizations.Where(o => o.ParentOrganizationId == parent.Id).ToList();
+
+            if (children.Any())
+            {
+                parent.ChildOrganizations = _mapper.Map<List<StakeholderOrganizationViewModel>>(children);
+
+                foreach (var child in parent.ChildOrganizations)
+                {
+                    PopulateOrganizationChildren(child, allOrganizations);
+                }
+            }
+        }
+
+        /// <summary>
+        /// افزودن واحد سازمانی جدید
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddOrganization(int stakeholderId, int? parentOrganizationId = null)
+        {
+            try
+            {
+                var stakeholder = _stakeholderRepository.GetStakeholderById(stakeholderId);
+
+                if (stakeholder == null || stakeholder.PersonType != 1)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var contacts = _stakeholderRepository.GetStakeholderContacts(stakeholderId, false);
+
+                ViewBag.StakeholderId = stakeholderId;
+                ViewBag.StakeholderName = stakeholder.DisplayName;
+                ViewBag.ParentOrganizationId = parentOrganizationId;
+                ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+
+                var model = new StakeholderOrganizationViewModel
+                {
+                    StakeholderId = stakeholderId,
+                    ParentOrganizationId = parentOrganizationId,
+                    IsActive = true,
+                    DisplayOrder = 1
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "AddOrganization",
+                    "خطا در نمایش فرم",
+                    ex
+                );
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره واحد سازمانی جدید
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddOrganization(StakeholderOrganizationViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // ✅ دریافت UserId از BaseController
+                    var currentUserId = GetUserId();
+                    
+                    if (string.IsNullOrEmpty(currentUserId))
+                    {
+                        ModelState.AddModelError("", "خطا در شناسایی کاربر. لطفاً دوباره وارد شوید");
+                        
+                        var stakeholderError = _stakeholderRepository.GetStakeholderById(model.StakeholderId);
+                        var contactsError = _stakeholderRepository.GetStakeholderContacts(model.StakeholderId, false);
+
+                        ViewBag.StakeholderId = model.StakeholderId;
+                        ViewBag.StakeholderName = stakeholderError?.DisplayName;
+                        ViewBag.ParentOrganizationId = model.ParentOrganizationId;
+                        ViewBag.AvailableContacts = new SelectList(contactsError, "Id", "FullName");
+
+                        return View(model);
+                    }
+
+                    // ✅ بررسی StakeholderId قبل از ایجاد Entity
+                    if (model.StakeholderId <= 0)
+                    {
+                        ModelState.AddModelError("", "شناسه طرف حساب نامعتبر است");
+                        
+                        var stakeholderError = _stakeholderRepository.GetStakeholderById(model.StakeholderId);
+                        var contactsError = _stakeholderRepository.GetStakeholderContacts(model.StakeholderId, false);
+
+                        ViewBag.StakeholderId = model.StakeholderId;
+                        ViewBag.StakeholderName = stakeholderError?.DisplayName;
+                        ViewBag.ParentOrganizationId = model.ParentOrganizationId;
+                        ViewBag.AvailableContacts = new SelectList(contactsError, "Id", "FullName");
+
+                        return View(model);
+                    }
+
+                    // ✅ ایجاد Entity از ViewModel
+                    var organization = _mapper.Map<StakeholderOrganization>(model);
+                    organization.CreatorUserId = currentUserId;
+
+                    // ✅ Debug: چاپ اطلاعات قبل از ثبت
+                    System.Diagnostics.Debug.WriteLine($"🔍 StakeholderId: {organization.StakeholderId}");
+                    System.Diagnostics.Debug.WriteLine($"🔍 Title: {organization.Title}");
+                    System.Diagnostics.Debug.WriteLine($"🔍 CreatorUserId: {organization.CreatorUserId}");
+
+                    // ✅ ثبت از طریق Repository
+                    var organizationId = _stakeholderRepository.CreateOrganization(organization);
+
+                    // ✅ ثبت لاگ
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "StakeholderOrganization",
+                        "AddOrganization",
+                        $"ایجاد واحد سازمانی: {organization.Title}",
+                        recordId: organizationId.ToString()
+                    );
+
+                    return RedirectToAction("OrganizationChart", new { stakeholderId = model.StakeholderId });
+                }
+                catch (ArgumentException ex)
+                {
+                    // ✅ خطاهای Validation
+                    await _activityLogger.LogErrorAsync(
+                        "StakeholderOrganization",
+                        "AddOrganization",
+                        "خطای اعتبارسنجی",
+                        ex
+                    );
+                    ModelState.AddModelError("", ex.Message);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // ✅ خطاهای منطقی
+                    await _activityLogger.LogErrorAsync(
+                        "StakeholderOrganization",
+                        "AddOrganization",
+                        "خطای منطقی",
+                        ex
+                    );
+                    ModelState.AddModelError("", ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    // ✅ خطاهای عمومی
+                    await _activityLogger.LogErrorAsync(
+                        "StakeholderOrganization",
+                        "AddOrganization",
+                        "خطا در ایجاد واحد",
+                        ex
+                    );
+                    ModelState.AddModelError("", "خطا در ثبت: " + ex.Message);
+                }
+            }
+
+            // ✅ بازگشت به View در صورت خطا
+            var stakeholder = _stakeholderRepository.GetStakeholderById(model.StakeholderId);
+            var contacts = _stakeholderRepository.GetStakeholderContacts(model.StakeholderId, false);
+
+            ViewBag.StakeholderId = model.StakeholderId;
+            ViewBag.StakeholderName = stakeholder?.DisplayName;
+            ViewBag.ParentOrganizationId = model.ParentOrganizationId;
+            ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+
+            return View(model);
+        }
+
+        /// <summary>
+        /// افزودن عضو به واحد سازمانی
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddOrganizationMember(int organizationId)
+        {
+            try
+            {
+                var organization = _stakeholderRepository.GetStakeholderOrganizationById(organizationId);
+
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var availableContacts = _stakeholderRepository.GetAvailableContactsForOrganization(
+                    organization.StakeholderId,
+                    organizationId
+                );
+
+                var positions = _stakeholderRepository.GetOrganizationPositions(organizationId, false);
+
+                ViewBag.OrganizationId = organizationId;
+                ViewBag.OrganizationTitle = organization.Title;
+                ViewBag.AvailableContacts = new SelectList(availableContacts, "Id", "FullName");
+                ViewBag.Positions = new SelectList(positions, "Id", "Title");
+
+                var model = new StakeholderOrganizationMemberViewModel
+                {
+                    OrganizationId = organizationId,
+                    IsActive = true,
+                    JoinDate = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd")
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "AddOrganizationMember",
+                    "خطا در نمایش فرم",
+                    ex
+                );
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// افزودن عضو به واحد سازمانی - با استفاده از RenderViewToStringAsync
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddOrganizationMember(StakeholderOrganizationMemberViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // بررسی تکراری نبودن
+                    if (_stakeholderRepository.IsContactAlreadyMember(model.OrganizationId, model.ContactId))
+                    {
+                        return Json(new
+                        {
+                            status = "error",
+                            message = new[]
+                            {
+                        new { status = "warning", text = "این شخص قبلاً به این واحد اضافه شده است" }
+                    }
+                        });
+                    }
+
+                    var member = _mapper.Map<StakeholderOrganizationMember>(model);
+                    member.CreateDate = DateTime.Now;
+                    member.CreatorUserId = _userManager.GetUserId(User);
+
+                    _uow.StakeholderOrganizationMemberUW.Create(member);
+                    _uow.Save();
+
+                    var organization = _stakeholderRepository.GetStakeholderOrganizationById(model.OrganizationId);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "StakeholderOrganization",
+                        "AddOrganizationMember",
+                        $"افزودن عضو به واحد: {organization.Title}",
+                        recordId: member.Id.ToString()
+                    );
+
+                    // رندر کردن چارت سازمانی به‌روزرسانی شده
+                    var stakeholder = _stakeholderRepository.GetStakeholderById(organization.StakeholderId, includeOrganizations: true);
+                    var organizations = _stakeholderRepository.GetStakeholderOrganizations(organization.StakeholderId, false);
+                    var rootOrganizations = organizations.Where(o => o.ParentOrganizationId == null).ToList();
+
+                    var chartViewModel = new StakeholderOrganizationChartViewModel
+                    {
+                        StakeholderId = organization.StakeholderId,
+                        StakeholderName = stakeholder.DisplayName,
+                        RootOrganizations = _mapper.Map<List<StakeholderOrganizationViewModel>>(rootOrganizations)
+                    };
+
+                    // پر کردن اطلاعات تودرتو
+                    foreach (var org in chartViewModel.RootOrganizations)
+                    {
+                        PopulateOrganizationChildren(org, organizations);
+                    }
+
+                    // رندر کردن چارت
+                    var renderedChart = await this.RenderViewToStringAsync("_OrganizationChartNodes", chartViewModel.RootOrganizations);
+
+                    return Json(new
+                    {
+                        status = "update-view",
+                        message = new[]
+                        {
+                    new { status = "success", text = "عضو با موفقیت اضافه شد" }
+                },
+                        viewList = new[]
+                        {
+                    new
+                    {
+                        elementId = "org-chart-container",
+                        view = new
+                        {
+                            result = renderedChart
+                        }
+                    }
+                }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "StakeholderOrganization",
+                        "AddOrganizationMember",
+                        "خطا در افزودن عضو",
+                        ex
+                    );
+
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[]
+                        {
+                    new { status = "error", text = "خطا در ذخیره: " + ex.Message }
+                }
+                    });
+                }
+            }
+
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => new { status = "error", text = e.ErrorMessage })
+                .ToArray();
+
+            return Json(new
+            {
+                status = "validation-error",
+                message = errors.Any() ? errors : new[]
+                {
+            new { status = "error", text = "اطلاعات نامعتبر است" }
+        }
+            });
+        }
+
+
+        // ==================== EDIT ORGANIZATION ====================
+
+        /// <summary>
+        /// ویرایش واحد سازمانی - نمایش فرم
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> EditOrganization(int id)
+        {
+            try
+            {
+                var organization = _stakeholderRepository.GetStakeholderOrganizationById(id);
+
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var viewModel = _mapper.Map<StakeholderOrganizationViewModel>(organization);
+
+                var contacts = _stakeholderRepository.GetStakeholderContacts(organization.StakeholderId, false);
+                var stakeholder = _stakeholderRepository.GetStakeholderById(organization.StakeholderId);
+
+                ViewBag.StakeholderId = organization.StakeholderId;
+                ViewBag.StakeholderName = stakeholder?.DisplayName;
+                ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName", organization.ManagerContactId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "StakeholderOrganization",
+                    "EditOrganization",
+                    $"مشاهده فرم ویرایش واحد: {organization.Title}",
+                    recordId: id.ToString()
+                );
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "EditOrganization",
+                    "خطا در نمایش فرم",
+                    ex,
+                    recordId: id.ToString()
+                );
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// ویرایش واحد سازمانی - با RenderViewToStringAsync
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditOrganization(StakeholderOrganizationViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var organization = _stakeholderRepository.GetStakeholderOrganizationById(model.Id);
+
+                    if (organization == null)
+                    {
+                        return Json(new
+                        {
+                            status = "error",
+                            message = new[]
+                            {
+                        new { status = "error", text = "واحد سازمانی یافت نشد" }
+                    }
+                        });
+                    }
+
+                    var oldValues = new
+                    {
+                        organization.Title,
+                        organization.ManagerContactId,
+                        organization.IsActive
+                    };
+
+                    var originalCreateDate = organization.CreateDate;
+                    var originalCreatorUserId = organization.CreatorUserId;
+                    var originalLevel = organization.Level;
+
+                    _mapper.Map(model, organization);
+
+                    organization.CreateDate = originalCreateDate;
+                    organization.CreatorUserId = originalCreatorUserId;
+                    organization.Level = originalLevel;
+                    organization.LastUpdateDate = DateTime.Now;
+                    organization.LastUpdaterUserId = _userManager.GetUserId(User);
+
+                    _uow.StakeholderOrganizationUW.Update(organization);
+                    _uow.Save();
+
+                    var newValues = new
+                    {
+                        organization.Title,
+                        organization.ManagerContactId,
+                        organization.IsActive
+                    };
+
+                    await _activityLogger.LogChangeAsync(
+                        ActivityTypeEnum.Edit,
+                        "StakeholderOrganization",
+                        "EditOrganization",
+                        $"ویرایش واحد: {organization.Title}",
+                        oldValues,
+                        newValues,
+                        recordId: organization.Id.ToString()
+                    );
+
+                    // رندر کردن چارت به‌روزرسانی شده
+                    var stakeholder = _stakeholderRepository.GetStakeholderById(organization.StakeholderId, includeOrganizations: true);
+                    var organizations = _stakeholderRepository.GetStakeholderOrganizations(organization.StakeholderId, false);
+                    var rootOrganizations = organizations.Where(o => o.ParentOrganizationId == null).ToList();
+
+                    var chartViewModel = new StakeholderOrganizationChartViewModel
+                    {
+                        StakeholderId = organization.StakeholderId,
+                        StakeholderName = stakeholder.DisplayName,
+                        RootOrganizations = _mapper.Map<List<StakeholderOrganizationViewModel>>(rootOrganizations)
+                    };
+
+                    foreach (var org in chartViewModel.RootOrganizations)
+                    {
+                        PopulateOrganizationChildren(org, organizations);
+                    }
+
+                    var renderedChart = await this.RenderViewToStringAsync("_OrganizationChartNodes", chartViewModel.RootOrganizations);
+
+                    return Json(new
+                    {
+                        status = "redirect",
+                        redirectUrl = Url.Action("OrganizationChart", new { stakeholderId = organization.StakeholderId }),
+                        message = new[]
+                        {
+                    new { status = "success", text = "واحد با موفقیت ویرایش شد" }
+                }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "StakeholderOrganization",
+                        "EditOrganization",
+                        "خطا در ویرایش",
+                        ex,
+                        recordId: model.Id.ToString()
+                    );
+
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[]
+                        {
+                    new { status = "error", text = "خطا در ذخیره: " + ex.Message }
+                }
+                    });
+                }
+            }
+
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => new { status = "error", text = e.ErrorMessage })
+                .ToArray();
+
+            return Json(new
+            {
+                status = "validation-error",
+                message = errors.Any() ? errors : new[]
+                {
+            new { status = "error", text = "اطلاعات نامعتبر است" }
+        }
+            });
+        }
+
+        // ==================== DELETE ORGANIZATION ====================
+
+        /// <summary>
+        /// حذف واحد سازمانی
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> DeleteOrganization(int id)
+        {
+            try
+            {
+                var organization = _stakeholderRepository.GetStakeholderOrganizationById(id, true, true);
+
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                ViewBag.HasChildren = organization.ChildOrganizations?.Any() ?? false;
+                ViewBag.HasMembers = organization.Members?.Any() ?? false;
+
+                return PartialView("_DeleteOrganization", organization);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "DeleteOrganization",
+                    "خطا در نمایش فرم حذف",
+                    ex,
+                    recordId: id.ToString()
+                );
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteOrganizationPost(int id)
+        {
+            try
+            {
+                var organization = _stakeholderRepository.GetStakeholderOrganizationById(id, true, true);
+
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                // بررسی وجود زیرمجموعه
+                if (organization.ChildOrganizations?.Any() ?? false)
+                {
+                    TempData["ErrorMessage"] = "امکان حذف واحدی که دارای زیرمجموعه است وجود ندارد";
+                    return RedirectToAction("OrganizationChart", new { stakeholderId = organization.StakeholderId });
+                }
+
+                var stakeholderId = organization.StakeholderId;
+                var title = organization.Title;
+
+                // حذف اعضا
+                if (organization.Members?.Any() ?? false)
+                {
+                    foreach (var member in organization.Members.ToList())
+                    {
+                        _uow.StakeholderOrganizationMemberUW.Delete(member);
+                    }
+                }
+
+                // حذف سمت‌ها
+                if (organization.Positions?.Any() ?? false)
+                {
+                    foreach (var position in organization.Positions.ToList())
+                    {
+                        _uow.StakeholderOrganizationPositionUW.Delete(position);
+                    }
+                }
+
+                _uow.StakeholderOrganizationUW.Delete(organization);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "StakeholderOrganization",
+                    "DeleteOrganization",
+                    $"حذف واحد سازمانی: {title}",
+                    recordId: id.ToString()
+                );
+
+                return RedirectToAction("OrganizationChart", new { stakeholderId });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "DeleteOrganization",
+                    "خطا در حذف",
+                    ex,
+                    recordId: id.ToString()
+                );
+                TempData["ErrorMessage"] = "خطا در حذف واحد";
+                return RedirectToAction("OrganizationChart");
+            }
+        }
+
+        // ==================== MANAGE POSITIONS ====================
+
+        /// <summary>
+        /// مدیریت سمت‌های واحد سازمانی
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ManagePositions(int organizationId)
+        {
+            try
+            {
+                var organization = _stakeholderRepository.GetStakeholderOrganizationById(organizationId, true, false);
+
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var positions = _stakeholderRepository.GetOrganizationPositions(organizationId, true);
+
+                ViewBag.OrganizationId = organizationId;
+                ViewBag.OrganizationTitle = organization.Title;
+                ViewBag.StakeholderId = organization.StakeholderId;
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "StakeholderOrganization",
+                    "ManagePositions",
+                    $"مشاهده سمت‌های واحد: {organization.Title}",
+                    recordId: organizationId.ToString()
+                );
+
+                return View(positions);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "ManagePositions",
+                    "خطا در نمایش سمت‌ها",
+                    ex,
+                    recordId: organizationId.ToString()
+                );
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+
+        /// <summary>
+        /// نمایش modal برای افزودن سمت
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddPositionModal(int organizationId)
+        {
+            try
+            {
+                var organization = _stakeholderRepository.GetStakeholderOrganizationById(organizationId);
+
+                if (organization == null)
+                    return NotFound();
+
+                var model = new StakeholderOrganizationPositionViewModel
+                {
+                    OrganizationId = organizationId,
+                    IsActive = true,
+                    DisplayOrder = 1,
+                    PowerLevel = 1
+                };
+
+                ViewBag.OrganizationTitle = organization.Title;
+
+                return PartialView("_AddPositionModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "AddPositionModal",
+                    "خطا در نمایش modal",
+                    ex
+                );
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
+        /// ذخیره سمت جدید - برای استفاده با modal-ajax-save
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPosition(StakeholderOrganizationPositionViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // اگر این سمت پیش‌فرض است، سایر سمت‌ها را غیرپیش‌فرض کنیم
+                    if (model.IsDefault)
+                    {
+                        var defaultPositions = _uow.StakeholderOrganizationPositionUW
+                            .Get(p => p.OrganizationId == model.OrganizationId && p.IsDefault);
+
+                        foreach (var pos in defaultPositions)
+                        {
+                            pos.IsDefault = false;
+                            _uow.StakeholderOrganizationPositionUW.Update(pos);
+                        }
+                    }
+
+                    var position = _mapper.Map<StakeholderOrganizationPosition>(model);
+                    position.CreateDate = DateTime.Now;
+                    position.CreatorUserId = _userManager.GetUserId(User);
+
+                    _uow.StakeholderOrganizationPositionUW.Create(position);
+                    _uow.Save();
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "StakeholderOrganization",
+                        "AddPosition",
+                        $"ایجاد سمت: {position.Title}",
+                        recordId: position.Id.ToString()
+                    );
+
+                    // دریافت لیست به‌روزرسانی شده سمت‌ها
+                    var organization = _stakeholderRepository.GetStakeholderOrganizationById(model.OrganizationId);
+                    var positions = _stakeholderRepository.GetOrganizationPositions(model.OrganizationId, true);
+
+                    // رندر کردن partial view با استفاده از RenderViewToStringAsync
+                    var renderedView = await this.RenderViewToStringAsync("_PositionsTableRows", positions);
+
+                    // پاسخ برای modal-ajax-save
+                    return Json(new
+                    {
+                        status = "update-view",
+                        message = new[]
+                        {
+                    new { status = "success", text = "سمت با موفقیت اضافه شد" }
+                },
+                        viewList = new[]
+                        {
+                    new
+                    {
+                        elementId = "positionsTableBody",
+                        view = new
+                        {
+                            result = renderedView
+                        }
+                    }
+                }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "StakeholderOrganization",
+                        "AddPosition",
+                        "خطا در افزودن سمت",
+                        ex
+                    );
+
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[]
+                        {
+                    new { status = "error", text = "خطا در ذخیره: " + ex.Message }
+                }
+                    });
+                }
+            }
+
+            // خطاهای validation
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => new { status = "error", text = e.ErrorMessage })
+                .ToArray();
+
+            return Json(new
+            {
+                status = "validation-error",
+                message = errors.Any() ? errors : new[]
+                {
+            new { status = "error", text = "اطلاعات نامعتبر است" }
+        }
+            });
+        }
+
+        // ==================== ORGANIZATION DETAILS ====================
+
+        /// <summary>
+        /// جزئیات واحد سازمانی
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> OrganizationDetails(int id)
+        {
+            try
+            {
+                var organization = _stakeholderRepository.GetStakeholderOrganizationById(id, true, true);
+
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var viewModel = _mapper.Map<StakeholderOrganizationViewModel>(organization);
+
+                ViewBag.Positions = organization.Positions;
+                ViewBag.Members = organization.Members;
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "StakeholderOrganization",
+                    "OrganizationDetails",
+                    $"مشاهده جزئیات واحد: {organization.Title}",
+                    recordId: id.ToString()
+                );
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "StakeholderOrganization",
+                    "OrganizationDetails",
+                    "خطا در نمایش جزئیات",
+                    ex,
+                    recordId: id.ToString()
+                );
+                return RedirectToAction("ErrorView", "Home");
+            }
+        } 
+    
     }
 }

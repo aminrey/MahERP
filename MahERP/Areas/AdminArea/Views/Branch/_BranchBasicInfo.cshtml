@@ -1,0 +1,88 @@
+﻿@model BranchDetailsViewModel
+
+<div class="row">
+    <div class="col-md-6">
+        <h4 class="mb-4"><i class="fa fa-building me-2 text-primary"></i>اطلاعات اصلی</h4>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">نام شعبه</label>
+            <div class="form-control-plaintext">@Model.Name</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">نوع شعبه</label>
+            <div class="form-control-plaintext">
+                @if (Model.IsMainBranch)
+                {
+                    <span class="badge bg-success">شعبه اصلی</span>
+                }
+                else
+                {
+                    <span class="badge bg-info">شعبه فرعی</span>
+                }
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">مدیر شعبه</label>
+            <div class="form-control-plaintext">@(string.IsNullOrEmpty(Model.ManagerName) ? "-" : Model.ManagerName)</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">وضعیت</label>
+            <div class="form-control-plaintext">
+                <span class="badge bg-@(Model.IsActive ? "success" : "danger")">
+                    @(Model.IsActive ? "فعال" : "غیرفعال")
+                </span>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">شعبه مادر</label>
+            <div class="form-control-plaintext">
+                @if (Model.ParentId.HasValue)
+                {
+                    <a href="@Url.Action("Details", "Branch", new { id = Model.ParentId })">
+                        <i class="fa fa-building me-1"></i>@Model.ParentBranchName
+                    </a>
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <h4 class="mb-4"><i class="fa fa-address-card me-2 text-info"></i>اطلاعات تماس</h4>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">تلفن</label>
+            <div class="form-control-plaintext">@(string.IsNullOrEmpty(Model.Phone) ? "-" : Model.Phone)</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">ایمیل</label>
+            <div class="form-control-plaintext">
+                @if (!string.IsNullOrEmpty(Model.Email))
+                {
+                    <a href="mailto:@Model.Email">@Model.Email</a>
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">آدرس</label>
+            <div class="form-control-plaintext">@(string.IsNullOrEmpty(Model.Address) ? "-" : Model.Address)</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">توضیحات</label>
+            <div class="form-control-plaintext">@(string.IsNullOrEmpty(Model.Description) ? "-" : Model.Description)</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">تاریخ ایجاد</label>
+            <div class="form-control-plaintext">
+                @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd")
+            </div>
+        </div>
+    </div>
+</div>

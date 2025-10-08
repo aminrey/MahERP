@@ -45,6 +45,18 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public byte VisibilityLevel { get; set; }
 
         /// <summary>
+        /// آیا این تسک خصوصی است؟ (فقط سازنده و انجام‌دهنده می‌توانند ببینند)
+        /// </summary>
+        public bool IsPrivate { get; set; } = false;
+
+        /// <summary>
+        /// سطح نمایش تسک
+        /// 0 = عمومی (طبق قوانین سیستم)
+        /// 1 = خصوصی (فقط سازنده و انجام‌دهندگان)
+        /// </summary>
+        public byte DisplayLevel { get; set; } = 0;
+
+        /// <summary>
         /// شناسه تیم (در صورتی که تسک تیمی باشد)
         /// </summary>
         public int? TeamId { get; set; }

@@ -340,112 +340,18 @@
                                     }
                                 </div>
 
-                                <!-- کاربران منتصب -->
+                                <!-- انتخاب طرف حساب - منتقل شده از تب دوم به تب اول -->
                                 <div class="mb-4">
-                                    <label class="form-label" for="AssignmentsSelectedTaskUserArraysString">کاربران منتصب</label>
-                                    <div id="UsersDiv">
-                                        <select class="js-select2 form-select @(ViewData.ModelState["AssignmentsSelectedTaskUserArraysString"]?.Errors.Count > 0 ? "is-invalid" : "")"
-                                                id="AssignmentsSelectedTaskUserArraysString"
-                                                data-placeholder="ابتدا شعبه را انتخاب کنید"
-                                                multiple="multiple"
-                                                name="AssignmentsSelectedTaskUserArraysString"
-                                                style="width: 100%;"
-                                                disabled>
-                                            <option value="">ابتدا شعبه را انتخاب کنید</option>
-                                        </select>
-                                    </div>
-                                    @if (ViewData.ModelState["AssignmentsSelectedTaskUserArraysString"]?.Errors.Count > 0)
-                                    {
-                                        <div class="invalid-feedback d-block">
-                                            <span asp-validation-for="AssignmentsSelectedTaskUserArraysString"></span>
-                                        </div>
-                                    }
-                                    <small class="form-text text-muted">
-                                        <i class="fa fa-users me-1"></i>
-                                        کاربرانی که این تسک به آن‌ها اختصاص داده می‌شود
-                                    </small>
-                                </div>
-
-                                <!-- تیم‌های منتصب -->
-                                <div class="mb-4">
-                                    <label class="form-label" for="AssignmentsSelectedTeamIds">تیم‌های منتصب</label>
-                                    <div id="TeamsDiv">
-                                        <select class="js-select2 form-select @(ViewData.ModelState["AssignmentsSelectedTeamIds"]?.Errors.Count > 0 ? "is-invalid" : "")"
-                                                id="AssignmentsSelectedTeamIds"
-                                                data-placeholder="ابتدا شعبه را انتخاب کنید"
-                                                multiple="multiple"
-                                                name="AssignmentsSelectedTeamIds"
-                                                style="width: 100%;"
-                                                disabled>
-                                            <option value="">ابتدا شعبه را انتخاب کنید</option>
-                                        </select>
-                                    </div>
-                                    @if (ViewData.ModelState["AssignmentsSelectedTeamIds"]?.Errors.Count > 0)
-                                    {
-                                        <div class="invalid-feedback d-block">
-                                            <span asp-validation-for="AssignmentsSelectedTeamIds"></span>
-                                        </div>
-                                    }
-                                    <small class="form-text text-muted">
-                                        <i class="fa fa-sitemap me-1"></i>
-                                        تیم‌هایی که این تسک به تمام اعضای آن‌ها اختصاص داده می‌شود
-                                    </small>
-                                </div>
-
-                                <!-- فایل‌های پیوست -->
-                                <div class="mb-4">
-                                    <label class="form-label" for="Attachments">فایل‌های پیوست</label>
-                                    <input type="file" name="Attachments" multiple class="form-control @(ViewData.ModelState["Attachments"]?.Errors.Count > 0 ? "is-invalid" : "")" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip,.rar">
-                                    @if (ViewData.ModelState["Attachments"]?.Errors.Count > 0)
-                                    {
-                                        <div class="invalid-feedback">
-                                            <span asp-validation-for="Attachments"></span>
-                                        </div>
-                                    }
-                                    <small class="form-text text-muted">
-                                        <i class="fa fa-paperclip me-1"></i>
-                                        فایل‌های مرتبط، اسناد، تصاویر یا مدارک مورد نیاز را ضمیمه کنید
-                                    </small>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 2: جزئیات بیشتر در تسک (جدید) -->
-            <div class="tab-pane" id="project-info" role="tabpanel">
-                <div class="block block-rounded">
-                    <div class="block-header block-header-default">
-                        <h3 class="block-title">جزئیات بیشتر در تسک</h3>
-                        <div class="block-options">
-                            <small class="text-muted">اطلاعات اختیاری برای دسته‌بندی بهتر</small>
-                        </div>
-                    </div>
-                    <div class="block-content">
-                        <div class="row justify-content-center">
-                            <div class="col-md-12 col-lg-10">
-                                
-                                <!-- راهنمای استفاده -->
-                                <div class="alert alert-info mb-4">
-                                    <h6><i class="fa fa-info-circle me-1"></i> درباره این بخش:</h6>
-                                    <p class="mb-2">این بخش برای دسته‌بندی و سازماندهی بهتر تسک‌ها طراحی شده و اختیاری است.</p>
-                                    <ul class="mb-0">
-                                        <li><strong>طرف حساب:</strong> برای تسک‌های مرتبط با مشتریان یا شرکای تجاری</li>
-                                        <li><strong>دسته‌بندی:</strong> برای گروه‌بندی تسک‌ها بر اساس موضوع</li>
-                                    </ul>
-                                </div>
-
-                                <!-- طرف حساب -->
-                                <div class="mb-4">
-                                    <label class="form-label" for="StakeholderId">طرف حساب</label>
+                                    <label class="form-label" for="StakeholderId">
+                                        طرف حساب
+                                        <small class="text-muted">(اختیاری)</small>
+                                    </label>
                                     <div id="StakeholdersDiv">
                                         <select asp-for="StakeholderId"
                                                 class="js-select2 form-select @(ViewData.ModelState["StakeholderId"]?.Errors.Count > 0 ? "is-invalid" : "")"
                                                 id="StakeholderId"
                                                 name="StakeholderId"
-                                                data-placeholder="ابتدا شعبه را انتخاب کنید"
+                                                data-placeholder="انتخاب طرف حساب"
                                                 data-url="@Url.Action("StakeholderTriggerSelectTaskCategories", "Tasks")"
                                                 data-toggle="multiplepartialview"
                                                 data-target-divs="TaskCategoriesDiv"
@@ -468,6 +374,134 @@
                                     </small>
                                 </div>
 
+                                <!-- کاربران منتصب با انتخاب تیم - جایگزین بخش قدیمی -->
+                                <div class="mb-4">
+                                    <label class="form-label">
+                                        کاربران منتصب <span class="text-danger">*</span>
+                                    </label>
+                                    
+                                    <div class="alert alert-info mb-3">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        برای هر کاربر باید تیم مربوطه را مشخص کنید (در صورتی که کاربر در چند تیم عضو باشد)
+                                    </div>
+
+                                    <div id="user-assignments-container">
+                                        <!-- ردیف‌های تخصیص کاربر-تیم به صورت دینامیک اضافه می‌شوند -->
+                                    </div>
+                                    
+                                    <!-- دکمه اضافه کردن کاربر جدید -->
+                                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add-user-assignment">
+                                        <i class="fa fa-plus me-1"></i> اضافه کردن کاربر
+                                    </button>
+                                    
+                                    <!-- Hidden inputs برای ارسال داده‌ها -->
+                                    <input type="hidden" id="AssignmentsSelectedTaskUserArraysString" name="AssignmentsSelectedTaskUserArraysString" />
+                                    <input type="hidden" id="UserTeamAssignmentsJson" asp-for="UserTeamAssignmentsJson" />
+                                    
+                                    @if (ViewData.ModelState["AssignmentsSelectedTaskUserArraysString"]?.Errors.Count > 0)
+                                    {
+                                        <div class="invalid-feedback d-block">
+                                            <span asp-validation-for="AssignmentsSelectedTaskUserArraysString"></span>
+                                        </div>
+                                    }
+                                    
+                                    <small class="form-text text-muted">
+                                        <i class="fa fa-users me-1"></i>
+                                        کاربرانی که این تسک به آن‌ها اختصاص داده می‌شود و تیم مربوطه
+                                    </small>
+                                </div>
+
+                                <!-- فایل‌های پیوست -->
+                                <div class="mb-4">
+                                    <label class="form-label" for="Attachments">فایل‌های پیوست</label>
+                                    <input type="file" name="Attachments" multiple class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip,.rar">
+                                    <small class="form-text text-muted">
+                                        <i class="fa fa-paperclip me-1"></i>
+                                        فایل‌های مرتبط، اسناد، تصاویر یا مدارک مورد نیاز را ضمیمه کنید
+                                    </small>
+                                </div>
+
+                                <!-- تنظیمات نمایش تسک - تیک تسک خصوصی -->
+                                <div class="mb-4">
+                                    <div class="card border-warning">
+                                        <div class="card-header bg-warning-light">
+                                            <h6 class="mb-0">
+                                                <i class="fa fa-shield-alt me-1"></i>
+                                                تنظیمات حریم خصوصی تسک
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="form-check form-switch">
+                                                <input asp-for="IsPrivate" 
+                                                       class="form-check-input" 
+                                                       type="checkbox" 
+                                                       id="IsPrivateToggle"
+                                                       onchange="togglePrivacyWarning()">
+                                                <label class="form-check-label" for="IsPrivateToggle">
+                                                    <strong>
+                                                        <i class="fa fa-lock me-1"></i>
+                                                        تسک خصوصی (محرمانه)
+                                                    </strong>
+                                                </label>
+                                            </div>
+                                            
+                                            <!-- پیام هشدار تسک خصوصی -->
+                                            <div id="privacyWarning" class="alert alert-warning mt-3" style="display: none;">
+                                                <h6 class="alert-heading">
+                                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                                    توجه: تسک خصوصی
+                                                </h6>
+                                                <hr>
+                                                <ul class="mb-0 small">
+                                                    <li><strong>فقط شما</strong> و <strong>افراد منتصب شده</strong> می‌توانند این تسک را مشاهده کنند</li>
+                                                    <li>حتی <strong>مدیران تیم</strong> و <strong>ناظران</strong> هم دسترسی نخواهند داشت</li>
+                                                    <li>این تسک در <strong>گزارشات عمومی</strong> و <strong>چارت‌های سازمانی</strong> نمایش داده نمی‌شود</li>
+                                                    <li>در صورت نیاز به <strong>نظارت</strong>، از گزینه تسک عمومی استفاده کنید</li>
+                                                </ul>
+                                            </div>
+
+                                            <small class="form-text text-muted d-block mt-2">
+                                                <i class="fa fa-info-circle me-1"></i>
+                                                <strong>تسک خصوصی:</strong> فقط شما و افراد منتسب شده می‌توانید این تسک را مشاهده کنند. 
+                                                حتی مدیران و ناظران هم دسترسی نخواهند داشت.
+                                            </small>
+                                            <small class="form-text text-muted d-block mt-1">
+                                                <i class="fa fa-unlock me-1"></i>
+                                                <strong>تسک عمومی:</strong> تسک طبق قوانین سیستم و سلسله مراتب سازمانی قابل مشاهده خواهد بود.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: جزئیات بیشتر در تسک (جدید) -->
+            <div class="tab-pane" id="project-info" role="tabpanel">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">جزئیات بیشتر در تسک</h3>
+                        <div class="block-options">
+                            <small class="text-muted">اطلاعات اختیاری برای دسته‌بندی بهتر</small>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12 col-lg-10">
+                                
+
+                                <!-- راهنمای استفاده -->
+                                <div class="alert alert-info mb-4">
+                                    <h6><i class="fa fa-info-circle me-1"></i> درباره این بخش:</h6>
+                                    <p class="mb-2">این بخش برای دسته‌بندی و سازماندهی بهتر تسک‌ها طراحی شده و اختیاری است.</p>
+                                    <ul class="mb-0">
+                                        <li><strong>دسته‌بندی:</strong> برای گروه‌بندی تسک‌ها بر اساس موضوع</li>
+                                    </ul>
+                                </div>
+
                                 <!-- دسته‌بندی تسک -->
                                 <div class="mb-4">
                                     <label class="form-label" for="TaskCategoryIdSelected">دسته‌بندی تسک</label>
@@ -475,26 +509,20 @@
                                         <select asp-for="TaskCategoryIdSelected"
                                                 id="TaskCategoryIdSelected"
                                                 name="TaskCategoryIdSelected"
-                                                class="js-select2 form-select @(ViewData.ModelState["TaskCategoryIdSelected"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                                class="js-select2 form-select"
                                                 data-placeholder="ابتدا شعبه را انتخاب کنید"
                                                 style="width: 100%;"
                                                 disabled>
                                             <option value="">انتخاب دسته‌بندی</option>
                                         </select>
                                     </div>
-                                    @if (ViewData.ModelState["TaskCategoryIdSelected"]?.Errors.Count > 0)
-                                    {
-                                        <div class="invalid-feedback d-block">
-                                            <span asp-validation-for="TaskCategoryIdSelected"></span>
-                                        </div>
-                                    }
                                     <small class="form-text text-muted">
                                         <i class="fa fa-tags me-1"></i>
                                         دسته‌بندی کمک می‌کند تسک‌ها بر اساس موضوع گروه‌بندی شوند
                                     </small>
                                 </div>
 
-                                <!-- پیغام راهنما در صورت عدم انتخاب شعبه -->
+                                <!-- پیغام راهنما -->
                                 <div class="alert alert-warning" id="project-branch-warning" style="display: none;">
                                     <h6><i class="fa fa-exclamation-triangle me-1"></i> توجه:</h6>
                                     <p class="mb-0">
@@ -510,29 +538,9 @@
                                 <div class="alert alert-light">
                                     <h6><i class="fa fa-lightbulb me-1"></i> نکته:</h6>
                                     <p class="mb-0">
-                                        انتخاب طرف حساب باعث فیلتر شدن دسته‌بندی‌های مرتبط می‌شود. 
+                                        انتخاب طرف حساب (در تب اطلاعات اصلی) باعث فیلتر شدن دسته‌بندی‌های مرتبط می‌شود. 
                                         اگر طرف حساب خاصی انتخاب نکنید، تمام دسته‌بندی‌های عمومی نمایش داده می‌شوند.
                                     </p>
-                                </div>
-
-                                <!-- آمار سریع -->
-                                <div class="row" id="project-stats" style="display: none;">
-                                    <div class="col-sm-6">
-                                        <div class="block block-rounded block-link-shadow bg-primary-light">
-                                            <div class="block-content block-content-full text-center">
-                                                <div class="fs-2 fw-bold text-primary" id="stakeholder-tasks-count">0</div>
-                                                <div class="fs-sm fw-semibold text-uppercase text-muted">تسک‌های این طرف حساب</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="block block-rounded block-link-shadow bg-success-light">
-                                            <div class="block-content block-content-full text-center">
-                                                <div class="fs-2 fw-bold text-success" id="category-tasks-count">0</div>
-                                                <div class="fs-sm fw-semibold text-uppercase text-muted">تسک‌های این دسته‌بندی</div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
 
                             </div>
@@ -774,12 +782,6 @@
                     <div class="block-content">
                         <div id="viewersList">
                             
-                            <!-- پیام انتظار -->
-                            <div class="alert alert-info" id="viewersWaiting">
-                                <i class="fa fa-info-circle me-2"></i>
-                                <strong>لیست ناظرین بر اساس انتخاب‌های شما محاسبه می‌شود</strong>
-                                <p class="mb-0 mt-2">پس از انتخاب کاربران منتصب و تیم‌ها، لیست کاملی از افرادی که می‌توانند این تسک را مشاهده کنند نمایش داده می‌شود.</p>
-                            </div>
 
                             <!-- محتوای ناظرین -->
                             <div id="viewersContent" style="display: none;">
@@ -824,24 +826,26 @@
     </script>
 
     <script>
-        // متغیرهای کمکی - اصلاح شده
+        // متغیرهای کمکی
         let operationsCounter = 0;
-        let operationsArray = []; // تغییر نام متغیر
+        let operationsArray = [];
         let remindersCounter = 0;
         let remindersList = [];
+        
+        // متغیرهای سراسری برای مدیریت User-Team Assignments
+        let userAssignments = [];
+        let availableUsers = [];
+        let availableTeams = [];
+        let assignmentCounter = 0;
 
         $(document).ready(function() {
             console.log('Document ready - شروع بارگذاری فرم');
             initializeForm();
             setupEventHandlers();
             initializeTasksManagement();
+            initializeUserAssignments();
+            autoSelectSingleBranch();
         });
-
-        function initializeTasksManagement() {
-            console.log('راه‌اندازی سیستم مدیریت کارها');
-            updateOperationsDisplay();
-            updateOperationsCount();
-        }
 
         function initializeForm() {
             console.log('شروع راه‌اندازی فرم');
@@ -875,14 +879,359 @@
             console.log('راه‌اندازی فرم کامل شد');
         }
 
+        function initializeTasksManagement() {
+            console.log('راه‌اندازی سیستم مدیریت کارها');
+            updateOperationsDisplay();
+            updateOperationsCount();
+        }
+
+        // راه‌اندازی سیستم User-Team Assignments
+        function initializeUserAssignments() {
+            $('#add-user-assignment').on('click', function() {
+                if (availableUsers.length === 0) {
+                    alert('ابتدا شعبه را انتخاب کنید');
+                    return;
+                }
+                addUserAssignmentRow();
+            });
+            
+            // هنگام تغییر شعبه، لیست کاربران و تیم‌ها را بروزرسانی کن
+            $('#BranchIdSelected').on('change', function() {
+                const branchId = $(this).val();
+                if (branchId) {
+                    loadBranchUsersAndTeams(branchId);
+                }
+            });
+        }
+
+        // انتخاب خودکار شعبه
+        function autoSelectSingleBranch() {
+            const branchSelect = $('#BranchIdSelected');
+            const options = branchSelect.find('option[value!=""]');
+            
+            if (options.length === 1) {
+                const branchId = options.first().val();
+                branchSelect.val(branchId).trigger('change');
+                
+                if (typeof toastr !== 'undefined') {
+                    toastr.info('شعبه به صورت خودکار انتخاب شد', '', {timeOut: 2000});
+                }
+            }
+        }
+
+        // بارگذاری کاربران و تیم‌های شعبه
+        function loadBranchUsersAndTeams(branchId) {
+            $.ajax({
+                url: '@Url.Action("BranchTriggerSelect", "Tasks")',
+                type: 'POST',
+                data: {
+                    branchId: branchId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'update-view' && response.viewList) {
+                        // استخراج کاربران
+                        const usersHtml = response.viewList.find(v => v.elementId === 'UsersDiv')?.view?.result;
+                        if (usersHtml) {
+                            const tempDiv = $('<div>').html(usersHtml);
+                            availableUsers = [];
+                            tempDiv.find('option[value!=""]').each(function() {
+                                availableUsers.push({
+                                    id: $(this).val(),
+                                    name: $(this).text()
+                                });
+                            });
+                        }
+                        
+                        // استخراج تیم‌ها
+                        const teamsHtml = response.viewList.find(v => v.elementId === 'TeamsDiv')?.view?.result;
+                        if (teamsHtml) {
+                            const tempDiv = $('<div>').html(teamsHtml);
+                            availableTeams = [];
+                            tempDiv.find('option[value!=""]').each(function() {
+                                availableTeams.push({
+                                    id: $(this).val(),
+                                    name: $(this).text()
+                                });
+                            });
+                        }
+                        
+                        // بروزرسانی تخصیص‌های موجود
+                        refreshUserAssignmentSelects();
+                        
+                        // بروزرسانی StakeholdersDiv
+                        const stakeholdersUpdate = response.viewList.find(v => v.elementId === 'StakeholdersDiv');
+                        if (stakeholdersUpdate) {
+                            $('#StakeholdersDiv').html(stakeholdersUpdate.view.result);
+                            $('#StakeholderId').select2({
+                                width: '100%',
+                                allowClear: true,
+                                placeholder: 'انتخاب طرف حساب'
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        // اضافه کردن ردیف جدید برای تخصیص کاربر-تیم - نسخه با پشتیبانی از "بدون تیم"
+        function addUserAssignmentRow(userId = '', teamId = '') {
+            assignmentCounter++;
+            const rowId = `assignment-row-${assignmentCounter}`;
+            const teamContainerId = `team-select-container-${assignmentCounter}`;
+
+            const userOptions = availableUsers.map(u =>
+                `<option value="${u.id}" ${u.id === userId ? 'selected' : ''}>${u.name}</option>`
+            ).join('');
+
+            const rowHtml = `
+                <div class="card mb-2 user-assignment-row" id="${rowId}" data-row-id="${assignmentCounter}">
+                    <div class="card-body p-3">
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <label class="form-label small mb-1">کاربر: <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm user-select js-select2"
+                                        data-row-id="${assignmentCounter}"
+                                        data-container-id="${teamContainerId}"
+                                        required>
+                                    <option value="">انتخاب کاربر...</option>
+                                    ${userOptions}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small mb-1">تیم: <span class="text-danger">*</span></label>
+                                <div id="${teamContainerId}">
+                                    <select class="form-select form-select-sm team-select js-select2"
+                                            data-row-id="${assignmentCounter}"
+                                            disabled>
+                                        <option value="">ابتدا کاربر را انتخاب کنید</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex justify-content-center align-items-center">
+                                <button type="button"
+                                        class="btn btn-sm btn-danger w-100 remove-assignment"
+                                        data-row-id="${assignmentCounter}">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#user-assignments-container').append(rowHtml);
+
+            const $row = $(`#${rowId}`);
+            const $userSelect = $row.find('.user-select');
+
+            // راه‌اندازی Select2
+            $userSelect.select2({
+                width: '100%',
+                dropdownParent: $row,
+                placeholder: 'انتخاب کاربر...'
+            });
+
+            // رویداد change کاربر
+            $userSelect.on('change', function() {
+                const selectedUserId = $(this).val();
+                const teamContainerId = $(this).data('container-id');
+                const branchId = $('#BranchIdSelected').val();
+
+                if (!selectedUserId || !branchId) {
+                    $(`#${teamContainerId}`).html(`
+                        <select class="form-select form-select-sm team-select" disabled>
+                            <option value="">ابتدا کاربر و شعبه را انتخاب کنید</option>
+                        </select>
+                    `);
+                    updateUserAssignmentsData();
+                    return;
+                }
+
+                // نمایش loading
+                $(`#${teamContainerId}`).html(`
+                    <div class="text-center p-2">
+                        <i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...
+                    </div>
+                `);
+
+                // AJAX
+                $.ajax({
+                    url: '@Url.Action("GetUserTeams", "Tasks")',
+                    type: 'POST',
+                    data: {
+                        userId: selectedUserId,
+                        branchId: branchId,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.status === 'update-view' && response.viewList) {
+                            // بروزرسانی HTML
+                            response.viewList.forEach(function(item) {
+                                $(`#${teamContainerId}`).html(item.view.result);
+
+                                // راه‌اندازی Select2 برای تیم
+                                const $teamSelect = $(`#${teamContainerId} .team-select`);
+                                $teamSelect.select2({
+                                    width: '100%',
+                                    dropdownParent: $row,
+                                    placeholder: 'انتخاب تیم...'
+                                });
+
+                                // رویداد change برای تیم
+                                $teamSelect.on('change', updateUserAssignmentsData);
+
+                                // ⭐ مدیریت انتخاب خودکار
+                                if (response.hasNoTeam === true) {
+                                    // اگر تیمی ندارد، گزینه "بدون تیم" (value=0) خودکار انتخاب می‌شود
+                                    $teamSelect.val('0').trigger('change');
+                                    
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.warning('این کاربر در هیچ تیمی عضو نیست - تسک به صورت فردی انجام می‌شود', '', {timeOut: 3000});
+                                    }
+                                } else {
+                                    // انتخاب خودکار اگر فقط یک تیم باشد
+                                    const options = $teamSelect.find('option[value!=""][value!="0"]');
+                                    if (options.length === 1) {
+                                        $teamSelect.val(options.first().val()).trigger('change');
+                                        
+                                        if (typeof toastr !== 'undefined') {
+                                            toastr.info(`تیم "${options.first().text()}" خودکار انتخاب شد`, '', {timeOut: 2000});
+                                        }
+                                    }
+                                }
+                            });
+
+                            updateUserAssignmentsData();
+                        } else {
+                            throw new Error(response.message || 'خطا در بارگذاری');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        $(`#${teamContainerId}`).html(`
+                            <select class="form-select form-select-sm team-select">
+                                <option value="0">بدون تیم (خطا در بارگذاری)</option>
+                            </select>
+                        `);
+
+                        // راه‌اندازی Select2 حتی در حالت خطا
+                        $(`#${teamContainerId} .team-select`).select2({
+                            width: '100%',
+                            dropdownParent: $row
+                        }).val('0').trigger('change');
+
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('خطا در بارگذاری تیم‌ها - گزینه "بدون تیم" انتخاب شد');
+                        }
+                        
+                        updateUserAssignmentsData();
+                    }
+                });
+            });
+
+            // رویداد حذف
+            $row.find('.remove-assignment').on('click', function() {
+                removeUserAssignmentRow($(this).data('row-id'));
+            });
+
+            // trigger اولیه
+            if (userId) {
+                $userSelect.val(userId).trigger('change');
+            }
+
+            updateUserAssignmentsData();
+        }
+        // حذف ردیف تخصیص
+        function removeUserAssignmentRow(rowId) {
+            $(`#assignment-row-${rowId}`).remove();
+            updateUserAssignmentsData();
+        }
+
+        // بروزرسانی سلکت‌های موجود
+        function refreshUserAssignmentSelects() {
+            $('.user-assignment-row').each(function() {
+                const rowId = $(this).data('row-id');
+                const currentUserId = $(this).find('.user-select').val();
+                const currentTeamId = $(this).find('.team-select').val();
+                
+                // بروزرسانی options
+                const userOptions = availableUsers.map(u => 
+                    `<option value="${u.id}" ${u.id === currentUserId ? 'selected' : ''}>${u.name}</option>`
+                ).join('');
+                
+                const teamOptions = availableTeams.map(t => 
+                    `<option value="${t.id}" ${t.id === currentTeamId ? 'selected' : ''}>${t.name}</option>`
+                ).join('');
+                
+                $(this).find('.user-select').html('<option value="">انتخاب کاربر...</option>' + userOptions);
+                $(this).find('.team-select').html('<option value="">انتخاب تیم...</option>' + teamOptions);
+            });
+        }
+
+               // ⭐⭐⭐ اصلاح تابع updateUserAssignmentsData
+        function updateUserAssignmentsData() {
+            const assignments = [];
+            const userTeamMap = {};
+
+            $('.user-assignment-row').each(function() {
+                let userId = $(this).find('.user-select').val();
+                const teamId = $(this).find('.team-select').val();
+
+                // ⭐⭐⭐ پاکسازی کامل userId
+                if (userId) {
+                    // تبدیل به string خالص
+                    userId = String(userId);
+
+                    // حذف تمام کاراکترهای اضافی
+                    userId = userId
+                        .replace(/[\[\]\/\s"'`]/g, '') // حذف [, ], /, space, ", ', `
+                        .trim();
+
+                    console.log('🔍 Cleaned userId:', userId, 'Length:', userId.length);
+
+                    // ⭐ بررسی معتبر بودن GUID
+                    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                    if (!guidRegex.test(userId)) {
+                        console.warn('⚠️ Invalid GUID format:', userId);
+                        return; // رد کردن این کاربر
+                    }
+                }
+
+                if (userId && teamId !== null && teamId !== undefined) {
+                    // ⭐ اضافه کردن به صورت string خالص (نه آرایه)
+                    if (!assignments.includes(userId)) {
+                        assignments.push(userId);
+                    }
+                    userTeamMap[userId] = teamId === "" ? 0 : parseInt(teamId);
+                }
+            });
+
+            // ⭐⭐⭐ تبدیل به JSON بدون nested arrays
+            const assignmentsJson = JSON.stringify(assignments);
+            const userTeamMapJson = JSON.stringify(userTeamMap);
+
+            console.log('📤 Assignments JSON:', assignmentsJson);
+            console.log('📤 UserTeamMap JSON:', userTeamMapJson);
+
+            // بررسی نهایی: آیا JSON معتبر است؟
+            if (assignmentsJson.includes('[[')) {
+                console.error('❌ NESTED ARRAY DETECTED! Fixing...');
+                // اصلاح فوری
+                const fixed = JSON.parse(assignmentsJson).flat();
+                $('#AssignmentsSelectedTaskUserArraysString').val(JSON.stringify(fixed));
+            } else {
+                $('#AssignmentsSelectedTaskUserArraysString').val(assignmentsJson);
+            }
+
+            $('#UserTeamAssignmentsJson').val(userTeamMapJson);
+        }
         function setupEventHandlers() {
             console.log('شروع تنظیم event handlers');
 
-            // مدیریت Enter key - اصلاح کامل
+            // مدیریت Enter key
             $('#js-task-input').off('keypress keydown keyup').on('keypress', function(e) {
-                console.log('Key pressed:', e.which, e.keyCode);
                 if (e.which === 13 || e.keyCode === 13) {
-                    console.log('Enter detected - calling addNewTask');
                     e.preventDefault();
                     e.stopPropagation();
                     e.stopImmediatePropagation();
@@ -891,24 +1240,10 @@
                 }
             });
 
-            // مدیریت کلیک دکمه‌ها
-            $('#addTaskBtn').off('click').on('click', function(e) {
-                console.log('Add button clicked');
+            $('#addTaskBtn, #addOperationBtn').off('click').on('click', function(e) {
                 e.preventDefault();
                 addNewTask();
                 return false;
-            });
-
-            $('#addOperationBtn').off('click').on('click', function(e) {
-                console.log('Add operation button clicked');
-                e.preventDefault();
-                addNewTask();
-                return false;
-            });
-
-            // سایر event handler ها...
-            $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds').on('change', function() {
-                updateViewersList();
             });
 
             $('#Title').on('blur input', function() {
@@ -956,17 +1291,6 @@
                 updateRemindersCount();
             });
 
-            $(document).on('change', '#StakeholderId', function() {
-                const stakeholderId = $(this).val();
-                const branchId = $('#BranchIdSelected').val();
-
-                if (stakeholderId && branchId) {
-                    loadTaskCategoriesByStakeholder(branchId, stakeholderId);
-                } else {
-                    $('#TaskCategoryIdSelected').prop('disabled', true).attr('data-placeholder', 'ابتدا طرف حساب را انتخاب کنید');
-                }
-            });
-
             $('#manualTaskCode').on('input', function() {
                 validateManualTaskCode();
             });
@@ -978,17 +1302,52 @@
             console.log('تنظیم event handlers کامل شد');
         }
 
-        // تابع اضافه کردن کار جدید - کاملاً اصلاح شده
-        function addNewTask() {
-            console.log('addNewTask called');
+        // مدیریت نمایش هشدار تسک خصوصی
+        function togglePrivacyWarning() {
+            const isPrivate = $('#IsPrivateToggle').is(':checked');
+            const warningDiv = $('#privacyWarning');
+            
+            if (isPrivate) {
+                warningDiv.slideDown(300);
+                
+                // نمایش تأییدیه
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'تسک خصوصی',
+                        html: `
+                            <div class="text-start">
+                                <p>با فعال کردن این گزینه:</p>
+                                <ul class="text-muted">
+                                    <li>فقط شما و افراد منتسب شده می‌توانند تسک را ببینند</li>
+                                    <li>مدیران و ناظران دسترسی نخواهند داشت</li>
+                                    <li>تسک در گزارشات عمومی نمایش داده نمی‌شود</li>
+                                </ul>
+                                <p class="mb-0"><strong>آیا مطمئن هستید؟</strong></p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'بله، خصوصی باشد',
+                        cancelButtonText: 'انصراف',
+                        confirmButtonColor: '#f0ad4e'
+                    }).then((result) => {
+                        if (!result.isConfirmed) {
+                            $('#IsPrivateToggle').prop('checked', false);
+                            warningDiv.slideUp(300);
+                        }
+                    });
+                }
+            } else {
+                warningDiv.slideUp(300);
+            }
+        }
 
+        // بقیه توابع مانند قبل...
+        function addNewTask() {
             const taskInput = $('#js-task-input');
             const taskText = taskInput.val().trim();
 
-            console.log('Task text:', taskText);
-
             if (!taskText) {
-                console.log('متن کار خالی است');
                 taskInput.focus();
                 return false;
             }
@@ -996,20 +1355,11 @@
             operationsCounter++;
             const taskId = operationsCounter;
 
-            console.log('اضافه کردن کار:', taskText, 'با ID:', taskId);
-
-            // HTML ساده بدون چک‌باکس و ستاره
             const taskHtml = `
-                <div class="js-task border rounded p-3 mb-2 bg-light animated fadeIn"
-                     data-task-id="${taskId}">
+                <div class="js-task border rounded p-3 mb-2 bg-light animated fadeIn" data-task-id="${taskId}">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div class="js-task-content fw-medium">
-                            ${taskText}
-                        </div>
-                        <button class="btn btn-sm btn-outline-danger"
-                                type="button"
-                                onclick="removeTask(${taskId})"
-                                title="حذف کار">
+                        <div class="js-task-content fw-medium">${taskText}</div>
+                        <button class="btn btn-sm btn-outline-danger" type="button" onclick="removeTask(${taskId})" title="حذف کار">
                             <i class="fa fa-times"></i>
                         </button>
                     </div>
@@ -1017,23 +1367,15 @@
             `;
 
             $('#operationsList').append(taskHtml);
-
-            // پاک کردن input
-            taskInput.val('');
-
-            // بروزرسانی نمایش
+            taskInput.val('').focus();
+            
             updateOperationsDisplay();
             updateOperationsCount();
             extractOperationsData();
 
-            // فوکوس مجدد
-            taskInput.focus();
-
-            console.log(`کار "${taskText}" با موفقیت اضافه شد. تعداد کل: ${operationsCounter}`);
             return false;
         }
 
-        // تابع حذف کار - اصلاح شده
         function removeTask(taskId) {
             if (confirm('آیا از حذف این کار اطمینان دارید؟')) {
                 $(`[data-task-id="${taskId}"]`).remove();
@@ -1043,14 +1385,11 @@
             }
         }
 
-        // استخراج داده‌های کارها - اصلاح شده
         function extractOperationsData() {
-            const currentOperations = []; // تغییر نام متغیر محلی
+            const currentOperations = [];
 
             $('#operationsList .js-task').each(function(index) {
-                const $task = $(this);
-                const title = $task.find('.js-task-content').text().trim();
-
+                const title = $(this).find('.js-task-content').text().trim();
                 if (title) {
                     currentOperations.push({
                         Title: title,
@@ -1062,80 +1401,46 @@
                 }
             });
 
-            const jsonData = JSON.stringify(currentOperations);
-            $('#taskOperationsData').val(jsonData);
-
-            console.log('عملیات‌ها استخراج شد:', currentOperations);
-            console.log('JSON داده:', jsonData);
+            $('#taskOperationsData').val(JSON.stringify(currentOperations));
         }
 
-        // تابع بروزرسانی نمایش
         function updateOperationsDisplay() {
             const tasksCount = $('#operationsList .js-task').length;
-
-            if (tasksCount === 0) {
-                $('#emptyOperationsList').show();
-                $('#operationsList').hide();
-            } else {
-                $('#emptyOperationsList').hide();
-                $('#operationsList').show();
-            }
+            $('#emptyOperationsList').toggle(tasksCount === 0);
+            $('#operationsList').toggle(tasksCount > 0);
         }
 
-        // تابع بروزرسانی شمارش
         function updateOperationsCount() {
             const tasksCount = $('#operationsList .js-task').length;
-            $('#operations-count').text(tasksCount);
-            $('#operationsBadge').text(tasksCount);
+            $('#operations-count, #operationsBadge').text(tasksCount);
         }
 
-        // باقی توابع بدون تغییر...
         function updateRemindersCount() {
-            let count = 0;
-            if ($('#defaultReminder').is(':checked')) {
-                count++;
-            }
+            let count = $('#defaultReminder').is(':checked') ? 1 : 0;
             count += $('#customRemindersList .card').length;
             $('#reminders-count').text(count);
         }
 
         function toggleTaskCodeInput() {
             const isManual = $('#toggleManualCode').is(':checked');
-            if (isManual) {
-                $('#automaticCodeDiv').hide();
-                $('#manualCodeDiv').show();
-                $('#manualTaskCode').focus();
-            } else {
-                $('#automaticCodeDiv').show();
-                $('#manualCodeDiv').hide();
-            }
+            $('#automaticCodeDiv').toggle(!isManual);
+            $('#manualCodeDiv').toggle(isManual);
+            if (isManual) $('#manualTaskCode').focus();
         }
 
         function validateMainInfo() {
             let hasErrors = false;
+            
             const title = $('#Title').val().trim();
-            if (!title) {
-                $('#Title').addClass('is-invalid').removeClass('is-valid');
-                hasErrors = true;
-            } else {
-                $('#Title').removeClass('is-invalid').addClass('is-valid');
-            }
+            $('#Title').toggleClass('is-invalid', !title).toggleClass('is-valid', !!title);
+            hasErrors = hasErrors || !title;
 
             const branchId = $('#BranchIdSelected').val();
-            if (!branchId) {
-                $('#BranchIdSelected').addClass('is-invalid').removeClass('is-valid');
-                $('#BranchIdSelected').next('.select2-container').addClass('select2-invalid');
-                hasErrors = true;
-            } else {
-                $('#BranchIdSelected').removeClass('is-invalid').addClass('is-valid');
-                $('#BranchIdSelected').next('.select2-container').removeClass('select2-invalid');
-            }
+            $('#BranchIdSelected').toggleClass('is-invalid', !branchId).toggleClass('is-valid', !!branchId);
+            $('#BranchIdSelected').next('.select2-container').toggleClass('select2-invalid', !branchId);
+            hasErrors = hasErrors || !branchId;
 
-            if (hasErrors) {
-                $('#main-info-error').removeClass('d-none');
-            } else {
-                $('#main-info-error').addClass('d-none');
-            }
+            $('#main-info-error').toggleClass('d-none', !hasErrors);
             return !hasErrors;
         }
 
@@ -1146,34 +1451,50 @@
             $('.is-invalid').removeClass('is-invalid');
             $('.select2-invalid').removeClass('select2-invalid');
 
+            // بررسی عنوان
             const title = $('#Title').val().trim();
             if (!title) {
                 isValid = false;
                 errors.push('عنوان تسک الزامی است');
                 $('#Title').addClass('is-invalid');
                 $('#main-info-tab').tab('show');
-                setTimeout(function() { $('#Title').focus(); }, 100);
             }
 
+            // بررسی شعبه
             const branchId = $('#BranchIdSelected').val();
             if (!branchId) {
                 isValid = false;
                 errors.push('انتخاب شعبه الزامی است');
-                $('#BranchIdSelected').addClass('is-invalid');
-                $('#BranchIdSelected').next('.select2-container').addClass('select2-invalid');
+                $('#BranchIdSelected').addClass('is-invalid').next('.select2-container').addClass('select2-invalid');
                 $('#main-info-tab').tab('show');
-                setTimeout(function() { $('#BranchIdSelected').select2('open'); }, 100);
             }
 
-            const selectedUsers = $('#AssignmentsSelectedTaskUserArraysString').val() || [];
-            const selectedTeams = $('#AssignmentsSelectedTeamIds').val() || [];
-
-            if (selectedUsers.length === 0 && selectedTeams.length === 0) {
+            // بررسی تخصیص کاربران
+            const assignedUsers = JSON.parse($('#AssignmentsSelectedTaskUserArraysString').val() || '[]');
+            if (assignedUsers.length === 0) {
                 isValid = false;
-                errors.push('لطفاً حداقل یک کاربر یا تیم را برای انجام تسک انتخاب کنید');
+                errors.push('لطفاً حداقل یک کاربر را برای انجام تسک انتخاب کنید');
                 $('#main-info-tab').tab('show');
             }
 
+            // بررسی تکمیل بودن تیم برای هر کاربر
+            let hasIncompleteAssignment = false;
+            $('.user-assignment-row').each(function() {
+                const userId = $(this).find('.user-select').val();
+                const teamId = $(this).find('.team-select').val();
+                
+                if (userId && !teamId) {
+                    isValid = false;
+                    hasIncompleteAssignment = true;
+                    $(this).find('.team-select').addClass('is-invalid');
+                }
+            });
+
+            if (hasIncompleteAssignment) {
+                errors.push('لطفاً برای تمام کاربران منتصب، تیم مربوطه را انتخاب کنید');
+            }
+
+            // بررسی کد دستی
             const isManualCode = $('#toggleManualCode').is(':checked');
             if (isManualCode) {
                 const manualCode = $('#manualTaskCode').val().trim();
@@ -1181,39 +1502,33 @@
                     isValid = false;
                     errors.push('لطفاً کد تسک را وارد کنید');
                     $('#manualTaskCode').addClass('is-invalid');
-                } else if (!validateManualTaskCode()) {
-                    isValid = false;
-                    errors.push('کد تسک وارد شده معتبر نیست');
                 } else if ($('#manualTaskCode').hasClass('is-invalid')) {
                     isValid = false;
                     errors.push('کد تسک وارد شده تکراری یا نامعتبر است');
                 }
             }
 
-            if (!isValid) {
-                let errorMessage = 'لطفاً خطاهای زیر را رفع کنید:\n\n' + errors.join('\n');
+            if (!isValid && errors.length > 0) {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         title: 'خطا در اعتبارسنجی',
-                        text: errorMessage,
+                        html: '<div class="text-start"><ul class="mb-0">' + 
+                              errors.map(e => `<li>${e}</li>`).join('') + 
+                              '</ul></div>',
                         icon: 'error',
                         confirmButtonText: 'متوجه شدم'
                     });
                 } else {
-                    alert(errorMessage);
+                    alert('لطفاً خطاهای زیر را رفع کنید:\n\n' + errors.join('\n'));
                 }
-                $('#main-info-tab').tab('show');
             }
+
             return isValid;
         }
 
         function updateBranchDependentSelects() {
             const branchId = $('#BranchIdSelected').val();
-            if (!branchId) {
-                $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds, #StakeholderId, #TaskCategoryIdSelected').prop('disabled', true);
-                return;
-            }
-            $('#AssignmentsSelectedTaskUserArraysString, #AssignmentsSelectedTeamIds, #StakeholderId').prop('disabled', false);
+            $('#StakeholderId, #TaskCategoryIdSelected').prop('disabled', !branchId);
         }
 
         function validateManualTaskCode() {
@@ -1225,22 +1540,14 @@
                 return true;
             }
 
-            if (manualCode.startsWith(systemPrefix + '-')) {
-                $('#manualTaskCode').addClass('is-invalid').removeClass('is-valid');
-                return false;
-            }
-
-            $('#manualTaskCode').addClass('is-valid').removeClass('is-invalid');
-            return true;
+            const isValid = !manualCode.startsWith(systemPrefix + '-');
+            $('#manualTaskCode').toggleClass('is-invalid', !isValid).toggleClass('is-valid', isValid);
+            return isValid;
         }
 
         function checkTaskCodeUniqueness() {
             const taskCode = $('#manualTaskCode').val().trim();
-            if (!taskCode || !validateManualTaskCode()) {
-                return;
-            }
-
-            $('#manualTaskCode').addClass('is-loading');
+            if (!taskCode || !validateManualTaskCode()) return;
 
             $.ajax({
                 url: '@Url.Action("CheckTaskCodeUniqueness", "Tasks")',
@@ -1250,7 +1557,6 @@
                     __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
                 },
                 success: function(response) {
-                    $('#manualTaskCode').removeClass('is-loading');
                     if (response.success && response.isUnique) {
                         $('#manualTaskCode').addClass('is-valid').removeClass('is-invalid');
                         $('#taskCodeMessages').html('<small class="text-success"><i class="fa fa-check me-1"></i>کد تسک معتبر و منحصر به فرد است</small>');
@@ -1258,38 +1564,6 @@
                         $('#manualTaskCode').addClass('is-invalid').removeClass('is-valid');
                         $('#taskCodeMessages').html('<small class="text-danger"><i class="fa fa-times me-1"></i>این کد تسک قبلاً استفاده شده است</small>');
                     }
-                },
-                error: function() {
-                    $('#manualTaskCode').removeClass('is-loading is-valid').addClass('is-invalid');
-                    $('#taskCodeMessages').html('<small class="text-danger"><i class="fa fa-exclamation-triangle me-1"></i>خطا در بررسی کد تسک</small>');
-                }
-            });
-        }
-
-        function loadTaskCategoriesByStakeholder(branchId, stakeholderId) {
-            $.ajax({
-                url: '@Url.Action("StakeholderTriggerSelectTaskCategories", "Tasks")',
-                type: 'POST',
-                data: {
-                    stakeholderId: stakeholderId,
-                    BranchIdSelected: branchId,
-                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                },
-                success: function(response) {
-                    if (response.status === 'update-view' && response.viewList && response.viewList.length > 0) {
-                        const taskCategoriesUpdate = response.viewList.find(v => v.elementId === 'TaskCategoriesDiv');
-                        if (taskCategoriesUpdate) {
-                            $('#TaskCategoriesDiv').html(taskCategoriesUpdate.view.result);
-                            $('#TaskCategoriesDiv .js-select2').select2({
-                                width: '100%',
-                                allowClear: true,
-                                containerCssClass: 'select2-validation'
-                            });
-                        }
-                    }
-                },
-                error: function() {
-                    console.error('خطا در بارگذاری دسته‌بندی‌ها');
                 }
             });
         }
@@ -1305,198 +1579,28 @@
             }
 
             let previewHtml = '<div class="row">';
-            if (startDate) {
-                previewHtml += `<div class="col-sm-4"><strong>شروع:</strong> ${startDate}</div>`;
-            }
-            if (dueDate) {
-                previewHtml += `<div class="col-sm-4"><strong>مهلت:</strong> ${dueDate}</div>`;
-            }
-            if (estimatedHours) {
-                previewHtml += `<div class="col-sm-4"><strong>مدت تخمینی:</strong> ${estimatedHours} ساعت</div>`;
-            }
+            if (startDate) previewHtml += `<div class="col-sm-4"><strong>شروع:</strong> ${startDate}</div>`;
+            if (dueDate) previewHtml += `<div class="col-sm-4"><strong>مهلت:</strong> ${dueDate}</div>`;
+            if (estimatedHours) previewHtml += `<div class="col-sm-4"><strong>مدت تخمینی:</strong> ${estimatedHours} ساعت</div>`;
             previewHtml += '</div>';
 
             $('#timePreviewContent').html(previewHtml);
             $('#timePreview').show();
         }
 
-        function updateProjectStats() {
-            const stakeholderId = $('#StakeholderId').val();
-            const categoryId = $('#TaskCategoryIdSelected').val();
-
-            if (!stakeholderId && !categoryId) {
-                $('#project-stats').hide();
-                return;
-            }
-
-            $.ajax({
-                url: '@Url.Action("GetProjectStats", "Tasks")',
-                type: 'POST',
-                data: {
-                    stakeholderId: stakeholderId,
-                    categoryId: categoryId,
-                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                },
-                success: function(response) {
-                    if (response.success) {
-                        $('#stakeholder-tasks-count').text(response.stakeholderTasksCount || 0);
-                        $('#category-tasks-count').text(response.categoryTasksCount || 0);
-                        $('#project-stats').show();
-                    }
-                },
-                error: function() {
-                    $('#project-stats').hide();
-                }
-            });
-        }
-
         function checkProjectTabRequirements() {
             const branchId = $('#BranchIdSelected').val();
-            if (!branchId) {
-                $('#project-branch-warning').show();
-            } else {
-                $('#project-branch-warning').hide();
-            }
+            $('#project-branch-warning').toggle(!branchId);
         }
 
-        $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
-            const $button = $(this);
-            const $modal = $button.closest('.modal');
-            const $form = $modal.find('#customReminderForm');
-
-            if ($form.length === 0) return;
-
-            event.preventDefault();
-            $button.prop('disabled', true);
-
-            const formData = new FormData($form[0]);
-
-            $.ajax({
-                url: $form.attr("action"),
-                type: "POST",
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function (response) {
-                    if (response.status === "temp-save") {
-                        addReminderToList(response.data);
-                        $modal.find('[data-bs-dismiss="modal"]').click();
-
-                        if (response.message && response.message.length > 0) {
-                            response.message.forEach(msg => {
-                                if (typeof toastr !== 'undefined') {
-                                    toastr.success(msg.text);
-                                } else {
-                                    alert(msg.text);
-                                }
-                            });
-                        }
-                    } else if (response.status === "validation-error") {
-                        if (response.message && response.message.length > 0) {
-                            response.message.forEach(msg => {
-                                if (typeof toastr !== 'undefined') {
-                                    toastr.error(msg.text);
-                                } else {
-                                    alert('خطا: ' + msg.text);
-                                }
-                            });
-                        }
-                        $button.prop('disabled', false);
-                    } else if (response.status === "error") {
-                        if (response.message && response.message.length > 0) {
-                            response.message.forEach(msg => {
-                                if (typeof toastr !== 'undefined') {
-                                    toastr.error(msg.text);
-                                } else {
-                                    alert('خطا: ' + msg.text);
-                                }
-                            });
-                        }
-                        $button.prop('disabled', false);
-                    }
-                },
-                error: function (xhr) {
-                    $button.prop('disabled', false);
-                    console.error('خطا در AJAX:', xhr);
-
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error('خطا در ارتباط با سرور');
-                    } else {
-                        alert('خطا در ارتباط با سرور');
-                    }
-                }
-            });
-        });
-
-        function addReminderToList(reminderData) {
-            const reminderId = Date.now();
-            let typeText = '';
-            let scheduleText = '';
-
-            switch(parseInt(reminderData.ReminderType)) {
-                case 1:
-                    typeText = 'تکراری';
-                    scheduleText = `هر ${reminderData.IntervalDays} روز`;
-                    break;
-                case 2:
-                    typeText = 'قبل از مهلت';
-                    scheduleText = `${reminderData.DaysBeforeDeadline} روز قبل`;
-                    break;
-                case 0:
-                default:
-                    typeText = 'یکبار';
-                    scheduleText = reminderData.StartDate ? `در ${reminderData.StartDate}` : 'در زمان مشخص';
-                    break;
-            }
-
-            const reminderHtml = `
-                <div class="card border-warning mb-3" data-reminder-id="${reminderId}">
-                    <div class="card-header bg-warning-light">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">
-                                <i class="fa fa-bell-o me-1"></i>
-                                ${reminderData.Title}
-                            </h6>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeReminder(${reminderId})">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <p class="mb-2">${reminderData.Description || 'بدون پیام اضافی'}</p>
-                                <small class="text-muted">
-                                    <i class="fa fa-clock me-1"></i>نوع: ${typeText} |
-                                    <i class="fa fa-calendar me-1"></i>زمان‌بندی: ${scheduleText} |
-                                    <i class="fa fa-bell me-1"></i>ساعت: ${reminderData.NotificationTime || '09:00'}
-                                </small>
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <span class="badge bg-warning text-dark">سفارشی</span>
-                            </div>
-                        </div>
-
-                        <input type="hidden" class="reminder-data"
-                               data-title="${reminderData.Title}"
-                               data-description="${reminderData.Description || ''}"
-                               data-type="${reminderData.ReminderType}"
-                               data-time="${reminderData.NotificationTime || '09:00:00'}"
-                               data-interval="${reminderData.IntervalDays || ''}"
-                               data-days-before="${reminderData.DaysBeforeDeadline || ''}"
-                               data-start-date="${reminderData.StartDate || ''}">
-                    </div>
-                </div>
-            `;
-
-            $('#customRemindersList').append(reminderHtml);
-            updateRemindersCount();
+        function updateAllHiddenInputs() {
             updateRemindersData();
+            extractOperationsData();
+            updateUserAssignmentsData();
         }
 
         function updateRemindersData() {
             remindersList = [];
-
             if ($('#defaultReminder').is(':checked')) {
                 remindersList.push({
                     Title: 'یادآوری پیش‌فرض سیستم',
@@ -1505,7 +1609,7 @@
                     NotificationTime: '09:00:00'
                 });
             }
-
+    
             $('#customRemindersList .reminder-data').each(function() {
                 const data = $(this).data();
                 const reminderObj = {
@@ -1574,5 +1678,315 @@
             updateRemindersData();
             extractOperationsData();
         }
+    </script>
+
+    @* اضافه کردن در انتهای بخش Scripts *@
+    
+    <script>
+        // متغیرهای سراسری برای مدیریت User-Team Assignments
+        let userAssignments = [];
+        let availableUsers = [];
+        let availableTeams = [];
+        let assignmentCounter = 0;
+
+        $(document).ready(function() {
+            // ... کدهای موجود ...
+            
+            initializeUserAssignments();
+            
+            // انتخاب خودکار شعبه اگر فقط یک شعبه در دسترس باشد
+            autoSelectSingleBranch();
+        });
+
+        // انتخاب خودکار شعبه
+        function autoSelectSingleBranch() {
+            const branchSelect = $('#BranchIdSelected');
+            const options = branchSelect.find('option[value!=""]');
+            
+            if (options.length === 1) {
+                const branchId = options.first().val();
+                branchSelect.val(branchId).trigger('change');
+                
+                if (typeof toastr !== 'undefined') {
+                    toastr.info('شعبه به صورت خودکار انتخاب شد', '', {timeOut: 2000});
+                }
+            }
+        }
+
+        // راه‌اندازی سیستم User-Team Assignments
+        function initializeUserAssignments() {
+            $('#add-user-assignment').on('click', function() {
+                if (availableUsers.length === 0) {
+                    alert('ابتدا شعبه را انتخاب کنید');
+                    return;
+                }
+                addUserAssignmentRow();
+            });
+            
+            // هنگام تغییر شعبه، لیست کاربران و تیم‌ها را بروزرسانی کن
+            $('#BranchIdSelected').on('change', function() {
+                const branchId = $(this).val();
+                if (branchId) {
+                    loadBranchUsersAndTeams(branchId);
+                }
+            });
+        }
+
+        // بارگذاری کاربران و تیم‌های شعبه
+        function loadBranchUsersAndTeams(branchId) {
+            $.ajax({
+                url: '@Url.Action("BranchTriggerSelect", "Tasks")',
+                type: 'POST',
+                data: {
+                    branchId: branchId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'update-view' && response.viewList) {
+                        // استخراج کاربران
+                        const usersHtml = response.viewList.find(v => v.elementId === 'UsersDiv')?.view?.result;
+                        if (usersHtml) {
+                            const tempDiv = $('<div>').html(usersHtml);
+                            availableUsers = [];
+                            tempDiv.find('option[value!=""]').each(function() {
+                                availableUsers.push({
+                                    id: $(this).val(),
+                                    name: $(this).text()
+                                });
+                            });
+                        }
+                        
+                        // استخراج تیم‌ها
+                        const teamsHtml = response.viewList.find(v => v.elementId === 'TeamsDiv')?.view?.result;
+                        if (teamsHtml) {
+                            const tempDiv = $('<div>').html(teamsHtml);
+                            availableTeams = [];
+                            tempDiv.find('option[value!=""]').each(function() {
+                                availableTeams.push({
+                                    id: $(this).val(),
+                                    name: $(this).text()
+                                });
+                            });
+                        }
+                        
+                        // بروزرسانی تخصیص‌های موجود
+                        refreshUserAssignmentSelects();
+                        
+                        // بروزرسانی StakeholdersDiv
+                        const stakeholdersUpdate = response.viewList.find(v => v.elementId === 'StakeholdersDiv');
+                        if (stakeholdersUpdate) {
+                            $('#StakeholdersDiv').html(stakeholdersUpdate.view.result);
+                            $('#StakeholderId').select2({
+                                width: '100%',
+                                allowClear: true,
+                                placeholder: 'انتخاب طرف حساب'
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        // اضافه کردن ردیف جدید برای تخصیص کاربر-تیم
+        function addUserAssignmentRow(userId = '', teamId = '') {
+            assignmentCounter++;
+            const rowId = `assignment-row-${assignmentCounter}`;
+            
+            const userOptions = availableUsers.map(u => 
+                `<option value="${u.id}" ${u.id === userId ? 'selected' : ''}>${u.name}</option>`
+            ).join('');
+            
+            const teamOptions = availableTeams.map(t => 
+                `<option value="${t.id}" ${t.id === teamId ? 'selected' : ''}>${t.name}</option>`
+            ).join('');
+            
+            const rowHtml = `
+                <div class="row mb-2 user-assignment-row" id="${rowId}" data-row-id="${assignmentCounter}">
+                    <div class="col-md-5">
+                        <select class="form-select user-select" data-row-id="${assignmentCounter}" required>
+                            <option value="">انتخاب کاربر...</option>
+                            ${userOptions}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <select class="form-select team-select" data-row-id="${assignmentCounter}" required>
+                            <option value="">انتخاب تیم...</option>
+                            ${teamOptions}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-sm btn-danger remove-assignment" data-row-id="${assignmentCounter}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            $('#user-assignments-container').append(rowHtml);
+            
+            // فعال‌سازی Select2 برای سلکت‌های جدید
+            $(`#${rowId} .user-select, #${rowId} .team-select`).select2({
+                width: '100%',
+                dropdownParent: $('#user-assignments-container')
+            });
+            
+            // رویدادها
+            $(`#${rowId} .user-select, #${rowId} .team-select`).on('change', updateUserAssignmentsData);
+            $(`#${rowId} .remove-assignment`).on('click', function() {
+                removeUserAssignmentRow($(this).data('row-id'));
+            });
+            
+            updateUserAssignmentsData();
+        }
+
+        // حذف ردیف تخصیص
+        function removeUserAssignmentRow(rowId) {
+            $(`#assignment-row-${rowId}`).remove();
+            updateUserAssignmentsData();
+        }
+
+        // بروزرسانی سلکت‌های موجود
+        function refreshUserAssignmentSelects() {
+            $('.user-assignment-row').each(function() {
+                const rowId = $(this).data('row-id');
+                const currentUserId = $(this).find('.user-select').val();
+                const currentTeamId = $(this).find('.team-select').val();
+                
+                // بروزرسانی options
+                const userOptions = availableUsers.map(u => 
+                    `<option value="${u.id}" ${u.id === currentUserId ? 'selected' : ''}>${u.name}</option>`
+                ).join('');
+                
+                const teamOptions = availableTeams.map(t => 
+                    `<option value="${t.id}" ${t.id === currentTeamId ? 'selected' : ''}>${t.name}</option>`
+                ).join('');
+                
+                $(this).find('.user-select').html('<option value="">انتخاب کاربر...</option>' + userOptions);
+                $(this).find('.team-select').html('<option value="">انتخاب تیم...</option>' + teamOptions);
+            });
+        }
+
+        // بروزرسانی داده‌های hidden inputs
+        function updateUserAssignmentsData() {
+            const assignments = [];
+            const userTeamMap = {};
+            
+            $('.user-assignment-row').each(function() {
+                const userId = $(this).find('.user-select').val();
+                const teamId = $(this).find('.team-select').val();
+                
+                // ⭐ پذیرش teamId = 0 (بدون تیم) به عنوان مقدار معتبر
+                if (userId && teamId !== '' && teamId !== null) {
+                    if (!assignments.includes(userId)) {
+                        assignments.push(userId);
+                    }
+                    // ⭐ ذخیره 0 برای "بدون تیم"
+                    userTeamMap[userId] = parseInt(teamId);
+                }
+            });
+            
+            // بروزرسانی hidden inputs
+            $('#AssignmentsSelectedTaskUserArraysString').val(JSON.stringify(assignments));
+            $('#UserTeamAssignmentsJson').val(JSON.stringify(userTeamMap));
+            
+            console.log('User assignments updated:', {
+                users: assignments,
+                teams: userTeamMap
+            });
+        }
+
+        // اصلاح تابع validateFormBeforeSubmit موجود
+        const originalValidateFormBeforeSubmit = validateFormBeforeSubmit;
+        validateFormBeforeSubmit = function() {
+            let isValid = originalValidateFormBeforeSubmit();
+            
+            // اعتبارسنجی User-Team Assignments
+            const assignedUsers = JSON.parse($('#AssignmentsSelectedTaskUserArraysString').val() || '[]');
+            const selectedTeams = $('#AssignmentsSelectedTeamIds').val() || [];
+            
+            if (assignedUsers.length === 0 && selectedTeams.length === 0) {
+                isValid = false;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'خطا در اعتبارسنجی',
+                        text: 'لطفاً حداقل یک کاربر یا تیم را برای انجام تسک انتخاب کنید',
+                        icon: 'error',
+                        confirmButtonText: 'متوجه شدم'
+                    });
+                }
+            }
+            
+            // بررسی تکمیل بودن تیم برای هر کاربر
+            $('.user-assignment-row').each(function() {
+                const userId = $(this).find('.user-select').val();
+                const teamId = $(this).find('.team-select').val();
+                
+                if (userId && !teamId) {
+                    isValid = false;
+                    $(this).find('.team-select').addClass('is-invalid');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'خطا در اعتبارسنجی',
+                            text: 'لطفاً برای تمام کاربران منتصب، تیم مربوطه را انتخاب کنید',
+                            icon: 'error',
+                            confirmButtonText: 'متوجه شدم'
+                        });
+                    }
+                    return false;
+                }
+            });
+            
+            return isValid;
+        };
+
+        // مدیریت نمایش هشدار تسک خصوصی
+        function togglePrivacyWarning() {
+            const isPrivate = $('#IsPrivateToggle').is(':checked');
+            const warningDiv = $('#privacyWarning');
+            
+            if (isPrivate) {
+                warningDiv.slideDown(300);
+                
+                // نمایش تأییدیه
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'تسک خصوصی',
+                        html: `
+
+                            <div class="text-start">
+                                <p>با فعال کردن این گزینه:</p>
+                                <ul class="text-muted">
+                                    <li>فقط شما و افراد منتسب شده می‌توانند تسک را ببینند</li>
+                                    <li>مدیران و ناظران دسترسی نخواهند داشت</li>
+                                    <li>تسک در گزارشات عمومی نمایش داده نمی‌شود</li>
+                                </ul>
+                                <p class="mb-0"><strong>آیا مطمئن هستید؟</strong></p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'بله، خصوصی باشد',
+                        cancelButtonText: 'انصراف',
+                        confirmButtonColor: '#f0ad4e'
+                    }).then((result) => {
+                        if (!result.isConfirmed) {
+                            $('#IsPrivateToggle').prop('checked', false);
+                            warningDiv.slideUp(300);
+                        }
+                    });
+                }
+            } else {
+                warningDiv.slideUp(300);
+            }
+        }
+
+        // بررسی وضعیت اولیه هنگام لود صفحه
+        $(document).ready(function() {
+            if ($('#IsPrivateToggle').is(':checked')) {
+                $('#privacyWarning').show();
+            }
+            
+            // ... بقیه کدهای ready ...
+        });
     </script>
 }

@@ -1,0 +1,119 @@
+﻿@model StakeholderOrganizationMemberViewModel
+@{
+    ViewData["Title"] = "افزودن عضو به واحد سازمانی";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-user-plus me-2"></i>
+            @ViewData["Title"]
+        </h3>
+        <div class="block-options">
+            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="history.back()">
+                <i class="fa fa-arrow-right me-1"></i> بازگشت
+            </button>
+        </div>
+    </div>
+
+    <div class="block-content block-content-full">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    افزودن عضو به واحد: <strong>@ViewBag.OrganizationTitle</strong>
+                </div>
+
+                <form asp-action="AddOrganizationMember" method="post">
+                    <input type="hidden" asp-for="OrganizationId" />
+
+                    <div class="mb-4">
+                        <label asp-for="ContactId" class="form-label"></label>
+                        <select asp-for="ContactId" class="form-select" asp-items="ViewBag.AvailableContacts">
+                            <option value="">-- انتخاب کنید --</option>
+                        </select>
+                        <span asp-validation-for="ContactId" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            از بین افراد مرتبط با طرف حساب انتخاب کنید
+                        </small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="PositionId" class="form-label"></label>
+                        <select asp-for="PositionId" class="form-select" asp-items="ViewBag.Positions">
+                            <option value="">-- بدون سمت --</option>
+                        </select>
+                        <span asp-validation-for="PositionId" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            سمت این عضو در واحد سازمانی
+                        </small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="JoinDate" class="form-label"></label>
+                        <input asp-for="JoinDate" type="text" class="form-control date-picker" 
+                               placeholder="1403/01/01" />
+                        <span asp-validation-for="JoinDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="3" 
+                                  placeholder="یادداشت‌های مربوط به این عضویت..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsSupervisor" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsSupervisor" class="form-check-label"></label>
+                            <small class="form-text text-muted d-block">
+                                اگر فعال شود، این عضو نقش ناظر در واحد را خواهد داشت
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                            <label asp-for="IsActive" class="form-check-label"></label>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-secondary w-100" onclick="history.back()">
+                                <i class="fa fa-times me-1"></i> انصراف
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fa fa-check me-1"></i> ذخیره
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/assets/js/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/assets/js/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.fa.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.date-picker').datepicker({
+                format: 'yyyy/mm/dd',
+                language: 'fa',
+                autoclose: true,
+                todayHighlight: true
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/assets/js/plugins/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+}

@@ -169,7 +169,6 @@ namespace MahERP.DataModelLayer.Repository
                 var userHasAccess = _context.BranchUser_Tbl
                     .Any(bu => bu.BranchId == branchId && bu.UserId == userId && bu.IsActive);
                 
-                // اگر کاربر ادمین نیست و دسترسی به شعبه ندارد
                 bool isAdmin = _userManagerRepository.GetUserInfoData(userId) != null;
                 if (!isAdmin && !userHasAccess)
                     return null;
@@ -217,20 +216,23 @@ namespace MahERP.DataModelLayer.Repository
                 .ThenBy(bu => bu.User.FirstName)
                 .ToList();
 
-            // دریافت طرف حساب‌های شعبه
-            var stakeholderIds = _context.StakeholderBranch_Tbl
-                .Where(sb => sb.BranchId == branchId && sb.IsActive)
-                .Select(sb => sb.StakeholderId);
-
-            var stakeholdersQuery = _context.Stakeholder_Tbl
-                .Where(s => stakeholderIds.Contains(s.Id) && !s.IsDeleted);
+            // ✅ دریافت StakeholderBranch به جای Stakeholder
+            var stakeholderBranchesQuery = _context.StakeholderBranch_Tbl
+                .Include(sb => sb.Stakeholder)
+                .Include(sb => sb.AssignedBy)
+                .Where(sb => sb.BranchId == branchId && sb.IsActive && !sb.Stakeholder.IsDeleted);
 
             if (!includeInactiveStakeholders)
-                stakeholdersQuery = stakeholdersQuery.Where(s => s.IsActive);
+                stakeholderBranchesQuery = stakeholderBranchesQuery.Where(sb => sb.Stakeholder.IsActive);
 
-            result.Stakeholders = stakeholdersQuery
-                .OrderBy(s => s.LastName)
-                .ThenBy(s => s.FirstName)
+            result.BranchStakeholders = stakeholderBranchesQuery
+                .OrderBy(sb => sb.Stakeholder.LastName)
+                .ThenBy(sb => sb.Stakeholder.FirstName)
+                .ToList();
+
+            // ✅ هنوز Stakeholders را هم پر می‌کنیم برای سازگاری
+            result.Stakeholders = result.BranchStakeholders
+                .Select(sb => sb.Stakeholder)
                 .ToList();
 
             // دریافت شعبه‌های زیرمجموعه
@@ -534,6 +536,25 @@ namespace MahERP.DataModelLayer.Repository
 
         #endregion
 
-     
+        public List<StakeholderBranch> GetBranchStakeholders(int branchId)
+        {
+            return _context.StakeholderBranch_Tbl
+                .Include(sb => sb.Stakeholder)
+                .Where(sb => sb.BranchId == branchId && sb.IsActive)
+                .OrderByDescending(sb => sb.AssignDate)
+                .ToList();
+        }
+
+        /// <summary>
+        /// دریافت شعبه بر اساس شناسه
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>اطلاعات شعبه</returns>
+        public Branch GetBranchById(int branchId)
+        {
+            return _context.Branch_Tbl
+                .AsNoTracking()
+                .FirstOrDefault(b => b.Id == branchId);
+        }
     }
 }

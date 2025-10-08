@@ -1,0 +1,40 @@
+﻿@model StakeholderViewModel
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="block block-rounded text-center">
+            <div class="block-content py-4">
+                <i class="fa fa-file-contract fa-3x text-primary mb-2"></i>
+                <h3 class="mb-0">@ViewBag.Contracts.Count</h3>
+                <p class="text-muted mb-0">قرارداد</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="block block-rounded text-center">
+            <div class="block-content py-4">
+                <i class="fa fa-users fa-3x text-success mb-2"></i>
+                <h3 class="mb-0">@ViewBag.Contacts.Count</h3>
+                <p class="text-muted mb-0">فرد مرتبط</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="block block-rounded text-center">
+            <div class="block-content py-4">
+                <i class="fa fa-tasks fa-3x text-info mb-2"></i>
+                <h3 class="mb-0">@ViewBag.Tasks.Count</h3>
+                <p class="text-muted mb-0">تسک</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="block block-rounded text-center">
+            <div class="block-content py-4">
+                <i class="fa fa-building fa-3x text-warning mb-2"></i>
+                <h3 class="mb-0">@ViewBag.Organizations.Count</h3>
+                <p class="text-muted mb-0">واحد سازمانی</p>
+            </div>
+        </div>
+    </div>
+</div>

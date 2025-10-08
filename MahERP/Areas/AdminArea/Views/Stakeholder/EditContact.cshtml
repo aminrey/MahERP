@@ -25,6 +25,7 @@
     </div>
 </div>
 <!-- END Hero -->
+
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <!-- Edit Contact Form -->
@@ -45,60 +46,91 @@
             <div class="block-content">
                 <div class="row justify-content-center">
                     <div class="col-md-10 col-lg-8">
+                        <!-- نام -->
                         <div class="mb-4">
                             <label class="form-label" for="FirstName">نام <span class="text-danger">*</span></label>
                             <input asp-for="FirstName" class="form-control" placeholder="نام کوچک را وارد کنید">
                             <span asp-validation-for="FirstName" class="text-danger"></span>
                         </div>
+
+                        <!-- نام خانوادگی -->
                         <div class="mb-4">
                             <label class="form-label" for="LastName">نام خانوادگی <span class="text-danger">*</span></label>
                             <input asp-for="LastName" class="form-control" placeholder="نام خانوادگی را وارد کنید">
                             <span asp-validation-for="LastName" class="text-danger"></span>
                         </div>
+
+                        <!-- عنوان شغلی -->
                         <div class="mb-4">
-                            <label class="form-label" for="Position">سمت</label>
-                            <input asp-for="Position" class="form-control" placeholder="سمت یا عنوان شغلی">
-                            <span asp-validation-for="Position" class="text-danger"></span>
+                            <label class="form-label" for="JobTitle">عنوان شغلی</label>
+                            <input asp-for="JobTitle" class="form-control" placeholder="مثال: مدیر فروش">
+                            <span asp-validation-for="JobTitle" class="text-danger"></span>
                         </div>
+
+                        <!-- دپارتمان -->
+                        <div class="mb-4">
+                            <label class="form-label" for="Department">دپارتمان</label>
+                            <input asp-for="Department" class="form-control" placeholder="مثال: فروش، مالی، فنی">
+                            <span asp-validation-for="Department" class="text-danger"></span>
+                        </div>
+
+                      
+
+
+                        <!-- تلفن ثابت -->
                         <div class="mb-4">
                             <label class="form-label" for="Phone">تلفن ثابت</label>
                             <input asp-for="Phone" class="form-control" placeholder="تلفن ثابت را وارد کنید">
                             <span asp-validation-for="Phone" class="text-danger"></span>
                         </div>
+
+                        <!-- تلفن همراه -->
                         <div class="mb-4">
                             <label class="form-label" for="Mobile">تلفن همراه</label>
                             <input asp-for="Mobile" class="form-control" placeholder="تلفن همراه را وارد کنید">
                             <span asp-validation-for="Mobile" class="text-danger"></span>
                         </div>
+
+                        <!-- ایمیل -->
                         <div class="mb-4">
                             <label class="form-label" for="Email">ایمیل</label>
                             <input asp-for="Email" type="email" class="form-control" placeholder="ایمیل را وارد کنید">
                             <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
+
+                        <!-- کد ملی -->
                         <div class="mb-4">
-                            <label class="form-label" for="ContactType">نوع ارتباط</label>
-                            <select asp-for="ContactType" asp-items="StaticSelectLists.ContactTypes" class="form-select">
-                                <option value="">انتخاب کنید</option>
-                            </select>
-                            <span asp-validation-for="ContactType" class="text-danger"></span>
+                            <label class="form-label" for="NationalCode">کد ملی</label>
+                            <input asp-for="NationalCode" class="form-control" placeholder="کد ملی 10 رقمی" maxlength="10">
+                            <span asp-validation-for="NationalCode" class="text-danger"></span>
                         </div>
+
+                        <!-- یادداشت -->
                         <div class="mb-4">
                             <label class="form-label" for="Notes">یادداشت</label>
                             <textarea asp-for="Notes" class="form-control" rows="4" placeholder="یادداشت یا توضیحات اضافی"></textarea>
                             <span asp-validation-for="Notes" class="text-danger"></span>
                         </div>
+
+                        <!-- Checkboxes -->
                         <div class="mb-4">
-                            <label class="form-check">
+                            <div class="form-check form-switch mb-2">
                                 <input asp-for="IsPrimary" type="checkbox" class="form-check-input">
-                                <span class="form-check-label">مخاطب اصلی</span>
-                            </label>
-                            <div class="form-text">مخاطب اصلی به عنوان فرد ارتباطی پیش‌فرض برای این طرف حساب در نظر گرفته می‌شود</div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-check">
+                                <label asp-for="IsPrimary" class="form-check-label">مخاطب اصلی</label>
+                            </div>
+                            <small class="text-muted d-block mb-3">
+                                مخاطب اصلی به عنوان فرد ارتباطی پیش‌فرض برای این طرف حساب در نظر گرفته می‌شود
+                            </small>
+
+                            <div class="form-check form-switch mb-2">
+                                <input asp-for="IsDecisionMaker" type="checkbox" class="form-check-input">
+                                <label asp-for="IsDecisionMaker" class="form-check-label">تصمیم‌گیرنده</label>
+                            </div>
+
+                            <div class="form-check form-switch">
                                 <input asp-for="IsActive" type="checkbox" class="form-check-input">
-                                <span class="form-check-label">وضعیت فعال</span>
-                            </label>
+                                <label asp-for="IsActive" class="form-check-label">وضعیت فعال</label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -116,6 +148,7 @@
     <!-- END Edit Contact Form -->
 </div>
 <!-- END Page Content -->
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");

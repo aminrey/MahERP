@@ -7,154 +7,113 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "نام کوچک طرف حساب را وارد کنید")]
-        [Display(Name = "نام")]
-        [MaxLength(100, ErrorMessage = "نام نمی‌تواند بیش از 100 کاراکتر باشد")]
-        public string FirstName { get; set; }
-
-        [Required(ErrorMessage = "نام خانوادگی طرف حساب را وارد کنید")]
-        [Display(Name = "نام خانوادگی")]
-        [MaxLength(100, ErrorMessage = "نام خانوادگی نمی‌تواند بیش از 100 کاراکتر باشد")]
-        public string LastName { get; set; }
-
-        [Display(Name = "نام شرکت")]
-        [MaxLength(200, ErrorMessage = "نام شرکت نمی‌تواند بیش از 200 کاراکتر باشد")]
-        public string? CompanyName { get; set; }
-
-        [Display(Name = "تلفن ثابت")]
-        [MaxLength(20, ErrorMessage = "تلفن ثابت نمی‌تواند بیش از 20 کاراکتر باشد")]
-        [RegularExpression(@"^[0-9\-\+\(\)]*$", ErrorMessage = "فرمت تلفن نامعتبر است")]
-        public string? Phone { get; set; }
-
-        [Display(Name = "تلفن همراه")]
-        [MaxLength(20, ErrorMessage = "تلفن همراه نمی‌تواند بیش از 20 کاراکتر باشد")]
-        [RegularExpression(@"^[0-9\-\+\(\)]*$", ErrorMessage = "فرمت موبایل نامعتبر است")]
-        public string? Mobile { get; set; }
-
-        [Display(Name = "ایمیل")]
-        [MaxLength(100, ErrorMessage = "ایمیل نمی‌تواند بیش از 100 کاراکتر باشد")]
-        [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
-        public string? Email { get; set; }
-
-        [Display(Name = "آدرس")]
-        [MaxLength(500, ErrorMessage = "آدرس نمی‌تواند بیش از 500 کاراکتر باشد")]
-        public string? Address { get; set; }
-
-        [Display(Name = "کد پستی")]
-        [MaxLength(20, ErrorMessage = "کد پستی نمی‌تواند بیش از 20 کاراکتر باشد")]
-        [RegularExpression(@"^[0-9]*$", ErrorMessage = "کد پستی فقط شامل اعداد می‌باشد")]
-        public string? PostalCode { get; set; }
-
-        [Display(Name = "کد ملی")]
-        [MaxLength(20, ErrorMessage = "کد ملی نمی‌تواند بیش از 20 کاراکتر باشد")]
-        [RegularExpression(@"^[0-9]*$", ErrorMessage = "کد ملی فقط شامل اعداد می‌باشد")]
-        public string? NationalCode { get; set; }
-
-        [Display(Name = "توضیحات")]
-        [MaxLength(1000, ErrorMessage = "توضیحات نمی‌تواند بیش از 1000 کاراکتر باشد")]
-        public string? Description { get; set; }
-
-        [Display(Name = "تاریخ ایجاد")]
-        public DateTime CreateDate { get; set; }
+        [Display(Name = "نوع شخص")]
+        [Required(ErrorMessage = "نوع شخص الزامی است")]
+        public byte PersonType { get; set; }
 
         [Display(Name = "نوع طرف حساب")]
         public byte StakeholderType { get; set; }
 
-        [Display(Name = "وضعیت فعال")]
-        public bool IsActive { get; set; } = true;
-
-        // اطلاعات CRM
-        public StakeholderCRMViewModel? CRMInfo { get; set; }
-
-        // نمایش نام کامل
-        public string FullName => $"{FirstName} {LastName}";
-
-        // نمایش نام کامل با در نظر گیری نام شرکت - برای نمایش در select ها
-        public string DisplayName => string.IsNullOrEmpty(CompanyName) 
-            ? $"{FirstName} {LastName}"
-            : $"{FirstName} {LastName} ({CompanyName})";
-
-        // نمایش نوع طرف حساب به صورت متنی
-        public string StakeholderTypeText
-        {
-            get
-            {
-                return StakeholderType switch
-                {
-                    0 => "مشتری",
-                    1 => "تامین کننده",
-                    2 => "همکار",
-                    3 => "سایر",
-                    _ => "نامشخص"
-                };
-            }
-        }
-    }
-
-    public class StakeholderSearchViewModel
-    {
-        [Display(Name = "نام یا نام خانوادگی")]
-        public string? Name { get; set; }
-
-        [Display(Name = "نام شرکت")]
-        public string? CompanyName { get; set; }
-
-        [Display(Name = "تلفن یا موبایل")]
-        public string? Phone { get; set; }
-
+        // ========== فیلدهای مشترک ==========
         [Display(Name = "ایمیل")]
+        [EmailAddress(ErrorMessage = "فرمت ایمیل صحیح نیست")]
         public string? Email { get; set; }
 
-        [Display(Name = "کد ملی")]
-        public string? NationalCode { get; set; }
+        [Display(Name = "تلفن ثابت")]
+        [Phone(ErrorMessage = "فرمت تلفن صحیح نیست")]
+        public string? Phone { get; set; }
 
-        [Display(Name = "نوع طرف حساب")]
-        public byte? StakeholderType { get; set; }
-
-        [Display(Name = "وضعیت فعال")]
-        public bool? IsActive { get; set; }
-
-        [Display(Name = "شامل موارد حذف شده")]
-        public bool IncludeDeleted { get; set; } = false;
-
-        [Display(Name = "تاریخ ایجاد از")]
-        public string? FromDate { get; set; }
-
-        [Display(Name = "تاریخ ایجاد تا")]
-        public string? ToDate { get; set; }
+        [Display(Name = "تلفن همراه")]
+        [Phone(ErrorMessage = "فرمت تلفن همراه صحیح نیست")]
+        public string? Mobile { get; set; }
 
         [Display(Name = "آدرس")]
         public string? Address { get; set; }
 
-        [Display(Name = "شهر")]
-        public string? City { get; set; }
+        [Display(Name = "کد پستی")]
+        public string? PostalCode { get; set; }
 
-        [Display(Name = "استان")]
-        public string? Province { get; set; }
+        [Display(Name = "توضیحات")]
+        public string? Description { get; set; }
 
-        // CRM Fields
-        [Display(Name = "مرحله فروش")]
-        public byte? SalesStage { get; set; }
+        // ========== فیلدهای شخص حقیقی ==========
+        [Display(Name = "نام")]
+        public string? FirstName { get; set; }
 
-        [Display(Name = "منبع مشتری")]
-        public byte? LeadSource { get; set; }
+        [Display(Name = "نام خانوادگی")]
+        public string? LastName { get; set; }
 
-        [Display(Name = "صنعت")]
-        public string? Industry { get; set; }
+        [Display(Name = "کد ملی")]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "کد ملی باید 10 رقم باشد")]
+        public string? NationalCode { get; set; }
 
-        [Display(Name = "امتیاز اعتباری")]
-        public string? CreditRating { get; set; }
+        [Display(Name = "تاریخ تولد")]
+        public string? BirthDate { get; set; }
 
-        [Display(Name = "حداقل ارزش بالقوه")]
-        public decimal? MinPotentialValue { get; set; }
+        [Display(Name = "جنسیت")]
+        public byte? Gender { get; set; }
 
-        [Display(Name = "حداکثر ارزش بالقوه")]
-        public decimal? MaxPotentialValue { get; set; }
+        // ========== فیلدهای شخص حقوقی ==========
+        [Display(Name = "نام شرکت")]
+        public string? CompanyName { get; set; }
 
-        [Display(Name = "کارشناس فروش")]
-        public string? SalesRepUserId { get; set; }
+        [Display(Name = "نام برند")]
+        public string? CompanyBrand { get; set; }
 
-        [Display(Name = "ایجاد کننده")]
-        public string? CreatorUserId { get; set; }
+        [Display(Name = "شماره ثبت")]
+        [StringLength(11, MinimumLength = 11, ErrorMessage = "شماره ثبت باید 11 رقم باشد")]
+        public string? RegistrationNumber { get; set; }
+
+        [Display(Name = "کد اقتصادی")]
+        [StringLength(12, MinimumLength = 12, ErrorMessage = "کد اقتصادی باید 12 رقم باشد")]
+        public string? EconomicCode { get; set; }
+
+        [Display(Name = "تاریخ ثبت شرکت")]
+        public string? RegistrationDate { get; set; }
+
+        [Display(Name = "آدرس ثبت شده")]
+        public string? RegisteredAddress { get; set; }
+
+        [Display(Name = "وب‌سایت")]
+        [Url(ErrorMessage = "فرمت وب‌سایت صحیح نیست")]
+        public string? Website { get; set; }
+
+        [Display(Name = "نماینده قانونی")]
+        public string? LegalRepresentative { get; set; }
+
+        // ========== فیلدهای سیستمی ==========
+        public bool IsActive { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime CreateDate { get; set; }
+
+        // ========== Computed Properties ==========
+        public string DisplayName => PersonType == 0 
+            ? $"{FirstName} {LastName}" 
+            : CompanyName ?? "نامشخص";
+
+        public string PersonTypeText => PersonType switch
+        {
+            0 => "شخص حقیقی",
+            1 => "شخص حقوقی",
+            _ => "نامشخص"
+        };
+
+        public string StakeholderTypeText => StakeholderType switch
+        {
+            0 => "مشتری",
+            1 => "تامین‌کننده",
+            2 => "همکار",
+            3 => "سایر",
+            _ => "نامشخص"
+        };
+
+        public string GenderText => Gender switch
+        {
+            0 => "مرد",
+            1 => "زن",
+            _ => "-"
+        };
+
+        public StakeholderCRMViewModel? CRMInfo { get; set; }
     }
 }

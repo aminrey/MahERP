@@ -5,7 +5,9 @@ using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Repository;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
+using System.Threading.Tasks;
 
 namespace MahERP.DataModelLayer.Services
 {
@@ -13,10 +15,105 @@ namespace MahERP.DataModelLayer.Services
     {
         private readonly AppDbContext _Context;
 
+        // ⭐ فیلدهای Transaction Management
+        private IDbContextTransaction _transaction;
+        private bool _disposed = false;
+
         public UnitOfWork(AppDbContext Db)
         {
-            _Context = Db;
+            _Context = Db ?? throw new ArgumentNullException(nameof(Db));
         }
+
+        #region Transaction Management Implementation
+
+        /// <summary>
+        /// شروع تراکنش جدید
+        /// </summary>
+        public async Task BeginTransactionAsync()
+        {
+            if (_transaction != null)
+            {
+                throw new InvalidOperationException(
+                    "تراکنش قبلاً شروع شده است. لطفاً ابتدا تراکنش فعلی را Commit یا Rollback کنید.");
+            }
+
+            _transaction = await _Context.Database.BeginTransactionAsync();
+        }
+
+        /// <summary>
+        /// تأیید و ذخیره تراکنش
+        /// </summary>
+        public async Task CommitTransactionAsync()
+        {
+            if (_transaction == null)
+            {
+                throw new InvalidOperationException(
+                    "هیچ تراکنش فعالی برای Commit وجود ندارد.");
+            }
+
+            try
+            {
+                // ابتدا تغییرات را ذخیره کن
+                await _Context.SaveChangesAsync();
+
+                // سپس تراکنش را Commit کن
+                await _transaction.CommitAsync();
+            }
+            catch
+            {
+                // در صورت خطا، Rollback خودکار
+                await RollbackTransactionAsync();
+                throw;
+            }
+            finally
+            {
+                // پاکسازی تراکنش
+                await DisposeTransactionAsync();
+            }
+        }
+
+        /// <summary>
+        /// لغو و برگشت تراکنش
+        /// </summary>
+        public async Task RollbackTransactionAsync()
+        {
+            if (_transaction != null)
+            {
+                try
+                {
+                    await _transaction.RollbackAsync();
+                }
+                catch (Exception ex)
+                {
+                    // لاگ خطا در صورت نیاز
+                    System.Diagnostics.Debug.WriteLine($"خطا در Rollback تراکنش: {ex.Message}");
+                    throw;
+                }
+                finally
+                {
+                    await DisposeTransactionAsync();
+                }
+            }
+        }
+
+        /// <summary>
+        /// بررسی وجود تراکنش فعال
+        /// </summary>
+        public bool HasActiveTransaction => _transaction != null;
+
+        /// <summary>
+        /// پاکسازی تراکنش
+        /// </summary>
+        private async Task DisposeTransactionAsync()
+        {
+            if (_transaction != null)
+            {
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
+        }
+
+        #endregion
 
         #region User and Role Management
         private GenereicClass<AppUsers> _userManager;
@@ -34,7 +131,6 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<Team> _team;
         private GenereicClass<TeamMember> _teamMember;
         public GenereicClass<TeamPosition> _TeamPosition;
-
         #endregion
 
         #region Core Notification System - سیستم نوتیفیکیشن کلی
@@ -50,6 +146,9 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<StakeholderContact> _stakeholderContact;
         private GenereicClass<StakeholderBranch> _stakeholderBranch;
         private GenereicClass<Contract> _contract;
+        private GenereicClass<StakeholderOrganization> _stakeholderOrganization;
+        private GenereicClass<StakeholderOrganizationPosition> _stakeholderOrganizationPosition;
+        private GenereicClass<StakeholderOrganizationMember> _stakeholderOrganizationMember;
         #endregion
 
         #region Task Management
@@ -236,7 +335,7 @@ namespace MahERP.DataModelLayer.Services
 
         #endregion
 
-        #region Core Notification System Properties - سیستم نوتیفیکیشن کلی
+        #region Core Notification System Properties
 
         public GenereicClass<CoreNotification> CoreNotificationUW
         {
@@ -347,6 +446,42 @@ namespace MahERP.DataModelLayer.Services
                     _contract = new GenereicClass<Contract>(_Context);
                 }
                 return _contract;
+            }
+        }
+
+        public GenereicClass<StakeholderOrganization> StakeholderOrganizationUW
+        {
+            get
+            {
+                if (_stakeholderOrganization == null)
+                {
+                    _stakeholderOrganization = new GenereicClass<StakeholderOrganization>(_Context);
+                }
+                return _stakeholderOrganization;
+            }
+        }
+
+        public GenereicClass<StakeholderOrganizationPosition> StakeholderOrganizationPositionUW
+        {
+            get
+            {
+                if (_stakeholderOrganizationPosition == null)
+                {
+                    _stakeholderOrganizationPosition = new GenereicClass<StakeholderOrganizationPosition>(_Context);
+                }
+                return _stakeholderOrganizationPosition;
+            }
+        }
+
+        public GenereicClass<StakeholderOrganizationMember> StakeholderOrganizationMemberUW
+        {
+            get
+            {
+                if (_stakeholderOrganizationMember == null)
+                {
+                    _stakeholderOrganizationMember = new GenereicClass<StakeholderOrganizationMember>(_Context);
+                }
+                return _stakeholderOrganizationMember;
             }
         }
 
@@ -672,14 +807,68 @@ namespace MahERP.DataModelLayer.Services
 
         #endregion
 
+        #region Save Methods
+
+        /// <summary>
+        /// ذخیره تغییرات (Sync)
+        /// </summary>
         public int Save()
         {
             return _Context.SaveChanges();
         }
 
+        /// <summary>
+        /// ذخیره تغییرات (Async)
+        /// </summary>
+        public async Task<int> SaveAsync()
+        {
+            return await _Context.SaveChangesAsync();
+        }
+
+        #endregion
+
+        #region Dispose Pattern
+
+        /// <summary>
+        /// پاکسازی منابع
+        /// </summary>
         public void Dispose()
         {
-            _Context.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+        /// <summary>
+        /// پاکسازی منابع (Protected)
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // پاکسازی تراکنش در صورت وجود
+                    if (_transaction != null)
+                    {
+                        _transaction.Dispose();
+                        _transaction = null;
+                    }
+
+                    // پاکسازی DbContext
+                    _Context?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
+        /// <summary>
+        /// Finalizer برای اطمینان از پاکسازی
+        /// </summary>
+        ~UnitOfWork()
+        {
+            Dispose(false);
+        }
+
+        #endregion
     }
 }

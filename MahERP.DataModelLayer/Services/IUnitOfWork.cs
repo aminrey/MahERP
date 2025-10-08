@@ -11,6 +11,10 @@ namespace MahERP.DataModelLayer.Services
 {
     public interface IUnitOfWork : IDisposable
     {
+        Task BeginTransactionAsync();
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
+        bool HasActiveTransaction { get; }
         #region User and Role Management
         GenereicClass<AppUsers> UserManagerUW { get; }
         GenereicClass<AppRoles> RoleUW { get; }
@@ -42,6 +46,11 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<StakeholderContact> StakeholderContactUW { get; }
         GenereicClass<StakeholderBranch> StakeholderBranchUW { get; }
         GenereicClass<Contract> ContractUW { get; }
+        // Stakeholder Organization
+        GenereicClass<StakeholderOrganization> StakeholderOrganizationUW { get; }
+        GenereicClass<StakeholderOrganizationPosition> StakeholderOrganizationPositionUW { get; }
+        GenereicClass<StakeholderOrganizationMember> StakeholderOrganizationMemberUW { get; }
+
         #endregion
 
         #region Task Management
@@ -77,5 +86,7 @@ namespace MahERP.DataModelLayer.Services
         #endregion
 
         int Save();
+            Task<int> SaveAsync();
+
     }
 }

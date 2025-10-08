@@ -56,9 +56,9 @@
                             <span asp-validation-for="LastName" class="text-danger"></span>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label" for="Position">سمت</label>
-                            <input asp-for="Position" class="form-control" placeholder="سمت یا عنوان شغلی">
-                            <span asp-validation-for="Position" class="text-danger"></span>
+                            <label class="form-label" for="JobTitle">عنوان شغلی</label>
+                            <input asp-for="JobTitle" class="form-control" placeholder="مثال: مدیر فروش">
+                            <span asp-validation-for="JobTitle" class="text-danger"></span>
                         </div>
                         <div class="mb-4">
                             <label class="form-label" for="Phone">تلفن ثابت</label>
@@ -75,18 +75,13 @@
                             <input asp-for="Email" type="email" class="form-control" placeholder="ایمیل را وارد کنید">
                             <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
+                       
                         <div class="mb-4">
-                            <label class="form-label" for="ContactType">نوع ارتباط</label>
-                            <select asp-for="ContactType" asp-items="StaticSelectLists.ContactTypes" class="form-select">
-                                <option value="">انتخاب کنید</option>
-                            </select>
-                            <span asp-validation-for="ContactType" class="text-danger"></span>
+                            <label class="form-label" for="Department">دپارتمان</label>
+                            <input asp-for="Department" class="form-control" placeholder="مثال: فروش، مالی، فنی">
+                            <span asp-validation-for="Department" class="text-danger"></span>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="Notes">یادداشت</label>
-                            <textarea asp-for="Notes" class="form-control" rows="4" placeholder="یادداشت یا توضیحات اضافی"></textarea>
-                            <span asp-validation-for="Notes" class="text-danger"></span>
-                        </div>
+                  
                         <div class="mb-4">
                             <label class="form-check">
                                 <input asp-for="IsPrimary" type="checkbox" class="form-check-input">

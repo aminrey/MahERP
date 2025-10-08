@@ -1,0 +1,85 @@
+﻿@model BranchDetailsViewModel
+
+<h4 class="mb-4"><i class="fa fa-chart-bar me-2 text-primary"></i>آمار و گزارشات</h4>
+
+<div class="row">
+    <div class="col-md-3 col-6">
+        <div class="block block-rounded text-center">
+            <div class="block-content py-4">
+                <i class="fa fa-users fa-3x text-primary mb-2"></i>
+                <h3 class="mb-0">@Model.ActiveUsersCount</h3>
+                <p class="text-muted mb-0">کاربر فعال</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6">
+        <div class="block block-rounded text-center">
+            <div class="block-content py-4">
+                <i class="fa fa-user-tie fa-3x text-success mb-2"></i>
+                <h3 class="mb-0">@Model.ActiveStakeholdersCount</h3>
+                <p class="text-muted mb-0">طرف حساب فعال</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6">
+        <div class="block block-rounded text-center">
+            <div class="block-content py-4">
+                <i class="fa fa-sitemap fa-3x text-warning mb-2"></i>
+                <h3 class="mb-0">@Model.ChildBranchesCount</h3>
+                <p class="text-muted mb-0">شعبه زیرمجموعه</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6">
+        <div class="block block-rounded text-center">
+            <div class="block-content py-4">
+                <i class="fa fa-check-circle fa-3x text-info mb-2"></i>
+                <h3 class="mb-0">@Model.ActiveChildBranchesCount</h3>
+                <p class="text-muted mb-0">شعبه زیرمجموعه فعال</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="my-4">
+
+<div class="row">
+    <div class="col-md-6">
+        <h5 class="mb-3">اطلاعات تکمیلی</h5>
+        <div class="mb-2">
+            <strong>نوع شعبه:</strong>
+            <span class="badge bg-@(Model.IsMainBranch ? "success" : "info")">
+                @(Model.IsMainBranch ? "شعبه اصلی" : "شعبه فرعی")
+            </span>
+        </div>
+        <div class="mb-2">
+            <strong>وضعیت:</strong>
+            <span class="badge bg-@(Model.IsActive ? "success" : "danger")">
+                @(Model.IsActive ? "فعال" : "غیرفعال")
+            </span>
+        </div>
+        <div class="mb-2">
+            <strong>تاریخ ایجاد:</strong>
+            @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd")
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <h5 class="mb-3">عملکرد</h5>
+        <div class="progress mb-3" style="height: 25px;">
+            <div class="progress-bar bg-success" role="progressbar" 
+                 style="width: @(Model.BranchUsers.Count > 0 ? (Model.ActiveUsersCount * 100 / Model.BranchUsers.Count) : 0)%">
+                کاربران فعال: @Model.ActiveUsersCount از @Model.BranchUsers.Count
+            </div>
+        </div>
+        <div class="progress mb-3" style="height: 25px;">
+            <div class="progress-bar bg-info" role="progressbar" 
+                 style="width: @(Model.Stakeholders.Count > 0 ? (Model.ActiveStakeholdersCount * 100 / Model.Stakeholders.Count) : 0)%">
+                طرف حساب‌های فعال: @Model.ActiveStakeholdersCount از @Model.Stakeholders.Count
+            </div>
+        </div>
+    </div>
+</div>

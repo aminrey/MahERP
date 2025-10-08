@@ -1,0 +1,289 @@
+﻿@model int 
+
+<div class="mb-3 text-end">
+    <a href="@Url.Action("AddOrganization", "Stakeholder", new { stakeholderId = Model })" 
+       class="btn btn-success">
+        <i class="fa fa-plus me-1"></i> افزودن واحد جدید
+    </a>
+</div>
+
+<div id="org-chart-container" class="text-center">
+    <div class="text-center py-4">
+        <i class="fa fa-spinner fa-spin fa-3x text-primary"></i>
+        <p class="mt-3">در حال بارگذاری چارت سازمانی...</p>
+    </div>
+</div>
+
+<style>
+    /* ========== استایل‌های چارت سازمانی ========== */
+    #org-chart-container {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        overflow-x: auto;
+        min-height: 400px;
+    }
+
+    .chart-wrapper {
+        display: inline-block;
+        min-width: 100%;
+    }
+
+    /* ========== نود سازمانی ========== */
+    .org-node {
+        display: inline-block;
+        margin: 15px;
+        position: relative;
+        vertical-align: top;
+    }
+
+    .org-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 20px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        min-width: 280px;
+        max-width: 350px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .org-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .org-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+        }
+
+    /* ========== عنوان و مدیر ========== */
+    .org-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        word-break: break-word;
+    }
+
+    .org-manager {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .org-stats {
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        margin: 10px 0;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 1.4rem;
+        font-weight: bold;
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        opacity: 0.8;
+    }
+
+    /* ========== دکمه‌های عملیات ========== */
+    .org-actions {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+        .org-actions .btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+    /* ========== زیرمجموعه‌ها ========== */
+    .child-orgs {
+        margin-top: 40px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+        /* خط اتصال عمودی به والد */
+        .child-orgs::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background: #dee2e6;
+        }
+
+        /* خط افقی بین بچه‌ها */
+        .child-orgs::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #dee2e6;
+            z-index: -1;
+        }
+
+        /* خط اتصال هر نود به خط افقی */
+        .child-orgs > .org-node::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background: #dee2e6;
+        }
+
+    /* ========== رنگ‌بندی بر اساس سطح ========== */
+    .org-node[data-level="0"] .org-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .org-node[data-level="1"] .org-card {
+        background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    }
+
+    .org-node[data-level="2"] .org-card {
+        background: linear-gradient(135deg, #45b7d1 0%, #96c93d 100%);
+    }
+
+    .org-node[data-level="3"] .org-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .org-node[data-level="4"] .org-card {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+        color: #2d3436;
+    }
+
+    /* ========== حالت خالی ========== */
+    .empty-state {
+        background: white;
+        border-radius: 12px;
+        border: 2px dashed #dee2e6;
+        padding: 3rem;
+    }
+
+    .manager-empty {
+        color: rgba(255, 255, 255, 0.6);
+        font-style: italic;
+    }
+
+    /* ========== Responsive Design ========== */
+    @@media (max-width: 992px) {
+        .org-card {
+            min-width: 240px;
+            max-width: 300px;
+            padding: 15px;
+        }
+
+        .org-title {
+            font-size: 1rem;
+        }
+
+        .stat-number {
+            font-size: 1.2rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        #org-chart-container {
+            padding: 10px;
+        }
+
+        .org-node {
+            margin: 10px 5px;
+        }
+
+        .org-card {
+            min-width: 100%;
+            max-width: 100%;
+            padding: 15px;
+        }
+
+        .org-title {
+            font-size: 0.95rem;
+        }
+
+        .org-manager {
+            font-size: 0.85rem;
+        }
+
+        .stat-number {
+            font-size: 1.1rem;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+        }
+
+        .child-orgs {
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+
+            .child-orgs::after {
+                display: none;
+            }
+
+            .child-orgs::before,
+            .child-orgs > .org-node::before {
+                height: 15px;
+                top: -15px;
+            }
+
+        .org-actions {
+            flex-direction: column;
+        }
+
+            .org-actions .btn {
+                width: 100%;
+            }
+    }
+
+    @@media (max-width: 480px) {
+        .org-card {
+            padding: 12px;
+        }
+
+        .org-stats {
+            padding: 8px 0;
+        }
+    }
+</style>

@@ -1,0 +1,73 @@
+﻿@{
+    Layout = null;
+}
+
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <form id="addStakeholderForm" asp-controller="Branch" asp-action="AddStakeholderToBranchPost" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="branchId" value="@ViewBag.BranchId" />
+
+            <div class="modal-header @ViewBag.ThemeClass">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-user-plus me-2"></i>
+                    @ViewBag.ModalTitle
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    افزودن طرف حساب به شعبه: <strong>@ViewBag.BranchName</strong>
+                </div>
+
+                <div class="mb-3">
+                    <label for="stakeholderId" class="form-label">
+                        انتخاب طرف حساب <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select js-select2" 
+                            id="stakeholderId" 
+                            name="stakeholderId" 
+                            data-placeholder="یک طرف حساب را انتخاب کنید"
+                            data-container="#modal-action"
+                            required>
+                        <option value="">-- انتخاب کنید --</option>
+                        @foreach (var item in ViewBag.AvailableStakeholders as List<SelectListItem>)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    @if (!(ViewBag.AvailableStakeholders as List<SelectListItem>).Any())
+                    {
+                        <div class="form-text text-warning">
+                            <i class="fa fa-exclamation-triangle me-1"></i>
+                            هیچ طرف حساب فعالی برای افزودن وجود ندارد
+                        </div>
+                    }
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                    <i class="fa fa-info-circle me-1"></i>
+                    <small>
+                        پس از افزودن، این طرف حساب در بخش تسکینگ این شعبه قابل استفاده خواهد بود
+                    </small>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" 
+                        class="btn btn-primary" 
+                        data-save="modal-ajax-save"
+                        @(!(ViewBag.AvailableStakeholders as List<SelectListItem>).Any() ? "disabled" : "")>
+                    <i class="fa fa-check me-1"></i>
+                    افزودن به شعبه
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

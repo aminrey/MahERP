@@ -41,7 +41,22 @@ builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IMainDashboardRepository, MainDashboardRepository>();
 builder.Services.AddScoped<ITaskVisibilityRepository, TaskVisibilityRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
+// ⭐ Services - Scoped
+builder.Services.AddScoped<TaskNotificationService>();
+builder.Services.AddScoped<TaskCodeGenerator>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHostedService<NotificationBackgroundService>();
+
+// ⭐ Background Service - Singleton + Hosted
+builder.Services.AddSingleton<NotificationBackgroundService>();
+builder.Services.AddHostedService(provider =>
+    provider.GetRequiredService<NotificationBackgroundService>());
+
+// اضافه کردن سرویس background برای نوتیفیکیشن‌ها
+
+// اضافه کردن Scoped Service برای TransactionManager
+builder.Services.AddScoped<TransactionManager>();
 builder.Services.AddSignalR();
 // Activity Logger Service
 builder.Services.AddScoped<ActivityLoggerService>(); // اضافه شده

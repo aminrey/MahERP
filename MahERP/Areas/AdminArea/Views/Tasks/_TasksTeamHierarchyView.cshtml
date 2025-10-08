@@ -1,0 +1,202 @@
+﻿@model TaskListForIndexViewModel
+
+@if (Model.GroupedTasks?.TeamTasksGrouped != null && Model.GroupedTasks.TeamTasksGrouped.Any())
+{
+    <div class="accordion" id="teamTasksAccordion">
+        @{
+            var teamIndex = 0;
+        }
+        @foreach (var teamGroup in Model.GroupedTasks.TeamTasksGrouped.OrderBy(t => t.Key))
+        {
+            teamIndex++;
+            var teamCollapseId = $"teamCollapse{teamIndex}";
+            var teamHeadingId = $"teamHeading{teamIndex}";
+
+            var totalTeamTasks = teamGroup.Value.Sum(p => p.Value.Count);
+
+            <div class="accordion-item mb-3">
+                <!-- هدر تیم -->
+                <h2 class="accordion-header" id="@teamHeadingId">
+                    <button class="accordion-button @(teamIndex == 1 ? "" : "collapsed")" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#@teamCollapseId">
+                        <div class="d-flex align-items-center justify-content-between w-100 pe-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-users text-primary fa-lg me-3"></i>
+                                <div>
+                                    <h5 class="mb-0">@teamGroup.Key</h5>
+                                    <small class="text-muted">@teamGroup.Value.Count عضو</small>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-primary">@totalTeamTasks تسک</span>
+                            </div>
+                        </div>
+                    </button>
+                </h2>
+
+                <div id="@teamCollapseId" 
+                     class="accordion-collapse collapse @(teamIndex == 1 ? "show" : "")" 
+                     data-bs-parent="#teamTasksAccordion">
+                    <div class="accordion-body p-0">
+                        
+                        @* لیست اعضای تیم *@
+                        @{
+                            var memberIndex = 0;
+                        }
+                        @foreach (var memberGroup in teamGroup.Value.OrderBy(m => m.Key))
+                        {
+                            memberIndex++;
+                            var memberCollapseId = $"member{teamIndex}_{memberIndex}Collapse";
+                            var memberHeadingId = $"member{teamIndex}_{memberIndex}Heading";
+
+                            <div class="border-bottom">
+                                <!-- هدر عضو -->
+                                <div class="d-flex align-items-center justify-content-between p-3 bg-light">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-sm me-2">
+                                            <span class="avatar-title rounded-circle bg-primary">
+                                                @{
+                                                    var names = memberGroup.Key.Split(' ');
+                                                    var initials = names.Length >= 2 
+                                                        ? $"{names[0][0]}{names[1][0]}" 
+                                                        : names[0][0].ToString();
+                                                }
+                                                @initials
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">@memberGroup.Key</h6>
+                                            <small class="text-muted">@memberGroup.Value.Count تسک</small>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#@memberCollapseId">
+                                        <i class="fa fa-eye me-1"></i>
+                                        مشاهده تسک‌ها
+                                    </button>
+                                </div>
+
+                                <!-- جدول تسک‌های عضو -->
+                                <div id="@memberCollapseId" class="collapse">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 40px;"></th>
+                                                    <th>تسک</th>
+                                                    <th class="text-center" style="width: 100px;">وضعیت</th>
+                                                    <th class="text-center" style="width: 100px;">مهلت</th>
+                                                    <th class="text-center" style="width: 100px;">پیشرفت</th>
+                                                    <th class="text-center" style="width: 80px;">عملیات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var task in memberGroup.Value)
+                                                {
+                                                    <tr class="@(task.IsOverdue && !task.CompletionDate.HasValue ? "table-warning" : "")">
+                                                        <td>
+                                                            @if (task.Priority == 2)
+                                                            {
+                                                                <i class="fa fa-exclamation-triangle text-danger" title="فوری"></i>
+                                                            }
+                                                            else if (task.Important)
+                                                            {
+                                                                <i class="fa fa-star text-warning" title="مهم"></i>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="fa fa-circle text-muted"></i>
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            <div>
+                                                                <a asp-action="Details" asp-route-id="@task.Id" 
+                                                                   class="fw-semibold text-primary text-decoration-none">
+                                                                    @task.Title
+                                                                </a>
+                                                                <div class="text-muted small">
+                                                                    کد: @task.TaskCode
+                                                                    @if (!string.IsNullOrEmpty(task.CategoryTitle))
+                                                                    {
+                                                                        <span class="badge bg-secondary badge-sm ms-2">@task.CategoryTitle</span>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            @{
+                                                                var statusClass = task.Status switch
+                                                                {
+                                                                    0 => "bg-secondary",
+                                                                    1 => "bg-warning",
+                                                                    2 => "bg-success",
+                                                                    3 => "bg-info",
+                                                                    4 => "bg-danger",
+                                                                    _ => "bg-dark"
+                                                                };
+                                                                var statusText = task.Status switch
+                                                                {
+                                                                    0 => "ایجاد",
+                                                                    1 => "انجام",
+                                                                    2 => "تکمیل",
+                                                                    3 => "تأیید",
+                                                                    4 => "رد",
+                                                                    _ => "؟"
+                                                                };
+                                                            }
+                                                            <span class="badge @statusClass badge-sm">@statusText</span>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            @if (task.DueDate.HasValue)
+                                                            {
+                                                                var isOverdue = task.DueDate.Value.Date < DateTime.Now.Date && !task.CompletionDate.HasValue;
+                                                                <small class="@(isOverdue ? "text-danger fw-bold" : "text-muted")">
+                                                                    @ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd")
+                                                                </small>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-muted">-</span>
+                                                            }
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <div class="progress progress-sm">
+                                                                <div class="progress-bar @(task.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                                                                     style="width: @task.ProgressPercentage%"
+                                                                     title="@task.ProgressPercentage%">
+                                                                </div>
+                                                            </div>
+                                                            <small class="text-muted">@task.ProgressPercentage%</small>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <a asp-action="Details" asp-route-id="@task.Id" 
+                                                               class="btn btn-outline-primary btn-xs" title="جزئیات">
+                                                                <i class="fa fa-eye"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fa fa-users fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">هیچ تسک تیمی یافت نشد</h5>
+        <p class="text-muted">در تیم‌های شما تسکی وجود ندارد یا شما مجوز مشاهده ندارید</p>
+    </div>
+}

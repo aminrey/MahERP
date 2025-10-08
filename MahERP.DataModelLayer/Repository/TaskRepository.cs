@@ -1,5 +1,7 @@
-﻿using MahERP.CommonLayer.PublicClasses;
+﻿using AutoMapper;
+using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.AcControl;
+using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Services;
@@ -9,6 +11,7 @@ using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -177,27 +180,28 @@ namespace MahERP.DataModelLayer.Repository
             return query.OrderByDescending(t => t.CreateDate).ToList();
         }
 
+        /// <summary>
+        /// دریافت تسک‌های چند شعبه (نسخه چندگانه)
+        /// </summary>
+        public List<Tasks> GetTasksByBranches(List<int> branchIds, bool includeDeleted = false)
+        {
+            var query = _context.Tasks_Tbl
+                .Where(t => branchIds.Contains(t.BranchId ?? 0))
+                .AsQueryable();
+
+            if (!includeDeleted)
+                query = query.Where(t => !t.IsDeleted);
+
+            return query.OrderByDescending(t => t.CreateDate).ToList();
+        }
+
+        /// <summary>
+        /// دریافت تسک‌های شعبه (نسخه قدیمی - حفظ برای سازگاری)
+        /// </summary>
         public List<Tasks> GetTasksByBranch(int branchId, bool includeDeleted = false)
         {
-            var query = _context.Tasks_Tbl.Where(t => t.BranchId == branchId);
-
-            if (!includeDeleted)
-                query = query.Where(t => !t.IsDeleted);
-
-            return query.OrderByDescending(t => t.CreateDate).ToList();
+            return GetTasksByBranches(new List<int> { branchId }, includeDeleted);
         }
-
-        public List<Tasks> GetTasksByStakeholder(int stakeholderId, bool includeDeleted = false)
-        {
-            var query = _context.Tasks_Tbl.Where(t => t.StakeholderId == stakeholderId);
-
-            if (!includeDeleted)
-                query = query.Where(t => !t.IsDeleted);
-
-            return query.OrderByDescending(t => t.CreateDate).ToList();
-        }
-
-        #endregion
 
         #region Task Validation Methods
 
@@ -783,170 +787,146 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         public int GetUserBranchId(string userId)
         {
-            var branchUser = _context.BranchUser_Tbl
-                .FirstOrDefault(bu => bu.UserId == userId && bu.IsActive);
-            return branchUser?.BranchId ?? 1; // پیش‌فرض شعبه اصلی
+            var branchIds = GetUserBranchIds(userId);
+            return branchIds.FirstOrDefault(); // اولین شعبه
         }
-
         /// <summary>
-        /// دریافت تیم‌های مرتبط با کاربر
+        /// دریافت همه شعبه‌های کاربر (نسخه چندگانه)
         /// </summary>
-        public async Task<List<TeamViewModel>> GetUserRelatedTeamsAsync(string userId)
+        public List<int> GetUserBranchIds(string userId)
         {
-            var teams = new List<TeamViewModel>();
+            var branchIds = _context.BranchUser_Tbl
+                .Where(bu => bu.UserId == userId && bu.IsActive)
+                .Select(bu => bu.BranchId)
+                .Distinct()
+                .ToList();
 
-            // تیم‌هایی که کاربر مدیر آن‌هاست
-            var managedTeams = _context.Team_Tbl.Where(t => t.ManagerUserId == userId && t.IsActive);
-            
-            // تیم‌هایی که کاربر عضو آن‌هاست
-            var memberTeams = _context.TeamMember_Tbl
-                .Where(tm => tm.UserId == userId && tm.IsActive)
-                .Select(tm => tm.Team)
-                .Where(t => t != null && t.IsActive);
-
-            // ترکیب و حذف تکرار
-            var allTeams = managedTeams.Union(memberTeams).Distinct().ToList();
-
-            foreach (var team in allTeams)
-            {
-                var manager = _context.Users.FirstOrDefault(u => u.Id == team.ManagerUserId);
-                
-                teams.Add(new TeamViewModel
-                {
-                    Id = team.Id,
-                    Title = team.Title,
-                    Description = team.Description,
-                    BranchId = team.BranchId,
-                    IsActive = team.IsActive,
-                    ManagerFullName = manager != null ? $"{manager.FirstName} {manager.LastName}" : "ندارد"
-                });
-            }
-
-            return teams.OrderBy(t => t.Title).ToList();
-        }
-
-        /// <summary>
-        /// دریافت کاربران مرتبط با کاربر
-        /// </summary>
-        public async Task<List<UserViewModelFull>> GetUserRelatedUsersAsync(string userId)
-        {
-            var relatedUserIds = new HashSet<string>();
-
-            // اعضای تیم‌هایی که کاربر مدیر آن‌هاست
-            var managedTeams = _context.Team_Tbl.Where(t => t.ManagerUserId == userId && t.IsActive);
-            foreach (var team in managedTeams)
-            {
-                var memberIds = _context.TeamMember_Tbl
-                    .Where(tm => tm.TeamId == team.Id && tm.IsActive)
-                    .Select(tm => tm.UserId);
-                foreach (var memberId in memberIds)
-                    relatedUserIds.Add(memberId);
-            }
-
-            // همکاران در تیم‌هایی که کاربر عضو آن‌هاست
-            var memberTeamIds = _context.TeamMember_Tbl
-                .Where(tm => tm.UserId == userId && tm.IsActive)
-                .Select(tm => tm.TeamId);
-            
-            foreach (var teamId in memberTeamIds)
-            {
-                var teammateIds = _context.TeamMember_Tbl
-                    .Where(tm => tm.TeamId == teamId && tm.IsActive)
-                    .Select(tm => tm.UserId);
-                foreach (var teammateId in teammateIds)
-                    relatedUserIds.Add(teammateId);
-            }
-
-            // تبدیل به UserViewModelFull
-            var users = new List<UserViewModelFull>();
-            foreach (var relatedUserId in relatedUserIds)
-            {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == relatedUserId);
-                if (user != null)
-                {
-                    users.Add(new UserViewModelFull
-                    {
-                        Id = user.Id,
-                        FullNamesString = $"{user.FirstName} {user.LastName}",
-                        FirstName = user.FirstName,
-                        LastName = user.LastName,
-                        UserName = user.UserName,
-                        PositionName = user.PositionName,
-                        IsActive = user.IsActive
-                    });
-                }
-            }
-
-            return users.OrderBy(u => u.FullNamesString).ToList();
+            // اگر کاربر در هیچ شعبه‌ای نیست، شعبه پیش‌فرض
+            return branchIds.Any() ? branchIds : new List<int> { 1 };
         }
 
         #endregion
 
         #region Statistics and Filter Methods
         /// <summary>
-        /// محاسبه آمار تسک‌ها بر اساس سطح دسترسی کاربر - اصلاح شده
+        /// محاسبه آمار ثابت - مستقل از ViewType - اصلاح نهایی
         /// </summary>
-        public async Task<TaskStatisticsViewModel> CalculateTaskStatisticsAsync(string userId, int dataAccessLevel, List<TaskViewModel> filteredTasks)
+        private async Task<TaskStatisticsViewModel> CalculateTaskStatisticsAsync(string userId, List<TaskViewModel> filteredTasks)
         {
-            List<TaskViewModel> allAvailableTasks;
-
-            switch (dataAccessLevel)
+            try
             {
-                case 0: // Personal
-                    var personalTasks = GetTasksByUser(userId, includeAssigned: true, includeCreated: true);
-                    allAvailableTasks = personalTasks.Select(MapToTaskViewModel).ToList();
-                    break;
+                // ⭐⭐⭐ مرحله 1: دریافت همه تسک‌هایی که کاربر مجوز دیدن آن‌ها را دارد
+                // شامل: تسک‌های شخصی + قابل مشاهده + نظارتی
+                var allAccessibleTasks = await GetTasksByUserWithPermissionsAsync(
+                    userId,
+                    includeAssigned: true,
+                    includeCreated: true,
+                    includeDeleted: false,
+                    includeSupervisedTasks: true); // ⭐ شامل تسک‌های نظارتی
 
-                case 1: // Branch
-                    var userBranchId = GetUserBranchId(userId);
-                    var branchTasks = GetTasksByBranch(userBranchId);
-                    allAvailableTasks = branchTasks.Select(MapToTaskViewModel).ToList();
-                    break;
+                // ⭐ اضافه کردن تسک‌های قابل مشاهده از طریق Visibility
+                var visibleTaskIds = await _taskVisibilityRepository.GetVisibleTaskIdsAsync(userId);
+                var visibleTasks = await _context.Tasks_Tbl
+                    .Where(t => visibleTaskIds.Contains(t.Id) && !t.IsDeleted)
+                    .ToListAsync();
 
-                case 2: // All
-                    var systemTasks = GetTasks(includeDeleted: false);
-                    allAvailableTasks = systemTasks.Select(MapToTaskViewModel).ToList();
-                    break;
+                // ⭐ ترکیب همه تسک‌ها و حذف تکرار
+                var combinedTasks = allAccessibleTasks
+                    .Concat(visibleTasks)
+                    .GroupBy(t => t.Id)
+                    .Select(g => g.First())
+                    .ToList();
 
-                default:
-                    allAvailableTasks = filteredTasks;
-                    break;
+                var allAccessibleTaskViewModels = combinedTasks.Select(MapToTaskViewModel).ToList();
+
+                // حذف تکرار از تسک‌های قابل دسترس
+                var uniqueAccessibleTasks = allAccessibleTaskViewModels
+                    .GroupBy(t => t.Id)
+                    .Select(g => g.First())
+                    .ToList();
+
+                // ⭐ مرحله 2: دریافت تسک‌های شخصی کاربر (برای آمار AssignedToMe و AssignedByMe)
+                var myTasks = await GetTasksByUserWithPermissionsAsync(
+                    userId,
+                    includeAssigned: true,
+                    includeCreated: true,
+                    includeDeleted: false,
+                    includeSupervisedTasks: false); // فقط تسک‌های شخصی
+
+                var myTaskViewModels = myTasks.Select(MapToTaskViewModel).ToList();
+
+                // حذف تکرار از تسک‌های شخصی
+                var uniqueMyTasks = myTaskViewModels
+                    .GroupBy(t => t.Id)
+                    .Select(g => g.First())
+                    .ToList();
+
+                // حذف تکرار از تسک‌های فیلتر شده
+                var uniqueFilteredTasks = filteredTasks
+                    .GroupBy(t => t.Id)
+                    .Select(g => g.First())
+                    .ToList();
+
+                // ⭐⭐⭐ محاسبه آمار
+                var statistics = new TaskStatisticsViewModel
+                {
+                    // ⭐⭐⭐ آمار ثابت (از همه تسک‌های قابل دسترس)
+                    TotalTasks = uniqueAccessibleTasks.Count, // ⭐ این عدد ثابت می‌ماند و شامل همه تسک‌های قابل دسترس است
+
+                    // ⭐⭐⭐ آمار شخصی (از تسک‌های شخصی کاربر)
+                    AssignedToMe = uniqueMyTasks.Count(t =>
+                        t.AssignmentsTaskUser != null &&
+                        t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId) &&
+                        t.CreatorUserId != userId),
+
+                    AssignedByMe = uniqueMyTasks.Count(t =>
+                        t.CreatorUserId == userId),
+
+                    // ⭐⭐⭐ آمار متغیر (از تسک‌های فیلتر شده - بسته به ViewType)
+                    CompletedTasks = uniqueFilteredTasks.Count(t =>
+                        t.CompletionDate.HasValue),
+
+                    OverdueTasks = uniqueFilteredTasks.Count(t =>
+                        !t.CompletionDate.HasValue &&
+                        t.DueDate.HasValue &&
+                        t.DueDate < DateTime.Now),
+
+                    InProgressTasks = uniqueFilteredTasks.Count(t =>
+                        !t.CompletionDate.HasValue &&
+                        t.IsActive),
+
+                    ImportantTasks = uniqueFilteredTasks.Count(t =>
+                        t.Important ||
+                        t.Priority == 1),
+
+                    UrgentTasks = uniqueFilteredTasks.Count(t =>
+                        t.Priority == 2),
+
+                    TeamTasks = 0,
+                    SubTeamTasks = 0
+                };
+
+                return statistics;
             }
-
-            // ⭐ حذف تسک‌های تکراری در محاسبه آمار
-            var uniqueAllTasks = allAvailableTasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
-            var uniqueFilteredTasks = filteredTasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
-
-            var statistics = new TaskStatisticsViewModel
+            catch (Exception ex)
             {
-                // آمار کل (بر اساس سطح دسترسی)
-                TotalTasks = uniqueAllTasks.Count,
+                Console.WriteLine($"❌ خطا در CalculateTaskStatisticsAsync: {ex.Message}");
 
-      
-                // تسک‌های منتصب به من - اصلاح شده
-                AssignedToMe = uniqueAllTasks.Count(t =>
-                    t.AssignmentsTaskUser != null &&
-                    t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId) &&
-                    t.CreatorUserId != userId), // فقط تسک‌هایی که خودم نساخته‌ام
-
-                // تسک‌های واگذار شده توسط من
-                AssignedByMe = uniqueAllTasks.Count(t => t.CreatorUserId == userId),
-
-                // آمار فیلتر شده فعلی
-                CompletedTasks = uniqueFilteredTasks.Count(t => t.CompletionDate.HasValue),
-                OverdueTasks = uniqueFilteredTasks.Count(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && t.DueDate < DateTime.Now),
-                InProgressTasks = uniqueFilteredTasks.Count(t => !t.CompletionDate.HasValue && t.IsActive),
-                ImportantTasks = uniqueFilteredTasks.Count(t => t.Important || t.Priority == 1),
-                UrgentTasks = uniqueFilteredTasks.Count(t => t.Priority == 2),
-
-                // آمار تیمی (در صورت نیاز)
-                TeamTasks = 0, // باید پیاده‌سازی شود
-                SubTeamTasks = 0 // باید پیاده‌سازی شود
-            };
-
-            return statistics;
+                return new TaskStatisticsViewModel
+                {
+                    TotalTasks = 0,
+                    AssignedToMe = 0,
+                    AssignedByMe = 0,
+                    CompletedTasks = 0,
+                    OverdueTasks = 0,
+                    InProgressTasks = 0,
+                    ImportantTasks = 0,
+                    UrgentTasks = 0,
+                    TeamTasks = 0,
+                    SubTeamTasks = 0
+                };
+            }
         }
-
         /// <summary>
         /// اعمال فیلترهای اضافی بر روی لیست تسک‌ها
         /// </summary>
@@ -1269,7 +1249,7 @@ namespace MahERP.DataModelLayer.Repository
                             (t.CreateDate >= start.Value && t.CreateDate <= end.Value) ||
                             // تسک‌هایی که DueDate در بازه است
                             (t.DueDate.HasValue && t.DueDate.Value >= start.Value && t.DueDate.Value <= end.Value) ||
-                            // تسک‌هایی که کل بازه را می‌پوشانند
+                            // تسک‌هایی که کل بازه را می‌پوشاند
                             (t.CreateDate <= start.Value && t.DueDate.HasValue && t.DueDate.Value >= end.Value)
                         );
                     }
@@ -1311,7 +1291,7 @@ namespace MahERP.DataModelLayer.Repository
                     );
                 }
 
-                // فیلتر کاربران انتصاب
+                // فیلتر کاربران انتساب
                 if (assignedUserIds != null && assignedUserIds.Any())
                 {
                     tasksQuery = tasksQuery.Where(t =>
@@ -1526,9 +1506,8 @@ namespace MahERP.DataModelLayer.Repository
                 Console.WriteLine($"Error adding personal events: {ex.Message}");
             }
         }
-
         /// <summary>
-        /// دریافت تسک‌ها برای Index با فیلترها (نسخه Async جدید) - اصلاح شده
+        /// دریافت تسک‌ها برای Index با فیلترها - نسخه بازنویسی شده
         /// </summary>
         public async Task<TaskListForIndexViewModel> GetTasksForIndexAsync(string userId, TaskFilterViewModel filters)
         {
@@ -1555,14 +1534,15 @@ namespace MahERP.DataModelLayer.Repository
                     await LoadMyTasksGroupedAsync(model, userId);
                 }
 
-                // محاسبه آمار
-                model.Statistics = await CalculateTaskStatisticsAsync(userId, 0, model.Tasks);
+                // ⭐⭐⭐ محاسبه آمار ثابت (مستقل از ViewType)
+                model.Statistics = await CalculateTaskStatisticsAsync(userId, model.Tasks);
 
                 return model;
             }
             catch (Exception ex)
             {
-                // در صورت خطا، مدل پیش‌فرض برگردان
+                Console.WriteLine($"❌ خطا در GetTasksForIndexAsync: {ex.Message}");
+
                 return new TaskListForIndexViewModel
                 {
                     UserLoginid = userId,
@@ -1609,7 +1589,6 @@ namespace MahERP.DataModelLayer.Repository
                 };
             }
         }
-
         /// <summary>
         /// دریافت داده‌های شعبه برای AJAX
         /// </summary>
@@ -1674,45 +1653,59 @@ namespace MahERP.DataModelLayer.Repository
                 };
             }
         }
-
         #endregion
 
         #region Helper Methods for New Async Implementation
 
         /// <summary>
-        /// پر کردن لیست‌های فیلتر به صورت async
+        /// پر کردن لیست‌های فیلتر به صورت async - اصلاح شده برای چند شعبه
         /// </summary>
         private async Task PopulateFilterListsAsync(TaskListForIndexViewModel model, string userId)
         {
             try
             {
-                // شعبه‌های کاربر
+                // ⭐⭐⭐ شعبه‌های کاربر (همه آن‌ها)
                 model.branchListInitial = _BranchRipository.GetBrnachListByUserId(userId);
 
-                // تیم‌های کاربر
+                // تیم‌های کاربر (از همه شعبه‌ها)
                 model.TeamsInitial = await GetUserRelatedTeamsAsync(userId);
 
-                // کاربران مرتبط
+                // کاربران مرتبط (از همه شعبه‌ها)
                 model.UsersInitial = await GetUserRelatedUsersAsync(userId);
 
-                // دسته‌بندی‌ها
+                // دسته‌بندی‌ها (کلی)
                 model.TaskCategoryInitial = GetAllCategories();
 
-                // طرف حساب‌ها
-                var stakeholders = _StakeholderRepo.GetStakeholders();
-                model.StakeholdersInitial = stakeholders.Select(s => new StakeholderViewModel
+                // ⭐⭐⭐ طرف حساب‌ها (از همه شعبه‌ها)
+                var userBranchIds = GetUserBranchIds(userId);
+                var allStakeholders = new List<StakeholderViewModel>();
+
+                foreach (var branchId in userBranchIds)
                 {
-                    Id = s.Id,
-                    FirstName = s.FirstName,
-                    LastName = s.LastName,
-                    CompanyName = s.CompanyName,
-                    NationalCode = s.NationalCode,
-                    IsActive = s.IsActive
-                }).ToList();
+                    var branchStakeholders = _StakeholderRepo.GetStakeholdersByBranchId(branchId);
+                    allStakeholders.AddRange(branchStakeholders.Select(s => new StakeholderViewModel
+                    {
+                        Id = s.Id,
+                        FirstName = s.FirstName,
+                        LastName = s.LastName,
+                        CompanyName = s.CompanyName,
+                        NationalCode = s.NationalCode,
+                        IsActive = s.IsActive
+                    }));
+                }
+
+                // حذف تکرار
+                model.StakeholdersInitial = allStakeholders
+                    .GroupBy(s => s.Id)
+                    .Select(g => g.First())
+                    .ToList();
+
+                Console.WriteLine($"✅ PopulateFilterListsAsync: {model.branchListInitial.Count} شعبه، {model.StakeholdersInitial.Count} طرف حساب");
             }
             catch (Exception ex)
             {
-                // در صورت خطا، لیست‌های خالی
+                Console.WriteLine($"❌ خطا در PopulateFilterListsAsync: {ex.Message}");
+                // لیست‌های خالی در صورت خطا
                 model.branchListInitial ??= new List<BranchViewModel>();
                 model.TeamsInitial ??= new List<TeamViewModel>();
                 model.UsersInitial ??= new List<UserViewModelFull>();
@@ -1722,7 +1715,7 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// بارگذاری تسک‌ها بر اساس فیلتر به صورت async
+        /// بارگذاری تسک‌ها بر اساس فیلتر به صورت async - اصلاح شده برای چند شعبه
         /// </summary>
         private async Task LoadTasksByFilterAsync(TaskListForIndexViewModel model, string userId)
         {
@@ -1733,25 +1726,19 @@ namespace MahERP.DataModelLayer.Repository
                     case TaskViewType.AllTasks:
                         await LoadAllTasksAsync(model, userId);
                         break;
-                        
-                    case TaskViewType.MyTeamsHierarchy:
-                        model.GroupedTasks = await GetHierarchicalTasksForUserAsync(userId);
-                        // ترکیب تمام تسک‌ها برای نمایش
-                        var allTasks = new List<TaskViewModel>();
-                        allTasks.AddRange(model.GroupedTasks.MyTasks);
-                        allTasks.AddRange(model.GroupedTasks.TeamMemberTasks.Values.SelectMany(tasks => tasks));
-                        allTasks.AddRange(model.GroupedTasks.SubTeamTasks.Values.SelectMany(tasks => tasks));
-                        model.Tasks = allTasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
+
+                    case TaskViewType.MyTeamsHierarchy: // ⭐ نام قدیمی - الان TeamTasks
+                        await LoadTeamTasksGroupedAsync(model, userId);
                         break;
-                        
+
                     case TaskViewType.MyTasks:
                         await LoadMyTasksAsync(model, userId);
                         break;
-                        
+
                     case TaskViewType.AssignedToMe:
                         await LoadAssignedToMeTasksAsync(model, userId);
                         break;
-                        
+
                     default:
                         await LoadMyTasksAsync(model, userId);
                         break;
@@ -1762,20 +1749,25 @@ namespace MahERP.DataModelLayer.Repository
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ خطا در LoadTasksByFilterAsync: {ex.Message}");
                 model.Tasks = new List<TaskViewModel>();
                 model.GroupedTasks = new TaskGroupedViewModel();
             }
         }
-
         /// <summary>
-        /// بارگذاری همه تسک‌ها بر اساس سطح دسترسی
+        /// بارگذاری همه تسک‌ها بر اساس سطح دسترسی - اصلاح شده برای چند شعبه
         /// </summary>
         private async Task LoadAllTasksAsync(TaskListForIndexViewModel model, string userId)
         {
-            // در اینجا باید از سطح دسترسی کاربر استفاده کنید
-            // فعلاً همه تسک‌های فعال را بارگذاری می‌کنیم
-            var allTasks = GetTasks(includeDeleted: false);
+            // ⭐⭐⭐ دریافت همه شعبه‌های کاربر
+            var userBranchIds = GetUserBranchIds(userId);
+
+            // ⭐⭐⭐ دریافت تسک‌های همه شعبه‌ها
+            var allTasks = GetTasksByBranches(userBranchIds);
+            
             model.Tasks = allTasks.Select(MapToTaskViewModel).ToList();
+
+            Console.WriteLine($"✅ LoadAllTasksAsync: کاربر در {userBranchIds.Count} شعبه عضو است، مجموع {allTasks.Count} تسک");
         }
 
         /// <summary>
@@ -1798,96 +1790,7 @@ namespace MahERP.DataModelLayer.Repository
                 .ToList();
             model.Tasks = tasks.Select(MapToTaskViewModel).ToList();
         }
-        /// <summary>
-        /// بارگذاری تسک‌های من با گروه‌بندی خاص - منطق کاملاً اصلاح شده
-        /// </summary>
-        private async Task LoadMyTasksGroupedAsync(TaskListForIndexViewModel model, string userId)
-        {
-            try
-            {
-                if (model.GroupedTasks == null)
-                    model.GroupedTasks = new TaskGroupedViewModel();
-
-                if (model.GroupedTasks.MyTasksGrouped == null)
-                    model.GroupedTasks.MyTasksGrouped = new MyTasksGroupedViewModel();
-
-                // ⭐ تسک‌های دریافتی (منتصب به من)
-                // شامل: تسک‌هایی که من در AssignmentsTaskUser با AssignedUserId من هستم
-                var assignedToMe = model.Tasks.Where(t =>
-                    t.AssignmentsTaskUser != null &&
-                    t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId)).ToList();
-
-                model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = assignedToMe;
-
-                // ⭐ تسک‌های واگذار شده (ایجاد شده توسط من)
-                // شامل: تسک‌هایی که من سازنده آنها هستم
-                var assignedByMe = model.Tasks.Where(t => t.CreatorUserId == userId).ToList();
-
-                var assignedByMeGrouped = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
-
-                // برای هر تسک که ایجاد کرده‌ام
-                foreach (var task in assignedByMe)
-                {
-                    if (task.AssignmentsTaskUser != null)
-                    {
-                        // ⭐ گروه‌بندی بر اساس AssignedUserId (نه AssignerUserId)
-                        // فیلتر کردن self-assignment برای نمایش در "واگذار شده"
-                        var assignees = task.AssignmentsTaskUser
-                            .Where(a => !string.IsNullOrEmpty(a.AssignedUserId)) // فقط assignments معتبر
-                            .Where(a => a.AssignedUserId != userId) // ⭐ حذف self-assignment از "واگذار شده"
-                            .GroupBy(a => a.AssignedUserId) // گروه‌بندی بر اساس AssignedUserId
-                            .Select(g => g.First()) // فقط اولین assignment هر کاربر
-                            .ToList();
-
-                        foreach (var assignment in assignees)
-                        {
-                            var assigneeInfo = new AssigneeInfo
-                            {
-                                Id = assignment.AssignedUserId,
-                                FullName = assignment.AssignedUserName,
-                                Type = "User",
-                                IsTeam = false
-                            };
-
-                            // ⭐ ایجاد گروه اگر وجود ندارد
-                            if (!assignedByMeGrouped.ContainsKey(assigneeInfo))
-                            {
-                                assignedByMeGrouped[assigneeInfo] = new List<TaskViewModel>();
-                            }
-
-                            // ⭐ اضافه کردن تسک فقط یکبار برای هر کاربر
-                            if (!assignedByMeGrouped[assigneeInfo].Any(t => t.Id == task.Id))
-                            {
-                                assignedByMeGrouped[assigneeInfo].Add(task);
-                            }
-                        }
-                    }
-                }
-
-                model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = assignedByMeGrouped;
-
-                // ⭐ لاگ برای debug
-                Console.WriteLine($"Debug: Total assigned to me tasks: {assignedToMe.Count}");
-                Console.WriteLine($"Debug: Total created by me tasks: {assignedByMe.Count}");
-                Console.WriteLine($"Debug: Unique assignee groups (excluding self): {assignedByMeGrouped.Count}");
-
-                foreach (var group in assignedByMeGrouped)
-                {
-                    Console.WriteLine($"Debug: Assignee {group.Key.FullName} ({group.Key.Id}) has {group.Value.Count} tasks");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in LoadMyTasksGroupedAsync: {ex.Message}");
-
-                // در صورت خطا، گروه‌بندی خالی
-                if (model.GroupedTasks?.MyTasksGrouped != null)
-                {
-                    model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = new List<TaskViewModel>();
-                    model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
-                }
-            }
-        }
+      
         /// <summary>
         /// تکمیل داده‌های مدل ایجاد تسک
         /// </summary>
@@ -1946,12 +1849,15 @@ namespace MahERP.DataModelLayer.Repository
             model.TeamsInitial ??= new List<TeamViewModel>();
             model.StakeholdersInitial ??= new List<StakeholderViewModel>();
 
-            model.TaskCodeSettings ??= _taskCodeGenerator.GetTaskCodeSettings();
-
+            model.TaskCodeSettings ??= new TaskCodeSettings
+            {
+                AllowManualInput = false,
+                SystemPrefix = "TSK"
+            };
 
             if (string.IsNullOrEmpty(model.TaskCode))
             {
-                model.TaskCode = _taskCodeGenerator.GenerateTaskCode();
+                model.TaskCode = "TSK-" + DateTime.Now.ToString("yyyyMMddHHmmss");
             }
         }
 
@@ -2345,6 +2251,7 @@ namespace MahERP.DataModelLayer.Repository
                 throw new Exception($"خطا در دریافت یادآوری‌ها: {ex.Message}", ex);
             }
         }
+
         /// <summary>
         /// دریافت یادآوری‌های داشبورد - نسخه ساده و بهینه
         /// </summary>
@@ -2391,6 +2298,7 @@ namespace MahERP.DataModelLayer.Repository
                 throw new Exception($"خطا در دریافت یادآوری‌های داشبورد: {ex.Message}", ex);
             }
         }
+
         /// <summary>
         /// اعمال مرتب‌سازی بر روی کوئری یادآوری‌ها
         /// </summary>
@@ -2788,7 +2696,7 @@ namespace MahERP.DataModelLayer.Repository
         #region Personal Dates Management Implementation
 
         /// <summary>
-        /// دریافت انتصاب تسک برای تنظیم تاریخ‌های شخصی
+        /// دریافت انتساب تسک برای تنظیم تاریخ‌های شخصی
         /// </summary>
         public async Task<TaskAssignment> GetTaskAssignmentForPersonalDatesAsync(int taskId, string userId)
         {
@@ -2801,12 +2709,12 @@ namespace MahERP.DataModelLayer.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception($"خطا در دریافت انتصاب تسک برای تاریخ‌های شخصی: {ex.Message}", ex);
+                throw new Exception($"خطا در دریافت انتساب تسک برای تاریخ‌های شخصی: {ex.Message}", ex);
             }
         }
 
         /// <summary>
-        /// دریافت انتصاب تسک بر اساس شناسه انتصاب برای تنظیم تاریخ‌های شخصی
+        /// دریافت انتساب تسک بر اساس شناسه انتساب برای تنظیم تاریخ‌های شخصی
         /// </summary>
         public async Task<TaskAssignment> GetTaskAssignmentByIdForPersonalDatesAsync(int assignmentId, string userId)
         {
@@ -2819,11 +2727,11 @@ namespace MahERP.DataModelLayer.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception($"خطا در دریافت انتصاب تسک بر اساس شناسه: {ex.Message}", ex);
+                throw new Exception($"خطا در دریافت انتساب تسک بر اساس شناسه: {ex.Message}", ex);
             }
         }
         /// <summary>
-        /// بروزرسانی تاریخ‌های شخصی انتصاب تسک
+        /// بروزرسانی تاریخ‌های شخصی انتساب تسک
         /// </summary>
         public async Task<bool> UpdatePersonalDatesAsync(int assignmentId, string userId, DateTime? personalStartDate, DateTime? personalEndDate, string personalTimeNote)
         {
@@ -2877,7 +2785,7 @@ namespace MahERP.DataModelLayer.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception($"خطا در دریافت انتصاب‌های تسک با تاریخ‌های شخصی: {ex.Message}", ex);
+                throw new Exception($"خطا در دریافت انتساب‌های تسک با تاریخ‌های شخصی: {ex.Message}", ex);
             }
         }
 
@@ -3329,6 +3237,837 @@ namespace MahERP.DataModelLayer.Repository
                     t.DueDate.HasValue && 
                     t.DueDate.Value.Date == today)
             };
+        }
+
+        #endregion
+
+        #region Task Creation and Validation Helper Methods Implementation
+
+        /// <summary>
+        /// اعتبارسنجی مدل تسک قبل از ایجاد یا ویرایش
+        /// </summary>
+        public async Task<(bool IsValid, Dictionary<string, string> Errors)> ValidateTaskModelAsync(TaskViewModel model, string userId)
+        {
+            var errors = new Dictionary<string, string>();
+            var isValid = true;
+
+            try
+            {
+                // بررسی شعبه
+                if (model.BranchIdSelected <= 0)
+                {
+                    errors.Add("BranchIdSelected", "انتخاب شعبه الزامی است");
+                    isValid = false;
+                }
+                else
+                {
+                    var userBranches = _BranchRipository.GetBrnachListByUserId(userId);
+                    if (!userBranches.Any(b => b.Id == model.BranchIdSelected))
+                    {
+                        errors.Add("BranchIdSelected", "شما به شعبه انتخاب شده دسترسی ندارید");
+                        isValid = false;
+                    }
+                }
+
+                // بررسی کد دستی
+                if (model.IsManualTaskCode && !string.IsNullOrWhiteSpace(model.ManualTaskCode))
+                {
+                    if (!_taskCodeGenerator.ValidateTaskCode(model.ManualTaskCode))
+                    {
+                        var settings = _taskCodeGenerator.GetTaskCodeSettings();
+                        errors.Add("ManualTaskCode",
+                            $"کد تسک نامعتبر است. نمی‌بایست از پیشوند '{settings.SystemPrefix}-' استفاده کنید");
+                        isValid = false;
+                    }
+                }
+
+                return (isValid, errors);
+            }
+            catch (Exception ex)
+            {
+                errors.Add("General", $"خطا در اعتبارسنجی: {ex.Message}");
+                return (false, errors);
+            }
+        }
+
+        /// <summary>
+        /// ایجاد entity تسک از ViewModel
+        /// </summary>
+        public async Task<Tasks> CreateTaskEntityAsync(TaskViewModel model, string currentUserId, IMapper mapper)
+        {
+            try
+            {
+                string finalTaskCode = model.IsManualTaskCode && !string.IsNullOrWhiteSpace(model.ManualTaskCode)
+                    ? model.ManualTaskCode
+                    : _taskCodeGenerator.GenerateTaskCode();
+
+                var task = mapper.Map<Tasks>(model);
+                task.TaskCode = finalTaskCode;
+                task.CreateDate = DateTime.Now;
+                task.CreatorUserId = currentUserId;
+                task.IsActive = model.IsActive;
+                task.IsDeleted = false;
+                task.TaskTypeInput = 1;
+                
+                // ⭐⭐⭐ اصلاح شده: مقدار پیش‌فرض تیمی
+                task.VisibilityLevel = model.VisibilityLevel > 0 ? model.VisibilityLevel : (byte)2; // پیش‌فرض: تیمی
+                
+                task.Priority = 0;
+                task.Important = false;
+                task.Status = 0;
+                task.CreationMode = 0;
+                task.TaskCategoryId = model.TaskCategoryIdSelected;
+                task.BranchId = model.BranchIdSelected;
+
+                // تبدیل تاریخ‌های شمسی
+                if (!string.IsNullOrEmpty(model.SuggestedStartDatePersian))
+                {
+                    task.DueDate = ConvertDateTime.ConvertShamsiToMiladi(model.SuggestedStartDatePersian);
+                }
+
+                if (!string.IsNullOrEmpty(model.StartDatePersian))
+                {
+                    task.StartDate = ConvertDateTime.ConvertShamsiToMiladi(model.StartDatePersian);
+                }
+
+                // ذخیره در دیتابیس
+                _unitOfWork.TaskUW.Create(task);
+                await _unitOfWork.SaveAsync();
+
+                return task;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در ایجاد entity تسک: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// ذخیره عملیات‌ها و یادآوری‌های تسک
+        /// </summary>
+        public async Task SaveTaskOperationsAndRemindersAsync(int taskId, TaskViewModel model)
+        {
+            try
+            {
+                // ذخیره عملیات‌ها
+                if (!string.IsNullOrEmpty(model.TaskOperationsJson))
+                {
+                    try
+                    {
+                        var operations = System.Text.Json.JsonSerializer.Deserialize<List<TaskOperationViewModel>>(model.TaskOperationsJson);
+                        if (operations?.Any() == true)
+                        {
+                            SaveTaskOperations(taskId, operations);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"خطا در ذخیره عملیات‌ها: {ex.Message}");
+                    }
+                }
+
+                // ذخیره یادآوری‌ها
+                if (!string.IsNullOrEmpty(model.TaskRemindersJson))
+                {
+                    try
+                    {
+                        var reminders = System.Text.Json.JsonSerializer.Deserialize<List<TaskReminderViewModel>>(model.TaskRemindersJson);
+                        if (reminders?.Any() == true)
+                        {
+                            SaveTaskReminders(taskId, reminders);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"خطا در ذخیره یادآوری‌ها: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در ذخیره عملیات‌ها و یادآوری‌ها: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// مدیریت انتصاب‌های تسک (نسخه ساده)
+        /// </summary>
+        public async Task HandleTaskAssignmentsAsync(Tasks task, TaskViewModel model, string currentUserId)
+        {
+            try
+            {
+                var assignedUserIds = model.AssignmentsSelectedTaskUserArraysString ?? new List<string>();
+                var assignedTeamIds = model.AssignmentsSelectedTeamIds ?? new List<int>();
+
+                // کاربران از تیم‌ها
+                var teamUserIds = await GetUsersFromTeamsAsync(assignedTeamIds);
+                var allAssignedUserIds = assignedUserIds.Union(teamUserIds).Distinct().ToList();
+
+                // اختصاص به سایرین
+                foreach (var assignedUserId in allAssignedUserIds)
+                {
+                    var assignment = new TaskAssignment
+                    {
+                        TaskId = task.Id,
+                        AssignedUserId = assignedUserId,
+                        AssignerUserId = currentUserId,
+                        AssignmentType = 0,
+                        AssignmentDate = DateTime.Now,
+                        Description = assignedUserIds.Contains(assignedUserId) ? "انتصاب مستقیم" : "انتصاب از طریق تیم",
+                        Status = 0,
+                    };
+                    _unitOfWork.TaskAssignmentUW.Create(assignment);
+                }
+
+                await _unitOfWork.SaveAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در مدیریت انتصاب‌ها: {ex.Message}", ex);
+            }
+        }
+        
+        /// <summary>
+        /// ذخیره فایل‌های پیوست تسک
+        /// </summary>
+        public async Task SaveTaskAttachmentsAsync(int taskId, List<IFormFile> files, string uploaderUserId, string webRootPath)
+        {
+            try
+            {
+                // تنظیمات اعتبارسنجی
+                var allowedExtensions = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png", ".zip", ".rar" };
+                var maxFileSize = 10 * 1024 * 1024; // 10 MB
+
+                string uploadsFolder = Path.Combine(webRootPath, "uploads", "tasks", taskId.ToString());
+
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var attachments = new List<TaskAttachment>();
+
+                foreach (var file in files)
+                {
+                    if (file.Length <= 0) continue;
+
+                    var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                    // اعتبارسنجی فرمت
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        Console.WriteLine($"فرمت فایل {file.FileName} مجاز نیست");
+                        continue;
+                    }
+
+                    // اعتبارسنجی حجم
+                    if (file.Length > maxFileSize)
+                    {
+                        Console.WriteLine($"حجم فایل {file.FileName} بیش از حد مجاز است");
+                        continue;
+                    }
+
+                    try
+                    {
+                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        attachments.Add(new TaskAttachment
+                        {
+                            TaskId = taskId,
+                            FileName = file.FileName,
+                            FileSize = file.Length,
+                            FilePath = $"/uploads/tasks/{taskId}/{uniqueFileName}",
+                            FileType = file.ContentType,
+                            UploadDate = DateTime.Now,
+                            UploaderUserId = uploaderUserId,
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"خطا در ذخیره فایل {file.FileName}: {ex.Message}");
+
+                        // Rollback: حذف پوشه
+                        if (Directory.Exists(uploadsFolder))
+                        {
+                            try
+                            {
+                                Directory.Delete(uploadsFolder, true);
+                            }
+                            catch { }
+                        }
+                        throw;
+                    }
+                }
+
+                // ذخیره در دیتابیس
+                if (attachments.Any())
+                {
+                    foreach (var attachment in attachments)
+                    {
+                        _unitOfWork.TaskAttachmentUW.Create(attachment);
+                    }
+                    await _unitOfWork.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در ذخیره فایل‌های پیوست: {ex.Message}", ex);
+            }
+        }
+
+        #endregion
+
+        #region Task Status Helper Methods Implementation
+
+        /// <summary>
+        /// دریافت رنگ وضعیت تسک برای تقویم
+        /// </summary>
+        public string GetTaskStatusColor(TaskCalendarViewModel task)
+        {
+            if (task.IsCompleted) return "#28a745"; // سبز
+            if (task.IsOverdue) return "#dc3545";   // قرمز
+            return "#007bff";                       // آبی
+        }
+
+        /// <summary>
+        /// دریافت متن وضعیت تسک برای تقویم
+        /// </summary>
+        public string GetTaskStatusTextForCalendar(TaskCalendarViewModel task)
+        {
+            if (task.IsCompleted) return "تکمیل شده";
+            if (task.IsOverdue) return "عقب افتاده";
+            return "در حال انجام";
+        }
+
+        #endregion
+
+
+        
+        /// <summary>
+        /// بارگذاری تسک‌های من با گروه‌بندی دقیق - نسخه کاملاً اصلاح شده
+        /// </summary>
+        private async Task LoadMyTasksGroupedAsync(TaskListForIndexViewModel model, string userId)
+        {
+            try
+            {
+                if (model.GroupedTasks == null)
+                    model.GroupedTasks = new TaskGroupedViewModel();
+
+                if (model.GroupedTasks.MyTasksGrouped == null)
+                    model.GroupedTasks.MyTasksGrouped = new MyTasksGroupedViewModel();
+
+                // ⭐ 1. تسک‌های دریافتی (منتصب به من - که من نساخته‌ام)
+                var assignedToMeTasks = model.Tasks
+                    .Where(t => t.AssignmentsTaskUser != null &&
+                               t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId) &&
+                               t.CreatorUserId != userId) // ⭐ کلیدی: فقط تسک‌هایی که من نساخته‌ام
+                    .ToList();
+
+                model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = assignedToMeTasks;
+
+                // ⭐ 2. تسک‌های واگذار شده (ساخته شده توسط من)
+                var createdByMeTasks = model.Tasks
+                    .Where(t => t.CreatorUserId == userId)
+                    .ToList();
+
+                // گروه‌بندی بر اساس تیم و سپس شخص
+                var assignedByMeGrouped = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
+
+                foreach (var task in createdByMeTasks)
+                {
+                    if (task.AssignmentsTaskUser == null || !task.AssignmentsTaskUser.Any())
+                        continue;
+
+                    // ⭐ برای هر assignment، تیم و شخص را مشخص کن
+                    foreach (var assignment in task.AssignmentsTaskUser.Where(a => !string.IsNullOrEmpty(a.AssignedUserId)))
+                    {
+                        // دریافت تیم کاربر منتصب شده
+                        var userTeam = await GetUserPrimaryTeamAsync(assignment.AssignedUserId, task.BranchId ?? 0);
+
+                        var assigneeInfo = new AssigneeInfo
+                        {
+                            Id = assignment.AssignedUserId,
+                            FullName = assignment.AssignedUserName,
+                            TeamId = userTeam?.Id,
+                            TeamName = userTeam?.Title ?? "بدون تیم",
+                            Type = "User",
+                            IsTeam = false
+                        };
+
+                        if (!assignedByMeGrouped.ContainsKey(assigneeInfo))
+                        {
+                            assignedByMeGrouped[assigneeInfo] = new List<TaskViewModel>();
+                        }
+
+                        // اضافه کردن تسک فقط یکبار
+                        if (!assignedByMeGrouped[assigneeInfo].Any(t => t.Id == task.Id))
+                        {
+                            assignedByMeGrouped[assigneeInfo].Add(task);
+                        }
+                    }
+                }
+
+                model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = assignedByMeGrouped;
+
+                Console.WriteLine($"✅ LoadMyTasksGroupedAsync: دریافتی={assignedToMeTasks.Count}, واگذار شده={assignedByMeGrouped.Count} گروه");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ خطا در LoadMyTasksGroupedAsync: {ex.Message}");
+
+                if (model.GroupedTasks?.MyTasksGrouped != null)
+                {
+                    model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = new List<TaskViewModel>();
+                    model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
+                }
+            }
+        }
+
+        /// <summary>
+        /// دریافت تیم اصلی کاربر در شعبه - متد کمکی جدید
+        /// </summary>
+        private async Task<Team?> GetUserPrimaryTeamAsync(string userId, int branchId)
+        {
+            try
+            {
+                // اگر AssignedInTeamId مشخص شده، از آن استفاده کن
+                var assignmentWithTeam = await _context.TaskAssignment_Tbl
+                    .Include(ta => ta.AssignedInTeam)
+                    .Where(ta => ta.AssignedUserId == userId &&
+                                ta.AssignedInTeamId.HasValue &&
+                                ta.AssignedInTeam.BranchId == branchId)
+                    .Select(ta => ta.AssignedInTeam)
+                    .FirstOrDefaultAsync();
+
+                if (assignmentWithTeam != null)
+                    return assignmentWithTeam;
+
+                // در غیر این صورت، اولین تیم کاربر را برگردان
+                return await _context.TeamMember_Tbl
+                    .Include(tm => tm.Team)
+                    .Where(tm => tm.UserId == userId &&
+                                tm.IsActive &&
+                                tm.Team.BranchId == branchId &&
+                                tm.Team.IsActive)
+                    .Select(tm => tm.Team)
+                    .FirstOrDefaultAsync();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// بارگذاری تسک‌های تیمی با گروه‌بندی کامل بر اساس تیم و شخص
+        /// </summary>
+        private async Task LoadTeamTasksGroupedAsync(TaskListForIndexViewModel model, string userId)
+        {
+            try
+            {
+                if (model.GroupedTasks == null)
+                    model.GroupedTasks = new TaskGroupedViewModel();
+
+                // 1. دریافت تیم‌های کاربر
+                var userTeams = await _context.TeamMember_Tbl
+                    .Include(tm => tm.Team)
+                    .Where(tm => tm.UserId == userId && tm.IsActive && tm.Team.IsActive)
+                    .Select(tm => tm.Team)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 2. دریافت تمام تسک‌های قابل مشاهده از طریق سیستم Visibility
+                var visibleTaskIds = await _taskVisibilityRepository.GetVisibleTaskIdsAsync(userId);
+
+                var allTeamTasks = await _context.Tasks_Tbl
+                    .Where(t => visibleTaskIds.Contains(t.Id) && !t.IsDeleted)
+                    .Include(t => t.TaskAssignments)
+                        .ThenInclude(ta => ta.AssignedUser)
+                    .Include(t => t.TaskCategory)
+                    .Include(t => t.Stakeholder)
+                    .ToListAsync();
+
+                // 3. گروه‌بندی بر اساس تیم
+                var tasksByTeam = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>();
+
+                foreach (var team in userTeams)
+                {
+                    // دریافت اعضای تیم
+                    var teamMembers = await _context.TeamMember_Tbl
+                        .Include(tm => tm.User)
+                        .Where(tm => tm.TeamId == team.Id && tm.IsActive)
+                        .ToListAsync();
+
+                    var teamMemberIds = teamMembers.Select(tm => tm.UserId).ToList();
+
+                    // فیلتر تسک‌های این تیم
+                    var teamTasks = allTeamTasks
+                        .Where(t => t.TaskAssignments.Any(ta => teamMemberIds.Contains(ta.AssignedUserId)))
+                        .ToList();
+
+                    if (!teamTasks.Any())
+                        continue;
+
+                    // گروه‌بندی بر اساس شخص در تیم
+                    var tasksByPerson = new Dictionary<string, List<TaskViewModel>>();
+
+                    foreach (var member in teamMembers)
+                    {
+                        var memberTasks = teamTasks
+                            .Where(t => t.TaskAssignments.Any(ta => ta.AssignedUserId == member.UserId))
+                            .Select(MapToTaskViewModel)
+                            .GroupBy(t => t.Id)
+                            .Select(g => g.First()) // حذف تکرار
+                            .ToList();
+
+                        if (memberTasks.Any())
+                        {
+                            var memberName = $"{member.User.FirstName} {member.User.LastName}";
+                            tasksByPerson[memberName] = memberTasks;
+                        }
+                    }
+
+                    if (tasksByPerson.Any())
+                    {
+                        tasksByTeam[team.Title] = tasksByPerson;
+                    }
+                }
+
+                model.GroupedTasks.TeamTasksGrouped = tasksByTeam;
+
+                // ترکیب تمام تسک‌ها برای نمایش در لیست اصلی
+                var allTasks = tasksByTeam.Values
+                    .SelectMany(dict => dict.Values.SelectMany(tasks => tasks))
+                    .GroupBy(t => t.Id)
+                    .Select(g => g.First())
+                    .ToList();
+
+                model.Tasks = allTasks;
+
+                Console.WriteLine($"✅ LoadTeamTasksGroupedAsync: {tasksByTeam.Count} تیم، مجموع {allTasks.Count} تسک");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ خطا در LoadTeamTasksGroupedAsync: {ex.Message}");
+                model.GroupedTasks.TeamTasksGrouped = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>();
+            }
+        }
+
+        #endregion
+
+        // ⭐ اضافه کردن این متدها به کلاس TaskRepository
+
+        #region Missing Methods from ITaskRepository
+
+        /// <summary>
+        /// دریافت تسک‌های طرف حساب
+        /// </summary>
+        public List<Tasks> GetTasksByStakeholder(int stakeholderId, bool includeDeleted = false)
+        {
+            var query = _context.Tasks_Tbl.Where(t => t.StakeholderId == stakeholderId);
+
+            if (!includeDeleted)
+                query = query.Where(t => !t.IsDeleted);
+
+            return query.OrderByDescending(t => t.CreateDate).ToList();
+        }
+
+        /// <summary>
+        /// دریافت تیم‌های مرتبط با کاربر
+        /// </summary>
+        public async Task<List<TeamViewModel>> GetUserRelatedTeamsAsync(string userId)
+        {
+            var teams = new List<TeamViewModel>();
+
+            // تیم‌هایی که کاربر مدیر آن‌هاست
+            var managedTeams = _context.Team_Tbl.Where(t => t.ManagerUserId == userId && t.IsActive);
+
+            // تیم‌هایی که کاربر عضو آن‌هاست
+            var memberTeams = _context.TeamMember_Tbl
+                .Where(tm => tm.UserId == userId && tm.IsActive)
+                .Select(tm => tm.Team)
+                .Where(t => t != null && t.IsActive);
+
+            // ترکیب و حذف تکرار
+            var allTeams = managedTeams.Union(memberTeams).Distinct().ToList();
+
+            foreach (var team in allTeams)
+            {
+                var manager = _context.Users.FirstOrDefault(u => u.Id == team.ManagerUserId);
+
+                teams.Add(new TeamViewModel
+                {
+                    Id = team.Id,
+                    Title = team.Title,
+                    Description = team.Description,
+                    BranchId = team.BranchId,
+                    IsActive = team.IsActive,
+                    ManagerFullName = manager != null ? $"{manager.FirstName} {manager.LastName}" : "ندارد"
+                });
+            }
+
+            return teams.OrderBy(t => t.Title).ToList();
+        }
+
+        /// <summary>
+        /// دریافت کاربران مرتبط با کاربر
+        /// </summary>
+        public async Task<List<UserViewModelFull>> GetUserRelatedUsersAsync(string userId)
+        {
+            var relatedUserIds = new HashSet<string>();
+
+            // اعضای تیم‌هایی که کاربر مدیر آن‌هاست
+            var managedTeams = _context.Team_Tbl.Where(t => t.ManagerUserId == userId && t.IsActive);
+            foreach (var team in managedTeams)
+            {
+                var memberIds = _context.TeamMember_Tbl
+                    .Where(tm => tm.TeamId == team.Id && tm.IsActive)
+                    .Select(tm => tm.UserId);
+                foreach (var memberId in memberIds)
+                    relatedUserIds.Add(memberId);
+            }
+
+            // همکاران در تیم‌هایی که کاربر عضو آن‌هاست
+            var memberTeamIds = _context.TeamMember_Tbl
+                .Where(tm => tm.UserId == userId && tm.IsActive)
+                .Select(tm => tm.TeamId);
+
+            foreach (var teamId in memberTeamIds)
+            {
+                var teammateIds = _context.TeamMember_Tbl
+                    .Where(tm => tm.TeamId == teamId && tm.IsActive)
+                    .Select(tm => tm.UserId);
+                foreach (var teammateId in teammateIds)
+                    relatedUserIds.Add(teammateId);
+            }
+
+            // تبدیل به UserViewModelFull
+            var users = new List<UserViewModelFull>();
+            foreach (var relatedUserId in relatedUserIds)
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == relatedUserId);
+                if (user != null)
+                {
+                    users.Add(new UserViewModelFull
+                    {
+                        Id = user.Id,
+                        FullNamesString = $"{user.FirstName} {user.LastName}",
+                        FirstName = user.FirstName,
+                        LastName = user.LastName,
+                        UserName = user.UserName,
+                        PositionName = user.PositionName,
+                        IsActive = user.IsActive
+                    });
+                }
+            }
+
+            return users.OrderBy(u => u.FullNamesString).ToList();
+        }
+
+        /// <summary>
+        /// مدیریت انتصاب‌های تسک با Bulk Insert - نسخه کامل
+        /// </summary>
+        public async Task HandleTaskAssignmentsBulkAsync(Tasks task, TaskViewModel model, string currentUserId)
+        {
+            try
+            {
+                var assignedUserIds = model.AssignmentsSelectedTaskUserArraysString ?? new List<string>();
+                var assignedTeamIds = model.AssignmentsSelectedTeamIds ?? new List<int>();
+
+                // پاکسازی userId ها
+                assignedUserIds = assignedUserIds
+                    .SelectMany(id => {
+                        if (string.IsNullOrWhiteSpace(id)) return Enumerable.Empty<string>();
+
+                        var cleaned = id
+                            .Trim()
+                            .Trim('[', ']', '/', ' ', '\t', '\n', '\r', '"', '\'', '`')
+                            .Replace("[", "").Replace("]", "")
+                            .Replace("/", "").Replace("\\", "")
+                            .Replace("\"", "").Replace("'", "")
+                            .Trim();
+
+                        if (cleaned.Contains(","))
+                        {
+                            return cleaned.Split(',')
+                                .Select(s => s.Trim().Trim('"', '\'', '[', ']'))
+                                .Where(s => !string.IsNullOrWhiteSpace(s));
+                        }
+
+                        return new[] { cleaned };
+                    })
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .Distinct()
+                    .ToList();
+
+                // Parse User-Team Map
+                Dictionary<string, int> userTeamMap = new Dictionary<string, int>();
+                if (!string.IsNullOrEmpty(model.UserTeamAssignmentsJson))
+                {
+                    try
+                    {
+                        var rawMap = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int>>(
+                            model.UserTeamAssignmentsJson) ?? new Dictionary<string, int>();
+
+                        foreach (var kvp in rawMap)
+                        {
+                            var cleanedKey = kvp.Key
+                                .Trim('[', ']', '/', ' ', '"', '\'')
+                                .Replace("[", "").Replace("]", "").Replace("/", "")
+                                .Trim();
+
+                            if (!string.IsNullOrWhiteSpace(cleanedKey))
+                            {
+                                userTeamMap[cleanedKey] = kvp.Value;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Silent fail - userTeamMap remains empty
+                    }
+                }
+
+                // دریافت کاربران از تیم‌ها
+                var teamUserIds = await GetUsersFromTeamsAsync(assignedTeamIds);
+                teamUserIds = teamUserIds
+                    .Select(id => id?.Trim('[', ']', '/', ' ', '"').Replace("[", "").Replace("]", "").Trim())
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .ToList();
+
+                var allAssignedUserIds = assignedUserIds.Union(teamUserIds).Distinct().ToList();
+
+                if (!allAssignedUserIds.Any())
+                {
+                    return;
+                }
+
+                // اعتبارسنجی در دیتابیس
+                var existingUserIds = await _context.Users
+                    .AsNoTracking()
+                    .Where(u => allAssignedUserIds.Contains(u.Id))
+                    .Select(u => u.Id)
+                    .ToListAsync();
+
+                var invalidUserIds = allAssignedUserIds.Except(existingUserIds).ToList();
+                if (invalidUserIds.Any())
+                {
+                    var invalidUsersStr = string.Join(", ", invalidUserIds.Select(id => $"'{id}'"));
+                    throw new InvalidOperationException($"کاربران زیر یافت نشدند: {invalidUsersStr}");
+                }
+
+                // ایجاد assignments
+                var assignments = new List<TaskAssignment>();
+                var assignmentDate = DateTime.Now;
+
+                foreach (var assignedUserId in existingUserIds)
+                {
+                    int? assignedInTeamId = null;
+
+                    // تعیین تیم مربوطه
+                    if (userTeamMap.ContainsKey(assignedUserId))
+                    {
+                        var teamId = userTeamMap[assignedUserId];
+                        assignedInTeamId = teamId == 0 ? null : (int?)teamId;
+                    }
+                    else if (teamUserIds.Contains(assignedUserId))
+                    {
+                        var userTeams = await GetUserTeamsInBranchAsync(assignedUserId, task.BranchId ?? 0);
+                        assignedInTeamId = userTeams.FirstOrDefault()?.Id;
+                    }
+
+                    var assignment = new TaskAssignment
+                    {
+                        TaskId = task.Id,
+                        AssignedUserId = assignedUserId,
+                        AssignerUserId = currentUserId,
+                        AssignmentType = 0,
+                        AssignmentDate = assignmentDate,
+                        Description = assignedUserIds.Contains(assignedUserId)
+                            ? "انتصاب مستقیم"
+                            : "انتصاب از طریق تیم",
+                        Status = 0,
+                        AssignedInTeamId = assignedInTeamId,
+                        DueDate = task.DueDate,
+                        StartDate = task.StartDate,
+                        IsRead = false,
+                        IsFavorite = false,
+                        IsMyDay = false
+                    };
+
+                    assignments.Add(assignment);
+                }
+
+                if (assignments.Any())
+                {
+                    _context.TaskAssignment_Tbl.AddRange(assignments);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در مدیریت انتصاب‌ها: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تیم‌های یک کاربر در شعبه مشخص - تبدیل به public
+        /// </summary>
+        public async Task<List<TeamViewModel>> GetUserTeamsByBranchAsync(string userId, int branchId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId) || branchId <= 0)
+                {
+                    return new List<TeamViewModel>();
+                }
+
+                // دریافت تیم‌های کاربر در شعبه مشخص
+                var userTeams = await _context.TeamMember_Tbl
+                    .Include(tm => tm.Team)
+                    .Where(tm => tm.UserId == userId &&
+                                tm.IsActive &&
+                                tm.Team.BranchId == branchId &&
+                                tm.Team.IsActive)
+                    .Select(tm => new TeamViewModel
+                    {
+                        Id = tm.Team.Id,
+                        Title = tm.Team.Title,
+                        Description = tm.Team.Description,
+                        BranchId = tm.Team.BranchId,
+                        IsActive = tm.Team.IsActive
+                    })
+                    .Distinct()
+                    .OrderBy(t => t.Title)
+                    .ToListAsync();
+
+                return userTeams;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"خطا در GetUserTeamsByBranchAsync: {ex.Message}");
+                return new List<TeamViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت تیم‌های یک کاربر در شعبه - متد کمکی برای HandleTaskAssignmentsBulkAsync
+        /// </summary>
+        private async Task<List<Team>> GetUserTeamsInBranchAsync(string userId, int branchId)
+        {
+            return await _context.TeamMember_Tbl
+                .Include(tm => tm.Team)
+                .Where(tm => tm.UserId == userId &&
+                            tm.IsActive &&
+                            tm.Team.BranchId == branchId &&
+                            tm.Team.IsActive)
+                .Select(tm => tm.Team)
+                .Distinct()
+                .ToListAsync();
         }
 
         #endregion

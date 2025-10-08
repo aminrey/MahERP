@@ -1,14 +1,15 @@
 ﻿using AutoMapper;
+using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
-using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Entities.Organization;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels.CRMViewModels;
+using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
-using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 
 namespace MahERP.AutoMapper
 {
@@ -20,19 +21,7 @@ namespace MahERP.AutoMapper
             CreateMap<AppUsers, AddUserViewModel>().ReverseMap();
             CreateMap<AppUsers, EditUserViewModel>().ReverseMap();
 
-            //Stakeholder
-            CreateMap<Stakeholder, StakeholderViewModel>()
-                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
-                .ReverseMap();
-            CreateMap<StakeholderCRM, StakeholderCRMViewModel>().ReverseMap();
-
-            // StakeholderContact mappings
-            CreateMap<StakeholderContactViewModel, StakeholderContact>()
-                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore());
-
-            CreateMap<StakeholderContact, StakeholderContactViewModel>();
+          
 
             // Branch -> BranchViewModel
             CreateMap<Branch, BranchViewModel>();
@@ -288,6 +277,97 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.Team, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedByUser, opt => opt.Ignore());
+
+
+
+
+
+
+            // Stakeholder Mappings
+            CreateMap<Stakeholder, StakeholderViewModel>()
+                .ForMember(dest => dest.BirthDate,
+                    opt => opt.MapFrom(src => src.BirthDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.BirthDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.RegistrationDate,
+                    opt => opt.MapFrom(src => src.RegistrationDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.RegistrationDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ReverseMap()
+                .ForMember(dest => dest.BirthDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.BirthDate)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.BirthDate)
+                        : (DateTime?)null))
+                .ForMember(dest => dest.RegistrationDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.RegistrationDate)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.RegistrationDate)
+                        : (DateTime?)null));
+
+            // StakeholderContact Mappings
+            CreateMap<StakeholderContact, StakeholderContactViewModel>()
+                .ReverseMap();
+
+            // StakeholderOrganization Mappings
+            CreateMap<StakeholderOrganization, StakeholderOrganizationViewModel>()
+                .ForMember(dest => dest.ManagerName,
+                    opt => opt.MapFrom(src => src.ManagerContact != null
+                        ? $"{src.ManagerContact.FirstName} {src.ManagerContact.LastName}"
+                        : null))
+                .ForMember(dest => dest.ParentOrganizationTitle,
+                    opt => opt.MapFrom(src => src.ParentOrganization != null
+                        ? src.ParentOrganization.Title
+                        : null))
+                .ReverseMap()
+                // ✅ مطمئن شوید StakeholderId به درستی map می‌شود
+                .ForMember(dest => dest.StakeholderId, opt => opt.MapFrom(src => src.StakeholderId)) // ✅ صریح
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.ParentOrganizationId, opt => opt.MapFrom(src => src.ParentOrganizationId))
+                .ForMember(dest => dest.ManagerContactId, opt => opt.MapFrom(src => src.ManagerContactId))
+                .ForMember(dest => dest.DisplayOrder, opt => opt.MapFrom(src => src.DisplayOrder))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdaterUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.Level, opt => opt.Ignore())
+                .ForMember(dest => dest.ChildOrganizations, opt => opt.Ignore())
+                .ForMember(dest => dest.Members, opt => opt.Ignore())
+                .ForMember(dest => dest.Positions, opt => opt.Ignore())
+                .ForMember(dest => dest.Stakeholder, opt => opt.Ignore())
+                .ForMember(dest => dest.ParentOrganization, opt => opt.Ignore())
+                .ForMember(dest => dest.ManagerContact, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore());
+
+            // StakeholderOrganizationPosition Mappings
+            CreateMap<StakeholderOrganizationPosition, StakeholderOrganizationPositionViewModel>()
+                .ReverseMap();
+
+            // StakeholderOrganizationMember Mappings
+            CreateMap<StakeholderOrganizationMember, StakeholderOrganizationMemberViewModel>()
+                .ForMember(dest => dest.JoinDate,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.JoinDate, "yyyy/MM/dd")))
+                .ForMember(dest => dest.LeaveDate,
+                    opt => opt.MapFrom(src => src.LeaveDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.LeaveDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.ContactName,
+                    opt => opt.MapFrom(src => src.Contact != null
+                        ? $"{src.Contact.FirstName} {src.Contact.LastName}"
+                        : null))
+                .ForMember(dest => dest.PositionTitle,
+                    opt => opt.MapFrom(src => src.Position != null
+                        ? src.Position.Title
+                        : null))
+                .ReverseMap()
+                .ForMember(dest => dest.JoinDate,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertShamsiToMiladi(src.JoinDate)))
+                .ForMember(dest => dest.LeaveDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.LeaveDate)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.LeaveDate)
+                        : (DateTime?)null));
+
         }
 
         // Helper methods for mapping

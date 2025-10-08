@@ -300,7 +300,7 @@ public class TaskViewModel
     /// سطح دسترسی تسک
     /// </summary>
     [Display(Name = "سطح دسترسی")]
-    public byte VisibilityLevel { get; set; }
+    public byte VisibilityLevel { get; set; } = 0;
 
     /// <summary>
     /// تاریخ آخرین بروزرسانی
@@ -319,6 +319,24 @@ public class TaskViewModel
     /// </summary>
     [Display(Name = "نحوه ایجاد")]
     public byte CreationMode { get; set; }
+
+    /// <summary>
+    /// آیا تسک خصوصی است؟
+    /// </summary>
+    [Display(Name = "تسک خصوصی")]
+    public bool IsPrivate { get; set; }
+
+    /// <summary>
+    /// لیست تیم‌های انتصاب (برای هر کاربر منتصب، تیم مرتبطش)
+    /// Key: UserId, Value: TeamId
+    /// </summary>
+    public Dictionary<string, int> UserTeamAssignments { get; set; } = new Dictionary<string, int>();
+
+    /// <summary>
+    /// JSON برای ارسال تخصیص تیم‌ها
+    /// </summary>
+    public string UserTeamAssignmentsJson { get; set; }
+
 }
 
 public class TaskOperationViewModel

@@ -5,6 +5,7 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using MahERP.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
@@ -54,16 +56,38 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         }
 
         // جزئیات شعبه
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var UserLogin = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                var currentUserId = _userManager.GetUserId(User);
+                var branchDetails = _branchRepository.GetBranchDetailsById(id, currentUserId,includeInactiveStakeholders:true);
 
-            // دریافت جزئیات کامل شعبه
-            var branchDetails = _branchRepository.GetBranchDetailsById(id, UserLogin);
-            if (branchDetails == null)
+                if (branchDetails == null)
+                {
+                    return RedirectToAction("ErrorView", "Home");
+                }
+
+                // ✅ انتقال BranchStakeholders به ViewBag
+                ViewBag.BranchStakeholders = branchDetails.BranchStakeholders;
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Branch",
+                    "Details",
+                    $"مشاهده جزئیات شعبه: {branchDetails.Name}",
+                    recordId: id.ToString(),
+                    entityType: "Branch",
+                    recordTitle: branchDetails.Name
+                );
+
+                return View(branchDetails);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Branch", "Details", "خطا در دریافت جزئیات", ex, recordId: id.ToString());
                 return RedirectToAction("ErrorView", "Home");
-
-            return View(branchDetails);
+            }
         }
 
         // افزودن شعبه جدید - نمایش فرم
@@ -563,6 +587,332 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             var branches = _branchRepository.GetBrnachListByUserId("0");
             ViewBag.SearchTerm = searchTerm;
             return View("Index", branches);
+        }
+        
+        /// <summary>
+        /// افزودن طرف حساب به شعبه - نمایش مودال
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddStakeholderToBranch(int branchId)
+        {
+            try
+            {
+                var branch = _branchRepository.GetBranchById(branchId);
+                if (branch == null)
+                {
+                    return NotFound();
+                }
+
+                // دریافت طرف حساب‌های فعال که قبلاً به این شعبه اختصاص نیافته‌اند
+                var assignedStakeholderIds = _uow.StakeholderBranchUW
+                    .Get(sb => sb.BranchId == branchId && sb.IsActive)
+                    .Select(sb => sb.StakeholderId)
+                    .ToList();
+
+                var availableStakeholders = _uow.StakeholderUW
+                    .Get(s => s.IsActive && !s.IsDeleted && !assignedStakeholderIds.Contains(s.Id))
+                    .Select(s => new SelectListItem
+                    {
+                        Value = s.Id.ToString(),
+                        Text = s.DisplayName
+                    })
+                    .ToList();
+
+                ViewBag.BranchId = branchId;
+                ViewBag.BranchName = branch.Name;
+                ViewBag.AvailableStakeholders = availableStakeholders;
+                ViewBag.ModalTitle = "افزودن طرف حساب به شعبه";
+                ViewBag.ThemeClass = "bg-primary";
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Branch",
+                    "AddStakeholderToBranch",
+                    $"مشاهده فرم افزودن طرف حساب به شعبه: {branch.Name}",
+                    recordId: branchId.ToString()
+                );
+
+                return PartialView("_AddStakeholderToBranch");
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "AddStakeholderToBranch",
+                    "خطا در نمایش فرم",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
+        /// افزودن طرف حساب به شعبه - پردازش درخواست
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddStakeholderToBranchPost(int branchId, int stakeholderId)
+        {
+            try
+            {
+                var branch = _branchRepository.GetBranchById(branchId);
+                if (branch == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شعبه یافت نشد" } }
+                    });
+                }
+
+                var stakeholder = _uow.StakeholderUW.GetById(stakeholderId);
+                if (stakeholder == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "طرف حساب یافت نشد" } }
+                    });
+                }
+
+                // بررسی عدم تکراری بودن
+                var exists = _uow.StakeholderBranchUW
+                    .Get(sb => sb.BranchId == branchId && sb.StakeholderId == stakeholderId)
+                    .FirstOrDefault();
+
+                if (exists != null)
+                {
+                    if (exists.IsActive)
+                    {
+                        return Json(new
+                        {
+                            status = "error",
+                            message = new[] { new { status = "warning", text = "این طرف حساب قبلاً به این شعبه اختصاص یافته است" } }
+                        });
+                    }
+                    else
+                    {
+                        // فعال‌سازی مجدد
+                        exists.IsActive = true;
+                        exists.AssignDate = DateTime.Now;
+                        exists.AssignedByUserId = GetUserId();
+                        _uow.StakeholderBranchUW.Update(exists);
+                    }
+                }
+                else
+                {
+                    // ایجاد رکورد جدید
+                    var stakeholderBranch = new StakeholderBranch
+                    {
+                        BranchId = branchId,
+                        StakeholderId = stakeholderId,
+                        IsActive = true,
+                        AssignDate = DateTime.Now,
+                        AssignedByUserId = GetUserId(),
+                        CreatorUserId = GetUserId(),
+                        CreateDate = DateTime.Now
+                    };
+
+                    _uow.StakeholderBranchUW.Create(stakeholderBranch);
+                }
+
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Branch",
+                    "AddStakeholderToBranch",
+                    $"افزودن طرف حساب {stakeholder.DisplayName} به شعبه {branch.Name}",
+                    recordId: branchId.ToString()
+                );
+
+                // رندر کردن لیست به‌روزرسانی شده طرف حساب‌های شعبه
+                var branchStakeholders = _branchRepository.GetBranchStakeholders(branchId);
+                var renderedView = await this.RenderViewToStringAsync("_BranchStakeholdersTableRows", branchStakeholders);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[] { new { status = "success", text = "طرف حساب با موفقیت به شعبه اضافه شد" } },
+                    viewList = new[]
+                    {
+                        new
+                        {
+                            elementId = "branchStakeholdersTableBody",
+                            view = new { result = renderedView }
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "AddStakeholderToBranch",
+                    "خطا در افزودن طرف حساب",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در ثبت: " + ex.Message } }
+                });
+            }
+        }
+        /// <summary>
+        /// حذف طرف حساب از شعبه - نمایش مودال تأیید
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> RemoveStakeholderFromBranch(int branchId, int stakeholderId)
+        {
+            try
+            {
+                var branch = _branchRepository.GetBranchById(branchId);
+                if (branch == null)
+                {
+                    return NotFound();
+                }
+
+                var stakeholder = _uow.StakeholderUW.GetById(stakeholderId);
+                if (stakeholder == null)
+                {
+                    return NotFound();
+                }
+
+                var stakeholderBranch = _uow.StakeholderBranchUW
+                    .Get(sb => sb.BranchId == branchId && sb.StakeholderId == stakeholderId && sb.IsActive)
+                    .FirstOrDefault();
+
+                if (stakeholderBranch == null)
+                {
+                    return NotFound();
+                }
+
+                ViewBag.BranchId = branchId;
+                ViewBag.StakeholderId = stakeholderId;
+                ViewBag.BranchName = branch.Name;
+                ViewBag.StakeholderName = stakeholder.DisplayName;
+                ViewBag.ModalTitle = "حذف طرف حساب از شعبه";
+                ViewBag.ThemeClass = "bg-danger";
+                ViewBag.ButtonClass = "btn rounded-0 btn-hero btn-danger";
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Branch",
+                    "RemoveStakeholderFromBranch",
+                    $"مشاهده فرم حذف طرف حساب {stakeholder.DisplayName} از شعبه {branch.Name}",
+                    recordId: branchId.ToString()
+                );
+
+                return PartialView("_RemoveStakeholderFromBranch", stakeholderBranch);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "RemoveStakeholderFromBranch",
+                    "خطا در نمایش فرم حذف",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
+        /// حذف طرف حساب از شعبه - پردازش درخواست
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveStakeholderFromBranchPost(int branchId, int stakeholderId)
+        {
+            try
+            {
+                var branch = _branchRepository.GetBranchById(branchId);
+                if (branch == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شعبه یافت نشد" } }
+                    });
+                }
+
+                var stakeholder = _uow.StakeholderUW.GetById(stakeholderId);
+                if (stakeholder == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "طرف حساب یافت نشد" } }
+                    });
+                }
+
+                var stakeholderBranch = _uow.StakeholderBranchUW
+                    .Get(sb => sb.BranchId == branchId && sb.StakeholderId == stakeholderId)
+                    .FirstOrDefault();
+
+                if (stakeholderBranch == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "ارتباط بین طرف حساب و شعبه یافت نشد" } }
+                    });
+                }
+
+                // غیرفعال کردن ارتباط (soft delete)
+                stakeholderBranch.IsActive = false;
+             
+
+                _uow.StakeholderBranchUW.Update(stakeholderBranch);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "Branch",
+                    "RemoveStakeholderFromBranch",
+                    $"حذف طرف حساب {stakeholder.DisplayName} از شعبه {branch.Name}",
+                    recordId: branchId.ToString()
+                );
+
+                // رندر کردن لیست به‌روزرسانی شده
+                var branchStakeholders = _branchRepository.GetBranchStakeholders(branchId);
+                var renderedView = await this.RenderViewToStringAsync("_BranchStakeholdersTableRows", branchStakeholders);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[] { new { status = "success", text = "طرف حساب با موفقیت از شعبه حذف شد" } },
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "branchStakeholdersTableBody",
+                    view = new { result = renderedView }
+                }
+            }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "RemoveStakeholderFromBranch",
+                    "خطا در حذف طرف حساب از شعبه",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در حذف: " + ex.Message } }
+                });
+            }
         }
     }
 }

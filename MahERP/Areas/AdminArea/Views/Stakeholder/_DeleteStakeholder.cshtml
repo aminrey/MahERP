@@ -3,25 +3,69 @@
     Layout = null;
 }
 
-<div class="modal-header">
-    <h5 class="modal-title">حذف طرف حساب</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
-<div class="modal-body">
-    <form method="POST" action="@Url.Action("DeleteStakeholderPost", "Stakeholder")">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="id" value="@Model.Id" />
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <form asp-controller="Stakeholder" asp-action="DeleteStakeholderPost" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
 
-        <div class="text-center">
-            <i class="fa fa-3x fa-exclamation-triangle text-danger mb-3"></i>
-            <p>آیا از حذف طرف حساب <strong>@Model.FirstName @Model.LastName</strong> مطمئن هستید؟</p>
-            <p class="text-muted">این عملیات قابل بازگشت نیست.</p>
-        </div>
-    </form>
-</div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
-    <button type="submit" class="btn btn-danger" data-save="modal-ajax-save">
-        <i class="fa fa-trash me-1"></i> حذف
-    </button>
+            <div class="modal-header @ViewBag.themeclass">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-trash-alt me-2"></i>
+                    @ViewBag.ViewTitle
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="text-center py-4">
+                    <div class="mb-4">
+                        <i class="fa fa-trash-alt fa-4x text-danger"></i>
+                    </div>
+                    <h4 class="mb-3">حذف طرف حساب</h4>
+                    
+                    <div class="alert alert-danger">
+                        <div class="mb-2">
+                            <strong>نام:</strong> @Model.FirstName @Model.LastName
+                        </div>
+                        @if (Model.PersonType == 1 && !string.IsNullOrEmpty(Model.CompanyName))
+                        {
+                            <div class="mb-2">
+                                <strong>شرکت:</strong> @Model.CompanyName
+                            </div>
+                        }
+                        <div class="mb-2">
+                            <strong>نوع:</strong> 
+                            <span class="badge bg-secondary">
+                                @(Model.PersonType == 0 ? "شخص حقیقی" : "شخص حقوقی")
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Mobile))
+                        {
+                            <div class="mb-0">
+                                <strong>تلفن:</strong> @Model.Mobile
+                            </div>
+                        }
+                    </div>
+
+                    <div class="alert alert-warning mb-0">
+                        <i class="fa fa-exclamation-triangle me-1"></i>
+                        <strong>توجه:</strong> این عملیات قابل بازگشت نیست!
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="@ViewBag.ButonClass" data-save="modal">
+                    <i class="fa fa-trash-alt me-1"></i>
+                    حذف قطعی
+                </button>
+            </div>
+        </form>
+    </div>
 </div>

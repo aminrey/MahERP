@@ -103,5 +103,15 @@ namespace MahERP.DataModelLayer.Services
         Task<List<MemberTaskVisibilityInfo>> GetMembersWithoutPositionAsync(int teamId);
 
         #endregion
+
+        /// <summary>
+        /// دریافت تسک‌های زیرتیم‌ها به صورت گروه‌بندی شده
+        /// </summary>
+        Task<SubTeamTasksGroupedViewModel> GetSubTeamTasksGroupedDetailedAsync(string userId, int? branchId = null);
+
+        /// <summary>
+        /// دریافت تسک‌های زیرتیم‌ها به صورت Dictionary ساده
+        /// </summary>
+        Task<Dictionary<int, List<int>>> GetSubTeamTasksGroupedAsync(string userId, int? branchId = null);
     }
 }

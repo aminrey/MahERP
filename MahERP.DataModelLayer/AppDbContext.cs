@@ -36,6 +36,9 @@ namespace MahERP.DataModelLayer
         public DbSet<StakeholderBranch> StakeholderBranch_Tbl { get; set; }
         public DbSet<StakeholderContact> StakeholderContact_Tbl { get; set; }
         public DbSet<Contract> Contract_Tbl { get; set; }
+        public DbSet<StakeholderOrganization> StakeholderOrganization_Tbl { get; set; }
+        public DbSet<StakeholderOrganizationPosition> StakeholderOrganizationPosition_Tbl { get; set; }
+        public DbSet<StakeholderOrganizationMember> StakeholderOrganizationMember_Tbl { get; set; }
 
         // Core Activities
         public DbSet<ActivityBase> ActivityBase_Tbl { get; set; }

@@ -173,5 +173,14 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <para>زمانی که کاربر گزارش را ثبت می‌کند، این ویژگی مقداردهی می‌شود.</para>
         /// </summary>
         public DateTime? ReportDate { get; set; }
+
+        /// <summary>
+        /// شناسه تیمی که کاربر در آن منتصب شده
+        /// (کاربر ممکن است در چند تیم باشد، این مشخص می‌کند در کدام تیم این تسک را دارد)
+        /// </summary>
+        public int? AssignedInTeamId { get; set; }
+
+        [ForeignKey("AssignedInTeamId")]
+        public virtual Team? AssignedInTeam { get; set; }
     }
 }

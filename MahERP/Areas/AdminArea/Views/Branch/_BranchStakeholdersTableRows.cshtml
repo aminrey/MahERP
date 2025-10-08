@@ -1,0 +1,73 @@
+﻿@using MahERP.CommonLayer.PublicClasses
+@using MahERP.DataModelLayer.Entities.AcControl
+
+@model List<StakeholderBranch>
+
+@if (Model != null && Model.Any())
+{
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.Stakeholder?.DisplayName</td>
+            <td>
+                @if (item.Stakeholder?.PersonType == 0)
+                {
+                    <span class="badge bg-info">حقیقی</span>
+                }
+                else
+                {
+                    <span class="badge bg-primary">حقوقی</span>
+                }
+            </td>
+            <td>
+                @if (item.Stakeholder?.StakeholderType == 0)
+                {
+                    <span class="badge bg-success">مشتری</span>
+                }
+                else if (item.Stakeholder?.StakeholderType == 1)
+                {
+                    <span class="badge bg-warning">تامین‌کننده</span>
+                }
+                else if (item.Stakeholder?.StakeholderType == 2)
+                {
+                    <span class="badge bg-secondary">همکار</span>
+                }
+            </td>
+            <td>@ConvertDateTime.ConvertMiladiToShamsi(item.AssignDate, "yyyy/MM/dd")</td>
+            <td>
+                @if (item.IsActive)
+                {
+                    <span class="badge bg-success">فعال</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">غیرفعال</span>
+                }
+            </td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                    <a href="@Url.Action("Details", "Stakeholder", new { id = item.StakeholderId })" 
+                       class="btn btn-sm btn-info" 
+                       title="جزئیات">
+                        <i class="fa fa-eye"></i>
+                    </a>
+                    <a href="@Url.Action("RemoveStakeholderFromBranch", "Branch", new { branchId = item.BranchId, stakeholderId = item.StakeholderId })"
+                       class="btn btn-sm btn-danger"
+                       data-toggle="modal-ajax"
+                       title="حذف از شعبه">
+                        <i class="fa fa-times"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    }
+}
+else
+{
+    <tr>
+        <td colspan="6" class="text-center text-muted py-4">
+            <i class="fa fa-info-circle me-1"></i>
+            هیچ طرف حسابی به این شعبه اختصاص نیافته است
+        </td>
+    </tr>
+}

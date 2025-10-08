@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
 {
@@ -9,54 +10,75 @@ namespace MahERP.DataModelLayer.ViewModels.StakeholderViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "شناسه طرف حساب الزامی است")]
         public int StakeholderId { get; set; }
 
-        [Required(ErrorMessage = "نام الزامی است")]
         [Display(Name = "نام")]
-        [MaxLength(100, ErrorMessage = "نام نمی‌تواند بیش از 100 کاراکتر باشد")]
+        [Required(ErrorMessage = "نام الزامی است")]
         public string FirstName { get; set; }
 
-        [Required(ErrorMessage = "نام خانوادگی الزامی است")]
         [Display(Name = "نام خانوادگی")]
-        [MaxLength(100, ErrorMessage = "نام خانوادگی نمی‌تواند بیش از 100 کاراکتر باشد")]
+        [Required(ErrorMessage = "نام خانوادگی الزامی است")]
         public string LastName { get; set; }
 
-        [Display(Name = "سمت")]
-        [MaxLength(150, ErrorMessage = "سمت نمی‌تواند بیش از 150 کاراکتر باشد")]
-        public string? Position { get; set; }
+        [Display(Name = "عنوان شغلی")]
+        public string? JobTitle { get; set; }
+
+        [Display(Name = "دپارتمان")]
+        public string? Department { get; set; }
 
         [Display(Name = "تلفن ثابت")]
-        [MaxLength(20, ErrorMessage = "تلفن ثابت نمی‌تواند بیش از 20 کاراکتر باشد")]
-        [RegularExpression(@"^[0-9\-\+\(\)]*$", ErrorMessage = "فرمت تلفن نامعتبر است")]
+        [Phone(ErrorMessage = "فرمت تلفن صحیح نیست")]
         public string? Phone { get; set; }
 
         [Display(Name = "تلفن همراه")]
-        [MaxLength(20, ErrorMessage = "تلفن همراه نمی‌تواند بیش از 20 کاراکتر باشد")]
-        [RegularExpression(@"^[0-9\-\+\(\)]*$", ErrorMessage = "فرمت موبایل نامعتبر است")]
+        [Phone(ErrorMessage = "فرمت تلفن همراه صحیح نیست")]
         public string? Mobile { get; set; }
 
         [Display(Name = "ایمیل")]
-        [MaxLength(100, ErrorMessage = "ایمیل نمی‌تواند بیش از 100 کاراکتر باشد")]
-        [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
+        [EmailAddress(ErrorMessage = "فرمت ایمیل صحیح نیست")]
         public string? Email { get; set; }
 
-        [Display(Name = "یادداشت")]
-        [MaxLength(500, ErrorMessage = "یادداشت نمی‌تواند بیش از 500 کاراکتر باشد")]
-        public string? Notes { get; set; }
+        [Display(Name = "کد ملی")]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "کد ملی باید 10 رقم باشد")]
+        public string? NationalCode { get; set; }
 
-        // فیلدهای اضافه شده
-        [Display(Name = "نوع ارتباط")]
-        public byte? ContactType { get; set; }
+        [Display(Name = "نوع تماس")]
+        public byte ContactType { get; set; }
 
-        [Display(Name = "مخاطب اصلی")]
+        [Display(Name = "سطح اهمیت")]
+        public byte ImportanceLevel { get; set; }
+
+        [Display(Name = "تماس اصلی")]
         public bool IsPrimary { get; set; }
 
-        [Display(Name = "وضعیت فعال")]
-        public bool IsActive { get; set; } = true;
+        [Display(Name = "تصمیم‌گیرنده")]
+        public bool IsDecisionMaker { get; set; }
 
-        // فیلدهای سیستمی
-        public DateTime CreateDate { get; set; }
-        public string? CreatorUserId { get; set; }
+        [Display(Name = "یادداشت")]
+        public string? Notes { get; set; }
+
+        public bool IsActive { get; set; }
+
+        public string FullName => $"{FirstName} {LastName}";
+
+        public string ContactTypeText => ContactType switch
+        {
+            0 => "کارمند",
+            1 => "مدیر",
+            2 => "نماینده",
+            3 => "تصمیم‌گیرنده",
+            4 => "تماس‌گیرنده",
+            5 => "سایر",
+            _ => "نامشخص"
+        };
+
+        public string ImportanceLevelText => ImportanceLevel switch
+        {
+            0 => "پایین",
+            1 => "متوسط",
+            2 => "بالا",
+            3 => "خیلی بالا",
+            _ => "نامشخص"
+        };
     }
 }

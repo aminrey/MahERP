@@ -1,0 +1,47 @@
+﻿@model int 
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="fa fa-list-alt me-2 text-info"></i>دسته‌بندی‌های تسک شعبه</h4>
+    <div>
+        <button type="button" class="btn btn-sm btn-success"
+                onclick="openModal('@Url.Action("AssignTaskCategoryToBranch", "BranchTaskCategory", new { area = "AdminArea", branchId = Model })')">
+            <i class="fa fa-plus me-1"></i> افزودن دسته‌بندی
+        </button>
+        <a href="@Url.Action("Index", "BranchTaskCategory", new { area = "AdminArea", branchId = Model })" 
+           class="btn btn-sm btn-alt-primary">
+            <i class="fa fa-list me-1"></i> مشاهده همه
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="fa fa-info-circle me-2"></i>
+    برای مشاهده لیست کامل دسته‌بندی‌های تسک، روی دکمه "مشاهده همه" کلیک کنید.
+</div>
+
+<div class="row">
+    @for (int i = 1; i <= 3; i++)
+    {
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="block block-rounded block-link-shadow h-100">
+                <div class="block-content text-center">
+                    <div class="py-3">
+                        <div class="fs-3 fw-semibold mb-2">
+                            <i class="fa fa-tag text-primary"></i>
+                        </div>
+                        <p class="fw-semibold mb-1">دسته‌بندی نمونه @i</p>
+                        <p class="fs-sm text-muted mb-2">توضیحات دسته‌بندی</p>
+                        <span class="badge bg-success">فعال</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="text-center mt-3">
+    <a href="@Url.Action("Index", "BranchTaskCategory", new { area = "AdminArea", branchId = Model })" 
+       class="btn btn-alt-primary">
+        <i class="fa fa-arrow-left me-1"></i> مشاهده تمام دسته‌بندی‌ها
+    </a>
+</div>

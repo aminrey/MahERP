@@ -130,6 +130,11 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// گروه‌بندی ویژه برای صفحه "تسک‌های من"
         /// </summary>
         public MyTasksGroupedViewModel MyTasksGrouped { get; set; } = new MyTasksGroupedViewModel();
+        /// <summary>
+        /// تسک‌های تیمی گروه‌بندی شده: Dictionary<TeamName, Dictionary<PersonName, List<TaskViewModel>>>
+        /// </summary>
+        public Dictionary<string, Dictionary<string, List<TaskViewModel>>> TeamTasksGrouped { get; set; }
+            = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>();
     }
 
     public enum TaskViewType
@@ -196,19 +201,32 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         Overdue = 99
     }
 
-
+    /// <summary>
+    /// اطلاعات شخص یا تیم منتصب شده
+    /// </summary>
     public class AssigneeInfo
     {
         public string Id { get; set; }
         public string FullName { get; set; }
-        public string Type { get; set; } // "User" یا "Team"
+
+        /// <summary>
+        /// شناسه تیم (برای گروه‌بندی)
+        /// </summary>
+        public int? TeamId { get; set; }
+
+        /// <summary>
+        /// نام تیم (برای نمایش)
+        /// </summary>
+        public string? TeamName { get; set; }
+
+        public string Type { get; set; } // "User" or "Team"
         public bool IsTeam { get; set; }
 
-        public override bool Equals(object obj)
+        // برای استفاده در Dictionary
+        public override bool Equals(object? obj)
         {
             if (obj is AssigneeInfo other)
             {
-                // ⭐ اصلاح: فقط بر اساس Id و Type مقایسه کن
                 return Id == other.Id && Type == other.Type;
             }
             return false;
@@ -216,13 +234,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
         public override int GetHashCode()
         {
-            // ⭐ اصلاح: HashCode بر اساس Id و Type
             return HashCode.Combine(Id, Type);
-        }
-
-        public override string ToString()
-        {
-            return $"{Type}:{Id}:{FullName}";
         }
     }
 

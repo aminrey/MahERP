@@ -54,144 +54,138 @@
             <ul class="nav-main">
 
                 <!-- ============== 📊 DASHBOARD SECTION ============== -->
-              
-                    <li class="nav-main-heading">داشبورد</li>
-                    <li class="nav-main-item @(IsMenuItemActive(currentController, currentAction, "Dashboard", "Index") ? "active" : "")">
-                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Dashboard", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">
-                            <i class="nav-main-link-icon fa fa-tachometer-alt text-primary"></i>
-                            <span class="nav-main-link-name fw-semibold">داشبورد اصلی</span>
-                        </a>
-                    </li>
-                
+                <li class="nav-main-heading">داشبورد</li>
+                <li class="nav-main-item @(IsMenuItemActive(currentController, currentAction, "Dashboard", "Index") ? "active" : "")">
+                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Dashboard", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">
+                        <i class="nav-main-link-icon fa fa-tachometer-alt text-primary"></i>
+                        <span class="nav-main-link-name fw-semibold">داشبورد اصلی</span>
+                    </a>
+                </li>
 
                 <!-- ============== 📋 TASK MANAGEMENT SECTION ============== -->
-               
-                    <li class="nav-main-heading">مدیریت تسک‌ها</li>
-                    <li class="nav-main-item @(IsTaskMenuActive(currentController) ? "open" : "")">
-                        <a aria-expanded="@(IsTaskMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                            <i class="nav-main-link-icon fa fa-tasks text-primary"></i>
-                            <span class="nav-main-link-name">تسک‌ها</span>
-                            <span class="nav-main-link-badge badge bg-primary rounded-pill ms-1" id="taskBadgeCount" style="display: none;">0</span>
-                        </a>
-                        <ul class="nav-main-submenu">
-                            <!-- 🎯 صفحات مهم -->
-                            <li class="nav-main-item nav-submenu-separator">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">صفحات اصلی</small>
-                                </div>
-                            </li>
+                <li class="nav-main-heading">مدیریت تسک‌ها</li>
+                <li class="nav-main-item @(IsTaskMenuActive(currentController) ? "open" : "")">
+                    <a aria-expanded="@(IsTaskMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                        <i class="nav-main-link-icon fa fa-tasks text-primary"></i>
+                        <span class="nav-main-link-name">تسک‌ها</span>
+                        <span class="nav-main-link-badge badge bg-primary rounded-pill ms-1" id="taskBadgeCount" style="display: none;">0</span>
+                    </a>
+                    <ul class="nav-main-submenu">
+                        <!-- 🎯 صفحات مهم -->
+                        <li class="nav-main-item nav-submenu-separator">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">صفحات اصلی</small>
+                            </div>
+                        </li>
 
-                            <!-- همه تسک‌ها -->
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-list text-info"></i>
-                                    <span class="nav-main-link-name">همه تسک‌ها</span>
-                                </a>
-                            </li>
+                        <!-- همه تسک‌ها -->
+                        <li class="nav-main-item">
+                            <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "AllTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-TaskViewType="AllTasks">
+                                <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                <span class="nav-main-link-name">همه تسک‌ها</span>
+                            </a>
+                        </li>
 
-                            <!-- تسک‌های من -->
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "MyTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-TaskViewType="MyTasks">
-                                    <i class="nav-main-link-icon fa fa-clipboard-check text-warning"></i>
-                                    <span class="nav-main-link-name">تسک‌های من</span>
-                                    <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" id="myTasksCount" style="display: none;">0</span>
-                                </a>
-                            </li>
+                        <!-- تسک‌های من -->
+                        <li class="nav-main-item">
+                            <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "MyTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-TaskViewType="MyTasks">
+                                <i class="nav-main-link-icon fa fa-clipboard-check text-warning"></i>
+                                <span class="nav-main-link-name">تسک‌های من</span>
+                                <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" id="myTasksCount" style="display: none;">0</span>
+                            </a>
+                        </li>
 
-                            <!-- یادآوری‌های من -->
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
-                                    <i class="nav-main-link-icon fa fa-bell text-orange"></i>
-                                    <span class="nav-main-link-name">یادآوری‌های من</span>
-                                    <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="remindersCount" style="display: none;">0</span>
-                                </a>
-                            </li>
+                        <!-- یادآوری‌های من -->
+                        <li class="nav-main-item">
+                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
+                                <i class="nav-main-link-icon fa fa-bell text-orange"></i>
+                                <span class="nav-main-link-name">یادآوری‌های من</span>
+                                <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="remindersCount" style="display: none;">0</span>
+                            </a>
+                        </li>
 
-                            <!-- تسک‌های امروز من -->
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "MyDayTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyDayTasks">
-                                    <i class="nav-main-link-icon fa fa-calendar-day text-success"></i>
-                                    <span class="nav-main-link-name">تسک‌های امروز</span>
-                                    <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="myDayCount" style="display: none;">0</span>
-                                </a>
-                            </li>
+                        <!-- تسک‌های امروز من -->
+                        <li class="nav-main-item">
+                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "MyDayTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyDayTasks">
+                                <i class="nav-main-link-icon fa fa-calendar-day text-success"></i>
+                                <span class="nav-main-link-name">تسک‌های امروز</span>
+                                <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="myDayCount" style="display: none;">0</span>
+                            </a>
+                        </li>
 
-                            <!-- 📅 تقویم -->
-                            <li class="nav-main-item nav-submenu-separator mt-2">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">تقویم</small>
-                                </div>
-                            </li>
+                        <!-- 📅 تقویم -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">تقویم</small>
+                            </div>
+                        </li>
 
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskCalendar") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskCalendar">
-                                    <i class="nav-main-link-icon fa fa-calendar text-success"></i>
-                                    <span class="nav-main-link-name">تقویم تسک‌ها</span>
-                                </a>
-                            </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskCalendar") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskCalendar">
+                                <i class="nav-main-link-icon fa fa-calendar text-success"></i>
+                                <span class="nav-main-link-name">تقویم تسک‌ها</span>
+                            </a>
+                        </li>
 
-                            <!-- ⚡ عملیات سریع -->
-                          
-                                <li class="nav-main-item nav-submenu-separator mt-2">
-                                    <div class="nav-submenu-title">
-                                        <small class="text-muted fw-semibold">عملیات سریع</small>
-                                    </div>
-                                </li>
+                        <!-- ⚡ عملیات سریع -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">عملیات سریع</small>
+                            </div>
+                        </li>
 
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Tasks", "CreateNewTask") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" asp-route-AddressRouteInComingUrl="side">
-                                        <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                        <span class="nav-main-link-name fw-semibold">ایجاد تسک جدید</span>
-                                    </a>
-                                </li>
-                            
+                        <li class="nav-main-item">
+                            <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Tasks", "CreateNewTask") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" asp-route-AddressRouteInComingUrl="side">
+                                <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                <span class="nav-main-link-name fw-semibold">ایجاد تسک جدید</span>
+                            </a>
+                        </li>
 
-                            <li class="nav-main-item">
-                                <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
-                                    <i class="nav-main-link-icon fa fa-search text-secondary"></i>
-                                    <span class="nav-main-link-name">جستجوی پیشرفته</span>
-                                </a>
-                            </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
+                                <i class="nav-main-link-icon fa fa-search text-secondary"></i>
+                                <span class="nav-main-link-name">جستجوی پیشرفته</span>
+                            </a>
+                        </li>
 
-                            <!-- 👥 مدیریت تیمی -->
-                            <li class="nav-main-item nav-submenu-separator mt-2">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">مدیریت تیمی</small>
-                                </div>
-                            </li>
+                        <!-- 👥 مدیریت تیمی -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">مدیریت تیمی</small>
+                            </div>
+                        </li>
 
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "AssignedByMe") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="AssignedByMe">
-                                    <i class="nav-main-link-icon fa fa-share-square text-info"></i>
-                                    <span class="nav-main-link-name">تسک‌های واگذار شده</span>
-                                    <span class="nav-main-link-badge badge bg-warning rounded-pill ms-1" id="assignedByMeCount" style="display: none;">0</span>
-                                </a>
-                            </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "AssignedByMe") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="AssignedByMe">
+                                <i class="nav-main-link-icon fa fa-share-square text-info"></i>
+                                <span class="nav-main-link-name">تسک‌های واگذار شده</span>
+                                <span class="nav-main-link-badge badge bg-warning rounded-pill ms-1" id="assignedByMeCount" style="display: none;">0</span>
+                            </a>
+                        </li>
 
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "SupervisedTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="SupervisedTasks">
-                                    <i class="nav-main-link-icon fa fa-eye text-purple"></i>
-                                    <span class="nav-main-link-name">تسک‌های نظارتی</span>
-                                    <span class="nav-main-link-badge badge bg-info rounded-pill ms-1" id="supervisedTasksCount" style="display: none;">0</span>
-                                </a>
-                            </li>
+                        <li class="nav-main-item">
+                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "SupervisedTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="SupervisedTasks">
+                                <i class="nav-main-link-icon fa fa-eye text-purple"></i>
+                                <span class="nav-main-link-name">تسک‌های نظارتی</span>
+                                <span class="nav-main-link-badge badge bg-info rounded-pill ms-1" id="supervisedTasksCount" style="display: none;">0</span>
+                            </a>
+                        </li>
 
-                            <!-- 📊 آمار و گزارشات -->
-                            <li class="nav-main-item nav-submenu-separator mt-2">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">آمار و گزارشات</small>
-                                </div>
-                            </li>
+                        <!-- 📊 آمار و گزارشات -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">آمار و گزارشات</small>
+                            </div>
+                        </li>
 
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskDashboard") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskDashboard">
-                                    <i class="nav-main-link-icon fa fa-chart-bar text-primary"></i>
-                                    <span class="nav-main-link-name">داشبورد تسک‌ها</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                
+                        <li class="nav-main-item">
+                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskDashboard") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskDashboard">
+                                <i class="nav-main-link-icon fa fa-chart-bar text-primary"></i>
+                                <span class="nav-main-link-name">داشبورد تسک‌ها</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
 
                 <!-- ============== 🔔 NOTIFICATIONS ============== -->
                 @if (Html.CanAccess("Notification") || isAdminOrManager)
@@ -266,6 +260,7 @@
                                     </a>
                                 </li>
                           
+
                                 @if (Html.CanAccess("Team", 1) || isAdminOrManager) 
                                 {
                                     <li class="nav-main-item">
@@ -385,36 +380,128 @@
                 {
                     <li class="nav-main-heading">مدیریت کسب‌وکار</li>
 
-                    <!-- طرف حساب‌ها -->
+                    <!-- ========== 🤝 طرف حساب‌ها - به‌روزرسانی شده ========== -->
                     @if (Html.CanAccess("Stakeholder") || isAdminOrManager)
                     {
                         <li class="nav-main-item @(IsStakeholderMenuActive(currentController) ? "open" : "")">
-                            <a aria-expanded="@(IsStakeholderMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <a aria-expanded="@(IsStakeholderMenuActive(currentController) ? "true" : "false")" 
+                               aria-haspopup="true" 
+                               class="nav-main-link nav-main-link-submenu" 
+                               data-toggle="submenu" 
+                               href="#">
                                 <i class="nav-main-link-icon fa fa-handshake text-primary"></i>
                                 <span class="nav-main-link-name">طرف حساب‌ها</span>
                             </a>
                             <ul class="nav-main-submenu">
+                                
+                                <!-- 📋 لیست‌ها -->
+                                <li class="nav-main-item nav-submenu-separator">
+                                    <div class="nav-submenu-title">
+                                        <small class="text-muted fw-semibold">لیست‌ها</small>
+                                    </div>
+                                </li>
+
+                                <!-- همه طرف حساب‌ها -->
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Stakeholder" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-list"></i>
-                                        <span class="nav-main-link-name">لیست طرف حساب‌ها</span>
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "Index") && string.IsNullOrEmpty(Context.Request.Query["personType"]) ? "active" : "")" 
+                                       asp-area="AdminArea" 
+                                       asp-controller="Stakeholder" 
+                                       asp-action="Index">
+                                        <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                        <span class="nav-main-link-name">همه طرف حساب‌ها</span>
                                     </a>
                                 </li>
-                                @if (Html.CanAccess("Stakeholder", 1) || isAdminOrManager) 
+
+                                <!-- اشخاص حقیقی -->
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsStakeholderTypeActive(currentController, currentAction, "0") ? "active" : "")" 
+                                       asp-area="AdminArea" 
+                                       asp-controller="Stakeholder" 
+                                       asp-action="Index" 
+                                       asp-route-personType="0">
+                                        <i class="nav-main-link-icon fa fa-user text-success"></i>
+                                        <span class="nav-main-link-name">اشخاص حقیقی</span>
+                                    </a>
+                                </li>
+
+                                <!-- اشخاص حقوقی -->
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsStakeholderTypeActive(currentController, currentAction, "1") ? "active" : "")" 
+                                       asp-area="AdminArea" 
+                                       asp-controller="Stakeholder" 
+                                       asp-action="Index" 
+                                       asp-route-personType="1">
+                                        <i class="nav-main-link-icon fa fa-building text-primary"></i>
+                                        <span class="nav-main-link-name">اشخاص حقوقی</span>
+                                    </a>
+                                </li>
+
+                                <!-- ➕ عملیات -->
+                                @if (Html.CanAccess("Stakeholder", 1) || isAdminOrManager)
                                 {
+                                    <li class="nav-main-item nav-submenu-separator mt-2">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">عملیات</small>
+                                        </div>
+                                    </li>
+
                                     <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "AddStakeholder") ? "active" : "")" asp-area="AdminArea" asp-controller="Stakeholder" asp-action="AddStakeholder">
-                                            <i class="nav-main-link-icon fa fa-plus-circle"></i>
-                                            <span class="nav-main-link-name">طرف حساب جدید</span>
+                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "AddStakeholder") ? "active" : "")" 
+                                           asp-area="AdminArea" 
+                                           asp-controller="Stakeholder" 
+                                           asp-action="AddStakeholder">
+                                            <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                            <span class="nav-main-link-name fw-semibold">طرف حساب جدید</span>
                                         </a>
                                     </li>
                                 }
+
+                                <!-- 🔍 جستجو -->
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search" onclick="loadAdvancedSearchModal()">
-                                        <i class="nav-main-link-icon fa fa-search"></i>
+                                    <a class="nav-main-link" 
+                                       href="#" 
+                                       data-bs-toggle="modal" 
+                                       data-bs-target="#modal-advanced-search" 
+                                       onclick="loadAdvancedSearchModal()">
+                                        <i class="nav-main-link-icon fa fa-search text-secondary"></i>
                                         <span class="nav-main-link-name">جستجوی پیشرفته</span>
                                     </a>
                                 </li>
+
+                                <!-- 👥 مدیریت مخاطبین -->
+                                <li class="nav-main-item nav-submenu-separator mt-2">
+                                    <div class="nav-submenu-title">
+                                        <small class="text-muted fw-semibold">مدیریت مخاطبین</small>
+                                    </div>
+                                </li>
+
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "ContactsList") ? "active" : "")" 
+                                       asp-area="AdminArea" 
+                                       asp-controller="Stakeholder" 
+                                       asp-action="ContactsList">
+                                        <i class="nav-main-link-icon fa fa-address-book text-info"></i>
+                                        <span class="nav-main-link-name">لیست مخاطبین</span>
+                                    </a>
+                                </li>
+
+                                <!-- 🏢 چارت‌های سازمانی -->
+                                <li class="nav-main-item nav-submenu-separator mt-2">
+                                    <div class="nav-submenu-title">
+                                        <small class="text-muted fw-semibold">ساختار سازمانی</small>
+                                    </div>
+                                </li>
+
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "OrganizationChartList") ? "active" : "")" 
+                                       asp-area="AdminArea" 
+                                       asp-controller="Stakeholder" 
+                                       asp-action="OrganizationChartList">
+                                        <i class="nav-main-link-icon fa fa-sitemap text-purple"></i>
+                                        <span class="nav-main-link-name">چارت‌های سازمانی</span>
+                                    </a>
+                                </li>
+
                             </ul>
                         </li>
                     }
@@ -577,7 +664,7 @@
                 <!-- ============== 🚪 LOGOUT ============== -->
                 <li class="nav-main-heading">خروج</li>
                 <li class="nav-main-item">
-                    <a class="nav-main-link logout-link"  href="/Account/LogOut">
+                    <a class="nav-main-link logout-link" href="/Account/LogOut">
                         <i class="nav-main-link-icon fa fa-sign-out-alt text-danger"></i>
                         <span class="nav-main-link-name">خروج از سیستم</span>
                     </a>
@@ -610,7 +697,6 @@
     </div>
 </div>
 
-<!-- تمام functions باقی مانده یکسان... -->
 @functions {
     /// <summary>
     /// بررسی active بودن آیتم‌های منو
@@ -618,6 +704,18 @@
     public bool IsMenuItemActive(string currentController, string currentAction, string targetController, string targetAction)
     {
         return currentController == targetController && currentAction == targetAction;
+    }
+
+    /// <summary>
+    /// بررسی active بودن نوع طرف حساب
+    /// </summary>
+    public bool IsStakeholderTypeActive(string currentController, string currentAction, string personType)
+    {
+        if (currentController != "Stakeholder" || currentAction != "Index")
+            return false;
+
+        var queryPersonType = Context.Request.Query["personType"].ToString();
+        return queryPersonType == personType;
     }
 
     /// <summary>
@@ -722,7 +820,6 @@
     }
 
     function createAndShowModal(url) {
-        // Show loading state
         $('#advanced-search-content, #advanced-search-task-content').html(`
             <div class="modal-body text-center">
                 <div class="d-flex justify-content-center">
@@ -734,7 +831,6 @@
             </div>
         `);
 
-        // Load content via AJAX
         $.get(url, function(data) {
             if (url.includes('Tasks')) {
                 $('#advanced-search-task-content').html(data);
@@ -759,12 +855,9 @@
         });
     }
 
-    // Update badge counts
     $(document).ready(function() {
         updateTaskCounts();
         updateMyDayCount();
-
-        // Update every 2 minutes
         setInterval(function() {
             updateTaskCounts();
             updateMyDayCount();
@@ -772,7 +865,6 @@
     });
 
     function updateTaskCounts() {
-        // Update task-related counters
         $.get('@Url.Action("GetDashboardSummary", "Dashboard", new { area = "AdminArea" })')
             .done(function(response) {
                 if (response.success) {
@@ -802,16 +894,11 @@
         }
     }
 
-    // Smooth scrolling for navigation
     $('.nav-main-link').on('click', function(e) {
         if ($(this).hasClass('nav-main-link-submenu')) return;
-
-        // Add loading animation
         const icon = $(this).find('.nav-main-link-icon');
         const originalIcon = icon.attr('class');
         icon.attr('class', 'nav-main-link-icon fa fa-spinner fa-spin');
-
-        // Restore icon after 1 second
         setTimeout(() => {
             icon.attr('class', originalIcon);
         }, 1000);

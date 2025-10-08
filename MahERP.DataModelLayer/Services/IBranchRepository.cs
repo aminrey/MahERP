@@ -11,6 +11,13 @@ namespace MahERP.DataModelLayer.Services
     public interface IBranchRepository
     {
         /// <summary>
+        /// دریافت شعبه بر اساس شناسه
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>اطلاعات شعبه</returns>
+        public Branch GetBranchById(int branchId);
+        
+        /// <summary>
         /// دریافت لیست شعبه‌هایی که کاربر مشخص در آن‌ها تعریف شده است
         /// </summary>
         /// <param name="UserLoginingid">شناسه کاربر لاگین شده</param>
@@ -138,6 +145,11 @@ namespace MahERP.DataModelLayer.Services
 
         #endregion
 
-        
+        /// <summary>   
+        /// دریافت لیست طرف حساب‌های شعبه مشخص
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>لیست طرف حساب‌های شعبه</returns>
+        List<StakeholderBranch> GetBranchStakeholders(int branchId);
     }
 }

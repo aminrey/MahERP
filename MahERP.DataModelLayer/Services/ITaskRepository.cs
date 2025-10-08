@@ -1,10 +1,12 @@
-﻿using MahERP.DataModelLayer.Entities.TaskManagement;
+﻿using AutoMapper;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -235,11 +237,7 @@ namespace MahERP.DataModelLayer.Repository
 
         #region Statistics and Filter Methods
 
-        /// <summary>
-        /// محاسبه آمار تسک‌ها بر اساس سطح دسترسی کاربر
-        /// </summary>
-        Task<TaskStatisticsViewModel> CalculateTaskStatisticsAsync(string userId, int dataAccessLevel, 
-            List<TaskViewModel> filteredTasks);
+   
 
         /// <summary>
         /// اعمال فیلترهای اضافی بر روی لیست تسک‌ها
@@ -490,7 +488,62 @@ namespace MahERP.DataModelLayer.Repository
            bool includeSupervisedTasks = false,
            bool includeDeletedTasks = false);
         Task<List<TaskReminderItemViewModel>> GetDashboardRemindersAsync(string userId, int maxResults = 10, int daysAhead = 1);
+        // در انتهای interface اضافه کنید:
 
+        #region Task Creation and Validation Helper Methods
+
+        /// <summary>
+        /// اعتبارسنجی مدل تسک قبل از ایجاد یا ویرایش
+        /// </summary>
+        Task<(bool IsValid, Dictionary<string, string> Errors)> ValidateTaskModelAsync(TaskViewModel model, string userId);
+
+        /// <summary>
+        /// ایجاد entity تسک از ViewModel
+        /// </summary>
+        Task<Tasks> CreateTaskEntityAsync(TaskViewModel model, string currentUserId, IMapper mapper);
+
+        /// <summary>
+        /// ذخیره عملیات‌ها و یادآوری‌های تسک
+        /// </summary>
+        Task SaveTaskOperationsAndRemindersAsync(int taskId, TaskViewModel model);
+
+        /// <summary>
+        /// مدیریت انتصاب‌های تسک (نسخه ساده)
+        /// </summary>
+        Task HandleTaskAssignmentsAsync(Tasks task, TaskViewModel model, string currentUserId);
+
+        /// <summary>
+        /// مدیریت انتصاب‌های تسک با Bulk Insert
+        /// </summary>
+        Task HandleTaskAssignmentsBulkAsync(Tasks task, TaskViewModel model, string currentUserId);
+
+        /// <summary>
+        /// ذخیره فایل‌های پیوست تسک
+        /// </summary>
+        Task SaveTaskAttachmentsAsync(int taskId, List<IFormFile> files, string uploaderUserId, string webRootPath);
+
+        #endregion
+
+        #region Task Status Helper Methods
+
+        /// <summary>
+        /// دریافت رنگ وضعیت تسک برای تقویم
+        /// </summary>
+        string GetTaskStatusColor(TaskCalendarViewModel task);
+
+        /// <summary>
+        /// دریافت متن وضعیت تسک برای تقویم
+        /// </summary>
+        string GetTaskStatusTextForCalendar(TaskCalendarViewModel task);
+
+        #endregion
+        /// <summary>
+        /// دریافت تیم‌های یک کاربر در شعبه مشخص
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>لیست تیم‌های کاربر در شعبه</returns>
+        Task<List<TeamViewModel>> GetUserTeamsByBranchAsync(string userId, int branchId);
     }
-
 }
+
