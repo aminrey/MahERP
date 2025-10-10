@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MahERP.DataModelLayer.Repository
+namespace MahERP.DataModelLayer.Repository.Tasking
 {
     public interface ITaskRepository
     {
@@ -168,11 +168,7 @@ namespace MahERP.DataModelLayer.Repository
 
         #region Visibility Methods
 
-        /// <summary>
-        /// دریافت تسک‌های قابل مشاهده برای کاربر (نسخه Async)
-        /// </summary>
-        Task<List<Tasks>> GetVisibleTasksForUserAsync(string userId, bool includeDeleted = false);
-
+       
         /// <summary>
         /// دریافت تسک‌های کاربر با در نظر گیری مجوزهای جدید (نسخه Async)
         /// </summary>
@@ -190,16 +186,8 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         Task<bool> CanUserViewTaskAsync(string userId, int taskId);
 
-        /// <summary>
-        /// دریافت تسک‌های قابل مشاهده برای کاربر (نسخه Sync - برای سازگاری)
-        /// </summary>
-        List<Tasks> GetVisibleTasksForUser(string userId, bool includeDeleted = false);
-
-        /// <summary>
-        /// بررسی مجوز مشاهده تسک (نسخه Sync - برای سازگاری)
-        /// </summary>
-        bool CanUserViewTask(string userId, int taskId);
-
+      
+   
         #endregion
 
         #region Hierarchical Task Methods
@@ -253,23 +241,8 @@ namespace MahERP.DataModelLayer.Repository
 
         #region AJAX and Helper Methods
 
-        /// <summary>
-        /// تغییر نوع نمایش
-        /// </summary>
-        Task<TaskFilterViewModel> ChangeViewTypeAsync(TaskViewType viewType);
-
-        /// <summary>
-        /// فیلتر سریع بر اساس وضعیت
-        /// </summary>
-        Task<TaskFilterViewModel> FilterByStatusAsync(TaskStatusFilter statusFilter, 
-            TaskFilterViewModel currentFilters = null);
-
-        /// <summary>
-        /// فیلتر سریع بر اساس اولویت
-        /// </summary>
-        Task<TaskFilterViewModel> FilterByPriorityAsync(TaskPriorityFilter priorityFilter, 
-            TaskFilterViewModel currentFilters = null);
-
+ 
+      
         /// <summary>
         /// دریافت داده‌های مربوط به تغییر شعبه
         /// </summary>
@@ -294,15 +267,8 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         TaskViewModel CreateTaskAndCollectData(string UserId);
 
-        /// <summary>
-        /// دریافت تسک‌ها برای صفحه Index
-        /// </summary>
-        TaskListForIndexViewModel GetTaskForIndexByUser(TaskListForIndexViewModel filterModel);
 
-        /// <summary>
-        /// دریافت تسک‌ها برای Index با فیلترها (نسخه Async جدید)
-        /// </summary>
-        Task<TaskListForIndexViewModel> GetTasksForIndexAsync(string userId, TaskFilterViewModel filters);
+
 
         /// <summary>
         /// آماده‌سازی مدل برای ایجاد تسک جدید (نسخه Async جدید)
@@ -544,6 +510,45 @@ namespace MahERP.DataModelLayer.Repository
         /// <param name="branchId">شناسه شعبه</param>
         /// <returns>لیست تیم‌های کاربر در شعبه</returns>
         Task<List<TeamViewModel>> GetUserTeamsByBranchAsync(string userId, int branchId);
+        /// <summary>
+        /// دریافت تاریخچه کامل تسک
+        /// </summary>
+        Task<List<TaskHistoryViewModel>> GetTaskHistoryAsync(int taskId);
+
+        #region Task Reminders Management - NEW
+
+        /// <summary>
+        /// دریافت لیست یادآوری‌های تسک
+        /// </summary>
+        Task<List<TaskReminderViewModel>> GetTaskRemindersListAsync(int taskId);
+
+        /// <summary>
+        /// دریافت یادآوری بر اساس شناسه
+        /// </summary>
+        Task<TaskReminderSchedule> GetReminderByIdAsync(int reminderId);
+
+        /// <summary>
+        /// ایجاد یادآوری جدید
+        /// </summary>
+        Task<int> CreateReminderAsync(TaskReminderViewModel model, string userId);
+
+        /// <summary>
+        /// غیرفعال کردن یادآوری
+        /// </summary>
+        Task<bool> DeactivateReminderAsync(int reminderId);
+
+        /// <summary>
+        /// تغییر وضعیت فعال/غیرفعال یادآوری
+        /// </summary>
+        Task<bool> ToggleReminderActiveStatusAsync(int reminderId);
+
+        /// <summary>
+        /// دریافت تسک از طریق شناسه (async)
+        /// </summary>
+        Task<Tasks> GetTaskByIdAsync(int taskId);
+
+        #endregion
+
     }
 }
 

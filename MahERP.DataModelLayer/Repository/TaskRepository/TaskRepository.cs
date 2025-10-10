@@ -1,11 +1,10 @@
 ﻿using AutoMapper;
 using MahERP.CommonLayer.PublicClasses;
-using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Extensions;
+using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
-using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
@@ -13,14 +12,8 @@ using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
 
-namespace MahERP.DataModelLayer.Repository
+namespace MahERP.DataModelLayer.Repository.Tasking
 {
     public class TaskRepository : ITaskRepository
     {
@@ -31,10 +24,11 @@ namespace MahERP.DataModelLayer.Repository
         private readonly IUserManagerRepository _userManagerRepository;
         private readonly TaskCodeGenerator _taskCodeGenerator;
         private readonly ITaskVisibilityRepository _taskVisibilityRepository;
+        private readonly ITaskHistoryRepository _taskHistoryRepository;
 
         public TaskRepository(AppDbContext context, IBranchRepository branchRipository, IUnitOfWork unitOfWork, 
             IUserManagerRepository userManagerRepository, IStakeholderRepository stakeholderRepo, 
-            TaskCodeGenerator taskCodeGenerator, ITaskVisibilityRepository taskVisibilityRepository)
+            TaskCodeGenerator taskCodeGenerator, ITaskVisibilityRepository taskVisibilityRepository, ITaskHistoryRepository taskHistoryRepository)
         {
             _context = context;
             _BranchRipository = branchRipository;
@@ -43,57 +37,10 @@ namespace MahERP.DataModelLayer.Repository
             _StakeholderRepo = stakeholderRepo;
             _taskCodeGenerator = taskCodeGenerator;
             _taskVisibilityRepository = taskVisibilityRepository;
+            _taskHistoryRepository = taskHistoryRepository;
         }
 
         #region Core CRUD Operations
-
-        public TaskListForIndexViewModel GetTaskForIndexByUser(TaskListForIndexViewModel filterModel)
-        {
-            string userId = filterModel.UserLoginid;
-
-            var taskForIndexViewModel = new TaskListForIndexViewModel
-            {
-                branchListInitial = _BranchRipository.GetBrnachListByUserId(userId),
-                TaskCategoryInitial = GetAllCategories(),
-                UsersInitial = _userManagerRepository.GetUserListBybranchId(0),
-                StakeholdersInitial = _StakeholderRepo.GetStakeholdersByBranchId(0),
-                Tasks = new List<TaskViewModel>()
-            };
-
-            // اصلاح کوئری LINQ برای جلوگیری از مشکل anonymous type
-            var tasksQuery = from ts in _context.TaskAssignment_Tbl
-                             join t in _context.Tasks_Tbl on ts.TaskId equals t.Id
-                             join cate in _context.TaskCategory_Tbl on t.TaskCategoryId equals cate.Id into categoryJoin
-                             from category in categoryJoin.DefaultIfEmpty()
-                             where ts.AssignedUserId == userId && !t.IsDeleted
-                             select new { t, category };
-
-            var tasks = tasksQuery.ToList().Select(item => new TaskViewModel
-            {
-                Id = item.t.Id,
-                Title = item.t.Title ?? string.Empty,
-                Description = item.t.Description,
-                TaskCode = item.t.TaskCode,
-                CreateDate = item.t.CreateDate,
-                DueDate = item.t.DueDate,
-                CompletionDate = item.t.CompletionDate,
-                ManagerApprovedDate = item.t.ManagerApprovedDate,
-                SupervisorApprovedDate = item.t.SupervisorApprovedDate,
-                IsActive = item.t.IsActive,
-                IsDeleted = item.t.IsDeleted,
-                BranchId = item.t.BranchId,
-                CategoryId = item.category?.Id,
-                CategoryTitle = item.category?.Title,
-                CreatorUserId = item.t.CreatorUserId,
-                StakeholderId = item.t.StakeholderId,
-                TaskType = item.t.TaskType
-            }).ToList();
-
-            taskForIndexViewModel.Tasks = tasks;
-            taskForIndexViewModel.TotalCount = tasks.Count;
-
-            return taskForIndexViewModel;
-        }
 
         public TaskViewModel CreateTaskAndCollectData(string UserId)
         {
@@ -138,7 +85,7 @@ namespace MahERP.DataModelLayer.Repository
             var query = _context.Tasks_Tbl.AsQueryable();
 
             if (includeOperations)
-                query = query.Include(t => t.TaskOperations);
+                query = query.Include(t => t.TaskOperations.Where(t=> !t.IsDeleted));
 
             if (includeAssignments)
                 query = query.Include(t => t.TaskAssignments)
@@ -1022,33 +969,7 @@ namespace MahERP.DataModelLayer.Repository
 
         #region AJAX and Helper Methods - متدهای حذف شده از Controller
 
-        /// <summary>
-        /// AJAX برای تغییر سریع نوع نمایش
-        /// </summary>
-        public async Task<TaskFilterViewModel> ChangeViewTypeAsync(TaskViewType viewType)
-        {
-            return new TaskFilterViewModel { ViewType = viewType };
-        }
-
-        /// <summary>
-        /// فیلتر سریع بر اساس آمار (فیلتر ثانویه)
-        /// </summary>
-        public async Task<TaskFilterViewModel> FilterByStatusAsync(TaskStatusFilter statusFilter, TaskFilterViewModel currentFilters = null)
-        {
-            currentFilters ??= new TaskFilterViewModel();
-            currentFilters.TaskStatus = statusFilter;
-            return currentFilters;
-        }
-
-        /// <summary>
-        /// فیلتر سریع بر اساس اولویت (فیلتر ثانویه)
-        /// </summary>
-        public async Task<TaskFilterViewModel> FilterByPriorityAsync(TaskPriorityFilter priorityFilter, TaskFilterViewModel currentFilters = null)
-        {
-            currentFilters ??= new TaskFilterViewModel();
-            currentFilters.TaskPriority = priorityFilter;
-            return currentFilters;
-        }
+  
 
         /// <summary>
         /// بروزرسانی لیست کاربران و تیم‌ها بر اساس شعبه انتخاب شده
@@ -1506,55 +1427,7 @@ namespace MahERP.DataModelLayer.Repository
                 Console.WriteLine($"Error adding personal events: {ex.Message}");
             }
         }
-        /// <summary>
-        /// دریافت تسک‌ها برای Index با فیلترها - نسخه بازنویسی شده
-        /// </summary>
-        public async Task<TaskListForIndexViewModel> GetTasksForIndexAsync(string userId, TaskFilterViewModel filters)
-        {
-            try
-            {
-                var model = new TaskListForIndexViewModel
-                {
-                    UserLoginid = userId,
-                    Filters = filters ?? new TaskFilterViewModel()
-                };
-
-                // پر کردن لیست‌های فیلتر
-                await PopulateFilterListsAsync(model, userId);
-
-                // تنظیم HasActiveFilters
-                model.HasActiveFilters = HasActiveFilters(model.Filters);
-
-                // دریافت تسک‌ها بر اساس فیلتر
-                await LoadTasksByFilterAsync(model, userId);
-
-                // اگر نوع نمایش MyTasks باشد، گروه‌بندی خاص انجام بده
-                if (model.Filters.ViewType == TaskViewType.MyTasks && model.Tasks.Any())
-                {
-                    await LoadMyTasksGroupedAsync(model, userId);
-                }
-
-                // ⭐⭐⭐ محاسبه آمار ثابت (مستقل از ViewType)
-                model.Statistics = await CalculateTaskStatisticsAsync(userId, model.Tasks);
-
-                return model;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ خطا در GetTasksForIndexAsync: {ex.Message}");
-
-                return new TaskListForIndexViewModel
-                {
-                    UserLoginid = userId,
-                    Filters = filters ?? new TaskFilterViewModel(),
-                    Tasks = new List<TaskViewModel>(),
-                    Statistics = new TaskStatisticsViewModel(),
-                    GroupedTasks = new TaskGroupedViewModel(),
-                    HasActiveFilters = false
-                };
-            }
-        }
-
+ 
         /// <summary>
         /// آماده‌سازی مدل برای ایجاد تسک جدید (نسخه Async جدید)
         /// </summary>
@@ -1657,139 +1530,6 @@ namespace MahERP.DataModelLayer.Repository
 
         #region Helper Methods for New Async Implementation
 
-        /// <summary>
-        /// پر کردن لیست‌های فیلتر به صورت async - اصلاح شده برای چند شعبه
-        /// </summary>
-        private async Task PopulateFilterListsAsync(TaskListForIndexViewModel model, string userId)
-        {
-            try
-            {
-                // ⭐⭐⭐ شعبه‌های کاربر (همه آن‌ها)
-                model.branchListInitial = _BranchRipository.GetBrnachListByUserId(userId);
-
-                // تیم‌های کاربر (از همه شعبه‌ها)
-                model.TeamsInitial = await GetUserRelatedTeamsAsync(userId);
-
-                // کاربران مرتبط (از همه شعبه‌ها)
-                model.UsersInitial = await GetUserRelatedUsersAsync(userId);
-
-                // دسته‌بندی‌ها (کلی)
-                model.TaskCategoryInitial = GetAllCategories();
-
-                // ⭐⭐⭐ طرف حساب‌ها (از همه شعبه‌ها)
-                var userBranchIds = GetUserBranchIds(userId);
-                var allStakeholders = new List<StakeholderViewModel>();
-
-                foreach (var branchId in userBranchIds)
-                {
-                    var branchStakeholders = _StakeholderRepo.GetStakeholdersByBranchId(branchId);
-                    allStakeholders.AddRange(branchStakeholders.Select(s => new StakeholderViewModel
-                    {
-                        Id = s.Id,
-                        FirstName = s.FirstName,
-                        LastName = s.LastName,
-                        CompanyName = s.CompanyName,
-                        NationalCode = s.NationalCode,
-                        IsActive = s.IsActive
-                    }));
-                }
-
-                // حذف تکرار
-                model.StakeholdersInitial = allStakeholders
-                    .GroupBy(s => s.Id)
-                    .Select(g => g.First())
-                    .ToList();
-
-                Console.WriteLine($"✅ PopulateFilterListsAsync: {model.branchListInitial.Count} شعبه، {model.StakeholdersInitial.Count} طرف حساب");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ خطا در PopulateFilterListsAsync: {ex.Message}");
-                // لیست‌های خالی در صورت خطا
-                model.branchListInitial ??= new List<BranchViewModel>();
-                model.TeamsInitial ??= new List<TeamViewModel>();
-                model.UsersInitial ??= new List<UserViewModelFull>();
-                model.TaskCategoryInitial ??= new List<TaskCategory>();
-                model.StakeholdersInitial ??= new List<StakeholderViewModel>();
-            }
-        }
-
-        /// <summary>
-        /// بارگذاری تسک‌ها بر اساس فیلتر به صورت async - اصلاح شده برای چند شعبه
-        /// </summary>
-        private async Task LoadTasksByFilterAsync(TaskListForIndexViewModel model, string userId)
-        {
-            try
-            {
-                switch (model.Filters.ViewType)
-                {
-                    case TaskViewType.AllTasks:
-                        await LoadAllTasksAsync(model, userId);
-                        break;
-
-                    case TaskViewType.MyTeamsHierarchy: // ⭐ نام قدیمی - الان TeamTasks
-                        await LoadTeamTasksGroupedAsync(model, userId);
-                        break;
-
-                    case TaskViewType.MyTasks:
-                        await LoadMyTasksAsync(model, userId);
-                        break;
-
-                    case TaskViewType.AssignedToMe:
-                        await LoadAssignedToMeTasksAsync(model, userId);
-                        break;
-
-                    default:
-                        await LoadMyTasksAsync(model, userId);
-                        break;
-                }
-
-                // اعمال فیلترهای اضافی
-                model.Tasks = await ApplyFiltersAsync(model.Tasks, model.Filters);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ خطا در LoadTasksByFilterAsync: {ex.Message}");
-                model.Tasks = new List<TaskViewModel>();
-                model.GroupedTasks = new TaskGroupedViewModel();
-            }
-        }
-        /// <summary>
-        /// بارگذاری همه تسک‌ها بر اساس سطح دسترسی - اصلاح شده برای چند شعبه
-        /// </summary>
-        private async Task LoadAllTasksAsync(TaskListForIndexViewModel model, string userId)
-        {
-            // ⭐⭐⭐ دریافت همه شعبه‌های کاربر
-            var userBranchIds = GetUserBranchIds(userId);
-
-            // ⭐⭐⭐ دریافت تسک‌های همه شعبه‌ها
-            var allTasks = GetTasksByBranches(userBranchIds);
-            
-            model.Tasks = allTasks.Select(MapToTaskViewModel).ToList();
-
-            Console.WriteLine($"✅ LoadAllTasksAsync: کاربر در {userBranchIds.Count} شعبه عضو است، مجموع {allTasks.Count} تسک");
-        }
-
-        /// <summary>
-        /// بارگذاری تسک‌های شخصی (همه تسک‌های مرتبط با کاربر)
-        /// </summary>
-        private async Task LoadMyTasksAsync(TaskListForIndexViewModel model, string userId)
-        {
-            var tasks = GetTasksByUser(userId, includeAssigned: true, includeCreated: true);
-            model.Tasks = tasks.Select(MapToTaskViewModel).ToList();
-        }
-
-        /// <summary>
-        /// بارگذاری تسک‌های منتصب شده (فقط تسک‌های واگذار شده از طرف دیگران)
-        /// </summary>
-        private async Task LoadAssignedToMeTasksAsync(TaskListForIndexViewModel model, string userId)
-        {
-            // فقط تسک‌هایی که کاربر سازنده آن‌ها نیست ولی منتصب شده
-            var tasks = GetTasksByUser(userId, includeAssigned: true, includeCreated: false)
-                .Where(t => t.CreatorUserId != userId) // اضافه کردن این شرط
-                .ToList();
-            model.Tasks = tasks.Select(MapToTaskViewModel).ToList();
-        }
       
         /// <summary>
         /// تکمیل داده‌های مدل ایجاد تسک
@@ -3546,216 +3286,6 @@ namespace MahERP.DataModelLayer.Repository
         #endregion
 
 
-        
-        /// <summary>
-        /// بارگذاری تسک‌های من با گروه‌بندی دقیق - نسخه کاملاً اصلاح شده
-        /// </summary>
-        private async Task LoadMyTasksGroupedAsync(TaskListForIndexViewModel model, string userId)
-        {
-            try
-            {
-                if (model.GroupedTasks == null)
-                    model.GroupedTasks = new TaskGroupedViewModel();
-
-                if (model.GroupedTasks.MyTasksGrouped == null)
-                    model.GroupedTasks.MyTasksGrouped = new MyTasksGroupedViewModel();
-
-                // ⭐ 1. تسک‌های دریافتی (منتصب به من - که من نساخته‌ام)
-                var assignedToMeTasks = model.Tasks
-                    .Where(t => t.AssignmentsTaskUser != null &&
-                               t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId) &&
-                               t.CreatorUserId != userId) // ⭐ کلیدی: فقط تسک‌هایی که من نساخته‌ام
-                    .ToList();
-
-                model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = assignedToMeTasks;
-
-                // ⭐ 2. تسک‌های واگذار شده (ساخته شده توسط من)
-                var createdByMeTasks = model.Tasks
-                    .Where(t => t.CreatorUserId == userId)
-                    .ToList();
-
-                // گروه‌بندی بر اساس تیم و سپس شخص
-                var assignedByMeGrouped = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
-
-                foreach (var task in createdByMeTasks)
-                {
-                    if (task.AssignmentsTaskUser == null || !task.AssignmentsTaskUser.Any())
-                        continue;
-
-                    // ⭐ برای هر assignment، تیم و شخص را مشخص کن
-                    foreach (var assignment in task.AssignmentsTaskUser.Where(a => !string.IsNullOrEmpty(a.AssignedUserId)))
-                    {
-                        // دریافت تیم کاربر منتصب شده
-                        var userTeam = await GetUserPrimaryTeamAsync(assignment.AssignedUserId, task.BranchId ?? 0);
-
-                        var assigneeInfo = new AssigneeInfo
-                        {
-                            Id = assignment.AssignedUserId,
-                            FullName = assignment.AssignedUserName,
-                            TeamId = userTeam?.Id,
-                            TeamName = userTeam?.Title ?? "بدون تیم",
-                            Type = "User",
-                            IsTeam = false
-                        };
-
-                        if (!assignedByMeGrouped.ContainsKey(assigneeInfo))
-                        {
-                            assignedByMeGrouped[assigneeInfo] = new List<TaskViewModel>();
-                        }
-
-                        // اضافه کردن تسک فقط یکبار
-                        if (!assignedByMeGrouped[assigneeInfo].Any(t => t.Id == task.Id))
-                        {
-                            assignedByMeGrouped[assigneeInfo].Add(task);
-                        }
-                    }
-                }
-
-                model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = assignedByMeGrouped;
-
-                Console.WriteLine($"✅ LoadMyTasksGroupedAsync: دریافتی={assignedToMeTasks.Count}, واگذار شده={assignedByMeGrouped.Count} گروه");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ خطا در LoadMyTasksGroupedAsync: {ex.Message}");
-
-                if (model.GroupedTasks?.MyTasksGrouped != null)
-                {
-                    model.GroupedTasks.MyTasksGrouped.TasksAssignedToMe = new List<TaskViewModel>();
-                    model.GroupedTasks.MyTasksGrouped.TasksAssignedByMe = new Dictionary<AssigneeInfo, List<TaskViewModel>>();
-                }
-            }
-        }
-
-        /// <summary>
-        /// دریافت تیم اصلی کاربر در شعبه - متد کمکی جدید
-        /// </summary>
-        private async Task<Team?> GetUserPrimaryTeamAsync(string userId, int branchId)
-        {
-            try
-            {
-                // اگر AssignedInTeamId مشخص شده، از آن استفاده کن
-                var assignmentWithTeam = await _context.TaskAssignment_Tbl
-                    .Include(ta => ta.AssignedInTeam)
-                    .Where(ta => ta.AssignedUserId == userId &&
-                                ta.AssignedInTeamId.HasValue &&
-                                ta.AssignedInTeam.BranchId == branchId)
-                    .Select(ta => ta.AssignedInTeam)
-                    .FirstOrDefaultAsync();
-
-                if (assignmentWithTeam != null)
-                    return assignmentWithTeam;
-
-                // در غیر این صورت، اولین تیم کاربر را برگردان
-                return await _context.TeamMember_Tbl
-                    .Include(tm => tm.Team)
-                    .Where(tm => tm.UserId == userId &&
-                                tm.IsActive &&
-                                tm.Team.BranchId == branchId &&
-                                tm.Team.IsActive)
-                    .Select(tm => tm.Team)
-                    .FirstOrDefaultAsync();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// بارگذاری تسک‌های تیمی با گروه‌بندی کامل بر اساس تیم و شخص
-        /// </summary>
-        private async Task LoadTeamTasksGroupedAsync(TaskListForIndexViewModel model, string userId)
-        {
-            try
-            {
-                if (model.GroupedTasks == null)
-                    model.GroupedTasks = new TaskGroupedViewModel();
-
-                // 1. دریافت تیم‌های کاربر
-                var userTeams = await _context.TeamMember_Tbl
-                    .Include(tm => tm.Team)
-                    .Where(tm => tm.UserId == userId && tm.IsActive && tm.Team.IsActive)
-                    .Select(tm => tm.Team)
-                    .Distinct()
-                    .ToListAsync();
-
-                // 2. دریافت تمام تسک‌های قابل مشاهده از طریق سیستم Visibility
-                var visibleTaskIds = await _taskVisibilityRepository.GetVisibleTaskIdsAsync(userId);
-
-                var allTeamTasks = await _context.Tasks_Tbl
-                    .Where(t => visibleTaskIds.Contains(t.Id) && !t.IsDeleted)
-                    .Include(t => t.TaskAssignments)
-                        .ThenInclude(ta => ta.AssignedUser)
-                    .Include(t => t.TaskCategory)
-                    .Include(t => t.Stakeholder)
-                    .ToListAsync();
-
-                // 3. گروه‌بندی بر اساس تیم
-                var tasksByTeam = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>();
-
-                foreach (var team in userTeams)
-                {
-                    // دریافت اعضای تیم
-                    var teamMembers = await _context.TeamMember_Tbl
-                        .Include(tm => tm.User)
-                        .Where(tm => tm.TeamId == team.Id && tm.IsActive)
-                        .ToListAsync();
-
-                    var teamMemberIds = teamMembers.Select(tm => tm.UserId).ToList();
-
-                    // فیلتر تسک‌های این تیم
-                    var teamTasks = allTeamTasks
-                        .Where(t => t.TaskAssignments.Any(ta => teamMemberIds.Contains(ta.AssignedUserId)))
-                        .ToList();
-
-                    if (!teamTasks.Any())
-                        continue;
-
-                    // گروه‌بندی بر اساس شخص در تیم
-                    var tasksByPerson = new Dictionary<string, List<TaskViewModel>>();
-
-                    foreach (var member in teamMembers)
-                    {
-                        var memberTasks = teamTasks
-                            .Where(t => t.TaskAssignments.Any(ta => ta.AssignedUserId == member.UserId))
-                            .Select(MapToTaskViewModel)
-                            .GroupBy(t => t.Id)
-                            .Select(g => g.First()) // حذف تکرار
-                            .ToList();
-
-                        if (memberTasks.Any())
-                        {
-                            var memberName = $"{member.User.FirstName} {member.User.LastName}";
-                            tasksByPerson[memberName] = memberTasks;
-                        }
-                    }
-
-                    if (tasksByPerson.Any())
-                    {
-                        tasksByTeam[team.Title] = tasksByPerson;
-                    }
-                }
-
-                model.GroupedTasks.TeamTasksGrouped = tasksByTeam;
-
-                // ترکیب تمام تسک‌ها برای نمایش در لیست اصلی
-                var allTasks = tasksByTeam.Values
-                    .SelectMany(dict => dict.Values.SelectMany(tasks => tasks))
-                    .GroupBy(t => t.Id)
-                    .Select(g => g.First())
-                    .ToList();
-
-                model.Tasks = allTasks;
-
-                Console.WriteLine($"✅ LoadTeamTasksGroupedAsync: {tasksByTeam.Count} تیم، مجموع {allTasks.Count} تسک");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ خطا در LoadTeamTasksGroupedAsync: {ex.Message}");
-                model.GroupedTasks.TeamTasksGrouped = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>();
-            }
-        }
 
         #endregion
 
@@ -4070,6 +3600,268 @@ namespace MahERP.DataModelLayer.Repository
                 .ToListAsync();
         }
 
+        #endregion
+        #region Task Reminders Management Implementation
+
+        /// <summary>
+        /// دریافت لیست یادآوری‌های تسک
+        /// </summary>
+        public async Task<List<TaskReminderViewModel>> GetTaskRemindersListAsync(int taskId)
+        {
+            try
+            {
+                var reminders = await _context.TaskReminderSchedule_Tbl
+                    .Include(r => r.Creator)
+                    .Where(r => r.TaskId == taskId && r.IsActive)
+                    .OrderByDescending(r => r.CreatedDate)
+                    .Select(r => new TaskReminderViewModel
+                    {
+                        Id = r.Id,
+                        TaskId = r.TaskId,
+                        Title = r.Title,
+                        Description = r.Description,
+                        ReminderType = r.ReminderType,
+                        IntervalDays = r.IntervalDays,
+                        DaysBeforeDeadline = r.DaysBeforeDeadline,
+                        StartDatePersian = r.StartDate.HasValue
+                            ? ConvertDateTime.ConvertMiladiToShamsi(r.StartDate.Value, "yyyy/MM/dd")
+                            : null,
+                        EndDatePersian = r.EndDate.HasValue
+                            ? ConvertDateTime.ConvertMiladiToShamsi(r.EndDate.Value, "yyyy/MM/dd")
+                            : null,
+                        NotificationTime = r.NotificationTime,
+                        IsSystemDefault = r.IsSystemDefault,
+                        IsActive = r.IsActive,
+                        CreatedDate = r.CreatedDate,
+                        CreatedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(r.CreatedDate, "yyyy/MM/dd HH:mm"),
+                        CreatorName = r.Creator != null ? $"{r.Creator.FirstName} {r.Creator.LastName}" : "سیستم"
+                    })
+                    .ToListAsync();
+
+                return reminders;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetTaskRemindersListAsync: {ex.Message}");
+                return new List<TaskReminderViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت یادآوری بر اساس شناسه
+        /// </summary>
+        public async Task<TaskReminderSchedule> GetReminderByIdAsync(int reminderId)
+        {
+            try
+            {
+                return await _context.TaskReminderSchedule_Tbl
+                    .Include(r => r.Task)
+                    .Include(r => r.Creator)
+                    .FirstOrDefaultAsync(r => r.Id == reminderId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetReminderByIdAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// ایجاد یادآوری جدید
+        /// </summary>
+        public async Task<int> CreateReminderAsync(TaskReminderViewModel model, string userId)
+        {
+            try
+            {
+                var reminder = new TaskReminderSchedule
+                {
+                    TaskId = model.TaskId,
+                    Title = model.Title,
+                    Description = model.Description,
+                    ReminderType = model.ReminderType,
+                    IntervalDays = model.IntervalDays,
+                    DaysBeforeDeadline = model.DaysBeforeDeadline,
+                    NotificationTime = model.NotificationTime ?? new TimeSpan(9, 0, 0),
+                    IsActive = model.IsActive,
+                    IsSystemDefault = false,
+                    CreatedDate = DateTime.Now,
+                    CreatorUserId = userId
+                };
+
+                // تبدیل تاریخ شمسی به میلادی
+                if (!string.IsNullOrEmpty(model.StartDatePersian))
+                {
+                    reminder.StartDate = ConvertDateTime.ConvertShamsiToMiladi(model.StartDatePersian);
+                }
+
+                if (!string.IsNullOrEmpty(model.EndDatePersian))
+                {
+                    reminder.EndDate = ConvertDateTime.ConvertShamsiToMiladi(model.EndDatePersian);
+                }
+
+                _context.TaskReminderSchedule_Tbl.Add(reminder);
+                await _context.SaveChangesAsync();
+
+                return reminder.Id;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in CreateReminderAsync: {ex.Message}");
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// غیرفعال کردن یادآوری
+        /// </summary>
+        public async Task<bool> DeactivateReminderAsync(int reminderId)
+        {
+            try
+            {
+                var reminder = await _context.TaskReminderSchedule_Tbl.FindAsync(reminderId);
+                if (reminder == null)
+                {
+                    return false;
+                }
+
+                reminder.IsActive = false;
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in DeactivateReminderAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// تغییر وضعیت فعال/غیرفعال یادآوری
+        /// </summary>
+        public async Task<bool> ToggleReminderActiveStatusAsync(int reminderId)
+        {
+            try
+            {
+                var reminder = await _context.TaskReminderSchedule_Tbl.FindAsync(reminderId);
+                if (reminder == null)
+                {
+                    return false;
+                }
+
+                reminder.IsActive = !reminder.IsActive;
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in ToggleReminderActiveStatusAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// دریافت تسک از طریق شناسه (async)
+        /// </summary>
+        public async Task<Tasks> GetTaskByIdAsync(int taskId)
+        {
+            try
+            {
+                return await _context.Tasks_Tbl
+                    .Include(t => t.TaskCategory)
+                    .Include(t => t.Stakeholder)
+                    .Include(t => t.Creator)
+                    .FirstOrDefaultAsync(t => t.Id == taskId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetTaskByIdAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        #endregion
+        #region Task History Methods Implementation
+
+        /// <summary>
+        /// دریافت تاریخچه کامل تسک
+        /// </summary>
+        public async Task<List<TaskHistoryViewModel>> GetTaskHistoryAsync(int taskId)
+        {
+            try
+            {
+                var histories = await _context.TaskHistory_Tbl
+                    .Include(h => h.User)
+                    .Where(h => h.TaskId == taskId)
+                    .OrderByDescending(h => h.ActionDate)
+                    .ToListAsync();
+
+                return histories.Select(h => new TaskHistoryViewModel
+                {
+                    Id = h.Id,
+                    ActionType = h.ActionType,
+                    Title = h.Title,
+                    Description = h.Description,
+                    UserName = h.User != null ? $"{h.User.FirstName} {h.User.LastName}" : "سیستم",
+                    ActionDate = h.ActionDate,
+                    ActionDatePersian = ConvertDateTime.ConvertMiladiToShamsi(h.ActionDate, "yyyy/MM/dd HH:mm"),
+                    RelatedItemId = h.RelatedItemId,
+                    RelatedItemType = h.RelatedItemType,
+                    IconClass = GetHistoryIcon(h.ActionType),
+                    BadgeClass = GetHistoryBadgeClass(h.ActionType)
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error getting task history: {ex.Message}");
+                return new List<TaskHistoryViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت آیکون برای نوع تغییر
+        /// </summary>
+        private string GetHistoryIcon(byte actionType)
+        {
+            return actionType switch
+            {
+                0 => "fa-plus",              // ایجاد
+                1 => "fa-edit",              // ویرایش
+                2 => "fa-sync",              // تغییر وضعیت
+                3 => "fa-user-plus",         // اضافه کاربر
+                4 => "fa-user-minus",        // حذف کاربر
+                5 => "fa-plus-circle",       // افزودن عملیات
+                7 => "fa-check-circle",      // تکمیل عملیات
+                8 => "fa-trash",             // حذف عملیات
+                9 => "fa-clipboard-check",   // ثبت گزارش کار
+                10 => "fa-bell-plus",        // افزودن یادآوری
+                15 => "fa-user-check",       // تایید سرپرست
+                16 => "fa-award",            // تایید مدیر
+                _ => "fa-circle"
+            };
+        }
+
+        /// <summary>
+        /// دریافت رنگ Badge برای نوع تغییر
+        /// </summary>
+        private string GetHistoryBadgeClass(byte actionType)
+        {
+            return actionType switch
+            {
+                0 => "bg-primary",           // ایجاد
+                1 => "bg-warning",           // ویرایش
+                2 => "bg-info",              // تغییر وضعیت
+                5 => "bg-primary",           // افزودن عملیات
+                7 => "bg-success",           // تکمیل عملیات
+                8 => "bg-danger",            // حذف
+                9 => "bg-info",              // گزارش کار
+                10 => "bg-warning",          // یادآوری
+                15 => "bg-info",             // تایید سرپرست
+                16 => "bg-success",          // تایید مدیر
+                _ => "bg-secondary"
+            };
+        }
         #endregion
     }
 }

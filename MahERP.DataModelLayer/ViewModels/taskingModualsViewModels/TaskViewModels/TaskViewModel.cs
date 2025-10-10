@@ -153,9 +153,14 @@ public class TaskViewModel
     /// </summary>
     [Display(Name = "یادآوری پیش‌فرض")]
     public bool EnableDefaultReminder { get; set; } = true;
+        /// <summary>
+        /// آیا این تسک در "روز من" کاربر فعلی قرار دارد؟
+        /// </summary>
+        [Display(Name = "در روز من")]
+        public bool IsInMyDay { get; set; }
 
-    // Progress calculation
-    [Display(Name = "درصد پیشرفت")]
+        // Progress calculation
+        [Display(Name = "درصد پیشرفت")]
     public int ProgressPercentage
     {
         get
@@ -339,166 +344,6 @@ public class TaskViewModel
 
 }
 
-public class TaskOperationViewModel
-{
-    public int Id { get; set; }
-
-    public int TaskId { get; set; }
-
-    [Required(ErrorMessage = "عنوان عملیات الزامی است")]
-    [Display(Name = "عنوان عملیات")]
-    [MaxLength(200, ErrorMessage = "عنوان عملیات حداکثر 200 کاراکتر باشد")]
-    public string Title { get; set; }
-
-    [Display(Name = "توضیحات")]
-    public string? Description { get; set; }
-
-    [Display(Name = "ترتیب انجام")]
-    public int OperationOrder { get; set; }
-
-    [Display(Name = "تکمیل شده")]
-    public bool IsCompleted { get; set; }
-
-    [Display(Name = "الزامی")]
-    public bool IsRequired { get; set; } = true;
-
-    /// <summary>
-    /// آیا عملیات تکمیل شده است؟
-    /// </summary>
-    public bool IsStarred { get; set; }
-    /// <summary>
-    /// مدت زمان تخمینی برای این عملیات (به ساعت)
-    /// </summary>
-    [Display(Name = "مدت زمان تخمینی (ساعت)")]
-    public decimal? EstimatedHours { get; set; }
-
-    /// <summary>
-    /// مدت زمان واقعی صرف شده (به ساعت)
-    /// </summary>
-    [Display(Name = "مدت زمان واقعی (ساعت)")]
-    public decimal? ActualHours { get; set; }
-
-    [Display(Name = "تاریخ تکمیل")]
-    public DateTime? CompletionDate { get; set; }
-
-    [Display(Name = "تکمیل کننده")]
-    public string? CompletedByUserId { get; set; }
-
-    [Display(Name = "نام تکمیل کننده")]
-    public string? CompletedByUserName { get; set; }
-
-    /// <summary>
-    /// یادداشت تکمیل
-    /// </summary>
-    [Display(Name = "یادداشت تکمیل")]
-    [MaxLength(500, ErrorMessage = "یادداشت تکمیل حداکثر 500 کاراکتر باشد")]
-    public string? CompletionNote { get; set; }
-
-    [Display(Name = "تاریخ ایجاد")]
-    public DateTime CreateDate { get; set; }
-
-    [Display(Name = "کاربر ایجادکننده")]
-    public string? CreatorUserId { get; set; }
-
-    /// <summary>
-    /// درصد پیشرفت این عملیات (0 تا 100)
-    /// </summary>
-    [Display(Name = "درصد پیشرفت")]
-    public int ProgressPercentage => IsCompleted ? 100 : 0;
-
-    /// <summary>
-    /// کلاس CSS برای نمایش وضعیت
-    /// </summary>
-    public string StatusClass => IsCompleted ? "text-success" :
-                               IsRequired ? "text-danger" : "text-muted";
-}
-
-/// <summary>
-/// ViewModel برای یادآوری‌های تسک
-/// </summary>
-public class TaskReminderViewModel
-{
-    public int Id { get; set; }
-
-    public int TaskId { get; set; }
-
-    [Required(ErrorMessage = "عنوان یادآوری الزامی است")]
-    [Display(Name = "عنوان یادآوری")]
-    [MaxLength(200, ErrorMessage = "عنوان یادآوری حداکثر 200 کاراکتر باشد")]
-    public string Title { get; set; }
-
-    [Display(Name = "توضیحات")]
-    [MaxLength(500, ErrorMessage = "توضیحات حداکثر 500 کاراکتر باشد")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// نوع یادآوری
-    /// 0 - یکبار در زمان مشخص
-    /// 1 - تکراری با فاصله زمانی مشخص
-    /// 2 - قبل از پایان مهلت
-    /// 3 - در روز شروع تسک
-    /// 4 - در روز پایان مهلت
-    /// </summary>
-    [Display(Name = "نوع یادآوری")]
-    public byte ReminderType { get; set; }
-
-    /// <summary>
-    /// فاصله تکرار (به روز) برای یادآوری تکراری
-    /// </summary>
-    [Display(Name = "فاصله تکرار (روز)")]
-    public int? IntervalDays { get; set; }
-
-    /// <summary>
-    /// چند روز قبل از پایان مهلت
-    /// </summary>
-    [Display(Name = "روزهای قبل از مهلت")]
-    public int? DaysBeforeDeadline { get; set; }
-
-    /// <summary>
-    /// تاریخ شروع یادآوری
-    /// </summary>
-    [Display(Name = "تاریخ شروع")]
-    public DateTime? StartDate { get; set; }
-    public string? StartDatePersian { get; set; }
-
-    /// <summary>
-    /// تاریخ پایان یادآوری
-    /// </summary>
-    [Display(Name = "تاریخ پایان")]
-    public DateTime? EndDate { get; set; }
-
-    /// <summary>
-    /// ساعت ارسال یادآوری
-    /// </summary>
-    [Display(Name = "ساعت ارسال")]
-    public TimeSpan NotificationTime { get; set; } = new TimeSpan(9, 0, 0);
-
-    /// <summary>
-    /// آیا این یادآوری پیش‌فرض سیستم است؟
-    /// </summary>
-    [Display(Name = "یادآوری پیش‌فرض")]
-    public bool IsSystemDefault { get; set; }
-
-    /// <summary>
-    /// آیا فعال است؟
-    /// </summary>
-    [Display(Name = "فعال")]
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>
-    /// متن نوع یادآوری برای نمایش
-    /// </summary>
-    [Display(Name = "نوع یادآوری")]
-    public string ReminderTypeText => ReminderType switch
-    {
-        0 => "یکبار در زمان مشخص",
-        1 => $"هر {IntervalDays} روز",
-        2 => $"{DaysBeforeDeadline} روز قبل از پایان مهلت",
-        3 => "در روز شروع تسک",
-        4 => "در روز پایان مهلت",
-        _ => "نامشخص"
-    };
-}
 
 /// <summary>
 /// DTO برای عملیات‌های تسک در JSON
@@ -714,21 +559,5 @@ public class UserTasksStatsViewModel
     public int OverdueTasksCount { get; set; }
     public int TodayTasksCount { get; set; }
 }
-public class OperationNoteViewModel
-{
-    public int OperationId { get; set; }
 
-    [Display(Name = "عنوان عملیات")]
-    public string OperationTitle { get; set; }
-
-    [Display(Name = "عنوان تسک")]
-    public string TaskTitle { get; set; }
-
-    [Display(Name = "گزارش انجام")]
-    [StringLength(1000, ErrorMessage = "گزارش نمی‌تواند بیش از 1000 کاراکتر باشد")]
-    public string? CompletionNote { get; set; }
-
-    [Display(Name = "وضعیت تکمیل")]
-    public bool IsCompleted { get; set; }
-}
 }

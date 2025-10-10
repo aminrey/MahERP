@@ -1,144 +1,227 @@
-﻿@model TaskWorkLogViewModel
+﻿@model OperationWorkLogViewModel
 
-<div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-        <form id="logWorkForm" asp-action="LogWork" method="post">
-            @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="TaskId" />
-            <input type="hidden" asp-for="TaskCode" />
-            <input type="hidden" asp-for="TaskTitle" />
-
-            <div class="modal-header">
-                <h4 class="modal-title">
-                    <i class="fa fa-clock me-2"></i>ثبت کار انجام شده
-                </h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
-            </div>
-
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="alert alert-info">
-                            <h6 class="alert-heading">
-                                <i class="fa fa-info-circle me-1"></i>تسک: @Model.TaskTitle
-                            </h6>
-                            <p class="mb-0">کد: <strong>@Model.TaskCode</strong></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-lg-8">
-                        <div class="mb-4">
-                            <label asp-for="WorkNote" class="form-label">
-                                <i class="fa fa-comment me-1"></i>توضیحات کار انجام شده
-                            </label>
-                            <textarea asp-for="WorkNote" 
-                                    class="form-control" 
-                                    rows="4" 
-                                    placeholder="توضیح مختصری از کاری که انجام دادید..."></textarea>
-                            <span asp-validation-for="WorkNote" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <div class="mb-4">
-                            <label asp-for="WorkDurationMinutes" class="form-label">
-                                <i class="fa fa-clock me-1"></i>مدت زمان کار (دقیقه)
-                            </label>
-                            <input asp-for="WorkDurationMinutes" 
-                                   type="number" 
-                                   class="form-control" 
-                                   min="1" 
-                                   max="480" 
-                                   placeholder="مثال: 30" />
-                            <span asp-validation-for="WorkDurationMinutes" class="text-danger"></span>
-                            <div class="form-text">حداکثر 8 ساعت (480 دقیقه)</div>
-                        </div>
-
-                        @if (Model.IsAlreadyWorkedOn)
-                        {
-                            <div class="alert alert-warning">
-                                <i class="fa fa-exclamation-triangle me-1"></i>
-                                قبلاً روی این تسک کار کرده‌اید
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
-                    <i class="fa fa-times me-1"></i>انصراف
-                </button>
-                <button type="button" class="btn btn-success" data-save="modal-ajax-save">
-                    <i class="fa fa-check me-1"></i>ثبت کار انجام شده
-                </button>
-            </div>
-        </form>
-    </div>
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+        <i class="fa fa-clipboard-check me-2"></i>
+        ثبت گزارش کار
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 
-<script>
-$(document).ready(function() {
-    // فوکوس روی فیلد اول
-    $('#WorkNote').focus();
+<form id="addWorkLogForm" asp-action="AddWorkLog" asp-controller="TaskOperations" asp-area="AdminArea" method="post">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.TaskOperationId)
+    <input hidden asp-for="TaskOperationId" type="text" />
 
-    // اضافه کردن event listener برای دکمه ثبت
-    $('[data-save="modal-ajax-save"]').on('ajaxSuccess', function(event, response) {
-        console.log('LogWork AJAX Success:', response);
-        
-        // اگر در صفحه MyDayTasks هستیم، نیازی به بستن دستی مودال نیست
-        // چون main.js در صورت update-view مودال را می‌بندد
-        
-        // بروزرسانی دکمه‌های تسک در صورت نیاز
-        updateTaskButtons(@Model.TaskId, true);
-        
-        // نمایش پیام موفقیت اضافی در صورت نیاز
-        if (typeof Dashmix !== 'undefined') {
-            Dashmix.helpers('jq-notify', {
-                type: 'success',
-                icon: 'fa fa-check me-1',
-                message: 'کار با موفقیت ثبت شد و صفحه بروزرسانی شد'
-            });
+    <div class="modal-body">
+        <!-- اطلاعات عملیات -->
+        <div class="alert alert-info border-0 mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fa fa-info-circle fa-2x me-3"></i>
+                <div>
+                    <h6 class="mb-1 fw-bold">@Model.OperationTitle</h6>
+                    <small class="text-muted">تسک: @Model.TaskTitle</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- توضیحات کار (اجباری) -->
+        <div class="mb-4">
+            <label asp-for="WorkDescription" class="form-label required">
+                <i class="fa fa-file-alt text-primary me-1"></i>
+                توضیحات کار انجام شده
+                <span class="text-danger">*</span>
+            </label>
+            <textarea asp-for="WorkDescription"
+                      class="form-control"
+                      rows="5"
+                      placeholder="توضیحات دقیق کار انجام شده را وارد کنید..."
+                      required
+                      minlength="5"
+                      maxlength="2000"></textarea>
+            <span asp-validation-for="WorkDescription" class="text-danger"></span>
+            <div class="form-text">
+                <i class="fa fa-info-circle me-1"></i>
+                حداقل 5 کاراکتر و حداکثر 2000 کاراکتر
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- مدت زمان (اختیاری) -->
+            <div class="col-md-6 mb-3">
+                <label asp-for="DurationMinutes" class="form-label">
+                    <i class="fa fa-clock text-info me-1"></i>
+                    مدت زمان (دقیقه)
+                </label>
+                <input asp-for="DurationMinutes"
+                       type="number"
+                       class="form-control"
+                       placeholder="مثال: 60"
+                       min="0"
+                       max="1440" />
+                <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                <div class="form-text">اختیاری</div>
+            </div>
+
+            <!-- درصد پیشرفت (اختیاری) -->
+            <div class="col-md-6 mb-3">
+                <label asp-for="ProgressPercentage" class="form-label">
+                    <i class="fa fa-percentage text-success me-1"></i>
+                    درصد پیشرفت
+                </label>
+                <input asp-for="ProgressPercentage"
+                       type="number"
+                       class="form-control"
+                       placeholder="0 تا 100"
+                       min="0"
+                       max="100" />
+                <span asp-validation-for="ProgressPercentage" class="text-danger"></span>
+                <div class="form-text">اختیاری</div>
+            </div>
+        </div>
+
+        <!-- نمایش WorkLog های اخیر -->
+        @if (Model.RecentWorkLogs?.Any() == true)
+        {
+            <div class="mt-4">
+                <h6 class="border-bottom pb-2 mb-3">
+                    <i class="fa fa-history text-warning me-2"></i>
+                    آخرین گزارش‌ها (@Model.TotalWorkLogsCount)
+                </h6>
+                <div class="list-group list-group-flush">
+                    @foreach (var log in Model.RecentWorkLogs.Take(3))
+                    {
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <p class="mb-1 small">@log.WorkDescription</p>
+                                    <small class="text-muted">
+                                        <i class="fa fa-user me-1"></i>@log.UserName
+                                        @if (log.DurationMinutes.HasValue)
+                                        {
+                                            <span class="mx-2">•</span>
+                                            <i class="fa fa-clock me-1"></i>
+                                            <span>
+                                                @log.DurationMinutes
+                                                دقیقه
+                                            </span>
+                                        
+                                                                        }
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         }
-    });
+    </div>
 
-    // اضافه کردن event listener برای خطا
-    $('[data-save="modal-ajax-save"]').on('ajaxError', function(event, xhr, status, error) {
-        console.error('LogWork AJAX Error:', { xhr, status, error });
-        
-        // نمایش پیام خطا
-        if (typeof Dashmix !== 'undefined') {
-            Dashmix.helpers('jq-notify', {
-                type: 'danger',
-                icon: 'fa fa-times me-1',
-                message: 'خطا در ثبت کار انجام شده'
-            });
-        }
-    });
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fa fa-times me-1"></i>
+            انصراف
+        </button>
+        <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save me-1"></i>
+            ثبت گزارش کار
+        </button>
+    </div>
+</form>
 
-    function updateTaskButtons(taskId, isWorkedOn) {
-        // بروزرسانی دکمه‌های تسک در صفحات مختلف
-        const $taskElements = $(`[data-task-id="${taskId}"]`);
-        
-        $taskElements.each(function() {
-            const $taskElement = $(this);
-            const $logWorkBtn = $taskElement.find('.btn-log-work, button[onclick*="logWork(' + taskId + ')"]');
-            
-            if ($logWorkBtn.length && isWorkedOn) {
-                $logWorkBtn.removeClass('btn-outline-success btn-success').addClass('btn-success');
-                
-                // تغییر متن دکمه اگر نیاز باشد
-                const currentHtml = $logWorkBtn.html();
-                if (currentHtml.indexOf('fa-play') !== -1) {
-                    $logWorkBtn.html('<i class="fa fa-check me-1"></i>کار ثبت شده');
-                } else if (currentHtml.indexOf('fa-edit') === -1) {
-                    $logWorkBtn.html('<i class="fa fa-edit me-1"></i>ویرایش کار');
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function() {
+            // فعال‌سازی Validation
+            $('#addWorkLogForm').validate({
+                rules: {
+                    WorkDescription: {
+                        required: true,
+                        minlength: 5,
+                        maxlength: 2000
+                    },
+                    DurationMinutes: {
+                        min: 0,
+                        max: 1440
+                    },
+                    ProgressPercentage: {
+                        min: 0,
+                        max: 100
+                    }
+                },
+                messages: {
+                    WorkDescription: {
+                        required: "توضیحات کار انجام شده الزامی است",
+                        minlength: "حداقل 5 کاراکتر وارد کنید",
+                        maxlength: "حداکثر 2000 کاراکتر مجاز است"
+                    },
+                    DurationMinutes: {
+                        min: "مدت زمان نمی‌تواند منفی باشد",
+                        max: "مدت زمان نمی‌تواند بیش از 1440 دقیقه باشد"
+                    },
+                    ProgressPercentage: {
+                        min: "درصد پیشرفت باید بین 0 تا 100 باشد",
+                        max: "درصد پیشرفت باید بین 0 تا 100 باشد"
+                    }
+                },
+                errorClass: 'invalid-feedback',
+                validClass: 'valid-feedback',
+                highlight: function(element) {
+                    $(element).addClass('is-invalid').removeClass('is-valid');
+                },
+                unhighlight: function(element) {
+                    $(element).removeClass('is-invalid').addClass('is-valid');
                 }
-            }
-        });
+            });
 
-        // بروزرسانی نشانگرهای بصری دیگر
-        const $progressBars = $(`[data-task-id="${taskId}"] .progress-bar`);
-        $progressBars.addClass('bg-success
+            // Handle form submission
+            $('#addWorkLogForm').on('submit', function(e) {
+                e.preventDefault();
+
+                if (!$(this).valid()) {
+                    return false;
+                }
+
+                const formData = $(this).serialize();
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    success: function(result) {
+                        if (result.status === 'success') {
+                            Dashmix.helpers('jq-notify', {
+                                type: 'success',
+                                icon: 'fa fa-check me-1',
+                                message: 'گزارش کار با موفقیت ثبت شد'
+                            });
+
+                            // بستن مودال
+                            $('#addWorkLogForm').closest('.modal').modal('hide');
+
+                            // Refresh صفحه
+                            if (result.refreshPage) {
+                                location.reload();
+                            }
+                        } else {
+                            Dashmix.helpers('jq-notify', {
+                                type: 'danger',
+                                icon: 'fa fa-times me-1',
+                                message: result.message?.[0]?.text || 'خطا در ثبت گزارش کار'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Dashmix.helpers('jq-notify', {
+                            type: 'danger',
+                            icon: 'fa fa-times me-1',
+                            message: 'خطا در ارتباط با سرور'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

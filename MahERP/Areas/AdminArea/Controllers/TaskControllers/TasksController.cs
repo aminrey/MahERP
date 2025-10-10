@@ -7,6 +7,9 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Repository.Tasking;
+using MahERP.DataModelLayer.Repository.TaskRepository;
+using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
@@ -35,6 +38,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         private readonly TaskNotificationService _taskNotificationService;
         private readonly TaskCodeGenerator _taskCodeGenerator;
         protected readonly IUserManagerRepository _userRepository;
+        private readonly ITaskFilterRepository _taskFilterRepository; // اضافه کردن dependency
+        private readonly ITaskHistoryRepository _taskHistoryRepository;
+
 
         public TasksController(
             IUnitOfWork uow,
@@ -49,7 +55,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             ActivityLoggerService activityLogger,
             TaskNotificationService taskNotificationService,
             TaskCodeGenerator taskCodeGenerator,
-            IUserManagerRepository userRepository)
+            IUserManagerRepository userRepository,
+            ITaskFilterRepository taskFilterRepository,ITaskHistoryRepository taskHistoryRepository) 
             : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _taskRepository = taskRepository;
@@ -61,6 +68,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _taskNotificationService = taskNotificationService;
             _taskCodeGenerator = taskCodeGenerator;
             _userRepository = userRepository;
+            _taskFilterRepository = taskFilterRepository;
+            _taskHistoryRepository = taskHistoryRepository;
+
         }
 
         #region Dashboard
@@ -99,7 +109,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 if (filters == null)
                     filters = new TaskFilterViewModel { ViewType = TaskViewType.AssignedByMe };
 
-                var model = await _taskRepository.GetTasksForIndexAsync(userId, filters); // استفاده از همان متد
+                // ⭐ تغییر به TaskFilterRepository
+                var model = await _taskFilterRepository.GetAssignedByMeTasksAsync(userId);
 
                 ViewBag.Title = "تسک‌های واگذار شده توسط من";
                 ViewBag.IsAssignedByMe = true;
@@ -107,7 +118,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "AssignedByMe", "مشاهده تسک‌های واگذار شده");
 
-                return View("Index", model); // استفاده از همان Index view
+                return View("Index", model);
             }
             catch (Exception ex)
             {
@@ -115,7 +126,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
-
         /// <summary>
         /// تسک‌هایی که کاربر ناظر آن‌هاست
         /// </summary>
@@ -264,70 +274,186 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             }
         }
 
-        /// <summary>
-        /// لیست اصلی تسک‌ها
-        /// </summary>
-        //[Permission("Tasks", "Index", 0)]
         public async Task<IActionResult> Index(TaskFilterViewModel filters = null)
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
 
-                // تنظیمات پیش‌فرض بر اساس سطح دسترسی
                 if (filters == null)
                 {
-                    var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
-                    filters = new TaskFilterViewModel
+                    filters = new TaskFilterViewModel();
+                }
+
+                // ⭐⭐⭐ بررسی TaskViewType از query string
+                if (!string.IsNullOrEmpty(Request.Query["viewType"]))
+                {
+                    // تبدیل string به enum
+                    if (Enum.TryParse<TaskViewType>(Request.Query["viewType"], out var viewType))
                     {
-                        ViewType = dataAccessLevel switch
+                        filters.ViewType = viewType;
+                    }
+                    else
+                    {
+                        // اگر مقدار نامعتبر بود، از DataAccessLevel استفاده کن
+                        var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
+                        filters.ViewType = dataAccessLevel switch
                         {
                             0 => TaskViewType.MyTasks,
                             1 => TaskViewType.AllTasks,
                             2 => TaskViewType.AllTasks,
                             _ => TaskViewType.MyTasks
-                        }
+                        };
+                    }
+                }
+                else
+                {
+                    // اگر TaskViewType ارسال نشده، از DataAccessLevel استفاده کن
+                    var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
+                    filters.ViewType = dataAccessLevel switch
+                    {
+                        0 => TaskViewType.MyTasks,
+                        1 => TaskViewType.AllTasks,
+                        2 => TaskViewType.AllTasks,
+                        _ => TaskViewType.MyTasks
                     };
                 }
 
                 ViewBag.currentUserId = GetUserId();
-                var model = await _taskRepository.GetTasksForIndexAsync(userId, filters);
+                var model = await _taskFilterRepository.GetTasksForIndexAsync(userId, filters);
 
-                // ⭐⭐⭐ Debug موقت - اینجا Breakpoint بگذارید
-                var debugInfo = new
+                // بررسی اینکه آیا FilterCounts null است
+                if (model.FilterCounts == null)
                 {
-                    UserId = userId,
-                    ViewType = model.Filters.ViewType,
-                    TotalTasks = model.Tasks.Count,
-                    MyCreatedTasks = model.Tasks.Count(t => t.CreatorUserId == userId),
-                    AssignedToMe = model.Tasks.Count(t => t.AssignmentsTaskUser != null &&
-                                                           t.AssignmentsTaskUser.Any(a => a.AssignedUserId == userId)),
-                    // ⭐ اضافه کردن لیست تسک‌ها
-                    AllTasks = model.Tasks.Select(t => new {
-                        t.Id,
-                        t.TaskCode,
-                        t.Title,
-                        CreatedByMe = t.CreatorUserId == userId,
-                        AssignedToMe = t.AssignmentsTaskUser?.Any(a => a.AssignedUserId == userId) ?? false,
-                        CreatorId = t.CreatorUserId,
-                        Assignments = t.AssignmentsTaskUser?.Select(a => new { a.AssignedUserId, a.AssignedUserName }).ToList()
-                    }).ToList()
-                };
-                // ⭐ اینجا Debugger را نگه دارید و debugInfo را در Watch Window ببینید
+                    Console.WriteLine("⚠️ FilterCounts is NULL! Re-calculating...");
+                    model.FilterCounts = await _taskFilterRepository.GetAllFilterCountsAsync(userId);
+                }
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "Index",
                     $"مشاهده لیست تسک‌ها - نوع: {filters.ViewType}");
+
+                ViewBag.FilterCounts = model.FilterCounts;
 
                 return View(model);
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("Tasks", "Index", "خطا در دریافت لیست تسک‌ها", ex);
+                Console.WriteLine($"❌ Exception in TasksController.Index: {ex.Message}\n{ex.StackTrace}");
                 return RedirectToAction("ErrorView", "Home");
             }
         }
+        // در قسمت AJAX Actions، بعد از GetCalendarEvents
 
+        /// <summary>
+        /// دریافت تسک‌های فیلتر شده برای Quick Filters
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetFilteredTasks(int filterType)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                TaskFilterResultViewModel result;
+
+                switch ((QuickFilterType)filterType)
+                {
+                    case QuickFilterType.AllVisible:
+                        result = await _taskFilterRepository.GetAllVisibleTasksAsync(userId);
+                        break;
+
+                    case QuickFilterType.MyAssigned:
+                        result = await _taskFilterRepository.GetMyAssignedTasksAsync(userId);
+                        break;
+
+                    case QuickFilterType.AssignedByMe:
+                        result = await _taskFilterRepository.GetAssignedByMeTasksAsync(userId);
+                        break;
+
+                    case QuickFilterType.MyTeams:
+                        result = await _taskFilterRepository.GetMyTeamsTasksAsync(userId);
+                        break;
+
+                    case QuickFilterType.Supervised:
+                        result = await _taskFilterRepository.GetSupervisedTasksAsync(userId);
+                        break;
+
+                    default:
+                        result = await _taskFilterRepository.GetAllVisibleTasksAsync(userId);
+                        break;
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "GetFilteredTasks",
+                    $"دریافت تسک‌های فیلتر شده - نوع: {(QuickFilterType)filterType}");
+                // ⭐⭐⭐ دریافت تعداد همه فیلترها و ارسال به View
+
+                var filterCounts = await _taskFilterRepository.GetAllFilterCountsAsync(userId);
+                ViewBag.FilterCounts = filterCounts;
+        // ⭐⭐⭐ رندر Partial View
+        var partialHtml = await this.RenderViewToStringAsync("_TasksGroupedPartial", result);
+
+        // ⭐⭐⭐ برگرداندن JSON با HTML و اطلاعات اضافی
+        return Json(new
+        {
+            success = true,
+            html = partialHtml,
+            filterName = result.FilterName,
+            totalCount = result.TotalCount,
+            filterCounts = new
+            {
+                allVisibleCount = filterCounts.AllVisibleCount,
+                myAssignedCount = filterCounts.MyAssignedCount,
+                assignedByMeCount = filterCounts.AssignedByMeCount,
+                myTeamsCount = filterCounts.MyTeamsCount,
+                supervisedCount = filterCounts.SupervisedCount
+            }
+        });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetFilteredTasks",
+                    "خطا در دریافت تسک‌های فیلتر شده", ex);
+
+                return PartialView("_TasksFilteredView", new TaskFilterResultViewModel
+                {
+                    FilterName = "خطا",
+                    TotalCount = 0,
+                    GroupedTasks = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>()
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد فیلترها برای Quick Filters (AJAX)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetFilterCounts()
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var counts = await _taskFilterRepository.GetAllFilterCountsAsync(userId);
+
+                return Json(new
+                {
+                    success = true,
+                    allVisibleCount = counts.AllVisibleCount,
+                    myAssignedCount = counts.MyAssignedCount,
+                    assignedByMeCount = counts.AssignedByMeCount,
+                    myTeamsCount = counts.MyTeamsCount,
+                    supervisedCount = counts.SupervisedCount
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetFilterCounts",
+                    "خطا در دریافت تعداد فیلترها", ex);
+
+                return Json(new { success = false, message = "خطا در دریافت تعداد فیلترها" });
+            }
+        }
         /// <summary>
         /// نمایش فرم ایجاد تسک جدید
         /// </summary>
@@ -360,13 +486,13 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
-                var task = _taskRepository.GetTaskById(id, includeOperations: true, 
+                var task = _taskRepository.GetTaskById(id, includeOperations: true,
                     includeAssignments: true, includeAttachments: true, includeComments: true);
-                
+
                 if (task == null)
                 {
                     await _activityLogger.LogActivityAsync(
-                        ActivityTypeEnum.View, "Tasks", "Details", 
+                        ActivityTypeEnum.View, "Tasks", "Details",
                         "تلاش برای مشاهده تسک غیرموجود", recordId: id.ToString());
                     return RedirectToAction("ErrorView", "Home");
                 }
@@ -379,9 +505,13 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 var currentUserId = _userManager.GetUserId(User);
                 await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
 
+                // ⭐⭐⭐ بررسی اینکه آیا تسک در "روز من" کاربر فعلی است
+                var isInMyDay = await _taskRepository.IsTaskInMyDayAsync(id, currentUserId);
+                ViewBag.IsInMyDay = isInMyDay;
+
                 await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "Details", 
-                    $"مشاهده جزئیات تسک: {task.Title}", 
+                    ActivityTypeEnum.View, "Tasks", "Details",
+                    $"مشاهده جزئیات تسک: {task.Title}",
                     recordId: id.ToString(), entityType: "Tasks", recordTitle: task.Title);
 
                 return View(viewModel);
@@ -793,6 +923,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 
                     // 6. ارسال نوتیفیکیشن (خارج از تراکنش)
                      EnqueueTaskNotification(task.Id, currentUserId, model);
+                    // ⭐ ثبت در تاریخچه
+                    await _taskHistoryRepository.LogTaskCreatedAsync(task.Id, currentUserId, task.Title, task.TaskCode);
 
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Create, "Tasks", "CreateNewTask",
@@ -934,6 +1066,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "BranchTriggerSelect",
                     $"بارگذاری داده‌های شعبه {branchId}");
+
 
                 return Json(new { status = "update-view", viewList = viewList });
             }
@@ -1426,5 +1559,536 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 });
             }
         }
+        [HttpGet]
+        public async Task<IActionResult> GetTaskHistory(int taskId)
+        {
+            try
+            {
+                var history = await _taskRepository.GetTaskHistoryAsync(taskId);
+                return PartialView("_TaskHistoryTimeline", history);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetTaskHistory", "خطا در دریافت تاریخچه", ex);
+                return PartialView("_TaskHistoryTimeline", new List<TaskHistoryViewModel>());
+            }
+        }
+
+
+        // اضافه کردن این methods به TasksController
+
+        #region Task Reminders Management
+
+        /// <summary>
+        /// دریافت لیست یادآوری‌های تسک
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetTaskReminders(int taskId)
+        {
+            try
+            {
+                // ✅ استفاده از Repository
+                var task = await _taskRepository.GetTaskByIdAsync(taskId);
+                if (task == null)
+                {
+                    return Json(new { status = "error", message = "تسک یافت نشد" });
+                }
+
+                // ✅ دریافت یادآوری‌ها از Repository
+                var reminders = await _taskRepository.GetTaskRemindersListAsync(taskId);
+
+                return PartialView("_TaskRemindersList", new { TaskId = taskId, Reminders = reminders });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetTaskReminders", "خطا در دریافت یادآوری‌ها", ex);
+                return Json(new { status = "error", message = "خطا در دریافت یادآوری‌ها" });
+            }
+        }
+
+        /// <summary>
+        /// نمایش مودال افزودن یادآوری جدید
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddReminderModal(int taskId)
+        {
+            try
+            {
+                // ✅ استفاده از Repository
+                var task = await _taskRepository.GetTaskByIdAsync(taskId);
+                if (task == null)
+                {
+                    return Json(new { status = "error", message = "تسک یافت نشد" });
+                }
+
+                var model = new TaskReminderViewModel
+                {
+                    TaskId = taskId,
+                    TaskTitle = task.Title,
+                    TaskCode = task.TaskCode,
+                    ReminderType = 2, // پیش‌فرض: قبل از مهلت
+                    DaysBeforeDeadline = 3,
+                    NotificationTime = new TimeSpan(9, 0, 0),
+                    IsActive = true
+                };
+
+                return PartialView("_AddReminderModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AddReminderModal", "خطا در نمایش مودال", ex);
+                return Json(new { status = "error", message = "خطا در نمایش فرم" });
+            }
+        }
+        /// <summary>
+        /// ذخیره یادآوری جدید
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveReminder(TaskReminderViewModel model)
+        {
+            try
+            {
+              
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                // ✅ استفاده از Repository
+                var reminderId = await _taskRepository.CreateReminderAsync(model, currentUserId);
+
+                if (reminderId == 0)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "خطا در ذخیره یادآوری" } }
+                    });
+                }
+
+                // ⭐ ثبت در تاریخچه
+                await _taskHistoryRepository.LogReminderAddedAsync(
+                    model.TaskId,
+                    currentUserId,
+                    reminderId,
+                    model.Title,
+                    model.ReminderType
+                );
+
+                // ✅✅✅ ساختار صحیح بر اساس main.js
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "reminders-list-container",
+                    view = new
+                    {
+                        result = await this.RenderViewToStringAsync(
+                            "_TaskRemindersList",
+                            new {
+                                TaskId = model.TaskId,
+                                Reminders = await _taskRepository.GetTaskRemindersListAsync(model.TaskId)
+                            }
+                        )
+                    }
+                }
+            },
+                    message = new[] { new { status = "success", text = "یادآوری با موفقیت اضافه شد" } }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "SaveReminder", "خطا در ذخیره یادآوری", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در ذخیره یادآوری" } }
+                });
+            }
+        }
+        /// <summary>
+        /// نمایش مودال تأیید حذف یادآوری
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> DeleteReminderConfirmModal(int reminderId)
+        {
+            try
+            {
+                var reminder = await _taskRepository.GetReminderByIdAsync(reminderId);
+                if (reminder == null)
+                {
+                    return Json(new { status = "error", message = "یادآوری یافت نشد" });
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "DeleteReminderConfirmModal",
+                    $"نمایش مودال تأیید حذف یادآوری {reminder.Title}");
+
+                return PartialView("_DeleteReminderConfirmModal", reminderId);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "DeleteReminderConfirmModal", "خطا در نمایش مودال", ex);
+                return Json(new { status = "error", message = "خطا در بارگذاری مودال" });
+            }
+        }
+        /// <summary>
+        /// حذف یادآوری تسک (برای استفاده با modal-ajax-save)
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> DeleteTaskReminder(int id)
+        {
+            try
+            {
+                // ✅ استفاده از Repository
+                var reminder = await _taskRepository.GetReminderByIdAsync(id);
+                if (reminder == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "یادآوری یافت نشد" } }
+                    });
+                }
+
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var taskId = reminder.TaskId;
+                var reminderTitle = reminder.Title;
+
+                // ✅ غیرفعال کردن از طریق Repository
+                var result = await _taskRepository.DeactivateReminderAsync(id);
+
+                if (!result)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "خطا در حذف یادآوری" } }
+                    });
+                }
+
+                // ⭐ ثبت در تاریخچه
+                await _taskHistoryRepository.LogReminderDeletedAsync(
+                    taskId,
+                    currentUserId,
+                    id,
+                    reminderTitle
+                );
+
+                // ✅✅✅ رندر مستقیم Partial View و ارسال در viewList
+                var updatedReminders = await _taskRepository.GetTaskRemindersListAsync(taskId);
+                var partialHtml = await this.RenderViewToStringAsync(
+                    "_TaskRemindersList",
+                    new { TaskId = taskId, Reminders = updatedReminders }
+                );
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "reminders-list-container",
+                    view = new { result = partialHtml }
+                }
+            },
+                    message = new[] { new { status = "success", text = "یادآوری با موفقیت حذف شد" } }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "DeleteTaskReminder", "خطا در حذف یادآوری", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در حذف یادآوری" } }
+                });
+            }
+        }
+
+        /// <summary>
+        /// فعال/غیرفعال کردن یادآوری
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleReminderStatus(int id)
+        {
+            try
+            {
+                // ✅ استفاده از Repository
+                var reminder = await _taskRepository.GetReminderByIdAsync(id);
+                if (reminder == null)
+                {
+                    return Json(new { status = "error", message = "یادآوری یافت نشد" });
+                }
+
+                // ✅ تغییر وضعیت از طریق Repository
+                var result = await _taskRepository.ToggleReminderActiveStatusAsync(id);
+
+                if (!result)
+                {
+                    return Json(new { status = "error", message = "خطا در تغییر وضعیت" });
+                }
+
+                // دریافت وضعیت جدید
+                var updatedReminder = await _taskRepository.GetReminderByIdAsync(id);
+                var statusText = updatedReminder.IsActive ? "فعال" : "غیرفعال";
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[] { new { status = "success", text = $"یادآوری {statusText} شد" } },
+                    updateTarget = "#reminders-list-container",
+                    updateUrl = Url.Action("GetTaskReminders", new { taskId = reminder.TaskId })
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "ToggleReminderStatus", "خطا در تغییر وضعیت", ex);
+                return Json(new { status = "error", message = "خطا در تغییر وضعیت" });
+            }
+        }
+
+        #endregion
+
+        #region My Day Actions - Quick Add Without Modal
+
+        /// <summary>
+        /// نمایش مودال افزودن تسک به "روز من" (با تاریخ و یادداشت)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddToMyDayModal(int taskId)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // دریافت اطلاعات تسک
+                var task = await _taskRepository.GetTaskByIdAsync(taskId);
+                if (task == null)
+                {
+                    return Json(new { status = "error", message = "تسک یافت نشد" });
+                }
+
+                // بررسی دسترسی کاربر به تسک
+                var hasAccess = await _taskRepository.CanUserViewTaskAsync(userId, taskId);
+                if (!hasAccess)
+                {
+                    return Json(new { status = "error", message = "شما به این تسک دسترسی ندارید" });
+                }
+
+                // بررسی اینکه آیا قبلاً در روز من است
+                var isAlreadyInMyDay = await _taskRepository.IsTaskInMyDayAsync(taskId, userId);
+
+                var model = new TaskMyDayViewModel
+                {
+                    TaskId = taskId,
+                    TaskTitle = task.Title,
+                    TaskCode = task.TaskCode,
+                    PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd"),
+                    IsAlreadyInMyDay = isAlreadyInMyDay
+                };
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "AddToMyDayModal",
+                    $"نمایش مودال افزودن تسک {task.TaskCode} به روز من");
+
+                return PartialView("_AddToMyDayModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AddToMyDayModal", "خطا در نمایش مودال", ex);
+                return Json(new { status = "error", message = "خطا در بارگذاری مودال" });
+            }
+        }
+
+        /// <summary>
+        /// افزودن تسک به "روز من" با تاریخ و یادداشت (از طریق Modal)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddToMyDay(TaskMyDayViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => new { status = "error", text = e.ErrorMessage })
+                        .ToArray();
+
+                    return Json(new
+                    {
+                        status = "validation-error",
+                        message = errors
+                    });
+                }
+
+                var userId = _userManager.GetUserId(User);
+
+                // بررسی دسترسی
+                var hasAccess = await _taskRepository.CanUserViewTaskAsync(userId, model.TaskId);
+                if (!hasAccess)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما به این تسک دسترسی ندارید" } }
+                    });
+                }
+
+                // تبدیل تاریخ شمسی به میلادی
+                DateTime plannedDate = DateTime.Now.Date;
+                if (!string.IsNullOrEmpty(model.PlannedDatePersian))
+                {
+                    plannedDate = ConvertDateTime.ConvertShamsiToMiladi(model.PlannedDatePersian);
+                }
+
+                // اضافه کردن به روز من
+                var result = await _taskRepository.AddTaskToMyDayAsync(
+                    model.TaskId,
+                    userId,
+                    plannedDate,
+                    model.PlanNote);
+
+                if (!result)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "خطا در افزودن تسک به روز من" } }
+                    });
+                }
+
+                // ⭐ ثبت در تاریخچه
+                var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
+                await _taskHistoryRepository.LogTaskAddedToMyDayAsync(
+                    model.TaskId,
+                    userId,
+                    task.Title,
+                    task.TaskCode,
+                    plannedDate
+                );
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create, "Tasks", "AddToMyDay",
+                    $"افزودن تسک {task.TaskCode} به روز من - تاریخ: {model.PlannedDatePersian}",
+                    recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: task.Title);
+
+                return Json(new
+                {
+                    status = "success",
+                    message = new[] { new { status = "success", text = "تسک با موفقیت به روز من اضافه شد" } }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AddToMyDay", "خطا در افزودن تسک به روز من", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در افزودن تسک: " + ex.Message } }
+                });
+            }
+        }
+
+        /// <summary>
+        /// حذف تسک از "روز من"
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveFromMyDay(int taskId, string? targetDatePersian = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // تبدیل تاریخ اگر ارسال شده
+                DateTime? targetDate = null;
+                if (!string.IsNullOrEmpty(targetDatePersian))
+                {
+                    targetDate = ConvertDateTime.ConvertShamsiToMiladi(targetDatePersian);
+                }
+
+                // حذف از روز من
+                var result = await _taskRepository.RemoveTaskFromMyDayAsync(taskId, userId, targetDate);
+
+                if (!result)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "تسک در روز من یافت نشد یا خطا در حذف"
+                    });
+                }
+
+                // ⭐ ثبت در تاریخچه
+                var task = await _taskRepository.GetTaskByIdAsync(taskId);
+                await _taskHistoryRepository.LogTaskRemovedFromMyDayAsync(
+                    taskId,
+                    userId,
+                    task.Title,
+                    task.TaskCode
+                );
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete, "Tasks", "RemoveFromMyDay",
+                    $"حذف تسک {task.TaskCode} از روز من",
+                    recordId: taskId.ToString(), entityType: "Tasks", recordTitle: task.Title);
+
+                return Json(new
+                {
+                    success = true,
+                    message = "تسک از روز من حذف شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "RemoveFromMyDay", "خطا در حذف تسک از روز من", ex);
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در حذف تسک از روز من"
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت صفحه "روز من"
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> MyDayTasks(string? date = null)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // تبدیل تاریخ اگر ارسال شده
+                DateTime? selectedDate = null;
+                if (!string.IsNullOrEmpty(date))
+                {
+                    selectedDate = ConvertDateTime.ConvertShamsiToMiladi(date);
+                }
+
+                // دریافت تسک‌های روز من
+                var model = await _taskRepository.GetMyDayTasksAsync(userId, selectedDate);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "MyDay",
+                    "مشاهده صفحه روز من");
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "MyDay", "خطا در دریافت تسک‌های روز من", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        #endregion
     }
 }

@@ -1,0 +1,205 @@
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskFilterResultViewModel
+@{
+    var filterCounts = ViewBag.FilterCounts as MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskFilterCountsViewModel;
+}
+@if (Model.TotalCount > 0)
+{
+    <div class="filtered-tasks-container">
+        <div class="filter-header mb-3">
+            <h5>@Model.FilterName</h5>
+            <span class="badge badge-primary">@Model.TotalCount تسک</span>
+        </div>
+
+        @if (Model.GroupedTasks != null && Model.GroupedTasks.Any())
+        {
+            @foreach (var team in Model.GroupedTasks)
+            {
+                <div class="team-group mb-4">
+                    <h6 class="team-header">
+                        <i class="fas fa-users"></i> @team.Key
+                    </h6>
+
+                    @foreach (var person in team.Value)
+                    {
+                        <div class="person-group mb-3">
+                            <div class="person-header">
+                                <i class="fas fa-user"></i> @person.Key
+                                <span class="badge badge-secondary">@person.Value.Count تسک</span>
+                            </div>
+
+                            <div class="tasks-list">
+                                @foreach (var task in person.Value)
+                                {
+                                    <div class="task-card" data-task-id="@task.Id">
+                                        <div class="task-header">
+                                            <span class="task-code">@task.TaskCode</span>
+                                            <span class="task-status badge @GetStatusBadgeClass(task.Status)">
+                                                @GetStatusText(task.Status)
+                                            </span>
+                                        </div>
+                                        <div class="task-title">
+                                            <a href="@Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })">
+                                                @task.Title
+                                            </a>
+                                        </div>
+                                        <div class="task-meta">
+                                            @if (task.DueDate.HasValue)
+                                            {
+                                                <span class="due-date">
+                                                    <i class="far fa-calendar"></i>
+                                                    @ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd")
+                                                </span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(task.CategoryTitle))
+                                            {
+                                                <span class="category">
+                                                    <i class="fas fa-tag"></i> @task.CategoryTitle
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="alert alert-info">
+                تسکی در این فیلتر یافت نشد.
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> تسکی یافت نشد.
+    </div>
+}
+
+@functions {
+    private string GetStatusBadgeClass(byte status)
+    {
+        return status switch
+        {
+            0 => "badge-secondary",
+            1 => "badge-warning",
+            2 => "badge-success",
+            3 => "badge-info",
+            4 => "badge-danger",
+            5 => "badge-primary",
+            _ => "badge-dark"
+        };
+    }
+
+    private string GetStatusText(byte status)
+    {
+        return status switch
+        {
+            0 => "ایجاد شده",
+            1 => "در حال انجام",
+            2 => "تکمیل شده",
+            3 => "تأیید شده",
+            4 => "رد شده",
+            5 => "در انتظار",
+            _ => "نامشخص"
+        };
+    }
+}
+
+<style>
+    .filtered-tasks-container {
+        padding: 15px;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #dee2e6;
+        padding-bottom: 10px;
+    }
+
+    .team-group {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .team-header {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 15px;
+        padding: 8px;
+        background: #e9ecef;
+        border-radius: 5px;
+    }
+
+    .person-group {
+        background: white;
+        border-radius: 6px;
+        padding: 12px;
+    }
+
+    .person-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+        color: #6c757d;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .task-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .task-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+
+    .task-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .task-code {
+        font-family: monospace;
+        font-weight: 600;
+        color: #6c757d;
+    }
+
+    .task-title {
+        margin-bottom: 8px;
+    }
+
+        .task-title a {
+            color: #212529;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .task-title a:hover {
+                color: #007bff;
+            }
+
+    .task-meta {
+        display: flex;
+        gap: 15px;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>

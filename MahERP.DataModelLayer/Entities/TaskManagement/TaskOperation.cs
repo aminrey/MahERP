@@ -33,13 +33,23 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public int OperationOrder { get; set; }
 
         /// <summary>
-        /// ستاره دار شدن عملیات
-        /// </summary>
-        public bool IsCompleted { get; set; }
-        /// <summary>
         /// آیا عملیات تکمیل شده است؟
         /// </summary>
+        public bool IsCompleted { get; set; }
+        
+        /// <summary>
+        /// ستاره دار شدن عملیات
+        /// </summary>
         public bool IsStarred { get; set; }
+        /// <summary>
+        /// حذف موقت عملیات
+        /// </summary>
+        public bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// تاریخ حذف عملیات
+        /// </summary>
+        public DateTime? DeleteDate { get; set; }
 
         /// <summary>
         /// تاریخ تکمیل عملیات
@@ -84,5 +94,11 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public string? CreatorUserId { get; set; }
         [ForeignKey("CreatorUserId")]
         public virtual AppUsers? Creator { get; set; }
+
+        // ⭐ Navigation Property جدید
+        /// <summary>
+        /// گزارش کارهای انجام شده روی این عملیات
+        /// </summary>
+        public virtual ICollection<TaskOperationWorkLog> WorkLogs { get; set; } = new List<TaskOperationWorkLog>();
     }
 }

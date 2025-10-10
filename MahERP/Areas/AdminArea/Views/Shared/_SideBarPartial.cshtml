@@ -80,7 +80,7 @@
 
                         <!-- همه تسک‌ها -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "AllTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-TaskViewType="AllTasks">
+                            <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "AllTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-ViewType="AllTasks">
                                 <i class="nav-main-link-icon fa fa-list text-info"></i>
                                 <span class="nav-main-link-name">همه تسک‌ها</span>
                             </a>
@@ -88,7 +88,7 @@
 
                         <!-- تسک‌های من -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "MyTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-TaskViewType="MyTasks">
+                            <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "MyTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-ViewType="MyTasks">
                                 <i class="nav-main-link-icon fa fa-clipboard-check text-warning"></i>
                                 <span class="nav-main-link-name">تسک‌های من</span>
                                 <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" id="myTasksCount" style="display: none;">0</span>

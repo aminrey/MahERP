@@ -2,7 +2,8 @@
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Repository.Tasking;
+using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
 using Microsoft.AspNetCore.Authorization;

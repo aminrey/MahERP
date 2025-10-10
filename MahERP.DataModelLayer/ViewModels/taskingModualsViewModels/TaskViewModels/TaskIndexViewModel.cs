@@ -1,47 +1,135 @@
-﻿using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+﻿using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
-using MahERP.DataModelLayer.Entities.TaskManagement;
 using System.ComponentModel.DataAnnotations;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
 {
-    public class TaskListForIndexViewModel
+    /// <summary>
+    /// ViewModel صفحه Index تسک‌ها - نسخه کامل
+    /// </summary>
+    public class TaskIndexViewModel
     {
-        public string? UserLoginid { get; set; }
+        /// <summary>
+        /// شناسه کاربر لاگین شده
+        /// </summary>
+        public string UserLoginid { get; set; } = string.Empty;
+
+        /// <summary>
+        /// لیست تسک‌ها (نمایش ساده)
+        /// </summary>
         public List<TaskViewModel> Tasks { get; set; } = new List<TaskViewModel>();
-        public int TotalCount { get; set; }
 
-        // لیست‌های اولیه برای فیلترها
-        public List<BranchViewModel>? branchListInitial { get; set; }
-        public List<UserViewModelFull>? UsersInitial { get; set; }
-        public List<StakeholderViewModel>? StakeholdersInitial { get; set; }
-        public List<TaskCategory>? TaskCategoryInitial { get; set; }
-        public List<TeamViewModel>? TeamsInitial { get; set; }
-
-        // فیلترهای انتخاب شده
-        public TaskFilterViewModel Filters { get; set; } = new TaskFilterViewModel();
-
-        // آمار تسک‌ها
-        public TaskStatisticsViewModel Statistics { get; set; } = new TaskStatisticsViewModel();
-
-        // گروه‌بندی تسک‌ها بر اساس نوع نمایش
+        /// <summary>
+        /// تسک‌های گروه‌بندی شده (نمایش سلسله مراتبی)
+        /// </summary>
         public TaskGroupedViewModel GroupedTasks { get; set; } = new TaskGroupedViewModel();
 
         /// <summary>
-        /// آیا فیلترهای فعالی وجود دارد
+        /// فیلترهای اعمال شده
         /// </summary>
-        public bool HasActiveFilters { get; set; } = false;
+        public TaskFilterViewModel Filters { get; set; } = new TaskFilterViewModel();
 
         /// <summary>
-        /// تسک‌های دریافتی (واگذار شده به من)
+        /// آمار تسک‌ها
         /// </summary>
-        public List<TaskViewModel> TasksAssignedToMe { get; set; } = new List<TaskViewModel>();
+        public TaskStatisticsViewModel Statistics { get; set; } = new TaskStatisticsViewModel();
 
         /// <summary>
-        /// تسک‌های واگذار شده (گروه‌بندی شده بر اساس انجام‌دهنده)
+        /// آیا فیلتر فعالی اعمال شده است؟
         /// </summary>
-        public Dictionary<string, List<TaskViewModel>> TasksAssignedByMeGrouped { get; set; } = new Dictionary<string, List<TaskViewModel>>();
+        public bool HasActiveFilters { get; set; }
+
+        /// <summary>
+        /// تعداد تسک‌ها برای هر فیلتر سریع
+        /// </summary>
+        public TaskFilterCountsViewModel FilterCounts { get; set; } = new TaskFilterCountsViewModel();
+
+        /// <summary>
+        /// فیلتر سریع فعلی
+        /// </summary>
+        public QuickFilterType CurrentFilter { get; set; } = QuickFilterType.AllVisible;
+
+        /// <summary>
+        /// نتیجه فیلتر فعلی (برای نمایش گروه‌بندی شده)
+        /// </summary>
+        public TaskFilterResultViewModel FilterResult { get; set; } = new TaskFilterResultViewModel();
+
+        #region لیست‌های اولیه برای فیلترها
+
+        /// <summary>
+        /// لیست شعبه‌ها برای فیلتر
+        /// </summary>
+        public List<BranchViewModel> branchListInitial { get; set; } = new List<BranchViewModel>();
+
+        /// <summary>
+        /// لیست تیم‌ها برای فیلتر
+        /// </summary>
+        public List<TeamViewModel> TeamsInitial { get; set; } = new List<TeamViewModel>();
+
+        /// <summary>
+        /// لیست کاربران برای فیلتر
+        /// </summary>
+        public List<UserViewModelFull> UsersInitial { get; set; } = new List<UserViewModelFull>();
+
+        /// <summary>
+        /// لیست دسته‌بندی‌ها برای فیلتر
+        /// </summary>
+        public List<TaskCategory> TaskCategoryInitial { get; set; } = new List<TaskCategory>();
+
+        /// <summary>
+        /// لیست طرف‌حساب‌ها برای فیلتر
+        /// </summary>
+        public List<StakeholderViewModel> StakeholdersInitial { get; set; } = new List<StakeholderViewModel>();
+
+        #endregion
+
+        #region متدهای کمکی
+
+        /// <summary>
+        /// آیا نمایش گروه‌بندی شده فعال است؟
+        /// </summary>
+        public bool IsGroupedView => Filters?.ViewType == TaskViewType.MyTeamsHierarchy;
+
+        /// <summary>
+        /// آیا نمایش لیست ساده فعال است؟
+        /// </summary>
+        public bool IsListView => !IsGroupedView;
+
+        /// <summary>
+        /// دریافت متن نوع نمایش فعلی
+        /// </summary>
+        public string GetCurrentViewTypeText()
+        {
+            return Filters?.ViewType switch
+            {
+                TaskViewType.AllTasks => "همه تسک‌ها",
+                TaskViewType.MyTasks => "تسک‌های من",
+                TaskViewType.AssignedToMe => "منتصب شده به من",
+                TaskViewType.AssignedByMe => "واگذار شده توسط من",
+                TaskViewType.MyTeamsHierarchy => "تسک‌های تیمی",
+                _ => "نامشخص"
+            };
+        }
+
+        /// <summary>
+        /// دریافت کلاس badge برای فیلتر فعال
+        /// </summary>
+        public string GetFilterBadgeClass(TaskViewType viewType)
+        {
+            return Filters?.ViewType == viewType ? "badge-primary" : "badge-secondary";
+        }
+
+        /// <summary>
+        /// آیا فیلتر خاصی فعال است؟
+        /// </summary>
+        public bool IsFilterActive(TaskViewType viewType)
+        {
+            return Filters?.ViewType == viewType;
+        }
+
+        #endregion
     }
 
     public class TaskFilterViewModel
@@ -80,7 +168,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public string? SearchTerm { get; set; }
 
         // خاصیت کمکی برای تشخیص وجود فیلتر فعال
-        public bool HasActiveFilters => 
+        public bool HasActiveFilters =>
             BranchId.HasValue ||
             TeamId.HasValue ||
             !string.IsNullOrEmpty(UserId) ||
@@ -94,22 +182,22 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
     public class TaskStatisticsViewModel
     {
         public int TotalTasks { get; set; }
-        
+
         /// <summary>
         /// تسک‌هایی که به من واگذار شده‌اند
         /// </summary>
         public int AssignedToMe { get; set; }
-        
+
         /// <summary>
         /// تسک‌هایی که من به دیگران واگذار کرده‌ام
         /// </summary>
         public int AssignedByMe { get; set; }
-        
+
         /// <summary>
         /// مجموع تسک‌های من = دریافتی + واگذار شده
         /// </summary>
         public int MyTasks => AssignedToMe + AssignedByMe;
-        
+
         public int CompletedTasks { get; set; }
         public int OverdueTasks { get; set; }
         public int InProgressTasks { get; set; }
@@ -125,7 +213,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public List<TaskViewModel> AssignedToMe { get; set; } = new List<TaskViewModel>();
         public Dictionary<string, List<TaskViewModel>> TeamMemberTasks { get; set; } = new Dictionary<string, List<TaskViewModel>>();
         public Dictionary<string, List<TaskViewModel>> SubTeamTasks { get; set; } = new Dictionary<string, List<TaskViewModel>>();
-        
+
         /// <summary>
         /// گروه‌بندی ویژه برای صفحه "تسک‌های من"
         /// </summary>
@@ -252,13 +340,13 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public string StatusText { get; set; }
         public string StatusBadgeClass { get; set; }
         public string StakeholderName { get; set; }
-        
+
         /// <summary>
         /// تعداد روزهای باقی‌مانده تا مهلت
         /// </summary>
-        public int? DaysUntilDue 
+        public int? DaysUntilDue
         {
-            get 
+            get
             {
                 if (!DueDate.HasValue) return null;
                 return (DueDate.Value.Date - DateTime.Now.Date).Days;
@@ -276,5 +364,4 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public string TimeAgo { get; set; }
         public string Url { get; set; }
     }
-
 }

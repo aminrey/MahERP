@@ -74,7 +74,9 @@ namespace MahERP.DataModelLayer
         public DbSet<PredefinedCopyDescription> PredefinedCopyDescription_Tbl { get; set; }
         public DbSet<BranchTaskCategoryStakeholder> BranchTaskCategoryStakeholder_Tbl { get; set; }
         public DbSet<TaskViewPermission> TaskViewPermission_Tbl { get; set; }
-    
+        public DbSet<TaskOperationWorkLog> TaskOperationWorkLog_Tbl { get; set; }
+        public DbSet<TaskHistory> TaskHistory_Tbl { get; set; }
+
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
         public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }

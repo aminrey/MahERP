@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
@@ -9,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using MahERP.DataModelLayer.Entities.AcControl;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
+using MahERP.DataModelLayer.Repository.TaskRepository;
+using MahERP.DataModelLayer.Repository.Tasking;
 
 namespace MahERP.Services
 {

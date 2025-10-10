@@ -1,0 +1,217 @@
+﻿@model TaskFilterResultViewModel
+@{
+    var filterCounts = ViewBag.FilterCounts as MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskFilterCountsViewModel;
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+}
+
+@if (Model.GroupedTasks.Any())
+{
+    @foreach (var teamGroup in Model.GroupedTasks.OrderBy(t => t.Key))
+    {
+        var teamId = teamGroup.Key.GetHashCode();
+        var teamName = teamGroup.Key;
+        var totalTeamTasks = teamGroup.Value.Sum(p => p.Value.Count);
+
+        <div class="team-group mb-3">
+            <!-- Team Header -->
+            <div class="team-header team-toggle" 
+                 data-bs-toggle="collapse" 
+                 data-bs-target="#team-@teamId"
+                 onclick="toggleTeam('@teamId')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-chevron-down toggle-icon me-2"></i>
+                        <i class="fa fa-users me-2"></i>
+                        <h5 class="mb-0">@teamName</h5>
+                    </div>
+                    <span class="badge bg-light text-dark">@totalTeamTasks تسک</span>
+                </div>
+            </div>
+
+            <!-- Team Content -->
+            <div id="team-@teamId" class="collapse show">
+                @foreach (var personGroup in teamGroup.Value.OrderBy(p => p.Key))
+                {
+                    var personId = personGroup.Key.GetHashCode();
+                    var personName = personGroup.Key;
+                    var personTasks = personGroup.Value;
+
+                    <div class="person-group ms-3 mt-2">
+                        <!-- Person Header -->
+                        <div class="person-header person-toggle" 
+                             data-bs-toggle="collapse" 
+                             data-bs-target="#person-@teamId-@personId"
+                             onclick="togglePerson('@teamId', '@personId')">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="fa fa-chevron-down toggle-icon me-2"></i>
+                                    <i class="fa fa-user me-2 text-primary"></i>
+                                    <strong>@personName</strong>
+                                </div>
+                                <span class="badge bg-secondary">@personTasks.Count تسک</span>
+                            </div>
+                        </div>
+
+                        <!-- Person Tasks -->
+                        <div id="person-@teamId-@personId" class="collapse show">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-vcenter mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 50px;"></th>
+                                            <th>کد</th>
+                                            <th>عنوان</th>
+                                            <th class="text-center d-none d-md-table-cell">دسته‌بندی</th>
+                                            <th class="text-center">وضعیت</th>
+                                            <th class="text-center d-none d-lg-table-cell">سازنده</th>
+                                            <th class="text-center d-none d-sm-table-cell">مهلت</th>
+                                            <th class="text-center" style="width: 120px;">عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var task in personTasks.OrderByDescending(t => t.CreateDate))
+                                        {
+                                            var isTaskAssignedToCurrentUser = task.AssignmentsTaskUser?.Any(a => a.AssignedUserId == currentUserId) ?? false;
+                                            var isInMyDay = task.IsInMyDay; 
+
+                                            <tr class="@(task.IsOverdue ? "table-warning" : "")">
+                                                <td class="text-center">
+                                                    @if (task.Priority == 2)
+                                                    {
+                                                        <i class="fa fa-exclamation-triangle text-danger" 
+                                                           title="فوری" data-bs-toggle="tooltip"></i>
+                                                    }
+                                                    else if (task.Important)
+                                                    {
+                                                        <i class="fa fa-star text-warning" 
+                                                           title="مهم" data-bs-toggle="tooltip"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fa fa-circle text-muted" style="font-size: 0.5rem;"></i>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">@task.TaskCode</small>
+                                                </td>
+                                                <td>
+                                                    <a asp-action="Details" asp-route-id="@task.Id" 
+                                                       class="fw-bold text-decoration-none">
+                                                        @task.Title
+                                                    </a>
+                                                    @if (!string.IsNullOrEmpty(task.Description))
+                                                    {
+                                                        <br />
+                                                        <small class="text-muted">
+                                                            @(task.Description.Length > 50 
+                                                                ? task.Description.Substring(0, 50) + "..." 
+                                                                : task.Description)
+                                                        </small>
+                                                    }
+                                                </td>
+                                                <td class="text-center d-none d-md-table-cell">
+                                                    @if (!string.IsNullOrEmpty(task.CategoryTitle))
+                                                    {
+                                                        <span class="badge bg-info">@task.CategoryTitle</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @{
+                                                        var statusClass = task.Status switch
+                                                        {
+                                                            0 => "bg-secondary",
+                                                            1 => "bg-warning",
+                                                            2 => "bg-success",
+                                                            3 => "bg-info",
+                                                            4 => "bg-danger",
+                                                            _ => "bg-dark"
+                                                        };
+
+                                                        var statusText = task.Status switch
+                                                        {
+                                                            0 => "ایجاد",
+                                                            1 => "انجام",
+                                                            2 => "تکمیل",
+                                                            3 => "تأیید",
+                                                            4 => "رد",
+                                                            _ => "؟"
+                                                        };
+                                                    }
+                                                    <span class="badge @statusClass">@statusText</span>
+                                                </td>
+                                                <td class="text-center d-none d-lg-table-cell">
+                                                    <small class="text-muted">@task.CreatorName</small>
+                                                </td>
+                                                <td class="text-center d-none d-sm-table-cell">
+                                                    @if (task.DueDate.HasValue)
+                                                    {
+                                                        var isOverdue = task.DueDate.Value < DateTime.Now && !task.CompletionDate.HasValue;
+                                                        <small class="@(isOverdue ? "text-danger fw-bold" : "text-muted")">
+                                                            @ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd")
+                                                        </small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <small class="text-muted">-</small>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <a asp-action="Details" asp-route-id="@task.Id" 
+                                                           class="btn btn-alt-secondary" 
+                                                           title="جزئیات" data-bs-toggle="tooltip">
+                                                            <i class="fa fa-eye"></i>
+                                                        </a>
+                                                        @if (isTaskAssignedToCurrentUser)
+                                                        {
+                                                            @if (isInMyDay)
+                                                            {
+                                                                @* دکمه غیرفعال - فقط نمایشی *@
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-success"
+                                                                        
+                                                                        title="در روز من قرار دارد"
+                                                                        data-bs-toggle="tooltip">
+                                                                    <i class="fa fa-check-circle"></i>
+                                                                </button>
+                                                            }
+                                                            else
+                                                            {
+                                                                @* دکمه فعال برای افزودن *@
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-primary btn-add-to-myday"
+                                                                        data-toggle="modal-ajax"
+                                                                        href="@Url.Action("AddToMyDayModal", "Tasks", new { taskId = task.Id })"
+                                                                        title="افزودن به روز من"
+                                                                        data-bs-toggle="tooltip">
+                                                                    <i class="fa fa-calendar-day"></i>
+                                                                </button>
+                                                            }
+                                                        }
+                                                        <a asp-action="Edit" asp-route-id="@task.Id" 
+                                                           class="btn btn-alt-primary" 
+                                                           title="ویرایش" data-bs-toggle="tooltip">
+                                                            <i class="fa fa-pencil-alt"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">تسکی یافت نشد</h5>
+    </div>
+}

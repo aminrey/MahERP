@@ -1,0 +1,39 @@
+﻿@model List<TaskHistoryViewModel>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="text-center text-muted py-5">
+        <i class="fa fa-info-circle fa-3x mb-3"></i>
+        <p class="mb-0">هیچ تغییری ثبت نشده است</p>
+    </div>
+}
+else
+{
+    @foreach (var item in Model)
+    {
+        <div class="timeline-item">
+            <div class="timeline-badge @item.BadgeClass">
+                <i class="fa @item.IconClass"></i>
+            </div>
+            <div class="timeline-panel">
+                <div class="timeline-heading">
+                    <h6 class="timeline-title">@item.Title</h6>
+                    <p class="text-muted fs-sm mb-0">
+                        <i class="fa fa-clock me-1"></i>
+                        @item.ActionDatePersian
+                    </p>
+                </div>
+                <div class="timeline-body">
+                    <p class="mb-1">
+                        <i class="fa fa-user me-1 text-muted"></i>
+                        <strong>@item.UserName</strong>
+                    </p>
+                    @if (!string.IsNullOrEmpty(item.Description))
+                    {
+                        <p class="mb-0 text-muted">@item.Description</p>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}

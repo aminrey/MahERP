@@ -1,0 +1,115 @@
+﻿@model TaskOperationViewModel
+
+@{
+    var isCompleted = Model.IsCompleted;
+    var isStarred = Model.IsStarred;
+    var hasWorkLogs = Model.WorkLogs?.Any() == true;
+}
+
+<div class="operation-item-card mb-2 border rounded p-3 @(isCompleted ? "bg-body-light" : "")"
+     data-operation-id="@Model.Id"
+     data-starred="@(isStarred ? "true" : "false")"
+     data-completed="@(isCompleted ? "true" : "false")"
+     data-order="@Model.OperationOrder"
+     id="operation-card-@Model.Id">
+
+    <!-- Spinner -->
+    <div class="operation-spinner" style="display: none; position: absolute; top: 10px; right: 10px;">
+        <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">در حال ذخیره...</span>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-start">
+        <!-- Checkbox -->
+        <div class="flex-shrink-0 me-3">
+            <div class="form-check">
+                <input class="form-check-input operation-checkbox"
+                       type="checkbox"
+                       @(isCompleted ? "checked" : "")
+                       onchange="dynamicToggleComplete(this, @Model.Id)"
+                       style="width: 1.5rem; height: 1.5rem; cursor: pointer;">
+            </div>
+        </div>
+
+        <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+                <span class="badge @(isCompleted ? "bg-success" : "bg-secondary") me-2">
+                    @Model.OperationOrder
+                </span>
+
+                @if (isStarred)
+                {
+                    <i class="fa fa-star text-warning me-2" title="ستاره‌دار"></i>
+                }
+
+                <h6 class="mb-0 @(isCompleted ? "text-decoration-line-through text-muted" : "")">
+                    @Model.Title
+                </h6>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <p class="text-muted small mb-2">@Model.Description</p>
+            }
+
+            @if (hasWorkLogs)
+            {
+                <div class="mt-2">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-info"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#worklogs-@Model.Id">
+                        <i class="fa fa-clipboard-list me-1"></i>
+                        @Model.WorkLogs.Count گزارش کار
+                    </button>
+
+                    <div class="collapse mt-3" id="worklogs-@Model.Id">
+                        <div class="border-start border-3 border-info ps-3">
+                            @foreach (var log in Model.WorkLogs.OrderByDescending(w => w.WorkDate).Take(3))
+                            {
+                                <div class="mb-2">
+                                    <small class="text-dark"><strong>@log.UserName</strong></small>
+                                    <small class="text-muted d-block">@log.WorkDescription</small>
+                                    <small class="text-info">
+                                        <i class="fa fa-clock me-1"></i>@log.DurationMinutes دقیقه
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="flex-shrink-0 ms-2">
+            <div class="btn-group btn-group-sm">
+                @if (!Model.IsCompleted)
+                {
+                    <button type="button"
+                            class="btn @(isStarred ? "btn-warning" : "btn-outline-warning") btn-sm"
+                            onclick="dynamicToggleStar(@Model.Id)"
+                            title="ستاره">
+                        <i class="fa fa-star"></i>
+                    </button>
+                
+
+                <button type="button"
+                        class="btn @(hasWorkLogs ? "btn-info" : "btn-outline-info") btn-sm"
+                        data-toggle="modal-ajax"
+                        href="@Url.Action("AddWorkLogModal", "TaskOperations", new { operationId = Model.Id, area = "AdminArea" })"
+                        title="ثبت کار">
+                    <i class="fa fa-clipboard-check"></i>
+                </button>
+                }
+
+                <button type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        onclick="dynamicDeleteOperation(@Model.Id)"
+                        title="حذف">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

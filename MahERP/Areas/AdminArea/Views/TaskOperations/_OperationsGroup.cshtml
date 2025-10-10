@@ -1,0 +1,47 @@
+﻿@model IEnumerable<TaskOperationViewModel>
+@{
+    // ⭐ بررسی امنیت ViewBag
+    var groupType = ViewBag.GroupType as string ?? "unknown";
+    var groupTitle = ViewBag.GroupTitle as string ?? "نامشخص";
+    var groupIcon = ViewBag.GroupIcon as string ?? "question-circle";
+    var groupColor = ViewBag.GroupColor as string ?? "secondary";
+    var groupDescription = ViewBag.GroupDescription as string ?? "";
+    var operations = Model?.ToList() ?? new List<TaskOperationViewModel>();
+
+    // ⭐ اگر ViewBag خالی است، log error
+    if (string.IsNullOrWhiteSpace(groupType) || groupType == "unknown")
+    {
+        <div class="alert alert-danger">
+            <i class="fa fa-exclamation-triangle me-2"></i>
+            <strong>خطا:</strong> اطلاعات گروه ناقص است.
+        </div>
+        return;
+    }
+}
+
+<div class="mb-4 operations-group" data-group="@groupType" id="@(groupType)-group">
+    <div class="d-flex align-items-center mb-3">
+        <div class="flex-shrink-0">
+            <div class="bg-@groupColor text-white rounded-circle d-flex align-items-center justify-content-center"
+                 style="width: 40px; height: 40px;">
+                <i class="fa fa-@groupIcon"></i>
+            </div>
+        </div>
+        <div class="flex-grow-1 ms-3">
+            <h6 class="mb-0 text-@groupColor">
+                <strong>@groupTitle</strong>
+                <span class="badge bg-@groupColor @(groupColor == "warning" ? "text-dark" : "") ms-2">@operations.Count</span>
+            </h6>
+            @if (!string.IsNullOrEmpty(groupDescription))
+            {
+                <small class="text-muted">@groupDescription</small>
+            }
+        </div>
+    </div>
+    <div class="@(groupType)-operations" id="@(groupType)-operations-container">
+        @foreach (var operation in operations)
+        {
+            @await Html.PartialAsync("_OperationItem.cshtml", operation)
+        }
+    </div>
+</div>

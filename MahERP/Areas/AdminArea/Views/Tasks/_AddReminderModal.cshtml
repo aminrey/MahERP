@@ -1,0 +1,295 @@
+﻿@model TaskReminderViewModel
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <form id="addReminderForm" asp-action="SaveReminder" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="TaskId" />
+
+            <div class="modal-header bg-warning text-white">
+                <h4 class="modal-title text-white mb-0">
+                    <i class="fa fa-bell me-2"></i>افزودن یادآوری جدید
+                </h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- اطلاعات تسک -->
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fa fa-info-circle me-1"></i>تسک: @Model.TaskTitle
+                    </h6>
+                    <p class="mb-0">کد: <strong>@Model.TaskCode</strong></p>
+                </div>
+
+                <!-- عنوان یادآوری -->
+                <div class="mb-4">
+                    <label asp-for="Title" class="form-label">
+                        <i class="fa fa-heading me-1"></i>عنوان یادآوری <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="Title" 
+                           class="form-control" 
+                           placeholder="مثال: یادآوری قبل از پایان مهلت" 
+                           maxlength="200" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <!-- توضیحات -->
+                <div class="mb-4">
+                    <label asp-for="Description" class="form-label">
+                        <i class="fa fa-align-right me-1"></i>توضیحات
+                    </label>
+                    <textarea asp-for="Description" 
+                              class="form-control" 
+                              rows="3" 
+                              placeholder="توضیحات تکمیلی (اختیاری)..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <!-- نوع یادآوری -->
+                <div class="mb-4">
+                    <label class="form-label">
+                        <i class="fa fa-cog me-1"></i>نوع یادآوری <span class="text-danger">*</span>
+                    </label>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="form-check form-check-block">
+                                <input asp-for="ReminderType" 
+                                       class="form-check-input" 
+                                       type="radio" 
+                                       value="0" 
+                                       id="reminderType0"
+                                       onchange="toggleReminderFields()">
+                                <label class="form-check-label" for="reminderType0">
+                                    <i class="fa fa-calendar text-primary me-2"></i>
+                                    <strong>یکبار در زمان مشخص</strong>
+                                    <small class="d-block text-muted">در تاریخ و ساعت مشخصی ارسال شود</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-check-block">
+                                <input asp-for="ReminderType" 
+                                       class="form-check-input" 
+                                       type="radio" 
+                                       value="1" 
+                                       id="reminderType1"
+                                       onchange="toggleReminderFields()">
+                                <label class="form-check-label" for="reminderType1">
+                                    <i class="fa fa-sync text-info me-2"></i>
+                                    <strong>تکراری</strong>
+                                    <small class="d-block text-muted">هر چند روز یکبار ارسال شود</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-check-block">
+                                <input asp-for="ReminderType" 
+                                       class="form-check-input" 
+                                       type="radio" 
+                                       value="2" 
+                                       id="reminderType2" 
+                                       checked
+                                       onchange="toggleReminderFields()">
+                                <label class="form-check-label" for="reminderType2">
+                                    <i class="fa fa-hourglass-half text-warning me-2"></i>
+                                    <strong>قبل از مهلت</strong>
+                                    <small class="d-block text-muted">X روز قبل از پایان مهلت</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-check-block">
+                                <input asp-for="ReminderType" 
+                                       class="form-check-input" 
+                                       type="radio" 
+                                       value="3" 
+                                       id="reminderType3"
+                                       onchange="toggleReminderFields()">
+                                <label class="form-check-label" for="reminderType3">
+                                    <i class="fa fa-play text-success me-2"></i>
+                                    <strong>در روز شروع تسک</strong>
+                                    <small class="d-block text-muted">در تاریخ شروع تسک ارسال شود</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <span asp-validation-for="ReminderType" class="text-danger"></span>
+                </div>
+
+                <!-- تنظیمات بر اساس نوع -->
+                <div class="row">
+                    <!-- فاصله تکرار (برای نوع 1) -->
+                    <div class="col-md-6 mb-4" id="intervalField" style="display: none;">
+                        <label asp-for="IntervalDays" class="form-label">
+                            <i class="fa fa-repeat me-1"></i>فاصله تکرار (روز)
+                        </label>
+                        <input asp-for="IntervalDays" 
+                               type="number" 
+                               class="form-control" 
+                               min="1" 
+                               max="365" 
+                               placeholder="مثال: 7 (هفتگی)" />
+                        <span asp-validation-for="IntervalDays" class="text-danger"></span>
+                    </div>
+
+                    <!-- چند روز قبل (برای نوع 2) -->
+                    <div class="col-md-6 mb-4" id="daysBeforeField">
+                        <label asp-for="DaysBeforeDeadline" class="form-label">
+                            <i class="fa fa-clock me-1"></i>چند روز قبل از مهلت
+                        </label>
+                        <input asp-for="DaysBeforeDeadline" 
+                               type="number" 
+                               class="form-control" 
+                               min="1" 
+                               max="30" 
+                               value="3" 
+                               placeholder="مثال: 3" />
+                        <span asp-validation-for="DaysBeforeDeadline" class="text-danger"></span>
+                    </div>
+
+                    <!-- ساعت ارسال -->
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">
+                            <i class="fa fa-clock me-1"></i>ساعت ارسال
+                        </label>
+                        <input type="time" 
+                               class="form-control" 
+                               id="notificationTimeInput"
+                               value="09:00" />
+                        <small class="form-text text-muted">زمان ارسال یادآوری در روز مشخص شده</small>
+                    </div>
+                </div>
+
+                <!-- تاریخ شروع و پایان (برای نوع 0 و 1) -->
+                <div class="row" id="dateRangeFields" style="display: none;">
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="StartDatePersian" class="form-label">
+                            <i class="fa fa-calendar-alt me-1"></i>تاریخ شروع
+                        </label>
+                        <input asp-for="StartDatePersian" 
+                               class="form-control js-flatpickr" 
+                               placeholder="انتخاب تاریخ..." />
+                        <span asp-validation-for="StartDatePersian" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="EndDatePersian" class="form-label">
+                            <i class="fa fa-calendar-times me-1"></i>تاریخ پایان (اختیاری)
+                        </label>
+                        <input asp-for="EndDatePersian" 
+                               class="form-control js-flatpickr" 
+                               placeholder="انتخاب تاریخ..." />
+                        <span asp-validation-for="EndDatePersian" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- وضعیت فعال -->
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input asp-for="IsActive" 
+                               class="form-check-input" 
+                               type="checkbox" 
+                               checked />
+                        <label asp-for="IsActive" class="form-check-label">
+                            <i class="fa fa-check-circle text-success me-1"></i>
+                            <strong>یادآوری فعال باشد</strong>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- پیش‌نمایش -->
+                <div class="alert alert-light border" id="reminderPreview">
+                    <h6><i class="fa fa-eye me-1"></i> پیش‌نمایش:</h6>
+                    <p class="mb-0" id="previewText">یادآوری 3 روز قبل از پایان مهلت در ساعت 09:00 ارسال خواهد شد</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>انصراف
+                </button>
+                <button type="button" class="btn btn-warning" data-save="modal-ajax-save">
+                    <i class="fa fa-check me-1"></i>ذخیره یادآوری
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // راه‌اندازی تقویم شمسی
+    $('.js-flatpickr').each(function() {
+        new mds.MdsPersianDateTimePicker(this, {
+            targetTextSelector: this,
+            enableTimePicker: false,
+            textFormat: 'yyyy/MM/dd'
+        });
+    });
+
+    toggleReminderFields();
+    updatePreview();
+
+    // رویدادها
+    $('input[name="ReminderType"]').on('change', updatePreview);
+    $('#IntervalDays, #DaysBeforeDeadline, #notificationTimeInput').on('input change', updatePreview);
+});
+
+function toggleReminderFields() {
+    const reminderType = $('input[name="ReminderType"]:checked').val();
+    
+    $('#intervalField').hide();
+    $('#daysBeforeField').hide();
+    $('#dateRangeFields').hide();
+    
+    if (reminderType === '0') {
+        // یکبار
+        $('#dateRangeFields').show();
+    } else if (reminderType === '1') {
+        // تکراری
+        $('#intervalField').show();
+        $('#dateRangeFields').show();
+    } else if (reminderType === '2') {
+        // قبل از مهلت
+        $('#daysBeforeField').show();
+    }
+}
+
+function updatePreview() {
+    const reminderType = $('input[name="ReminderType"]:checked').val();
+    const time = $('#notificationTimeInput').val() || '09:00';
+    let text = '';
+    
+    switch(reminderType) {
+        case '0':
+            const startDate = $('#StartDatePersian').val() || 'تاریخ مشخص';
+            text = `یادآوری در تاریخ ${startDate} ساعت ${time} ارسال خواهد شد`;
+            break;
+        case '1':
+            const interval = $('#IntervalDays').val() || 'X';
+            text = `یادآوری هر ${interval} روز یکبار در ساعت ${time} ارسال خواهد شد`;
+            break;
+        case '2':
+            const daysBefore = $('#DaysBeforeDeadline').val() || '3';
+            text = `یادآوری ${daysBefore} روز قبل از پایان مهلت در ساعت ${time} ارسال خواهد شد`;
+            break;
+        case '3':
+            text = `یادآوری در روز شروع تسک ساعت ${time} ارسال خواهد شد`;
+            break;
+    }
+    
+    $('#previewText').text(text);
+}
+
+// ذخیره ساعت در hidden field
+$('[data-save="modal-ajax-save"]').on('click', function() {
+    const timeValue = $('#notificationTimeInput').val();
+    if (timeValue) {
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'NotificationTime',
+            value: timeValue + ':00'
+        }).appendTo('#addReminderForm');
+    }
+});
+</script>

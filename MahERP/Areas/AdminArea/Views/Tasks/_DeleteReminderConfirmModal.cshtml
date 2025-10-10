@@ -1,0 +1,63 @@
+﻿@model int
+
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form asp-action="DeleteTaskReminder" asp-controller="Tasks" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model" />
+
+            <div class="modal-header bg-danger">
+                <h4 class="modal-title text-white mb-0">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    تأیید حذف یادآوری
+                </h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-danger mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-exclamation-circle fa-3x me-3 text-danger"></i>
+                        <div>
+                            <h5 class="alert-heading mb-2">هشدار!</h5>
+                            <p class="mb-0">آیا از حذف این یادآوری اطمینان دارید؟</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-warning">
+                    <div class="card-header bg-warning-light">
+                        <h6 class="mb-0">
+                            <i class="fa fa-info-circle me-1"></i>
+                            نکات مهم:
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0 text-muted">
+                            <li>این یادآوری به صورت <strong>دائمی</strong> حذف خواهد شد</li>
+                            <li>رویدادهای آینده این یادآوری <strong>ارسال نخواهند شد</strong></li>
+                            <li>این عملیات <strong class="text-danger">قابل بازگشت نیست</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>انصراف
+                </button>
+                <button type="button"
+                        class="btn btn-danger"
+                        data-save="modal-ajax-save">
+                    <i class="fa fa-trash me-1"></i>بله، حذف شود
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .bg-warning-light {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+</style>

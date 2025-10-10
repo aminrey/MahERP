@@ -4,6 +4,9 @@ using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Repository.Tasking;
+using MahERP.DataModelLayer.Repository.TaskRepository;
+using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.Hubs;
 using MahERP.Services;
@@ -42,6 +45,9 @@ builder.Services.AddScoped<IMainDashboardRepository, MainDashboardRepository>();
 builder.Services.AddScoped<ITaskVisibilityRepository, TaskVisibilityRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
+builder.Services.AddScoped<ITaskFilterRepository, TaskFilterRepository>();
+builder.Services.AddScoped<ITaskOperationsRepository, TaskOperationsRepository>(); // ⭐ جدید
+builder.Services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
 // ⭐ Services - Scoped
 builder.Services.AddScoped<TaskNotificationService>();
 builder.Services.AddScoped<TaskCodeGenerator>();

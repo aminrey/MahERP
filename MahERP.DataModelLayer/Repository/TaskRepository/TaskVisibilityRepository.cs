@@ -1,7 +1,6 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Entities.TaskManagement;
-using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MahERP.DataModelLayer.Repository
+namespace MahERP.DataModelLayer.Repository.Tasking
 {
     /// <summary>
     /// Repository مدیریت قدرت مشاهده تسک‌ها بر اساس ساختار سازمانی

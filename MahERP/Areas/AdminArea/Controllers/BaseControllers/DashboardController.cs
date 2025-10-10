@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Repository.Tasking;
+using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;

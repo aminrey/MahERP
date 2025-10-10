@@ -1,0 +1,139 @@
+﻿@model dynamic
+
+<div class="row">
+    @if (Model.Reminders.Count == 0)
+    {
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fa fa-bell-slash fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">هیچ یادآوری فعالی وجود ندارد</h5>
+                <p class="text-muted">برای افزودن یادآوری جدید از دکمه بالا استفاده کنید</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var reminder in Model.Reminders)
+        {
+            <div class="col-lg-6 col-md-12 mb-3">
+                <div class="card @(reminder.IsSystemDefault ? "border-success" : "border-warning") h-100 shadow-sm">
+                    <div class="card-header @(reminder.IsSystemDefault ? "bg-success-light" : "bg-warning-light")">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1">
+                                <i class="fa @(reminder.IsSystemDefault ? "fa-shield-alt" : "fa-bell") me-2"></i>
+                                <strong>@reminder.Title</strong>
+                                @if (reminder.IsSystemDefault)
+                                {
+                                    <span class="badge bg-success ms-2">پیش‌فرض سیستم</span>
+                                }
+                            </div>
+                            @if (!reminder.IsSystemDefault)
+                            {
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-primary"
+                                            onclick="editTaskReminder(@reminder.Id)"
+                                            title="ویرایش">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            data-toggle="modal-ajax"
+                                            href="@Url.Action("DeleteReminderConfirmModal", "Tasks", new { reminderId = reminder.Id })"
+                                            title="حذف">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(reminder.Description))
+                        {
+                            <p class="text-muted mb-3 fst-italic">
+                                <i class="fa fa-quote-left me-1"></i>
+                                @reminder.Description
+                            </p>
+                        }
+
+                        <div class="mb-2 d-flex align-items-center">
+                            <span class="badge bg-primary me-2">
+                                <i class="fa fa-cog me-1"></i>نوع
+                            </span>
+                            <span>@reminder.ReminderTypeText</span>
+                        </div>
+
+                        <div class="mb-2 d-flex align-items-center">
+                            <span class="badge bg-info me-2">
+                                <i class="fa fa-clock me-1"></i>ساعت
+                            </span>
+                            <span>@reminder.NotificationTime</span>
+                        </div>
+
+                        @if (reminder.StartDatePersian != null)
+                        {
+                            <div class="mb-2 d-flex align-items-center">
+                                <span class="badge bg-success me-2">
+                                    <i class="fa fa-calendar me-1"></i>شروع
+                                </span>
+                                <span>@reminder.StartDatePersian</span>
+                            </div>
+                        }
+
+                        @if (reminder.EndDatePersian != null)
+                        {
+                            <div class="mb-2 d-flex align-items-center">
+                                <span class="badge bg-danger me-2">
+                                    <i class="fa fa-calendar-times me-1"></i>پایان
+                                </span>
+                                <span>@reminder.EndDatePersian</span>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fa fa-user me-1"></i>
+                                @reminder.CreatorName
+                            </small>
+                            <small class="text-muted">
+                                <i class="fa fa-clock me-1"></i>
+                                @reminder.CreatedDatePersian
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    function editTaskReminder(reminderId) {
+        // TODO: بارگذاری مودال ویرایش
+        Dashmix.helpers('jq-notify', {
+            type: 'info',
+            icon: 'fa fa-info-circle me-1',
+            message: 'قابلیت ویرایش به زودی...'
+        });
+    }
+</script>
+
+<style>
+    .bg-success-light {
+        background-color: rgba(40, 167, 69, 0.1) !important;
+    }
+
+    .bg-warning-light {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+</style>

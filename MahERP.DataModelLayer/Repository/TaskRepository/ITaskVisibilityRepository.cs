@@ -3,7 +3,7 @@ using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MahERP.DataModelLayer.Services
+namespace MahERP.DataModelLayer.Repository.Tasking
 {
     /// <summary>
     /// رابط repository مدیریت قدرت مشاهده تسک‌ها بر اساس ساختار سازمانی

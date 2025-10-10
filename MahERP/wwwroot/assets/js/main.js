@@ -1252,3 +1252,139 @@ $(document).ready(function() {
 
 // Expose DynamicSelect2Manager globally for external access
 window.DynamicSelect2Manager = DynamicSelect2Manager;
+
+
+/**
+* نمایش مودال تایید SweetAlert با قابلیت سفارشی‌سازی کامل
+* @param {Object} options - تنظیمات مودال تایید
+* @returns {Promise<boolean>} - true اگر کاربر تایید کند، false در غیر این صورت
+*/
+async function showConfirmationSwal(options = {}) {
+    const defaultOptions = {
+        title: 'آیا اطمینان دارید؟',
+        text: 'این عملیات قابل بازگشت نیست',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'بله، ادامه بده',
+        cancelButtonText: 'خیر، انصراف',
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        reverseButtons: true,
+        focusCancel: true,
+        customClass: {
+            confirmButton: 'btn btn-success',
+            cancelButton: 'btn btn-danger'
+        },
+        buttonsStyling: false
+    };
+
+    const mergedOptions = { ...defaultOptions, ...options };
+
+    try {
+        const result = await Swal.fire(mergedOptions);
+        return result.isConfirmed;
+    } catch (error) {
+        console.error('خطا در نمایش SweetAlert:', error);
+        return false;
+    }
+}
+
+/**
+ * نمایش مودال تایید ساده برای حذف
+ * @param {string} itemName - نام آیتم برای حذف
+ * @returns {Promise<boolean>}
+ */
+async function showDeleteConfirmation(itemName = 'این آیتم') {
+    return await showConfirmationSwal({
+        title: 'حذف ' + itemName,
+        text: 'آیا از حذف این مورد اطمینان دارید؟',
+        icon: 'warning',
+        confirmButtonText: 'بله، حذف شود',
+        cancelButtonText: 'خیر، انصراف',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d'
+    });
+}
+
+/**
+ * نمایش پیام موفقیت SweetAlert
+ * @param {string} title - عنوان پیام
+ * @param {string} text - متن پیام
+ */
+function showSuccessSwal(title = 'موفق!', text = 'عملیات با موفقیت انجام شد') {
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: 'success',
+        confirmButtonText: 'باشه',
+        customClass: {
+            confirmButton: 'btn btn-success'
+        },
+        buttonsStyling: false
+    });
+}
+
+/**
+ * نمایش پیام خطا SweetAlert
+ * @param {string} title - عنوان خطا
+ * @param {string} text - متن خطا
+ */
+function showErrorSwal(title = 'خطا!', text = 'عملیات با خطا مواجه شد') {
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: 'error',
+        confirmButtonText: 'باشه',
+        customClass: {
+            confirmButton: 'btn btn-danger'
+        },
+        buttonsStyling: false
+    });
+}
+
+/**
+ * نمایش مودال تایید با input برای یادداشت
+ * @param {Object} options - تنظیمات مودال
+ * @returns {Promise<{confirmed: boolean, value: string|null}>}
+ */
+async function showConfirmationWithInput(options = {}) {
+    const defaultOptions = {
+        title: 'تایید عملیات',
+        text: 'لطفاً یادداشت خود را وارد کنید',
+        icon: 'question',
+        input: 'textarea',
+        inputPlaceholder: 'یادداشت (اختیاری)',
+        showCancelButton: true,
+        confirmButtonText: 'تایید',
+        cancelButtonText: 'انصراف',
+        customClass: {
+            confirmButton: 'btn btn-success',
+            cancelButton: 'btn btn-danger'
+        },
+        buttonsStyling: false,
+        inputValidator: (value) => {
+            // اعتبارسنجی اختیاری
+            return null;
+        }
+    };
+
+    const mergedOptions = { ...defaultOptions, ...options };
+
+    try {
+        const result = await Swal.fire(mergedOptions);
+        return {
+            confirmed: result.isConfirmed,
+            value: result.value || null
+        };
+    } catch (error) {
+        console.error('خطا در نمایش SweetAlert با input:', error);
+        return { confirmed: false, value: null };
+    }
+}
+
+// ✅ Expose به window برای استفاده global
+window.showConfirmationSwal = showConfirmationSwal;
+window.showDeleteConfirmation = showDeleteConfirmation;
+window.showSuccessSwal = showSuccessSwal;
+window.showErrorSwal = showErrorSwal;
+window.showConfirmationWithInput = showConfirmationWithInput;

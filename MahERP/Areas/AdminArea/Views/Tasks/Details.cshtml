@@ -2,538 +2,963 @@
 @{
     ViewData["Title"] = "جزئیات تسک";
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var isAssignedToCurrentUser = Model.UsersInitial?.Any(a => a.Id == currentUserId) ?? false;
+    var isAssignedToCurrentUser = Model.AssignmentsTaskUser?.Any(a => a.AssignedUserId == currentUserId) ?? false;
+    var isCreator = Model.CreatorUserId == currentUserId;
     var isManager = User.IsInRole("Admin") || User.IsInRole("Manager");
     var isSupervisor = User.IsInRole("Supervisor") || isManager;
+    var isAdminOrManager = Html.IsAdminOrManager();
+
+    // تعیین رنگ و وضعیت
+    string statusColor = "primary";
+    string statusText = "در حال انجام";
+    string statusIcon = "fa-clock";
+    var isInMyDay = ViewBag.IsInMyDay ?? false;
+
+    if (Model.IsDeleted) {
+        statusColor = "danger"; statusText = "حذف شده"; statusIcon = "fa-trash";
+    } else if (!Model.IsActive) {
+        statusColor = "warning"; statusText = "غیرفعال"; statusIcon = "fa-pause-circle";
+    } else if (Model.CompletionDate.HasValue && Model.ManagerApprovedDate.HasValue) {
+        statusColor = "success"; statusText = "تایید نهایی"; statusIcon = "fa-check-double";
+    } else if (Model.CompletionDate.HasValue && Model.SupervisorApprovedDate.HasValue) {
+        statusColor = "info"; statusText = "تایید سرپرست"; statusIcon = "fa-user-check";
+    } else if (Model.CompletionDate.HasValue) {
+        statusColor = "success"; statusText = "تکمیل شده"; statusIcon = "fa-check-circle";
+    } else if (Model.DueDate.HasValue && DateTime.Now > Model.DueDate.Value) {
+        statusColor = "danger"; statusText = "تاخیر دارد"; statusIcon = "fa-exclamation-triangle";
+    }
 }
 
-<!-- Hero -->
-<div class="bg-body-light">
-    <div class="content content-full">
-        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
-            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">جزئیات تسک</h1>
-            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="نشانگر مسیر">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a asp-action="Index">تسک‌ها</a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">جزئیات</li>
-                </ol>
-            </nav>
+<!-- Hero Section - بنر بهبود یافته -->
+<div class="hero-section position-relative overflow-hidden">
+    <!-- Background Image با Overlay -->
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100">
+        <img src="~/assets/media/photos/photo21.jpg" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+
+        <!-- Gradient Overlay -->
+        <div class="bg-black-75 position-absolute top-0 start-0 w-100 h-100"></div>
+
+        <!-- Animated Pattern -->
+        <div class="hero-pattern position-absolute top-0 start-0 w-100 h-100">
+            <svg class="w-100 h-100 opacity-10" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="hero-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <circle cx="30" cy="30" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="60" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="60" r="2" fill="currentColor" class="text-white" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hero-pattern)" />
+            </svg>
+        </div>
+
+        <!-- Floating Shapes -->
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+
+    <div class="content content-full position-relative" style="z-index: 10;">
+        <div class="py-5">
+            <!-- Task Header -->
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-start gap-3">
+                        <!-- Status Icon -->
+                        <div class="flex-shrink-0">
+                            <div class="hero-status-icon @($"status-{statusColor}")">
+                                <div class="icon-wrapper">
+                                    <i class="fa @statusIcon fa-2x"></i>
+                                </div>
+                                <div class="status-label">@statusText</div>
+                            </div>
+                        </div>
+
+                        <!-- Task Info -->
+                        <div class="flex-grow-1">
+                            <!-- Task Title -->
+                            <div class="hero-title-wrapper mb-3">
+                                <h1 class="hero-title text-white mb-2">@Model.Title</h1>
+                                <div class="hero-subtitle d-flex flex-wrap align-items-center gap-2">
+                                    <span class="badge badge-modern bg-white text-dark px-3 py-2 rounded-pill">
+                                        <i class="fa fa-hashtag me-1"></i>
+                                        <span class="fw-bold">@Model.TaskCode</span>
+                                    </span>
+                                    <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                    <span class="badge badge-modern bg-white bg-opacity-20 text-dark px-3 py-2 rounded-pill">
+                                        <i class="fa fa-calendar-alt me-1"></i>
+                                        <span>@ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd")</span>
+                                    </span>
+                                    @if (Model.Important)
+                                    {
+                                        <span class="badge badge-modern bg-danger px-3 py-2 rounded-pill pulse-animation">
+                                            <i class="fa fa-star me-1"></i>
+                                            <span>مهم</span>
+                                        </span>
+                                    }
+                                    @if (Model.Priority == 2)
+                                    {
+                                        <span class="badge badge-modern bg-warning px-3 py-2 rounded-pill pulse-animation">
+                                            <i class="fa fa-bolt me-1"></i>
+                                            <span>فوری</span>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Quick Stats -->
+                            <div class="hero-stats">
+                                <div class="row g-3">
+                                    <div class="col-6 col-md-3">
+                                        <div class="stat-card">
+                                            <div class="stat-icon">
+                                                <i class="fa fa-chart-line"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <div class="stat-label">پیشرفت</div>
+                                                <div class="stat-value">@Model.ProgressPercentage<span class="stat-unit">%</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="stat-card">
+                                            <div class="stat-icon">
+                                                <i class="fa fa-users"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <div class="stat-label">اعضا</div>
+                                                <div class="stat-value">@(Model.AssignmentsTaskUser?.Count ?? 0)<span class="stat-unit">نفر</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="stat-card">
+                                            <div class="stat-icon">
+                                                <i class="fa fa-tasks"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <div class="stat-label">عملیات</div>
+                                                <div class="stat-value">
+                                                    @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)/@(Model.Operations?.Count ?? 0)
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if (Model.DueDate.HasValue)
+                                    {
+                                        var remainingDays = (Model.DueDate.Value - DateTime.Now).Days;
+                                        <div class="col-6 col-md-3">
+                                            <div class="stat-card @(remainingDays < 0 ? "stat-danger" : remainingDays <= 3 ? "stat-warning" : "")">
+                                                <div class="stat-icon">
+                                                    <i class="fa fa-clock"></i>
+                                                </div>
+                                                <div class="stat-content">
+                                                    <div class="stat-label">مهلت</div>
+                                                    <div class="stat-value">
+                                                        @if (remainingDays < 0)
+                                                        {
+                                                            <span>@Math.Abs(remainingDays)</span>
+                                                            <span class="stat-unit">روز تاخیر</span>
+                                                        }
+                                                        else if (remainingDays == 0)
+                                                        {
+                                                            <span>امروز</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@remainingDays</span>
+                                                            <span class="stat-unit">روز</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="col-lg-4">
+                    <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
+                        @if (isCreator || isManager)
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.Id"
+                               class="btn btn-hero btn-warning btn-lg">
+                                <i class="fa fa-pencil-alt me-2"></i>
+                                <span>ویرایش</span>
+                            </a>
+                        }
+
+                        @if (!Model.CompletionDate.HasValue && isAssignedToCurrentUser)
+                        {
+                            <a href="@Url.Action("CompleteTask", new { id = Model.Id })"
+                               data-toggle="modal-ajax"
+                               class="btn btn-hero btn-success btn-lg">
+                                <i class="fa fa-check me-2"></i>
+                                <span>تکمیل تسک</span>
+                            </a>
+                        }
+                        else if (Model.CompletionDate.HasValue && (isCreator || isManager))
+                        {
+                            <a href="@Url.Action("ReopenTask", new { id = Model.Id })"
+                               data-toggle="modal-ajax"
+                               class="btn btn-hero btn-warning btn-lg">
+                                <i class="fa fa-redo me-2"></i>
+                                <span>بازگشایی</span>
+                            </a>
+                        }
+
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-hero btn-light btn-lg dropdown-toggle"
+                                    data-bs-toggle="dropdown">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-modern">
+                                @if (isAssignedToCurrentUser)
+                                {
+                                    <li>
+                                        @if (isInMyDay)
+                                        {
+                                            <!-- ⭐⭐⭐ دکمه غیرفعال با آیکون متفاوت - فقط نمایشی -->
+                                            <button type="button"
+                                                    class="dropdown-item disabled"
+                                                    style="cursor: not-allowed; opacity: 0.6;"
+                                                    title="این تسک در روز من شما قرار دارد">
+                                                <i class="fa fa-check-circle text-success me-2"></i>
+                                                <span class="text-success fw-bold">در روز من قرار دارد</span>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary"
+                                                    data-toggle="modal-ajax"
+                                                    href="@Url.Action("AddToMyDayModal", "Tasks", new { taskId = Model.Id })"
+                                                    title="افزودن به روز من">
+                                                <i class="fa fa-calendar-alt me-1"></i>
+                                                افزودن به روز من
+                                            </button>
+                                           
+                                        }
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="@Url.Action("LogWorkModal", new { taskId = Model.Id })"
+                                           data-toggle="modal-ajax">
+                                            <i class="fa fa-clock text-success me-2"></i>
+                                            <span>ثبت کار انجام شده</span>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                }
+                          
+                                <li>
+                                    <a class="dropdown-item"
+                                       href="@Url.Action("AssignTask", new { taskId = Model.Id })"
+                                       data-toggle="modal-ajax">
+                                        <i class="fa fa-user-plus text-info me-2"></i>
+                                        <span>اختصاص کاربر</span>
+                                    </a>
+                                </li>
+                                @if (isAdminOrManager)
+                                {
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="@Url.Action("ToggleActiveStatus", new { id = Model.Id })"
+                                           data-toggle="modal-ajax">
+                                            <i class="fa @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-2"></i>
+                                            <span>@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger"
+                                           href="@Url.Action("Delete", new { id = Model.Id })"
+                                           data-toggle="modal-ajax">
+                                            <i class="fa fa-trash-alt me-2"></i>
+                                            <span>حذف تسک</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-<!-- END Hero -->
 
-<!-- Page Content -->
-<div class="content">
-    <!-- Quick Actions - بروزرسانی شده -->
-    <div class="row push">
-        <div class="col-sm-6 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" asp-action="Edit" asp-route-id="@Model.Id">
-                <div class="block-content py-5">
-                    <div class="fs-3 fw-semibold text-primary mb-1">
-                        <i class="fa fa-pencil-alt"></i>
-                    </div>
-                    <p class="fw-semibold fs-sm text-primary text-uppercase mb-0">
-                        ویرایش تسک
-                    </p>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("CompleteTask", new { id = Model.Id })" data-toggle="modal-ajax">
-                <div class="block-content py-5">
-                    <div class="fs-3 fw-semibold text-@(Model.CompletionDate.HasValue ? "warning" : "success") mb-1">
-                        <i class="fa fa-@(Model.CompletionDate.HasValue ? "redo" : "check")"></i>
-                    </div>
-                    <p class="fw-semibold fs-sm text-@(Model.CompletionDate.HasValue ? "warning" : "success") text-uppercase mb-0">
-                        @(Model.CompletionDate.HasValue ? "بازگشایی" : "تکمیل")
-                    </p>
-                </div>
-            </a>
-        </div>
-        
-        <!-- دکمه جدید: افزودن به روز من -->
-        @if (isAssignedToCurrentUser)
-        {
-            <div class="col-sm-6 col-xl-2">
-                <a class="block block-rounded block-link-shadow text-center h-100 mb-0" 
-                   href="@Url.Action("AddToMyDayModal", new { taskId = Model.Id })" 
-                   data-toggle="modal-ajax">
-                    <div class="block-content py-5">
-                        <div class="fs-3 fw-semibold text-info mb-1">
-                            <i class="fa fa-calendar-plus"></i>
-                        </div>
-                        <p class="fw-semibold fs-sm text-info text-uppercase mb-0">
-                            افزودن به روز من
-                        </p>
-                    </div>
-                </a>
-            </div>
-        }
 
-        <!-- دکمه جدید: ثبت کار انجام شده -->
-        @if (isAssignedToCurrentUser)
-        {
-            <div class="col-sm-6 col-xl-2">
-                <a class="block block-rounded block-link-shadow text-center h-100 mb-0" 
-                   href="@Url.Action("LogWorkModal", new { taskId = Model.Id })" 
-                   data-toggle="modal-ajax">
-                    <div class="block-content py-5">
-                        <div class="fs-3 fw-semibold text-success mb-1">
-                            <i class="fa fa-clock"></i>
+<!-- Main Content با Tabs -->
+<div class="content content-full">
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs nav-tabs-alt nav-justified push" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview" 
+                    type="button" role="tab">
+                <i class="fa fa-info-circle me-1"></i>
+                <span class="d-none d-sm-inline">نگاه کلی</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-operations" 
+                    type="button" role="tab">
+                <i class="fa fa-cogs me-1"></i>
+                <span class="d-none d-sm-inline">عملیات</span>
+                @if (Model.Operations?.Any() == true) {
+                    <span class="badge bg-primary rounded-pill ms-1">@Model.Operations.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-team" 
+                    type="button" role="tab">
+                <i class="fa fa-users me-1"></i>
+                <span class="d-none d-sm-inline">تیم</span>
+                @if (Model.AssignmentsTaskUser?.Any() == true) {
+                    <span class="badge bg-info rounded-pill ms-1">@Model.AssignmentsTaskUser.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reminders-tab" data-bs-toggle="tab" data-bs-target="#tab-reminders" type="button" role="tab">
+                <i class="fa fa-bell me-1"></i>
+                <span class="d-none d-sm-inline">یادآوری‌ها</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-timeline" 
+                    type="button" role="tab">
+                <i class="fa fa-history me-1"></i>
+                <span class="d-none d-sm-inline">تاریخچه</span>
+            </button>
+        </li>
+    
+    </ul>
+    
+    <!-- Tabs Content -->
+    <div class="tab-content">
+        <!-- Tab 1: نگاه کلی -->
+        <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+            <div class="row">
+                <!-- بخش اصلی -->
+                <div class="col-lg-8">
+                    <!-- توضیحات -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-align-right text-primary me-2"></i>توضیحات تسک
+                            </h3>
                         </div>
-                        <p class="fw-semibold fs-sm text-success text-uppercase mb-0">
-                            ثبت کار انجام شده
-                        </p>
-                    </div>
-                </a>
-            </div>
-        }
-
-        <div class="col-sm-6 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AddOperation", new { taskId = Model.Id })" data-toggle="modal-ajax">
-                <div class="block-content py-5">
-                    <div class="fs-3 fw-semibold text-warning mb-1">
-                        <i class="fa fa-plus-circle"></i>
-                    </div>
-                    <p class="fw-semibold fs-sm text-warning text-uppercase mb-0">
-                        افزودن عملیات
-                    </p>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" href="@Url.Action("AssignTask", new { taskId = Model.Id })" data-toggle="modal-ajax">
-                <div class="block-content py-5">
-                    <div class="fs-3 fw-semibold text-dark mb-1">
-                        <i class="fa fa-user-plus"></i>
-                    </div>
-                    <p class="fw-semibold fs-sm text-dark text-uppercase mb-0">
-                        اختصاص کاربر
-                    </p>
-                </div>
-            </a>
-        </div>
-    </div>
-    <!-- END Quick Actions -->
-
-    <div class="row">
-        <div class="col-md-8">
-            <!-- Task Details -->
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-tasks text-muted me-1"></i> جزئیات تسک
-                    </h3>
-                    <div class="block-options">
-                        <div class="dropdown">
-                            <button type="button" class="btn btn-alt-secondary" id="dropdown-default-alt-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-fw fa-ellipsis-v"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-default-alt-secondary">
-                                <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
-                                <a class="dropdown-item" href="@Url.Action("ToggleActiveStatus", new { id = Model.Id })" data-toggle="modal-ajax">
-                                    <i class="fa fa-fw @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-1"></i> @(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
-                                <a class="dropdown-item text-danger" href="@Url.Action("Delete", new { id = Model.Id })" data-toggle="modal-ajax">
-                                    <i class="fa fa-fw fa-trash-alt me-1"></i> حذف
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="block-content">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h2 class="mb-1">@Model.Title</h2>
-                            <div class="fs-sm text-muted">
-                                <span class="badge bg-primary">@Model.TaskCode</span> |
-                                <span>ایجاد: @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd")</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <div class="mb-2">
-                                @if (Model.IsDeleted)
-                                {
-                                    <span class="badge bg-danger p-2">حذف شده</span>
-                                }
-                                else if (!Model.IsActive)
-                                {
-                                    <span class="badge bg-warning p-2">غیرفعال</span>
-                                }
-                                else if (Model.CompletionDate.HasValue && Model.ManagerApprovedDate.HasValue)
-                                {
-                                    <span class="badge bg-success p-2">تکمیل و تایید شده</span>
-                                }
-                                else if (Model.CompletionDate.HasValue && Model.SupervisorApprovedDate.HasValue)
-                                {
-                                    <span class="badge bg-info p-2">تایید سرپرست</span>
-                                }
-                                else if (Model.CompletionDate.HasValue)
-                                {
-                                    <span class="badge bg-primary p-2">تکمیل شده</span>
-                                }
-                                else if (Model.DueDate.HasValue && DateTime.Now > Model.DueDate.Value)
-                                {
-                                    <span class="badge bg-danger p-2">تاخیر</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-info p-2">در حال انجام</span>
-                                }
-                            </div>
-                            @if (Model.DueDate.HasValue)
-                            {
+                        <div class="block-content">
+                            @if (string.IsNullOrEmpty(Model.Description)) {
+                                <div class="py-5 text-center text-muted">
+                                    <i class="fa fa-file-alt fa-3x opacity-25 mb-3"></i>
+                                    <p class="mb-0">توضیحاتی برای این تسک ثبت نشده است.</p>
+                                </div>
+                            } else {
                                 <div class="fs-sm">
-                                    <span class="fw-bold">مهلت انجام:</span>
-                                    <span class="@(Model.DueDate.Value < DateTime.Now && !Model.CompletionDate.HasValue ? "text-danger" : "")">
-                                        @ConvertDateTime.ConvertMiladiToShamsi(Model.DueDate.Value, "yyyy/MM/dd")
-                                    </span>
+                                    @Html.Raw(Model.Description.Replace("\n", "<br/>"))
                                 </div>
                             }
                         </div>
                     </div>
-
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h4>توضیحات</h4>
-                            <div class="p-2 bg-body-light rounded">
-                                @if (string.IsNullOrEmpty(Model.Description))
-                                {
-                                    <p class="text-muted">توضیحاتی ثبت نشده است.</p>
-                                }
-                                else
-                                {
-                                    <p>@Html.Raw(Model.Description.Replace("\n", "<br/>"))</p>
-                                }
-                            </div>
+                    
+                    <!-- اطلاعات جزئیات -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-info-circle text-info me-2"></i>اطلاعات جزئیات
+                            </h3>
                         </div>
-                    </div>
-                    <!-- Task Information -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h4>اطلاعات تسک</h4>
-                            <table class="table table-bordered table-striped table-vcenter">
-                                <tbody>
-                                    <tr>
-                                        <th class="text-center" style="width: 40%;">دسته‌بندی</th>
-                                        <td class="text-center">@(string.IsNullOrEmpty(Model.CategoryTitle) ? "بدون دسته‌بندی" : Model.CategoryTitle)</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="text-center">طرف حساب</th>
-                                        <td class="text-center">@(string.IsNullOrEmpty(Model.StakeholderName) ? "ندارد" : Model.StakeholderName)</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="text-center">ایجاد کننده</th>
-                                        <td class="text-center">@(string.IsNullOrEmpty(Model.CreatorName) ? "نامشخص" : Model.CreatorName)</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="text-center">نوع تسک</th>
-                                        <td class="text-center">
-                                            @switch (Model.TaskType)
-                                            {
-                                                case 0:
-                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-info-light text-info">عادی</span>
-                                                    break;
-                                                case 1:
-                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-warning-light text-warning">مهم</span>
-                                                    break;
-                                                case 2:
-                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-danger-light text-danger">اضطراری</span>
-                                                    break;
-                                                default:
-                                                    <span class="fs-xs fw-semibold d-inline-block py-1 px-3 rounded-pill bg-info-light text-info">عادی</span>
-                                                    break;
-                                            }
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h4>وضعیت تکمیل</h4>
-                            <table class="table table-bordered table-striped table-vcenter">
-                                <tbody>
-                                    <tr>
-                                        <th class="text-center" style="width: 40%;">تکمیل شده</th>
-                                        <td class="text-center">
-                                            @if (Model.CompletionDate.HasValue)
-                                            {
-                                                <span class="text-success">بله - @ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate.Value, "yyyy/MM/dd")</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-danger">خیر</span>
-                                            }
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th class="text-center">تایید سرپرست</th>
-                                        <td class="text-center">
-                                            @if (Model.SupervisorApprovedDate.HasValue)
-                                            {
-                                                <span class="text-success">بله - @ConvertDateTime.ConvertMiladiToShamsi(Model.SupervisorApprovedDate.Value, "yyyy/MM/dd")</span>
-                                            }
-                                            else if (Model.CompletionDate.HasValue && isSupervisor)
-                                            {
-                                                <button type="button" class="btn btn-sm btn-alt-success" onclick="approveBySupervisor(@Model.Id)">
-                                                    <i class="fa fa-check opacity-50 me-1"></i> تایید
-                                                </button>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-danger">خیر</span>
-                                            }
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th class="text-center">تایید مدیر</th>
-                                        <td class="text-center">
-                                            @if (Model.ManagerApprovedDate.HasValue)
-                                            {
-                                                <span class="text-success">بله - @ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate.Value, "yyyy/MM/dd")</span>
-                                            }
-                                            else if (Model.SupervisorApprovedDate.HasValue && isManager)
-                                            {
-                                                <button type="button" class="btn btn-sm btn-alt-success" onclick="approveByManager(@Model.Id)">
-                                                    <i class="fa fa-check opacity-50 me-1"></i> تایید
-                                                </button>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-danger">خیر</span>
-                                            }
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th class="text-center">درصد پیشرفت</th>
-                                        <td class="text-center">
-                                            <div class="progress push mb-0">
-                                                <div class="progress-bar progress-bar-striped @(Model.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" role="progressbar"
-                                                     style="width: @Model.ProgressPercentage%" aria-valuenow="@Model.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
-                                                    <span class="fs-sm fw-semibold">@Model.ProgressPercentage%</span>
+                        <div class="block-content">
+                            <div class="row g-3">
+                                <!-- دسته‌بندی -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="flex-shrink-0">
+                                                <i class="fa fa-folder fa-2x text-primary"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fs-xs text-muted">دسته‌بندی</div>
+                                                <div class="fw-semibold">
+                                                    @(string.IsNullOrEmpty(Model.CategoryTitle) ? "بدون دسته‌بندی" : Model.CategoryTitle)
                                                 </div>
                                             </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- END Task Details -->
-                    <!-- Task Operations -->
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-cogs text-muted me-1"></i> عملیات‌های تسک
-                    </h3>
-                    <div class="block-options">
-                        @if (isAssignedToCurrentUser)
-                        {
-                            <button type="button" class="btn btn-sm btn-alt-primary me-2" data-toggle="modal-ajax" href="@Url.Action("AddOperation", new { taskId = Model.Id })">
-                                <i class="fa fa-plus opacity-50 me-1"></i> افزودن عملیات
-                            </button>
-                        }
-                        <div class="dropdown">
-                            <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-toggle="dropdown">
-                                <i class="fa fa-filter me-1"></i> فیلتر
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end">
-                                <a class="dropdown-item" href="#" onclick="filterOperations('all')">
-                                    <i class="fa fa-list me-1"></i> همه عملیات
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="filterOperations('starred')">
-                                    <i class="fa fa-star text-warning me-1"></i> ستاره‌دار
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="filterOperations('completed')">
-                                    <i class="fa fa-check text-success me-1"></i> تکمیل شده
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="filterOperations('pending')">
-                                    <i class="fa fa-clock text-warning me-1"></i> در انتظار
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="block-content block-content-full">
-                    @if (Model.Operations == null || !Model.Operations.Any())
-                    {
-                        <div class="alert alert-info">
-                            <i class="fa fa-info-circle me-1"></i> هیچ عملیاتی برای این تسک تعریف نشده است.
-                        </div>
-                    }
-                    else
-                    {
-                        <!-- آمار سریع عملیات -->
-                        <div class="row mb-4">
-                            <div class="col-6 col-md-3">
-                                <div class="bg-primary-light p-3 rounded text-center">
-                                    <div class="fs-3 fw-bold text-primary">@Model.Operations.Count()</div>
-                                    <div class="fs-sm text-muted">کل عملیات</div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="bg-success-light p-3 rounded text-center">
-                                    <div class="fs-3 fw-bold text-success">@Model.Operations.Count(o => o.IsCompleted)</div>
-                                    <div class="fs-sm text-muted">تکمیل شده</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="bg-warning-light p-3 rounded text-center">
-                                    <div class="fs-3 fw-bold text-warning">@Model.Operations.Count(o => o.IsStarred)</div>
-                                    <div class="fs-sm text-muted">ستاره‌دار</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="bg-info-light p-3 rounded text-center">
-                                    <div class="fs-3 fw-bold text-info">@Model.Operations.Count(o => !string.IsNullOrEmpty(o.CompletionNote))</div>
-                                    <div class="fs-sm text-muted">با گزارش</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- لیست عملیات با کارت‌ها -->
-                        <div class="row" id="operationsList">
-                            @{
-                                // مرتب‌سازی: ابتدا ستاره‌دار، سپس بر اساس ترتیب
-                                var sortedOperations = Model.Operations
-                                    .OrderByDescending(o => o.IsStarred)
-                                    .ThenBy(o => o.OperationOrder)
-                                    .ToList();
-                            }
-                            
-                            @foreach (var operation in sortedOperations)
-                            {
-                                <div class="col-12 mb-3 operation-item" 
-                                     data-starred="@operation.IsStarred.ToString().ToLower()" 
-                                     data-completed="@operation.IsCompleted.ToString().ToLower()">
-                                    <div class="card @(operation.IsStarred ? "border-warning" : "") @(operation.IsCompleted ? "bg-light" : "")">
-                                        
-                                        <!-- Header کارت -->
-                                        <div class="card-header py-2 @(operation.IsStarred ? "bg-warning-light" : "bg-body-light")">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="d-flex align-items-center">
-                                                    <!-- شماره ترتیب -->
-                                                    <span class="badge @(operation.IsCompleted ? "bg-success" : "bg-secondary") me-2">
-                                                        @operation.OperationOrder
-                                                    </span>
-                                                    
-                                                    <!-- ستاره -->
-                                                    @if (operation.IsStarred)
-                                                    {
-                                                        <i class="fa fa-star text-warning me-2" title="ستاره‌دار"></i>
-                                                    }
-                                                    
-                                                    <!-- عنوان -->
-                                                    <h6 class="mb-0 @(operation.IsCompleted ? "text-decoration-line-through text-muted" : "")">
-                                                        @operation.Title
-                                                    </h6>
+                                
+                                <!-- طرف حساب -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="flex-shrink-0">
+                                                <i class="fa fa-handshake fa-2x text-success"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fs-xs text-muted">طرف حساب</div>
+                                                <div class="fw-semibold">
+                                                    @(string.IsNullOrEmpty(Model.StakeholderName) ? "ندارد" : Model.StakeholderName)
                                                 </div>
-                                                
-                                                <!-- وضعیت -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- ایجاد کننده -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="flex-shrink-0">
+                                                <i class="fa fa-user-circle fa-2x text-info"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fs-xs text-muted">ایجاد کننده</div>
+                                                <div class="fw-semibold">
+                                                    @(string.IsNullOrEmpty(Model.CreatorName) ? "نامشخص" : Model.CreatorName)
+                                                </div>
+                                                <div class="fs-xs text-muted">
+                                                    @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd HH:mm")
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- اولویت -->
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="flex-shrink-0">
+                                                <i class="fa fa-flag fa-2x text-warning"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <div class="fs-xs text-muted">اولویت</div>
                                                 <div>
-                                                    @if (operation.IsCompleted)
-                                                    {
-                                                        <span class="badge bg-success">
-                                                            <i class="fa fa-check me-1"></i>تکمیل شده
-                                                        </span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-warning">
-                                                            <i class="fa fa-clock me-1"></i>در انتظار
-                                                        </span>
+                                                    @switch (Model.Priority) {
+                                                        case 0:
+                                                            <span class="badge bg-info-light text-info">
+                                                                <i class="fa fa-circle me-1"></i>عادی
+                                                            </span>
+                                                            break;
+                                                        case 1:
+                                                            <span class="badge bg-warning-light text-warning">
+                                                                <i class="fa fa-star me-1"></i>مهم
+                                                            </span>
+                                                            break;
+                                                        case 2:
+                                                            <span class="badge bg-danger-light text-danger">
+                                                                <i class="fa fa-bolt me-1"></i>فوری
+                                                            </span>
+                                                            break;
                                                     }
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        <!-- محتوای کارت -->
-                                        <div class="card-body py-3">
-                                            <!-- توضیحات عملیات -->
-                                            @if (!string.IsNullOrEmpty(operation.Description))
-                                            {
-                                                <p class="text-muted mb-2 @(operation.IsCompleted ? "text-decoration-line-through" : "")">
-                                                    @operation.Description
-                                                </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- آمار سریع -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-chart-bar text-success me-2"></i>آمار
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="row g-2 text-center">
+                                <div class="col-6">
+                                    <div class="p-3 bg-success-light rounded-3">
+                                        <div class="fs-2 fw-bold text-success">
+                                            @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)
+                                        </div>
+                                        <div class="fs-xs text-muted">عملیات تکمیل</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 bg-warning-light rounded-3">
+                                        <div class="fs-2 fw-bold text-warning">
+                                            @(Model.Operations?.Count(o => !o.IsCompleted) ?? 0)
+                                        </div>
+                                        <div class="fs-xs text-muted">در انتظار</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 bg-info-light rounded-3">
+                                        <div class="fs-2 fw-bold text-info">
+                                            @(Model.AssignmentsTaskUser?.Count ?? 0)
+                                        </div>
+                                        <div class="fs-xs text-muted">اعضای تیم</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 bg-primary-light rounded-3">
+                                        <div class="fs-2 fw-bold text-primary">
+                                            @Model.ProgressPercentage%
+                                        </div>
+                                        <div class="fs-xs text-muted">پیشرفت</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- وضعیت تایید -->
+                    @if (Model.CompletionDate.HasValue || isSupervisor || isManager) {
+                        <div class="block block-rounded block-fx-shadow">
+                            <div class="block-header block-header-default">
+                                <h3 class="block-title">
+                                    <i class="fa fa-check-double text-success me-2"></i>وضعیت تایید
+                                </h3>
+                            </div>
+                            <div class="block-content">
+                                <div class="list-group list-group-flush">
+                                    <!-- تکمیل -->
+                                    <div class="list-group-item d-flex align-items-center px-0">
+                                        <div class="flex-shrink-0 me-3">
+                                            @if (Model.CompletionDate.HasValue) {
+                                                <span class="fa-stack fa-1x">
+                                                    <i class="fa fa-circle fa-stack-2x text-success"></i>
+                                                    <i class="fa fa-check fa-stack-1x text-white"></i>
+                                                </span>
+                                            } else {
+                                                <span class="fa-stack fa-1x">
+                                                    <i class="fa fa-circle fa-stack-2x text-muted"></i>
+                                                    <i class="fa fa-clock fa-stack-1x text-white"></i>
+                                                </span>
                                             }
-                                            
-                                            <!-- اطلاعات تکمیل -->
-                                            @if (operation.IsCompleted && operation.CompletionDate.HasValue)
-                                            {
-                                                <div class="alert alert-success mb-2 py-2">
-                                                    <div class="row align-items-center">
-                                                        <div class="col-md-6">
-                                                            <small>
-                                                                <i class="fa fa-calendar-check me-1"></i>
-                                                                تکمیل شده در: @ConvertDateTime.ConvertMiladiToShamsi(operation.CompletionDate.Value, "yyyy/MM/dd HH:mm")
-                                                            </small>
-                                                        </div>
-                                                        @if (!string.IsNullOrEmpty(operation.CompletedByUserId))
-                                                        {
-                                                            <div class="col-md-6">
-                                                                <small>
-                                                                    <i class="fa fa-user me-1"></i>
-                                                                    توسط: @(operation.CompletedByUserName)
-                                                                </small>
-                                                            </div>
-                                                        }
-                                                    </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold">تکمیل تسک</div>
+                                            @if (Model.CompletionDate.HasValue) {
+                                                <div class="fs-xs text-muted">
+                                                    @ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate.Value, "yyyy/MM/dd HH:mm")
                                                 </div>
+                                            } else {
+                                                <div class="fs-xs text-muted">در انتظار</div>
                                             }
-                                            
-                                            <!-- گزارش تکمیل -->
-                                            @if (!string.IsNullOrEmpty(operation.CompletionNote))
-                                            {
-                                                <div class="alert alert-info mb-2 py-2">
-                                                    <small class="fw-bold">گزارش:</small>
-                                                    <div class="mt-1">@operation.CompletionNote</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- تایید سرپرست -->
+                                    <div class="list-group-item d-flex align-items-center px-0">
+                                        <div class="flex-shrink-0 me-3">
+                                            @if (Model.SupervisorApprovedDate.HasValue) {
+                                                <span class="fa-stack fa-1x">
+                                                    <i class="fa fa-circle fa-stack-2x text-info"></i>
+                                                    <i class="fa fa-check fa-stack-1x text-white"></i>
+                                                </span>
+                                            } else {
+                                                <span class="fa-stack fa-1x">
+                                                    <i class="fa fa-circle fa-stack-2x text-muted"></i>
+                                                    <i class="fa fa-clock fa-stack-1x text-white"></i>
+                                                </span>
+                                            }
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold">تایید سرپرست</div>
+                                            @if (Model.SupervisorApprovedDate.HasValue) {
+                                                <div class="fs-xs text-muted">
+                                                    @ConvertDateTime.ConvertMiladiToShamsi(Model.SupervisorApprovedDate.Value, "yyyy/MM/dd")
                                                 </div>
+                                            } else if (Model.CompletionDate.HasValue && isSupervisor) {
+                                                <button type="button" class="btn btn-xs btn-info mt-1" 
+                                                        onclick="approveBySupervisor(@Model.Id)">
+                                                    <i class="fa fa-check me-1"></i>تایید
+                                                </button>
+                                            } else {
+                                                <div class="fs-xs text-muted">در انتظار</div>
                                             }
-                                            
-                                            <!-- دکمه‌های عملیات -->
-                                            @if (isAssignedToCurrentUser)
-                                            {
-                                                <div class="d-flex gap-1 flex-wrap">
-                                                    
-                                                    <!-- دکمه ستاره -->
-                                                    <button type="button" 
-                                                            class="btn btn-sm @(operation.IsStarred ? "btn-warning" : "btn-outline-warning")" 
-                                                            onclick="toggleOperationStar(@operation.Id)"
-                                                            data-bs-toggle="tooltip" 
-                                                            title="@(operation.IsStarred ? "حذف ستاره" : "ستاره‌دار کردن")">
-                                                        <i class="fa @(operation.IsStarred ? "fa-star" : "fa-star-o")"></i>
-                                                    </button>
-                                                    
-                                                    <!-- دکمه تکمیل/بازگشت -->
-                                                    <button type="button" 
-                                                            class="btn btn-sm @(operation.IsCompleted ? "btn-outline-secondary" : "btn-success")" 
-                                                            onclick="toggleOperationCompletion(@operation.Id)"
-                                                            data-bs-toggle="tooltip" 
-                                                            title="@(operation.IsCompleted ? "بازگشت به حالت انتظار" : "تکمیل عملیات")">
-                                                        <i class="fa @(operation.IsCompleted ? "fa-undo" : "fa-check")"></i>
-                                                        @(operation.IsCompleted ? "بازگشت" : "تکمیل")
-                                                    </button>
-                                                    
-                                                    <!-- دکمه گزارش -->
-                                                    <button type="button" 
-                                                            class="btn btn-sm @(string.IsNullOrEmpty(operation.CompletionNote) ? "btn-outline-info" : "btn-info")" 
-                                                            data-toggle="modal-ajax" 
-                                                            href="@Url.Action("AddOperationNote", new { operationId = operation.Id })"
-                                                            data-bs-toggle="tooltip" 
-                                                            title="@(string.IsNullOrEmpty(operation.CompletionNote) ? "افزودن گزارش" : "ویرایش گزارش")">
-                                                        <i class="fa @(string.IsNullOrEmpty(operation.CompletionNote) ? "fa-comment-slash text-danger" : "fa-comment")"></i>
-                                                        گزارش
-                                                    </button>
-                                                    
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- تایید مدیر -->
+                                    <div class="list-group-item d-flex align-items-center px-0 border-0">
+                                        <div class="flex-shrink-0 me-3">
+                                            @if (Model.ManagerApprovedDate.HasValue) {
+                                                <span class="fa-stack fa-1x">
+                                                    <i class="fa fa-circle fa-stack-2x text-success"></i>
+                                                    <i class="fa fa-award fa-stack-1x text-white"></i>
+                                                </span>
+                                            } else {
+                                                <span class="fa-stack fa-1x">
+                                                    <i class="fa fa-circle fa-stack-2x text-muted"></i>
+                                                    <i class="fa fa-clock fa-stack-1x text-white"></i>
+                                                </span>
+                                            }
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold">تایید مدیر</div>
+                                            @if (Model.ManagerApprovedDate.HasValue) {
+                                                <div class="fs-xs text-muted">
+                                                    @ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate.Value, "yyyy/MM/dd")
+                                                </div>
+                                            } else if (Model.SupervisorApprovedDate.HasValue && isManager) {
+                                                <button type="button" class="btn btn-xs btn-success mt-1" 
+                                                        onclick="approveByManager(@Model.Id)">
+                                                    <i class="fa fa-check me-1"></i>تایید
+                                                </button>
+                                            } else {
+                                                <div class="fs-xs text-muted">در انتظار</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    
+                    <!-- Progress Bar -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-chart-line text-primary me-2"></i>پیشرفت کار
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-semibold">درصد تکمیل</span>
+                                    <span class="fw-bold text-primary">@Model.ProgressPercentage%</span>
+                                </div>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated @(Model.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                                         role="progressbar" 
+                                         style="width: @Model.ProgressPercentage%" 
+                                         aria-valuenow="@Model.ProgressPercentage" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        @Model.ProgressPercentage%
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            @if (Model.DueDate.HasValue) {
+                                var remainingDays = (Model.DueDate.Value - DateTime.Now).Days;
+                                <div class="alert @(remainingDays < 0 ? "alert-danger" : remainingDays <= 3 ? "alert-warning" : "alert-info") mb-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa @(remainingDays < 0 ? "fa-exclamation-triangle" : "fa-clock") fa-2x me-3"></i>
+                                        <div>
+                                            <div class="fw-bold">مهلت انجام</div>
+                                            <div class="fs-sm">
+                                                @ConvertDateTime.ConvertMiladiToShamsi(Model.DueDate.Value, "yyyy/MM/dd")
+                                                @if (!Model.CompletionDate.HasValue) {
+                                                    @if (remainingDays < 0) {
+                                                        <span class="badge bg-danger ms-1">@Math.Abs(remainingDays) روز تاخیر</span>
+                                                    } else if (remainingDays == 0) {
+                                                        <span class="badge bg-warning ms-1">امروز</span>
+                                                    } else if (remainingDays <= 3) {
+                                                        <span class="badge bg-warning ms-1">@remainingDays روز مانده</span>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Tab 2: عملیات‌ها - نسخه نهایی با گروه‌بندی -->
+        <div class="tab-pane fade" id="tab-operations" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <!-- ⭐ هدینگ بنفش با متن سفید -->
+                <div class="block-header bg-primary text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-cogs me-2"></i>مدیریت عملیات تسک
+                    </h3>
+                    <div class="block-options">
+                        @if (isAssignedToCurrentUser || isCreator || isManager)
+                        {
+                            <button type="button" class="btn btn-sm btn-light"
+                                    onclick="$('#newOperationTitleInput').focus()">
+                                <i class="fa fa-plus me-1"></i>افزودن سریع
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="block-content">
+                    @if (Model.Operations == null || !Model.Operations.Any())
+                    {
+                        <!-- پیام خالی -->
+                        <div class="py-5 text-center text-muted">
+                            <i class="fa fa-tasks fa-4x opacity-25 mb-3"></i>
+                            <h5>هیچ عملیاتی تعریف نشده است</h5>
+                            @if (isAssignedToCurrentUser || isCreator || isManager)
+                            {
+                                <p class="mb-3">برای شروع، اولین عملیات را اضافه کنید</p>
+                                <div class="card border-primary mx-auto" style="max-width: 600px;">
+                                    <div class="card-body">
+                                        <div class="input-group">
+                                            <input class="form-control"
+                                                   id="newOperationTitleInput"
+                                                   placeholder="عنوان عملیات جدید..."
+                                                   type="text"
+                                                   autocomplete="off" />
+                                            <button class="btn btn-primary" type="button" id="addNewOperationBtn">
+                                                <i class="fa fa-plus me-1"></i>افزودن
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- فرم افزودن عملیات جدید -->
+                        @if (isAssignedToCurrentUser || isCreator || isManager)
+                        {
+                            <div class="card border-primary mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0 text-white">
+                                        <i class="fa fa-plus-circle me-1"></i>افزودن عملیات جدید
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="input-group input-group-lg">
+                                        <input class="form-control border-2"
+                                               id="newOperationTitleInput"
+                                               placeholder="عنوان عملیات جدید را وارد کنید و Enter بزنید..."
+                                               type="text"
+                                               autocomplete="off"
+                                               maxlength="200" />
+                                        <button class="btn btn-primary px-4" type="button" id="addNewOperationBtn">
+                                            <i class="fa fa-plus me-1"></i>افزودن
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted mt-2">
+                                        <i class="fa fa-keyboard me-1"></i>برای افزودن سریع، Enter را فشار دهید
+                                    </small>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- آمار عملیات -->
+                        <div class="row g-2 mb-4">
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-primary-light rounded-3 text-center">
+                                    <div class="fs-2 fw-bold text-primary" id="totalOpsCount">
+                                        @Model.Operations.Count()
+                                    </div>
+                                    <div class="fs-xs text-muted">کل عملیات</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-success-light rounded-3 text-center">
+                                    <div class="fs-2 fw-bold text-success" id="completedOpsCount">
+                                        @Model.Operations.Count(o => o.IsCompleted)
+                                    </div>
+                                    <div class="fs-xs text-muted">تکمیل شده</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-warning-light rounded-3 text-center">
+                                    <div class="fs-2 fw-bold text-warning" id="starredOpsCount">
+                                        @Model.Operations.Count(o => o.IsStarred)
+                                    </div>
+                                    <div class="fs-xs text-muted">ستاره‌دار</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-info-light rounded-3 text-center">
+                                    <div class="fs-2 fw-bold text-info" id="withWorkLogCount">
+                                        @Model.Operations.Count(o => o.WorkLogs?.Any() == true)
+                                    </div>
+                                    <div class="fs-xs text-muted">با گزارش کار</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ⭐ لیست عملیات - با Placeholder برای ترتیب ثابت -->
+                        <div id="operationsList">
+                            @{
+                                var starredOps = Model.Operations.Where(o => o.IsStarred && !o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
+                                var pendingOps = Model.Operations.Where(o => !o.IsStarred && !o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
+                                var completedOps = Model.Operations.Where(o => o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
+                            }
+
+                            <!-- ⭐ Placeholder برای گروه ستاره‌دار -->
+                            <div id="starred-group-placeholder" data-order="1">
+                                @if (starredOps.Any())
+                                {
+                                    <div class="mb-4 operations-group" data-group="starred" id="starred-group">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fa fa-star"></i>
                                                 </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-0 text-warning">
+                                                    <strong>عملیات ستاره‌دار</strong>
+                                                    <span class="badge bg-warning text-dark ms-2">@starredOps.Count</span>
+                                                </h6>
+                                                <small class="text-muted">عملیات‌های با اولویت بالا</small>
+                                            </div>
+                                        </div>
+                                        <div class="starred-operations" id="starred-operations-container">
+                                            @foreach (var operation in starredOps)
+                                            {
+                                                @await Html.PartialAsync("~/Areas/AdminArea/Views/TaskOperations/_OperationItem.cshtml", operation)
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- ⭐ Placeholder برای گروه در انتظار -->
+                            <div id="pending-group-placeholder" data-order="2">
+                                @if (pendingOps.Any())
+                                {
+                                    <div class="mb-4 operations-group" data-group="pending" id="pending-group">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fa fa-clock"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-0 text-primary">
+                                                    <strong>در انتظار انجام</strong>
+                                                    <span class="badge bg-primary ms-2">@pendingOps.Count</span>
+                                                </h6>
+                                                <small class="text-muted">عملیات‌های در حال انجام</small>
+                                            </div>
+                                        </div>
+                                        <div class="pending-operations" id="pending-operations-container">
+                                            @foreach (var operation in pendingOps)
+                                            {
+                                                @await Html.PartialAsync("~/Areas/AdminArea/Views/TaskOperations/_OperationItem.cshtml", operation)
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- ⭐ Placeholder برای گروه تکمیل شده -->
+                            <div id="completed-group-placeholder" data-order="3">
+                                @if (completedOps.Any())
+                                {
+                                    <div class="mb-4 operations-group" data-group="completed" id="completed-group">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fa fa-check-circle"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-0 text-success">
+                                                    <strong>تکمیل شده</strong>
+                                                    <span class="badge bg-success ms-2">@completedOps.Count</span>
+                                                </h6>
+                                                <small class="text-muted">عملیات‌های به اتمام رسیده</small>
+                                            </div>
+                                        </div>
+                                        <div class="completed-operations" id="completed-operations-container">
+                                            @foreach (var operation in completedOps)
+                                            {
+                                                @await Html.PartialAsync("~/Areas/AdminArea/Views/TaskOperations/_OperationItem.cshtml", operation)
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <!-- Tab 3: تیم و اعضا -->
+        <div class="tab-pane fade" id="tab-team" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-users text-info me-2"></i>اعضای تیم
+                    </h3>
+                    <div class="block-options">
+                        @if (isCreator || isManager) {
+                            <button type="button" class="btn btn-sm btn-primary" 
+                                    data-toggle="modal-ajax" 
+                                    href="@Url.Action("AssignTask", new { taskId = Model.Id })">
+                                <i class="fa fa-user-plus me-1"></i>افزودن
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="block-content">
+                    @if (Model.AssignmentsTaskUser == null || !Model.AssignmentsTaskUser.Any()) {
+                        <div class="py-5 text-center text-muted">
+                            <i class="fa fa-users fa-4x opacity-25 mb-3"></i>
+                            <h5>هیچ کاربری اختصاص داده نشده است</h5>
+                            @if (isCreator || isManager) {
+                                <p class="mb-3">برای شروع همکاری، اولین عضو را اضافه کنید</p>
+                                <button type="button" class="btn btn-primary" 
+                                        data-toggle="modal-ajax" 
+                                        href="@Url.Action("AssignTask", new { taskId = Model.Id })">
+                                    <i class="fa fa-user-plus me-1"></i>افزودن عضو
+                                </button>
+                            }
+                        </div>
+                    } else {
+                        <div class="row g-3">
+                            @foreach (var assignment in Model.AssignmentsTaskUser) {
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 border">
+                                        <div class="card-body text-center">
+                                            <div class="mb-3">
+                                                @{
+                                                    var initials = "";
+                                                    var nameParts = assignment.AssignedUserName?.Split(' ');
+                                                    if (nameParts?.Length > 0) {
+                                                        initials = nameParts[0].Substring(0, 1);
+                                                        if (nameParts.Length > 1) {
+                                                            initials += nameParts[1].Substring(0, 1);
+                                                        }
+                                                    }
+                                                }
+                                                <div class="avatar-circle bg-primary text-white mx-auto">
+                                                    @initials
+                                                </div>
+                                            </div>
+                                            <h6 class="mb-1">@assignment.AssignedUserName</h6>
+                                            @if (!string.IsNullOrEmpty(assignment.Description)) {
+                                                <p class="fs-sm text-muted mb-2">@assignment.Description</p>
+                                            }
+                                            <div class="fs-xs text-muted mb-3">
+                                                <i class="fa fa-calendar-check me-1"></i>
+                                                @ConvertDateTime.ConvertMiladiToShamsi(assignment.AssignDate, "yyyy/MM/dd")
+                                            </div>
+                                            @if (isCreator || isManager) {
+                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                        data-toggle="modal-ajax" 
+                                                        href="@Url.Action("RemoveAssignment", new { id = assignment.Id })"
+                                                        title="حذف">
+                                                    <i class="fa fa-user-minus"></i>
+                                                </button>
                                             }
                                         </div>
                                     </div>
@@ -543,325 +968,463 @@
                     }
                 </div>
             </div>
-            <!-- END Task Operations -->
         </div>
-        <div class="col-md-4">
-            <!-- Task Assignments -->
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-users text-muted me-1"></i> کاربران اختصاص داده شده
+        <!-- تب یادآوری‌ها -->
+        <div class="tab-pane fade" id="tab-reminders" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header bg-warning text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-bell me-2"></i>یادآوری‌های تسک
                     </h3>
                     <div class="block-options">
-                        <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
-                        <button type="button" class="btn btn-sm btn-alt-primary" data-toggle="modal-ajax" href="@Url.Action("AssignTask", new { taskId = Model.Id })">
-                            <i class="fa fa-user-plus opacity-50 me-1"></i> اختصاص
+                        <button type="button"
+                                class="btn btn-sm btn-light"
+                                data-toggle="modal-ajax"
+                                href="@Url.Action("AddReminderModal", "Tasks", new { taskId = Model.Id })">
+                            <i class="fa fa-plus me-1"></i>افزودن یادآوری
                         </button>
                     </div>
                 </div>
                 <div class="block-content">
-                    @if (Model.AssignmentsTaskUser == null || !Model.AssignmentsTaskUser.Any())
-                    {
-                        <div class="alert alert-info">
-                            <i class="fa fa-info-circle me-1"></i> هیچ کاربری به این تسک اختصاص داده نشده است.
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="list-group push">
-                            @foreach (var assignment in Model.AssignmentsTaskUser)
-                            {
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span class="fw-semibold">@assignment.AssignedUserName</span>
-                                        @if (!string.IsNullOrEmpty(assignment.Description))
-                                        {
-                                            <div class="fs-sm text-muted">@assignment.Description</div>
-                                        }
-                                        <div class="fs-sm text-muted">
-                                            <i class="fa fa-calendar-check"></i> تاریخ تخصیص: @(ConvertDateTime.ConvertMiladiToShamsi(assignment.AssignDate, "yyyy/MM/dd"))
-                                        </div>
-                                    </div>
-                                    <!-- اصلاح شده: حذف onclick و اضافه کردن data-toggle="modal-ajax" -->
-                                    <button type="button" class="btn btn-sm btn-alt-danger" data-toggle="modal-ajax" href="@Url.Action("RemoveAssignment", new { id = assignment.Id })" data-bs-toggle="tooltip" title="حذف تخصیص">
-                                        <i class="fa fa-user-minus"></i>
-                                    </button>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-            <!-- END Task Assignments -->
-            <!-- Task Info -->
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-chart-pie text-muted me-1"></i> اطلاعات تکمیلی
-                    </h3>
-                </div>
-                <div class="block-content">
-                    <!-- Completion -->
-                    <div class="mb-4">
-                        <h5>درصد تکمیل</h5>
-                        <div class="progress push">
-                            <div class="progress-bar progress-bar-striped @(Model.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" role="progressbar"
-                                 style="width: @Model.ProgressPercentage%" aria-valuenow="@Model.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
-                                <span class="fs-sm fw-semibold">@Model.ProgressPercentage%</span>
-                            </div>
+                    <div id="reminders-list-container">
+                        <div class="text-center py-4">
+                            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                            <p class="text-muted mt-2">در حال بارگذاری...</p>
                         </div>
                     </div>
-
-                    <!-- Activity Timeline -->
-                    <h5>تاریخچه فعالیت</h5>
-                    <ul class="timeline timeline-alt">
-                        <li class="timeline-event">
-                            <div class="timeline-event-icon bg-primary">
-                                <i class="fa fa-plus"></i>
-                            </div>
-                            <div class="timeline-event-block block block-rounded">
-                                <div class="block-header block-header-default">
-                                    <h3 class="block-title">ایجاد تسک</h3>
-                                    <div class="block-options">
-                                        <div class="timeline-event-time block-options-item fs-sm">
-                                            @(ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd"))
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="block-content">
-                                    <p class="fw-semibold mb-2">
-                                        تسک توسط @Model.CreatorName ایجاد شد.
-                                    </p>
-                                </div>
-                            </div>
-                        </li>
-                        @if (Model.CompletionDate.HasValue)
-                        {
-                            <li class="timeline-event">
-                                <div class="timeline-event-icon bg-success">
-                                    <i class="fa fa-check"></i>
-                                </div>
-                                <div class="timeline-event-block block block-rounded">
-                                    <div class="block-header block-header-default">
-                                        <h3 class="block-title">تکمیل تسک</h3>
-                                        <div class="block-options">
-                                            <div class="timeline-event-time block-options-item fs-sm">
-                                                @(ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate, "yyyy/MM/dd"))
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="block-content">
-                                        <p class="fw-semibold mb-2">
-                                            تسک تکمیل شد.
-                                        </p>
-                                    </div>
-                                </div>
-                            </li>
-                        }
-                        @if (Model.SupervisorApprovedDate.HasValue)
-                        {
-                            <li class="timeline-event">
-                                <div class="timeline-event-icon bg-info">
-                                    <i class="fa fa-check-double"></i>
-                                </div>
-                                <div class="timeline-event-block block block-rounded">
-                                    <div class="block-header block-header-default">
-                                        <h3 class="block-title">تایید سرپرست</h3>
-                                        <div class="block-options">
-                                            <div class="timeline-event-time block-options-item fs-sm">
-                                                @(ConvertDateTime.ConvertMiladiToShamsi(Model.SupervisorApprovedDate, "yyyy/MM/dd"))
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="block-content">
-                                        <p class="fw-semibold mb-2">
-                                            تسک توسط سرپرست تایید شد.
-                                        </p>
-                                    </div>
-                                </div>
-                            </li>
-                        }
-                        @if (Model.ManagerApprovedDate.HasValue)
-                        {
-                            <li class="timeline-event">
-                                <div class="timeline-event-icon bg-modern">
-                                    <i class="fa fa-award"></i>
-                                </div>
-                                <div class="timeline-event-block block block-rounded">
-                                    <div class="block-header block-header-default">
-                                        <h3 class="block-title">تایید مدیر</h3>
-                                        <div class="block-options">
-                                            <div class="timeline-event-time block-options-item fs-sm">
-                                                @(ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate, "yyyy/MM/dd"))
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="block-content">
-                                        <p class="fw-semibold mb-2">
-                                            تسک توسط مدیر تایید شد.
-                                        </p>
-                                    </div>
-                                </div>
-                            </li>
-                        }
-                    </ul>
                 </div>
             </div>
-            <!-- END Task Info -->
         </div>
+        <!-- Tab 5: تاریخچه کامل -->
+        <div class="tab-pane fade" id="tab-timeline" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-history text-warning me-2"></i>تاریخچه کامل تسک
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="loadTaskHistory()">
+                            <i class="fa fa-sync me-1"></i>بروزرسانی
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div id="task-timeline-container" class="timeline">
+                        <!-- محتوا از AJAX بارگذاری می‌شود -->
+                    </div>
+                </div>
+            </div>
+        </div>
+      
     </div>
 </div>
+
 @section Scripts {
+    
+<script>
+$(document).ready(function() {
+    // بارگذاری یادآوری‌ها هنگام کلیک روی تب
+    $('#reminders-tab').on('click', function() {
+        loadTaskReminders();
+    });
+});
+
+function loadTaskReminders() {
+    $('#reminders-list-container').html(`
+        <div class="text-center py-4">
+            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+            <p class="text-muted mt-2">در حال بارگذاری...</p>
+        </div>
+    `);
+    
+    $('#reminders-list-container').load('@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })');
+}
+</script>
     <script>
-        // تابع تغییر وضعیت تکمیل عملیات
-        function toggleOperationCompletion(operationId) {
+        // بارگذاری تاریخچه با AJAX
+        function loadTaskHistory() {
             $.ajax({
-                url: '@Url.Action("ToggleOperationCompletion")',
-                type: 'POST',
-                data: { 
-                    id: operationId,
-                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                url: '@Url.Action("GetTaskHistory", "Tasks", new { area = "AdminArea" })',
+                type: 'GET',
+                data: { taskId: @Model.Id },
+                success: function(result) {
+                    $('#task-timeline-container').html(result);
                 },
-                success: function (result) {
-                    if (result.success) {
-                        // نمایش پیام موفقیت
-                        if (typeof toastr !== 'undefined') {
-                            toastr.success(result.message || 'وضعیت عملیات با موفقیت تغییر کرد');
-                        }
-                        // بروزرسانی صفحه
-                        location.reload();
-                    } else {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(result.message || 'خطا در تغییر وضعیت عملیات');
-                        } else {
-                            alert('خطا: ' + (result.message || 'خطا در تغییر وضعیت عملیات'));
-                        }
-                    }
-                },
-                error: function () {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error('خطا در ارتباط با سرور');
-                    } else {
-                        alert('خطا در ارتباط با سرور');
-                    }
+                error: function() {
+                    Dashmix.helpers('jq-notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times me-1',
+                        message: 'خطا در بارگذاری تاریخچه'
+                    });
                 }
             });
         }
 
-        // تابع تغییر وضعیت ستاره عملیات
-        function toggleOperationStar(operationId) {
-            $.ajax({
-                url: '@Url.Action("ToggleOperationStar")',
-                type: 'POST',
-                data: { 
-                    id: operationId,
-                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                },
-                success: function (result) {
-                    if (result.success) {
-                        // نمایش پیام موفقیت
-                        if (typeof toastr !== 'undefined') {
-                            toastr.success(result.message || 'وضعیت ستاره عملیات تغییر کرد');
-                        }
-                        // بروزرسانی صفحه
-                        location.reload();
-                    } else {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(result.message || 'خطا در تغییر وضعیت ستاره');
-                        } else {
-                            alert('خطا: ' + (result.message || 'خطا در تغییر وضعیت ستاره'));
-                        }
-                    }
-                },
-                error: function () {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error('خطا در ارتباط با سرور');
-                    } else {
-                        alert('خطا در ارتباط با سرور');
-                    }
-                }
+        // بارگذاری یادآوری‌ها هنگام کلیک روی تب
+        $(document).ready(function() {
+            $('#reminders-tab').on('click', function() {
+                loadReminders();
             });
-        }
+        });
 
-        // تابع فیلتر عملیات
-        function filterOperations(filterType) {
-            const operations = $('.operation-item');
+        function loadReminders() {
+            $('#reminders-list-container').html(`
+                <div class="text-center py-4">
+                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="text-muted mt-2">در حال بارگذاری...</p>
+                </div>
+            `);
             
-            operations.show();
-            
-            switch(filterType) {
-                case 'starred':
-                    operations.filter('[data-starred="false"]').hide();
-                    break;
-                case 'completed':
-                    operations.filter('[data-completed="false"]').hide();
-                    break;
-                case 'pending':
-                    operations.filter('[data-completed="true"]').hide();
-                    break;
-                case 'all':
-                default:
-                    // همه نمایش داده می‌شوند
-                    break;
+            $('#reminders-list-container').load('@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })');
+        }
+    </script>
+<script>
+// ========================================
+// ⭐ Notification Helper
+// ========================================
+const NotificationHelper = {
+    success: function(message) {
+        Dashmix.helpers('jq-notify', {
+            type: 'success',
+            icon: 'fa fa-check me-1',
+            message: message
+        });
+    },
+    error: function(message) {
+        Dashmix.helpers('jq-notify', {
+            type: 'danger',
+            icon: 'fa fa-times me-1',
+            message: message
+        });
+    },
+    warning: function(message) {
+        Dashmix.helpers('jq-notify', {
+            type: 'warning',
+            icon: 'fa fa-exclamation-triangle me-1',
+            message: message
+        });
+    },
+    info: function(message) {
+        Dashmix.helpers('jq-notify', {
+            type: 'info',
+            icon: 'fa fa-info me-1',
+            message: message
+        });
+    }
+};
+
+
+        // ========================================
+        // ⭐ Dynamic Operations Manager
+        // ========================================
+                      const DynamicOperationsManager = {
+            taskId: @Model.Id,
+
+            refreshGroup: function(groupType) {
+                if (!groupType || typeof groupType !== 'string' || groupType.trim() === '') {
+                    console.error('❌ Invalid GroupType:', groupType);
+                    NotificationHelper.error('خطا: نوع گروه نامعتبر است');
+                    return;
+                }
+
+                const normalizedGroupType = groupType.trim().toLowerCase();
+
+                if (!['starred', 'pending', 'completed'].includes(normalizedGroupType)) {
+                    console.error('❌ Unknown GroupType:', normalizedGroupType);
+                    NotificationHelper.error(`نوع گروه نامعتبر: ${normalizedGroupType}`);
+                    return;
+                }
+
+                console.log(`🔄 Refreshing group: "${normalizedGroupType}"`);
+
+                $.ajax({
+                    url: '@Url.Action("GetOperationsGroup", "TaskOperations", new { area = "AdminArea" })',
+                    type: 'GET',
+                    data: {
+                        taskId: this.taskId,
+                        groupType: normalizedGroupType
+                    },
+                    success: function(result) {
+                        console.log(`📦 Response for "${normalizedGroupType}":`, result);
+
+                        if (!result || typeof result !== 'object') {
+                            console.error('❌ Invalid response format:', result);
+                            NotificationHelper.error('خطا در دریافت پاسخ سرور');
+                            return;
+                        }
+
+                        if (result.success) {
+                            // ⭐ حذف گروه قدیمی
+                            const groupId = `${normalizedGroupType}-group`;
+                            $(`#${groupId}`).remove();
+                            $(`.operations-group[data-group="${normalizedGroupType}"]`).remove();
+
+                            console.log(`🗑️ Removed old group: #${groupId}`);
+
+                            // ⭐ اضافه کردن به placeholder مربوطه (برای حفظ ترتیب)
+                            const placeholderId = `${normalizedGroupType}-group-placeholder`;
+
+                            if (result.html && typeof result.html === 'string' && result.html.trim() !== '') {
+                                $(`#${placeholderId}`).html(result.html);
+                                console.log(`✅ Added group "${normalizedGroupType}" to placeholder with ${result.count} operations`);
+                            } else {
+                                // ⭐ خالی کردن placeholder اگر گروه خالی شد
+                                $(`#${placeholderId}`).empty();
+                                console.log(`ℹ️ Group "${normalizedGroupType}" is empty - placeholder cleared`);
+                            }
+
+                            // بروزرسانی آمار
+                            DynamicOperationsManager.updateStats();
+                        } else {
+                            console.error(`❌ Server error:`, result.message);
+                            NotificationHelper.error(result.message || 'خطا در سرور');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(`❌ AJAX error for "${normalizedGroupType}":`, xhr);
+                        NotificationHelper.error('خطا در ارتباط با سرور');
+                    }
+                });
+            },
+
+            // بروزرسانی آمار
+            updateStats: function() {
+                const total = $('.operation-item-card').length;
+                const completed = $('.operation-item-card[data-completed="true"]').length;
+                const starred = $('.operation-item-card[data-starred="true"]').length;
+                const withWorkLog = $('.operation-item-card .btn-info:not(.btn-outline-info)').length;
+
+                $('#totalOpsCount').text(total);
+                $('#completedOpsCount').text(completed);
+                $('#starredOpsCount').text(starred);
+                $('#withWorkLogCount').text(withWorkLog);
+
+                console.log(`📊 Stats - Total: ${total}, Completed: ${completed}, Starred: ${starred}`);
+            },
+
+            // Toggle Complete
+            toggleComplete: function(operationId) {
+                const $card = $(`#operation-card-${operationId}`);
+                if (!$card.length) {
+                    console.error(`❌ Card not found: operation-card-${operationId}`);
+                    return;
+                }
+
+                const $spinner = $card.find('.operation-spinner');
+                const wasCompleted = $card.attr('data-completed') === 'true';
+                const isStarred = $card.attr('data-starred') === 'true';
+
+                console.log(`🔄 Toggle operation ${operationId}:`, {
+                    wasCompleted,
+                    isStarred,
+                    willMoveTo: wasCompleted ? 'pending' : 'completed'
+                });
+
+                $card.css('opacity', '0.6');
+                $spinner.show();
+
+                $.ajax({
+                    url: '@Url.Action("ToggleOperationComplete", "TaskOperations", new { area = "AdminArea" })',
+                    type: 'POST',
+                    data: {
+                        id: operationId,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(result) {
+                        if (result.success) {
+                            NotificationHelper.success(result.message || 'وضعیت تغییر کرد');
+
+                            // ⭐ حذف کارت
+                            $card.fadeOut(200, function() {
+                                $(this).remove();
+                                console.log(`✅ Card ${operationId} removed`);
+
+                                // ⭐ بروزرسانی گروه‌ها بر اساس حالت قبلی
+                                if (wasCompleted) {
+                                    // از completed به pending یا starred
+                                    setTimeout(() => DynamicOperationsManager.refreshGroup('completed'), 100);
+                                    setTimeout(() => DynamicOperationsManager.refreshGroup(isStarred ? 'starred' : 'pending'), 300);
+                                } else {
+                                    // از pending/starred به completed
+                                    setTimeout(() => DynamicOperationsManager.refreshGroup(isStarred ? 'starred' : 'pending'), 100);
+                                    setTimeout(() => DynamicOperationsManager.refreshGroup('completed'), 300);
+                                }
+                            });
+                        } else {
+                            console.error('❌ Toggle failed:', result.message);
+                            NotificationHelper.error(result.message);
+                            $card.css('opacity', '1');
+                            $spinner.hide();
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('❌ Toggle error:', xhr);
+                        NotificationHelper.error('خطا در ذخیره');
+                        $card.css('opacity', '1');
+                        $spinner.hide();
+                    }
+                });
+            },
+
+            // Toggle Star
+            toggleStar: function(operationId) {
+                const $card = $(`#operation-card-${operationId}`);
+                if (!$card.length) return;
+
+                const $spinner = $card.find('.operation-spinner');
+                console.log(`⭐ Toggling star for operation ${operationId}`);
+
+                $card.css('opacity', '0.6');
+                $spinner.show();
+
+                $.ajax({
+                    url: '@Url.Action("ToggleOperationStar", "TaskOperations", new { area = "AdminArea" })',
+                    type: 'POST',
+                    data: {
+                        id: operationId,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(result) {
+                        if (result.success) {
+                            NotificationHelper.success(result.message || 'ستاره تغییر کرد');
+
+                            $card.fadeOut(200, function() {
+                                $(this).remove();
+
+                                setTimeout(() => {
+                                    DynamicOperationsManager.refreshGroup('starred');
+                                }, 100);
+
+                                setTimeout(() => {
+                                    DynamicOperationsManager.refreshGroup('pending');
+                                }, 300);
+                            });
+                        } else {
+                            NotificationHelper.error(result.message);
+                            $card.css('opacity', '1');
+                            $spinner.hide();
+                        }
+                    },
+                    error: function() {
+                        NotificationHelper.error('خطا در ذخیره');
+                        $card.css('opacity', '1');
+                        $spinner.hide();
+                    }
+                });
+            },
+
+            deleteOperation: function(operationId) {
+                if (!confirm('آیا از حذف این عملیات اطمینان دارید؟')) return;
+
+                const $card = $(`#operation-card-${operationId}`);
+
+                $.ajax({
+                    url: '@Url.Action("DeleteOperation", "TaskOperations", new { area = "AdminArea" })',
+                    type: 'POST',
+                    data: {
+                        id: operationId,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(result) {
+                        if (result.success) {
+                            NotificationHelper.success('عملیات حذف شد');
+
+                            $card.fadeOut(300, function() {
+                                $(this).remove();
+                                DynamicOperationsManager.updateStats();
+                            });
+                        } else {
+                            NotificationHelper.error(result.message);
+                        }
+                    },
+                    error: function() {
+                        NotificationHelper.error('خطا در حذف');
+                    }
+                });
+            },
+
+            addOperation: function() {
+                const title = $('#newOperationTitleInput').val().trim();
+
+                if (!title) {
+                    NotificationHelper.warning('لطفاً عنوان عملیات را وارد کنید');
+                    $('#newOperationTitleInput').focus();
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("AddOperation", "TaskOperations", new { area = "AdminArea" })',
+                    type: 'POST',
+                    data: {
+                        taskId: this.taskId,
+                        title: title,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(result) {
+                        if (result.success) {
+                            NotificationHelper.success('عملیات اضافه شد');
+                            $('#newOperationTitleInput').val('');
+
+                            setTimeout(() => {
+                                DynamicOperationsManager.refreshGroup('pending');
+                            }, 200);
+                        } else {
+                            NotificationHelper.error(result.message);
+                        }
+                    },
+                    error: function() {
+                        NotificationHelper.error('خطا در افزودن عملیات');
+                    }
+                });
             }
-            
-            // بروزرسانی متن فیلتر
-            updateFilterButtonText(filterType);
-        }
+        };
+// ========================================
+// ⭐ Global Functions
+// ========================================
+function dynamicToggleComplete(checkbox, operationId) {
+    DynamicOperationsManager.toggleComplete(operationId);
+}
 
-        // بروزرسانی متن دکمه فیلتر
-        function updateFilterButtonText(filterType) {
-            const filterButton = $('.btn:contains("فیلتر")');
-            const filterTexts = {
-                'all': 'همه عملیات',
-                'starred': 'ستاره‌دار',
-                'completed': 'تکمیل شده',
-                'pending': 'در انتظار'
-            };
-            
-            if (filterTexts[filterType]) {
-                filterButton.html('<i class="fa fa-filter me-1"></i> ' + filterTexts[filterType]);
-            }
-        }
+function dynamicToggleStar(operationId) {
+    DynamicOperationsManager.toggleStar(operationId);
+}
 
-        // سایر توابع موجود
-        function approveBySupervisor(taskId) {
-            $.ajax({
-                url: '@Url.Action("ApproveTaskBySupervisor")',
-                type: 'POST',
-                data: { 
-                    id: taskId,
-                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                },
-                success: function (result) {
-                    if (result.success) {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.success('تسک با موفقیت تایید شد');
-                        }
-                        location.reload();
-                    } else {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(result.message || 'خطا در تایید تسک');
-                        } else {
-                            alert('خطا: ' + (result.message || 'خطا در تایید تسک'));
-                        }
-                    }
-                },
-                error: function () {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error('خطا در ارتباط با سرور');
-                    } else {
-                        alert('خطا در ارتباط با سرور');
-                    }
-                }
-            });
+function dynamicDeleteOperation(operationId) {
+    DynamicOperationsManager.deleteOperation(operationId);
+}
+
+// ========================================
+// ⭐ Document Ready
+// ========================================
+$(document).ready(function() {
+    // افزودن عملیات با Enter
+    $('#newOperationTitleInput').on('keypress', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            DynamicOperationsManager.addOperation();
         }
+    });
+    
+    // افزودن عملیات با کلیک
+    $('#addNewOperationBtn').on('click', function() {
+        DynamicOperationsManager.addOperation();
+    });
+    
+    // بروزرسانی اولیه آمار
+    DynamicOperationsManager.updateStats();
+    
+    console.log('✅ Dynamic Operations Manager initialized');
+});
+
+
+       
+
 
         function approveByManager(taskId) {
             $.ajax({
                 url: '@Url.Action("ApproveTaskByManager")',
                 type: 'POST',
-                data: { 
+                data: {
                     id: taskId,
                     __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
                 },
@@ -909,6 +1472,1046 @@
                     $(this).removeClass('shadow-sm');
                 }
             );
+
+            // راه‌اندازی Smooth Scrolling
+            $('a[href*="#"]').on('click', function(e) {
+                if (this.hash !== '') {
+                    e.preventDefault();
+                    var hash = this.hash;
+                    $('html, body').animate({
+                        scrollTop: $(hash).offset().top - 100
+                    }, 800);
+                }
+            });
+
+            // Auto-hide alerts بعد از 5 ثانیه
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+
+            // نمایش تعداد کاراکترها در textarea
+            $('textarea').on('input', function() {
+                var maxLength = $(this).attr('maxlength');
+                if (maxLength) {
+                    var currentLength = $(this).val().length;
+                    var counterElement = $(this).siblings('.char-counter');
+                    if (counterElement.length) {
+                        counterElement.text(currentLength + ' / ' + maxLength);
+                    }
+                }
+            });
+
+            // Confirm قبل از حذف
+            $('[data-confirm-delete]').on('click', function(e) {
+                if (!confirm('آیا از حذف این مورد اطمینان دارید؟')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            // بارگذاری lazy برای تصاویر
+            if ('loading' in HTMLImageElement.prototype) {
+                const images = document.querySelectorAll('img[loading="lazy"]');
+                images.forEach(img => {
+                    img.src = img.dataset.src;
+                });
+            }
+
+            // تنظیم ارتفاع یکسان برای کارت‌ها
+            function equalizeCardHeights() {
+                var maxHeight = 0;
+                $('.operation-item .card').each(function() {
+                    if ($(this).height() > maxHeight) {
+                        maxHeight = $(this).height();
+                    }
+                });
+                // اختیاری: می‌توانید ارتفاع یکسان تنظیم کنید
+                // $('.operation-item .card').height(maxHeight);
+            }
+            equalizeCardHeights();
+            $(window).resize(equalizeCardHeights);
+
+            // Progress bar animation
+            $('.progress-bar').each(function() {
+                var width = $(this).attr('aria-valuenow');
+                $(this).css('width', '0%').animate({
+                    width: width + '%'
+                }, 1500);
+            });
+
+            // Highlight فیلد‌های خالی در فرم‌ها
+            $('form').on('submit', function() {
+                $(this).find('input[required], textarea[required], select[required]').each(function() {
+                    if (!$(this).val()) {
+                        $(this).addClass('is-invalid');
+                    } else {
+                        $(this).removeClass('is-invalid');
+                    }
+                });
+            });
+
+            // Clear validation on input change
+            $('input, textarea, select').on('change input', function() {
+                $(this).removeClass('is-invalid');
+            });
+
+            // Auto-resize textarea
+            $('textarea').each(function() {
+                this.setAttribute('style', 'height:' + (this.scrollHeight) + 'px;overflow-y:hidden;');
+            }).on('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // کپی کردن کد تسک
+            $('.copy-task-code').on('click', function() {
+                var taskCode = $(this).data('task-code') || '@Model.TaskCode';
+                var tempInput = $('<input>');
+                $('body').append(tempInput);
+                tempInput.val(taskCode).select();
+                document.execCommand('copy');
+                tempInput.remove();
+
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('کد تسک کپی شد: ' + taskCode);
+                } else {
+                    alert('کد تسک کپی شد: ' + taskCode);
+                }
+            });
+
+            // Keyboard shortcuts
+            $(document).keydown(function(e) {
+                // Ctrl/Cmd + S برای ذخیره
+                if ((e.ctrlKey || e.metaKey) && e.keyCode == 83) {
+                    e.preventDefault();
+                    $('form').submit();
+                    return false;
+                }
+
+                // Escape برای بستن modal
+                if (e.keyCode == 27) {
+                    $('.modal').modal('hide');
+                }
+            });
+
+            // Real-time search در لیست عملیات
+            $('#operationSearch').on('keyup', function() {
+                var searchText = $(this).val().toLowerCase();
+                $('.operation-item').each(function() {
+                    var operationText = $(this).text().toLowerCase();
+                    if (operationText.indexOf(searchText) > -1) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+
+            // نمایش تعداد عملیات فیلتر شده
+            function updateOperationCount() {
+                var visibleCount = $('.operation-item:visible').length;
+                var totalCount = $('.operation-item').length;
+                $('#operationCount').text(visibleCount + ' از ' + totalCount + ' عملیات');
+            }
+
+            // فراخوانی بعد از فیلتر
+            $('.operation-item').on('hide.bs.collapse show.bs.collapse', updateOperationCount);
+
+            // Drag and Drop برای مرتب‌سازی عملیات (اختیاری)
+            if (typeof Sortable !== 'undefined') {
+                var operationsList = document.getElementById('operationsList');
+                if (operationsList) {
+                    new Sortable(operationsList, {
+                        animation: 150,
+                        handle: '.operation-drag-handle',
+                        onEnd: function(evt) {
+                            // ارسال ترتیب جدید به سرور
+                            var newOrder = [];
+                            $('.operation-item').each(function(index) {
+                                newOrder.push({
+                                    id: $(this).data('operation-id'),
+                                    order: index + 1
+                                });
+                            });
+
+                            $.ajax({
+                                url: '@Url.Action("UpdateOperationOrder")',
+                                type: 'POST',
+                                data: JSON.stringify(newOrder),
+                                contentType: 'application/json',
+                                headers: {
+                                    'RequestVerificationToken': $('[name="__RequestVerificationToken"]').val()
+                                },
+                                success: function(result) {
+                                    if (result.success) {
+                                        toastr.success('ترتیب عملیات با موفقیت ذخیره شد');
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Print functionality
+            $('#printTask').on('click', function() {
+                window.print();
+            });
+
+    
+
+            // Show loading spinner on AJAX calls
+            $(document).ajaxStart(function() {
+                $('#loadingSpinner').show();
+            }).ajaxStop(function() {
+                $('#loadingSpinner').hide();
+            });
+
+            // مدیریت تاریخ و زمان شمسی
+            if (typeof moment !== 'undefined' && typeof moment.loadPersian !== 'undefined') {
+                moment.loadPersian({
+                    usePersianDigits: true,
+                    dialect: 'persian-modern'
+                });
+
+                $('.persian-date').each(function() {
+                    var dateValue = $(this).data('date');
+                    if (dateValue) {
+                        var persianDate = moment(dateValue).format('jYYYY/jMM/jDD HH:mm');
+                        $(this).text(persianDate);
+                    }
+                });
+            }
+
+            // Notification bell animation
+            $('.notification-bell').on('click', function() {
+                $(this).addClass('shake-animation');
+                setTimeout(() => {
+                    $(this).removeClass('shake-animation');
+                }, 500);
+            });
+
+            // Auto-save draft (ذخیره خودکار پیش‌نویس)
+            var autoSaveInterval = setInterval(function() {
+                var formData = $('form').serialize();
+                localStorage.setItem('taskDraft_@Model.Id', formData);
+            }, 30000); // هر 30 ثانیه
+
+            // بازیابی پیش‌نویس
+            if (localStorage.getItem('taskDraft_@Model.Id')) {
+                var savedDraft = localStorage.getItem('taskDraft_@Model.Id');
+                // می‌توانید از کاربر بپرسید آیا می‌خواهد پیش‌نویس را بازیابی کند
+            }
+
+            // Track user activity
+            var activityTimeout;
+            function resetActivityTimer() {
+                clearTimeout(activityTimeout);
+                activityTimeout = setTimeout(function() {
+                    // کاربر 5 دقیقه غیرفعال بوده
+                    console.log('User inactive');
+                }, 300000); // 5 دقیقه
+            }
+
+            $(document).on('mousemove keypress scroll', resetActivityTimer);
+            resetActivityTimer();
+
+            // Badge pulse animation
+            $('.badge-pulse').each(function() {
+                setInterval(() => {
+                    $(this).addClass('pulse-once');
+                    setTimeout(() => {
+                        $(this).removeClass('pulse-once');
+                    }, 1000);
+                }, 3000);
+            });
+
+            // Cleanup on page unload
+            $(window).on('beforeunload', function() {
+                clearInterval(autoSaveInterval);
+                clearTimeout(activityTimeout);
+            });
+
+            console.log('Task Details page initialized successfully');
         });
     </script>
+}
+
+@section Styles {
+    <style>
+        /* ========================================
+                   Hero Section - بنر مدرن
+                ======================================== */
+        .hero-section {
+            min-height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+        }
+
+        /* Background & Overlay */
+        .hero-bg img {
+            object-fit: cover;
+        }
+
+        .hero-overlay {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 50%, rgba(52, 58, 64, 0.95) 100%);
+        }
+
+        .hero-pattern {
+            animation: patternMove 20s linear infinite;
+        }
+
+        @@keyframes patternMove {
+            0% {
+                transform: translateX(0) translateY(0);
+            }
+
+            100% {
+                transform: translateX(60px) translateY(60px);
+            }
+        }
+
+        /* Floating Shapes */
+        .hero-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            top: -150px;
+            right: -100px;
+            animation: float 15s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            bottom: -100px;
+            left: 10%;
+            animation: float 20s ease-in-out infinite reverse;
+        }
+
+        .shape-3 {
+            width: 150px;
+            height: 150px;
+            top: 50%;
+            left: -75px;
+            animation: float 18s ease-in-out infinite;
+        }
+
+        @@keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+            }
+
+            50% {
+                transform: translateY(-30px) translateX(30px);
+            }
+        }
+
+        /* Breadcrumb Modern */
+        .breadcrumb-modern {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            display: inline-flex;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+            .breadcrumb-modern .breadcrumb-item + .breadcrumb-item::before {
+                content: "›";
+                color: rgba(255, 255, 255, 0.5);
+                padding: 0 0.75rem;
+            }
+
+        .hover-opacity-100:hover {
+            opacity: 1 !important;
+            transition: opacity 0.3s;
+        }
+
+        /* Status Icon */
+        .hero-status-icon {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1.25rem;
+            text-align: center;
+            min-width: 100px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+
+            .hero-status-icon:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            }
+
+            .hero-status-icon .icon-wrapper {
+                width: 60px;
+                height: 60px;
+                margin: 0 auto 0.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 50%;
+                color: white;
+            }
+
+            .hero-status-icon .status-label {
+                color: white;
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+        /* Status Colors */
+        .status-success .icon-wrapper {
+            background: rgba(40, 167, 69, 0.3);
+        }
+
+        .status-danger .icon-wrapper {
+            background: rgba(220, 53, 69, 0.3);
+        }
+
+        .status-warning .icon-wrapper {
+            background: rgba(255, 193, 7, 0.3);
+        }
+
+        .status-info .icon-wrapper {
+            background: rgba(13, 202, 240, 0.3);
+        }
+
+        .status-primary .icon-wrapper {
+            background: rgba(13, 110, 253, 0.3);
+        }
+
+        /* Hero Title */
+        .hero-title-wrapper {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            line-height: 1.2;
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Badge Modern */
+        .badge-modern {
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s;
+        }
+
+            .badge-modern:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        /* Stats Cards */
+        .hero-stats {
+            margin-top: 1.5rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s;
+            height: 100%;
+        }
+
+            .stat-card:hover {
+                background: rgba(255, 255, 255, 0.25);
+                transform: translateY(-3px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            }
+
+        .stat-icon {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .stat-content {
+            flex-grow: 1;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-unit {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-right: 0.25rem;
+        }
+
+        .stat-card.stat-danger .stat-icon {
+            background: rgba(220, 53, 69, 0.3);
+        }
+
+        .stat-card.stat-warning .stat-icon {
+            background: rgba(255, 193, 7, 0.3);
+        }
+
+        /* Hero Buttons */
+        .hero-actions {
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        .btn-hero {
+            padding: 0.875rem 1.75rem;
+            font-weight: 600;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+            .btn-hero:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            }
+
+            .btn-hero.btn-light {
+                background: rgba(255, 255, 255, 0.95);
+                color: #212529;
+            }
+
+                .btn-hero.btn-light:hover {
+                    background: white;
+                }
+
+        /* Dropdown Modern */
+        .dropdown-menu-modern {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem;
+        }
+
+            .dropdown-menu-modern .dropdown-item {
+                border-radius: 8px;
+                padding: 0.75rem 1rem;
+                margin-bottom: 0.25rem;
+                transition: all 0.2s;
+            }
+
+                .dropdown-menu-modern .dropdown-item:hover {
+                    background: rgba(13, 110, 253, 0.1);
+                    transform: translateX(5px);
+                }
+
+        /* ========================================
+                   Additional Styles
+                ======================================== */
+
+        /* Avatar Circle */
+        .avatar-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Block Effects */
+        .block-fx-shadow {
+            transition: all 0.3s ease;
+        }
+
+            .block-fx-shadow:hover {
+                box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.08);
+                transform: translateY(-2px);
+            }
+
+        /* Operation Card */
+        .operation-item.completed {
+            opacity: 0.7;
+        }
+
+        .operation-item .card {
+            transition: all 0.3s ease;
+        }
+
+            .operation-item .card:hover {
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+                transform: translateY(-2px);
+            }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding: 0;
+            list-style: none;
+        }
+
+            .timeline:before {
+                content: '';
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 20px;
+                width: 2px;
+                background: #e4e7ed;
+            }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-left: 60px;
+        }
+
+        .timeline-badge {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 1;
+        }
+
+        .timeline-panel {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            position: relative;
+        }
+
+            .timeline-panel:before {
+                content: '';
+                position: absolute;
+                left: -10px;
+                top: 15px;
+                width: 0;
+                height: 0;
+                border-style: solid;
+                border-width: 5px 10px 5px 0;
+                border-color: transparent #f8f9fa transparent transparent;
+            }
+
+        /* Color Utilities */
+        .bg-primary-light {
+            background-color: rgba(13, 110, 253, 0.1);
+        }
+
+        .bg-success-light {
+            background-color: rgba(25, 135, 84, 0.1);
+        }
+
+        .bg-warning-light {
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+
+        .bg-info-light {
+            background-color: rgba(13, 202, 240, 0.1);
+        }
+
+        .bg-danger-light {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Operation Item Hover Effects */
+        .operation-item {
+            transition: all 0.3s ease;
+        }
+
+            .operation-item:hover {
+                transform: translateY(-2px);
+            }
+
+        /* Shake Animation for Notifications */
+        @@keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-5px);
+            }
+
+            20%, 40%, 60%, 80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .shake-animation {
+            animation: shake 0.5s;
+        }
+
+        /* Pulse Animation for Badges */
+        .pulse-once {
+            animation: pulse 1s;
+        }
+
+        /* Loading Spinner */
+        #loadingSpinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            display: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 5px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+        /* Timeline Enhancements */
+        .timeline-event-block {
+            transition: all 0.3s ease;
+        }
+
+            .timeline-event-block:hover {
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+                transform: translateX(-5px);
+            }
+
+        /* Card Shadow on Hover */
+        .block-rounded:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        /* Badge Styles */
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* Button Hover Effects */
+        .btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+            .btn::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                transition: width 0.6s, height 0.6s;
+            }
+
+            .btn:hover::before {
+                width: 300px;
+                height: 300px;
+            }
+
+        /* Animation for Progress Bar */
+        @@keyframes progressBarAnimation {
+            0% {
+                width: 0%;
+            }
+
+            100% {
+                width: var(--progress-width);
+            }
+        }
+
+        .progress-bar {
+            animation: progressBarAnimation 1.5s ease-in-out;
+        }
+
+        /* Focus Styles for Accessibility */
+        *:focus {
+            outline: 2px solid #0d6efd;
+            outline-offset: 2px;
+        }
+
+        /* Tooltip Custom Styles */
+        .tooltip-inner {
+            max-width: 300px;
+            padding: 0.5rem 0.75rem;
+            background-color: #212529;
+        }
+
+        /* Alert Custom Styles */
+        .alert {
+            border-left: 4px solid;
+            border-radius: 0.25rem;
+        }
+
+        .alert-info {
+            border-left-color: #0dcaf0;
+        }
+
+        .alert-success {
+            border-left-color: #198754;
+        }
+
+        .alert-warning {
+            border-left-color: #ffc107;
+        }
+
+        .alert-danger {
+            border-left-color: #dc3545;
+        }
+
+        /* Responsive Utilities */
+        @@media (max-width: 991px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .hero-status-icon {
+                min-width: 80px;
+                padding: 1rem;
+            }
+
+                .hero-status-icon .icon-wrapper {
+                    width: 50px;
+                    height: 50px;
+                }
+        }
+
+        @@media (max-width: 767px) {
+            .hero-section {
+                min-height: 350px;
+            }
+
+            .hero-title {
+                font-size: 1.5rem;
+            }
+
+            .stat-value {
+                font-size: 1.25rem;
+            }
+
+            .btn-hero {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.875rem;
+            }
+
+            .stat-card {
+                padding: 0.75rem;
+            }
+
+            .stat-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
+            .avatar-circle {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+
+            .operation-item .card-body {
+                padding: 0.75rem;
+            }
+
+            .fs-3 {
+                font-size: 1.5rem !important;
+            }
+
+            .timeline-event-block {
+                margin-left: 10px;
+            }
+        }
+
+        /* Print Styles */
+        @@media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .operation-item .card {
+                page-break-inside: avoid;
+                border: 1px solid #dee2e6 !important;
+            }
+        }
+        /* Breadcrumb در پایین بنر */
+        .breadcrumb-bottom {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            font-size: 0.875rem;
+        }
+
+            .breadcrumb-bottom .breadcrumb-item + .breadcrumb-item::before {
+                content: "›";
+                color: #6c757d;
+                padding: 0 0.5rem;
+            }
+
+            .breadcrumb-bottom .breadcrumb-item a:hover {
+                color: #0d6efd !important;
+                transition: color 0.2s;
+            }
+        /* Placeholder Containers */
+        #starred-group-placeholder,
+        #pending-group-placeholder,
+        #completed-group-placeholder {
+            min-height: 0;
+            transition: min-height 0.3s ease;
+        }
+
+        /* Animation for group appearance */
+        .operations-group {
+            animation: slideInFromTop 0.4s ease-out;
+        }
+
+        @@keyframes slideInFromTop {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-item.disabled {
+            pointer-events: none;
+            background-color: rgba(25, 135, 84, 0.05);
+            border-left: 3px solid #198754;
+        }
+
+            .dropdown-item.disabled .text-success {
+                animation: successPulse 2s infinite;
+            }
+
+        @@keyframes successPulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        /* ⭐ Badge در Quick Stats برای نمایش وضعیت */
+        .my-day-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: #198754;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            border: 2px solid white;
+            animation: badgePulse 2s infinite;
+        }
+
+        @@keyframes badgePulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+    </style>
 }
