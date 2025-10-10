@@ -7,6 +7,7 @@
     var isManager = User.IsInRole("Admin") || User.IsInRole("Manager");
     var isSupervisor = User.IsInRole("Supervisor") || isManager;
     var isAdminOrManager = Html.IsAdminOrManager();
+    var isCompletedByMe = Model.AssignmentsTaskUser?.Any(a=> a.CompletionDate.HasValue && a.AssignedUserId == currentUserId) ?? false;
 
     // تعیین رنگ و وضعیت
     string statusColor = "primary";
@@ -187,7 +188,7 @@
               @* در بخش Action Buttons *@
 <div class="col-lg-4">
     <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
-        @if (Model.CompletionDate.HasValue)
+        @if (isCompletedByMe)
         {
             <!-- ⭐ نمایش Badge قفل شده -->
             <div class="alert alert-success d-flex align-items-center mb-0">
@@ -228,7 +229,7 @@
                 <i class="fa fa-ellipsis-h"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end dropdown-menu-modern">
-                @if (isAssignedToCurrentUser && !Model.CompletionDate.HasValue)
+                @if (isCompletedByMe)
                 {
                     <li>
                         @if (isInMyDay)
@@ -262,7 +263,7 @@
                     <li><hr class="dropdown-divider"></li>
                 }
 
-                @if (!Model.CompletionDate.HasValue)
+                                @if (!isCompletedByMe)
                 {
                     <li>
                         <a class="dropdown-item" href="#"
@@ -766,7 +767,7 @@
                                 </div>
                             </div>
                             }
-else if (Model.CompletionDate.HasValue)
+else if (isCompletedByMe)
 {
     <div class="alert alert-info mb-4">
         <i class="fa fa-info-circle me-2"></i>
@@ -921,7 +922,7 @@ else if (Model.CompletionDate.HasValue)
                 <i class="fa fa-users me-2"></i>اعضای تسک
             </h3>
             <div class="block-options">
-                @if ((isCreator || isManager) && !Model.CompletionDate.HasValue)
+                @if ((isCreator || isManager) && !isCompletedByMe)
                 {
                     <button type="button" 
                             class="btn btn-sm btn-light" 
@@ -930,7 +931,7 @@ else if (Model.CompletionDate.HasValue)
                         <i class="fa fa-user-plus me-1"></i>افزودن کاربر
                     </button>
                 }
-                else if (Model.CompletionDate.HasValue)
+                else if (isCompletedByMe)
                 {
                     <span class="badge bg-light text-dark">
                         <i class="fa fa-lock me-1"></i>قفل شده
@@ -960,7 +961,7 @@ else if (Model.CompletionDate.HasValue)
                 <i class="fa fa-bell me-2"></i>یادآوری‌های تسک
             </h3>
             <div class="block-options">
-                @if (!Model.CompletionDate.HasValue)
+                @if (!isCompletedByMe)
                 {
                     <button type="button"
                             class="btn btn-sm btn-light"
@@ -978,7 +979,7 @@ else if (Model.CompletionDate.HasValue)
             </div>
         </div>
         <div class="block-content">
-            @if (Model.CompletionDate.HasValue)
+                    @if (isCompletedByMe)
             {
                 <div class="alert alert-info mb-3">
                     <i class="fa fa-info-circle me-2"></i>

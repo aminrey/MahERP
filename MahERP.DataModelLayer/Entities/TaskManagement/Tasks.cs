@@ -82,7 +82,6 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         
         public DateTime? DueDate { get; set; }
         
-        public DateTime? CompletionDate { get; set; }
 
         public bool? SupervisorApproved { get; set; }
         

@@ -453,26 +453,53 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
             }
         }
 
-       
 
         /// <summary>
-        /// محاسبه آمار
+        /// محاسبه آمار - اصلاح شده
         /// </summary>
         private async Task<TaskStatisticsViewModel> CalculateStatisticsAsync(string userId, List<TaskViewModel> tasks)
         {
             return new TaskStatisticsViewModel
             {
                 TotalTasks = tasks.Count,
+
                 AssignedToMe = tasks.Count(t =>
                     t.AssignmentsTaskUser?.Any(a => a.AssignedUserId == userId) == true
                     && t.CreatorUserId != userId),
+
                 AssignedByMe = tasks.Count(t => t.CreatorUserId == userId),
-                CompletedTasks = tasks.Count(t => t.CompletionDate.HasValue),
+
+                // ⭐⭐⭐ اصلاح شده: بررسی CompletionDate کاربر فعلی
+                CompletedTasks = tasks.Count(t =>
+                    t.AssignmentsTaskUser?.Any(a =>
+                        a.AssignedUserId == userId &&
+                        a.CompletionDate.HasValue) == true),
+
+                // ⭐⭐⭐ اصلاح شده: عقب افتاده‌ها
                 OverdueTasks = tasks.Count(t =>
-                    !t.CompletionDate.HasValue
-                    && t.DueDate.HasValue
-                    && t.DueDate < DateTime.Now),
-                InProgressTasks = tasks.Count(t => !t.CompletionDate.HasValue && t.IsActive),
+                {
+                    // بررسی اینکه آیا کاربر فعلی تسک را تکمیل کرده؟
+                    var myAssignment = t.AssignmentsTaskUser?
+                        .FirstOrDefault(a => a.AssignedUserId == userId);
+
+                    var isCompletedByMe = myAssignment?.CompletionDate.HasValue ?? false;
+
+                    return !isCompletedByMe
+                           && t.DueDate.HasValue
+                           && t.DueDate < DateTime.Now;
+                }),
+
+                // ⭐⭐⭐ اصلاح شده: در حال انجام
+                InProgressTasks = tasks.Count(t =>
+                {
+                    var myAssignment = t.AssignmentsTaskUser?
+                        .FirstOrDefault(a => a.AssignedUserId == userId);
+
+                    var isCompletedByMe = myAssignment?.CompletionDate.HasValue ?? false;
+
+                    return !isCompletedByMe && t.IsActive;
+                }),
+
                 ImportantTasks = tasks.Count(t => t.Important || t.Priority == 1),
                 UrgentTasks = tasks.Count(t => t.Priority == 2)
             };
@@ -494,7 +521,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
         }
 
         /// <summary>
-        /// تبدیل Entity به ViewModel
+        /// تبدیل Entity به ViewModel - اصلاح شده
         /// </summary>
         private TaskViewModel MapToViewModel(Tasks task, string? currentUserId = null)
         {
@@ -504,6 +531,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 .ToList();
 
             var category = _context.TaskCategory_Tbl.FirstOrDefault(c => c.Id == task.TaskCategoryId);
+
             var taskViewModel = new TaskViewModel
             {
                 Id = task.Id,
@@ -512,7 +540,6 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 TaskCode = task.TaskCode,
                 CreateDate = task.CreateDate,
                 DueDate = task.DueDate,
-                CompletionDate = task.CompletionDate,
                 IsActive = task.IsActive,
                 IsDeleted = task.IsDeleted,
                 BranchId = task.BranchId,
@@ -522,6 +549,8 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 Priority = task.Priority,
                 Important = task.Important,
                 Status = task.Status,
+
+                // ⭐⭐⭐ اصلاح شده: اضافه کردن CompletionDate
                 AssignmentsTaskUser = assignments.Select(a => new TaskAssignmentViewModel
                 {
                     Id = a.Id,
@@ -529,77 +558,91 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                     AssignedUserId = a.AssignedUserId,
                     AssignedUserName = $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}",
                     AssignerUserId = a.AssignerUserId,
-                    AssignDate = a.AssignmentDate
+                    AssignDate = a.AssignmentDate,
+                    CompletionDate = a.CompletionDate // ⭐⭐⭐ اضافه شده
                 }).ToList()
             };
 
-            // ⭐⭐⭐ بررسی وضعیت "روز من" اگر currentUserId ارسال شده
+            // ⭐ بررسی "روز من"
             if (!string.IsNullOrEmpty(currentUserId))
             {
                 taskViewModel.IsInMyDay = _context.TaskMyDay_Tbl
                     .AsNoTracking()
                     .Any(tmd => tmd.TaskId == task.Id &&
-                                    tmd.UserId == currentUserId &&
-                                    tmd.IsActive);
+                               tmd.UserId == currentUserId &&
+                               tmd.IsActive);
+
+                // ⭐⭐⭐ اضافه شده: تعیین CompletionDate برای کاربر فعلی
+                var currentUserAssignment = assignments.FirstOrDefault(a => a.AssignedUserId == currentUserId);
+                if (currentUserAssignment != null)
+                {
+                    taskViewModel.CompletionDate = currentUserAssignment.CompletionDate;
+                }
             }
+
             return taskViewModel;
         }
 
-        /// <summary>
-/// تبدیل Entity به ViewModel - نسخه Async با IsInMyDay
-/// </summary>
-private async Task<TaskViewModel> MapToViewModelAsync(Tasks task, string? currentUserId = null)
-{
-    // ⭐ استفاده از Async
-    var assignments = await _context.TaskAssignment_Tbl
-        .Include(ta => ta.AssignedUser)
-        .Where(ta => ta.TaskId == task.Id)
-        .ToListAsync();
-
-    var category = await _context.TaskCategory_Tbl
-        .FirstOrDefaultAsync(c => c.Id == task.TaskCategoryId);
-
-    var taskViewModel = new TaskViewModel
-    {
-        Id = task.Id,
-        Title = task.Title,
-        Description = task.Description,
-        TaskCode = task.TaskCode,
-        CreateDate = task.CreateDate,
-        DueDate = task.DueDate,
-        CompletionDate = task.CompletionDate,
-        IsActive = task.IsActive,
-        IsDeleted = task.IsDeleted,
-        BranchId = task.BranchId,
-        CreatorUserId = task.CreatorUserId,
-        CategoryId = task.TaskCategoryId,
-        CategoryTitle = category?.Title,
-        Priority = task.Priority,
-        Important = task.Important,
-        Status = task.Status,
-        AssignmentsTaskUser = assignments.Select(a => new TaskAssignmentViewModel
+        private async Task<TaskViewModel> MapToViewModelAsync(Tasks task, string? currentUserId = null)
         {
-            Id = a.Id,
-            TaskId = a.TaskId,
-            AssignedUserId = a.AssignedUserId,
-            AssignedUserName = $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}",
-            AssignerUserId = a.AssignerUserId,
-            AssignDate = a.AssignmentDate
-        }).ToList()
-    };
+            var assignments = await _context.TaskAssignment_Tbl
+                .Include(ta => ta.AssignedUser)
+                .Where(ta => ta.TaskId == task.Id)
+                .ToListAsync();
 
-    // ⭐⭐⭐ بررسی وضعیت "روز من" اگر currentUserId ارسال شده
-    if (!string.IsNullOrEmpty(currentUserId))
-    {
-        taskViewModel.IsInMyDay = await _context.TaskMyDay_Tbl
-            .AsNoTracking()
-            .AnyAsync(tmd => tmd.TaskId == task.Id &&
-                            tmd.UserId == currentUserId &&
-                            tmd.IsActive);
-    }
+            var category = await _context.TaskCategory_Tbl
+                .FirstOrDefaultAsync(c => c.Id == task.TaskCategoryId);
 
-    return taskViewModel;
-}
+            var taskViewModel = new TaskViewModel
+            {
+                Id = task.Id,
+                Title = task.Title,
+                Description = task.Description,
+                TaskCode = task.TaskCode,
+                CreateDate = task.CreateDate,
+                DueDate = task.DueDate,
+                IsActive = task.IsActive,
+                IsDeleted = task.IsDeleted,
+                BranchId = task.BranchId,
+                CreatorUserId = task.CreatorUserId,
+                CategoryId = task.TaskCategoryId,
+                CategoryTitle = category?.Title,
+                Priority = task.Priority,
+                Important = task.Important,
+                Status = task.Status,
+
+                // ⭐⭐⭐ اصلاح شده: اضافه کردن CompletionDate
+                AssignmentsTaskUser = assignments.Select(a => new TaskAssignmentViewModel
+                {
+                    Id = a.Id,
+                    TaskId = a.TaskId,
+                    AssignedUserId = a.AssignedUserId,
+                    AssignedUserName = $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}",
+                    AssignerUserId = a.AssignerUserId,
+                    AssignDate = a.AssignmentDate,
+                    CompletionDate = a.CompletionDate // ⭐⭐⭐ اضافه شده
+                }).ToList()
+            };
+
+            // ⭐ بررسی "روز من"
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                taskViewModel.IsInMyDay = await _context.TaskMyDay_Tbl
+                    .AsNoTracking()
+                    .AnyAsync(tmd => tmd.TaskId == task.Id &&
+                                    tmd.UserId == currentUserId &&
+                                    tmd.IsActive);
+
+                // ⭐⭐⭐ اضافه شده: تعیین CompletionDate برای کاربر فعلی
+                var currentUserAssignment = assignments.FirstOrDefault(a => a.AssignedUserId == currentUserId);
+                if (currentUserAssignment != null)
+                {
+                    taskViewModel.CompletionDate = currentUserAssignment.CompletionDate;
+                }
+            }
+
+            return taskViewModel;
+        }
 
         #region Helper Methods
 

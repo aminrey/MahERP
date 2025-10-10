@@ -1005,9 +1005,11 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         #region جدید - پیاده‌سازی جزئیات دریافت تسک‌های زیرتیم‌ها
 
         /// <summary>
-        /// دریافت تسک‌های زیرتیم‌ها به صورت کاملاً گروه‌بندی شده
+        /// دریافت تسک‌های زیرتیم‌ها به صورت کاملاً گروه‌بندی شده - اصلاح شده
         /// </summary>
-        public async Task<SubTeamTasksGroupedViewModel> GetSubTeamTasksGroupedDetailedAsync(string userId, int? branchId = null)
+        public async Task<SubTeamTasksGroupedViewModel> GetSubTeamTasksGroupedDetailedAsync(
+            string userId,
+            int? branchId = null)
         {
             var result = new SubTeamTasksGroupedViewModel();
 
@@ -1028,8 +1030,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     ParentTeamName = parentTeam.Title
                 };
 
-                // دریافت زیرتیم‌ها به صورت سلسله مراتبی
-                await LoadSubTeamsRecursiveAsync(teamGroup, parentTeam.Id, 1);
+                // ⭐⭐⭐ اصلاح شده: ارسال userId
+                await LoadSubTeamsRecursiveAsync(teamGroup, parentTeam.Id, 1, userId);
 
                 if (teamGroup.SubTeams.Any())
                 {
@@ -1041,11 +1043,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
             return result;
         }
-
         /// <summary>
-        /// بارگذاری بازگشتی زیرتیم‌ها و تسک‌های آن‌ها
+        /// بارگذاری بازگشتی زیرتیم‌ها و تسک‌های آن‌ها - اصلاح شده
         /// </summary>
-        private async Task LoadSubTeamsRecursiveAsync(SubTeamGroupViewModel teamGroup, int parentTeamId, int level)
+        private async Task LoadSubTeamsRecursiveAsync(
+            SubTeamGroupViewModel teamGroup,
+            int parentTeamId,
+            int level,
+            string currentUserId = null) // ⭐ اضافه شده
         {
             var subTeams = await _context.Team_Tbl
                 .Where(t => t.ParentTeamId == parentTeamId && t.IsActive)
@@ -1060,7 +1065,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                                !t.IsPrivate &&
                                t.VisibilityLevel != 1)
                     .Include(t => t.Creator)
-                    .Include(t => t.TaskAssignments)
+                    .Include(t => t.TaskAssignments) // ⭐ برای CompletionDate
+                        .ThenInclude(ta => ta.AssignedUser) // ⭐ اضافه شده
                     .Include(t => t.TaskCategory)
                     .ToListAsync();
 
@@ -1081,10 +1087,12 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                             g => new UserTasksGroupViewModel
                             {
                                 UserId = g.Key,
-                                UserFullName = g.First().Creator != null 
+                                UserFullName = g.First().Creator != null
                                     ? $"{g.First().Creator.FirstName} {g.First().Creator.LastName}"
                                     : "نامشخص",
-                                Tasks = g.Select(MapTaskToViewModel).ToList()
+
+                                // ⭐⭐⭐ اصلاح شده: ارسال currentUserId
+                                Tasks = g.Select(t => MapTaskToViewModel(t, currentUserId)).ToList()
                             });
 
                     subTeamViewModel.TasksByUser = tasksByUser;
@@ -1093,15 +1101,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     teamGroup.SubTeams[subTeam.Id] = subTeamViewModel;
                 }
 
-                // بارگذاری زیرتیم‌های بعدی (بازگشتی)
-                await LoadSubTeamsRecursiveAsync(teamGroup, subTeam.Id, level + 1);
+                // بارگذاری زیرتیم‌های بعدی (بازگشتی) - ⭐ ارسال currentUserId
+                await LoadSubTeamsRecursiveAsync(teamGroup, subTeam.Id, level + 1, currentUserId);
             }
         }
-
         /// <summary>
-        /// تبدیل Task Entity به TaskViewModel
+        /// تبدیل Task Entity به TaskViewModel - اصلاح شده برای نمایش تاریخ تکمیل هر کاربر
         /// </summary>
-        private TaskViewModel MapTaskToViewModel(Tasks task)
+        private TaskViewModel MapTaskToViewModel(Tasks task, string currentUserId = null)
         {
             return new TaskViewModel
             {
@@ -1111,7 +1118,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 TaskCode = task.TaskCode,
                 CreateDate = task.CreateDate,
                 DueDate = task.DueDate,
-                CompletionDate = task.CompletionDate,
+
+                // ⭐⭐⭐ اصلاح شده: تاریخ تکمیل بر اساس کاربر جاری
+                CompletionDate = !string.IsNullOrEmpty(currentUserId)
+                    ? task.TaskAssignments?
+                        .FirstOrDefault(t => t.CompletionDate.HasValue && t.AssignedUserId == currentUserId)
+                        ?.CompletionDate
+                    : null, // اگر userId نداشتیم، تاریخ تکمیل کل تسک
+
                 IsActive = task.IsActive,
                 Priority = task.Priority,
                 Important = task.Important,
@@ -1119,13 +1133,19 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 CreatorUserId = task.CreatorUserId,
                 CategoryId = task.TaskCategoryId,
                 CategoryTitle = task.TaskCategory?.Title,
+
                 AssignmentsTaskUser = task.TaskAssignments?
                     .Select(a => new TaskAssignmentViewModel
                     {
+                        Id = a.Id, // ⭐ اضافه شده
+                        TaskId = a.TaskId, // ⭐ اضافه شده
                         AssignedUserId = a.AssignedUserId,
-                        AssignedUserName = a.AssignedUser != null 
+                        AssignedUserName = a.AssignedUser != null
                             ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
-                            : "نامشخص"
+                            : "نامشخص",
+                        CompletionDate = a.CompletionDate, // ⭐ تاریخ تکمیل هر assignment
+                        AssignDate = a.AssignmentDate, // ⭐ اضافه شده
+                        Description = a.Description // ⭐ اضافه شده
                     }).ToList() ?? new List<TaskAssignmentViewModel>()
             };
         }

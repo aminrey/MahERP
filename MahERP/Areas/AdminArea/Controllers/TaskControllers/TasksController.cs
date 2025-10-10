@@ -1703,6 +1703,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
+                var currentUserId = GetUserId();
                 var task = await _taskRepository.GetTaskByIdAsync(taskId);
                 if (task == null)
                 {
@@ -1712,7 +1713,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 var reminders = await _taskRepository.GetTaskRemindersListAsync(taskId);
 
                 // ⭐ ارسال وضعیت قفل به View
-                ViewBag.IsTaskCompleted = task.CompletionDate.HasValue;
+                ViewBag.IsTaskCompleted = task.TaskAssignments?.Any(a => a.CompletionDate.HasValue && a.AssignedUserId == currentUserId) ?? false;
+
 
                 return PartialView("_TaskRemindersList", new { TaskId = taskId, Reminders = reminders });
             }
@@ -2280,6 +2282,17 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         message = new[] { new { status = "error", text = "شما دسترسی لازم را ندارید" } }
                     });
 
+                // ⭐ بررسی اینکه آیا تسک برای کاربر جاری تکمیل شده؟
+                var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(userId, model.TaskId);
+                var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
+
+                if (isTaskCompletedForCurrentUser)
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما این تسک را تکمیل کرده‌اید و نمی‌توانید کاربر جدید اضافه کنید" } }
+                    });
+
                 // بررسی تکراری نبودن
                 var existingAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(
                     model.SelectedUserId,
@@ -2333,7 +2346,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                                 ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
                                 : "نامشخص",
                             AssignDate = a.AssignmentDate,
-                            CompletionDate = a.CompletionDate,
+                            CompletionDate = a.CompletionDate, // ⭐⭐⭐ از Assignment
                             Description = a.Description
                         })
                         .ToList();
@@ -2344,15 +2357,10 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         new
                         {
                             Assignments = assignments,
+                            TaskId = task.Id, // ⭐ اضافه شده
                             IsCreator = isCreator,
                             IsManager = isAdmin,
-                            IsTaskCompleted = task.CompletionDate.HasValue
-                        }, new
-                        {
-                            Assignments = assignments,
-                            IsCreator = isCreator,
-                            IsManager = isAdmin,
-                            IsTaskCompleted = task.CompletionDate.HasValue
+                            IsTaskCompleted = isTaskCompletedForCurrentUser // ⭐⭐⭐ برای کاربر جاری
                         });
 
                     // ⭐⭐⭐ برگرداندن JSON با ساختار update-view
@@ -2429,7 +2437,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 return StatusCode(500, "خطا در بارگذاری مودال");
             }
         }
-
         /// <summary>
         /// حذف Assignment
         /// </summary>
@@ -2443,7 +2450,11 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 var assignment = await _taskRepository.GetTaskAssignmentByIdAsync(assignmentId);
 
                 if (assignment == null)
-                    return Json(new { success = false, message = "تخصیص یافت نشد" });
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "تخصیص یافت نشد" } }
+                    });
 
                 var task = assignment.Task;
 
@@ -2452,7 +2463,22 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 var isAdmin = User.IsInRole("Admin");
 
                 if (!isCreator && !isAdmin)
-                    return Json(new { success = false, message = "شما دسترسی لازم را ندارید" });
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما دسترسی لازم را ندارید" } }
+                    });
+
+                // ⭐ بررسی اینکه آیا تسک برای کاربر جاری تکمیل شده؟
+                var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(userId, task.Id);
+                var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
+
+                if (isTaskCompletedForCurrentUser)
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما این تسک را تکمیل کرده‌اید و نمی‌توانید کاربر حذف کنید" } }
+                    });
 
                 // حذف Assignment
                 var removedUserName = assignment.AssignedUser != null
@@ -2476,23 +2502,70 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         $"حذف {removedUserName} از تسک {task.Title}",
                         recordId: task.Id.ToString());
 
+                    // ⭐⭐⭐ دریافت لیست به‌روزرسانی شده اعضا
+                    var updatedTask = _taskRepository.GetTaskById(
+                        task.Id,
+                        includeAssignments: true);
+
+                    var assignments = updatedTask.TaskAssignments
+                        .Select(a => new TaskAssignmentViewModel
+                        {
+                            Id = a.Id,
+                            TaskId = a.TaskId,
+                            AssignedUserId = a.AssignedUserId,
+                            AssignedUserName = a.AssignedUser != null
+                                ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
+                                : "نامشخص",
+                            AssignDate = a.AssignmentDate,
+                            CompletionDate = a.CompletionDate, // ⭐⭐⭐ از Assignment
+                            Description = a.Description
+                        })
+                        .ToList();
+
+                    // ⭐⭐⭐ رندر Partial View
+                    var partialHtml = await this.RenderViewToStringAsync(
+                        "_TaskMembersList",
+                        new
+                        {
+                            Assignments = assignments,
+                            TaskId = task.Id,
+                            IsCreator = isCreator,
+                            IsManager = isAdmin,
+                            IsTaskCompleted = isTaskCompletedForCurrentUser // ⭐⭐⭐ برای کاربر جاری
+                        });
+
+                    // ⭐⭐⭐ برگرداندن JSON با ساختار update-view
                     return Json(new
                     {
-                        success = true,
-                        message = "کاربر با موفقیت از تسک حذف شد",
-                        refreshPage = true
+                        status = "update-view",
+                        viewList = new[]
+                        {
+                    new
+                    {
+                        elementId = "task-members-container",
+                        view = new { result = partialHtml }
+                    }
+                },
+                        message = new[] { new { status = "success", text = $"{removedUserName} با موفقیت از تسک حذف شد" } }
                     });
                 }
 
-                return Json(new { success = false, message = "خطا در حذف کاربر" });
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در حذف کاربر" } }
+                });
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("Tasks", "RemoveAssignment", "خطا در حذف کاربر", ex);
-                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = $"خطا: {ex.Message}" } }
+                });
             }
         }
-
         /// <summary>
         /// دریافت تیم‌های کاربر برای AJAX
         /// </summary>

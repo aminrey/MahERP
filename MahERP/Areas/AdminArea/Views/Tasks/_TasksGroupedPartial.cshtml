@@ -189,11 +189,12 @@
                                                                 </button>
                                                             }
                                                         }
-                                                        <a asp-action="Edit" asp-route-id="@task.Id" 
-                                                           class="btn btn-alt-primary" 
-                                                           title="ویرایش" data-bs-toggle="tooltip">
-                                                            <i class="fa fa-pencil-alt"></i>
-                                                        </a>
+                                                         <a href="#"
+                   onclick="showComingSoonNotification(event, 'ویرایش تسک')"
+                   class="btn btn-sm  btn-warning ">
+                    <i class="fa fa-pencil-alt me-2"></i>
+                    <span>ویرایش</span>
+                </a>
                                                     </div>
                                                 </td>
                                             </tr>

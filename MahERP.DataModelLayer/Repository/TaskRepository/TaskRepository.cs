@@ -279,11 +279,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     .Any(a => a.TaskId == t.Id && a.AssignedUserId == assignedUserId));
             }
 
-            // Filter by completion status
-            if (isCompleted.HasValue)
-            {
-                query = query.Where(t => (t.CompletionDate != null) == isCompleted.Value);
-            }
+   
 
             return query.OrderByDescending(t => t.CreateDate).ToList();
         }
@@ -656,7 +652,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 TaskCode = task.TaskCode,
                 CreateDate = task.CreateDate,
                 DueDate = task.DueDate,
-                CompletionDate = task.CompletionDate,
                 ManagerApprovedDate = task.ManagerApprovedDate,
                 SupervisorApprovedDate = task.SupervisorApprovedDate,
                 IsActive = task.IsActive,
@@ -1241,7 +1236,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         t.CreateDate,
                         t.StartDate,
                         t.DueDate,
-                        t.CompletionDate,
                         t.CreatorUserId,
                         t.StakeholderId,
                         t.TaskCategoryId,
@@ -1249,7 +1243,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         t.Priority,
                         t.Important,
                         t.BranchId,
-                     
+                     t.TaskAssignments, // شامل انتساب‌ها
                         // اطلاعات طرف حساب
                         StakeholderFirstName = t.Stakeholder != null ? t.Stakeholder.FirstName : null,
                         StakeholderLastName = t.Stakeholder != null ? t.Stakeholder.LastName : null,
@@ -1276,7 +1270,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     }
 
                     // تعیین رنگ و وضعیت
-                    bool isCompleted = task.CompletionDate.HasValue;
+                    bool isCompleted =  task.TaskAssignments.Any(t=> t.CompletionDate.HasValue && t.AssignedUserId == userId);
                     bool isOverdue = !isCompleted && task.DueDate.HasValue && task.DueDate < DateTime.Now;
 
                     string calendarColor = isCompleted ? "#28a745" :    // سبز برای تکمیل شده
@@ -2294,15 +2288,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 switch (filters.TaskStatus.Value)
                 {
-                    case TaskStatusFilter.Completed:
-                        query = query.Where(t => t.CompletionDate.HasValue);
-                        break;
-                    case TaskStatusFilter.InProgress:
-                        query = query.Where(t => !t.CompletionDate.HasValue && t.IsActive);
-                        break;
-                    case TaskStatusFilter.Overdue:
-                        query = query.Where(t => !t.CompletionDate.HasValue && t.DueDate.HasValue && t.DueDate < DateTime.Now);
-                        break;
+                  
                     case TaskStatusFilter.Created:
                         query = query.Where(t => t.Status == 0);
                         break;
@@ -3772,6 +3758,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     .Include(t => t.TaskCategory)
                     .Include(t => t.Stakeholder)
                     .Include(t => t.Creator)
+                    .Include(t=> t.TaskAssignments)
                     .FirstOrDefaultAsync(t => t.Id == taskId);
             }
             catch (Exception ex)
@@ -3792,6 +3779,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 var task = await _context.Tasks_Tbl
                     .Include(t => t.TaskOperations)
+                    .Include(t=> t.TaskAssignments)
                     .FirstOrDefaultAsync(t => t.Id == taskId && t.IsActive);
 
                 if (task == null)
@@ -3821,7 +3809,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     AdditionalNote = null,
                     AllOperationsCompleted = pendingOperationsCount == 0,
                     PendingOperationsCount = pendingOperationsCount,
-                    IsAlreadyCompleted = task.CompletionDate.HasValue
+                    IsAlreadyCompleted = task.TaskAssignments.Any(t=> t.AssignedUserId == userId && t.CompletionDate.HasValue)
                 };
 
                 return model;
@@ -3855,7 +3843,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     return (false, "شما به این تسک اختصاص داده نشده‌اید");
 
                 // ⭐ بررسی اینکه آیا قبلاً تکمیل شده
-                if (task.CompletionDate.HasValue)
+                if (assignment.CompletionDate.HasValue)
                 {
                     // فقط بروزرسانی گزارش در TaskAssignment
                     assignment.UserReport = model.CompletionReport;
@@ -3867,8 +3855,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 else
                 {
                     // ⭐⭐⭐ تکمیل جدید - بروزرسانی Tasks
-                    task.CompletionDate = DateTime.Now;
-                    task.Status = 2; // تکمیل شده - منتظر تایید
+                    assignment.CompletionDate = DateTime.Now;
+                    assignment.Status = 2; // تکمیل شده - منتظر تایید
                     task.LastUpdateDate = DateTime.Now;
 
                     // ⭐⭐⭐ تکمیل خودکار همه عملیات باقیمانده

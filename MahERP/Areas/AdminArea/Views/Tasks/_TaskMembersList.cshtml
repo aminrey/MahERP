@@ -1,5 +1,6 @@
 ﻿@{
     var assignments = ViewBag.Assignments as List<TaskAssignmentViewModel> ?? new List<TaskAssignmentViewModel>();
+    var taskId = ViewBag.TaskId ?? 0;
     var isCreator = ViewBag.IsCreator ?? false;
     var isManager = ViewBag.IsManager ?? false;
     var isTaskCompleted = ViewBag.IsTaskCompleted ?? false;
@@ -14,10 +15,10 @@
         @if ((isCreator || isManager) && !isTaskCompleted)
         {
             <p class="mb-3">برای شروع همکاری، اولین عضو را اضافه کنید</p>
-            <button type="button" 
-                    class="btn btn-primary" 
-                    data-toggle="modal-ajax" 
-                    href="@Url.Action("AssignUserToTaskModal", "Tasks", new { taskId = assignments.FirstOrDefault()?.TaskId })">
+            <button type="button"
+                    class="btn btn-primary"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("AssignUserToTaskModal", "Tasks", new { taskId = taskId })">
                 <i class="fa fa-user-plus me-1"></i>افزودن عضو
             </button>
         }
@@ -75,7 +76,7 @@ else
                                         }
                                     }
                                 }
-                                <div class="avatar-circle @(assignment.CompletionDate.HasValue ? "bg-success" : "bg-primary") text-white me-3" 
+                                <div class="avatar-circle @(assignment.CompletionDate.HasValue ? "bg-success" : "bg-primary") text-white me-3"
                                      style="width: 50px; height: 50px; font-size: 18px;">
                                     @initials
                                 </div>
@@ -95,12 +96,12 @@ else
                                     </small>
                                 </div>
                             </div>
-                            
+
                             @if ((isCreator || isManager) && !isTaskCompleted)
                             {
-                                <button type="button" 
-                                        class="btn btn-sm btn-outline-danger flex-shrink-0" 
-                                        data-toggle="modal-ajax" 
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger flex-shrink-0"
+                                        data-toggle="modal-ajax"
                                         href="@Url.Action("RemoveAssignmentModal", "Tasks", new { assignmentId = assignment.Id })"
                                         title="حذف از تسک">
                                     <i class="fa fa-user-minus"></i>
@@ -119,7 +120,7 @@ else
                                     <p class="fs-sm mb-0">@assignment.Description</p>
                                 </div>
                             }
-                            
+
                             <div class="d-flex justify-content-between align-items-center text-muted fs-xs">
                                 <div>
                                     <i class="fa fa-calendar-plus me-1"></i>
