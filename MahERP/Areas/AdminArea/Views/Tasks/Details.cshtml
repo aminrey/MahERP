@@ -189,7 +189,8 @@
                     <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
                         @if (isCreator || isManager)
                         {
-                            <a asp-action="Edit" asp-route-id="@Model.Id"
+                            <a href="#"
+                               onclick="showComingSoonNotification(event, 'ویرایش تسک')"
                                class="btn btn-hero btn-warning btn-lg">
                                 <i class="fa fa-pencil-alt me-2"></i>
                                 <span>ویرایش</span>
@@ -226,7 +227,6 @@
                                     <li>
                                         @if (isInMyDay)
                                         {
-                                            <!-- ⭐⭐⭐ دکمه غیرفعال با آیکون متفاوت - فقط نمایشی -->
                                             <button type="button"
                                                     class="dropdown-item disabled"
                                                     style="cursor: not-allowed; opacity: 0.6;"
@@ -245,7 +245,6 @@
                                                 <i class="fa fa-calendar-alt me-1"></i>
                                                 افزودن به روز من
                                             </button>
-                                           
                                         }
                                     </li>
                                     <li>
@@ -258,30 +257,31 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                 }
-                          
+
                                 <li>
                                     <a class="dropdown-item"
-                                       href="@Url.Action("AssignTask", new { taskId = Model.Id })"
-                                       data-toggle="modal-ajax">
+                                       href="#"
+                                       onclick="showComingSoonNotification(event, 'اختصاص کاربر')">
                                         <i class="fa fa-user-plus text-info me-2"></i>
                                         <span>اختصاص کاربر</span>
                                     </a>
                                 </li>
+
                                 @if (isAdminOrManager)
                                 {
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item"
-                                           href="@Url.Action("ToggleActiveStatus", new { id = Model.Id })"
-                                           data-toggle="modal-ajax">
+                                           href="#"
+                                           onclick="showComingSoonNotification(event, '@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")')">
                                             <i class="fa @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-2"></i>
                                             <span>@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")</span>
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item text-danger"
-                                           href="@Url.Action("Delete", new { id = Model.Id })"
-                                           data-toggle="modal-ajax">
+                                           href="#"
+                                           onclick="showComingSoonNotification(event, 'حذف تسک')">
                                             <i class="fa fa-trash-alt me-2"></i>
                                             <span>حذف تسک</span>
                                         </a>
@@ -1079,39 +1079,6 @@ function loadTaskReminders() {
         }
     </script>
 <script>
-// ========================================
-// ⭐ Notification Helper
-// ========================================
-const NotificationHelper = {
-    success: function(message) {
-        Dashmix.helpers('jq-notify', {
-            type: 'success',
-            icon: 'fa fa-check me-1',
-            message: message
-        });
-    },
-    error: function(message) {
-        Dashmix.helpers('jq-notify', {
-            type: 'danger',
-            icon: 'fa fa-times me-1',
-            message: message
-        });
-    },
-    warning: function(message) {
-        Dashmix.helpers('jq-notify', {
-            type: 'warning',
-            icon: 'fa fa-exclamation-triangle me-1',
-            message: message
-        });
-    },
-    info: function(message) {
-        Dashmix.helpers('jq-notify', {
-            type: 'info',
-            icon: 'fa fa-info me-1',
-            message: message
-        });
-    }
-};
 
 
         // ========================================

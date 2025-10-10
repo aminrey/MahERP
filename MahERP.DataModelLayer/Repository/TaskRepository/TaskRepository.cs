@@ -85,7 +85,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             var query = _context.Tasks_Tbl.AsQueryable();
 
             if (includeOperations)
-                query = query.Include(t => t.TaskOperations.Where(t=> !t.IsDeleted));
+                query = query.Include(t => t.TaskOperations.Where(t=> !t.IsDeleted)).ThenInclude(t=> t.WorkLogs);
 
             if (includeAssignments)
                 query = query.Include(t => t.TaskAssignments)
@@ -3782,6 +3782,117 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         }
 
         #endregion
+
+        /// <summary>
+        /// آماده‌سازی مودال تکمیل تسک
+        /// </summary>
+        public async Task<CompleteTaskViewModel> PrepareCompleteTaskModalAsync(int taskId, string userId)
+        {
+            try
+            {
+                var task = await _context.Tasks_Tbl
+                    .Include(t => t.TaskOperations)
+                    .FirstOrDefaultAsync(t => t.Id == taskId && t.IsActive);
+
+                if (task == null)
+                    return null;
+
+                // بررسی دسترسی کاربر
+                var hasAccess = await CanUserViewTaskAsync(userId, taskId);
+                if (!hasAccess)
+                    return null;
+
+                // بررسی اینکه آیا کاربر به تسک اختصاص داده شده
+                var isAssigned = await _context.TaskAssignment_Tbl
+                    .AnyAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
+
+                if (!isAssigned)
+                    return null;
+
+                // شمارش عملیات تکمیل نشده
+                var pendingOperationsCount = task.TaskOperations
+                    ?.Count(o => !o.IsCompleted ) ?? 0;
+
+                var model = new CompleteTaskViewModel
+                {
+                    TaskId = taskId,
+                    TaskTitle = task.Title,
+                    TaskCode = task.TaskCode,
+                    AdditionalNote = null,
+                    AllOperationsCompleted = pendingOperationsCount == 0,
+                    PendingOperationsCount = pendingOperationsCount,
+                    IsAlreadyCompleted = task.CompletionDate.HasValue
+                };
+
+                return model;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in PrepareCompleteTaskModalAsync: {ex.Message}");
+                return null;
+            }
+        }
+        /// <summary>
+        /// ثبت تکمیل تسک - نسخه اصلاح شده برای سازگاری با ساختار جدول
+        /// </summary>
+        public async Task<(bool IsSuccess, string ErrorMessage)> CompleteTaskAsync(CompleteTaskViewModel model, string userId)
+        {
+            try
+            {
+                var task = await _context.Tasks_Tbl
+                    .Include(t => t.TaskAssignments)
+                    .FirstOrDefaultAsync(t => t.Id == model.TaskId && t.IsActive);
+
+                if (task == null)
+                    return (false, "تسک یافت نشد");
+
+                // بررسی اینکه آیا کاربر به تسک اختصاص داده شده
+                var assignment = task.TaskAssignments
+                    .FirstOrDefault(a => a.AssignedUserId == userId);
+
+                if (assignment == null)
+                    return (false, "شما به این تسک اختصاص داده نشده‌اید");
+
+                // ⭐ اصلاح شده: بررسی اینکه آیا قبلاً تکمیل شده
+                if (task.CompletionDate.HasValue)
+                {
+                    // فقط بروزرسانی گزارش در TaskAssignment
+                    assignment.UserReport = model.CompletionReport;
+                    assignment.ReportDate = DateTime.Now;
+
+                    // ⭐ اصلاح: استفاده از فیلد صحیح
+                    task.LastUpdateDate = DateTime.Now;
+
+                    _context.TaskAssignment_Tbl.Update(assignment);
+                }
+                else
+                {
+                    // ⭐ تکمیل جدید - بروزرسانی Tasks
+                    task.CompletionDate = DateTime.Now;
+                    task.Status = 2; // تکمیل شده - منتظر تایید
+                    task.LastUpdateDate = DateTime.Now;
+
+                    // ⭐ بروزرسانی TaskAssignment
+                    assignment.Status = 2; // تکمیل شده
+                    assignment.CompletionDate = DateTime.Now;
+                    assignment.UserReport = model.CompletionReport;
+                    assignment.ReportDate = DateTime.Now;
+
+                    _context.TaskAssignment_Tbl.Update(assignment);
+                }
+
+               
+                _context.Tasks_Tbl.Update(task);
+                await _context.SaveChangesAsync();
+
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in CompleteTaskAsync: {ex.Message}\n{ex.StackTrace}");
+                return (false, $"خطا در ثبت تکمیل: {ex.Message}");
+            }
+        }
         #region Task History Methods Implementation
 
         /// <summary>

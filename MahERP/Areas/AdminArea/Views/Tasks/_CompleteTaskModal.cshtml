@@ -1,0 +1,151 @@
+﻿@model CompleteTaskViewModel
+@{
+    Layout = null;
+}
+
+<div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+        <form asp-controller="Tasks" asp-action="CompleteTaskPost" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="TaskId" />
+
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-check-circle me-2"></i>
+                    تکمیل تسک
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                @if (Model.IsAlreadyCompleted)
+                {
+                    <div class="alert alert-warning mb-3">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <strong>توجه:</strong> این تسک قبلاً تکمیل شده است. شما در حال بروزرسانی گزارش تکمیل هستید.
+                    </div>
+                }
+
+                <!-- اطلاعات تسک -->
+                <div class="card border-success mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fa fa-hashtag text-success me-2"></i>
+                                    <strong>کد تسک:</strong>
+                                    <span class="ms-2 text-primary">@Model.TaskCode</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fa fa-tasks text-success me-2"></i>
+                                    <strong>عنوان:</strong>
+                                    <span class="ms-2">@Model.TaskTitle</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!Model.AllOperationsCompleted && Model.PendingOperationsCount > 0)
+                        {
+                            <div class="alert alert-warning mb-0 mt-3">
+                                <i class="fa fa-exclamation-triangle me-2"></i>
+                                <strong>هشدار:</strong>
+                                <span>@Model.PendingOperationsCount عملیات هنوز تکمیل نشده است.</span>
+                                <small class="d-block mt-2">
+                                    آیا مطمئن هستید که می‌خواهید تسک را با وجود عملیات تکمیل نشده، به پایان برسانید؟
+                                </small>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- گزارش تکمیل -->
+                <div class="mb-4">
+                    <label class="form-label required-label">
+                        <i class="fa fa-file-alt text-success me-1"></i>
+                        گزارش تکمیل تسک
+                    </label>
+                    <textarea asp-for="CompletionReport"
+                              id="CompletionReportEditor"
+                              class="form-control"
+                              rows="8"
+                              placeholder="لطفاً گزارش کامل از کارهای انجام شده، نتایج، و هر نکته مهم دیگری را وارد کنید...">@Model.CompletionReport</textarea>
+                              <script>
+
+                        fulltiny('CompletionReportEditor', 'گزارش کامل کارهای انجام شده را وارد کنید...', 350);
+                    </script>
+
+                    <span asp-validation-for="CompletionReport" class="text-danger"></span>
+                    <small class="form-text text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        این گزارش برای ایجاد کننده تسک و سرپرستان قابل مشاهده خواهد بود.
+                    </small>
+                </div>
+
+                <!-- نکات مهم -->
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">
+                        <i class="fa fa-lightbulb me-2"></i>نکات مهم:
+                    </h6>
+                    <ul class="mb-0 small">
+                        <li>پس از تکمیل، تسک به وضعیت "منتظر تایید سرپرست" تغییر می‌کند</li>
+                        <li>سرپرست و ایجاد کننده تسک از تکمیل آن مطلع می‌شوند</li>
+                        <li>در صورت نیاز، تسک می‌تواند توسط مدیر یا سرپرست بازگشایی شود</li>
+                        <li>گزارش شما در تاریخچه تسک ثبت و قابل مشاهده خواهد بود</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-success" data-save="modal-ajax-save">
+                    <i class="fa fa-check me-1"></i>
+                    @(Model.IsAlreadyCompleted ? "بروزرسانی گزارش" : "تکمیل تسک")
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+   
+
+
+<style>
+    .required-label::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .alert-heading {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+
+    /* ⭐ استایل برای TinyMCE در مودال */
+    .tox-tinymce {
+        border-radius: 0.375rem;
+        border: 1px solid #ced4da;
+    }
+
+    .tox .tox-toolbar,
+    .tox .tox-toolbar__overflow,
+    .tox .tox-toolbar__primary {
+        background: #f8f9fa !important;
+    }
+
+    /* ⭐ اطمینان از RTL در TinyMCE */
+    .tox .tox-edit-area__iframe {
+        direction: rtl;
+        text-align: right;
+    }
+</style>

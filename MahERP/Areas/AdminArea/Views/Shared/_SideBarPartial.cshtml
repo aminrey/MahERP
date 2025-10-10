@@ -71,13 +71,20 @@
                         <span class="nav-main-link-badge badge bg-primary rounded-pill ms-1" id="taskBadgeCount" style="display: none;">0</span>
                     </a>
                     <ul class="nav-main-submenu">
-                        <!-- 🎯 صفحات مهم -->
-                        <li class="nav-main-item nav-submenu-separator">
+                     
+                        <!-- ⚡ عملیات سریع -->
+                        <li class="nav-main-item nav-submenu-separator mt-2">
                             <div class="nav-submenu-title">
-                                <small class="text-muted fw-semibold">صفحات اصلی</small>
+                                <small class="text-muted fw-semibold">عملیات سریع</small>
                             </div>
                         </li>
 
+                        <li class="nav-main-item">
+                            <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Tasks", "CreateNewTask") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" asp-route-AddressRouteInComingUrl="side">
+                                <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                <span class="nav-main-link-name fw-semibold">ایجاد تسک جدید</span>
+                            </a>
+                        </li>
                         <!-- همه تسک‌ها -->
                         <li class="nav-main-item">
                             <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "AllTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-ViewType="AllTasks">
@@ -85,6 +92,13 @@
                                 <span class="nav-main-link-name">همه تسک‌ها</span>
                             </a>
                         </li>
+                        <!-- 🎯 صفحات مهم -->
+                        <li class="nav-main-item nav-submenu-separator">
+                            <div class="nav-submenu-title">
+                                <small class="text-muted fw-semibold">صفحات اصلی</small>
+                            </div>
+                        </li>
+                     
 
                         <!-- تسک‌های من -->
                         <li class="nav-main-item">
@@ -127,49 +141,8 @@
                             </a>
                         </li>
 
-                        <!-- ⚡ عملیات سریع -->
-                        <li class="nav-main-item nav-submenu-separator mt-2">
-                            <div class="nav-submenu-title">
-                                <small class="text-muted fw-semibold">عملیات سریع</small>
-                            </div>
-                        </li>
-
-                        <li class="nav-main-item">
-                            <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Tasks", "CreateNewTask") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" asp-route-AddressRouteInComingUrl="side">
-                                <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                <span class="nav-main-link-name fw-semibold">ایجاد تسک جدید</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-main-item">
-                            <a class="nav-main-link" href="#" data-bs-toggle="modal" data-bs-target="#modal-advanced-search-task" onclick="loadTaskAdvancedSearchModal()">
-                                <i class="nav-main-link-icon fa fa-search text-secondary"></i>
-                                <span class="nav-main-link-name">جستجوی پیشرفته</span>
-                            </a>
-                        </li>
-
-                        <!-- 👥 مدیریت تیمی -->
-                        <li class="nav-main-item nav-submenu-separator mt-2">
-                            <div class="nav-submenu-title">
-                                <small class="text-muted fw-semibold">مدیریت تیمی</small>
-                            </div>
-                        </li>
-
-                        <li class="nav-main-item">
-                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "AssignedByMe") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="AssignedByMe">
-                                <i class="nav-main-link-icon fa fa-share-square text-info"></i>
-                                <span class="nav-main-link-name">تسک‌های واگذار شده</span>
-                                <span class="nav-main-link-badge badge bg-warning rounded-pill ms-1" id="assignedByMeCount" style="display: none;">0</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-main-item">
-                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "SupervisedTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="SupervisedTasks">
-                                <i class="nav-main-link-icon fa fa-eye text-purple"></i>
-                                <span class="nav-main-link-name">تسک‌های نظارتی</span>
-                                <span class="nav-main-link-badge badge bg-info rounded-pill ms-1" id="supervisedTasksCount" style="display: none;">0</span>
-                            </a>
-                        </li>
+                    
+                      
 
                         <!-- 📊 آمار و گزارشات -->
                         <li class="nav-main-item nav-submenu-separator mt-2">

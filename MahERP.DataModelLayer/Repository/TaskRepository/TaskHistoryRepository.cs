@@ -3,6 +3,7 @@ using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -469,7 +470,41 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             }
         }
         #endregion
+        /// <summary>
+        /// ثبت تکمیل تسک در تاریخچه - نسخه اصلاح شده
+        /// </summary>
+        public async Task LogTaskCompletedAsync(int taskId, string userId, string taskTitle, string taskCode)
+        {
+            try
+            {
+                // دریافت اطلاعات کاربر
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                var userName = user != null ? $"{user.FirstName} {user.LastName}" : "نامشخص";
 
+                // ⭐ ایجاد رکورد تاریخچه با فیلدهای صحیح
+                var history = new TaskHistory
+                {
+                    TaskId = taskId,
+                    UserId = userId,                    // ✅ اصلاح شده: UserId
+                    ActionType = 2,                     // ✅ StatusChanged (تغییر وضعیت)
+                    Title = "تکمیل تسک",
+                    Description = $"تسک «{taskTitle}» ({taskCode}) توسط {userName} تکمیل شد",
+                    OldValue = "در حال انجام",
+                    NewValue = "تکمیل شده - منتظر تایید",
+                    ActionDate = DateTime.Now,
+                    // ⭐ فیلدهای اختیاری:
+                    UserIp = GetUserIp(),
+                    UserAgent = GetUserAgent()
+                };
+
+                await _context.TaskHistory_Tbl.AddAsync(history);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in LogTaskCompletedAsync: {ex.Message}");
+            }
+        }
         #region Helper Methods
 
         /// <summary>

@@ -116,6 +116,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.ParentCategory, opt => opt.Ignore());
 
             // اضافه کردن mapping جدید برای TaskCategoryItemViewModel
+            CreateMap<OperationWorkLogViewModel, TaskOperationWorkLog>().ReverseMap();
             CreateMap<TaskCategory, TaskCategoryItemViewModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))

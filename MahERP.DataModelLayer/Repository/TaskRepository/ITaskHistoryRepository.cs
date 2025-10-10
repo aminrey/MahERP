@@ -12,7 +12,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
     public interface ITaskHistoryRepository
     {
         #region Core Methods
-
+        
         /// <summary>
         /// ثبت تغییر در تاریخچه
         /// </summary>
@@ -38,7 +38,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         Task<List<TaskHistoryViewModel>> GetRecentTaskHistoryAsync(int taskId, int take = 10);
 
         /// <summary>
-        /// حذف تاریخچه تسک (Soft Delete)
+        /// حذف تاریخچه تسک
         /// </summary>
         Task<bool> DeleteTaskHistoryAsync(int taskId);
 
@@ -52,9 +52,9 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         Task LogTaskCreatedAsync(int taskId, string userId, string taskTitle, string taskCode);
 
         /// <summary>
-        /// ثبت تکمیل تسک
+        /// ثبت تکمیل تسک - ⭐ اصلاح شده: اضافه کردن taskCode
         /// </summary>
-        Task LogTaskCompletedAsync(int taskId, string userId, string taskTitle);
+        Task LogTaskCompletedAsync(int taskId, string userId, string taskTitle, string taskCode);
 
         /// <summary>
         /// ثبت ویرایش تسک
@@ -133,6 +133,16 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         Task LogUserRemovedAsync(int taskId, string userId, string removedUserName);
 
+        /// <summary>
+        /// ثبت افزودن تسک به "روز من"
+        /// </summary>
+        Task LogTaskAddedToMyDayAsync(int taskId, string userId, string taskTitle, string taskCode, DateTime plannedDate);
+
+        /// <summary>
+        /// ثبت حذف تسک از "روز من"
+        /// </summary>
+        Task LogTaskRemovedFromMyDayAsync(int taskId, string userId, string taskTitle, string taskCode);
+
         #endregion
 
         #region Helper Methods
@@ -151,15 +161,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// دریافت متن نوع تغییر
         /// </summary>
         string GetActionTypeText(byte actionType);
-        /// <summary>
-        /// ثبت افزودن تسک به "روز من"
-        /// </summary>
-        Task LogTaskAddedToMyDayAsync(int taskId, string userId, string taskTitle, string taskCode, DateTime plannedDate);
 
-        /// <summary>
-        /// ثبت حذف تسک از "روز من"
-        /// </summary>
-        Task LogTaskRemovedFromMyDayAsync(int taskId, string userId, string taskTitle, string taskCode);
         #endregion
     }
 }

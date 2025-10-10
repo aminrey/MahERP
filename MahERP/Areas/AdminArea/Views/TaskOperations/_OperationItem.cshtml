@@ -4,6 +4,7 @@
     var isCompleted = Model.IsCompleted;
     var isStarred = Model.IsStarred;
     var hasWorkLogs = Model.WorkLogs?.Any() == true;
+    var workLogsCount = Model.WorkLogs?.Count ?? 0;
 }
 
 <div class="operation-item-card mb-2 border rounded p-3 @(isCompleted ? "bg-body-light" : "")"
@@ -102,7 +103,16 @@
                     <i class="fa fa-clipboard-check"></i>
                 </button>
                 }
-
+                @if (hasWorkLogs)
+                {
+                    <button type="button"
+                            class="btn btn-outline-primary btn-sm mb-1"
+                            data-toggle="modal-ajax"
+                            href="@Url.Action("ViewWorkLogsModal", "TaskOperations", new { operationId = Model.Id, area = "AdminArea" })"
+                            title="مشاهده لیست کارها">
+                        <i class="fa fa-list"></i>
+                    </button>
+                }
                 <button type="button"
                         class="btn btn-outline-danger btn-sm"
                         onclick="dynamicDeleteOperation(@Model.Id)"

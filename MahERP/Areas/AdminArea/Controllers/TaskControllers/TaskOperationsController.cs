@@ -405,12 +405,27 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                         recordId: result.WorkLogId?.ToString(),
                         entityType: "TaskOperationWorkLog");
 
+                    // ⭐ دریافت لیست آپدیت شده WorkLog ها
+                    var updatedWorkLogs = await _operationsRepository.GetOperationWorkLogsAsync(model.TaskOperationId, take: 5);
+
+                    // ⭐ رندر Partial View برای لیست جدید
+                    var workLogsHtml = await this.RenderViewToStringAsync("_WorkLogsList", updatedWorkLogs);
+
                     return Json(new
                     {
-                        status = "success",
+                        status = "update-view",
                         message = new[] { new { status = "success", text = "گزارش کار با موفقیت ثبت شد" } },
+                        viewList = new[]
+                        {
+                            new
+                            {
+                                elementId = "workLogsListContainer",
+                                view = new { result = workLogsHtml },
+                                appendMode = false
+                            }
+                        },
                         workLogId = result.WorkLogId,
-                        refreshPage = true
+                        totalCount = updatedWorkLogs.Count
                     });
                 }
 
@@ -736,5 +751,70 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         #endregion
+
+
+        /// <summary>
+        /// نمایش مودال لیست WorkLog ها (GET)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ViewWorkLogsModal(int operationId)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                if (!await _operationsRepository.CanUserAccessOperationAsync(operationId, userId))
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما مجاز به مشاهده این اطلاعات نیستید" } }
+                    });
+                }
+
+                var operation = await _operationsRepository.GetOperationByIdAsync(operationId, includeWorkLogs: false);
+                if (operation == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "عملیات یافت نشد" } }
+                    });
+                }
+
+                var workLogs = await _operationsRepository.GetOperationWorkLogsAsync(operationId);
+
+                var model = new OperationWorkLogViewModel
+                {
+                    TaskOperationId = operationId,
+                    OperationTitle = operation.Title,
+                    TaskTitle = operation.Task?.Title ?? "نامشخص",
+                    RecentWorkLogs = workLogs,
+                    TotalWorkLogsCount = workLogs.Count
+                };
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "TaskOperations",
+                    "ViewWorkLogsModal",
+                    $"نمایش لیست WorkLog های عملیات {operationId}");
+
+                return PartialView("_ViewWorkLogsModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "TaskOperations",
+                    "ViewWorkLogsModal",
+                    "خطا در نمایش مودال لیست",
+                    ex);
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در بارگذاری لیست" } }
+                });
+            }
+        }
     }
 }

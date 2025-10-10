@@ -1388,3 +1388,58 @@ window.showDeleteConfirmation = showDeleteConfirmation;
 window.showSuccessSwal = showSuccessSwal;
 window.showErrorSwal = showErrorSwal;
 window.showConfirmationWithInput = showConfirmationWithInput;
+
+// ========================================
+// ⭐ Notification Helper
+// ========================================
+const NotificationHelper = {
+    success: function (message) {
+        Dashmix.helpers('jq-notify', {
+            type: 'success',
+            icon: 'fa fa-check me-1',
+            message: message
+        });
+    },
+    error: function (message) {
+        Dashmix.helpers('jq-notify', {
+            type: 'danger',
+            icon: 'fa fa-times me-1',
+            message: message
+        });
+    },
+    warning: function (message) {
+        Dashmix.helpers('jq-notify', {
+            type: 'warning',
+            icon: 'fa fa-exclamation-triangle me-1',
+            message: message
+        });
+    },
+    info: function (message) {
+        Dashmix.helpers('jq-notify', {
+            type: 'info',
+            icon: 'fa fa-info me-1',
+            message: message
+        });
+    }
+};
+
+// ========================================
+// ⭐ Coming Soon Feature Notification
+// ========================================
+/**
+ * نمایش پیغام "به‌زودی" برای قابلیت‌های در حال توسعه
+ * @param {Event} event - رویداد کلیک (برای جلوگیری از رفتار پیش‌فرض)
+ * @param {string} featureName - نام قابلیت (برای نمایش در پیام)
+ */
+function showComingSoonNotification(event, featureName) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    const message = featureName
+        ? `قابلیت "${featureName}" به‌زودی اضافه خواهد شد`
+        : 'این قابلیت به‌زودی اضافه خواهد شد';
+
+    NotificationHelper.info(message);
+}

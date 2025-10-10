@@ -549,6 +549,26 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         #endregion
 
+        #region Complete Task Methods - NEW
+
+        /// <summary>
+        /// آماده‌سازی مودال تکمیل تسک
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>مدل مودال تکمیل تسک یا null در صورت عدم دسترسی</returns>
+        Task<CompleteTaskViewModel> PrepareCompleteTaskModalAsync(int taskId, string userId);
+
+        /// <summary>
+        /// ثبت تکمیل تسک
+        /// </summary>
+        /// <param name="model">مدل تکمیل تسک</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>نتیجه عملیات (موفقیت/خطا)</returns>
+        Task<(bool IsSuccess, string ErrorMessage)> CompleteTaskAsync(CompleteTaskViewModel model, string userId);
+
+        #endregion
+
     }
 }
 

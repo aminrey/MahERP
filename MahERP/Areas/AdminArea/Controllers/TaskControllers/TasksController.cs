@@ -522,6 +522,114 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
+        /// <summary>
+        /// نمایش مودال تکمیل تسک
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> CompleteTask(int id)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // دریافت اطلاعات تسک و آماده‌سازی مودال
+                var model = await _taskRepository.PrepareCompleteTaskModalAsync(id, userId);
+
+                if (model == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "تسک یافت نشد یا شما به آن دسترسی ندارید" } }
+                    });
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "CompleteTask",
+                    $"نمایش مودال تکمیل تسک {model.TaskCode}",
+                    recordId: id.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
+
+                return PartialView("_CompleteTaskModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "CompleteTask", "خطا در نمایش مودال تکمیل", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در بارگذاری مودال" } }
+                });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteTaskPost(CompleteTaskViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => new { status = "error", text = e.ErrorMessage })
+                        .ToArray();
+
+                    return Json(new
+                    {
+                        status = "validation-error",
+                        message = errors
+                    });
+                }
+
+                var userId = _userManager.GetUserId(User);
+
+                // ✅ ثبت تکمیل تسک از طریق Repository
+                var result = await _taskRepository.CompleteTaskAsync(model, userId);
+
+                if (!result.IsSuccess)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = result.ErrorMessage } }
+                    });
+                }
+
+                // ⭐ ثبت در تاریخچه
+                await _taskHistoryRepository.LogTaskCompletedAsync(
+                    model.TaskId,
+                    userId,
+                    model.TaskTitle,
+                    model.TaskCode
+                );
+
+                // ⭐ ارسال نوتیفیکیشن
+                await _taskNotificationService.NotifyTaskCompletedAsync(model.TaskId, userId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Update, "Tasks", "CompleteTask",
+                    $"تکمیل تسک {model.TaskCode} - {model.TaskTitle}",
+                    recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
+
+                // ✅ بازگرداندن response با redirect
+                return Json(new
+                {
+                    status = "redirect",
+                    message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد" } },
+                    redirectUrl = Url.Action("Details", "Tasks", new { id = model.TaskId, area = "AdminArea" })
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "CompleteTaskPost", "خطا در ثبت تکمیل تسک", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در ثبت تکمیل تسک: " + ex.Message } }
+                });
+            }
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleOperationStar(int id)

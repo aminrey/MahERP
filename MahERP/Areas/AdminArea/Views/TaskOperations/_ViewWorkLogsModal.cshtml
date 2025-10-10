@@ -1,0 +1,131 @@
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.OperationWorkLogViewModel
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">
+                <i class="fa fa-list-check me-2"></i>
+                لیست گزارش کارهای انجام شده
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+        <div class="modal-body">
+            <!-- اطلاعات عملیات -->
+            <div class="alert alert-info mb-3">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>تسک:</strong> @Model.TaskTitle
+                    </div>
+                    <div class="col-md-6">
+                        <strong>عملیات:</strong> @Model.OperationTitle
+                    </div>
+                </div>
+            </div>
+
+            <!-- لیست WorkLog ها -->
+            <div id="workLogsFullList">
+                @if (Model.RecentWorkLogs == null || !Model.RecentWorkLogs.Any())
+                {
+                    <div class="alert alert-warning text-center">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        هیچ گزارش کاری ثبت نشده است
+                    </div>
+                }
+                else
+                {
+                    <div class="timeline">
+                        @foreach (var log in Model.RecentWorkLogs)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <h6 class="mb-0">
+                                                        <i class="fa fa-user-circle me-1 text-primary"></i>
+                                                        @log.UserName
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        <i class="fa fa-calendar me-1"></i>
+                                                        @log.WorkDatePersian
+                                                        @if (!string.IsNullOrEmpty(log.WorkDatePersian))
+                                                        {
+                                                            <span> - ساعت @ConvertDateTime.ConvertMiladiToShamsi(log.WorkDate , "hh:mm:ss")</span>
+                                                        }
+                                                    </small>
+                                                </div>
+                                                @if (log.DurationMinutes.HasValue)
+                                                {
+                                                    <span class="badge bg-info">
+                                                        <i class="fa fa-clock me-1"></i>
+                                                        @log.DurationMinutes دقیقه
+                                                    </span>
+                                                }
+                                            </div>
+                                            <div class="work-description">
+                                                <p class="mb-0">@log.WorkDescription</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-1"></i>
+                بستن
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        padding-bottom: 20px;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: 0;
+        top: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 2px #007bff;
+    }
+
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 9px;
+        top: 25px;
+        bottom: -20px;
+        width: 2px;
+        background: #e9ecef;
+    }
+
+    .work-description {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 3px solid #007bff;
+    }
+</style>
