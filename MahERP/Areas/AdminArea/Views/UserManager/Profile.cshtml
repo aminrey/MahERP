@@ -408,7 +408,9 @@
                         if (response && response.status === 'success') {
                             // به‌روزرسانی تصویر پروفایل
                             $('#profileImage').attr('src', response.imagePath + '?v=' + new Date().getTime());
-                            
+                                                       
+                            $('input[name="ProfileImagePath"]').val(response.imagePath);
+
                             Swal.fire({
                                 icon: 'success',
                                 title: 'موفقیت',

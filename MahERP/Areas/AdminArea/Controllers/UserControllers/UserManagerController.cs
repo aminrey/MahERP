@@ -7,6 +7,7 @@ using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
@@ -23,6 +24,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         private readonly UserManager<AppUsers> _UserManager;
         private readonly IMapper _Mapper;
         private readonly IUserManagerRepository _UserRepository;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
         public UserManagerController(
             IUnitOfWork context, 
@@ -31,13 +33,15 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             IUserManagerRepository userrepository, // تصحیح نوع پارامتر
             PersianDateHelper persianDateHelper, 
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger )
+            ActivityLoggerService activityLogger, IWebHostEnvironment webHostEnvironment)
             : base(context, userManager, persianDateHelper, memoryCache, activityLogger , userrepository)
         {
             _Context = context;
             _UserManager = userManager;
             _Mapper = Mapper;
             _UserRepository = userrepository; // ✅ اصلاح شده
+            _webHostEnvironment = webHostEnvironment;
+
         }
 
         /// <summary>
@@ -1023,6 +1027,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                         MelliCode = currentUser.MelliCode,
                         Gender = currentUser.Gender,
                         IsActive = currentUser.IsActive,
+                        ProfileImagePath = currentUser.ProfileImagePath,
                         RegisterDate = currentUser.RegisterDate
                     };
                 }
@@ -1093,7 +1098,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                         currentUser.Province,
                         currentUser.Address,
                         currentUser.MelliCode,
-                        currentUser.Gender
+                        currentUser.Gender,
+                        currentUser.ProfileImagePath
                     };
 
                     // به‌روزرسانی اطلاعات
@@ -1107,6 +1113,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     currentUser.Province = model.Province;
                     currentUser.Address = model.Address;
                     currentUser.MelliCode = model.MelliCode;
+                    currentUser.ProfileImagePath = model.ProfileImagePath;
                     currentUser.Gender = model.Gender ?? 1;
 
                     var result = await _UserManager.UpdateAsync(currentUser);
@@ -1125,7 +1132,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                             currentUser.Province,
                             currentUser.Address,
                             currentUser.MelliCode,
-                            currentUser.Gender
+                            currentUser.Gender,
+                            currentUser.ProfileImagePath
                         };
 
                         // ثبت لاگ تغییرات
@@ -1322,67 +1330,78 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 
                 if (profileImage == null || profileImage.Length == 0)
                 {
-                    return Json(new { status = "error", message = "تصویر انتخاب نشده است" });
+                    return Json(new { status = "error", message = "فایلی انتخاب نشده است" });
                 }
 
                 // بررسی نوع فایل
                 var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-                var fileExtension = Path.GetExtension(profileImage.FileName).ToLower();
-                if (!allowedExtensions.Contains(fileExtension))
+                var extension = Path.GetExtension(profileImage.FileName).ToLower();
+                if (!allowedExtensions.Contains(extension))
                 {
-                    return Json(new { status = "error", message = "فرمت تصویر مجاز نیست. فرمت‌های مجاز: JPG, PNG, GIF" });
+                    return Json(new { status = "error", message = "فرمت تصویر مجاز نیست" });
                 }
 
-                // بررسی حجم فایل (حداکثر 5 مگابایت)
+                // بررسی حجم فایل (5MB)
                 if (profileImage.Length > 5 * 1024 * 1024)
                 {
                     return Json(new { status = "error", message = "حجم تصویر نباید بیشتر از 5 مگابایت باشد" });
                 }
 
-                // ایجاد مسیر ذخیره‌سازی
-                var uploadsFolder = Path.Combine("wwwroot", "uploads", "profiles");
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                // تولید نام یکتا برای فایل
-                var fileName = $"{currentUser.Id}_{Guid.NewGuid()}{fileExtension}";
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                // ذخیره فایل
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await profileImage.CopyToAsync(stream);
-                }
-
-                // حذف تصویر قبلی اگر وجود دارد
+                // حذف تصویر قبلی در صورت وجود
                 if (!string.IsNullOrEmpty(currentUser.ProfileImagePath))
                 {
-                    var oldImagePath = Path.Combine("wwwroot", currentUser.ProfileImagePath.TrimStart('/'));
+                    var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, currentUser.ProfileImagePath.TrimStart('/'));
                     if (System.IO.File.Exists(oldImagePath))
                     {
                         System.IO.File.Delete(oldImagePath);
                     }
                 }
 
-                // به‌روزرسانی مسیر تصویر در دیتابیس
-                var relativePath = $"/uploads/profiles/{fileName}";
+                // ایجاد مسیر ذخیره‌سازی
+                var uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "profiles");
+                if (!Directory.Exists(uploadFolder))
+                {
+                    Directory.CreateDirectory(uploadFolder);
+                }
+
+                // ایجاد نام فایل یکتا
+                var uniqueFileName = $"{currentUser.Id}_{Guid.NewGuid()}{extension}";
+                var filePath = Path.Combine(uploadFolder, uniqueFileName);
+
+                // ذخیره فایل
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await profileImage.CopyToAsync(fileStream);
+                }
+
+                // به‌روزرسانی مسیر در دیتابیس
+                var relativePath = $"/uploads/profiles/{uniqueFileName}";
                 currentUser.ProfileImagePath = relativePath;
-                await _UserManager.UpdateAsync(currentUser);
 
-                // ثبت لاگ
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Edit,
-                    "UserManager",
-                    "UploadProfileImage",
-                    $"آپلود تصویر پروفایل: {currentUser.FirstName} {currentUser.LastName}",
-                    recordId: currentUser.Id,
-                    entityType: "AppUsers",
-                    recordTitle: $"{currentUser.FirstName} {currentUser.LastName}"
-                );
+                var result = await _UserManager.UpdateAsync(currentUser);
 
-                return Json(new { status = "success", message = "تصویر پروفایل با موفقیت آپلود شد", imagePath = relativePath });
+                if (result.Succeeded)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Edit,
+                        "UserManager",
+                        "UploadProfileImage",
+                        $"آپلود تصویر پروفایل: {currentUser.FirstName} {currentUser.LastName}",
+                        recordId: currentUser.Id
+                    );
+
+                    return Json(new { status = "success", message = "تصویر با موفقیت آپلود شد", imagePath = relativePath });
+                }
+                else
+                {
+                    // حذف فایل در صورت خطا
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+
+                    return Json(new { status = "error", message = "خطا در ذخیره تصویر در دیتابیس" });
+                }
             }
             catch (Exception ex)
             {
@@ -1393,7 +1412,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     ex
                 );
 
-                return Json(new { status = "error", message = "خطا در آپلود تصویر" });
+                return Json(new { status = "error", message = $"خطا در آپلود تصویر: {ex.Message}" });
             }
         }
     }

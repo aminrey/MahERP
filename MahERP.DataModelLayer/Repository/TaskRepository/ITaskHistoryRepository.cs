@@ -171,5 +171,15 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             string taskTitle,
             string taskCode);
         #endregion
+        /// <summary>
+        /// ثبت گزارش کار روی تسک (سطح کلی - بدون عملیات)
+        /// </summary>
+
+      Task LogTaskWorkLogAddedAsync(
+        int taskId,
+        string userId,
+        int workLogId,
+        string workDescription,
+        int? durationMinutes = null);
     }
 }

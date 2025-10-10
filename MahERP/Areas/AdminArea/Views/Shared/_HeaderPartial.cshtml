@@ -33,7 +33,7 @@
                         data-bs-toggle="dropdown" id="page-header-user-dropdown" type="button">
                     <!-- ⭐ Avatar Image -->
                     <img alt="تصویر پروفایل" class="img-avatar img-avatar32 img-avatar-thumb d-none d-sm-inline-block me-1"
-                         src="/assets/media/avatars/avatar0.jpg"
+                         src=" @(!string.IsNullOrEmpty(currentUser.ProfileImagePath) ? currentUser.ProfileImagePath : " /assets/media/avatars/avatar0.jpg")"
                          style="border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);" />
 
                     <!-- ⭐ User Icon for mobile -->
@@ -50,7 +50,7 @@
                     <div class="rounded-top fw-semibold text-center p-3 border-bottom bg-primary-dark text-white">
                         <div class="mb-2">
                             <img alt="تصویر پروفایل" class="img-avatar img-avatar48 img-avatar-thumb"
-                                 src="/assets/media/avatars/avatar0.jpg"
+                                 src=" @(!string.IsNullOrEmpty(currentUser.ProfileImagePath) ? currentUser.ProfileImagePath : " /assets/media/avatars/avatar0.jpg")"
                                  style="border: 3px solid rgba(255,255,255,0.3);" />
                         </div>
 
@@ -116,7 +116,7 @@
                         </a>
 
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "UserManager", "Settings") ? "active" : "")"
-                           asp-area="AdminArea" asp-controller="UserManager" asp-action="Settings">
+                           onclick="showComingSoonNotification(event, 'تنظیمات کاربری')" href="#">
                             <i class="fa fa-fw fa-cog me-2 text-info"></i>
                             <div>
                                 <div class="fw-semibold">تنظیمات</div>
@@ -126,14 +126,7 @@
 
                         <div class="dropdown-divider"></div>
 
-                        <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "Tasks", "MyTasks") ? "active" : "")"
-                           asp-area="AdminArea" asp-controller="Tasks" asp-action="MyTasks">
-                            <i class="fa fa-fw fa-tasks me-2 text-warning"></i>
-                            <div>
-                                <div class="fw-semibold">تسک‌های من</div>
-                                <div class="fs-xs text-muted">مدیریت تسک‌های شخصی</div>
-                            </div>
-                        </a>
+                      
 
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")"
                            asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
@@ -143,24 +136,6 @@
                                 <div class="fs-xs text-muted">یادآوری‌های فعال</div>
                             </div>
                         </a>
-                    </div>
-
-                    <!-- ⭐ Quick Stats -->
-                    <div class="p-2 border-top border-bottom bg-body-light">
-                        <div class="row text-center">
-                            <div class="col-4">
-                                <div class="fs-lg fw-bold text-primary" id="userStatsMyTasks">-</div>
-                                <div class="fs-xs text-muted">تسک‌های من</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="fs-lg fw-bold text-warning" id="userStatsReminders">-</div>
-                                <div class="fs-xs text-muted">یادآوری‌ها</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="fs-lg fw-bold text-info" id="userStatsNotifications">-</div>
-                                <div class="fs-xs text-muted">نوتیف‌ها</div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- ⭐ Logout Section -->

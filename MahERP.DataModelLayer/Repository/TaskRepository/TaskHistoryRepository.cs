@@ -538,7 +538,28 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             }
         }
         #region Helper Methods
+        /// <summary>
+        /// ثبت گزارش کار روی تسک (سطح کلی)
+        /// </summary>
+        public async Task LogTaskWorkLogAddedAsync(
+            int taskId,
+            string userId,
+            int workLogId,
+            string workDescription,
+            int? durationMinutes = null)
+        {
+            var durationText = durationMinutes.HasValue ? $" ({durationMinutes} دقیقه)" : "";
 
+            await LogHistoryAsync(
+                taskId,
+                userId,
+                TaskHistoryActionType.TaskWorkLogAdded, // ⭐ استفاده از enum جدید
+                "ثبت گزارش کار روی تسک",
+                $"کاربر گزارش کار جدیدی ثبت کرد: {workDescription}{durationText}",
+                workLogId,
+                "TaskWorkLog"
+            );
+        }
         /// <summary>
         /// دریافت آیکون برای نوع تغییر
         /// </summary>

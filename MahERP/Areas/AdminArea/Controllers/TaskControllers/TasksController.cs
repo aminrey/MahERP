@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using TaskWorkLogViewModel = MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskWorkLogViewModel;
 
 namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
@@ -2651,6 +2652,182 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 });
             }
         }
+
+
+        #endregion
+
+        #region Task Work Log
+
+        /// <summary>
+        /// مودال ثبت کار انجام شده روی تسک
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> LogTaskWorkModal(int taskId)
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                // ✅ استفاده از Repository به جای دسترسی مستقیم به DbContext
+                var model = await _taskRepository.PrepareLogTaskWorkModalAsync(taskId, currentUserId);
+
+                if (model == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "شما عضو این تسک نیستید یا تسک یافت نشد"
+                    });
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "LogTaskWorkModal",
+                    $"نمایش مودال ثبت کار برای تسک {model.TaskCode}",
+                    recordId: taskId.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: model.TaskTitle);
+
+                return PartialView("_LogTaskWorkModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "LogTaskWorkModal", "خطا در نمایش مودال ثبت کار", ex);
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در بارگذاری مودال"
+                });
+            }
+        }
+
+        /// <summary>
+        /// ثبت کار انجام شده روی تسک
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LogTaskWork(TaskWorkLogViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new
+                {
+                    success = false,
+                    status = "validation-error",
+                    message = new[] {
+                new {
+                    status = "error",
+                    text = "اطلاعات وارد شده معتبر نیست"
+                }
+            }
+                });
+            }
+
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            // ✅ استفاده از Repository
+            var result = await _taskRepository.AddTaskWorkLogAsync(
+                model.TaskId,
+                currentUserId,
+                model.WorkDescription,
+                model.DurationMinutes,
+                model.ProgressPercentage
+            );
+
+            if (result.Success)
+            {
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Tasks",
+                    "LogTaskWork",
+                    $"ثبت گزارش کار برای تسک {model.TaskId}",
+                    recordId: model.TaskId.ToString(),
+                    entityType: "Tasks");
+
+                return Json(new
+                {
+                    success = true,
+                    status = "success",
+                    message = new[] {
+                new {
+                    status = "success",
+                    text = result.Message
+                }
+            }
+                });
+            }
+
+            return Json(new
+            {
+                success = false,
+                status = "error",
+                message = new[] {
+            new {
+                status = "error",
+                text = result.Message
+            }
+        }
+            });
+        }
+
+        /// <summary>
+        /// مودال نمایش لیست گزارش کارهای یک تسک
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ViewTaskWorkLogsModal(int taskId)
+        {
+            try
+            {
+                // ✅ استفاده از Repository
+                var workLogs = await _taskRepository.GetTaskWorkLogsAsync(taskId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "ViewTaskWorkLogsModal",
+                    $"نمایش لیست گزارش کارهای تسک {taskId}",
+                    recordId: taskId.ToString(),
+                    entityType: "Tasks");
+
+                return PartialView("_TaskWorkLogsModal", workLogs);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "ViewTaskWorkLogsModal", "خطا در نمایش لیست گزارش کارها", ex);
+                return PartialView("_TaskWorkLogsModal", new List<TaskWorkLogViewModel>());
+            }
+        }
+
+        #endregion
+        #region Task Focus
+
+        /// <summary>
+        /// تنظیم فوکوس روی تسک
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> SetTaskFocus(int taskId)
+        {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            var result = await _taskRepository.SetTaskFocusAsync(taskId, currentUserId);
+
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        /// <summary>
+        /// حذف فوکوس از تسک
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> RemoveTaskFocus(int taskId)
+        {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            var result = await _taskRepository.RemoveTaskFocusAsync(taskId, currentUserId);
+
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
         #endregion
     }
 }

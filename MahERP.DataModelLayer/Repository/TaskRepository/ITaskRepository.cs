@@ -411,7 +411,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         Task<TaskAssignment> GetTaskAssignmentForPersonalDatesAsync(int taskId, string userId);
 
         /// <summary>
-        /// دریافت انتصاب تسک بر اساس شناسه انتصاب برای تنظیم تاریخ‌های شخصی
+        /// دریافت انتصاب تسک بر اساس شناسه انتساب برای تنظیم تاریخ‌های شخصی
         /// </summary>
         Task<TaskAssignment> GetTaskAssignmentByIdForPersonalDatesAsync(int assignmentId, string userId);
 
@@ -582,6 +582,72 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// غیرفعال کردن یادآوری‌های یک تسک
         /// </summary>
         Task<bool> DeactivateAllTaskRemindersAsync(int taskId);
+
+        #endregion
+
+        #region Task Work Log Management - ⭐ جدید اضافه شده
+
+        /// <summary>
+        /// ثبت گزارش کار انجام شده روی تسک (سطح کلی تسک)
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="userId">شناسه کاربر ثبت‌کننده</param>
+        /// <param name="workDescription">توضیحات کار انجام شده</param>
+        /// <param name="durationMinutes">مدت زمان کار (اختیاری)</param>
+        /// <param name="progressPercentage">درصد پیشرفت (اختیاری)</param>
+        /// <returns>موفقیت، پیام، و شناسه WorkLog</returns>
+        Task<(bool Success, string Message, int? WorkLogId)> AddTaskWorkLogAsync(
+            int taskId,
+            string userId,
+            string workDescription,
+            int? durationMinutes = null,
+            int? progressPercentage = null);
+
+        /// <summary>
+        /// دریافت لیست گزارش کارهای یک تسک
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="take">تعداد رکورد (0 = همه)</param>
+        /// <returns>لیست گزارش کارها</returns>
+        Task<List<TaskWorkLogViewModel>> GetTaskWorkLogsAsync(int taskId, int take = 0);
+
+        #endregion
+
+        #region Task Focus Management - ⭐ جدید اضافه شده
+
+        /// <summary>
+        /// تنظیم فوکوس کاربر روی یک تسک (فقط یک تسک می‌تواند فوکوس باشد)
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>موفقیت و پیام</returns>
+        Task<(bool Success, string Message)> SetTaskFocusAsync(int taskId, string userId);
+
+        /// <summary>
+        /// حذف فوکوس از یک تسک
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>موفقیت و پیام</returns>
+        Task<(bool Success, string Message)> RemoveTaskFocusAsync(int taskId, string userId);
+
+        /// <summary>
+        /// دریافت شناسه تسک فوکوس شده کاربر
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>شناسه تسک فوکوس شده یا null</returns>
+        Task<int?> GetUserFocusedTaskIdAsync(string userId);
+
+        #endregion
+        #region Task Work Log Management
+
+        /// <summary>
+        /// آماده‌سازی مودال ثبت کار انجام شده روی تسک
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>ViewModel برای مودال یا null در صورت عدم دسترسی</returns>
+        Task<TaskWorkLogViewModel?> PrepareLogTaskWorkModalAsync(int taskId, string userId);
 
         #endregion
     }

@@ -76,7 +76,7 @@ namespace MahERP.DataModelLayer
         public DbSet<TaskViewPermission> TaskViewPermission_Tbl { get; set; }
         public DbSet<TaskOperationWorkLog> TaskOperationWorkLog_Tbl { get; set; }
         public DbSet<TaskHistory> TaskHistory_Tbl { get; set; }
-
+        public DbSet<TaskWorkLog> TaskWorkLog_Tbl { get; set; }
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
         public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }
@@ -779,7 +779,19 @@ namespace MahERP.DataModelLayer
                 .WithMany()
                 .HasForeignKey(t => t.TaskCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+            // ⭐ TaskMyDay relationships
 
+            modelBuilder.Entity<TaskMyDay>()
+    .HasOne(tmd => tmd.TaskAssignment)
+    .WithMany(ta => ta.MyDayRecords)
+    .HasForeignKey(tmd => tmd.TaskAssignmentId)
+    .OnDelete(DeleteBehavior.Cascade); // اگر Assignment حذف شد، MyDay هم حذف شود
+
+            // ⭐ یکتا بودن: هر TaskAssignment در هر تاریخ فقط یک بار
+            modelBuilder.Entity<TaskMyDay>()
+                .HasIndex(tmd => new { tmd.TaskAssignmentId, tmd.PlannedDate })
+                .IsUnique()
+                .HasDatabaseName("IX_TaskMyDay_Assignment_Date");
             // TaskTemplate relationships
             modelBuilder.Entity<TaskTemplate>()
                 .HasOne(tt => tt.Category)

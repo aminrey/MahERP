@@ -521,7 +521,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
         }
 
         /// <summary>
-        /// تبدیل Entity به ViewModel - اصلاح شده
+        /// تبدیل Entity به ViewModel - اصلاح شده برای استفاده از TaskAssignment
         /// </summary>
         private TaskViewModel MapToViewModel(Tasks task, string? currentUserId = null)
         {
@@ -550,7 +550,6 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 Important = task.Important,
                 Status = task.Status,
 
-                // ⭐⭐⭐ اصلاح شده: اضافه کردن CompletionDate
                 AssignmentsTaskUser = assignments.Select(a => new TaskAssignmentViewModel
                 {
                     Id = a.Id,
@@ -559,30 +558,43 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                     AssignedUserName = $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}",
                     AssignerUserId = a.AssignerUserId,
                     AssignDate = a.AssignmentDate,
-                    CompletionDate = a.CompletionDate // ⭐⭐⭐ اضافه شده
+                    CompletionDate = a.CompletionDate
                 }).ToList()
             };
 
-            // ⭐ بررسی "روز من"
+            // ⭐ بررسی "روز من" و فوکوس برای کاربر فعلی
             if (!string.IsNullOrEmpty(currentUserId))
             {
-                taskViewModel.IsInMyDay = _context.TaskMyDay_Tbl
-                    .AsNoTracking()
-                    .Any(tmd => tmd.TaskId == task.Id &&
-                               tmd.UserId == currentUserId &&
-                               tmd.IsActive);
-
-                // ⭐⭐⭐ اضافه شده: تعیین CompletionDate برای کاربر فعلی
+                // ⭐⭐⭐ اصلاح شده: بررسی IsInMyDay از طریق TaskAssignment
                 var currentUserAssignment = assignments.FirstOrDefault(a => a.AssignedUserId == currentUserId);
+
                 if (currentUserAssignment != null)
                 {
+                    // بررسی وجود رکورد در TaskMyDay برای این Assignment
+                    taskViewModel.IsInMyDay = _context.TaskMyDay_Tbl
+                        .AsNoTracking()
+                        .Any(tmd => tmd.TaskAssignmentId == currentUserAssignment.Id &&
+                                   !tmd.IsRemoved &&
+                                   tmd.PlannedDate.Date == DateTime.Now.Date); // ⭐ فقط امروز
+
+                    // بررسی IsFocused از TaskAssignment
+                    taskViewModel.IsFocused = currentUserAssignment.IsFocused;
                     taskViewModel.CompletionDate = currentUserAssignment.CompletionDate;
+                }
+                else
+                {
+                    // کاربر فعلی عضو این تسک نیست
+                    taskViewModel.IsInMyDay = false;
+                    taskViewModel.IsFocused = false;
                 }
             }
 
             return taskViewModel;
         }
 
+        /// <summary>
+        /// تبدیل Entity به ViewModel (نسخه Async) - اصلاح شده
+        /// </summary>
         private async Task<TaskViewModel> MapToViewModelAsync(Tasks task, string? currentUserId = null)
         {
             var assignments = await _context.TaskAssignment_Tbl
@@ -611,7 +623,6 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 Important = task.Important,
                 Status = task.Status,
 
-                // ⭐⭐⭐ اصلاح شده: اضافه کردن CompletionDate
                 AssignmentsTaskUser = assignments.Select(a => new TaskAssignmentViewModel
                 {
                     Id = a.Id,
@@ -620,24 +631,34 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                     AssignedUserName = $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}",
                     AssignerUserId = a.AssignerUserId,
                     AssignDate = a.AssignmentDate,
-                    CompletionDate = a.CompletionDate // ⭐⭐⭐ اضافه شده
+                    CompletionDate = a.CompletionDate
                 }).ToList()
             };
 
-            // ⭐ بررسی "روز من"
+            // ⭐ بررسی "روز من" و فوکوس برای کاربر فعلی (نسخه Async)
             if (!string.IsNullOrEmpty(currentUserId))
             {
-                taskViewModel.IsInMyDay = await _context.TaskMyDay_Tbl
-                    .AsNoTracking()
-                    .AnyAsync(tmd => tmd.TaskId == task.Id &&
-                                    tmd.UserId == currentUserId &&
-                                    tmd.IsActive);
-
-                // ⭐⭐⭐ اضافه شده: تعیین CompletionDate برای کاربر فعلی
+                // ⭐⭐⭐ اصلاح شده: بررسی IsInMyDay از طریق TaskAssignment
                 var currentUserAssignment = assignments.FirstOrDefault(a => a.AssignedUserId == currentUserId);
+
                 if (currentUserAssignment != null)
                 {
+                    // بررسی وجود رکورد در TaskMyDay برای این Assignment (نسخه Async)
+                    taskViewModel.IsInMyDay = await _context.TaskMyDay_Tbl
+                        .AsNoTracking()
+                        .AnyAsync(tmd => tmd.TaskAssignmentId == currentUserAssignment.Id &&
+                                        !tmd.IsRemoved &&
+                                        tmd.PlannedDate.Date == DateTime.Now.Date); // ⭐ فقط امروز
+
+                    // بررسی IsFocused از TaskAssignment
+                    taskViewModel.IsFocused = currentUserAssignment.IsFocused;
                     taskViewModel.CompletionDate = currentUserAssignment.CompletionDate;
+                }
+                else
+                {
+                    // کاربر فعلی عضو این تسک نیست
+                    taskViewModel.IsInMyDay = false;
+                    taskViewModel.IsFocused = false;
                 }
             }
 

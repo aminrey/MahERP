@@ -1,0 +1,44 @@
+﻿@model AddToMyDayViewModel
+
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <form asp-action="AddToMyDay" asp-controller="MyDayTask" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="TaskAssignmentId" />
+
+            <div class="block block-rounded mb-0">
+                <div class="block-header bg-primary text-white">
+                    <h3 class="block-title text-white">
+                        <i class="fa fa-calendar-plus me-2"></i>افزودن به روز من
+                    </h3>
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal">
+                        <i class="fa fa-times text-white"></i>
+                    </button>
+                </div>
+
+                <div class="block-content">
+                    <div class="mb-3">
+                        <label asp-for="PlannedDate" class="form-label"></label>
+                        <input asp-for="PlannedDate" type="date" class="form-control" />
+                        <span asp-validation-for="PlannedDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PlanNote" class="form-label"></label>
+                        <textarea asp-for="PlanNote" class="form-control" rows="3" 
+                                  placeholder="مثال: شروع از ساعت 10 صبح"></textarea>
+                    </div>
+                </div>
+
+                <div class="block-content block-content-full text-end border-top">
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                        انصراف
+                    </button>
+                    <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i>افزودن
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

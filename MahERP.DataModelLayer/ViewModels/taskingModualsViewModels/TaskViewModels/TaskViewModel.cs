@@ -342,7 +342,22 @@ public class TaskViewModel
     /// </summary>
     public string UserTeamAssignmentsJson { get; set; }
 
-}
+        /// <summary>
+        /// آیا این تسک فوکوس کاربر جاری است؟
+        /// </summary>
+        public bool? IsFocused { get; set; }
+
+        /// <summary>
+        /// تاریخ فوکوس شدن
+        /// </summary>
+        public DateTime? FocusedDate { get; set; }
+
+        /// <summary>
+        /// لیست گزارش کارهای انجام شده روی تسک
+        /// </summary>
+        public List<TaskWorkLogViewModel> WorkLogs { get; set; } = new List<TaskWorkLogViewModel>();
+
+    }
 
 
 /// <summary>
@@ -410,7 +425,17 @@ public class TaskAssignmentViewModel
     /// ⭐ متد کمکی: آیا این یک assignment واقعی است؟ (نه self-assignment)
     /// </summary>
     public bool IsActualAssignment => !IsSelfAssignment && !string.IsNullOrEmpty(AssignedUserId);
-}
+        /// <summary>
+        /// آیا این تسک در حال حاضر فوکوس کاربر است؟
+        /// فقط یک تسک از تسک‌های کاربر می‌تواند فوکوس باشد
+        /// </summary>
+        public bool IsFocused { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ فوکوس شدن تسک
+        /// </summary>
+        public DateTime? FocusedDate { get; set; }
+    }
 
 public class TaskCategoryViewModel
 {

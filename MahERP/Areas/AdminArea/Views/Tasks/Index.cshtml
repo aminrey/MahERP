@@ -3,32 +3,171 @@
     ViewData["Title"] = "مدیریت تسک‌ها";
 }
 
-<!-- صفحه اصلی مدیریت تسک‌ها با فیلترهای آماده -->
-<div class="content">
-    <!-- Header Section -->
-    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center py-2">
-        <div class="flex-grow-1 mb-1 mb-md-0">
-            <h1 class="h3 fw-bold mb-1">
-                مدیریت تسک‌ها
-            </h1>
-            <p class="text-muted mb-0">
-                نمایش و مدیریت تسک‌های سازمان
-            </p>
+<!-- Hero Section - بنر مدرن -->
+<div class="hero-section position-relative overflow-hidden">
+    <!-- Background Image با Overlay -->
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100">
+        <img src="~/assets/media/photos/photo21.jpg" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+
+        <!-- Gradient Overlay -->
+        <div class="bg-black-75 position-absolute top-0 start-0 w-100 h-100"></div>
+
+        <!-- Animated Pattern -->
+        <div class="hero-pattern position-absolute top-0 start-0 w-100 h-100">
+            <svg class="w-100 h-100 opacity-10" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="hero-pattern-tasks" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <circle cx="30" cy="30" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="60" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="60" r="2" fill="currentColor" class="text-white" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hero-pattern-tasks)" />
+            </svg>
         </div>
-        
-        <!-- Action Buttons -->
-        <div class="mt-3 mt-md-0">
-            <div class="btn-group" role="group">
-                <a asp-action="CreateNewTask" class="btn btn-success">
-                    <i class="fa fa-plus me-1"></i> تسک جدید
-                </a>
-                <a asp-action="TaskCalendar" class="btn btn-outline-primary">
-                    <i class="fa fa-calendar me-1"></i> تقویم
-                </a>
-                <button type="button" class="btn btn-outline-secondary" 
-                        data-bs-toggle="modal" data-bs-target="#advancedFiltersModal">
-                    <i class="fa fa-filter me-1"></i> فیلترهای پیشرفته
-                </button>
+
+        <!-- Floating Shapes -->
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+
+    <div class="content content-full position-relative" style="z-index: 10;">
+        <div class="py-4">
+            <!-- Header Section -->
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-start gap-3">
+                        <!-- Status Icon -->
+                        <div class="flex-shrink-0">
+                            <div class="hero-status-icon status-primary">
+                                <div class="icon-wrapper">
+                                    <i class="fa fa-tasks fa-2x"></i>
+                                </div>
+                                <div class="status-label">مدیریت</div>
+                            </div>
+                        </div>
+
+                        <!-- Title & Subtitle -->
+                        <div class="flex-grow-1">
+                            <div class="hero-title-wrapper">
+                                <h1 class="hero-title text-white mb-2">
+                                    <i class="fa fa-clipboard-list me-2"></i>مدیریت تسک‌ها
+                                </h1>
+                                <div class="hero-subtitle d-flex flex-wrap align-items-center gap-2">
+                                    <span class="badge badge-modern bg-white text-dark px-3 py-2 rounded-pill">
+                                        <i class="fa fa-list me-1"></i>
+                                        <span class="fw-bold">@Model.FilterResult.TotalCount</span>
+                                        <span class="ms-1">تسک</span>
+                                    </span>
+                                    <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                    <span class="text-white-75">نمایش و مدیریت تسک‌های سازمان</span>
+                                </div>
+                            </div>
+
+                            <!-- Quick Stats در بنر -->
+                            <div class="hero-stats mt-3">
+                                <div class="row g-2">
+                                    <div class="col-6 col-md-auto">
+                                        <div class="stat-card stat-card-sm">
+                                            <div class="stat-icon">
+                                                <i class="fa fa-chart-line"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <div class="stat-label">پیشرفت کلی</div>
+                                                <div class="stat-value">
+                                                    @if (Model.FilterResult.TotalCount > 0)
+                                                    {
+                                                        var completionRate = (int)((double)Model.Statistics.CompletedTasks / Model.FilterResult.TotalCount * 100);
+                                                        <span>@completionRate<span class="stat-unit">%</span></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>0<span class="stat-unit">%</span></span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-auto">
+                                        <div class="stat-card stat-card-sm">
+                                            <div class="stat-icon">
+                                                <i class="fa fa-check-circle"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <div class="stat-label">تکمیل شده</div>
+                                                <div class="stat-value">@Model.Statistics.CompletedTasks</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-auto">
+                                        <div class="stat-card stat-card-sm stat-warning">
+                                            <div class="stat-icon">
+                                                <i class="fa fa-clock"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <div class="stat-label">در حال انجام</div>
+                                                <div class="stat-value">@Model.Statistics.InProgressTasks</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-auto">
+                                        <div class="stat-card stat-card-sm stat-danger">
+                                            <div class="stat-icon">
+                                                <i class="fa fa-exclamation-triangle"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <div class="stat-label">عقب افتاده</div>
+                                                <div class="stat-value">@Model.Statistics.OverdueTasks</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    <!-- Breadcrumb -->
+                    <nav class="mb-3" aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
+                            <li class="breadcrumb-item">
+                                <a asp-area="AdminArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
+                                    <i class="fa fa-home me-1"></i>داشبورد
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
+                                    تسک‌ها
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active text-white">لیست تسک‌ها</li>
+                        </ol>
+                    </nav>
+                    <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
+                        <a asp-action="CreateNewTask" class="btn btn-hero btn-success btn-lg">
+                            <i class="fa fa-plus me-2"></i>
+                            <span>تسک جدید</span>
+                        </a>
+                        <a asp-action="TaskCalendar" class="btn btn-hero btn-light btn-lg">
+                            <i class="fa fa-calendar me-2"></i>
+                            <span class="d-none d-md-inline">تقویم</span>
+                        </a>
+                        <button type="button" 
+                                class="btn btn-hero btn-light btn-lg"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#advancedFiltersModal">
+                            <i class="fa fa-filter me-2"></i>
+                            <span class="d-none d-md-inline">فیلترها</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

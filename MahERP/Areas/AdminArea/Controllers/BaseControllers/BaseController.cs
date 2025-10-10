@@ -83,6 +83,7 @@ namespace MahERP.Areas.AdminArea.Controllers.BaseControllers
                                 CompanyName = userInfo.CompanyName,
                                 PositionName = userInfo.PositionName ?? "کارمند",
                                 City = userInfo.City,
+                                 userInfo.ProfileImagePath,
                                 Province = userInfo.Province
                             };
 

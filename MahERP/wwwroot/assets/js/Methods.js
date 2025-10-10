@@ -124,3 +124,149 @@ async function quickAddToMyDay(taskId, taskTitle = null) {
 
 // ⭐ Expose به window برای استفاده global
 window.quickAddToMyDay = quickAddToMyDay;
+
+// ========================================
+// ⭐ تنظیم فوکوس - اصلاح شده
+// ========================================
+function setTaskFocus(taskId) {
+    Swal.fire({
+        title: 'تنظیم فوکوس',
+        text: 'آیا میخواهید این تسک را به عنوان فوکوس اصلی خود انتخاب کنید؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'بله، تنظیم کن',
+        cancelButtonText: 'انصراف',
+        customClass: {
+            confirmButton: 'btn btn-success',
+            cancelButton: 'btn btn-secondary'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/AdminArea/Tasks/SetTaskFocus', // ⭐ URL استاتیک
+                type: 'POST',
+                data: {
+                    taskId: taskId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        // نمایش پیام موفقیت
+                        if (typeof SendResposeMessage === 'function') {
+                            SendResposeMessage(response.message);
+                        } else if (typeof NotificationHelper !== 'undefined') {
+                            NotificationHelper.success(response.message || 'تسک با موفقیت به عنوان فوکوس تنظیم شد');
+                        } else {
+                            Swal.fire({
+                                title: 'موفق!',
+                                text: response.message || 'تسک با موفقیت به عنوان فوکوس تنظیم شد',
+                                icon: 'success',
+                                confirmButtonText: 'باشه',
+                                timer: 2000
+                            });
+                        }
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        // نمایش پیام خطا
+                        if (typeof SendResposeMessage === 'function') {
+                            SendResposeMessage(response.message);
+                        } else if (typeof NotificationHelper !== 'undefined') {
+                            NotificationHelper.error(response.message || 'خطا در تنظیم فوکوس');
+                        } else {
+                            Swal.fire({
+                                title: 'خطا',
+                                text: response.message || 'خطا در تنظیم فوکوس',
+                                icon: 'error',
+                                confirmButtonText: 'باشه'
+                            });
+                        }
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Error in setTaskFocus:', xhr);
+
+                    if (typeof handleAjaxError === 'function') {
+                        handleAjaxError(xhr);
+                    } else if (typeof NotificationHelper !== 'undefined') {
+                        NotificationHelper.error('خطا در ارتباط با سرور');
+                    } else {
+                        Swal.fire({
+                            title: 'خطا',
+                            text: 'خطا در ارتباط با سرور',
+                            icon: 'error',
+                            confirmButtonText: 'باشه'
+                        });
+                    }
+                }
+            });
+        }
+    });
+}
+
+// ========================================
+// ⭐ حذف فوکوس - اصلاح شده
+// ========================================
+function removeTaskFocus(taskId) {
+    $.ajax({
+        url: '/AdminArea/Tasks/RemoveTaskFocus', // ⭐ URL استاتیک
+        type: 'POST',
+        data: {
+            taskId: taskId,
+            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+        },
+        success: function (response) {
+            if (response.success) {
+                // نمایش پیام موفقیت
+                if (typeof SendResposeMessage === 'function') {
+                    SendResposeMessage(response.message);
+                } else if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.success(response.message || 'فوکوس با موفقیت حذف شد');
+                } else {
+                    Swal.fire({
+                        title: 'موفق!',
+                        text: response.message || 'فوکوس با موفقیت حذف شد',
+                        icon: 'success',
+                        confirmButtonText: 'باشه',
+                        timer: 2000
+                    });
+                }
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                // نمایش پیام خطا
+                if (typeof SendResposeMessage === 'function') {
+                    SendResposeMessage(response.message);
+                } else if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.error(response.message || 'خطا در حذف فوکوس');
+                } else {
+                    Swal.fire({
+                        title: 'خطا',
+                        text: response.message || 'خطا در حذف فوکوس',
+                        icon: 'error',
+                        confirmButtonText: 'باشه'
+                    });
+                }
+            }
+        },
+        error: function (xhr) {
+            console.error('Error in removeTaskFocus:', xhr);
+
+            if (typeof handleAjaxError === 'function') {
+                handleAjaxError(xhr);
+            } else if (typeof NotificationHelper !== 'undefined') {
+                NotificationHelper.error('خطا در ارتباط با سرور');
+            } else {
+                Swal.fire({
+                    title: 'خطا',
+                    text: 'خطا در ارتباط با سرور',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+            }
+        }
+    });
+}
+
+// ⭐ Expose به window برای استفاده global
+window.setTaskFocus = setTaskFocus;
+window.removeTaskFocus = removeTaskFocus;

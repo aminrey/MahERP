@@ -30,18 +30,32 @@
                             <div class="tasks-list">
                                 @foreach (var task in person.Value)
                                 {
-                                    <div class="task-card" data-task-id="@task.Id">
+                                    <div class="task-card @(task.IsFocused == true ? "task-focused border-warning" : "")" 
+                                         data-task-id="@task.Id">
+                                        
+                                        @* آیکون فوکوس *@
+                                        @if (task.IsFocused == true)
+                                        {
+                                            <div class="task-focus-badge position-absolute top-0 end-0 m-2">
+                                                <span class="badge bg-warning">
+                                                    <i class="fa fa-star me-1"></i>فوکوس
+                                                </span>
+                                            </div>
+                                        }
+
                                         <div class="task-header">
                                             <span class="task-code">@task.TaskCode</span>
                                             <span class="task-status badge @GetStatusBadgeClass(task.Status)">
                                                 @GetStatusText(task.Status)
                                             </span>
                                         </div>
+                                        
                                         <div class="task-title">
                                             <a href="@Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })">
                                                 @task.Title
                                             </a>
                                         </div>
+                                        
                                         <div class="task-meta">
                                             @if (task.DueDate.HasValue)
                                             {
@@ -55,6 +69,33 @@
                                                 <span class="category">
                                                     <i class="fas fa-tag"></i> @task.CategoryTitle
                                                 </span>
+                                            }
+                                        </div>
+
+                                        @* دکمه های اکشن *@
+                                        <div class="task-actions mt-2 d-flex gap-1">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-primary"
+                                                    data-toggle="modal-ajax"
+                                                    href="@Url.Action("LogTaskWorkModal", "Tasks", new { taskId = task.Id, area = "AdminArea" })">
+                                                <i class="fa fa-clock me-1"></i>ثبت کار
+                                            </button>
+
+                                            @if (task.IsFocused == true)
+                                            {
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-warning"
+                                                        onclick="removeTaskFocusFromList(@task.Id)">
+                                                    <i class="fa fa-star me-1"></i>حذف فوکوس
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-warning"
+                                                        onclick="setTaskFocusFromList(@task.Id)">
+                                                    <i class="fa fa-bullseye me-1"></i>فوکوس
+                                                </button>
                                             }
                                         </div>
                                     </div>
@@ -110,6 +151,7 @@ else
     }
 }
 
+@* استایل *@
 <style>
     .filtered-tasks-container {
         padding: 15px;
@@ -169,6 +211,24 @@ else
             border-color: #007bff;
         }
 
+    .task-focused {
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.4);
+        animation: pulse-glow 2s infinite;
+    }
+
+    @@keyframes pulse-glow {
+        0%, 100% {
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+        }
+        50% {
+            box-shadow: 0 0 25px rgba(255, 193, 7, 0.6);
+        }
+    }
+
+    .task-focus-badge {
+        z-index: 10;
+    }
+
     .task-header {
         display: flex;
         justify-content: space-between;
@@ -202,4 +262,68 @@ else
         font-size: 0.875rem;
         color: #6c757d;
     }
+
+    .task-actions {
+        flex-wrap: wrap;
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-circle {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .btn-icon {
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
 </style>
+
+@* اسکریپت فوکوس تسک *@
+<script>
+    function setTaskFocusFromList(taskId) {
+        $.ajax({
+            url: '@Url.Action("SetTaskFocus", "Tasks")',
+            type: 'POST',
+            data: {
+                taskId: taskId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                SendResposeMessage(response.message);
+                if (response.success) {
+                    setTimeout(() => location.reload(), 1000);
+                }
+            }
+        });
+    }
+
+    function removeTaskFocusFromList(taskId) {
+        $.ajax({
+            url: '@Url.Action("RemoveTaskFocus", "Tasks")',
+            type: 'POST',
+            data: {
+                taskId: taskId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                SendResposeMessage(response.message);
+                if (response.success) {
+                    setTimeout(() => location.reload(), 1000);
+                }
+            }
+        });
+    }
+</script>

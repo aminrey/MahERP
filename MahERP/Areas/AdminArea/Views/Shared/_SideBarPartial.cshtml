@@ -120,9 +120,9 @@
 
                         <!-- تسک‌های امروز من -->
                         <li class="nav-main-item">
-                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "MyDayTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="MyDayTasks">
+                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "MyDayTask", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="MyDayTask" asp-action="Index">
                                 <i class="nav-main-link-icon fa fa-calendar-day text-success"></i>
-                                <span class="nav-main-link-name">تسک‌های امروز</span>
+                                <span class="nav-main-link-name">تسک‌های روز من</span>
                                 <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="myDayCount" style="display: none;">0</span>
                             </a>
                         </li>

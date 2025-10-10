@@ -133,6 +133,7 @@ namespace MahERP.DataModelLayer.Repository
                                            UserName = us.UserName,
                                            Gender = us.Gender,
                                            Province = us.Province,
+                                           ProfileImagePath = us.ProfileImagePath,
                                            RegisterDate = us.RegisterDate
 
                                        }).FirstOrDefault();

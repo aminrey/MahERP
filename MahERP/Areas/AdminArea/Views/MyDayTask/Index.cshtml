@@ -1,0 +1,463 @@
+﻿@model MyDayTasksViewModel
+@{
+    ViewData["Title"] = "روز من";
+    var focusedTask = Model.TasksByDate.Values
+        .SelectMany(x => x)
+        .FirstOrDefault(t => t.IsFocused);
+}
+
+
+<!-- Hero Section - بنر بهبود یافته مشابه Details -->
+<div class="hero-section position-relative overflow-hidden">
+    <!-- Background Image با Overlay -->
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100">
+        <img src="~/assets/media/photos/photo5.jpg" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+
+        <!-- Gradient Overlay -->
+        <div class="bg-black-75 position-absolute top-0 start-0 w-100 h-100"></div>
+
+        <!-- Animated Pattern -->
+        <div class="hero-pattern position-absolute top-0 start-0 w-100 h-100">
+            <svg class="w-100 h-100 opacity-10" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="hero-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <circle cx="30" cy="30" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="60" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="60" r="2" fill="currentColor" class="text-white" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hero-pattern)" />
+            </svg>
+        </div>
+
+        <!-- Floating Shapes -->
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+
+    <div class="content content-full position-relative" style="z-index: 10;">
+        <div class="py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-start gap-3">
+                        <!-- Status Icon -->
+                        <div class="flex-shrink-0">
+                            <div class="hero-status-icon status-primary">
+                                <div class="icon-wrapper">
+                                    <i class="fa fa-sun fa-2x"></i>
+                                </div>
+                                <div class="status-label">روز من</div>
+                            </div>
+                        </div>
+
+                        <!-- Title & Subtitle -->
+                        <div class="flex-grow-1">
+                            <div class="hero-title-wrapper">
+                                <h1 class="hero-title text-white mb-2">
+                                    <i class="fa fa-calendar-day me-2"></i>برنامه امروز من
+                                </h1>
+                                <div class="hero-subtitle d-flex flex-wrap align-items-center gap-2">
+                                    <span class="badge badge-modern bg-white text-dark px-3 py-2 rounded-pill">
+                                        <i class="fa fa-calendar-alt me-1"></i>
+                                        <span>@DateTime.Now.ToString("yyyy/MM/dd", new System.Globalization.CultureInfo("fa-IR"))</span>
+                                    </span>
+                                    <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                    <span class="text-white-75">برنامه‌ریزی و مدیریت تسک‌های امروز</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    <!-- Breadcrumb -->
+                    <nav class="mb-3" aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
+                            <li class="breadcrumb-item">
+                                <a asp-area="AdminArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
+                                    <i class="fa fa-home me-1"></i>داشبورد
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
+                                    تسک‌ها
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active text-white">تسک روز من</li>
+                        </ol>
+                    </nav>
+                    @if (focusedTask != null)
+                    {
+                        <div class="hero-actions">
+                            <div class="alert alert-warning mb-0 d-inline-flex align-items-center gap-2 px-4 py-3 rounded-pill shadow-lg">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fa fa-bullseye"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-warning-emphasis">متمرکز روی:</div>
+                                    <div class="fs-sm">@focusedTask.TaskTitle</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-white-75">
+                            <i class="fa fa-info-circle me-1"></i>
+                            هیچ تسک متمرکزی انتخاب نشده
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="content">
+    <div class="row mb-4">
+        <div class="col-6 col-md-3 mb-3">
+            <div class="block block-rounded text-center">
+                <div class="block-content">
+                    <div class="fs-2 fw-bold text-primary">@Model.Stats.TotalPlannedTasks</div>
+                    <div class="fs-sm text-muted">برنامه‌ریزی شده</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="block block-rounded text-center">
+                <div class="block-content">
+                    <div class="fs-2 fw-bold text-success">@Model.Stats.CompletedTasks</div>
+                    <div class="fs-sm text-muted">تکمیل شده</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="block block-rounded text-center">
+                <div class="block-content">
+                    <div class="fs-2 fw-bold text-info">@Model.Stats.WorkedTasks</div>
+                    <div class="fs-sm text-muted">در حال کار</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="block block-rounded text-center">
+                <div class="block-content">
+                    <div class="fs-2 fw-bold text-warning">@Model.Stats.TotalWorkTimeFormatted</div>
+                    <div class="fs-sm text-muted">مدت زمان کار</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@foreach (var dateGroup in Model.TasksByDate.OrderByDescending(x => x.Key))
+{
+    <div class="block block-rounded mb-4">
+        <div class="block-header block-header-default bg-primary text-white">
+            <h3 class="block-title text-white">
+                <i class="fa fa-calendar-day me-2"></i>@dateGroup.Key
+                <span class="badge bg-white text-primary ms-2">@dateGroup.Value.Count تسک</span>
+            </h3>
+        </div>
+        <div class="block-content">
+            @if (dateGroup.Value.Any())
+            {
+                <div class="row">
+                    @foreach (var task in dateGroup.Value)
+                    {
+                        // ⭐ تعیین کلاس بر اساس وضعیت
+                        var cardClass = task.IsCompleted ? "border-success" : 
+                                       task.IsFocused ? "border-warning" : 
+                                       task.IsOverdue ? "border-danger" : "";
+
+                        <div class="col-lg-6 mb-3">
+                            <div class="task-card block block-rounded @cardClass">
+                                <div class="block-content p-3">
+                                    <!-- Task Header -->
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-1">
+                                                @if (task.IsCompleted)
+                                                {
+                                                    <span class="badge bg-success me-1">
+                                                        <i class="fa fa-check-circle"></i> تکمیل شده
+                                                    </span>
+                                                }
+                                                else if (task.IsFocused)
+                                                {
+                                                    <span class="badge bg-warning badge-focused me-1">
+                                                        <i class="fa fa-bullseye"></i> متمرکز
+                                                    </span>
+                                                }
+                                                <a asp-area="AdminArea" 
+                                                   asp-controller="Tasks" 
+                                                   asp-action="Details" 
+                                                   asp-route-id="@task.TaskId"
+                                                   class="text-decoration-none">
+                                                    @task.TaskTitle
+                                                </a>
+                                            </h5>
+                                            <small class="text-muted">
+                                                <i class="fa fa-hashtag"></i> @task.TaskCode
+                                                @if (!string.IsNullOrEmpty(task.CategoryTitle))
+                                                {
+                                                    <span class="badge bg-info ms-2">@task.CategoryTitle</span>
+                                                }
+                                            </small>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            @if (task.TaskPriority == 2)
+                                            {
+                                                <span class="badge bg-danger">فوری</span>
+                                            }
+                                            else if (task.IsImportant)
+                                            {
+                                                <span class="badge bg-warning">مهم</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Task Description -->
+                                    @if (!string.IsNullOrEmpty(task.TaskDescription))
+                                    {
+                                        <p class="text-muted fs-sm mb-2">
+                                            @(task.TaskDescription.Length > 100 
+                                                ? task.TaskDescription.Substring(0, 100) + "..." 
+                                                : task.TaskDescription)
+                                        </p>
+                                    }
+
+                                    <!-- ⭐⭐⭐ Progress Bar -->
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>پیشرفت</small>
+                                            <small class="fw-bold">@task.ProgressPercentage%</small>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar @(task.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                                                 style="width: @task.ProgressPercentage%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Plan/Work Note -->
+                                    @if (!string.IsNullOrEmpty(task.PlanNote))
+                                    {
+                                        <div class="alert alert-info py-2 mb-2">
+                                            <i class="fa fa-sticky-note me-1"></i>
+                                            <small>@task.PlanNote</small>
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(task.WorkNote))
+                                    {
+                                        <div class="alert alert-success py-2 mb-2">
+                                            <i class="fa fa-check-circle me-1"></i>
+                                            <small>@task.WorkNote</small>
+                                            @if (task.WorkDurationMinutes.HasValue)
+                                            {
+                                                <span class="badge bg-success ms-1">
+                                                    @task.WorkDurationMinutes دقیقه
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+
+                                    <!-- ⭐⭐⭐ Actions (با قفل برای تسک‌های تکمیل شده) -->
+                                    <div class="btn-group w-100" role="group">
+                                        @if (task.IsCompleted)
+                                        {
+                                            <!-- ⭐ تسک تکمیل شده: فقط دکمه حذف و مشاهده لاگ‌ها -->
+                                            <a href="@Url.Action("ViewWorkLogsModal", "MyDayTask", new { taskId = task.TaskId })"
+                                               data-toggle="modal-ajax"
+                                               class="btn btn-sm btn-info"
+                                               title="مشاهده گزارش کارها">
+                                                <i class="fa fa-list me-1"></i>لیست کارها
+                                            </a>
+
+                                            <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
+                                               data-toggle="modal-ajax"
+                                               class="btn btn-sm btn-danger"
+                                               title="حذف از روز من">
+                                                <i class="fa fa-times me-1"></i>حذف
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <!-- ⭐ تسک در حال انجام: همه دکمه‌ها فعال -->
+                                            <a href="@Url.Action("LogWorkModal", "MyDayTask", new { myDayId = task.MyDayId })"
+                                               data-toggle="modal-ajax"
+                                               class="btn btn-sm btn-success"
+                                               title="ثبت کار">
+                                                <i class="fa fa-clock me-1"></i>ثبت کار
+                                            </a>
+
+                                            @if (task.IsFocused)
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-sm btn-warning"
+                                                        onclick="removeFocus(@task.MyDayId)"
+                                                        title="حذف تمرکز">
+                                                    <i class="fa fa-star me-1"></i>حذف تمرکز
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-warning"
+                                                        onclick="setFocus(@task.MyDayId)"
+                                                        title="تنظیم به عنوان تمرکز">
+                                                    <i class="fa fa-bullseye me-1"></i>متمرکز
+                                                </button>
+                                            }
+
+                                            <a href="@Url.Action("ViewWorkLogsModal", "MyDayTask", new { taskId = task.TaskId })"
+                                               data-toggle="modal-ajax"
+                                               class="btn btn-sm btn-info"
+                                               title="مشاهده گزارش کارها">
+                                                <i class="fa fa-list me-1"></i>لیست
+                                            </a>
+
+                                            <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
+                                               data-toggle="modal-ajax"
+                                               class="btn btn-sm btn-danger"
+                                               title="حذف از روز من">
+                                                <i class="fa fa-times"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fa fa-inbox fa-3x mb-3"></i>
+                    <p>تسکی برای این روز برنامه‌ریزی نشده است</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+
+</div>
+@section Scripts {
+    <script src="~/assets/js/Methods.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Auto-refresh every 5 minutes
+            setInterval(function() {
+                location.reload();
+            }, 300000);
+
+            // ⭐ Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+
+        // ⭐⭐⭐ استفاده از متدهای آماده Methods.js
+        // این متدها در Methods.js تعریف شده‌اند و به صورت global در دسترس هستند
+
+        // ⭐ تنظیم فوکوس - استفاده از setTaskFocus از Methods.js
+        function setFocus(myDayId) {
+            // تبدیل myDayId به taskId (در صورت نیاز)
+            // اگر API شما myDayId می‌خواهد، باید متد را سفارشی کنیم
+            
+            Swal.fire({
+                title: 'تنظیم فوکوس',
+                text: 'آیا میخواهید این تسک را به عنوان فوکوس اصلی خود انتخاب کنید؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله، تنظیم کن',
+                cancelButtonText: 'انصراف',
+                customClass: {
+                    confirmButton: 'btn btn-success',
+                    cancelButton: 'btn btn-secondary'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("SetFocused", "MyDayTask")',
+                        type: 'POST',
+                        data: {
+                            myDayId: myDayId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'موفق!',
+                                    text: response.message || 'تسک با موفقیت به عنوان فوکوس تنظیم شد',
+                                    icon: 'success',
+                                    confirmButtonText: 'باشه',
+                                    timer: 2000,
+                                    timerProgressBar: true,
+                                    customClass: {
+                                        confirmButton: 'btn btn-success'
+                                    },
+                                    buttonsStyling: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                showErrorSwal('خطا', response.message || 'خطا در تنظیم فوکوس');
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Error in setFocus:', xhr);
+                            showErrorSwal('خطا', 'خطا در ارتباط با سرور');
+                        }
+                    });
+                }
+            });
+        }
+
+        // ⭐ حذف فوکوس - استفاده از الگوی مشابه با SweetAlert
+        function removeFocus(myDayId) {
+            $.ajax({
+                url: '@Url.Action("RemoveFocused", "MyDayTask")',
+                type: 'POST',
+                data: {
+                    myDayId: myDayId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'موفق!',
+                            text: response.message || 'فوکوس با موفقیت حذف شد',
+                            icon: 'success',
+                            confirmButtonText: 'باشه',
+                            timer: 2000,
+                            timerProgressBar: true,
+                            customClass: {
+                                confirmButton: 'btn btn-success'
+                            },
+                            buttonsStyling: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        showErrorSwal('خطا', response.message || 'خطا در حذف فوکوس');
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Error in removeFocus:', xhr);
+                    showErrorSwal('خطا', 'خطا در ارتباط با سرور');
+                }
+            });
+        }
+    </script>
+}

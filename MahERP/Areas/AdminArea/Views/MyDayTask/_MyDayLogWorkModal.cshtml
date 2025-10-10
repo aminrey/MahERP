@@ -1,0 +1,48 @@
+﻿@model MyDayLogWorkViewModel
+
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <form asp-action="LogWork" asp-controller="MyDayTask" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="MyDayId" />
+
+            <div class="block block-rounded mb-0">
+                <div class="block-header bg-success text-white">
+                    <h3 class="block-title text-white">
+                        <i class="fa fa-clock me-2"></i>ثبت گزارش کار
+                    </h3>
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal">
+                        <i class="fa fa-times text-white"></i>
+                    </button>
+                </div>
+
+                <div class="block-content">
+                    <div class="mb-3">
+                        <label asp-for="WorkNote" class="form-label">
+                            توضیحات کار انجام شده <span class="text-danger">*</span>
+                        </label>
+                        <textarea asp-for="WorkNote" class="form-control" rows="5" 
+                                  placeholder="توضیح دقیق کاری که انجام دادید..." required></textarea>
+                        <span asp-validation-for="WorkNote" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DurationMinutes" class="form-label"></label>
+                        <input asp-for="DurationMinutes" type="number" class="form-control" 
+                               placeholder="مثال: 120" min="0" max="1440" />
+                        <small class="text-muted">برحسب دقیقه (اختیاری)</small>
+                    </div>
+                </div>
+
+                <div class="block-content block-content-full text-end border-top">
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                        انصراف
+                    </button>
+                    <button type="button" class="btn btn-success" data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i>ثبت
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

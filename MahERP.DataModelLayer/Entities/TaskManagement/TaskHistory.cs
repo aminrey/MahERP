@@ -169,6 +169,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         RemovedFromMyDay = 21,
 
         /// <summary>22 - ثبت کار روی تسک در روز من</summary>
-        WorkLoggedOnMyDay = 22
+        WorkLoggedOnMyDay = 22,
+        TaskWorkLogAdded = 23
     }
 }

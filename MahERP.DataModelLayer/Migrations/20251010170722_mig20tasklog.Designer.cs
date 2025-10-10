@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251010170722_mig20tasklog")]
+    partial class mig20tasklog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3207,7 +3210,10 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsRemoved")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsWorkedOn")
                         .HasColumnType("bit");
 
                     b.Property<string>("PlanNote")
@@ -3217,14 +3223,12 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<DateTime>("PlannedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("RemovedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TaskAssignmentId")
+                    b.Property<int>("TaskId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("WorkDurationMinutes")
                         .HasColumnType("int");
@@ -3238,9 +3242,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TaskAssignmentId", "PlannedDate")
-                        .IsUnique()
-                        .HasDatabaseName("IX_TaskMyDay_Assignment_Date");
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("TaskMyDay_Tbl");
                 });
@@ -5356,13 +5360,21 @@ namespace MahERP.DataModelLayer.Migrations
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskMyDay", b =>
                 {
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskAssignment", "TaskAssignment")
-                        .WithMany("MyDayRecords")
-                        .HasForeignKey("TaskAssignmentId")
+                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("TaskAssignment");
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskNotification", b =>
@@ -5994,11 +6006,6 @@ namespace MahERP.DataModelLayer.Migrations
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.PredefinedCopyDescription", b =>
                 {
                     b.Navigation("TaskAssignments");
-                });
-
-            modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskAssignment", b =>
-                {
-                    b.Navigation("MyDayRecords");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", b =>

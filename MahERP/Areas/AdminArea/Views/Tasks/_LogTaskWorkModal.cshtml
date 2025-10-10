@@ -1,0 +1,152 @@
+﻿@model TaskWorkLogViewModel
+
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form id="logTaskWorkForm" 
+              asp-action="LogTaskWork" 
+              asp-controller="Tasks" 
+              asp-area="AdminArea" 
+              method="post">
+            
+            <input type="hidden" asp-for="TaskId" />
+            @Html.AntiForgeryToken()
+
+            <!-- Modal Header -->
+            <div class="block block-rounded block-themed mb-0">
+                <div class="block-header bg-primary-dark">
+                    <h3 class="block-title text-white">
+                        <i class="fa fa-clock me-2"></i>ثبت کار انجام شده
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" 
+                                class="btn-block-option" 
+                                data-bs-dismiss="modal" 
+                                aria-label="Close">
+                            <i class="fa fa-fw fa-times text-white"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="block-content block-content-full">
+                    @if (!string.IsNullOrEmpty(Model.TaskTitle))
+                    {
+                        <div class="alert alert-info d-flex align-items-center mb-4">
+                            <div class="flex-shrink-0">
+                                <i class="fa fa-info-circle fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <p class="mb-0">
+                                    <strong>تسک:</strong> @Model.TaskTitle
+                                </p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- توضیحات کار انجام شده - اجباری -->
+                    <div class="mb-4">
+                        <label class="form-label" for="WorkDescription">
+                            توضیحات کار انجام شده 
+                            <span class="text-danger">*</span>
+                        </label>
+                        <textarea asp-for="WorkDescription" 
+                                  class="form-control" 
+                                  id="WorkDescription"
+                                  rows="5" 
+                                  placeholder="مثال: بررسی مستندات و شروع طراحی پایگاه داده، تست عملکرد قسمت احراز هویت"
+                                  maxlength="2000"
+                                  required></textarea>
+                        <span asp-validation-for="WorkDescription" class="text-danger"></span>
+                        <div class="form-text">
+                            <i class="fa fa-lightbulb me-1"></i>
+                            توضیحات دقیق در مورد کاری که انجام دادید را بنویسید (حداقل 5 کاراکتر)
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- مدت زمان - اختیاری -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="DurationMinutes">
+                                مدت زمان (دقیقه)
+                                <small class="text-muted fw-normal">(اختیاری)</small>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-clock"></i>
+                                </span>
+                                <input asp-for="DurationMinutes" 
+                                       type="number" 
+                                       class="form-control" 
+                                       id="DurationMinutes"
+                                       placeholder="60"
+                                       min="0"
+                                       max="1440" />
+                            </div>
+                            <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                            <div class="form-text">
+                                مثال: 30 دقیقه = نیم ساعت
+                            </div>
+                        </div>
+
+                        <!-- درصد پیشرفت - اختیاری -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="ProgressPercentage">
+                                درصد پیشرفت کلی تسک
+                                <small class="text-muted fw-normal">(اختیاری)</small>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-chart-line"></i>
+                                </span>
+                                <input asp-for="ProgressPercentage" 
+                                       type="number" 
+                                       class="form-control" 
+                                       id="ProgressPercentage"
+                                       placeholder="25"
+                                       min="0"
+                                       max="100" />
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <span asp-validation-for="ProgressPercentage" class="text-danger"></span>
+                            <div class="form-text">
+                                برآورد پیشرفت کلی تسک بعد از این کار
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning d-flex align-items-center mb-0">
+                        <div class="flex-shrink-0">
+                            <i class="fa fa-info-circle fa-2x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="mb-0">
+                                <strong>نکته:</strong> فقط فیلد <strong>توضیحات</strong> اجباری است. 
+                                فیلدهای مدت زمان و درصد پیشرفت اختیاری هستند.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="block-content block-content-full block-content-sm text-end border-top">
+                    <button type="button" 
+                            class="btn btn-alt-secondary" 
+                            data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="button" 
+                            class="btn btn-primary" 
+                            data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i>
+                        ثبت گزارش کار
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

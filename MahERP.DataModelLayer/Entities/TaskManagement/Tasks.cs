@@ -166,6 +166,10 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public virtual ICollection<TaskNotification> TaskNotifications { get; set; } = new HashSet<TaskNotification>();
         public virtual ICollection<TaskOperation> TaskOperations { get; set; } = new HashSet<TaskOperation>();
         public virtual ICollection<TaskViewer> TaskViewers { get; set; } = new HashSet<TaskViewer>();
+        /// <summary>
+        /// گزارش کارهای انجام شده روی این تسک
+        /// </summary>
+        public virtual ICollection<TaskWorkLog> TaskWorkLogs { get; set; } = new HashSet<TaskWorkLog>();
     }
 }
 

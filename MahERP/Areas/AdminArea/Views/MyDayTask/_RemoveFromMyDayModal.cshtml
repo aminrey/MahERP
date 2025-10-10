@@ -1,0 +1,43 @@
+﻿@model dynamic
+
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <form asp-action="RemoveFromMyDay" asp-controller="MyDayTask" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="myDayId" value="@Model.MyDayId" />
+
+            <div class="block block-rounded mb-0">
+                <div class="block-header bg-danger text-white">
+                    <h3 class="block-title text-white">
+                        <i class="fa fa-trash me-2"></i>حذف از روز من
+                    </h3>
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal">
+                        <i class="fa fa-times text-white"></i>
+                    </button>
+                </div>
+
+                <div class="block-content">
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        آیا مطمئن هستید که می‌خواهید این تسک را از روز خود حذف کنید؟
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>تسک:</strong> @Model.TaskTitle
+                        <br />
+                        <strong>کد:</strong> @Model.TaskCode
+                    </div>
+                </div>
+
+                <div class="block-content block-content-full text-end border-top">
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i>انصراف
+                    </button>
+                    <button type="button" class="btn btn-danger" data-save="modal-ajax-save">
+                        <i class="fa fa-trash me-1"></i>حذف
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

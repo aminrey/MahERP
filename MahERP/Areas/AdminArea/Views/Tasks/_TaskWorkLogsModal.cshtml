@@ -1,0 +1,101 @@
+﻿@model List<TaskWorkLogViewModel>
+
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+        <div class="block block-rounded block-themed mb-0">
+            <!-- Modal Header -->
+            <div class="block-header bg-info-dark">
+                <h3 class="block-title text-white">
+                    <i class="fa fa-list me-2"></i>لیست گزارش کارها
+                    @if (Model?.Any() == true)
+                    {
+                        <span class="badge bg-white text-dark ms-2">@Model.Count مورد</span>
+                    }
+                </h3>
+                <div class="block-options">
+                    <button type="button" 
+                            class="btn-block-option" 
+                            data-bs-dismiss="modal" 
+                            aria-label="Close">
+                        <i class="fa fa-fw fa-times text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="block-content block-content-full">
+                @if (Model == null || !Model.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">هیچ گزارش کاری ثبت نشده است</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="timeline timeline-alt">
+                        @foreach (var log in Model.OrderByDescending(l => l.WorkDate))
+                        {
+                            <div class="timeline-event">
+                                <div class="timeline-event-icon bg-info">
+                                    <i class="fa fa-clipboard-check"></i>
+                                </div>
+                                <div class="timeline-event-block block">
+                                    <div class="block-header">
+                                        <div class="d-flex align-items-center justify-content-between w-100">
+                                            <div>
+                                                <h4 class="block-title mb-0">
+                                                    <i class="fa fa-user-circle me-1"></i>
+                                                    @log.UserName
+                                                </h4>
+                                            </div>
+                                            <div class="text-muted">
+                                                <i class="fa fa-clock me-1"></i>
+                                                <small>@log.WorkDatePersian</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="block-content">
+                                        <p class="mb-2">@log.WorkDescription</p>
+                                        
+                                        <div class="row g-2 mt-2">
+                                            @if (log.DurationMinutes.HasValue && log.DurationMinutes > 0)
+                                            {
+                                                <div class="col-auto">
+                                                    <span class="badge bg-primary">
+                                                        <i class="fa fa-clock me-1"></i>
+                                                        @log.DurationMinutes دقیقه
+                                                    </span>
+                                                </div>
+                                            }
+                                            
+                                            @if (log.ProgressPercentage.HasValue)
+                                            {
+                                                <div class="col-auto">
+                                                    <span class="badge bg-success">
+                                                        <i class="fa fa-chart-line me-1"></i>
+                                                        پیشرفت: @log.ProgressPercentage%
+                                                    </span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="block-content block-content-full block-content-sm text-end border-top">
+                <button type="button" 
+                        class="btn btn-alt-secondary" 
+                        data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    بستن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

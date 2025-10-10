@@ -182,5 +182,22 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 
         [ForeignKey("AssignedInTeamId")]
         public virtual Team? AssignedInTeam { get; set; }
+
+        /// <summary>
+        /// آیا این تسک در حال حاضر فوکوس کاربر است؟
+        /// فقط یک تسک از تسک‌های کاربر می‌تواند فوکوس باشد
+        /// </summary>
+        public bool IsFocused { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ فوکوس شدن تسک
+        /// </summary>
+        public DateTime? FocusedDate { get; set; }
+
+        /// <summary>
+        /// ⭐ رکوردهای "روز من" مرتبط با این assignment
+        /// یک assignment می‌تواند در چند روز مختلف قرار بگیرد
+        /// </summary>
+        public virtual ICollection<TaskMyDay> MyDayRecords { get; set; } = new List<TaskMyDay>();
     }
 }

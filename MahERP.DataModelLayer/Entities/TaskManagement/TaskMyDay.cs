@@ -1,57 +1,46 @@
-﻿using MahERP.DataModelLayer.Entities.AcControl;
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MahERP.DataModelLayer.Entities.TaskManagement
 {
-    /// <summary>
-    /// تسک‌های برنامه‌ریزی شده برای "روز من" هر کاربر
+    /// <summary>   
+    /// تسک‌های برنامه‌ریزی شده برای "روز من" - مرتبط با TaskAssignment
+    /// این جدول فقط برای کاربرانی که تسک به آن‌ها assign شده معنی دارد
     /// </summary>
     public class TaskMyDay
     {
+        /// <summary>
+        /// شناسه منحصر به فرد
+        /// </summary>
         [Key]
         public int Id { get; set; }
 
         /// <summary>
-        /// شناسه تسک
+        /// ⭐ شناسه TaskAssignment مرتبط (کلید خارجی)
         /// </summary>
-        public int TaskId { get; set; }
-        [ForeignKey("TaskId")]
-        public virtual Tasks Task { get; set; }
+        [Required(ErrorMessage = "شناسه انتساب تسک الزامی است")]
+        public int TaskAssignmentId { get; set; }
+
+        [ForeignKey("TaskAssignmentId")]
+        public virtual TaskAssignment TaskAssignment { get; set; }
 
         /// <summary>
-        /// شناسه کاربر
+        /// تاریخ برنامه‌ریزی شده برای انجام این تسک (تاریخ روز)
         /// </summary>
-        [Required]
-        public string UserId { get; set; }
-        [ForeignKey("UserId")]
-        public virtual AppUsers User { get; set; }
-
-        /// <summary>
-        /// تاریخ برنامه‌ریزی (تاریخ روزی که کاربر قصد کار روی تسک را دارد)
-        /// </summary>
-        [Required]
+        [Required(ErrorMessage = "تاریخ برنامه‌ریزی الزامی است")]
+        [DataType(DataType.Date)]
         public DateTime PlannedDate { get; set; }
 
         /// <summary>
-        /// یادداشت کاربر هنگام اضافه کردن به "روز من"
+        /// یادداشت برنامه‌ریزی (اختیاری)
+        /// مثال: "شروع از ساعت 10 صبح"
         /// </summary>
         [MaxLength(500)]
         public string? PlanNote { get; set; }
 
         /// <summary>
-        /// تاریخ ایجاد رکورد
-        /// </summary>
-        public DateTime CreatedDate { get; set; }
-
-        /// <summary>
-        /// آیا روی این تسک امروز کار شده است
-        /// </summary>
-        public bool IsWorkedOn { get; set; }
-
-        /// <summary>
-        /// تاریخ شروع کار روی تسک
+        /// تاریخ شروع کار روی تسک (زمانی که کاربر شروع کرد)
         /// </summary>
         public DateTime? WorkStartDate { get; set; }
 
@@ -67,8 +56,23 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public int? WorkDurationMinutes { get; set; }
 
         /// <summary>
-        /// آیا تسک فعال است (حذف نشده)
+        /// تاریخ ایجاد رکورد
         /// </summary>
-        public bool IsActive { get; set; } = true;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// تاریخ آخرین بروزرسانی
+        /// </summary>
+        public DateTime? UpdatedDate { get; set; }
+
+        /// <summary>
+        /// آیا این تسک حذف شده از "روز من"؟
+        /// </summary>
+        public bool IsRemoved { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ حذف
+        /// </summary>
+        public DateTime? RemovedDate { get; set; }
     }
 }

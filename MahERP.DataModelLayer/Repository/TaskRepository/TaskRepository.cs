@@ -685,7 +685,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         AssignerUserId = a.AssignerUserId, // ⭐ کلیدی: ذخیره AssignerUserId
                         AssignDate = a.AssignmentDate,
                         CompletionDate = a.CompletionDate,
-                        Description = a.Description
+                        Description = a.Description,
+                        IsFocused = a.IsFocused,
+                        FocusedDate= a.FocusedDate
                     }).ToList()
             };
         }
@@ -2619,53 +2621,74 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         // اضافه کردن این متدها به کلاس TaskRepository
 
         /// <summary>
-        /// اضافه کردن تسک به "روز من"
+        /// اضافه کردن تسک به "روز من" - اصلاح شده برای استفاده از TaskAssignment
         /// </summary>
         public async Task<bool> AddTaskToMyDayAsync(int taskId, string userId, DateTime plannedDate, string? planNote = null)
         {
             try
             {
-                // بررسی اینکه آیا قبلاً در این تاریخ وجود دارد
+                // ⭐ دریافت TaskAssignment مربوطه
+                var assignment = await _context.TaskAssignment_Tbl
+                    .FirstOrDefaultAsync(a =>
+                        a.TaskId == taskId &&
+                        a.AssignedUserId == userId);
+
+                if (assignment == null)
+                {
+                    Console.WriteLine($"❌ Assignment not found for Task {taskId} and User {userId}");
+                    return false; // کاربر به این تسک اختصاص داده نشده
+                }
+
+                // ⭐ بررسی وجود رکورد قبلی در همین تاریخ
                 var existingRecord = await _context.TaskMyDay_Tbl
-                    .FirstOrDefaultAsync(x => x.TaskId == taskId &&
-                                            x.UserId == userId &&
-                                            x.PlannedDate.Date == plannedDate.Date &&
-                                            x.IsActive);
+                    .FirstOrDefaultAsync(tmd =>
+                        tmd.TaskAssignmentId == assignment.Id &&
+                        tmd.PlannedDate.Date == plannedDate.Date &&
+                        !tmd.IsRemoved);
 
                 if (existingRecord != null)
                 {
-                    // اگر وجود دارد، فقط یادداشت را بروزرسانی کن
+                    // ⭐ بروزرسانی یادداشت
                     existingRecord.PlanNote = planNote;
+                    existingRecord.UpdatedDate = DateTime.Now;
                     _context.TaskMyDay_Tbl.Update(existingRecord);
                 }
                 else
                 {
-                    // ایجاد رکورد جدید
+                    // ⭐ ایجاد رکورد جدید
                     var newRecord = new TaskMyDay
                     {
-                        TaskId = taskId,
-                        UserId = userId,
+                        TaskAssignmentId = assignment.Id,
                         PlannedDate = plannedDate.Date,
                         PlanNote = planNote,
                         CreatedDate = DateTime.Now,
-                        IsWorkedOn = false,
-                        IsActive = true
+                        IsRemoved = false
                     };
 
                     await _context.TaskMyDay_Tbl.AddAsync(newRecord);
                 }
 
                 await _context.SaveChangesAsync();
+
+                // ⭐ ثبت در تاریخچه
+                await _taskHistoryRepository.LogTaskAddedToMyDayAsync(
+                    taskId,
+                    userId,
+                    assignment.Task?.Title ?? "نامشخص",
+                    assignment.Task?.TaskCode ?? string.Empty,
+                    plannedDate);
+
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"❌ Error in AddTaskToMyDayAsync: {ex.Message}");
                 return false;
             }
         }
 
         /// <summary>
-        /// ثبت کار انجام شده روی تسک
+        /// ثبت کار انجام شده روی تسک - اصلاح شده
         /// </summary>
         public async Task<bool> LogTaskWorkAsync(int taskId, string userId, string? workNote = null, int? workDurationMinutes = null)
         {
@@ -2673,43 +2696,54 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 var today = DateTime.Now.Date;
 
-                // پیدا کردن یا ایجاد رکورد "روز من"
+                // ⭐ دریافت TaskAssignment
+                var assignment = await _context.TaskAssignment_Tbl
+                    .FirstOrDefaultAsync(a =>
+                        a.TaskId == taskId &&
+                        a.AssignedUserId == userId);
+
+                if (assignment == null)
+                {
+                    Console.WriteLine($"❌ Assignment not found for Task {taskId} and User {userId}");
+                    return false;
+                }
+
+                // ⭐ پیدا کردن یا ایجاد رکورد "روز من"
                 var myDayRecord = await _context.TaskMyDay_Tbl
-                    .FirstOrDefaultAsync(x => x.TaskId == taskId &&
-                                            x.UserId == userId &&
-                                            x.PlannedDate.Date == today &&
-                                            x.IsActive);
+                    .FirstOrDefaultAsync(tmd =>
+                        tmd.TaskAssignmentId == assignment.Id &&
+                        tmd.PlannedDate.Date == today &&
+                        !tmd.IsRemoved);
 
                 if (myDayRecord == null)
                 {
                     // اگر در "روز من" نیست، ایجاد کن
                     myDayRecord = new TaskMyDay
                     {
-                        TaskId = taskId,
-                        UserId = userId,
+                        TaskAssignmentId = assignment.Id,
                         PlannedDate = today,
                         CreatedDate = DateTime.Now,
-                        IsActive = true
+                        IsRemoved = false
                     };
                     await _context.TaskMyDay_Tbl.AddAsync(myDayRecord);
                 }
 
-                // بروزرسانی اطلاعات کار
-                myDayRecord.IsWorkedOn = true;
+                // ⭐ بروزرسانی اطلاعات کار
                 myDayRecord.WorkStartDate = DateTime.Now;
                 myDayRecord.WorkNote = workNote;
                 myDayRecord.WorkDurationMinutes = workDurationMinutes;
+                myDayRecord.UpdatedDate = DateTime.Now;
 
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"❌ Error in LogTaskWorkAsync: {ex.Message}");
                 return false;
             }
         }
 
-    
         /// <summary>
         /// دریافت تسک‌های "روز من" برای کاربر - اصلاح شده برای نمایش امروز، فردا و دیروز
         /// </summary>
@@ -2720,19 +2754,20 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             var yesterday = today.AddDays(-1);
             var tomorrow = today.AddDays(1);
 
-            // ⭐ فیلتر کردن برای نمایش فقط دیروز، امروز و فردا
+            // ⭐ کوئری اصلاح شده
             var myDayTasks = await _context.TaskMyDay_Tbl
-                .Include(x => x.Task)
-                    .ThenInclude(x => x.TaskCategory)
-                .Include(x => x.Task)
-                    .ThenInclude(x => x.Stakeholder)
-                .Where(x => x.UserId == userId && 
-                           x.IsActive &&
-                           (x.PlannedDate.Date == yesterday || 
-                            x.PlannedDate.Date == today || 
-                            x.PlannedDate.Date == tomorrow))
-                .OrderBy(x => x.PlannedDate)
-                .ThenBy(x => x.CreatedDate)
+                .Include(tmd => tmd.TaskAssignment)
+                    .ThenInclude(ta => ta.Task)
+                        .ThenInclude(t => t.TaskCategory)
+                .Include(tmd => tmd.TaskAssignment.Task.Stakeholder)
+                .Where(tmd =>
+                    tmd.TaskAssignment.AssignedUserId == userId &&
+                    !tmd.IsRemoved &&
+                    (tmd.PlannedDate.Date == yesterday ||
+                     tmd.PlannedDate.Date == today ||
+                     tmd.PlannedDate.Date == tomorrow))
+                .OrderBy(tmd => tmd.PlannedDate)
+                .ThenBy(tmd => tmd.CreatedDate)
                 .ToListAsync();
 
             var result = new MyDayTasksViewModel
@@ -2744,31 +2779,35 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 TasksByDate = new Dictionary<string, List<MyDayTaskItemViewModel>>()
             };
 
-            foreach (var item in myDayTasks)
+            foreach (var myDayTask in myDayTasks)
             {
+                var task = myDayTask.TaskAssignment.Task;
+                var isWorkedOn = !string.IsNullOrEmpty(myDayTask.WorkNote) || myDayTask.WorkStartDate.HasValue;
+
                 var taskItem = new MyDayTaskItemViewModel
                 {
-                    TaskId = item.TaskId,
-                    TaskCode = item.Task.TaskCode,
-                    TaskTitle = item.Task.Title,
-                    TaskDescription = item.Task.Description,
-                    CategoryTitle = item.Task.TaskCategory?.Title,
-                    StakeholderName = item.Task.Stakeholder?.CompanyName ??
-                                   (string.IsNullOrEmpty(item.Task.Stakeholder?.FirstName) ? "ندارد" :
-                                    $"{item.Task.Stakeholder.FirstName} {item.Task.Stakeholder.LastName}"),
-                    TaskPriority = item.Task.Priority,
-                    IsImportant = item.Task.Important,
-                    PlanNote = item.PlanNote,
-                    WorkNote = item.WorkNote,
-                    WorkDurationMinutes = item.WorkDurationMinutes,
-                    IsWorkedOn = item.IsWorkedOn,
-                    WorkStartDate = item.WorkStartDate,
-                    CreatedDate = item.CreatedDate,
-                    TaskStatus = item.Task.Status,
-                    ProgressPercentage = CalculateTaskProgress(item.Task),
-                    PlannedDate = item.PlannedDate,
-                    PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(item.PlannedDate, "yyyy/MM/dd"),
-                 
+                    TaskId = task.Id,
+                    TaskAssignmentId = myDayTask.TaskAssignmentId,
+                    TaskCode = task.TaskCode,
+                    TaskTitle = task.Title,
+                    TaskDescription = task.Description,
+                    CategoryTitle = task.TaskCategory?.Title,
+                    StakeholderName = task.Stakeholder?.CompanyName ??
+                                   (string.IsNullOrEmpty(task.Stakeholder?.FirstName) ? "ندارد" :
+                                    $"{task.Stakeholder.FirstName} {task.Stakeholder.LastName}"),
+                    TaskPriority = task.Priority,
+                    IsImportant = task.Important,
+                    IsFocused = myDayTask.TaskAssignment.IsFocused,
+                    PlanNote = myDayTask.PlanNote,
+                    WorkNote = myDayTask.WorkNote,
+                    WorkDurationMinutes = myDayTask.WorkDurationMinutes,
+                    IsWorkedOn = isWorkedOn,
+                    WorkStartDate = myDayTask.WorkStartDate,
+                    CreatedDate = myDayTask.CreatedDate,
+                    TaskStatus = myDayTask.TaskAssignment.Status,
+                    ProgressPercentage = CalculateTaskProgress(task),
+                    PlannedDate = myDayTask.PlannedDate,
+                    PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(myDayTask.PlannedDate, "yyyy/MM/dd"),
                 };
 
                 // گروه‌بندی بر اساس تاریخ
@@ -2780,7 +2819,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 result.TasksByDate[dateKey].Add(taskItem);
 
                 // همچنان نگهداری لیست‌های قدیمی برای سازگاری
-                if (item.IsWorkedOn)
+                if (isWorkedOn)
                     result.WorkedTasks.Add(taskItem);
                 else
                     result.PlannedTasks.Add(taskItem);
@@ -2799,21 +2838,29 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         }
 
         /// <summary>
-        /// بررسی اینکه آیا تسک در "روز من" وجود دارد
+        /// بررسی اینکه آیا تسک در "روز من" وجود دارد - اصلاح شده
         /// </summary>
         public async Task<bool> IsTaskInMyDayAsync(int taskId, string userId, DateTime? targetDate = null)
         {
             var checkDate = targetDate?.Date ?? DateTime.Now.Date;
 
+            // ⭐ کوئری اصلاح شده
+            var assignment = await _context.TaskAssignment_Tbl
+                .FirstOrDefaultAsync(a =>
+                    a.TaskId == taskId &&
+                    a.AssignedUserId == userId);
+
+            if (assignment == null) return false;
+
             return await _context.TaskMyDay_Tbl
-                .AnyAsync(x => x.TaskId == taskId &&
-                              x.UserId == userId &&
-                              x.PlannedDate.Date == checkDate &&
-                              x.IsActive);
+                .AnyAsync(tmd =>
+                    tmd.TaskAssignmentId == assignment.Id &&
+                    tmd.PlannedDate.Date == checkDate &&
+                    !tmd.IsRemoved);
         }
 
         /// <summary>
-        /// حذف تسک از "روز من"
+        /// حذف تسک از "روز من" - اصلاح شده
         /// </summary>
         public async Task<bool> RemoveTaskFromMyDayAsync(int taskId, string userId, DateTime? targetDate = null)
         {
@@ -2821,25 +2868,61 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 var checkDate = targetDate?.Date ?? DateTime.Now.Date;
 
+                // ⭐ کوئری اصلاح شده
+                var assignment = await _context.TaskAssignment_Tbl
+                    .FirstOrDefaultAsync(a =>
+                        a.TaskId == taskId &&
+                        a.AssignedUserId == userId);
+
+                if (assignment == null) return false;
+
                 var record = await _context.TaskMyDay_Tbl
-                    .FirstOrDefaultAsync(x => x.TaskId == taskId &&
-                                            x.UserId == userId &&
-                                            x.PlannedDate.Date == checkDate &&
-                                            x.IsActive);
+                    .Include(tmd => tmd.TaskAssignment.Task)
+                    .FirstOrDefaultAsync(tmd =>
+                        tmd.TaskAssignmentId == assignment.Id &&
+                        tmd.PlannedDate.Date == checkDate &&
+                        !tmd.IsRemoved);
 
                 if (record != null)
                 {
-                    record.IsActive = false;
+                    record.IsRemoved = true;
+                    record.RemovedDate = DateTime.Now;
+                    record.UpdatedDate = DateTime.Now;
+
                     await _context.SaveChangesAsync();
+
+                    // ⭐ ثبت در تاریخچه
+                    await _taskHistoryRepository.LogTaskRemovedFromMyDayAsync(
+                        taskId,
+                        userId,
+                        record.TaskAssignment.Task?.Title ?? "نامشخص",
+                        record.TaskAssignment.Task?.TaskCode ?? string.Empty);
+
                     return true;
                 }
 
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"❌ Error in RemoveTaskFromMyDayAsync: {ex.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// دریافت تعداد تسک‌های "روز من" برای کاربر - اصلاح شده
+        /// </summary>
+        public async Task<int> GetMyDayTasksCountAsync(string userId, DateTime? targetDate = null)
+        {
+            var checkDate = targetDate?.Date ?? DateTime.Now.Date;
+
+            return await _context.TaskMyDay_Tbl
+                .Include(tmd => tmd.TaskAssignment)
+                .CountAsync(tmd =>
+                    tmd.TaskAssignment.AssignedUserId == userId &&
+                    tmd.PlannedDate.Date == checkDate &&
+                    !tmd.IsRemoved);
         }
 
         /// <summary>
@@ -2856,18 +2939,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             return (int)((double)completedOperations / totalOperations * 100);
         }
 
-        /// <summary>
-        /// دریافت تعداد تسک‌های "روز من" برای کاربر
-        /// </summary>
-        public async Task<int> GetMyDayTasksCountAsync(string userId, DateTime? targetDate = null)
-        {
-            var checkDate = targetDate?.Date ?? DateTime.Now.Date;
-
-            return await _context.TaskMyDay_Tbl
-                .CountAsync(x => x.UserId == userId &&
-                                x.PlannedDate.Date == checkDate &&
-                                x.IsActive);
-        }
+     
         #endregion
 
         #region Comprehensive User Tasks
@@ -4082,6 +4154,222 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return null;
             }
         }
+
+        // در انتهای کلاس اضافه کنید:
+
+        #region Task Work Log Management
+
+        /// <summary>
+        /// ثبت کار انجام شده روی تسک
+        /// </summary>
+        public async Task<(bool Success, string Message, int? WorkLogId)> AddTaskWorkLogAsync(
+            int taskId,
+            string userId,
+            string workDescription,
+            int? durationMinutes = null,
+            int? progressPercentage = null)
+        {
+            try
+            {
+                // بررسی دسترسی کاربر
+                var assignment = await _context.TaskAssignment_Tbl
+                    .FirstOrDefaultAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
+
+                if (assignment == null)
+                {
+                    return (false, "شما عضو این تسک نیستید", null);
+                }
+
+                var workLog = new TaskWorkLog
+                {
+                    TaskId = taskId,
+                    UserId = userId,
+                    WorkDescription = workDescription,
+                    WorkDate = DateTime.Now,
+                    DurationMinutes = durationMinutes,
+                    ProgressPercentage = progressPercentage,
+                    CreatedDate = DateTime.Now,
+                    IsDeleted = false
+                };
+
+                _context.TaskWorkLog_Tbl.Add(workLog);
+                await _context.SaveChangesAsync();
+
+                // ثبت در تاریخچه
+                await _taskHistoryRepository.LogTaskWorkLogAddedAsync(
+             taskId,
+             userId,
+             workLog.Id,
+             workDescription,
+             durationMinutes
+         );
+
+                return (true, "گزارش کار با موفقیت ثبت شد", workLog.Id);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"خطا در ثبت گزارش کار: {ex.Message}", null);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست WorkLog های یک تسک
+        /// </summary>
+        public async Task<List<TaskWorkLogViewModel>> GetTaskWorkLogsAsync(int taskId, int take = 0)
+        {
+            var query = _context.TaskWorkLog_Tbl
+                .Include(w => w.User)
+                .Where(w => w.TaskId == taskId && !w.IsDeleted)
+                .OrderByDescending(w => w.WorkDate);
+
+            if (take > 0)
+            {
+                query = (IOrderedQueryable<TaskWorkLog>)query.Take(take);
+            }
+
+            var workLogs = await query.ToListAsync();
+
+            return workLogs.Select(w => new TaskWorkLogViewModel
+            {
+                Id = w.Id,
+                TaskId = w.TaskId,
+                WorkDescription = w.WorkDescription,
+                WorkDate = w.WorkDate,
+                WorkDatePersian = ConvertDateTime.ConvertMiladiToShamsi(w.WorkDate, "yyyy/MM/dd HH:mm"),
+                DurationMinutes = w.DurationMinutes,
+                ProgressPercentage = w.ProgressPercentage,
+                UserId = w.UserId,
+                UserName = w.User != null ? $"{w.User.FirstName} {w.User.LastName}" : "نامشخص",
+                CreatedDate = w.CreatedDate,
+                CreatedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(w.CreatedDate, "yyyy/MM/dd HH:mm")
+            }).ToList();
+        }
+
+        #endregion
+
+        #region Task Focus Management
+
+        /// <summary>
+        /// تنظیم فوکوس کاربر روی یک تسک
+        /// </summary>
+        public async Task<(bool Success, string Message)> SetTaskFocusAsync(int taskId, string userId)
+        {
+            try
+            {
+                // بررسی عضویت کاربر در تسک
+                var targetAssignment = await _context.TaskAssignment_Tbl
+                    .FirstOrDefaultAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
+
+                if (targetAssignment == null)
+                {
+                    return (false, "شما عضو این تسک نیستید");
+                }
+
+                // حذف فوکوس از تسک‌های قبلی
+                var previousFocused = await _context.TaskAssignment_Tbl
+                    .Where(a => a.AssignedUserId == userId && a.IsFocused)
+                    .ToListAsync();
+
+                foreach (var assignment in previousFocused)
+                {
+                    assignment.IsFocused = false;
+                    assignment.FocusedDate = null;
+                }
+
+                // تنظیم فوکوس جدید
+                targetAssignment.IsFocused = true;
+                targetAssignment.FocusedDate = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return (true, "تسک با موفقیت به عنوان فوکوس انتخاب شد");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"خطا در تنظیم فوکوس: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// حذف فوکوس از یک تسک
+        /// </summary>
+        public async Task<(bool Success, string Message)> RemoveTaskFocusAsync(int taskId, string userId)
+        {
+            try
+            {
+                var assignment = await _context.TaskAssignment_Tbl
+                    .FirstOrDefaultAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
+
+                if (assignment == null)
+                {
+                    return (false, "شما عضو این تسک نیستید");
+                }
+
+                assignment.IsFocused = false;
+                assignment.FocusedDate = null;
+
+                await _context.SaveChangesAsync();
+
+                return (true, "فوکوس از تسک حذف شد");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"خطا در حذف فوکوس: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// دریافت تسک فوکوس شده کاربر
+        /// </summary>
+        public async Task<int?> GetUserFocusedTaskIdAsync(string userId)
+        {
+            var focusedAssignment = await _context.TaskAssignment_Tbl
+                .FirstOrDefaultAsync(a => a.AssignedUserId == userId && a.IsFocused);
+
+            return focusedAssignment?.TaskId;
+        }
+
+        #endregion
+        #region Task Work Log Management - بخش موجود را گسترش می‌دهیم
+
+        /// <summary>
+        /// آماده‌سازی مودال ثبت کار انجام شده روی تسک
+        /// </summary>
+        public async Task<TaskWorkLogViewModel?> PrepareLogTaskWorkModalAsync(int taskId, string userId)
+        {
+            try
+            {
+                // بررسی دسترسی کاربر به تسک
+                var assignment = await _context.TaskAssignment_Tbl
+                    .Include(a => a.Task)
+                    .FirstOrDefaultAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
+
+                if (assignment == null)
+                {
+                    return null; // کاربر عضو این تسک نیست
+                }
+
+                // ⭐ دریافت اطلاعات تسک
+                var task = assignment.Task;
+
+                // ⭐ ایجاد ViewModel
+                var model = new TaskWorkLogViewModel
+                {
+                    TaskId = taskId,
+                    TaskTitle = task?.Title ?? "نامشخص",
+                    TaskCode = task?.TaskCode ?? string.Empty
+                };
+
+                return model;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in PrepareLogTaskWorkModalAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        #endregion
         /// <summary>
         /// دریافت آیکون برای نوع تغییر
         /// </summary>
