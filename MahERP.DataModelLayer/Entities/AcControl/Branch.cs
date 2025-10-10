@@ -50,6 +50,17 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public DateTime CreateDate { get; set; }
 
         public DateTime? LastUpdateDate { get; set; }
+      
+      
+        /// <summary>
+        /// ادرس مرکز پیام لاگ به همه اعضای یک شعبه
+        /// </summary>
+        /// 
+        public string? TelegramBotToken { get; set; }
+        public string? TelegramBotTokenName { get; set; }
+
+
+
 
         // Navigation properties
         public virtual ICollection<BranchUser> BranchUsers { get; set; }
