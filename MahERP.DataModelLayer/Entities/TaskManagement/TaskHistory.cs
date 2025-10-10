@@ -154,6 +154,21 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         ManagerApproved = 16,
 
         /// <summary>17 - رد تسک</summary>
-        TaskRejected = 17
+        TaskRejected = 17,
+
+        /// <summary>18 - تکمیل تسک</summary>
+        TaskCompleted = 18,
+
+        /// <summary>19 - غیرفعال شدن یادآوری‌ها هنگام تکمیل تسک</summary>
+        RemindersDeactivatedOnCompletion = 19,
+
+        /// <summary>20 - افزودن تسک به روز من</summary>
+        AddedToMyDay = 20,
+
+        /// <summary>21 - حذف تسک از روز من</summary>
+        RemovedFromMyDay = 21,
+
+        /// <summary>22 - ثبت کار روی تسک در روز من</summary>
+        WorkLoggedOnMyDay = 22
     }
 }

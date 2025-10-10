@@ -25,7 +25,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <summary>
         /// دریافت تسک بر اساس شناسه با امکان include کردن related entities
         /// </summary>
-        Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, 
+        Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false,
             bool includeAttachments = false, bool includeComments = false);
 
         /// <summary>
@@ -115,6 +115,26 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         TaskAssignment GetTaskAssignmentByUserAndTask(string userId, int taskId);
 
+        /// <summary>
+        /// تخصیص کاربر جدید به تسک
+        /// </summary>
+        Task<bool> AssignUserToTaskAsync(int taskId, string userId, string assignerUserId, int? teamId = null, string description = null);
+
+        /// <summary>
+        /// حذف Assignment
+        /// </summary>
+        Task<bool> RemoveTaskAssignmentAsync(int assignmentId);
+
+        /// <summary>
+        /// دریافت Assignment با اطلاعات کامل
+        /// </summary>
+        Task<TaskAssignment> GetTaskAssignmentByIdAsync(int assignmentId);
+
+        /// <summary>
+        /// بررسی تکراری نبودن Assignment
+        /// </summary>
+        Task<TaskAssignment> GetTaskAssignmentByUserAndTaskAsync(string userId, int taskId);
+
         #endregion
 
         #region Task Categories
@@ -168,7 +188,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         #region Visibility Methods
 
-       
+
         /// <summary>
         /// دریافت تسک‌های کاربر با در نظر گیری مجوزهای جدید (نسخه Async)
         /// </summary>
@@ -186,8 +206,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         Task<bool> CanUserViewTaskAsync(string userId, int taskId);
 
-      
-   
+
+
         #endregion
 
         #region Hierarchical Task Methods
@@ -221,11 +241,16 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         Task<List<UserViewModelFull>> GetUserRelatedUsersAsync(string userId);
 
+        /// <summary>
+        /// دریافت تیم‌های یک کاربر در شعبه مشخص
+        /// </summary>
+        Task<List<TeamViewModel>> GetUserTeamsByBranchAsync(string userId, int branchId);
+
         #endregion
 
         #region Statistics and Filter Methods
 
-   
+
 
         /// <summary>
         /// اعمال فیلترهای اضافی بر روی لیست تسک‌ها
@@ -241,8 +266,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         #region AJAX and Helper Methods
 
- 
-      
+
+
         /// <summary>
         /// دریافت داده‌های مربوط به تغییر شعبه
         /// </summary>
@@ -355,16 +380,11 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <summary>
         /// دریافت انتصاب‌های تسک همراه با تاریخ‌های شخصی
         /// </summary>
-        /// <param name="taskId">شناسه تسک</param>
-        /// <returns>لیست انتصاب‌های تسک با تاریخ‌های شخصی</returns>
         Task<List<TaskAssignment>> GetTaskAssignmentsWithPersonalDatesAsync(int taskId);
 
         /// <summary>
         /// دریافت حروف اول نام کاربر
         /// </summary>
-        /// <param name="firstName">نام</param>
-        /// <param name="lastName">نام خانوادگی</param>
-        /// <returns>حروف اول نام</returns>
         string GetUserInitials(string firstName, string lastName);
 
         #endregion
@@ -388,30 +408,18 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <summary>
         /// دریافت انتصاب تسک برای تنظیم تاریخ‌های شخصی
         /// </summary>
-        /// <param name="taskId">شناسه تسک</param>
-        /// <param name="userId">شناسه کاربر</param>
-        /// <returns>انتصاب تسک همراه با اطلاعات تسک</returns>
         Task<TaskAssignment> GetTaskAssignmentForPersonalDatesAsync(int taskId, string userId);
 
         /// <summary>
         /// دریافت انتصاب تسک بر اساس شناسه انتصاب برای تنظیم تاریخ‌های شخصی
         /// </summary>
-        /// <param name="assignmentId">شناسه انتساب</param>
-        /// <param name="userId">شناسه کاربر</param>
-        /// <returns>انتصاب تسک همراه با اطلاعات تسک</returns>
         Task<TaskAssignment> GetTaskAssignmentByIdForPersonalDatesAsync(int assignmentId, string userId);
 
         /// <summary>
         /// بروزرسانی تاریخ‌های شخصی انتساب تسک
         /// </summary>
-        /// <param name="assignmentId">شناسه انتساب</param>
-        /// <param name="userId">شناسه کاربر</param>
-        /// <param name="personalStartDate">تاریخ شروع شخصی</param>
-        /// <param name="personalEndDate">تاریخ پایان شخصی</param>
-        /// <param name="personalTimeNote">یادداشت زمان‌بندی شخصی</param>
-        /// <returns>True در صورت موفقیت</returns>
         Task<bool> UpdatePersonalDatesAsync(int assignmentId, string userId, DateTime? personalStartDate, DateTime? personalEndDate, string personalTimeNote);
-     
+
         #endregion
 
         #region TaskMyDay Methods
@@ -447,14 +455,25 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         Task<int> GetMyDayTasksCountAsync(string userId, DateTime? targetDate = null);
 
         #endregion
+
+        #region Comprehensive User Tasks
+
+        /// <summary>
+        /// دریافت همه انواع تسک‌های کاربر به تفکیک نوع
+        /// </summary>
         Task<UserTasksComprehensiveViewModel> GetUserTasksComprehensiveAsync(
            string userId,
            bool includeCreatedTasks = true,
            bool includeAssignedTasks = true,
            bool includeSupervisedTasks = false,
            bool includeDeletedTasks = false);
+
+        /// <summary>
+        /// دریافت یادآوری‌های داشبورد
+        /// </summary>
         Task<List<TaskReminderItemViewModel>> GetDashboardRemindersAsync(string userId, int maxResults = 10, int daysAhead = 1);
-        // در انتهای interface اضافه کنید:
+
+        #endregion
 
         #region Task Creation and Validation Helper Methods
 
@@ -503,19 +522,17 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         string GetTaskStatusTextForCalendar(TaskCalendarViewModel task);
 
         #endregion
-        /// <summary>
-        /// دریافت تیم‌های یک کاربر در شعبه مشخص
-        /// </summary>
-        /// <param name="userId">شناسه کاربر</param>
-        /// <param name="branchId">شناسه شعبه</param>
-        /// <returns>لیست تیم‌های کاربر در شعبه</returns>
-        Task<List<TeamViewModel>> GetUserTeamsByBranchAsync(string userId, int branchId);
+
+        #region Task History Methods
+
         /// <summary>
         /// دریافت تاریخچه کامل تسک
         /// </summary>
         Task<List<TaskHistoryViewModel>> GetTaskHistoryAsync(int taskId);
 
-        #region Task Reminders Management - NEW
+        #endregion
+
+        #region Task Reminders Management
 
         /// <summary>
         /// دریافت لیست یادآوری‌های تسک
@@ -549,26 +566,23 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         #endregion
 
-        #region Complete Task Methods - NEW
+        #region Complete Task Methods
 
         /// <summary>
         /// آماده‌سازی مودال تکمیل تسک
         /// </summary>
-        /// <param name="taskId">شناسه تسک</param>
-        /// <param name="userId">شناسه کاربر</param>
-        /// <returns>مدل مودال تکمیل تسک یا null در صورت عدم دسترسی</returns>
         Task<CompleteTaskViewModel> PrepareCompleteTaskModalAsync(int taskId, string userId);
 
         /// <summary>
         /// ثبت تکمیل تسک
         /// </summary>
-        /// <param name="model">مدل تکمیل تسک</param>
-        /// <param name="userId">شناسه کاربر</param>
-        /// <returns>نتیجه عملیات (موفقیت/خطا)</returns>
         Task<(bool IsSuccess, string ErrorMessage)> CompleteTaskAsync(CompleteTaskViewModel model, string userId);
 
-        #endregion
+        /// <summary>
+        /// غیرفعال کردن یادآوری‌های یک تسک
+        /// </summary>
+        Task<bool> DeactivateAllTaskRemindersAsync(int taskId);
 
+        #endregion
     }
 }
-

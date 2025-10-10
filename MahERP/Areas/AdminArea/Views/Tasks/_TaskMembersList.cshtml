@@ -1,0 +1,142 @@
+﻿@{
+    var assignments = ViewBag.Assignments as List<TaskAssignmentViewModel> ?? new List<TaskAssignmentViewModel>();
+    var isCreator = ViewBag.IsCreator ?? false;
+    var isManager = ViewBag.IsManager ?? false;
+    var isTaskCompleted = ViewBag.IsTaskCompleted ?? false;
+}
+
+@if (!assignments.Any())
+{
+    <!-- پیام خالی -->
+    <div class="py-5 text-center text-muted">
+        <i class="fa fa-users fa-4x opacity-25 mb-3"></i>
+        <h5>هیچ کاربری اختصاص داده نشده است</h5>
+        @if ((isCreator || isManager) && !isTaskCompleted)
+        {
+            <p class="mb-3">برای شروع همکاری، اولین عضو را اضافه کنید</p>
+            <button type="button" 
+                    class="btn btn-primary" 
+                    data-toggle="modal-ajax" 
+                    href="@Url.Action("AssignUserToTaskModal", "Tasks", new { taskId = assignments.FirstOrDefault()?.TaskId })">
+                <i class="fa fa-user-plus me-1"></i>افزودن عضو
+            </button>
+        }
+    </div>
+}
+else
+{
+    <!-- آمار سریع -->
+    <div class="row g-2 mb-4">
+        <div class="col-6 col-md-4">
+            <div class="p-3 bg-xdream-lighter rounded-3 text-center">
+                <div class="fs-2 fw-bold text-primary">
+                    @assignments.Count
+                </div>
+                <div class="fs-xs text-muted">کل اعضا</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="p-3 bg-success-light rounded-3 text-center">
+                <div class="fs-2 fw-bold text-success">
+                    @assignments.Count(a => a.CompletionDate.HasValue)
+                </div>
+                <div class="fs-xs text-muted">تکمیل کرده</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="p-3 bg-warning-light rounded-3 text-center">
+                <div class="fs-2 fw-bold text-warning">
+                    @assignments.Count(a => !a.CompletionDate.HasValue)
+                </div>
+                <div class="fs-xs text-muted">در حال انجام</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لیست اعضا -->
+    <div class="row g-3">
+        @foreach (var assignment in assignments)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border @(assignment.CompletionDate.HasValue ? "border-success" : "")">
+                    <div class="card-body">
+                        <!-- هدر کارت -->
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                @{
+                                    var initials = "";
+                                    var nameParts = assignment.AssignedUserName?.Split(' ');
+                                    if (nameParts?.Length > 0)
+                                    {
+                                        initials = nameParts[0].Substring(0, 1);
+                                        if (nameParts.Length > 1)
+                                        {
+                                            initials += nameParts[1].Substring(0, 1);
+                                        }
+                                    }
+                                }
+                                <div class="avatar-circle @(assignment.CompletionDate.HasValue ? "bg-success" : "bg-primary") text-white me-3" 
+                                     style="width: 50px; height: 50px; font-size: 18px;">
+                                    @initials
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">@assignment.AssignedUserName</h6>
+                                    <small class="text-muted">
+                                        @if (assignment.CompletionDate.HasValue)
+                                        {
+                                            <i class="fa fa-check-circle text-success me-1"></i>
+                                            <span>تکمیل شده</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-clock text-warning me-1"></i>
+                                            <span>در حال انجام</span>
+                                        }
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            @if ((isCreator || isManager) && !isTaskCompleted)
+                            {
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger flex-shrink-0" 
+                                        data-toggle="modal-ajax" 
+                                        href="@Url.Action("RemoveAssignmentModal", "Tasks", new { assignmentId = assignment.Id })"
+                                        title="حذف از تسک">
+                                    <i class="fa fa-user-minus"></i>
+                                </button>
+                            }
+                        </div>
+
+                        <!-- جزئیات -->
+                        <div class="border-top pt-3">
+                            @if (!string.IsNullOrEmpty(assignment.Description))
+                            {
+                                <div class="mb-2">
+                                    <small class="text-muted d-block mb-1">
+                                        <i class="fa fa-sticky-note me-1"></i>توضیحات:
+                                    </small>
+                                    <p class="fs-sm mb-0">@assignment.Description</p>
+                                </div>
+                            }
+                            
+                            <div class="d-flex justify-content-between align-items-center text-muted fs-xs">
+                                <div>
+                                    <i class="fa fa-calendar-plus me-1"></i>
+                                    <span>@ConvertDateTime.ConvertMiladiToShamsi(assignment.AssignDate, "yyyy/MM/dd")</span>
+                                </div>
+                                @if (assignment.CompletionDate.HasValue)
+                                {
+                                    <div class="text-success">
+                                        <i class="fa fa-check me-1"></i>
+                                        <span>@ConvertDateTime.ConvertMiladiToShamsi(assignment.CompletionDate.Value, "yyyy/MM/dd")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

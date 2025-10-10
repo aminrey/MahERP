@@ -604,19 +604,27 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     model.TaskCode
                 );
 
+                // ⭐⭐⭐ ثبت غیرفعال شدن یادآوری‌ها در تاریخچه
+                await _taskHistoryRepository.LogRemindersDeactivatedOnCompletionAsync(
+                    model.TaskId,
+                    userId,
+                    model.TaskTitle,
+                    model.TaskCode
+                );
+
                 // ⭐ ارسال نوتیفیکیشن
                 await _taskNotificationService.NotifyTaskCompletedAsync(model.TaskId, userId);
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.Update, "Tasks", "CompleteTask",
-                    $"تکمیل تسک {model.TaskCode} - {model.TaskTitle}",
+                    $"تکمیل تسک {model.TaskCode} - {model.TaskTitle} و غیرفعال کردن یادآوری‌ها",
                     recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
 
                 // ✅ بازگرداندن response با redirect
                 return Json(new
                 {
                     status = "redirect",
-                    message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد" } },
+                    message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد و یادآوری‌ها غیرفعال شدند" } },
                     redirectUrl = Url.Action("Details", "Tasks", new { id = model.TaskId, area = "AdminArea" })
                 });
             }
@@ -1695,15 +1703,16 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         {
             try
             {
-                // ✅ استفاده از Repository
                 var task = await _taskRepository.GetTaskByIdAsync(taskId);
                 if (task == null)
                 {
                     return Json(new { status = "error", message = "تسک یافت نشد" });
                 }
 
-                // ✅ دریافت یادآوری‌ها از Repository
                 var reminders = await _taskRepository.GetTaskRemindersListAsync(taskId);
+
+                // ⭐ ارسال وضعیت قفل به View
+                ViewBag.IsTaskCompleted = task.CompletionDate.HasValue;
 
                 return PartialView("_TaskRemindersList", new { TaskId = taskId, Reminders = reminders });
             }
@@ -2196,7 +2205,379 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
+        /// <summary>
+        /// نمایش مودال افزودن کاربر به تسک
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AssignUserToTaskModal(int taskId)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var task = await _taskRepository.GetTaskByIdAsync(taskId);
 
+                if (task == null)
+                    return NotFound();
+
+                // بررسی دسترسی
+                var isCreator = task.CreatorUserId == userId;
+                var isAdmin = User.IsInRole("Admin");
+
+                if (!isCreator && !isAdmin)
+                    return Forbid();
+
+                var model = new AssignUserToTaskViewModel
+                {
+                    TaskId = taskId,
+                    TaskTitle = task.Title,
+                    TaskCode = task.TaskCode,
+                    BranchId = task.BranchId ?? 0
+                };
+
+                // دریافت کاربران و تیم‌های شعبه
+                if (model.BranchId > 0)
+                {
+                    var branchData = await _taskRepository.GetBranchTriggeredDataAsync(model.BranchId);
+                    model.AvailableUsers = branchData.Users;
+                    model.AvailableTeams = branchData.Teams;
+                }
+
+                return PartialView("_AssignUserToTaskModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AssignUserToTaskModal", "خطا در نمایش مودال", ex);
+                return StatusCode(500, "خطا در بارگذاری مودال");
+            }
+        }
+        /// <summary>
+        /// ثبت تخصیص کاربر جدید به تسک
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignUserToTask(AssignUserToTaskViewModel model)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
+
+                if (task == null)
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "تسک یافت نشد" } }
+                    });
+
+                // بررسی دسترسی
+                var isCreator = task.CreatorUserId == userId;
+                var isAdmin = User.IsInRole("Admin");
+
+                if (!isCreator && !isAdmin)
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما دسترسی لازم را ندارید" } }
+                    });
+
+                // بررسی تکراری نبودن
+                var existingAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(
+                    model.SelectedUserId,
+                    model.TaskId);
+
+                if (existingAssignment != null)
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "این کاربر قبلاً به تسک اختصاص داده شده است" } }
+                    });
+
+                // ایجاد Assignment
+                var result = await _taskRepository.AssignUserToTaskAsync(
+                    model.TaskId,
+                    model.SelectedUserId,
+                    userId,
+                    model.SelectedTeamId,
+                    model.Description);
+
+                if (result)
+                {
+                    // ثبت در تاریخچه
+                    var assignedUser = await _userManager.FindByIdAsync(model.SelectedUserId);
+                    var assignedUserName = assignedUser != null ? $"{assignedUser.FirstName} {assignedUser.LastName}" : "نامشخص";
+
+                    await _taskHistoryRepository.LogUserAssignedAsync(
+                        model.TaskId,
+                        userId,
+                        assignedUserName);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "Tasks",
+                        "AssignUserToTask",
+                        $"تخصیص کاربر {assignedUserName} به تسک {task.Title}",
+                        recordId: model.TaskId.ToString());
+
+                    // ⭐⭐⭐ دریافت لیست به‌روزرسانی شده اعضا
+                    var updatedTask = _taskRepository.GetTaskById(
+                        model.TaskId,
+                        includeAssignments: true);
+
+                    var assignments = updatedTask.TaskAssignments
+                        .Select(a => new TaskAssignmentViewModel
+                        {
+                            Id = a.Id,
+                            TaskId = a.TaskId,
+                            AssignedUserId = a.AssignedUserId,
+                            AssignedUserName = a.AssignedUser != null
+                                ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
+                                : "نامشخص",
+                            AssignDate = a.AssignmentDate,
+                            CompletionDate = a.CompletionDate,
+                            Description = a.Description
+                        })
+                        .ToList();
+
+                    // ⭐⭐⭐ رندر Partial View
+                    var partialHtml = await this.RenderViewToStringAsync(
+                        "_TaskMembersList",
+                        new
+                        {
+                            Assignments = assignments,
+                            IsCreator = isCreator,
+                            IsManager = isAdmin,
+                            IsTaskCompleted = task.CompletionDate.HasValue
+                        }, new
+                        {
+                            Assignments = assignments,
+                            IsCreator = isCreator,
+                            IsManager = isAdmin,
+                            IsTaskCompleted = task.CompletionDate.HasValue
+                        });
+
+                    // ⭐⭐⭐ برگرداندن JSON با ساختار update-view
+                    return Json(new
+                    {
+                        status = "update-view",
+                        viewList = new[]
+                        {
+                    new
+                    {
+                        elementId = "task-members-container",
+                        view = new { result = partialHtml }
+                    }
+                },
+                        message = new[] { new { status = "success", text = "کاربر با موفقیت به تسک اختصاص داده شد" } }
+                    });
+                }
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در تخصیص کاربر" } }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AssignUserToTask", "خطا در تخصیص کاربر", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = $"خطا: {ex.Message}" } }
+                });
+            }
+        }
+        /// <summary>
+        /// نمایش مودال تأیید حذف Assignment
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> RemoveAssignmentModal(int assignmentId)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var assignment = await _taskRepository.GetTaskAssignmentByIdAsync(assignmentId);
+
+                if (assignment == null)
+                    return NotFound();
+
+                var task = assignment.Task;
+
+                // بررسی دسترسی
+                var isCreator = task.CreatorUserId == userId;
+                var isAdmin = User.IsInRole("Admin");
+
+                if (!isCreator && !isAdmin)
+                    return Forbid();
+
+                var model = new RemoveAssignmentViewModel
+                {
+                    AssignmentId = assignmentId,
+                    TaskId = task.Id,
+                    TaskTitle = task.Title,
+                    TaskCode = task.TaskCode,
+                    UserName = assignment.AssignedUser != null
+                        ? $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}"
+                        : "نامشخص"
+                };
+
+                return PartialView("_RemoveAssignmentModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "RemoveAssignmentModal", "خطا در نمایش مودال", ex);
+                return StatusCode(500, "خطا در بارگذاری مودال");
+            }
+        }
+
+        /// <summary>
+        /// حذف Assignment
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveAssignment(int assignmentId)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                var assignment = await _taskRepository.GetTaskAssignmentByIdAsync(assignmentId);
+
+                if (assignment == null)
+                    return Json(new { success = false, message = "تخصیص یافت نشد" });
+
+                var task = assignment.Task;
+
+                // بررسی دسترسی
+                var isCreator = task.CreatorUserId == userId;
+                var isAdmin = User.IsInRole("Admin");
+
+                if (!isCreator && !isAdmin)
+                    return Json(new { success = false, message = "شما دسترسی لازم را ندارید" });
+
+                // حذف Assignment
+                var removedUserName = assignment.AssignedUser != null
+                    ? $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}"
+                    : "نامشخص";
+
+                var result = await _taskRepository.RemoveTaskAssignmentAsync(assignmentId);
+
+                if (result)
+                {
+                    // ثبت در تاریخچه
+                    await _taskHistoryRepository.LogUserRemovedAsync(
+                        task.Id,
+                        userId,
+                        removedUserName);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Delete,
+                        "Tasks",
+                        "RemoveAssignment",
+                        $"حذف {removedUserName} از تسک {task.Title}",
+                        recordId: task.Id.ToString());
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = "کاربر با موفقیت از تسک حذف شد",
+                        refreshPage = true
+                    });
+                }
+
+                return Json(new { success = false, message = "خطا در حذف کاربر" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "RemoveAssignment", "خطا در حذف کاربر", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت تیم‌های کاربر برای AJAX
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> GetUserTeamsForAssignment(string userId, int branchId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId) || branchId <= 0)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "پارامترهای نامعتبر"
+                    });
+                }
+
+                var userTeams = await _taskRepository.GetUserTeamsByBranchAsync(userId, branchId);
+
+                var html = "";
+
+                if (!userTeams.Any())
+                {
+                    html = @"<select class='form-select team-select' name='SelectedTeamId' required disabled>
+                        <option value='0'>بدون تیم</option>
+                     </select>
+                     <small class='form-text text-warning mt-1'>
+                        <i class='fa fa-exclamation-triangle me-1'></i>
+                        این کاربر در هیچ تیمی عضو نیست
+                     </small>";
+                }
+                else if (userTeams.Count == 1)
+                {
+                    var team = userTeams.First();
+                    html = $@"<select class='form-select team-select' name='SelectedTeamId' required>
+                        <option value='{team.Id}' selected>{team.Title}</option>
+                      </select>
+                      <small class='form-text text-success mt-1'>
+                        <i class='fa fa-check me-1'></i>
+                        تیم به صورت خودکار انتخاب شد
+                      </small>";
+                }
+                else
+                {
+                    html = "<select class='form-select team-select' name='SelectedTeamId' required>";
+                    html += "<option value=''>انتخاب تیم...</option>";
+
+                    foreach (var team in userTeams)
+                    {
+                        html += $"<option value='{team.Id}'>{team.Title}</option>";
+                    }
+
+                    html += "</select>";
+                    html += @"<small class='form-text text-muted mt-1'>
+                        <i class='fa fa-info-circle me-1'></i>
+                        لطفاً تیم مربوطه را انتخاب کنید
+                      </small>";
+                }
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "TeamSelectDiv",
+                    view = new { result = html }
+                }
+            },
+                    hasNoTeam = !userTeams.Any(),
+                    teamCount = userTeams.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetUserTeamsForAssignment: {ex.Message}");
+
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا در دریافت تیم‌ها"
+                });
+            }
+        }
         #endregion
     }
 }

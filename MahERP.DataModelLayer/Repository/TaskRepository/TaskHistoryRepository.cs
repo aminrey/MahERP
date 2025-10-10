@@ -505,6 +505,38 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 Console.WriteLine($"❌ Error in LogTaskCompletedAsync: {ex.Message}");
             }
         }
+        /// <summary>
+        /// ثبت غیرفعال شدن یادآوری‌ها هنگام تکمیل تسک
+        /// </summary>
+        public async Task LogRemindersDeactivatedOnCompletionAsync(
+            int taskId,
+            string userId,
+            string taskTitle,
+            string taskCode)
+        {
+            try
+            {
+                var historyEntry = new TaskHistory
+                {
+                    TaskId = taskId,
+                    UserId = userId,
+                    ActionType = (byte)TaskHistoryActionType.RemindersDeactivatedOnCompletion, // ⭐ نیاز به اضافه کردن enum
+                    Title = "غیرفعال شدن یادآوری‌ها",
+                    Description = $"یادآوری‌های تسک '{taskTitle}' ({taskCode}) به دلیل تکمیل تسک، خودکار غیرفعال شدند",
+                    ActionDate = DateTime.Now,
+                    RelatedItemType = "TaskReminder"
+                };
+
+                await _context.TaskHistory_Tbl.AddAsync(historyEntry);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Logged reminder deactivation for task {taskId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error logging reminder deactivation: {ex.Message}");
+            }
+        }
         #region Helper Methods
 
         /// <summary>

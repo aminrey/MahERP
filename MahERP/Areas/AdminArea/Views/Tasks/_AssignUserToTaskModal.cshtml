@@ -1,0 +1,149 @@
+﻿@model AssignUserToTaskViewModel
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <form method="post" asp-action="AssignUserToTask" asp-controller="Tasks" 
+              id="assignUserForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="TaskId" />
+            <input type="hidden" asp-for="BranchId" />
+            
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-user-plus me-2"></i>
+                    افزودن کاربر به تسک
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- اطلاعات تسک -->
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-info-circle fa-2x me-3"></i>
+                        <div>
+                            <div class="fw-bold">@Model.TaskTitle</div>
+                            <small class="text-muted">کد تسک: @Model.TaskCode</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- انتخاب کاربر -->
+                <div class="mb-4">
+                    <label class="form-label" for="SelectedUserId">
+                        انتخاب کاربر <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="SelectedUserId"
+                            class="js-select2 form-select @(ViewData.ModelState["SelectedUserId"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                            id="SelectedUserId"
+                            data-placeholder="کاربر را انتخاب کنید"
+                            data-url="@Url.Action("GetUserTeamsForAssignment", "Tasks")"
+                            data-toggle="multiplepartialview"
+                            data-target-divs="TeamSelectDiv"
+                            data-param-name="userId"
+                            data-branch-param="BranchId"
+                            required>
+                        <option value="">انتخاب کاربر...</option>
+                        @if (Model.AvailableUsers != null)
+                        {
+                            foreach (var user in Model.AvailableUsers)
+                            {
+                                <option value="@user.UserId">@user.UserFullName</option>
+                            }
+                        }
+                    </select>
+                    @if (ViewData.ModelState["SelectedUserId"]?.Errors.Count > 0)
+                    {
+                        <div class="invalid-feedback d-block">
+                            <span asp-validation-for="SelectedUserId"></span>
+                        </div>
+                    }
+                    <small class="form-text text-muted">
+                        <i class="fa fa-user me-1"></i>
+                        کاربری که می‌خواهید به این تسک اختصاص دهید
+                    </small>
+                </div>
+
+                <!-- انتخاب تیم -->
+                <div class="mb-4">
+                    <label class="form-label">
+                        تیم <span class="text-danger">*</span>
+                    </label>
+                    <div id="TeamSelectDiv">
+                        <select class="form-select team-select" 
+                                name="SelectedTeamId" 
+                                required 
+                                disabled>
+                            <option value="">ابتدا کاربر را انتخاب کنید</option>
+                        </select>
+                        <small class="form-text text-muted mt-1">
+                            <i class="fa fa-info-circle me-1"></i>
+                            بعد از انتخاب کاربر، تیم مربوطه را انتخاب کنید
+                        </small>
+                    </div>
+                </div>
+
+                <!-- توضیحات -->
+                <div class="mb-3">
+                    <label class="form-label" for="Description">توضیحات (اختیاری)</label>
+                    <textarea asp-for="Description"
+                              class="form-control"
+                              rows="3"
+                              placeholder="توضیحات اضافی درباره این تخصیص..."
+                              maxlength="500"></textarea>
+                    <small class="form-text text-muted">
+                        <i class="fa fa-sticky-note me-1"></i>
+                        توضیحات کمکی برای کاربر منتصب شده
+                    </small>
+                </div>
+
+                <!-- نمایش خطاها -->
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <strong>خطاهای اعتبارسنجی:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>انصراف
+                </button>
+                <button type="button" 
+                        class="btn btn-primary" 
+                        id="submitAssignBtn"
+                        data-save="modal-ajax-save">
+                    <i class="fa fa-user-plus me-1"></i>تخصیص کاربر
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // راه‌اندازی Select2
+    $('#SelectedUserId').select2({
+        width: '100%',
+        dropdownParent: $('.modal-content'),
+        placeholder: 'کاربر را انتخاب کنید'
+    });
+
+    // مدیریت موفقیت
+    $('#submitAssignBtn').on('ajaxSuccess', function(event, response) {
+        if (response.success && response.refreshPage) {
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
+        }
+    });
+});
+</script>

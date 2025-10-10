@@ -1,0 +1,136 @@
+﻿@model RemoveAssignmentViewModel
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <form method="post" 
+              asp-action="RemoveAssignment" 
+              asp-controller="Tasks"
+              id="removeAssignmentForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="assignmentId" value="@Model.AssignmentId" />
+            
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-user-minus me-2"></i>
+                    حذف کاربر از تسک
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    <strong>هشدار:</strong> این عملیات قابل بازگشت نیست!
+                </div>
+
+                <div class="card border-danger mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title text-danger">
+                            <i class="fa fa-tasks me-2"></i>اطلاعات تسک
+                        </h6>
+                        <div class="mb-2">
+                            <strong>عنوان:</strong> @Model.TaskTitle
+                        </div>
+                        <div class="mb-2">
+                            <strong>کد:</strong> 
+                            <span class="badge bg-secondary">@Model.TaskCode</span>
+                        </div>
+                        <hr>
+                        <h6 class="card-title text-danger">
+                            <i class="fa fa-user me-2"></i>کاربر
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle bg-danger text-white me-3" style="width: 50px; height: 50px;">
+                                @{
+                                    var initials = "";
+                                    var nameParts = Model.UserName?.Split(' ');
+                                    if (nameParts?.Length > 0)
+                                    {
+                                        initials = nameParts[0].Substring(0, 1);
+                                        if (nameParts.Length > 1)
+                                        {
+                                            initials += nameParts[1].Substring(0, 1);
+                                        }
+                                    }
+                                }
+                                @initials
+                            </div>
+                            <div>
+                                <div class="fw-bold">@Model.UserName</div>
+                                <small class="text-muted">این کاربر از تسک حذف خواهد شد</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-muted mb-0">
+                    <i class="fa fa-info-circle me-1"></i>
+                    آیا از حذف این کاربر از تسک اطمینان دارید؟
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>انصراف
+                </button>
+                <button type="button" 
+                        class="btn btn-danger" 
+                        id="confirmRemoveBtn">
+                    <i class="fa fa-trash me-1"></i>بله، حذف شود
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#confirmRemoveBtn').on('click', async function() {
+        const confirmed = await showConfirmationSwal({
+            title: 'آیا مطمئن هستید؟',
+            text: 'کاربر "@Model.UserName" از تسک "@Model.TaskTitle" حذف خواهد شد',
+            icon: 'warning',
+            confirmButtonText: 'بله، حذف شود',
+            cancelButtonText: 'انصراف',
+            confirmButtonColor: '#dc3545'
+        });
+
+        if (confirmed) {
+            // نمایش loading
+            $(this).prop('disabled', true)
+                   .html('<i class="fa fa-spinner fa-spin me-1"></i>در حال حذف...');
+
+            // ارسال فرم
+            const formData = new FormData($('#removeAssignmentForm')[0]);
+
+            $.ajax({
+                url: $('#removeAssignmentForm').attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        showSuccessSwal('موفق!', response.message || 'کاربر با موفقیت حذف شد');
+                        
+                        setTimeout(function() {
+                            $('.modal').modal('hide');
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showErrorSwal('خطا', response.message || 'خطا در حذف کاربر');
+                        $('#confirmRemoveBtn').prop('disabled', false)
+                                             .html('<i class="fa fa-trash me-1"></i>بله، حذف شود');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error:', xhr);
+                    showErrorSwal('خطا', 'خطا در ارتباط با سرور');
+                    $('#confirmRemoveBtn').prop('disabled', false)
+                                         .html('<i class="fa fa-trash me-1"></i>بله، حذف شود');
+                }
+            });
+        }
+    });
+});
+</script>

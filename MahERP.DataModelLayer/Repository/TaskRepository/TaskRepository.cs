@@ -3833,7 +3833,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             }
         }
         /// <summary>
-        /// ثبت تکمیل تسک - نسخه اصلاح شده برای سازگاری با ساختار جدول
+        /// ثبت تکمیل تسک - با قفل خودکار، پیشرفت 100% و غیرفعال کردن یادآوری‌ها
         /// </summary>
         public async Task<(bool IsSuccess, string ErrorMessage)> CompleteTaskAsync(CompleteTaskViewModel model, string userId)
         {
@@ -3841,6 +3841,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 var task = await _context.Tasks_Tbl
                     .Include(t => t.TaskAssignments)
+                    .Include(t => t.TaskOperations) // ⭐ برای محاسبه پیشرفت
                     .FirstOrDefaultAsync(t => t.Id == model.TaskId && t.IsActive);
 
                 if (task == null)
@@ -3853,24 +3854,39 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 if (assignment == null)
                     return (false, "شما به این تسک اختصاص داده نشده‌اید");
 
-                // ⭐ اصلاح شده: بررسی اینکه آیا قبلاً تکمیل شده
+                // ⭐ بررسی اینکه آیا قبلاً تکمیل شده
                 if (task.CompletionDate.HasValue)
                 {
                     // فقط بروزرسانی گزارش در TaskAssignment
                     assignment.UserReport = model.CompletionReport;
                     assignment.ReportDate = DateTime.Now;
-
-                    // ⭐ اصلاح: استفاده از فیلد صحیح
                     task.LastUpdateDate = DateTime.Now;
 
                     _context.TaskAssignment_Tbl.Update(assignment);
                 }
                 else
                 {
-                    // ⭐ تکمیل جدید - بروزرسانی Tasks
+                    // ⭐⭐⭐ تکمیل جدید - بروزرسانی Tasks
                     task.CompletionDate = DateTime.Now;
                     task.Status = 2; // تکمیل شده - منتظر تایید
                     task.LastUpdateDate = DateTime.Now;
+
+                    // ⭐⭐⭐ تکمیل خودکار همه عملیات باقیمانده
+                    if (task.TaskOperations != null && task.TaskOperations.Any())
+                    {
+                        foreach (var operation in task.TaskOperations.Where(o => !o.IsCompleted && !o.IsDeleted))
+                        {
+                            operation.IsCompleted = true;
+                            operation.CompletionDate = DateTime.Now;
+                            operation.CompletedByUserId = userId;
+                            operation.CompletionNote = "تکمیل خودکار هنگام اتمام تسک";
+
+                            _context.TaskOperation_Tbl.Update(operation);
+                        }
+                    }
+
+                    // ⭐⭐⭐⭐⭐ غیرفعال کردن یادآوری‌های تسک
+                    await DeactivateTaskRemindersAsync(model.TaskId);
 
                     // ⭐ بروزرسانی TaskAssignment
                     assignment.Status = 2; // تکمیل شده
@@ -3881,7 +3897,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     _context.TaskAssignment_Tbl.Update(assignment);
                 }
 
-               
                 _context.Tasks_Tbl.Update(task);
                 await _context.SaveChangesAsync();
 
@@ -3893,8 +3908,59 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return (false, $"خطا در ثبت تکمیل: {ex.Message}");
             }
         }
-        #region Task History Methods Implementation
 
+        /// <summary>
+        /// غیرفعال کردن یادآوری‌های یک تسک - متد خصوصی
+        /// </summary>
+        private async Task DeactivateTaskRemindersAsync(int taskId)
+        {
+            try
+            {
+                // ⭐ دریافت همه یادآوری‌های فعال تسک
+                var activeReminders = await _context.TaskReminderSchedule_Tbl
+                    .Where(r => r.TaskId == taskId && r.IsActive)
+                    .ToListAsync();
+
+                if (!activeReminders.Any())
+                {
+                    Console.WriteLine($"ℹ️ No active reminders found for task {taskId}");
+                    return;
+                }
+
+                // ⭐ غیرفعال کردن تمام یادآوری‌ها
+                foreach (var reminder in activeReminders)
+                {
+                    reminder.IsActive = false;
+                    _context.TaskReminderSchedule_Tbl.Update(reminder);
+                }
+
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Deactivated {activeReminders.Count} reminders for task {taskId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error deactivating reminders for task {taskId}: {ex.Message}");
+                // ⚠️ عدم throw کردن exception برای جلوگیری از rollback کل transaction
+            }
+        }
+        #region Task History Methods Implementation
+        /// <summary>
+        /// غیرفعال کردن یادآوری‌های یک تسک - نسخه عمومی
+        /// </summary>
+        public async Task<bool> DeactivateAllTaskRemindersAsync(int taskId)
+        {
+            try
+            {
+                await DeactivateTaskRemindersAsync(taskId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in DeactivateAllTaskRemindersAsync: {ex.Message}");
+                return false;
+            }
+        }
         /// <summary>
         /// دریافت تاریخچه کامل تسک
         /// </summary>
@@ -3929,7 +3995,105 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return new List<TaskHistoryViewModel>();
             }
         }
+        /// <summary>
+        /// تخصیص کاربر جدید به تسک
+        /// </summary>
+        public async Task<bool> AssignUserToTaskAsync(
+            int taskId,
+            string userId,
+            string assignerUserId,
+            int? teamId = null,
+            string description = null)
+        {
+            try
+            {
+                var assignment = new TaskAssignment
+                {
+                    TaskId = taskId,
+                    AssignedUserId = userId,
+                    AssignerUserId = assignerUserId,
+                    AssignedInTeamId = teamId == 0 ? null : teamId,
+                    AssignmentDate = DateTime.Now,
+                    Description = description ?? "تخصیص مستقیم",
+                    Status = 0,
+                    AssignmentType = 0,
+                    IsRead = false,
+                    IsFavorite = false,
+                    IsMyDay = false
+                };
 
+                _context.TaskAssignment_Tbl.Add(assignment);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in AssignUserToTaskAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// حذف Assignment
+        /// </summary>
+        public async Task<bool> RemoveTaskAssignmentAsync(int assignmentId)
+        {
+            try
+            {
+                var assignment = await _context.TaskAssignment_Tbl.FindAsync(assignmentId);
+
+                if (assignment == null)
+                    return false;
+
+                _context.TaskAssignment_Tbl.Remove(assignment);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in RemoveTaskAssignmentAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// دریافت Assignment با اطلاعات کامل
+        /// </summary>
+        public async Task<TaskAssignment> GetTaskAssignmentByIdAsync(int assignmentId)
+        {
+            try
+            {
+                return await _context.TaskAssignment_Tbl
+                    .Include(a => a.Task)
+                    .Include(a => a.AssignedUser)
+                    .Include(a => a.AssignerUser)
+                    .FirstOrDefaultAsync(a => a.Id == assignmentId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTaskAssignmentByIdAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// بررسی تکراری نبودن Assignment
+        /// </summary>
+        public async Task<TaskAssignment> GetTaskAssignmentByUserAndTaskAsync(string userId, int taskId)
+        {
+            try
+            {
+                return await _context.TaskAssignment_Tbl
+                    .FirstOrDefaultAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTaskAssignmentByUserAndTaskAsync: {ex.Message}");
+                return null;
+            }
+        }
         /// <summary>
         /// دریافت آیکون برای نوع تغییر
         /// </summary>

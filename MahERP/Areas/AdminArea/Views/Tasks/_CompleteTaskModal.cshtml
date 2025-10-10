@@ -3,11 +3,13 @@
     Layout = null;
 }
 
-<div class="modal-dialog modal-lg modal-dialog-centered">
+<div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
         <form asp-controller="Tasks" asp-action="CompleteTaskPost" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="TaskId" />
+            <input type="hidden" asp-for="TaskTitle" />
+            <input type="hidden" asp-for="TaskCode" />
 
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title text-white">
@@ -16,7 +18,7 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
+            
             <div class="modal-body">
                 @if (Model.IsAlreadyCompleted)
                 {

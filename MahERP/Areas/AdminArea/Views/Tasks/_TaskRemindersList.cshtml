@@ -1,33 +1,81 @@
 ﻿@model dynamic
+@{
+    var taskId = Model.TaskId;
+    var reminders = Model.Reminders as List<TaskReminderViewModel> ?? new List<TaskReminderViewModel>();
+    var isTaskCompleted = ViewBag.IsTaskCompleted ?? false;
+}
 
-<div class="row">
-    @if (Model.Reminders.Count == 0)
+@if (!reminders.Any())
+{
+    <div class="text-center py-5 text-muted">
+        <i class="fa fa-bell-slash fa-3x mb-3"></i>
+        <p class="mb-0">یادآوری‌ای برای این تسک ثبت نشده است.</p>
+        @if (!isTaskCompleted)
+        {
+            <p class="text-muted mt-2">
+                <small>برای افزودن یادآوری جدید از دکمه "افزودن یادآوری" استفاده کنید</small>
+            </p>
+        }
+    </div>
+}
+else
+{
+    @* ⭐ Alert برای تسک تکمیل شده - جابجا شده به بالا *@
+    @if (isTaskCompleted)
     {
-        <div class="col-12">
-            <div class="text-center py-5">
-                <i class="fa fa-bell-slash fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">هیچ یادآوری فعالی وجود ندارد</h5>
-                <p class="text-muted">برای افزودن یادآوری جدید از دکمه بالا استفاده کنید</p>
+        <div class="alert alert-success mb-3 border-start border-4 border-success">
+            <div class="d-flex align-items-center">
+                <i class="fa fa-check-circle fa-2x me-3 text-success"></i>
+                <div>
+                    <strong>توجه:</strong> این تسک تکمیل شده است. تمام یادآوری‌ها خودکار غیرفعال شده‌اند.
+                </div>
             </div>
         </div>
     }
-    else
-    {
-        @foreach (var reminder in Model.Reminders)
+
+    <div class="row">
+        @foreach (var reminder in reminders)
         {
+            var cardBorderClass = isTaskCompleted 
+                ? "border-secondary" 
+                : (reminder.IsSystemDefault ? "border-success" : "border-warning");
+            
+            var cardHeaderClass = isTaskCompleted 
+                ? "bg-light" 
+                : (reminder.IsSystemDefault ? "bg-success-light" : "bg-warning-light");
+
             <div class="col-lg-6 col-md-12 mb-3">
-                <div class="card @(reminder.IsSystemDefault ? "border-success" : "border-warning") h-100 shadow-sm">
-                    <div class="card-header @(reminder.IsSystemDefault ? "bg-success-light" : "bg-warning-light")">
+                <div class="card @cardBorderClass h-100 shadow-sm @(isTaskCompleted || !reminder.IsActive ? "opacity-75" : "")">
+                    <div class="card-header @cardHeaderClass">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="flex-grow-1">
-                                <i class="fa @(reminder.IsSystemDefault ? "fa-shield-alt" : "fa-bell") me-2"></i>
+                                @* ⭐ آیکون تغییر می‌کند بر اساس وضعیت *@
+                                <i class="fa @(isTaskCompleted ? "fa-bell-slash" : reminder.IsSystemDefault ? "fa-shield-alt" : "fa-bell") me-2 @(isTaskCompleted ? "text-secondary" : "")"></i>
                                 <strong>@reminder.Title</strong>
-                                @if (reminder.IsSystemDefault)
+
+                                @* ⭐ Badge وضعیت *@
+                                @if (isTaskCompleted)
                                 {
-                                    <span class="badge bg-success ms-2">پیش‌فرض سیستم</span>
+                                    <span class="badge bg-success ms-2">
+                                        <i class="fa fa-check me-1"></i>تسک تکمیل شد
+                                    </span>
+                                }
+                                else if (!reminder.IsActive)
+                                {
+                                    <span class="badge bg-secondary ms-2">
+                                        <i class="fa fa-ban me-1"></i>غیرفعال
+                                    </span>
+                                }
+                                else if (reminder.IsSystemDefault)
+                                {
+                                    <span class="badge bg-success ms-2">
+                                        <i class="fa fa-shield-alt me-1"></i>پیش‌فرض سیستم
+                                    </span>
                                 }
                             </div>
-                            @if (!reminder.IsSystemDefault)
+
+                            @* ⭐ دکمه‌ها فقط اگر تسک تکمیل نشده باشد *@
+                            @if (!isTaskCompleted && !reminder.IsSystemDefault)
                             {
                                 <div class="btn-group btn-group-sm">
                                     <button type="button"
@@ -45,8 +93,15 @@
                                     </button>
                                 </div>
                             }
+                            @if (isTaskCompleted)
+                            {
+                                <div class="text-muted">
+                                    <i class="fa fa-lock" title="قفل شده"></i>
+                                </div>
+                            }
                         </div>
                     </div>
+
                     <div class="card-body">
                         @if (!string.IsNullOrEmpty(reminder.Description))
                         {
@@ -89,7 +144,23 @@
                                 <span>@reminder.EndDatePersian</span>
                             </div>
                         }
+
+                        @* ⭐ نمایش وضعیت فعال/غیرفعال *@
+                        @if (!isTaskCompleted)
+                        {
+                            <div class="mt-3 pt-2 border-top">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="text-muted small">
+                                        <i class="fa fa-info-circle me-1"></i>وضعیت:
+                                    </span>
+                                    <span class="badge @(reminder.IsActive ? "bg-success" : "bg-secondary")">
+                                        @(reminder.IsActive ? "فعال" : "غیرفعال")
+                                    </span>
+                                </div>
+                            </div>
+                        }
                     </div>
+
                     <div class="card-footer bg-light">
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">
@@ -105,8 +176,8 @@
                 </div>
             </div>
         }
-    }
-</div>
+    </div>
+}
 
 <script>
     function editTaskReminder(reminderId) {
@@ -129,11 +200,28 @@
     }
 
     .card {
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
     }
 
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-        }
+    /* ⭐ فقط کارت‌های فعال hover می‌خورند */
+    .card:not(.opacity-75):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+
+    /* ⭐ کارت‌های غیرفعال */
+    .card.opacity-75 {
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(108, 117, 125, 0.03) 10px,
+            rgba(108, 117, 125, 0.03) 20px
+        );
+    }
+
+    /* ⭐ Border سمت چپ برای Alert */
+    .alert.border-start {
+        border-left-width: 4px !important;
+    }
 </style>

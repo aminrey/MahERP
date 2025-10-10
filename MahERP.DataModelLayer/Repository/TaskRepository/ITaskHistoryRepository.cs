@@ -162,6 +162,14 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         string GetActionTypeText(byte actionType);
 
+        /// <summary>
+        /// ثبت غیرفعال شدن یادآوری‌ها هنگام تکمیل تسک
+        /// </summary>
+        Task LogRemindersDeactivatedOnCompletionAsync(
+            int taskId,
+            string userId,
+            string taskTitle,
+            string taskCode);
         #endregion
     }
 }

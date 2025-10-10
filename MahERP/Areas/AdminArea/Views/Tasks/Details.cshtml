@@ -184,113 +184,119 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="col-lg-4">
-                    <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
-                        @if (isCreator || isManager)
-                        {
-                            <a href="#"
-                               onclick="showComingSoonNotification(event, 'ویرایش تسک')"
-                               class="btn btn-hero btn-warning btn-lg">
-                                <i class="fa fa-pencil-alt me-2"></i>
-                                <span>ویرایش</span>
-                            </a>
-                        }
-
-                        @if (!Model.CompletionDate.HasValue && isAssignedToCurrentUser)
-                        {
-                            <a href="@Url.Action("CompleteTask", new { id = Model.Id })"
-                               data-toggle="modal-ajax"
-                               class="btn btn-hero btn-success btn-lg">
-                                <i class="fa fa-check me-2"></i>
-                                <span>تکمیل تسک</span>
-                            </a>
-                        }
-                        else if (Model.CompletionDate.HasValue && (isCreator || isManager))
-                        {
-                            <a href="@Url.Action("ReopenTask", new { id = Model.Id })"
-                               data-toggle="modal-ajax"
-                               class="btn btn-hero btn-warning btn-lg">
-                                <i class="fa fa-redo me-2"></i>
-                                <span>بازگشایی</span>
-                            </a>
-                        }
-
-                        <div class="dropdown">
-                            <button type="button" class="btn btn-hero btn-light btn-lg dropdown-toggle"
-                                    data-bs-toggle="dropdown">
-                                <i class="fa fa-ellipsis-h"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-modern">
-                                @if (isAssignedToCurrentUser)
-                                {
-                                    <li>
-                                        @if (isInMyDay)
-                                        {
-                                            <button type="button"
-                                                    class="dropdown-item disabled"
-                                                    style="cursor: not-allowed; opacity: 0.6;"
-                                                    title="این تسک در روز من شما قرار دارد">
-                                                <i class="fa fa-check-circle text-success me-2"></i>
-                                                <span class="text-success fw-bold">در روز من قرار دارد</span>
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <button type="button"
-                                                    class="btn btn-outline-secondary"
-                                                    data-toggle="modal-ajax"
-                                                    href="@Url.Action("AddToMyDayModal", "Tasks", new { taskId = Model.Id })"
-                                                    title="افزودن به روز من">
-                                                <i class="fa fa-calendar-alt me-1"></i>
-                                                افزودن به روز من
-                                            </button>
-                                        }
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="@Url.Action("LogWorkModal", new { taskId = Model.Id })"
-                                           data-toggle="modal-ajax">
-                                            <i class="fa fa-clock text-success me-2"></i>
-                                            <span>ثبت کار انجام شده</span>
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                }
-
-                                <li>
-                                    <a class="dropdown-item"
-                                       href="#"
-                                       onclick="showComingSoonNotification(event, 'اختصاص کاربر')">
-                                        <i class="fa fa-user-plus text-info me-2"></i>
-                                        <span>اختصاص کاربر</span>
-                                    </a>
-                                </li>
-
-                                @if (isAdminOrManager)
-                                {
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="#"
-                                           onclick="showComingSoonNotification(event, '@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")')">
-                                            <i class="fa @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-2"></i>
-                                            <span>@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item text-danger"
-                                           href="#"
-                                           onclick="showComingSoonNotification(event, 'حذف تسک')">
-                                            <i class="fa fa-trash-alt me-2"></i>
-                                            <span>حذف تسک</span>
-                                        </a>
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    </div>
+              @* در بخش Action Buttons *@
+<div class="col-lg-4">
+    <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
+        @if (Model.CompletionDate.HasValue)
+        {
+            <!-- ⭐ نمایش Badge قفل شده -->
+            <div class="alert alert-success d-flex align-items-center mb-0">
+                <i class="fa fa-lock fa-2x me-3"></i>
+                <div>
+                    <div class="fw-bold">تسک قفل شده</div>
+                    <small>این تسک تکمیل شده و قابل ویرایش نیست</small>
                 </div>
+            </div>
+        }
+        else
+        {
+            @if (isCreator || isManager)
+            {
+                <a href="#"
+                   onclick="showComingSoonNotification(event, 'ویرایش تسک')"
+                   class="btn btn-hero btn-warning btn-lg">
+                    <i class="fa fa-pencil-alt me-2"></i>
+                    <span>ویرایش</span>
+                </a>
+            }
+
+            @if (isAssignedToCurrentUser)
+            {
+                <a href="@Url.Action("CompleteTask", new { id = Model.Id })"
+                   data-toggle="modal-ajax"
+                   class="btn btn-hero btn-success btn-lg">
+                    <i class="fa fa-check me-2"></i>
+                    <span>تکمیل تسک</span>
+                </a>
+            }
+        }
+
+        <div class="dropdown">
+            <button type="button" class="btn btn-hero btn-light btn-lg dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                    @(Model.CompletionDate.HasValue ? "disabled" : "")>
+                <i class="fa fa-ellipsis-h"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-modern">
+                @if (isAssignedToCurrentUser && !Model.CompletionDate.HasValue)
+                {
+                    <li>
+                        @if (isInMyDay)
+                        {
+                            <button type="button"
+                                    class="dropdown-item disabled"
+                                    style="cursor: not-allowed; opacity: 0.6;">
+                                <i class="fa fa-check-circle text-success me-2"></i>
+                                <span class="text-success fw-bold">در روز من قرار دارد</span>
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="dropdown-item"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("AddToMyDayModal", "Tasks", new { taskId = Model.Id })">
+                                <i class="fa fa-calendar-alt me-2"></i>
+                                افزودن به روز من
+                            </button>
+                        }
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                           href="@Url.Action("LogWorkModal", new { taskId = Model.Id })"
+                           data-toggle="modal-ajax">
+                            <i class="fa fa-clock text-success me-2"></i>
+                            <span>ثبت کار انجام شده</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                }
+
+                @if (!Model.CompletionDate.HasValue)
+                {
+                    <li>
+                        <a class="dropdown-item" href="#"
+                           onclick="showComingSoonNotification(event, 'اختصاص کاربر')">
+                            <i class="fa fa-user-plus text-info me-2"></i>
+                            <span>اختصاص کاربر</span>
+                        </a>
+                    </li>
+                }
+
+                @if (isAdminOrManager)
+                {
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item"
+                           href="#"
+                           onclick="showComingSoonNotification(event, '@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")')">
+                            <i class="fa @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-2"></i>
+                            <span>@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-danger"
+                           href="#"
+                           onclick="showComingSoonNotification(event, 'حذف تسک')">
+                            <i class="fa fa-trash-alt me-2"></i>
+                            <span>حذف تسک</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
             </div>
         </div>
     </div>
@@ -322,7 +328,7 @@
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-team" 
                     type="button" role="tab">
                 <i class="fa fa-users me-1"></i>
-                <span class="d-none d-sm-inline">تیم</span>
+                <span class="d-none d-sm-inline">اعضای تسک</span>
                 @if (Model.AssignmentsTaskUser?.Any() == true) {
                     <span class="badge bg-info rounded-pill ms-1">@Model.AssignmentsTaskUser.Count</span>
                 }
@@ -682,20 +688,26 @@
         <div class="tab-pane fade" id="tab-operations" role="tabpanel">
             <div class="block block-rounded block-fx-shadow">
                 <!-- ⭐ هدینگ بنفش با متن سفید -->
-                <div class="block-header bg-primary text-white">
-                    <h3 class="block-title text-white mb-0">
-                        <i class="fa fa-cogs me-2"></i>مدیریت عملیات تسک
-                    </h3>
-                    <div class="block-options">
-                        @if (isAssignedToCurrentUser || isCreator || isManager)
-                        {
-                            <button type="button" class="btn btn-sm btn-light"
-                                    onclick="$('#newOperationTitleInput').focus()">
-                                <i class="fa fa-plus me-1"></i>افزودن سریع
-                            </button>
-                        }
-                    </div>
-                </div>
+               <div class="block-header bg-primary text-white">
+    <h3 class="block-title text-white mb-0">
+        <i class="fa fa-cogs me-2"></i>مدیریت عملیات تسک
+    </h3>
+    <div class="block-options">
+        @if ((isAssignedToCurrentUser || isCreator || isManager) && !Model.CompletionDate.HasValue)
+        {
+            <button type="button" class="btn btn-sm btn-light"
+                    onclick="$('#newOperationTitleInput').focus()">
+                <i class="fa fa-plus me-1"></i>افزودن سریع
+            </button>
+        }
+        else if (Model.CompletionDate.HasValue)
+        {
+            <span class="badge bg-light text-dark">
+                <i class="fa fa-lock me-1"></i>قفل شده
+            </span>
+        }
+    </div>
+</div>
 
                 <div class="block-content">
                     @if (Model.Operations == null || !Model.Operations.Any())
@@ -727,8 +739,9 @@
                     else
                     {
                         <!-- فرم افزودن عملیات جدید -->
-                        @if (isAssignedToCurrentUser || isCreator || isManager)
-                        {
+                      
+                            @if (!Model.CompletionDate.HasValue && (isAssignedToCurrentUser || isCreator || isManager))
+{
                             <div class="card border-primary mb-4">
                                 <div class="card-header bg-primary text-white">
                                     <h6 class="mb-0 text-white">
@@ -752,7 +765,15 @@
                                     </small>
                                 </div>
                             </div>
-                        }
+                            }
+else if (Model.CompletionDate.HasValue)
+{
+    <div class="alert alert-info mb-4">
+        <i class="fa fa-info-circle me-2"></i>
+        <strong>توجه:</strong> این تسک تکمیل شده و امکان افزودن عملیات جدید وجود ندارد.
+    </div>
+}
+                        
 
                         <!-- آمار عملیات -->
                         <div class="row g-2 mb-4">
@@ -892,109 +913,87 @@
                 </div>
             </div>
         </div>
-        <!-- Tab 3: تیم و اعضا -->
-        <div class="tab-pane fade" id="tab-team" role="tabpanel">
-            <div class="block block-rounded block-fx-shadow">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-users text-info me-2"></i>اعضای تیم
-                    </h3>
-                    <div class="block-options">
-                        @if (isCreator || isManager) {
-                            <button type="button" class="btn btn-sm btn-primary" 
-                                    data-toggle="modal-ajax" 
-                                    href="@Url.Action("AssignTask", new { taskId = Model.Id })">
-                                <i class="fa fa-user-plus me-1"></i>افزودن
-                            </button>
-                        }
-                    </div>
+        <!-- Tab 3: اعضای تسک -->
+<div class="tab-pane fade" id="tab-team" role="tabpanel">
+    <div class="block block-rounded block-fx-shadow">
+        <div class="block-header bg-info text-white">
+            <h3 class="block-title text-white mb-0">
+                <i class="fa fa-users me-2"></i>اعضای تسک
+            </h3>
+            <div class="block-options">
+                @if ((isCreator || isManager) && !Model.CompletionDate.HasValue)
+                {
+                    <button type="button" 
+                            class="btn btn-sm btn-light" 
+                            data-toggle="modal-ajax" 
+                            href="@Url.Action("AssignUserToTaskModal", "Tasks", new { taskId = Model.Id })">
+                        <i class="fa fa-user-plus me-1"></i>افزودن کاربر
+                    </button>
+                }
+                else if (Model.CompletionDate.HasValue)
+                {
+                    <span class="badge bg-light text-dark">
+                        <i class="fa fa-lock me-1"></i>قفل شده
+                    </span>
+                }
+            </div>
+        </div>
+        <div class="block-content">
+            <!-- ⭐⭐⭐ Container برای بروزرسانی AJAX -->
+            <div id="task-members-container">
+                @{
+                    ViewBag.Assignments = Model.AssignmentsTaskUser;
+                    ViewBag.IsCreator = isCreator;
+                    ViewBag.IsManager = isManager;
+                    ViewBag.IsTaskCompleted = Model.CompletionDate.HasValue;
+                }
+                @await Html.PartialAsync("_TaskMembersList")
+            </div>
+        </div>
+    </div>
+</div>
+       <!-- تب یادآوری‌ها -->
+<div class="tab-pane fade" id="tab-reminders" role="tabpanel">
+    <div class="block block-rounded block-fx-shadow">
+        <div class="block-header bg-warning text-white">
+            <h3 class="block-title text-white mb-0">
+                <i class="fa fa-bell me-2"></i>یادآوری‌های تسک
+            </h3>
+            <div class="block-options">
+                @if (!Model.CompletionDate.HasValue)
+                {
+                    <button type="button"
+                            class="btn btn-sm btn-light"
+                            data-toggle="modal-ajax"
+                            href="@Url.Action("AddReminderModal", "Tasks", new { taskId = Model.Id })">
+                        <i class="fa fa-plus me-1"></i>افزودن یادآوری
+                    </button>
+                }
+                else
+                {
+                    <span class="badge bg-light text-dark">
+                        <i class="fa fa-lock me-1"></i>قفل شده
+                    </span>
+                }
+            </div>
+        </div>
+        <div class="block-content">
+            @if (Model.CompletionDate.HasValue)
+            {
+                <div class="alert alert-info mb-3">
+                    <i class="fa fa-info-circle me-2"></i>
+                    <strong>توجه:</strong> این تسک تکمیل شده است. یادآوری‌ها فقط قابل مشاهده هستند و امکان ویرایش یا حذف آن‌ها وجود ندارد.
                 </div>
-                <div class="block-content">
-                    @if (Model.AssignmentsTaskUser == null || !Model.AssignmentsTaskUser.Any()) {
-                        <div class="py-5 text-center text-muted">
-                            <i class="fa fa-users fa-4x opacity-25 mb-3"></i>
-                            <h5>هیچ کاربری اختصاص داده نشده است</h5>
-                            @if (isCreator || isManager) {
-                                <p class="mb-3">برای شروع همکاری، اولین عضو را اضافه کنید</p>
-                                <button type="button" class="btn btn-primary" 
-                                        data-toggle="modal-ajax" 
-                                        href="@Url.Action("AssignTask", new { taskId = Model.Id })">
-                                    <i class="fa fa-user-plus me-1"></i>افزودن عضو
-                                </button>
-                            }
-                        </div>
-                    } else {
-                        <div class="row g-3">
-                            @foreach (var assignment in Model.AssignmentsTaskUser) {
-                                <div class="col-md-6 col-lg-4">
-                                    <div class="card h-100 border">
-                                        <div class="card-body text-center">
-                                            <div class="mb-3">
-                                                @{
-                                                    var initials = "";
-                                                    var nameParts = assignment.AssignedUserName?.Split(' ');
-                                                    if (nameParts?.Length > 0) {
-                                                        initials = nameParts[0].Substring(0, 1);
-                                                        if (nameParts.Length > 1) {
-                                                            initials += nameParts[1].Substring(0, 1);
-                                                        }
-                                                    }
-                                                }
-                                                <div class="avatar-circle bg-primary text-white mx-auto">
-                                                    @initials
-                                                </div>
-                                            </div>
-                                            <h6 class="mb-1">@assignment.AssignedUserName</h6>
-                                            @if (!string.IsNullOrEmpty(assignment.Description)) {
-                                                <p class="fs-sm text-muted mb-2">@assignment.Description</p>
-                                            }
-                                            <div class="fs-xs text-muted mb-3">
-                                                <i class="fa fa-calendar-check me-1"></i>
-                                                @ConvertDateTime.ConvertMiladiToShamsi(assignment.AssignDate, "yyyy/MM/dd")
-                                            </div>
-                                            @if (isCreator || isManager) {
-                                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                        data-toggle="modal-ajax" 
-                                                        href="@Url.Action("RemoveAssignment", new { id = assignment.Id })"
-                                                        title="حذف">
-                                                    <i class="fa fa-user-minus"></i>
-                                                </button>
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
+            }
+            <div id="reminders-list-container">
+                <div class="text-center py-4">
+                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="text-muted mt-2">در حال بارگذاری...</p>
                 </div>
             </div>
         </div>
-        <!-- تب یادآوری‌ها -->
-        <div class="tab-pane fade" id="tab-reminders" role="tabpanel">
-            <div class="block block-rounded block-fx-shadow">
-                <div class="block-header bg-warning text-white">
-                    <h3 class="block-title text-white mb-0">
-                        <i class="fa fa-bell me-2"></i>یادآوری‌های تسک
-                    </h3>
-                    <div class="block-options">
-                        <button type="button"
-                                class="btn btn-sm btn-light"
-                                data-toggle="modal-ajax"
-                                href="@Url.Action("AddReminderModal", "Tasks", new { taskId = Model.Id })">
-                            <i class="fa fa-plus me-1"></i>افزودن یادآوری
-                        </button>
-                    </div>
-                </div>
-                <div class="block-content">
-                    <div id="reminders-list-container">
-                        <div class="text-center py-4">
-                            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
-                            <p class="text-muted mt-2">در حال بارگذاری...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
+</div>
         <!-- Tab 5: تاریخچه کامل -->
         <div class="tab-pane fade" id="tab-timeline" role="tabpanel">
             <div class="block block-rounded block-fx-shadow">
@@ -1702,6 +1701,186 @@ $(document).ready(function() {
             console.log('Task Details page initialized successfully');
         });
     </script>
+<script>
+$(document).ready(function() {
+    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
+    
+    // ⭐ غیرفعال کردن تمام دکمه‌های ویرایش اگر تسک تکمیل شده
+    if (isTaskCompleted) {
+        console.log('🔒 Task is locked - disabling edit features');
+        
+        // غیرفعال کردن checkbox عملیات
+        $('.operation-checkbox').prop('disabled', true).css('cursor', 'not-allowed');
+        
+        // غیرفعال کردن دکمه ستاره
+        $('[onclick^="dynamicToggleStar"]').prop('disabled', true).addClass('disabled');
+        
+        // غیرفعال کردن دکمه حذف
+        $('[onclick^="dynamicDeleteOperation"]').hide();
+        
+        // غیرفعال کردن input افزودن عملیات
+        $('#newOperationTitleInput, #addNewOperationBtn').prop('disabled', true);
+        
+        // اضافه کردن نشان قفل به عملیات‌ها
+        $('.operation-item-card').each(function() {
+            $(this).css('opacity', '0.7');
+            $(this).prepend('<span class="badge bg-secondary position-absolute top-0 end-0 m-2"><i class="fa fa-lock"></i></span>');
+        });
+    }
+    
+    // ⭐ بروزرسانی Progress Bar به 100%
+    if (isTaskCompleted) {
+        $('.progress-bar').removeClass('bg-primary').addClass('bg-success');
+        $('.progress-bar').css('width', '100%').attr('aria-valuenow', 100).text('100%');
+        $('.stat-value').filter(function() {
+            return $(this).text().includes('%');
+        }).text('100%');
+    }
+});
+
+// ⭐ Override تابع dynamicToggleComplete
+const originalToggleComplete = window.dynamicToggleComplete;
+window.dynamicToggleComplete = function(checkbox, operationId) {
+    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
+    
+    if (isTaskCompleted) {
+        NotificationHelper.warning('این تسک تکمیل شده و قابل ویرایش نیست');
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked; // بازگرداندن به حالت قبل
+        }
+        return false;
+    }
+    
+    // اجرای تابع اصلی
+    if (typeof originalToggleComplete === 'function') {
+        originalToggleComplete(checkbox, operationId);
+    } else {
+        DynamicOperationsManager.toggleComplete(operationId);
+    }
+};
+</script>
+
+<script>
+$(document).ready(function() {
+    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
+    
+    // بارگذاری یادآوری‌ها هنگام کلیک روی تب
+    $('#reminders-tab').on('click', function() {
+        loadTaskReminders();
+    });
+    
+    // ⭐ غیرفعال کردن تمام دکمه‌های ویرایش اگر تسک تکمیل شده
+    if (isTaskCompleted) {
+        console.log('🔒 Task is locked - disabling edit features');
+        
+        // غیرفعال کردن checkbox عملیات
+        $('.operation-checkbox').prop('disabled', true).css('cursor', 'not-allowed');
+        
+        // غیرفعال کردن دکمه ستاره
+        $('[onclick^="dynamicToggleStar"]').prop('disabled', true).addClass('disabled');
+        
+        // غیرفعال کردن دکمه حذف
+        $('[onclick^="dynamicDeleteOperation"]').hide();
+        
+        // غیرفعال کردن input افزودن عملیات
+        $('#newOperationTitleInput, #addNewOperationBtn').prop('disabled', true);
+        
+        // ⭐⭐⭐ غیرفعال کردن دکمه‌های یادآوری
+        disableReminders();
+        
+        // اضافه کردن نشان قفل به عملیات‌ها
+        $('.operation-item-card').each(function() {
+            $(this).css('opacity', '0.7');
+            $(this).prepend('<span class="badge bg-secondary position-absolute top-0 end-0 m-2"><i class="fa fa-lock"></i></span>');
+        });
+    }
+    
+    // ⭐ بروزرسانی Progress Bar به 100%
+    if (isTaskCompleted) {
+        $('.progress-bar').removeClass('bg-primary').addClass('bg-success');
+        $('.progress-bar').css('width', '100%').attr('aria-valuenow', 100).text('100%');
+        $('.stat-value').filter(function() {
+            return $(this).text().includes('%');
+        }).text('100%');
+    }
+});
+
+function loadTaskReminders() {
+    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
+    
+    $('#reminders-list-container').html(`
+        <div class="text-center py-4">
+            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+            <p class="text-muted mt-2">در حال بارگذاری...</p>
+        </div>
+    `);
+    
+    $('#reminders-list-container').load('@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })', function() {
+        // ⭐ بعد از بارگذاری، دکمه‌ها را غیرفعال کن
+        if (isTaskCompleted) {
+            console.log('🔒 Disabling reminder actions after load');
+            disableReminders();
+        }
+    });
+}
+
+// ⭐⭐⭐ تابع جدید: غیرفعال کردن یادآوری‌ها
+function disableReminders() {
+    setTimeout(function() {
+        // غیرفعال کردن دکمه حذف یادآوری
+        $('.delete-reminder-btn, [data-reminder-delete]').prop('disabled', true)
+            .addClass('disabled')
+            .css('cursor', 'not-allowed')
+            .attr('onclick', 'return false;');
+        
+        // غیرفعال کردن دکمه ویرایش یادآوری
+        $('.edit-reminder-btn, [data-reminder-edit]').prop('disabled', true)
+            .addClass('disabled')
+            .css('cursor', 'not-allowed')
+            .attr('onclick', 'return false;');
+        
+        // غیرفعال کردن toggle وضعیت یادآوری
+        $('.toggle-reminder-btn, [data-reminder-toggle]').prop('disabled', true)
+            .addClass('disabled')
+            .css('cursor', 'not-allowed')
+            .attr('onclick', 'return false;');
+        
+        // مخفی کردن دکمه‌های خطرناک
+        $('.delete-reminder-btn, [data-reminder-delete]').hide();
+        
+        // اضافه کردن نشان قفل
+        $('.reminder-item').each(function() {
+            if (!$(this).find('.lock-badge').length) {
+                $(this).css('opacity', '0.7')
+                    .prepend('<span class="badge bg-secondary lock-badge position-absolute top-0 end-0 m-2"><i class="fa fa-lock"></i></span>');
+            }
+        });
+        
+        console.log('✅ Reminders disabled successfully');
+    }, 500); // تاخیر برای اطمینان از بارگذاری DOM
+}
+
+// ⭐ Override تابع dynamicToggleComplete
+const originalToggleComplete = window.dynamicToggleComplete;
+window.dynamicToggleComplete = function(checkbox, operationId) {
+    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
+    
+    if (isTaskCompleted) {
+        NotificationHelper.warning('این تسک تکمیل شده و قابل ویرایش نیست');
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+        }
+        return false;
+    }
+    
+    if (typeof originalToggleComplete === 'function') {
+        originalToggleComplete(checkbox, operationId);
+    } else {
+        DynamicOperationsManager.toggleComplete(operationId);
+    }
+};
+</script>
+
 }
 
 @section Styles {
@@ -2481,4 +2660,93 @@ $(document).ready(function() {
             }
         }
     </style>
+    
+<style>
+    /* ⭐ استایل برای تسک قفل شده */
+    .task-locked {
+        pointer-events: none;
+        opacity: 0.6;
+        position: relative;
+    }
+    
+    .task-locked::after {
+        content: '\f023'; /* fa-lock */
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 1.5rem;
+        color: #6c757d;
+        opacity: 0.5;
+    }
+    
+    /* ⭐ نشان قفل برای عملیات */
+    .operation-locked {
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(108, 117, 125, 0.05) 10px,
+            rgba(108, 117, 125, 0.05) 20px
+        );
+        border-left: 3px solid #6c757d !important;
+    }
+    
+    /* ⭐ Progress Bar سبز برای تکمیل */
+    .progress-bar.bg-success-completed {
+        background: linear-gradient(90deg, #28a745 0%, #20c997 100%) !important;
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+    }
+    
+    /* ⭐ Alert قفل شده */
+    .alert-locked {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #6c757d;
+        animation: lockedPulse 3s infinite;
+    }
+    
+    @@keyframes lockedPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.9; }
+    }
+<!-- ... سایر استایل‌ها ... -->
+
+<style>
+    /* ⭐ استایل یادآوری قفل شده */
+    .reminder-locked {
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(108, 117, 125, 0.03) 10px,
+            rgba(108, 117, 125, 0.03) 20px
+        ) !important;
+        border-left: 3px solid #6c757d !important;
+        opacity: 0.7;
+    }
+    
+    .reminder-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+    
+    .reminder-item .lock-badge {
+        animation: badgePulse 2s infinite;
+    }
+    
+    /* ⭐ دکمه‌های غیرفعال */
+    .btn.disabled,
+    .btn:disabled {
+        pointer-events: none;
+        opacity: 0.5;
+        cursor: not-allowed !important;
+    }
+</style>
+
 }

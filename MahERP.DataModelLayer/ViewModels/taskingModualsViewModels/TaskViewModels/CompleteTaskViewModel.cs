@@ -10,10 +10,10 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public int TaskId { get; set; }
         
         [Display(Name = "عنوان تسک")]
-        public string TaskTitle { get; set; }
+        public string? TaskTitle { get; set; }
         
         [Display(Name = "کد تسک")]
-        public string TaskCode { get; set; }
+        public string? TaskCode { get; set; }
         
         [Required(ErrorMessage = "گزارش تکمیل الزامی است")]
         [Display(Name = "گزارش تکمیل")]
