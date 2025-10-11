@@ -159,6 +159,20 @@
                                 </form>
                                 <!-- END Sign In Form -->
                             </div>
+                            <!-- ⭐ نمایش ورژن و زمان -->
+                            <div class="block-content bg-body-light text-center py-3">
+                                <p class="fs-sm text-muted mb-1">
+                                    <i class="fa fa-code-branch me-1"></i>
+                                    <span class="fw-semibold">نسخه:</span> @ViewBag.AppVersion
+                                </p>
+                                <p class="fs-sm text-muted mb-0">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    <span class="fw-semibold">آخرین بروزرسانی:</span> @ViewBag.BuildDate
+                                </p>
+                            </div>
+
+
+
                             <div class="block-content bg-body">
                                 <div class="d-flex justify-content-center text-center push">
                                     <a class="item item-circle item-tiny me-1 bg-default" data-theme="default" data-toggle="theme" href="#"></a>

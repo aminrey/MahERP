@@ -1,6 +1,7 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using MahERP.Helpers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,11 +26,19 @@ namespace MahERP.Controllers
             _activityLogger = activityLogger;
         }
 
+        private void GetVersionInfo()
+        {
+            ViewBag.Version = VersionHelper.GetVersion();
+            ViewBag.BuildDate = VersionHelper.GetBuildDate();
+            ViewBag.FullVersionInfo = VersionHelper.GetFullVersionInfo();
+        }
+
         [HttpGet]
         public async Task<IActionResult> Login(string? ReturnUrl)
         {
             try
             {
+                GetVersionInfo();
                 var Users = _Context.UserManagerUW.Get();
                 if (Users.Count() == 0)
                 {
@@ -150,6 +159,8 @@ namespace MahERP.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? ReturnUrl)
         {
+            GetVersionInfo();
+
             if (ModelState.IsValid)
             {
                 try
