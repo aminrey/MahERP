@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using MahERP.DataModelLayer.Entities.Organization;
+using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;

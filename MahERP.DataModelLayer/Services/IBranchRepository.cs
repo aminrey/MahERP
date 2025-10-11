@@ -5,6 +5,7 @@ using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using System;
 using System.Collections.Generic;
+using MahERP.DataModelLayer.Entities.Contacts;
 
 namespace MahERP.DataModelLayer.Services
 {
@@ -151,5 +152,59 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="branchId">شناسه شعبه</param>
         /// <returns>لیست طرف حساب‌های شعبه</returns>
         List<StakeholderBranch> GetBranchStakeholders(int branchId);
+
+
+        /// <summary>
+        /// دریافت لیست افراد مرتبط با شعبه
+        /// </summary>
+        List<BranchContact> GetBranchContacts(int branchId, bool includeInactive = false);
+
+        /// <summary>
+        /// دریافت یک BranchContact با شناسه
+        /// </summary>
+        BranchContact GetBranchContactById(int id);
+
+        /// <summary>
+        /// بررسی اینکه آیا فرد قبلاً به شعبه اضافه شده
+        /// </summary>
+        bool IsContactAssignedToBranch(int branchId, int contactId);
+
+        /// <summary>
+        /// دریافت لیست افراد قابل اضافه شدن به شعبه (افرادی که قبلاً اضافه نشده‌اند)
+        /// </summary>
+        List<MahERP.DataModelLayer.Entities.Contacts.Contact> GetAvailableContactsForBranch(int branchId);
+
+        // ⭐⭐⭐ NEW: BranchOrganization Methods ⭐⭐⭐
+
+        /// <summary>
+        /// دریافت لیست سازمان‌های مرتبط با شعبه
+        /// </summary>
+        List<BranchOrganization> GetBranchOrganizations(int branchId, bool includeInactive = false);
+
+        /// <summary>
+        /// دریافت یک BranchOrganization با شناسه
+        /// </summary>
+        BranchOrganization GetBranchOrganizationById(int id);
+
+        /// <summary>
+        /// بررسی اینکه آیا سازمان قبلاً به شعبه اضافه شده
+        /// </summary>
+        bool IsOrganizationAssignedToBranch(int branchId, int organizationId);
+
+        /// <summary>
+        /// دریافت لیست سازمان‌های قابل اضافه شدن به شعبه
+        /// </summary>
+        List<Organization> GetAvailableOrganizationsForBranch(int branchId);
+
+        /// <summary>
+        /// دریافت تمام افراد نمایان در شعبه (افراد مستقیم + اعضای سازمان‌ها)
+        /// </summary>
+        List<Contact> GetAllVisibleContactsInBranch(int branchId);
+
+        /// <summary>
+        /// دریافت آمار افراد و سازمان‌های شعبه
+        /// </summary>
+        (int TotalContacts, int TotalOrganizations, int TotalVisibleMembers) GetBranchContactStatistics(int branchId);
+
     }
 }

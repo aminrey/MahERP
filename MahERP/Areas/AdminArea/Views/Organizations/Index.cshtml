@@ -1,0 +1,135 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationViewModel>
+@{
+    ViewData["Title"] = "لیست سازمان‌ها";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-building me-2"></i>
+            @ViewData["Title"]
+        </h3>
+        <div class="block-options">
+            <a asp-action="Create" class="btn btn-sm btn-alt-success">
+                <i class="fa fa-plus me-1"></i> سازمان جدید
+            </a>
+        </div>
+    </div>
+
+    <div class="block-content">
+        <!-- فیلتر و جستجو -->
+        <form method="get" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <input type="text" name="searchTerm" class="form-control" 
+                           placeholder="جستجو (نام، شماره ثبت، کد اقتصادی...)" 
+                           value="@ViewBag.SearchTerm" />
+                </div>
+                <div class="col-md-3">
+                    <select name="organizationType" class="form-select">
+                        <option value="">همه انواع</option>
+                        <option value="0" selected="@(ViewBag.OrganizationType == 0)">شرکت</option>
+                        <option value="1" selected="@(ViewBag.OrganizationType == 1)">سازمان</option>
+                        <option value="2" selected="@(ViewBag.OrganizationType == 2)">موسسه</option>
+                        <option value="3" selected="@(ViewBag.OrganizationType == 3)">نهاد</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="includeInactive" class="form-check-input" 
+                               checked="@ViewBag.IncludeInactive" />
+                        <label class="form-check-label">نمایش غیرفعال‌ها</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa fa-search me-1"></i> جستجو
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- جدول -->
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-vcenter">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>نام سازمان</th>
+                            <th>نام برند</th>
+                            <th>شماره ثبت</th>
+                            <th>نوع</th>
+                            <th>تلفن</th>
+                            <th class="text-center">وضعیت</th>
+                            <th class="text-center" style="width: 250px;">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var org in Model)
+                        {
+                            <tr>
+                                <td class="text-center">@org.Id</td>
+                                <td class="fw-semibold">
+                                    <a asp-action="Details" asp-route-id="@org.Id">
+                                        @org.Name
+                                    </a>
+                                </td>
+                                <td>@(org.Brand ?? "-")</td>
+                                <td>@(org.RegistrationNumber ?? "-")</td>
+                                <td>
+                                    <span class="badge bg-info">@org.OrganizationTypeText</span>
+                                </td>
+                                <td>@(org.PrimaryPhone ?? "-")</td>
+                                <td class="text-center">
+                                    @if (org.IsActive)
+                                    {
+                                        <span class="badge bg-success">فعال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">غیرفعال</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a asp-action="Details" asp-route-id="@org.Id" 
+                                           class="btn btn-sm btn-alt-info" title="جزئیات">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@org.Id" 
+                                           class="btn btn-sm btn-alt-primary" title="ویرایش">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                        <a asp-action="OrganizationChart" asp-route-organizationId="@org.Id" 
+                                           class="btn btn-sm btn-alt-success" title="چارت سازمانی">
+                                            <i class="fa fa-sitemap"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-alt-danger" 
+                                                data-toggle="modal-ajax"
+                                                href="@Url.Action("Delete", new { id = org.Id })"
+                                                title="حذف">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fa fa-building fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">هیچ سازمانی یافت نشد</h4>
+                <p class="text-muted">برای شروع، اولین سازمان را اضافه کنید</p>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i> افزودن سازمان جدید
+                </a>
+            </div>
+        }
+    </div>
+</div>

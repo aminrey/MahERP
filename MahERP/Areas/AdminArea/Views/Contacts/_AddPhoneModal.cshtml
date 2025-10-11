@@ -1,0 +1,77 @@
+﻿@model MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactPhoneViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="block block-rounded mb-0">
+            <div class="block-header bg-primary-dark">
+                <h3 class="block-title text-white">
+                    <i class="fa fa-phone me-2"></i>
+                    افزودن شماره تماس
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal">
+                        <i class="fa fa-times text-white"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form asp-action="AddPhone" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ContactId" />
+                
+                <div class="block-content">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-floating mb-3">
+                                <select asp-for="PhoneType" class="form-select" required>
+                                    <option value="">-- انتخاب کنید --</option>
+                                    <option value="0">موبایل</option>
+                                    <option value="1">تلفن ثابت</option>
+                                    <option value="2">اضطراری</option>
+                                    <option value="3">کاری</option>
+                                    <option value="4">منزل</option>
+                                </select>
+                                <label asp-for="PhoneType">نوع شماره *</label>
+                                <span asp-validation-for="PhoneType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="PhoneNumber" class="form-control" placeholder="09123456789" required />
+                                <label asp-for="PhoneNumber">شماره تماس *</label>
+                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <input asp-for="Extension" class="form-control" placeholder="داخلی" />
+                        <label asp-for="Extension">داخلی</label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsDefault" type="checkbox" class="form-check-input" />
+                            <label asp-for="IsDefault" class="form-check-label">
+                                شماره پیش‌فرض (برای احراز هویت)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i> انصراف
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary" data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

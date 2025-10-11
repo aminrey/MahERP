@@ -1,0 +1,269 @@
+﻿@model MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactViewModel
+@{
+    ViewData["Title"] = "جزئیات - " + Model.FullName;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-user me-2"></i>
+            @ViewData["Title"]
+        </h3>
+        <div class="block-options">
+            <a asp-action="Index" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i> بازگشت
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-alt-primary">
+                <i class="fa fa-edit me-1"></i> ویرایش
+            </a>
+        </div>
+    </div>
+
+    <div class="block-content">
+        <div class="row">
+            <!-- اطلاعات اصلی -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fa fa-user me-2"></i> اطلاعات شخصی
+                    </div>
+                    <div class="card-body text-center">
+                        @if (!string.IsNullOrEmpty(Model.ProfileImagePath))
+                        {
+                            <img src="@Model.ProfileImagePath" alt="@Model.FullName" 
+                                 class="img-avatar img-avatar-thumb mb-3" />
+                        }
+                        else
+                        {
+                            <div class="img-avatar img-avatar-thumb mb-3 bg-primary-light">
+                                <span class="display-4">
+                                    @Model.FirstName?.Substring(0, 1)@Model.LastName?.Substring(0, 1)
+                                </span>
+                            </div>
+                        }
+
+                        <h4 class="mb-1">@Model.FullName</h4>
+                        
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">فعال</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">غیرفعال</span>
+                        }
+
+                        <hr />
+
+                        <table class="table table-borderless mb-0 small">
+                            @if (!string.IsNullOrEmpty(Model.NationalCode))
+                            {
+                                <tr>
+                                    <td class="fw-bold">کد ملی:</td>
+                                    <td>@Model.NationalCode</td>
+                                </tr>
+                            }
+                            <tr>
+                                <td class="fw-bold">جنسیت:</td>
+                                <td>@Model.GenderText</td>
+                            </tr>
+                            @if (Model.BirthDate.HasValue)
+                            {
+                                <tr>
+                                    <td class="fw-bold">تاریخ تولد:</td>
+                                    <td>@Model.BirthDatePersian</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+
+                <!-- شماره‌های تماس -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <i class="fa fa-phone me-2"></i> شماره‌های تماس
+                        <a asp-action="ManagePhones" asp-route-contactId="@Model.Id" 
+                           class="btn btn-sm btn-light float-end">
+                            مدیریت
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Phones?.Any() == true)
+                        {
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var phone in Model.Phones.OrderByDescending(p => p.IsDefault))
+                                {
+                                    <li class="mb-2">
+                                        <i class="fa fa-phone text-muted me-2"></i>
+                                        <strong>@phone.FormattedNumber</strong>
+                                        <br />
+                                        <small class="text-muted">
+                                            @phone.PhoneTypeText
+                                            @if (phone.IsDefault)
+                                            {
+                                                <span class="badge bg-success">پیش‌فرض</span>
+                                            }
+                                        </small>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center mb-0">شماره‌ای ثبت نشده</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- ایمیل و آدرس -->
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <i class="fa fa-envelope me-2"></i> اطلاعات تماس
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-muted">ایمیل اصلی</h6>
+                                <p class="mb-0">
+                                    @if (!string.IsNullOrEmpty(Model.PrimaryEmail))
+                                    {
+                                        <a href="mailto:@Model.PrimaryEmail">@Model.PrimaryEmail</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-muted">ایمیل دوم</h6>
+                                <p class="mb-0">
+                                    @if (!string.IsNullOrEmpty(Model.SecondaryEmail))
+                                    {
+                                        <a href="mailto:@Model.SecondaryEmail">@Model.SecondaryEmail</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-muted">آدرس اصلی</h6>
+                                <p>@(Model.PrimaryAddress ?? "-")</p>
+                                @if (!string.IsNullOrEmpty(Model.PrimaryPostalCode))
+                                {
+                                    <p class="small text-muted">کد پستی: @Model.PrimaryPostalCode</p>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted">آدرس دوم</h6>
+                                <p>@(Model.SecondaryAddress ?? "-")</p>
+                                @if (!string.IsNullOrEmpty(Model.SecondaryPostalCode))
+                                {
+                                    <p class="small text-muted">کد پستی: @Model.SecondaryPostalCode</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- عضویت‌های سازمانی -->
+                @if (Model.DepartmentMemberships?.Any() == true)
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <i class="fa fa-building me-2"></i> عضویت‌های سازمانی
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>سازمان</th>
+                                            <th>بخش</th>
+                                            <th>سمت</th>
+                                            <th>تاریخ پیوستن</th>
+                                            <th>وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var membership in Model.DepartmentMemberships)
+                                        {
+                                            <tr>
+                                                <td>@membership.DepartmentTitle</td>
+                                                <td>@membership.DepartmentTitle</td>
+                                                <td>@membership.PositionTitle</td>
+                                                <td>@membership.JoinDatePersian</td>
+                                                <td>
+                                                    @if (membership.IsActive)
+                                                    {
+                                                        <span class="badge bg-success">فعال</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">غیرفعال</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- یادداشت‌ها -->
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <i class="fa fa-sticky-note me-2"></i> یادداشت‌ها
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">@Model.Notes</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- اطلاعات سیستمی -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa fa-info-circle me-2"></i> اطلاعات سیستمی
+                    </div>
+                    <div class="card-body">
+                        <div class="row small">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <strong>تاریخ ایجاد:</strong><br />
+                                    @Model.CreatedDatePersian
+                                </p>
+                                <p class="mb-0">
+                                    <strong>ایجاد کننده:</strong><br />
+                                    @Model.CreatorName
+                                </p>
+                            </div>
+                            @if (Model.LastUpdateDate.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <p class="mb-0">
+                                        <strong>آخرین بروزرسانی:</strong><br />
+                                        @Model.LastUpdateDatePersian
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

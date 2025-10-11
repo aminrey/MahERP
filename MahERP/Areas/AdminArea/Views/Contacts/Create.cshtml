@@ -1,0 +1,152 @@
+﻿@model MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactViewModel
+@{
+    ViewData["Title"] = "افزودن فرد جدید";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-user-plus me-2"></i>
+            @ViewData["Title"]
+        </h3>
+        <div class="block-options">
+            <a asp-action="Index" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i> بازگشت
+            </a>
+        </div>
+    </div>
+
+    <div class="block-content block-content-full">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row">
+                <!-- اطلاعات شخصی -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <i class="fa fa-user me-2"></i> اطلاعات شخصی
+                        </div>
+                        <div class="card-body">
+                            <div class="form-floating mb-3">
+                                <input asp-for="FirstName" class="form-control" placeholder="نام" required />
+                                <label asp-for="FirstName">نام *</label>
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input asp-for="LastName" class="form-control" placeholder="نام خانوادگی" required />
+                                <label asp-for="LastName">نام خانوادگی *</label>
+                                <span asp-validation-for="LastName" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input asp-for="NationalCode" class="form-control" placeholder="کد ملی" maxlength="10" />
+                                <label asp-for="NationalCode">کد ملی</label>
+                                <span asp-validation-for="NationalCode" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <select asp-for="Gender" class="form-select">
+                                    <option value="">-- انتخاب کنید --</option>
+                                    <option value="0">مرد</option>
+                                    <option value="1">زن</option>
+                                    <option value="2">سایر</option>
+                                </select>
+                                <label asp-for="Gender">جنسیت</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input asp-for="BirthDatePersian" class="form-control date-picker" 
+                                       placeholder="1370/01/01" />
+                                <label asp-for="BirthDatePersian">تاریخ تولد</label>
+                                <span asp-validation-for="BirthDatePersian" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- اطلاعات تماس -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <i class="fa fa-envelope me-2"></i> اطلاعات تماس
+                        </div>
+                        <div class="card-body">
+                            <div class="form-floating mb-3">
+                                <input asp-for="PrimaryEmail" type="email" class="form-control" placeholder="email@example.com" />
+                                <label asp-for="PrimaryEmail">ایمیل اصلی</label>
+                                <span asp-validation-for="PrimaryEmail" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input asp-for="SecondaryEmail" type="email" class="form-control" placeholder="email@example.com" />
+                                <label asp-for="SecondaryEmail">ایمیل دوم</label>
+                                <span asp-validation-for="SecondaryEmail" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <textarea asp-for="PrimaryAddress" class="form-control" rows="2" 
+                                          placeholder="آدرس اصلی..."></textarea>
+                                <label asp-for="PrimaryAddress">آدرس اصلی</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input asp-for="PrimaryPostalCode" class="form-control" placeholder="کد پستی" maxlength="10" />
+                                <label asp-for="PrimaryPostalCode">کد پستی</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- یادداشت‌ها -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <i class="fa fa-sticky-note me-2"></i> یادداشت‌ها
+                </div>
+                <div class="card-body">
+                    <div class="form-floating">
+                        <textarea asp-for="Notes" class="form-control" rows="3" 
+                                  placeholder="یادداشت‌های اضافی..."></textarea>
+                        <label asp-for="Notes">یادداشت‌ها</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- دکمه‌ها -->
+            <div class="row">
+                <div class="col-6">
+                    <a asp-action="Index" class="btn btn-alt-secondary w-100">
+                        <i class="fa fa-times me-1"></i> انصراف
+                    </a>
+                </div>
+                <div class="col-6">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fa fa-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/assets/js/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/assets/js/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.fa.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.date-picker').datepicker({
+                format: 'yyyy/mm/dd',
+                language: 'fa',
+                autoclose: true,
+                todayHighlight: true
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/assets/js/plugins/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+}

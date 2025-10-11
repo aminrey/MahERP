@@ -339,41 +339,105 @@
                                         </small>
                                     }
                                 </div>
+                                <!-- ⭐⭐⭐ بخش جدید: انتخاب طرف حساب (Contact یا Organization) -->
+                                <!-- جایگزین بخش قدیمی StakeholderId -->
 
-                                <!-- انتخاب طرف حساب - منتقل شده از تب دوم به تب اول -->
                                 <div class="mb-4">
-                                    <label class="form-label" for="StakeholderId">
+                                    <label class="form-label">
+                                        <i class="fa fa-handshake me-1"></i>
                                         طرف حساب
                                         <small class="text-muted">(اختیاری)</small>
                                     </label>
-                                    <div id="StakeholdersDiv">
-                                        <select asp-for="StakeholderId"
-                                                class="js-select2 form-select @(ViewData.ModelState["StakeholderId"]?.Errors.Count > 0 ? "is-invalid" : "")"
-                                                id="StakeholderId"
-                                                name="StakeholderId"
-                                                data-placeholder="انتخاب طرف حساب"
-                                                data-url="@Url.Action("StakeholderTriggerSelectTaskCategories", "Tasks")"
-                                                data-toggle="multiplepartialview"
-                                                data-target-divs="TaskCategoriesDiv"
-                                                data-param-name="stakeholderId"
-                                                data-branch-param="BranchIdSelected"
-                                                style="width: 100%;"
-                                                disabled>
-                                            <option value="">انتخاب طرف حساب</option>
-                                        </select>
-                                    </div>
-                                    @if (ViewData.ModelState["StakeholderId"]?.Errors.Count > 0)
-                                    {
-                                        <div class="invalid-feedback d-block">
-                                            <span asp-validation-for="StakeholderId"></span>
-                                        </div>
-                                    }
-                                    <small class="form-text text-muted">
-                                        <i class="fa fa-handshake me-1"></i>
-                                        طرف حساب مرتبط با این تسک (مشتری، تامین‌کننده، شریک تجاری و...)
-                                    </small>
-                                </div>
 
+                                    <!-- ⭐ Tab Navigation برای انتخاب نوع -->
+                                    <ul class="nav nav-pills mb-3" id="stakeholderTypeTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="contact-tab"
+                                                    data-bs-toggle="pill" data-bs-target="#contact-panel"
+                                                    type="button" role="tab">
+                                                <i class="fa fa-user me-1"></i>
+                                                فرد
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="organization-tab"
+                                                    data-bs-toggle="pill" data-bs-target="#organization-panel"
+                                                    type="button" role="tab">
+                                                <i class="fa fa-building me-1"></i>
+                                                شرکت/سازمان
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content">
+                                        <!-- ⭐⭐⭐ Panel 1: انتخاب Contact -->
+                                        <div class="tab-pane fade show active" id="contact-panel" role="tabpanel">
+                                            <div id="ContactSelectionDiv">
+                                                <select asp-for="SelectedContactId"
+                                                        class="js-select2 form-select"
+                                                        id="SelectedContactId"
+                                                        name="SelectedContactId"
+                                                        data-placeholder="انتخاب فرد"
+                                                        data-url="@Url.Action("ContactTriggerSelect", "Tasks")"
+                                                        data-toggle="partialview"
+                                                        data-target-div="ContactOrganizationsDiv"
+                                                        data-param-name="contactId"
+                                                        style="width: 100%;">
+                                                    <option value="">انتخاب فرد</option>
+                                                    @if (Model.ContactsInitial != null && Model.ContactsInitial.Any())
+                                                    {
+                                                        @foreach (var contact in Model.ContactsInitial)
+                                                        {
+                                                            <option value="@contact.Id">@contact.FullName (@contact.NationalCode)</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <small class="form-text text-muted mt-1">
+                                                <i class="fa fa-user me-1"></i>
+                                                افرادی که در شعبه انتخاب شده تعریف شده‌اند
+                                            </small>
+
+                                            <!-- ⭐ بخش نمایش سازمان‌های مرتبط با Contact -->
+                                            <div id="ContactOrganizationsDiv" class="mt-3" style="display: none;">
+                                                <!-- محتوا از AJAX بارگذاری می‌شود -->
+                                            </div>
+                                        </div>
+
+                                        <!-- ⭐⭐⭐ Panel 2: انتخاب Organization -->
+                                        <div class="tab-pane fade" id="organization-panel" role="tabpanel">
+                                            <div id="OrganizationSelectionDiv">
+                                                <select asp-for="SelectedOrganizationId"
+                                                        class="js-select2 form-select"
+                                                        id="SelectedOrganizationId"
+                                                        name="SelectedOrganizationId"
+                                                        data-placeholder="انتخاب شرکت/سازمان"
+                                                        style="width: 100%;">
+                                                    <option value="">انتخاب شرکت/سازمان</option>
+                                                    @if (Model.OrganizationsInitial != null && Model.OrganizationsInitial.Any())
+                                                    {
+                                                        @foreach (var org in Model.OrganizationsInitial)
+                                                        {
+                                                            <option value="@org.Id">
+                                                                @org.DisplayName
+                                                                @if (!string.IsNullOrEmpty(org.RegistrationNumber))
+                                                                {
+                                                                    <text> (ثبت: @org.RegistrationNumber)</text>
+                                                                }
+                                                            </option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <small class="form-text text-muted mt-1">
+                                                <i class="fa fa-building me-1"></i>
+                                                شرکت‌ها و سازمان‌هایی که در شعبه انتخاب شده تعریف شده‌اند
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
                                 <!-- کاربران منتصب با انتخاب تیم - جایگزین بخش قدیمی -->
                                 <div class="mb-4">
                                     <label class="form-label">
@@ -1987,6 +2051,98 @@
             }
             
             // ... بقیه کدهای ready ...
+        });
+    </script>
+
+    <script>
+
+        $(document).ready(function() {
+            // ⭐ مدیریت تغییر شعبه: بروزرسانی Contacts و Organizations
+            $('#BranchIdSelected').on('change', function() {
+                const branchId = $(this).val();
+
+                if (!branchId) {
+                    $('#SelectedContactId, #SelectedOrganizationId').prop('disabled', true).empty().append('<option value="">ابتدا شعبه را انتخاب کنید</option>');
+                    $('#ContactOrganizationsDiv').hide();
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("BranchTriggerSelectForStakeholders", "Tasks")',
+                    type: 'POST',
+                    data: {
+                        branchId: branchId,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success && response.viewList) {
+                            // بروزرسانی Contact dropdown
+                            const contactView = response.viewList.find(v => v.elementId === 'ContactSelectionDiv');
+                            if (contactView) {
+                                $('#SelectedContactId').html(contactView.view.result).prop('disabled', false);
+                            }
+
+                            // بروزرسانی Organization dropdown
+                            const orgView = response.viewList.find(v => v.elementId === 'OrganizationSelectionDiv');
+                            if (orgView) {
+                                $('#SelectedOrganizationId').html(orgView.view.result).prop('disabled', false);
+                            }
+
+                            // پاک کردن بخش سازمان‌های Contact
+                            $('#ContactOrganizationsDiv').hide().empty();
+
+                            // بروزرسانی Select2
+                            $('.js-select2').select2();
+                        }
+                    },
+                    error: function() {
+                        toastr.error('خطا در بارگذاری اطلاعات');
+                    }
+                });
+            });
+
+            // ⭐ مدیریت تغییر Contact: نمایش سازمان‌های مرتبط
+            $('#SelectedContactId').on('change', function() {
+                const contactId = $(this).val();
+
+                if (!contactId) {
+                    $('#ContactOrganizationsDiv').hide().empty();
+                    return;
+                }
+
+                $('#ContactOrganizationsDiv').html('<div class="text-center py-3"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>').show();
+
+                $.ajax({
+                    url: '@Url.Action("ContactTriggerSelect", "Tasks")',
+                    type: 'POST',
+                    data: {
+                        contactId: contactId,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(html) {
+                        $('#ContactOrganizationsDiv').html(html);
+                        // بروزرسانی Select2 برای dropdown جدید
+                        $('#ContactRelatedOrganizationId').select2();
+                    },
+                    error: function() {
+                        $('#ContactOrganizationsDiv').html('<div class="alert alert-danger">خطا در بارگذاری سازمان‌ها</div>');
+                    }
+                });
+            });
+
+            // ⭐ مدیریت تغییر Tab: پاک کردن انتخاب‌های قبلی
+            $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function(e) {
+                const target = $(e.target).attr('data-bs-target');
+
+                if (target === '#contact-panel') {
+                    // پاک کردن Organization
+                    $('#SelectedOrganizationId').val('').trigger('change');
+                } else if (target === '#organization-panel') {
+                    // پاک کردن Contact و سازمان‌های مرتبط
+                    $('#SelectedContactId').val('').trigger('change');
+                    $('#ContactOrganizationsDiv').hide().empty();
+                }
+            });
         });
     </script>
 }

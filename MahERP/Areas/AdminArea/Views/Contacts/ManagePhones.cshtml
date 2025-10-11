@@ -1,0 +1,101 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactPhoneViewModel>
+@{
+    ViewData["Title"] = "مدیریت شماره‌های تماس - " + ViewBag.ContactName;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-phone me-2"></i>
+            مدیریت شماره‌های تماس
+        </h3>
+        <div class="block-options">
+            <a asp-action="Details" asp-route-id="@ViewBag.ContactId" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i> بازگشت
+            </a>
+            <button type="button" class="btn btn-sm btn-alt-success"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("AddPhoneModal", new { contactId = ViewBag.ContactId })">
+                <i class="fa fa-plus me-1"></i> شماره جدید
+            </button>
+        </div>
+    </div>
+
+    <div class="block-content">
+        <div class="alert alert-info">
+            <i class="fa fa-info-circle me-2"></i>
+            مدیریت شماره‌های تماس برای: <strong>@ViewBag.ContactName</strong>
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-vcenter">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>نوع</th>
+                            <th>شماره تماس</th>
+                            <th>داخلی</th>
+                            <th class="text-center">پیش‌فرض</th>
+                            <th class="text-center">تایید شده</th>
+                            <th class="text-center">وضعیت</th>
+                            <th class="text-center" style="width: 150px;">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="phonesTableBody">
+                        @await Html.PartialAsync("_PhoneTableRows", Model)
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fa fa-phone fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">هیچ شماره‌ای ثبت نشده است</h4>
+                <p class="text-muted">برای شروع، اولین شماره را اضافه کنید</p>
+                <button type="button" class="btn btn-primary"
+                        data-toggle="modal-ajax"
+                        href="@Url.Action("AddPhoneModal", new { contactId = ViewBag.ContactId })">
+                    <i class="fa fa-plus me-1"></i> افزودن اولین شماره
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setDefaultPhone(phoneId) {
+            if (confirm('آیا می‌خواهید این شماره را به عنوان پیش‌فرض تنظیم کنید؟')) {
+                $.post('@Url.Action("SetDefaultPhone")', {
+                    phoneId: phoneId,
+                    contactId: @ViewBag.ContactId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                }, function(result) {
+                    if (result.success) {
+                        location.reload();
+                    } else {
+                        alert(result.message);
+                    }
+                });
+            }
+        }
+
+        function deletePhone(phoneId) {
+            if (confirm('آیا از حذف این شماره اطمینان دارید؟')) {
+                $.post('@Url.Action("DeletePhone")', {
+                    id: phoneId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                }, function(result) {
+                    if (result.success) {
+                        location.reload();
+                    } else {
+                        alert(result.message);
+                    }
+                });
+            }
+        }
+    </script>
+}

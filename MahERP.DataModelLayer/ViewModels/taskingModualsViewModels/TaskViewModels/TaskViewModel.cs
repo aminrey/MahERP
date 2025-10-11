@@ -1,14 +1,15 @@
 ﻿using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Extensions;
-using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
-using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
 {
@@ -357,6 +358,42 @@ public class TaskViewModel
         /// </summary>
         public List<TaskWorkLogViewModel> WorkLogs { get; set; } = new List<TaskWorkLogViewModel>();
 
+        /// <summary>
+        /// ⭐⭐⭐ شناسه فرد انتخاب شده (نسخه جدید)
+        /// </summary>
+        [Display(Name = "فرد")]
+        public int? SelectedContactId { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ شناسه سازمان انتخاب شده (نسخه جدید)
+        /// </summary>
+        [Display(Name = "سازمان")]
+        public int? SelectedOrganizationId { get; set; }
+
+        /// <summary>
+        /// نام فرد (برای نمایش)
+        /// </summary>
+        public string ContactFullName { get; set; }
+
+        /// <summary>
+        /// نام سازمان (برای نمایش)
+        /// </summary>
+        public string OrganizationName { get; set; }
+
+        /// <summary>
+        /// لیست اولیه Contact‌ها برای dropdown (بر اساس شعبه)
+        /// </summary>
+        public List<ContactViewModel> ContactsInitial { get; set; } = new();
+
+        /// <summary>
+        /// لیست اولیه Organization‌ها برای dropdown (بر اساس شعبه)
+        /// </summary>
+        public List<OrganizationViewModel> OrganizationsInitial { get; set; } = new();
+
+        /// <summary>
+        /// لیست سازمان‌هایی که Contact انتخاب شده در آن‌ها عضو است
+        /// </summary>
+        public List<OrganizationViewModel> ContactOrganizations { get; set; } = new();
     }
 
 
@@ -500,20 +537,41 @@ public class BranchChangeDataViewModel
     public List<TeamViewModel> Teams { get; set; } = new List<TeamViewModel>();
     public List<StakeholderViewModel> Stakeholders { get; set; } = new List<StakeholderViewModel>();
 }
+    /// <summary>
+    /// ViewModel برای پاسخ تغییر شعبه در AJAX
+    /// </summary>
+    public class BranchSelectResponseViewModel
+    {
+        /// <summary>
+        /// کاربران شعبه
+        /// </summary>
+        public List<BranchUserViewModel> Users { get; set; } = new();
 
-/// <summary>
-/// مدل پاسخ برای AJAX تغییر شعبه
-/// </summary>
-public class BranchSelectResponseViewModel
-{
-    public List<BranchUserViewModel> Users { get; set; } = new();
-    public List<TeamViewModel> Teams { get; set; } = new();
-    public List<StakeholderViewModel> Stakeholders { get; set; } = new();
-}
-/// <summary>
-/// مدل آمار پروژه
-/// </summary>
-public class ProjectStatsViewModel
+        /// <summary>
+        /// تیم‌های شعبه
+        /// </summary>
+        public List<TeamViewModel> Teams { get; set; } = new();
+
+        /// <summary>
+        /// ⭐ OLD - طرف حساب‌های قدیمی (حفظ برای backward compatibility)
+        /// </summary>
+        [Obsolete("از Contacts و Organizations استفاده کنید")]
+        public List<StakeholderViewModel> Stakeholders { get; set; } = new();
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - افراد شعبه
+        /// </summary>
+        public List<ContactViewModel> Contacts { get; set; } = new();
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - سازمان‌های شعبه
+        /// </summary>
+        public List<OrganizationViewModel> Organizations { get; set; } = new();
+    }
+    /// <summary>
+    /// مدل آمار پروژه
+    /// </summary>
+    public class ProjectStatsViewModel
 {
     public int StakeholderTasksCount { get; set; }
     public int CategoryTasksCount { get; set; }

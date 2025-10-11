@@ -33,7 +33,8 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 .Include(tmd => tmd.TaskAssignment)
                     .ThenInclude(ta => ta.Task)
                         .ThenInclude(t => t.TaskCategory)
-                .Include(tmd => tmd.TaskAssignment.Task.Stakeholder)
+                .Include(tmd => tmd.TaskAssignment.Task.Contact)
+                .Include(tmd => tmd.TaskAssignment.Task.Organization)
                 .Include(tmd => tmd.TaskAssignment.Task.TaskOperations.Where(o => !o.IsDeleted)) // ⭐ اضافه شده
                 .Where(tmd =>
                     tmd.TaskAssignment.AssignedUserId == userId &&
@@ -67,7 +68,8 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 .Include(tmd => tmd.TaskAssignment)
                     .ThenInclude(ta => ta.Task)
                         .ThenInclude(t => t.TaskCategory)
-                .Include(tmd => tmd.TaskAssignment.Task.Stakeholder)
+                .Include(tmd => tmd.TaskAssignment.Task.Contact)
+                .Include(tmd => tmd.TaskAssignment.Task.Organization)
                 .Include(tmd => tmd.TaskAssignment.Task.TaskOperations.Where(o => !o.IsDeleted)) // ⭐ اضافه شده
                 .Where(tmd =>
                     tmd.TaskAssignment.AssignedUserId == userId &&
@@ -280,7 +282,8 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 .Include(tmd => tmd.TaskAssignment)
                     .ThenInclude(ta => ta.Task)
                         .ThenInclude(t => t.TaskCategory)
-                .Include(tmd => tmd.TaskAssignment.Task.Stakeholder)
+                .Include(tmd => tmd.TaskAssignment.Task.Contact)
+                .Include(tmd => tmd.TaskAssignment.Task.Organization)
 
                 .FirstOrDefaultAsync(tmd =>
                     tmd.TaskAssignment.AssignedUserId == userId &&
@@ -363,9 +366,11 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 TaskTitle = task.Title,
                 TaskDescription = task.Description,
                 CategoryTitle = task.TaskCategory?.Title,
-                StakeholderName = !string.IsNullOrEmpty(task.Stakeholder?.CompanyName)
-                    ? task.Stakeholder?.CompanyName
-                    : $"{task.Stakeholder?.FirstName} {task.Stakeholder?.LastName}",
+                StakeholderName = task.Organization != null
+    ? task.Organization.DisplayName
+    : (task.Contact != null
+        ? task.Contact.FullName
+        : "نامشخص"),
                 TaskPriority = task.Priority,
                 IsImportant = task.Important,
                 IsFocused = assignment.IsFocused,
@@ -377,8 +382,7 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 CreatedDate = task.CreateDate,
                 TaskStatus = assignment.Status,
                 ProgressPercentage = progressPercentage, // ⭐ اضافه شده
-                IsEditable = isEditable, // ⭐ اضافه شده
-                IsCompleted = assignment.CompletionDate.HasValue, // ⭐ اضافه شده
+               
                 PlannedDate = myDayTask.PlannedDate,
                 PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(myDayTask.PlannedDate, "yyyy/MM/dd")
             };

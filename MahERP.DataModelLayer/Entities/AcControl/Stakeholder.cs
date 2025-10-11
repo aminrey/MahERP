@@ -10,7 +10,9 @@ namespace MahERP.DataModelLayer.Entities.AcControl
 {
     /// <summary>
     /// طرف حساب - می‌تواند شخص حقیقی یا حقوقی باشد
-    /// </summary>
+    /// </summary>   
+    [Obsolete("This class is kept for backward compatibility. Use Contact and Organization instead.")]
+
     public class Stakeholder
     {
         [Key]
@@ -143,8 +145,8 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         
         [InverseProperty(nameof(Contract.Stakeholder))]
         public virtual ICollection<Contract> Contracts { get; set; } = new HashSet<Contract>();
-        
-        [InverseProperty(nameof(Tasks.Stakeholder))]
+
+        [Obsolete("Use Contact/Organization relationships in Tasks instead")]
         public virtual ICollection<Tasks> TaskList { get; set; } = new HashSet<Tasks>();
 
         // ========== Computed Properties ==========

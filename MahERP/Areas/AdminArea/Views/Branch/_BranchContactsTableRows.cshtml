@@ -1,0 +1,75 @@
+﻿@using MahERP.CommonLayer.PublicClasses
+@using MahERP.DataModelLayer.Entities.AcControl
+
+@model List<BranchContact>
+
+@if (Model != null && Model.Any())
+{
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                <a asp-controller="Contacts" asp-action="Details" asp-route-id="@item.ContactId" target="_blank">
+                    @item.Contact?.FullName
+                </a>
+            </td>
+            <td>@(item.Contact?.DefaultPhone?.FormattedNumber ?? "-")</td>
+            <td>@(item.Contact?.PrimaryEmail ?? "-")</td>
+            <td>
+                @switch (item.RelationType)
+                {
+                    case 0:
+                        <span class="badge bg-success">@item.RelationTypeText</span>
+                        break;
+                    case 1:
+                        <span class="badge bg-warning">@item.RelationTypeText</span>
+                        break;
+                    case 2:
+                        <span class="badge bg-info">@item.RelationTypeText</span>
+                        break;
+                    default:
+                        <span class="badge bg-secondary">@item.RelationTypeText</span>
+                        break;
+                }
+            </td>
+            <td>@ConvertDateTime.ConvertMiladiToShamsi(item.AssignDate, "yyyy/MM/dd")</td>
+            <td class="text-center">
+                @if (item.IsActive)
+                {
+                    <span class="badge bg-success">فعال</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">غیرفعال</span>
+                }
+            </td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                    <a href="@Url.Action("Details", "Contacts", new { id = item.ContactId })" 
+                       class="btn btn-sm btn-info" 
+                       target="_blank"
+                       title="جزئیات فرد">
+                        <i class="fa fa-eye"></i>
+                    </a>
+                    <a href="@Url.Action("RemoveContactFromBranch", "Branch", new { id = item.Id })"
+                       class="btn btn-sm btn-danger"
+                       data-toggle="modal-ajax"
+                       title="حذف از شعبه">
+                        <i class="fa fa-times"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    }
+}
+else
+{
+    <tr>
+        <td colspan="7" class="text-center text-muted py-4">
+            <i class="fa fa-info-circle me-1"></i>
+            هیچ فردی به این شعبه اختصاص نیافته است
+        </td>
+    </tr>
+}
+
+@Html.AntiForgeryToken()

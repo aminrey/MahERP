@@ -62,6 +62,7 @@
                                             <th>کد</th>
                                             <th>عنوان</th>
                                             <th class="text-center d-none d-md-table-cell">دسته‌بندی</th>
+                                            <th class="text-center d-none d-lg-table-cell">طرف حساب</th> <!-- ⭐ NEW -->
                                             <th class="text-center">وضعیت</th>
                                             <th class="text-center d-none d-lg-table-cell">سازنده</th>
                                             <th class="text-center d-none d-sm-table-cell">مهلت</th>
@@ -142,6 +143,46 @@
                                                     @if (!string.IsNullOrEmpty(task.CategoryTitle))
                                                     {
                                                         <span class="badge bg-info">@task.CategoryTitle</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center d-none d-lg-table-cell">
+                                                    @if (task.SelectedContactId.HasValue)
+                                                    {
+                                                        <span class="badge bg-primary" title="فرد: @task.ContactFullName">
+                                                            <i class="fa fa-user me-1"></i>
+                                                            @(task.ContactFullName?.Length > 15 
+                                                                ? task.ContactFullName.Substring(0, 15) + "..." 
+                                                                : task.ContactFullName)
+                                                        </span>
+                                                        @if (task.SelectedOrganizationId.HasValue)
+                                                        {
+                                                            <br />
+                                                            <small class="text-muted" title="سازمان: @task.OrganizationName">
+                                                                <i class="fa fa-building"></i> @(task.OrganizationName?.Length > 15 
+                                                                    ? task.OrganizationName.Substring(0, 15) + "..." 
+                                                                    : task.OrganizationName)
+                                                            </small>
+                                                        }
+                                                    }
+                                                    else if (task.SelectedOrganizationId.HasValue)
+                                                    {
+                                                        <span class="badge bg-info" title="سازمان: @task.OrganizationName">
+                                                            <i class="fa fa-building me-1"></i>
+                                                            @(task.OrganizationName?.Length > 15 
+                                                                ? task.OrganizationName.Substring(0, 15) + "..." 
+                                                                : task.OrganizationName)
+                                                        </span>
+                                                    }
+                                                    else if (task.StakeholderId.HasValue)
+                                                    {
+                                                        <!-- ⚠️ Fallback -->
+                                                        <small class="text-muted">
+                                                            <i class="fa fa-archive"></i> @task.StakeholderName
+                                                        </small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
                                                     }
                                                 </td>
                                                 <td class="text-center">

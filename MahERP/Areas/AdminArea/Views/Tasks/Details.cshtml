@@ -453,22 +453,63 @@
                                     </div>
                                 </div>
                                 
-                                <!-- طرف حساب -->
-                                <div class="col-sm-6">
-                                    <div class="p-3 bg-body-light rounded-3">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="flex-shrink-0">
-                                                <i class="fa fa-handshake fa-2x text-success"></i>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <div class="fs-xs text-muted">طرف حساب</div>
-                                                <div class="fw-semibold">
-                                                    @(string.IsNullOrEmpty(Model.StakeholderName) ? "ندارد" : Model.StakeholderName)
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <!-- در بخش نمایش اطلاعات تسک، جایگزین بخش Stakeholder قدیمی: -->
+
+<!-- ⭐⭐⭐ نمایش Contact/Organization جدید -->
+<div class="col-sm-6">
+    <div class="p-3 bg-body-light rounded-3">
+        <div class="d-flex align-items-center mb-2">
+            <div class="flex-shrink-0">
+                @if (Model.SelectedContactId.HasValue || Model.SelectedOrganizationId.HasValue)
+                {
+                    <i class="fa fa-handshake fa-2x text-success"></i>
+                }
+                else
+                {
+                    <i class="fa fa-ban fa-2x text-muted"></i>
+                }
+            </div>
+            <div class="flex-grow-1 ms-3">
+                <div class="fs-xs text-muted">طرف حساب</div>
+                <div class="fw-semibold">
+                    @if (Model.SelectedContactId.HasValue)
+                    {
+                        <div>
+                            <i class="fa fa-user me-1 text-primary"></i>
+                            <strong>@Model.ContactFullName</strong>
+                            @if (Model.SelectedOrganizationId.HasValue)
+                            {
+                                <div class="mt-1 ms-3">
+                                    <i class="fa fa-building me-1 text-info"></i>
+                                    <small class="text-muted">@Model.OrganizationName</small>
                                 </div>
+                            }
+                        </div>
+                    }
+                    else if (Model.SelectedOrganizationId.HasValue)
+                    {
+                        <div>
+                            <i class="fa fa-building me-1 text-info"></i>
+                            <strong>@Model.OrganizationName</strong>
+                        </div>
+                    }
+                    else if (Model.StakeholderId.HasValue)
+                    {
+                        <!-- ⚠️ Fallback به سیستم قدیمی -->
+                        <div>
+                            <i class="fa fa-archive me-1 text-warning"></i>
+                            <small class="text-muted">(قدیمی) @Model.StakeholderName</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-muted">ندارد</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
                                 
                                 <!-- ایجاد کننده -->
                                 <div class="col-sm-6">

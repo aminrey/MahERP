@@ -270,6 +270,35 @@
                                         </div>
                                     }
 
+                                    <!-- Contact/Organization Info -->
+                                    @if (!string.IsNullOrEmpty(task.ContactFullName) || !string.IsNullOrEmpty(task.OrganizationName))
+                                    {
+                                        <div class="alert alert-info py-2 mb-2">
+                                            @if (!string.IsNullOrEmpty(task.ContactFullName))
+                                            {
+                                                <div>
+                                                    <i class="fa fa-user me-1"></i>
+                                                    <small><strong>فرد:</strong> @task.ContactFullName</small>
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(task.OrganizationName))
+                                            {
+                                                <div>
+                                                    <i class="fa fa-building me-1"></i>
+                                                    <small><strong>سازمان:</strong> @task.OrganizationName</small>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else if (!string.IsNullOrEmpty(task.StakeholderName))
+                                    {
+                                        <!-- ⚠️ Fallback -->
+                                        <div class="alert alert-secondary py-2 mb-2">
+                                            <i class="fa fa-archive me-1"></i>
+                                            <small><strong>طرف حساب (قدیمی):</strong> @task.StakeholderName</small>
+                                        </div>
+                                    }
+
                                     <!-- ⭐⭐⭐ Actions (با قفل برای تسک‌های تکمیل شده) -->
                                     <div class="btn-group w-100" role="group">
                                         @if (task.IsCompleted)

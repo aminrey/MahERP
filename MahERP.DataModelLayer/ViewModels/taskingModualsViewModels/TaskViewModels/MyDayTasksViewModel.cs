@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels
@@ -51,43 +52,136 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
     /// </summary>
     public class MyDayTaskItemViewModel
     {
-        public int MyDayId { get; set; }
         public int TaskId { get; set; }
         public int TaskAssignmentId { get; set; }
-        public string TaskCode { get; set; } = string.Empty;
-        public string TaskTitle { get; set; } = string.Empty;
-        public string? TaskDescription { get; set; }
-        public string? CategoryTitle { get; set; }
-        public string? StakeholderName { get; set; }
-        public byte TaskPriority { get; set; }
-        public bool IsImportant { get; set; }
-        public bool IsFocused { get; set; }
-        public string? PlanNote { get; set; }
-        public string? WorkNote { get; set; }
-        public int? WorkDurationMinutes { get; set; }
-        public bool IsWorkedOn { get; set; }
-        public DateTime? WorkStartDate { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public byte TaskStatus { get; set; }
-        public int ProgressPercentage { get; set; } // ⭐ اضافه شده
-        public bool IsEditable { get; set; } // ⭐ اضافه شده
-        public bool IsCompleted { get; set; } // ⭐ اضافه شده
-        public DateTime PlannedDate { get; set; }
-        public string PlannedDatePersian { get; set; } = string.Empty;
+        public int MyDayId { get; set; } // ⭐ شناسه TaskMyDay
 
+        [Display(Name = "کد تسک")]
+        public string TaskCode { get; set; }
+
+        [Display(Name = "عنوان تسک")]
+        public string TaskTitle { get; set; }
+
+        [Display(Name = "توضیحات")]
+        public string? TaskDescription { get; set; }
+
+        [Display(Name = "دسته‌بندی")]
+        public string? CategoryTitle { get; set; }
+
+        /// <summary>
+        /// ⚠️ Deprecated - برای backward compatibility
+        /// </summary>
+        [Display(Name = "طرف حساب (قدیمی)")]
+        public string? StakeholderName { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - نام کامل Contact
+        /// </summary>
+        [Display(Name = "نام فرد")]
+        public string? ContactFullName { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - نام سازمان
+        /// </summary>
+        [Display(Name = "نام سازمان")]
+        public string? OrganizationName { get; set; }
+
+        [Display(Name = "اولویت")]
+        public byte TaskPriority { get; set; }
+
+        [Display(Name = "مهم")]
+        public bool IsImportant { get; set; }
+
+        [Display(Name = "متمرکز")]
+        public bool IsFocused { get; set; }
+
+        [Display(Name = "یادداشت برنامه")]
+        public string? PlanNote { get; set; }
+
+        [Display(Name = "یادداشت کار")]
+        public string? WorkNote { get; set; }
+
+        [Display(Name = "مدت زمان کار (دقیقه)")]
+        public int? WorkDurationMinutes { get; set; }
+
+        [Display(Name = "کار انجام شده")]
+        public bool IsWorkedOn { get; set; }
+
+        [Display(Name = "تاریخ شروع کار")]
+        public DateTime? WorkStartDate { get; set; }
+
+        [Display(Name = "تاریخ ایجاد")]
+        public DateTime CreatedDate { get; set; }
+
+        [Display(Name = "وضعیت تسک")]
+        public byte TaskStatus { get; set; }
+
+        [Display(Name = "درصد پیشرفت")]
+        public int ProgressPercentage { get; set; }
+
+        [Display(Name = "تاریخ برنامه‌ریزی")]
+        public DateTime PlannedDate { get; set; }
+
+        [Display(Name = "تاریخ برنامه‌ریزی (شمسی)")]
+        public string PlannedDatePersian { get; set; }
+
+        /// <summary>
+        /// ⭐ بررسی تکمیل شدن تسک
+        /// </summary>
+        public bool IsCompleted => TaskStatus >= 2;
+        /// <summary>
+        /// آیا این تسک برای امروز است؟
+        /// </summary>
+        [NotMapped]
         public bool IsToday => PlannedDate.Date == DateTime.Now.Date;
-        public bool IsOverdue => PlannedDate.Date < DateTime.Now.Date && !IsWorkedOn;
+
+        /// <summary>
+        /// آیا این تسک عقب افتاده است؟
+        /// </summary>
+        [NotMapped]
+        public bool IsOverdue => PlannedDate.Date < DateTime.Now.Date && !IsCompleted;
+
+  
     }
     /// <summary>
-    /// آمار "روز من"
+    /// ViewModel برای نمایش آمار "روز من"
     /// </summary>
     public class MyDayStatsViewModel
     {
+        [Display(Name = "تعداد کل تسک‌های برنامه‌ریزی شده")]
         public int TotalPlannedTasks { get; set; }
+
+        [Display(Name = "تعداد تسک‌هایی که روی آن‌ها کار شده")]
         public int WorkedTasks { get; set; }
+
+        [Display(Name = "تعداد تسک‌های تکمیل شده")]
         public int CompletedTasks { get; set; }
+
+        [Display(Name = "مجموع زمان کار (دقیقه)")]
         public int TotalWorkTimeMinutes { get; set; }
-        public string TotalWorkTimeFormatted => $"{TotalWorkTimeMinutes / 60}:{TotalWorkTimeMinutes % 60:D2}";
+
+        /// <summary>
+        /// ⭐ فرمت زمان کار (به صورت ساعت:دقیقه)
+        /// </summary>
+        [Display(Name = "مجموع زمان کار")]
+        public string TotalWorkTimeFormatted
+        {
+            get
+            {
+                if (TotalWorkTimeMinutes == 0)
+                    return "0 دقیقه";
+
+                var hours = TotalWorkTimeMinutes / 60;
+                var minutes = TotalWorkTimeMinutes % 60;
+
+                if (hours > 0 && minutes > 0)
+                    return $"{hours} ساعت و {minutes} دقیقه";
+                else if (hours > 0)
+                    return $"{hours} ساعت";
+                else
+                    return $"{minutes} دقیقه";
+            }
+        }
     }
     public class AddToMyDayViewModel
     {

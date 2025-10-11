@@ -2,7 +2,7 @@
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Entities.Organization;
+using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;

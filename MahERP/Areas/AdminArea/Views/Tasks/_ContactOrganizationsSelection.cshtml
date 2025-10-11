@@ -1,0 +1,61 @@
+﻿@model List<OrganizationViewModel>
+
+@if (Model != null && Model.Any())
+{
+    <div class="card border-info">
+        <div class="card-header bg-info-light">
+            <h6 class="mb-0">
+                <i class="fa fa-building me-1"></i>
+                این فرد در سازمان‌های زیر عضو است:
+            </h6>
+        </div>
+        <div class="card-body">
+            <label class="form-label">
+                انتخاب سازمان مرتبط
+                <small class="text-muted">(اختیاری)</small>
+            </label>
+            
+            <select class="js-select2 form-select" 
+                    id="ContactRelatedOrganizationId"
+                    name="ContactRelatedOrganizationId"
+                    data-placeholder="انتخاب سازمان یا بدون سازمان"
+                    style="width: 100%;">
+                <option value="">بدون سازمان خاص</option>
+                @foreach (var org in Model)
+                {
+                    <option value="@org.Id">
+                        @org.DisplayName
+                        
+                    </option>
+                }
+            </select>
+            
+            <small class="form-text text-muted mt-2">
+                <i class="fa fa-info-circle me-1"></i>
+                می‌توانید مشخص کنید این تسک مربوط به کدام سازمان است یا بدون انتخاب ادامه دهید
+            </small>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        <i class="fa fa-exclamation-triangle me-1"></i>
+        این فرد در هیچ سازمانی عضو نیست
+    </div>
+}
+
+@functions {
+    private string GetRelationTypeText(byte relationType)
+    {
+        return relationType switch
+        {
+            0 => "مدیر",
+            1 => "کارمند",
+            2 => "نماینده",
+            3 => "مشتری",
+            4 => "تامین‌کننده",
+            _ => "سایر"
+        };
+    }
+}

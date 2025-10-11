@@ -1,0 +1,771 @@
+﻿using AutoMapper;
+using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
+using MahERP.CommonLayer.PublicClasses;
+using MahERP.DataModelLayer.AcControl;
+using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Repository.ContactRepository;
+using MahERP.DataModelLayer.Repository.OrganizationRepository;
+using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using MahERP.Extentions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Caching.Memory;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
+{
+    [Area("AdminArea")]
+    [Authorize]
+    [PermissionRequired("Organization")]
+    public class OrganizationsController : BaseController
+    {
+        private readonly IOrganizationRepository _organizationRepository;
+        private readonly IContactRepository _contactRepository;
+        private readonly IUnitOfWork _uow;
+        private new readonly UserManager<AppUsers> _userManager;
+        private readonly IMapper _mapper;
+
+        public OrganizationsController(
+            IOrganizationRepository organizationRepository,
+            IContactRepository contactRepository,
+            IUnitOfWork uow,
+            UserManager<AppUsers> userManager,
+            IMapper mapper,
+            PersianDateHelper persianDateHelper,
+            IMemoryCache memoryCache,
+            ActivityLoggerService activityLogger,
+            IUserManagerRepository userRepository)
+            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
+        {
+            _organizationRepository = organizationRepository;
+            _contactRepository = contactRepository;
+            _uow = uow;
+            _userManager = userManager;
+            _mapper = mapper;
+        }
+
+        // ==================== INDEX ====================
+
+        /// <summary>
+        /// لیست سازمان‌ها
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Index(string searchTerm = null, byte? organizationType = null, bool includeInactive = false)
+        {
+            try
+            {
+                List<Organization> organizations;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    organizations = _organizationRepository.SearchOrganizations(searchTerm, organizationType, includeInactive);
+                }
+                else
+                {
+                    organizations = _organizationRepository.GetAllOrganizations(includeInactive, organizationType);
+                }
+
+                var viewModels = _mapper.Map<List<OrganizationViewModel>>(organizations);
+
+                ViewBag.SearchTerm = searchTerm;
+                ViewBag.OrganizationType = organizationType;
+                ViewBag.IncludeInactive = includeInactive;
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Organizations",
+                    "Index",
+                    "مشاهده لیست سازمان‌ها"
+                );
+
+                return View(viewModels);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "Index", "خطا در دریافت لیست", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        // ==================== DETAILS ====================
+
+        /// <summary>
+        /// جزئیات سازمان
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            try
+            {
+                var organization = await _organizationRepository.GetOrganizationByIdAsync(id, 
+                    includeDepartments: true, 
+                    includeContacts: true);
+
+                if (organization == null)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "Organizations",
+                        "Details",
+                        "تلاش برای مشاهده سازمان غیرموجود",
+                        recordId: id.ToString()
+                    );
+                    return RedirectToAction("ErrorView", "Home");
+                }
+
+                var viewModel = _mapper.Map<OrganizationViewModel>(organization);
+
+                // آمار
+                var stats = await _organizationRepository.GetOrganizationStatisticsAsync(id);
+                ViewBag.Statistics = stats;
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Organizations",
+                    "Details",
+                    $"مشاهده جزئیات سازمان: {organization.DisplayName}",
+                    recordId: id.ToString(),
+                    entityType: "Organization",
+                    recordTitle: organization.DisplayName
+                );
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "Details", "خطا در دریافت جزئیات", ex, recordId: id.ToString());
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        // ==================== CREATE ====================
+
+        /// <summary>
+        /// نمایش فرم افزودن سازمان جدید
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Create()
+        {
+            try
+            {
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Organizations",
+                    "Create",
+                    "مشاهده فرم افزودن سازمان جدید"
+                );
+
+                return View(new OrganizationViewModel { IsActive = true, OrganizationType = 0 });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "Create", "خطا در نمایش فرم", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره سازمان جدید
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(OrganizationViewModel model)
+        {
+            // اعتبارسنجی
+            if (string.IsNullOrEmpty(model.Name))
+            {
+                ModelState.AddModelError("Name", "نام سازمان الزامی است");
+            }
+
+            // بررسی یکتا بودن شماره ثبت
+            if (!string.IsNullOrEmpty(model.RegistrationNumber))
+            {
+                if (!_organizationRepository.IsRegistrationNumberUnique(model.RegistrationNumber))
+                {
+                    ModelState.AddModelError("RegistrationNumber", "این شماره ثبت قبلاً استفاده شده است");
+                }
+            }
+
+            // بررسی یکتا بودن کد اقتصادی
+            if (!string.IsNullOrEmpty(model.EconomicCode))
+            {
+                if (!_organizationRepository.IsEconomicCodeUnique(model.EconomicCode))
+                {
+                    ModelState.AddModelError("EconomicCode", "این کد اقتصادی قبلاً استفاده شده است");
+                }
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var organization = _mapper.Map<Organization>(model);
+                    organization.CreatedDate = DateTime.Now;
+                    organization.CreatorUserId = GetUserId();
+
+                    _uow.OrganizationUW.Create(organization);
+                    _uow.Save();
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "Organizations",
+                        "Create",
+                        $"ایجاد سازمان جدید: {organization.DisplayName}",
+                        recordId: organization.Id.ToString(),
+                        entityType: "Organization",
+                        recordTitle: organization.DisplayName
+                    );
+
+                    TempData["SuccessMessage"] = "سازمان با موفقیت ایجاد شد";
+                    return RedirectToAction(nameof(Details), new { id = organization.Id });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync("Organizations", "Create", "خطا در ایجاد", ex);
+                    ModelState.AddModelError("", "خطا در ذخیره: " + ex.Message);
+                }
+            }
+
+            return View(model);
+        }
+
+        // ==================== EDIT ====================
+
+        /// <summary>
+        /// نمایش فرم ویرایش سازمان
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            try
+            {
+                var organization = await _organizationRepository.GetOrganizationByIdAsync(id);
+
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var viewModel = _mapper.Map<OrganizationViewModel>(organization);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Organizations",
+                    "Edit",
+                    $"مشاهده فرم ویرایش سازمان: {organization.DisplayName}",
+                    recordId: id.ToString(),
+                    entityType: "Organization",
+                    recordTitle: organization.DisplayName
+                );
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "Edit", "خطا در نمایش فرم", ex, recordId: id.ToString());
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره ویرایش سازمان
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(OrganizationViewModel model)
+        {
+            // اعتبارسنجی
+            if (!string.IsNullOrEmpty(model.RegistrationNumber))
+            {
+                if (!_organizationRepository.IsRegistrationNumberUnique(model.RegistrationNumber, model.Id))
+                {
+                    ModelState.AddModelError("RegistrationNumber", "این شماره ثبت قبلاً استفاده شده است");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(model.EconomicCode))
+            {
+                if (!_organizationRepository.IsEconomicCodeUnique(model.EconomicCode, model.Id))
+                {
+                    ModelState.AddModelError("EconomicCode", "این کد اقتصادی قبلاً استفاده شده است");
+                }
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var organization = _uow.OrganizationUW.GetById(model.Id);
+                    if (organization == null)
+                        return RedirectToAction("ErrorView", "Home");
+
+                    var oldValues = new
+                    {
+                        organization.Name,
+                        organization.RegistrationNumber,
+                        organization.EconomicCode,
+                        organization.IsActive
+                    };
+
+                    var originalCreated = organization.CreatedDate;
+                    var originalCreatorId = organization.CreatorUserId;
+
+                    _mapper.Map(model, organization);
+
+                    organization.CreatedDate = originalCreated;
+                    organization.CreatorUserId = originalCreatorId;
+                    organization.LastUpdateDate = DateTime.Now;
+                    organization.LastUpdaterUserId = GetUserId();
+
+                    _uow.OrganizationUW.Update(organization);
+                    _uow.Save();
+
+                    var newValues = new
+                    {
+                        organization.Name,
+                        organization.RegistrationNumber,
+                        organization.EconomicCode,
+                        organization.IsActive
+                    };
+
+                    await _activityLogger.LogChangeAsync(
+                        ActivityTypeEnum.Edit,
+                        "Organizations",
+                        "Edit",
+                        $"ویرایش سازمان: {organization.DisplayName}",
+                        oldValues,
+                        newValues,
+                        recordId: organization.Id.ToString(),
+                        entityType: "Organization",
+                        recordTitle: organization.DisplayName
+                    );
+
+                    TempData["SuccessMessage"] = "اطلاعات با موفقیت ویرایش شد";
+                    return RedirectToAction(nameof(Details), new { id = organization.Id });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync("Organizations", "Edit", "خطا در ویرایش", ex, recordId: model.Id.ToString());
+                    ModelState.AddModelError("", "خطا در ذخیره: " + ex.Message);
+                }
+            }
+
+            return View(model);
+        }
+
+        // ==================== DELETE ====================
+
+        /// <summary>
+        /// نمایش مودال تایید حذف
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var organization = _uow.OrganizationUW.GetById(id);
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                ViewBag.themeclass = "bg-danger";
+                ViewBag.ViewTitle = "حذف سازمان";
+
+                return PartialView("_DeleteOrganization", organization);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "Delete", "خطا در نمایش فرم حذف", ex, recordId: id.ToString());
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// حذف سازمان
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                var organization = _uow.OrganizationUW.GetById(id);
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var organizationName = organization.DisplayName;
+
+                // حذف نرم
+                organization.IsActive = false;
+                organization.LastUpdateDate = DateTime.Now;
+                organization.LastUpdaterUserId = GetUserId();
+
+                _uow.OrganizationUW.Update(organization);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "Organizations",
+                    "Delete",
+                    $"حذف سازمان: {organizationName}",
+                    recordId: id.ToString(),
+                    entityType: "Organization",
+                    recordTitle: organizationName
+                );
+
+                TempData["SuccessMessage"] = "سازمان با موفقیت حذف شد";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "Delete", "خطا در حذف", ex, recordId: id.ToString());
+                TempData["ErrorMessage"] = "خطا در حذف سازمان";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // ==================== ORGANIZATION CHART ====================
+
+        /// <summary>
+        /// نمایش چارت سازمانی
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> OrganizationChart(int organizationId)
+        {
+            try
+            {
+                var organization = await _organizationRepository.GetOrganizationByIdAsync(organizationId, includeDepartments: true);
+
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var chartViewModel = await _organizationRepository.GetOrganizationChartAsync(organizationId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Organizations",
+                    "OrganizationChart",
+                    $"مشاهده چارت سازمانی: {organization.DisplayName}",
+                    recordId: organizationId.ToString()
+                );
+
+                return View(chartViewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "OrganizationChart", "خطا در نمایش چارت", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        // ==================== DEPARTMENT MANAGEMENT ====================
+
+        /// <summary>
+        /// افزودن بخش جدید - نمایش فرم
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddDepartment(int organizationId, int? parentDepartmentId = null)
+        {
+            try
+            {
+                var organization = await _organizationRepository.GetOrganizationByIdAsync(organizationId);
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                // دریافت لیست افراد برای انتخاب مدیر
+                var contacts = _contactRepository.GetAllContacts(includeInactive: false);
+                
+                ViewBag.OrganizationId = organizationId;
+                ViewBag.OrganizationName = organization.DisplayName;
+                ViewBag.ParentDepartmentId = parentDepartmentId;
+                ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+
+                var model = new OrganizationDepartmentViewModel
+                {
+                    OrganizationId = organizationId,
+                    ParentDepartmentId = parentDepartmentId,
+                    IsActive = true,
+                    DisplayOrder = 1
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "AddDepartment", "خطا در نمایش فرم", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره بخش جدید
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddDepartment(OrganizationDepartmentViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var department = _mapper.Map<OrganizationDepartment>(model);
+                    department.CreatorUserId = GetUserId();
+
+                    var createdDepartment = await _organizationRepository.CreateDepartmentAsync(department);
+                    var departmentId = createdDepartment.Id;
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "Organizations",
+                        "AddDepartment",
+                        $"ایجاد بخش جدید: {department.Title}",
+                        recordId: departmentId.ToString()
+                    );
+
+                    TempData["SuccessMessage"] = "بخش با موفقیت ایجاد شد";
+                    return RedirectToAction(nameof(OrganizationChart), new { organizationId = model.OrganizationId });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync("Organizations", "AddDepartment", "خطا در ایجاد بخش", ex);
+                    ModelState.AddModelError("", "خطا در ذخیره: " + ex.Message);
+                }
+            }
+
+            // بازگشت به فرم در صورت خطا
+            var organization = await _organizationRepository.GetOrganizationByIdAsync(model.OrganizationId);
+            var contacts = _contactRepository.GetAllContacts(includeInactive: false);
+            
+            ViewBag.OrganizationId = model.OrganizationId;
+            ViewBag.OrganizationName = organization?.DisplayName;
+            ViewBag.ParentDepartmentId = model.ParentDepartmentId;
+            ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+
+            return View(model);
+        }
+
+        // ==================== POSITION MANAGEMENT ====================
+
+        /// <summary>
+        /// مدیریت سمت‌ها
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ManagePositions(int departmentId)
+        {
+            try
+            {
+                var department = _organizationRepository.GetDepartmentById(departmentId, includePositions: true);
+                if (department == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                var positions = _organizationRepository.GetDepartmentPositions(departmentId, includeInactive: false);
+                var viewModels = _mapper.Map<List<DepartmentPositionViewModel>>(positions);
+
+                ViewBag.DepartmentId = departmentId;
+                ViewBag.DepartmentTitle = department.Title;
+                ViewBag.OrganizationId = department.OrganizationId;
+
+                return View(viewModels);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "ManagePositions", "خطا در نمایش سمت‌ها", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// افزودن سمت جدید - Modal
+        /// </summary>
+        [HttpGet]
+        public IActionResult AddPositionModal(int departmentId)
+        {
+            var department = _organizationRepository.GetDepartmentById(departmentId);
+            
+            ViewBag.DepartmentTitle = department?.Title;
+
+            var model = new DepartmentPositionViewModel
+            {
+                DepartmentId = departmentId,
+                IsActive = true,
+                DisplayOrder = 1,
+                PowerLevel = 50
+            };
+
+            return PartialView("_AddPositionModal", model);
+        }
+
+        /// <summary>
+        /// ذخیره سمت جدید
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPosition(DepartmentPositionViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var position = _mapper.Map<DepartmentPosition>(model);
+                    position.CreatorUserId = GetUserId();
+
+                    var createdPosition = await _organizationRepository.CreatePositionAsync(position);
+                    var positionId = createdPosition.Id;
+                    // رندر لیست به‌روزرسانی شده
+                    var positions = _organizationRepository.GetDepartmentPositions(model.DepartmentId, includeInactive: false);
+                    var viewModels = _mapper.Map<List<DepartmentPositionViewModel>>(positions);
+                    var renderedView = await this.RenderViewToStringAsync("_PositionsTableRows", viewModels);
+
+                    return Json(new
+                    {
+                        status = "update-view",
+                        message = new[] { new { status = "success", text = "سمت با موفقیت اضافه شد" } },
+                        viewList = new[]
+                        {
+                            new
+                            {
+                                elementId = "positionsTableBody",
+                                view = new { result = renderedView }
+                            }
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync("Organizations", "AddPosition", "خطا در افزودن سمت", ex);
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "خطا در ذخیره: " + ex.Message } }
+                    });
+                }
+            }
+
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => new { status = "error", text = e.ErrorMessage })
+                .ToArray();
+
+            return Json(new
+            {
+                status = "validation-error",
+                message = errors
+            });
+        }
+
+        // ==================== MEMBER MANAGEMENT ====================
+
+        /// <summary>
+        /// افزودن عضو به بخش - نمایش فرم
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddMember(int departmentId)
+        {
+            try
+            {
+                var department = _organizationRepository.GetDepartmentById(departmentId);
+                if (department == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                // دریافت افراد موجود
+                var contacts = _contactRepository.GetAllContacts(includeInactive: false);
+                
+                // دریافت سمت‌های بخش
+                var positions = _organizationRepository.GetDepartmentPositions(departmentId, includeInactive: false);
+
+                ViewBag.DepartmentId = departmentId;
+                ViewBag.DepartmentTitle = department.Title;
+                ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+                ViewBag.Positions = new SelectList(positions, "Id", "Title");
+
+                var model = new DepartmentMemberViewModel
+                {
+                    DepartmentId = departmentId,
+                    IsActive = true,
+                    JoinDatePersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd")
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "AddMember", "خطا در نمایش فرم", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره عضو جدید
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddMember(DepartmentMemberViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // بررسی عضویت قبلی
+                    if (_organizationRepository.IsContactMemberOfDepartment(model.ContactId, model.DepartmentId))
+                    {
+                        ModelState.AddModelError("", "این شخص قبلاً به این بخش اضافه شده است");
+                        
+                        // بازگشت به فرم
+                        var department = _organizationRepository.GetDepartmentById(model.DepartmentId, includePositions: true);
+                        var contacts = _contactRepository.GetAllContacts(includeInactive: false);
+                        var positions = _organizationRepository.GetDepartmentPositions(model.DepartmentId, includeInactive: false);
+
+                        ViewBag.DepartmentId = model.DepartmentId;
+                        ViewBag.DepartmentTitle = department?.Title;
+                        ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+                        ViewBag.Positions = new SelectList(positions, "Id", "Title");
+
+                        return View(model);
+                    }
+
+                    var member = _mapper.Map<DepartmentMember>(model);
+                    member.CreatorUserId = GetUserId();
+
+                    var memberId = await _organizationRepository.AddMemberToDepartmentAsync(member);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "Organizations",
+                        "AddMember",
+                        $"افزودن عضو به بخش",
+                        recordId: memberId.ToString()
+                    );
+
+                    TempData["SuccessMessage"] = "عضو با موفقیت اضافه شد";
+                    
+                    // بازگشت به چارت سازمانی
+                    var dept = _organizationRepository.GetDepartmentById(model.DepartmentId);
+                    return RedirectToAction(nameof(OrganizationChart), new { organizationId = dept.OrganizationId });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync("Organizations", "AddMember", "خطا در افزودن عضو", ex);
+                    ModelState.AddModelError("", "خطا در ذخیره: " + ex.Message);
+                }
+            }
+
+            // بازگشت به فرم در صورت خطا
+            {
+                var department = _organizationRepository.GetDepartmentById(model.DepartmentId, includePositions: true);
+                var contacts = _contactRepository.GetAllContacts(includeInactive: false);
+                var positions = _organizationRepository.GetDepartmentPositions(model.DepartmentId, includeInactive: false);
+
+                ViewBag.DepartmentId = model.DepartmentId;
+                ViewBag.DepartmentTitle = department?.Title;
+                ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+                ViewBag.Positions = new SelectList(positions, "Id", "Title");
+            }
+
+            return View(model);
+        }
+    }
+}

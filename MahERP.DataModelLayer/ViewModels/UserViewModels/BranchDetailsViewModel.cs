@@ -53,11 +53,21 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         [Display(Name = "کاربران شعبه")]
         public List<BranchUser> BranchUsers { get; set; } = new List<BranchUser>();
 
-        // طرف حساب‌های شعبه (با اطلاعات اتصال)
-        [Display(Name = "طرف حساب‌های شعبه")]
+        // ⭐⭐⭐ NEW: افراد شعبه (سیستم جدید)
+        [Display(Name = "افراد شعبه")]
+        public List<BranchContact> BranchContacts { get; set; } = new List<BranchContact>();
+
+        // ⭐⭐⭐ NEW: سازمان‌های شعبه (سیستم جدید)
+        [Display(Name = "سازمان‌های شعبه")]
+        public List<BranchOrganization> BranchOrganizations { get; set; } = new List<BranchOrganization>();
+
+        // ❌ DEPRECATED: طرف حساب‌های قدیمی (نگهداری برای backward compatibility)
+        [Obsolete("از BranchContacts و BranchOrganizations استفاده کنید")]
+        [Display(Name = "طرف حساب‌های شعبه (قدیمی)")]
         public List<StakeholderBranch> BranchStakeholders { get; set; } = new List<StakeholderBranch>();
 
-        // طرف حساب‌های شعبه (فقط اطلاعات Stakeholder)
+        // ❌ DEPRECATED: طرف حساب‌های شعبه (فقط اطلاعات Stakeholder)
+        [Obsolete("از BranchContacts و BranchOrganizations استفاده کنید")]
         [Display(Name = "طرف حساب‌های شعبه")]
         public List<Stakeholder> Stakeholders { get; set; } = new List<Stakeholder>();
 
@@ -69,7 +79,9 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         [Display(Name = "تعداد کاربران فعال")]
         public int ActiveUsersCount { get; set; }
 
-        [Display(Name = "تعداد طرف حساب‌های فعال")]
+        // ❌ DEPRECATED
+        [Obsolete("از DirectContactsCount استفاده کنید")]
+        [Display(Name = "تعداد طرف حساب‌های فعال (قدیمی)")]
         public int ActiveStakeholdersCount { get; set; }
 
         [Display(Name = "تعداد شعبه‌های زیرمجموعه")]
@@ -77,6 +89,16 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
 
         [Display(Name = "تعداد شعبه‌های زیرمجموعه فعال")]
         public int ActiveChildBranchesCount { get; set; }
+
+        // ⭐⭐⭐ NEW: آمار سیستم جدید
+        [Display(Name = "تعداد افراد مستقیم")]
+        public int DirectContactsCount { get; set; }
+
+        [Display(Name = "تعداد سازمان‌ها")]
+        public int OrganizationsCount { get; set; }
+
+        [Display(Name = "تعداد کل افراد نمایان (مستقیم + اعضای سازمان‌ها)")]
+        public int TotalVisibleMembersCount { get; set; }
 
         // خصوصیات محاسبه شده
         public string ParentBranchName => ParentBranch?.Name;

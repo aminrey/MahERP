@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
@@ -411,7 +412,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         Task<TaskAssignment> GetTaskAssignmentForPersonalDatesAsync(int taskId, string userId);
 
         /// <summary>
-        /// دریافت انتصاب تسک بر اساس شناسه انتساب برای تنظیم تاریخ‌های شخصی
+        /// دریافت انتساب تسک بر اساس شناسه انتساب برای تنظیم تاریخ‌های شخصی
         /// </summary>
         Task<TaskAssignment> GetTaskAssignmentByIdForPersonalDatesAsync(int assignmentId, string userId);
 
@@ -648,6 +649,25 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <param name="userId">شناسه کاربر</param>
         /// <returns>ViewModel برای مودال یا null در صورت عدم دسترسی</returns>
         Task<TaskWorkLogViewModel?> PrepareLogTaskWorkModalAsync(int taskId, string userId);
+
+        #endregion
+
+        #region Branch and Organization Related Methods
+
+        /// <summary>
+        /// دریافت Contactهای شعبه (افراد مرتبط با شعبه)
+        /// </summary>
+        Task<List<ContactViewModel>> GetBranchContactsAsync(int branchId);
+
+        /// <summary>
+        /// دریافت Organizationهای شعبه (سازمان‌های مرتبط با شعبه)
+        /// </summary>
+        Task<List<OrganizationViewModel>> GetBranchOrganizationsAsync(int branchId);
+
+        /// <summary>
+        /// دریافت سازمان‌هایی که یک Contact در آن‌ها عضو است
+        /// </summary>
+        Task<List<OrganizationViewModel>> GetContactOrganizationsAsync(int contactId);
 
         #endregion
     }

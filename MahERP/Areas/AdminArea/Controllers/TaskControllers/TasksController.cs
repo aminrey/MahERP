@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using TaskWorkLogViewModel = MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskWorkLogViewModel;
 
 namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
@@ -456,28 +457,45 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             }
         }
         /// <summary>
-        /// نمایش فرم ایجاد تسک جدید
+        /// GET: ایجاد تسک جدید
         /// </summary>
         [HttpGet]
-        //[Permission("Tasks", "CreateNewTask", 1)]
         public async Task<IActionResult> CreateNewTask()
         {
             try
             {
-                var userId = _userManager.GetUserId(User);
+                var userId = GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account", new { area = "Identity" });
+                }
+
+                // آماده‌سازی مدل با سیستم جدید
                 var model = await _taskRepository.PrepareCreateTaskModelAsync(userId);
 
                 await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "CreateNewTask", "مشاهده فرم ایجاد تسک");
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "CreateNewTask",
+                    "مشاهده فرم ایجاد تسک جدید"
+                );
 
                 return View(model);
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "CreateNewTask", "خطا در نمایش فرم", ex);
-                return RedirectToAction("ErrorView", "Home");
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "CreateNewTask",
+                    "خطا در نمایش فرم ایجاد تسک",
+                    ex
+                );
+
+                TempData["ErrorMessage"] = "خطا در بارگذاری فرم";
+                return RedirectToAction("Index");
             }
         }
+
 
         /// <summary>
         /// جزئیات تسک
@@ -2829,5 +2847,120 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
 
         #endregion
+
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW: AJAX - بروزرسانی لیست‌های Contact و Organization بر اساس شعبه
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> BranchTriggerSelectForStakeholders(int branchId)
+        {
+            try
+            {
+                if (branchId <= 0)
+                {
+                    return Json(new { success = false, message = "شعبه نامعتبر است" });
+                }
+
+                // دریافت Contacts
+                var contacts = await _taskRepository.GetBranchContactsAsync(branchId);
+
+                // دریافت Organizations
+                var organizations = await _taskRepository.GetBranchOrganizationsAsync(branchId);
+
+                // ساخت HTML برای dropdown Contact
+                var contactsHtml = new System.Text.StringBuilder();
+                contactsHtml.Append("<select class=\"js-select2 form-select\" id=\"SelectedContactId\" name=\"SelectedContactId\" data-placeholder=\"انتخاب فرد\" style=\"width: 100%;\">");
+                contactsHtml.Append("<option value=\"\">انتخاب فرد</option>");
+                foreach (var contact in contacts)
+                {
+                    contactsHtml.Append($"<option value=\"{contact.Id}\">{contact.FullName}");
+                    if (!string.IsNullOrEmpty(contact.NationalCode))
+                    {
+                        contactsHtml.Append($" ({contact.NationalCode})");
+                    }
+                    contactsHtml.Append("</option>");
+                }
+                contactsHtml.Append("</select>");
+
+                // ساخت HTML برای dropdown Organization
+                var organizationsHtml = new System.Text.StringBuilder();
+                organizationsHtml.Append("<select class=\"js-select2 form-select\" id=\"SelectedOrganizationId\" name=\"SelectedOrganizationId\" data-placeholder=\"انتخاب شرکت/سازمان\" style=\"width: 100%;\">");
+                organizationsHtml.Append("<option value=\"\">انتخاب شرکت/سازمان</option>");
+                foreach (var org in organizations)
+                {
+                    organizationsHtml.Append($"<option value=\"{org.Id}\">{org.DisplayName}");
+                    if (!string.IsNullOrEmpty(org.RegistrationNumber))
+                    {
+                        organizationsHtml.Append($" (ثبت: {org.RegistrationNumber})");
+                    }
+                    organizationsHtml.Append("</option>");
+                }
+                organizationsHtml.Append("</select>");
+
+                return Json(new
+                {
+                    success = true,
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                new { elementId = "ContactSelectionDiv", view = new { result = contactsHtml.ToString() } },
+                new { elementId = "OrganizationSelectionDiv", view = new { result = organizationsHtml.ToString() } }
+            }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "BranchTriggerSelectForStakeholders",
+                    "خطا در بارگذاری Contact/Organization",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+
+                return Json(new { success = false, message = $"خطا در بارگذاری: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW: AJAX - دریافت سازمان‌های مرتبط با Contact انتخاب شده
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> ContactTriggerSelect(int contactId)
+        {
+            try
+            {
+                if (contactId <= 0)
+                {
+                    return PartialView("_ContactOrganizationsSelection", new List<OrganizationViewModel>());
+                }
+
+                // دریافت سازمان‌های Contact
+                var organizations = await _taskRepository.GetContactOrganizationsAsync(contactId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "ContactTriggerSelect",
+                    $"دریافت سازمان‌های Contact {contactId}",
+                    recordId: contactId.ToString()
+                );
+
+                return PartialView("_ContactOrganizationsSelection", organizations);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "ContactTriggerSelect",
+                    "خطا در دریافت سازمان‌های Contact",
+                    ex,
+                    recordId: contactId.ToString()
+                );
+
+                return PartialView("_ContactOrganizationsSelection", new List<OrganizationViewModel>());
+            }
+        }
     }
 }

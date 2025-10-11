@@ -13,7 +13,14 @@ namespace MahERP.DataModelLayer.Entities.AcControl
             // Initialize collections
             BranchUsers = new HashSet<BranchUser>();
             TaskList = new HashSet<Tasks>();
+            
+            // ❌ DEPRECATED - فقط برای سازگاری با تسک‌های قدیمی
             Stakeholders = new HashSet<Stakeholder>();
+            
+            // ✅ NEW - سیستم جدید
+            BranchContacts = new HashSet<BranchContact>();
+            BranchOrganizations = new HashSet<BranchOrganization>();
+            
             ChildBranches = new HashSet<Branch>();
         }
 
@@ -44,6 +51,7 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public bool IsMainBranch { get; set; }
 
         public int? ParentId { get; set; }
+        
         [ForeignKey("ParentId")]
         public virtual Branch? ParentBranch { get; set; }
 
@@ -51,21 +59,33 @@ namespace MahERP.DataModelLayer.Entities.AcControl
 
         public DateTime? LastUpdateDate { get; set; }
       
-      
         /// <summary>
-        /// ادرس مرکز پیام لاگ به همه اعضای یک شعبه
+        /// آدرس مرکز پیام لاگ به همه اعضای یک شعبه
         /// </summary>
-        /// 
         public string? TelegramBotToken { get; set; }
         public string? TelegramBotTokenName { get; set; }
 
-
-
-
-        // Navigation properties
+        // ========== Navigation Properties =========
+        
         public virtual ICollection<BranchUser> BranchUsers { get; set; }
         public virtual ICollection<Tasks> TaskList { get; set; }
-        public virtual ICollection<Stakeholder> Stakeholders { get; set; }
         public virtual ICollection<Branch> ChildBranches { get; set; }
+        
+        // ❌ DEPRECATED - نگه می‌داریم برای سازگاری با تسک‌های قدیمی
+        [Obsolete("از BranchContacts و BranchOrganizations استفاده کنید")]
+        public virtual ICollection<Stakeholder> Stakeholders { get; set; }
+        
+        // ✅ NEW - سیستم جدید
+        /// <summary>
+        /// افراد مرتبط با شعبه (تکی)
+        /// </summary>
+        [InverseProperty(nameof(BranchContact.Branch))]
+        public virtual ICollection<BranchContact> BranchContacts { get; set; }
+        
+        /// <summary>
+        /// سازمان‌های مرتبط با شعبه (گروهی)
+        /// </summary>
+        [InverseProperty(nameof(BranchOrganization.Branch))]
+        public virtual ICollection<BranchOrganization> BranchOrganizations { get; set; }
     }
 }

@@ -1,0 +1,61 @@
+﻿@model MahERP.DataModelLayer.Entities.Contacts.Contact
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="block block-rounded mb-0">
+            <div class="block-header @ViewBag.themeclass">
+                <h3 class="block-title text-white">
+                    <i class="fa fa-trash me-2"></i>
+                    @ViewBag.ViewTitle
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal">
+                        <i class="fa fa-times text-white"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form asp-action="DeleteConfirmed" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                
+                <div class="block-content">
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        آیا از حذف این فرد اطمینان دارید؟
+                    </div>
+                    
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="fw-bold">نام کامل:</td>
+                            <td>@Model.FullName</td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.NationalCode))
+                        {
+                            <tr>
+                                <td class="fw-bold">کد ملی:</td>
+                                <td>@Model.NationalCode</td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.PrimaryEmail))
+                        {
+                            <tr>
+                                <td class="fw-bold">ایمیل:</td>
+                                <td>@Model.PrimaryEmail</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i> انصراف
+                    </button>
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fa fa-check me-1"></i> تایید حذف
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

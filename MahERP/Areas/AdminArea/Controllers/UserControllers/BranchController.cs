@@ -913,6 +913,594 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     message = new[] { new { status = "error", text = "خطا در حذف: " + ex.Message } }
                 });
             }
+
+           
         }
+        #region BranchContact Management
+
+        /// <summary>
+        /// افزودن فرد به شعبه - نمایش مودال
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddContactToBranch(int branchId)
+        {
+            try
+            {
+                var branch = _branchRepository.GetBranchById(branchId);
+                if (branch == null)
+                {
+                    return NotFound();
+                }
+
+                // دریافت افراد قابل اضافه شدن
+                var availableContacts = _branchRepository.GetAvailableContactsForBranch(branchId)
+                    .Select(c => new SelectListItem
+                    {
+                        Value = c.Id.ToString(),
+                        Text = c.FullName
+                    })
+                    .ToList();
+
+                ViewBag.BranchId = branchId;
+                ViewBag.BranchName = branch.Name;
+                ViewBag.AvailableContacts = availableContacts;
+                ViewBag.ModalTitle = "افزودن فرد به شعبه";
+                ViewBag.ThemeClass = "bg-primary";
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Branch",
+                    "AddContactToBranch",
+                    $"مشاهده فرم افزودن فرد به شعبه: {branch.Name}",
+                    recordId: branchId.ToString()
+                );
+
+                return PartialView("_AddContactToBranch");
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "AddContactToBranch",
+                    "خطا در نمایش فرم",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
+        /// افزودن فرد به شعبه - پردازش درخواست
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddContactToBranchPost(int branchId, int contactId, byte relationType, string notes)
+        {
+            try
+            {
+                var branch = _branchRepository.GetBranchById(branchId);
+                if (branch == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شعبه یافت نشد" } }
+                    });
+                }
+
+                var contact = _uow.ContactUW.GetById(contactId);
+                if (contact == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "فرد یافت نشد" } }
+                    });
+                }
+
+                // بررسی عدم تکراری بودن
+                if (_branchRepository.IsContactAssignedToBranch(branchId, contactId))
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "warning", text = "این فرد قبلاً به این شعبه اختصاص یافته است" } }
+                    });
+                }
+
+                // ایجاد رکورد جدید
+                var branchContact = new BranchContact
+                {
+                    BranchId = branchId,
+                    ContactId = contactId,
+                    RelationType = relationType,
+                    IsActive = true,
+                    AssignDate = DateTime.Now,
+                    AssignedByUserId = GetUserId(),
+                    Notes = notes
+                };
+
+                _uow.BranchContactUW.Create(branchContact);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Branch",
+                    "AddContactToBranch",
+                    $"افزودن فرد {contact.FullName} به شعبه {branch.Name}",
+                    recordId: branchId.ToString()
+                );
+
+                // رندر کردن لیست به‌روزرسانی شده
+                var branchContacts = _branchRepository.GetBranchContacts(branchId);
+                var renderedView = await this.RenderViewToStringAsync("_BranchContactsTableRows", branchContacts);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[] { new { status = "success", text = "فرد با موفقیت به شعبه اضافه شد" } },
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "branchContactsTableBody",
+                    view = new { result = renderedView }
+                }
+            }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "AddContactToBranch",
+                    "خطا در افزودن فرد",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در ثبت: " + ex.Message } }
+                });
+            }
+        }
+
+        /// <summary>
+        /// حذف فرد از شعبه - نمایش مودال تأیید
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> RemoveContactFromBranch(int id)
+        {
+            try
+            {
+                var branchContact = _branchRepository.GetBranchContactById(id);
+                if (branchContact == null)
+                {
+                    return NotFound();
+                }
+
+                ViewBag.BranchContactId = id;
+                ViewBag.BranchName = branchContact.Branch?.Name;
+                ViewBag.ContactName = branchContact.Contact?.FullName;
+                ViewBag.ModalTitle = "حذف فرد از شعبه";
+                ViewBag.ThemeClass = "bg-danger";
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Branch",
+                    "RemoveContactFromBranch",
+                    $"مشاهده فرم حذف فرد {branchContact.Contact?.FullName} از شعبه {branchContact.Branch?.Name}",
+                    recordId: id.ToString()
+                );
+
+                return PartialView("_RemoveContactFromBranch", branchContact);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "RemoveContactFromBranch",
+                    "خطا در نمایش فرم حذف",
+                    ex,
+                    recordId: id.ToString()
+                );
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
+        /// حذف فرد از شعبه - پردازش درخواست
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveContactFromBranchPost(int id)
+        {
+            try
+            {
+                var branchContact = _branchRepository.GetBranchContactById(id);
+                if (branchContact == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "رکورد یافت نشد" } }
+                    });
+                }
+
+                var branchId = branchContact.BranchId;
+                var contactName = branchContact.Contact?.FullName;
+                var branchName = branchContact.Branch?.Name;
+
+                // غیرفعال کردن (soft delete)
+                branchContact.IsActive = false;
+                _uow.BranchContactUW.Update(branchContact);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "Branch",
+                    "RemoveContactFromBranch",
+                    $"حذف فرد {contactName} از شعبه {branchName}",
+                    recordId: id.ToString()
+                );
+
+                // رندر کردن لیست به‌روزرسانی شده
+                var branchContacts = _branchRepository.GetBranchContacts(branchId);
+                var renderedView = await this.RenderViewToStringAsync("_BranchContactsTableRows", branchContacts);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[] { new { status = "success", text = "فرد با موفقیت از شعبه حذف شد" } },
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "branchContactsTableBody",
+                    view = new { result = renderedView }
+                }
+            }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "RemoveContactFromBranch",
+                    "خطا در حذف فرد از شعبه",
+                    ex,
+                    recordId: id.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در حذف: " + ex.Message } }
+                });
+            }
+        }
+
+        #endregion
+
+        #region BranchOrganization Management
+
+        /// <summary>
+        /// افزودن سازمان به شعبه - نمایش مودال
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> AddOrganizationToBranch(int branchId)
+        {
+            try
+            {
+                var branch = _branchRepository.GetBranchById(branchId);
+                if (branch == null)
+                {
+                    return NotFound();
+                }
+
+                // دریافت سازمان‌های قابل اضافه شدن
+                var availableOrganizations = _branchRepository.GetAvailableOrganizationsForBranch(branchId)
+                    .Select(o => new SelectListItem
+                    {
+                        Value = o.Id.ToString(),
+                        Text = o.DisplayName
+                    })
+                    .ToList();
+
+                ViewBag.BranchId = branchId;
+                ViewBag.BranchName = branch.Name;
+                ViewBag.AvailableOrganizations = availableOrganizations;
+                ViewBag.ModalTitle = "افزودن سازمان به شعبه";
+                ViewBag.ThemeClass = "bg-success";
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Branch",
+                    "AddOrganizationToBranch",
+                    $"مشاهده فرم افزودن سازمان به شعبه: {branch.Name}",
+                    recordId: branchId.ToString()
+                );
+
+                return PartialView("_AddOrganizationToBranch");
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "AddOrganizationToBranch",
+                    "خطا در نمایش فرم",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
+        /// افزودن سازمان به شعبه - پردازش درخواست
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddOrganizationToBranchPost(int branchId, int organizationId, byte relationType, bool includeAllMembers, string notes)
+        {
+            try
+            {
+                var branch = _branchRepository.GetBranchById(branchId);
+                if (branch == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شعبه یافت نشد" } }
+                    });
+                }
+
+                var organization = _uow.OrganizationUW.GetById(organizationId);
+                if (organization == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "سازمان یافت نشد" } }
+                    });
+                }
+
+                // بررسی عدم تکراری بودن
+                if (_branchRepository.IsOrganizationAssignedToBranch(branchId, organizationId))
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "warning", text = "این سازمان قبلاً به این شعبه اختصاص یافته است" } }
+                    });
+                }
+
+                // ایجاد رکورد جدید
+                var branchOrganization = new BranchOrganization
+                {
+                    BranchId = branchId,
+                    OrganizationId = organizationId,
+                    RelationType = relationType,
+                    IncludeAllMembers = includeAllMembers,
+                    IsActive = true,
+                    AssignDate = DateTime.Now,
+                    AssignedByUserId = GetUserId(),
+                    Notes = notes
+                };
+
+                _uow.BranchOrganizationUW.Create(branchOrganization);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Branch",
+                    "AddOrganizationToBranch",
+                    $"افزودن سازمان {organization.DisplayName} به شعبه {branch.Name} (نمایش اعضا: {(includeAllMembers ? "بله" : "خیر")})",
+                    recordId: branchId.ToString()
+                );
+
+                // رندر کردن لیست به‌روزرسانی شده
+                var branchOrganizations = _branchRepository.GetBranchOrganizations(branchId);
+                var renderedView = await this.RenderViewToStringAsync("_BranchOrganizationsTableRows", branchOrganizations);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[] { new { status = "success", text = "سازمان با موفقیت به شعبه اضافه شد" } },
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "branchOrganizationsTableBody",
+                    view = new { result = renderedView }
+                }
+            }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "AddOrganizationToBranch",
+                    "خطا در افزودن سازمان",
+                    ex,
+                    recordId: branchId.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در ثبت: " + ex.Message } }
+                });
+            }
+        }
+
+        /// <summary>
+        /// حذف سازمان از شعبه - نمایش مودال تأیید
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> RemoveOrganizationFromBranch(int id)
+        {
+            try
+            {
+                var branchOrganization = _branchRepository.GetBranchOrganizationById(id);
+                if (branchOrganization == null)
+                {
+                    return NotFound();
+                }
+
+                ViewBag.BranchOrganizationId = id;
+                ViewBag.BranchName = branchOrganization.Branch?.Name;
+                ViewBag.OrganizationName = branchOrganization.Organization?.DisplayName;
+                ViewBag.ModalTitle = "حذف سازمان از شعبه";
+                ViewBag.ThemeClass = "bg-danger";
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Branch",
+                    "RemoveOrganizationFromBranch",
+                    $"مشاهده فرم حذف سازمان {branchOrganization.Organization?.DisplayName} از شعبه {branchOrganization.Branch?.Name}",
+                    recordId: id.ToString()
+                );
+
+                return PartialView("_RemoveOrganizationFromBranch", branchOrganization);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "RemoveOrganizationFromBranch",
+                    "خطا در نمایش فرم حذف",
+                    ex,
+                    recordId: id.ToString()
+                );
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
+        /// حذف سازمان از شعبه - پردازش درخواست
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveOrganizationFromBranchPost(int id)
+        {
+            try
+            {
+                var branchOrganization = _branchRepository.GetBranchOrganizationById(id);
+                if (branchOrganization == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "رکورد یافت نشد" } }
+                    });
+                }
+
+                var branchId = branchOrganization.BranchId;
+                var organizationName = branchOrganization.Organization?.DisplayName;
+                var branchName = branchOrganization.Branch?.Name;
+
+                // غیرفعال کردن (soft delete)
+                branchOrganization.IsActive = false;
+                _uow.BranchOrganizationUW.Update(branchOrganization);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "Branch",
+                    "RemoveOrganizationFromBranch",
+                    $"حذف سازمان {organizationName} از شعبه {branchName}",
+                    recordId: id.ToString()
+                );
+
+                // رندر کردن لیست به‌روزرسانی شده
+                var branchOrganizations = _branchRepository.GetBranchOrganizations(branchId);
+                var renderedView = await this.RenderViewToStringAsync("_BranchOrganizationsTableRows", branchOrganizations);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[] { new { status = "success", text = "سازمان با موفقیت از شعبه حذف شد" } },
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "branchOrganizationsTableBody",
+                    view = new { result = renderedView }
+                }
+            }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "RemoveOrganizationFromBranch",
+                    "خطا در حذف سازمان از شعبه",
+                    ex,
+                    recordId: id.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در حذف: " + ex.Message } }
+                });
+            }
+        }
+
+        /// <summary>
+        /// تغییر وضعیت نمایش اعضای سازمان
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleOrganizationIncludeMembers(int id)
+        {
+            try
+            {
+                var branchOrganization = _branchRepository.GetBranchOrganizationById(id);
+                if (branchOrganization == null)
+                {
+                    return Json(new { success = false, message = "رکورد یافت نشد" });
+                }
+
+                branchOrganization.IncludeAllMembers = !branchOrganization.IncludeAllMembers;
+                _uow.BranchOrganizationUW.Update(branchOrganization);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Edit,
+                    "Branch",
+                    "ToggleOrganizationIncludeMembers",
+                    $"تغییر وضعیت نمایش اعضا به {(branchOrganization.IncludeAllMembers ? "فعال" : "غیرفعال")} برای سازمان {branchOrganization.Organization?.DisplayName}",
+                    recordId: id.ToString()
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    includeMembers = branchOrganization.IncludeAllMembers,
+                    message = branchOrganization.IncludeAllMembers ? "اعضا نمایان شدند" : "اعضا مخفی شدند"
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "ToggleOrganizationIncludeMembers",
+                    "خطا در تغییر وضعیت",
+                    ex,
+                    recordId: id.ToString()
+                );
+
+                return Json(new { success = false, message = "خطا در عملیات" });
+            }
+        }
+
+        #endregion
     }
 }

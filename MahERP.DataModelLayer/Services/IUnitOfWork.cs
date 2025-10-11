@@ -1,9 +1,9 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
-using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Repository;
 using System;
 
@@ -40,7 +40,18 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<CoreNotificationSetting> CoreNotificationSettingUW { get; }
         #endregion
 
+
         #region Stakeholder Management
+        GenereicClass<Contact> ContactUW { get; }
+        GenereicClass<ContactPhone> ContactPhoneUW { get; }
+        GenereicClass<Organization> OrganizationUW { get; }
+        GenereicClass<OrganizationDepartment> OrganizationDepartmentUW { get; }
+        GenereicClass<DepartmentPosition> DepartmentPositionUW { get; }
+        GenereicClass<DepartmentMember> DepartmentMemberUW { get; }
+        GenereicClass<OrganizationContact> OrganizationContactUW { get; }
+
+        GenereicClass<BranchContact> BranchContactUW { get; }
+        GenereicClass<BranchOrganization> BranchOrganizationUW { get; }
         GenereicClass<Stakeholder> StakeholderUW { get; }
         GenereicClass<StakeholderCRM> StakeholderCRMUW { get; }
         GenereicClass<StakeholderContact> StakeholderContactUW { get; }

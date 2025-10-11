@@ -3,7 +3,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MahERP.DataModelLayer.Entities.Organization
+namespace MahERP.DataModelLayer.Entities.Core
 {
     /// <summary>
     /// اعضای تیم

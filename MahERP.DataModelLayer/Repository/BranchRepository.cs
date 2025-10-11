@@ -216,7 +216,13 @@ namespace MahERP.DataModelLayer.Repository
                 .ThenBy(bu => bu.User.FirstName)
                 .ToList();
 
-            // ✅ دریافت StakeholderBranch به جای Stakeholder
+            // ✅ NEW: دریافت افراد شعبه
+            result.BranchContacts = GetBranchContacts(branchId, includeInactive: includeInactiveStakeholders);
+
+            // ✅ NEW: دریافت سازمان‌های شعبه
+            result.BranchOrganizations = GetBranchOrganizations(branchId, includeInactive: includeInactiveStakeholders);
+
+            // ❌ DEPRECATED: نگه می‌داریم برای سازگاری
             var stakeholderBranchesQuery = _context.StakeholderBranch_Tbl
                 .Include(sb => sb.Stakeholder)
                 .Include(sb => sb.AssignedBy)
@@ -230,10 +236,18 @@ namespace MahERP.DataModelLayer.Repository
                 .ThenBy(sb => sb.Stakeholder.FirstName)
                 .ToList();
 
-            // ✅ هنوز Stakeholders را هم پر می‌کنیم برای سازگاری
             result.Stakeholders = result.BranchStakeholders
                 .Select(sb => sb.Stakeholder)
                 .ToList();
+
+            // محاسبه آمار جدید
+            var stats = GetBranchContactStatistics(branchId);
+            result.DirectContactsCount = stats.TotalContacts;
+            result.OrganizationsCount = stats.TotalOrganizations;
+            result.TotalVisibleMembersCount = stats.TotalVisibleMembers;
+
+            // آمار قدیمی
+            result.ActiveStakeholdersCount = result.Stakeholders.Count(s => s.IsActive);
 
             // دریافت شعبه‌های زیرمجموعه
             var childBranchesQuery = _context.Branch_Tbl
@@ -361,7 +375,7 @@ namespace MahERP.DataModelLayer.Repository
         /// دریافت اطلاعات کامل انتساب دسته‌بندی به شعبه و طرف حساب
         /// </summary>
         /// <param name="id">شناسه انتساب</param>
-        /// <returns>اطلاعات انتصاب</returns>
+        /// <returns>اطلاعات انتساب</returns>
         public BranchTaskCategoryStakeholder GetBranchTaskCategoryStakeholderById(int id)
         {
             return _context.BranchTaskCategoryStakeholder_Tbl
@@ -556,5 +570,189 @@ namespace MahERP.DataModelLayer.Repository
                 .AsNoTracking()
                 .FirstOrDefault(b => b.Id == branchId);
         }
+
+        #region BranchContact Methods
+
+        /// <summary>
+        /// دریافت لیست افراد مرتبط با شعبه
+        /// </summary>
+        public List<BranchContact> GetBranchContacts(int branchId, bool includeInactive = false)
+        {
+            var query = _context.BranchContact_Tbl
+                .Include(bc => bc.Contact)
+                    .ThenInclude(c => c.Phones.Where(p => p.IsDefault))
+                .Include(bc => bc.AssignedBy)
+                .Where(bc => bc.BranchId == branchId);
+
+            if (!includeInactive)
+                query = query.Where(bc => bc.IsActive && bc.Contact.IsActive);
+
+            return query
+                .OrderBy(bc => bc.Contact.FirstName)
+                .ThenBy(bc => bc.Contact.LastName)
+                .ToList();
+        }
+
+        /// <summary>
+        /// دریافت یک BranchContact با شناسه
+        /// </summary>
+        public BranchContact GetBranchContactById(int id)
+        {
+            return _context.BranchContact_Tbl
+                .Include(bc => bc.Contact)
+                .Include(bc => bc.Branch)
+                .Include(bc => bc.AssignedBy)
+                .FirstOrDefault(bc => bc.Id == id);
+        }
+
+        /// <summary>
+        /// بررسی اینکه آیا فرد قبلاً به شعبه اضافه شده
+        /// </summary>
+        public bool IsContactAssignedToBranch(int branchId, int contactId)
+        {
+            return _context.BranchContact_Tbl
+                .Any(bc => bc.BranchId == branchId && bc.ContactId == contactId && bc.IsActive);
+        }
+
+        /// <summary>
+        /// دریافت لیست افراد قابل اضافه شدن به شعبه
+        /// </summary>
+        public List<MahERP.DataModelLayer.Entities.Contacts.Contact> GetAvailableContactsForBranch(int branchId)
+        {
+            // افرادی که قبلاً به شعبه اضافه شده‌اند
+            var assignedContactIds = _context.BranchContact_Tbl
+                .Where(bc => bc.BranchId == branchId && bc.IsActive)
+                .Select(bc => bc.ContactId)
+                .ToList();
+
+            // افراد فعال که هنوز اضافه نشده‌اند
+            return _context.Contact_Tbl
+                .Where(c => c.IsActive && !assignedContactIds.Contains(c.Id))
+                .OrderBy(c => c.FirstName)
+                .ThenBy(c => c.LastName)
+                .ToList();
+        }
+
+        #endregion
+
+        #region BranchOrganization Methods
+
+        /// <summary>
+        /// دریافت لیست سازمان‌های مرتبط با شعبه
+        /// </summary>
+        public List<BranchOrganization> GetBranchOrganizations(int branchId, bool includeInactive = false)
+        {
+            var query = _context.BranchOrganization_Tbl
+                .Include(bo => bo.Organization)
+                    .ThenInclude(o => o.Departments)
+                .Include(bo => bo.AssignedBy)
+                .Where(bo => bo.BranchId == branchId);
+
+            if (!includeInactive)
+                query = query.Where(bo => bo.IsActive && bo.Organization.IsActive);
+
+            return query
+                .OrderBy(bo => bo.Organization.Name)
+                .ToList();
+        }
+
+        /// <summary>
+        /// دریافت یک BranchOrganization با شناسه
+        /// </summary>
+        public BranchOrganization GetBranchOrganizationById(int id)
+        {
+            return _context.BranchOrganization_Tbl
+                .Include(bo => bo.Organization)
+                .Include(bo => bo.Branch)
+                .Include(bo => bo.AssignedBy)
+                .FirstOrDefault(bo => bo.Id == id);
+        }
+
+        /// <summary>
+        /// بررسی اینکه آیا سازمان قبلاً به شعبه اضافه شده
+        /// </summary>
+        public bool IsOrganizationAssignedToBranch(int branchId, int organizationId)
+        {
+            return _context.BranchOrganization_Tbl
+                .Any(bo => bo.BranchId == branchId && bo.OrganizationId == organizationId && bo.IsActive);
+        }
+
+        /// <summary>
+        /// دریافت لیست سازمان‌های قابل اضافه شدن به شعبه
+        /// </summary>
+        public List<MahERP.DataModelLayer.Entities.Contacts.Organization> GetAvailableOrganizationsForBranch(int branchId)
+        {
+            // سازمان‌هایی که قبلاً به شعبه اضافه شده‌اند
+            var assignedOrgIds = _context.BranchOrganization_Tbl
+                .Where(bo => bo.BranchId == branchId && bo.IsActive)
+                .Select(bo => bo.OrganizationId)
+                .ToList();
+
+            // سازمان‌های فعال که هنوز اضافه نشده‌اند
+            return _context.Organization_Tbl
+                .Where(o => o.IsActive && !assignedOrgIds.Contains(o.Id))
+                .OrderBy(o => o.Name)
+                .ToList();
+        }
+
+        /// <summary>
+        /// دریافت تمام افراد نمایان در شعبه (افراد مستقیم + اعضای سازمان‌ها)
+        /// </summary>
+        public List<MahERP.DataModelLayer.Entities.Contacts.Contact> GetAllVisibleContactsInBranch(int branchId)
+        {
+            var contacts = new List<MahERP.DataModelLayer.Entities.Contacts.Contact>();
+
+            // 1. افراد مستقیم اضافه شده به شعبه
+            var directContacts = _context.BranchContact_Tbl
+                .Include(bc => bc.Contact)
+                .Where(bc => bc.BranchId == branchId && bc.IsActive && bc.Contact.IsActive)
+                .Select(bc => bc.Contact)
+                .ToList();
+
+            contacts.AddRange(directContacts);
+
+            // 2. اعضای سازمان‌هایی که IncludeAllMembers = true است
+            var orgIds = _context.BranchOrganization_Tbl
+                .Where(bo => bo.BranchId == branchId && bo.IsActive && bo.IncludeAllMembers)
+                .Select(bo => bo.OrganizationId)
+                .ToList();
+
+            var orgMemberContacts = _context.DepartmentMember_Tbl
+                .Include(dm => dm.Contact)
+                .Include(dm => dm.Department)
+                .Where(dm => orgIds.Contains(dm.Department.OrganizationId) && 
+                             dm.IsActive && 
+                             dm.Contact.IsActive)
+                .Select(dm => dm.Contact)
+                .ToList();
+
+            contacts.AddRange(orgMemberContacts);
+
+            // حذف تکراری‌ها و مرتب‌سازی
+            return contacts
+                .GroupBy(c => c.Id)
+                .Select(g => g.First())
+                .OrderBy(c => c.FirstName)
+                .ThenBy(c => c.LastName)
+                .ToList();
+        }
+
+        /// <summary>
+        /// دریافت آمار افراد و سازمان‌های شعبه
+        /// </summary>
+        public (int TotalContacts, int TotalOrganizations, int TotalVisibleMembers) GetBranchContactStatistics(int branchId)
+        {
+            var totalContacts = _context.BranchContact_Tbl
+                .Count(bc => bc.BranchId == branchId && bc.IsActive);
+
+            var totalOrganizations = _context.BranchOrganization_Tbl
+                .Count(bo => bo.BranchId == branchId && bo.IsActive);
+
+            var totalVisibleMembers = GetAllVisibleContactsInBranch(branchId).Count;
+
+            return (totalContacts, totalOrganizations, totalVisibleMembers);
+        }
+
+        #endregion
     }
 }

@@ -1,0 +1,124 @@
+﻿@using MahERP.CommonLayer.PublicClasses
+@using MahERP.DataModelLayer.Entities.AcControl
+
+@model List<BranchOrganization>
+
+@if (Model != null && Model.Any())
+{
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                <a asp-controller="Organizations" asp-action="Details" asp-route-id="@item.OrganizationId" target="_blank">
+                    <i class="fa fa-building me-1"></i>
+                    @item.Organization?.DisplayName
+                </a>
+            </td>
+            <td>
+                @switch (item.RelationType)
+                {
+                    case 0:
+                        <span class="badge bg-success">@item.RelationTypeText</span>
+                        break;
+                    case 1:
+                        <span class="badge bg-warning">@item.RelationTypeText</span>
+                        break;
+                    case 2:
+                        <span class="badge bg-info">@item.RelationTypeText</span>
+                        break;
+                    case 3:
+                        <span class="badge bg-primary">@item.RelationTypeText</span>
+                        break;
+                    default:
+                        <span class="badge bg-secondary">@item.RelationTypeText</span>
+                        break;
+                }
+            </td>
+            <td class="text-center">
+                <span class="badge bg-info">
+                    @(item.Organization?.Departments?.Count(d => d.IsActive) ?? 0) بخش
+                </span>
+            </td>
+            <td class="text-center">
+                <span class="badge bg-primary">
+                    @(item.Organization?.Departments?.SelectMany(d => d.Members).Count(m => m.IsActive) ?? 0) نفر
+                </span>
+            </td>
+            <td class="text-center">
+                <div class="form-check form-switch d-inline-block">
+                    <input class="form-check-input" 
+                           type="checkbox" 
+                           @(item.IncludeAllMembers ? "checked" : "")
+                           onchange="toggleIncludeMembers(@item.Id, this)"
+                           title="نمایش/عدم نمایش اعضا">
+                </div>
+            </td>
+            <td>@ConvertDateTime.ConvertMiladiToShamsi(item.AssignDate, "yyyy/MM/dd")</td>
+            <td class="text-center">
+                @if (item.IsActive)
+                {
+                    <span class="badge bg-success">فعال</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">غیرفعال</span>
+                }
+            </td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                    <a href="@Url.Action("Details", "Organizations", new { id = item.OrganizationId })" 
+                       class="btn btn-sm btn-info" 
+                       target="_blank"
+                       title="جزئیات سازمان">
+                        <i class="fa fa-eye"></i>
+                    </a>
+                    <a href="@Url.Action("OrganizationChart", "Organizations", new { organizationId = item.OrganizationId })" 
+                       class="btn btn-sm btn-success" 
+                       target="_blank"
+                       title="چارت سازمانی">
+                        <i class="fa fa-sitemap"></i>
+                    </a>
+                    <a href="@Url.Action("RemoveOrganizationFromBranch", "Branch", new { id = item.Id })"
+                       class="btn btn-sm btn-danger"
+                       data-toggle="modal-ajax"
+                       title="حذف از شعبه">
+                        <i class="fa fa-times"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    }
+}
+else
+{
+    <tr>
+        <td colspan="8" class="text-center text-muted py-4">
+            <i class="fa fa-info-circle me-1"></i>
+            هیچ سازمانی به این شعبه اختصاص نیافته است
+        </td>
+    </tr>
+}
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function toggleIncludeMembers(id, checkbox) {
+            $.post('@Url.Action("ToggleOrganizationIncludeMembers")', {
+                id: id,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            }, function(result) {
+                if (result.success) {
+                    toastr.success(result.message);
+                    checkbox.checked = result.includeMembers;
+                } else {
+                    toastr.error(result.message);
+                    checkbox.checked = !checkbox.checked;
+                }
+            }).fail(function() {
+                toastr.error('خطا در ارتباط با سرور');
+                checkbox.checked = !checkbox.checked;
+            });
+        }
+    </script>
+}

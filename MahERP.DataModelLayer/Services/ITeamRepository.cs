@@ -1,4 +1,4 @@
-﻿using MahERP.DataModelLayer.Entities.Organization;
+﻿using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;

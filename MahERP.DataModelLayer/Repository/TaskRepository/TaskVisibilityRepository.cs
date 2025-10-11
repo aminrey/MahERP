@@ -1,5 +1,5 @@
 ﻿using MahERP.DataModelLayer.AcControl;
-using MahERP.DataModelLayer.Entities.Organization;
+using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;

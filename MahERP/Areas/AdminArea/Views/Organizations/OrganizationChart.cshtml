@@ -1,0 +1,325 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationChartViewModel
+@{
+    ViewData["Title"] = "چارت سازمانی - " + Model.OrganizationName;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-sitemap me-2"></i>
+            @ViewData["Title"]
+        </h3>
+        <div class="block-options">
+            <a asp-action="Details" asp-route-id="@Model.OrganizationId" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i> بازگشت
+            </a>
+            <a asp-action="AddDepartment" asp-route-organizationId="@Model.OrganizationId" 
+               class="btn btn-sm btn-alt-success">
+                <i class="fa fa-plus me-1"></i> بخش جدید
+            </a>
+        </div>
+    </div>
+
+    <div class="block-content">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    <strong>راهنما:</strong> این چارت، ساختار سازمانی <strong>@Model.OrganizationName</strong> را نمایش می‌دهد.
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div id="org-chart-container" class="text-center">
+                    @if (Model.RootDepartments != null && Model.RootDepartments.Any())
+                    {
+                        <div class="chart-wrapper">
+                            @foreach (var rootDept in Model.RootDepartments)
+                            {
+                                <div class="org-node" data-level="@rootDept.Level">
+                                    <div class="org-card">
+                                        <div class="org-title">@rootDept.Title</div>
+                                        
+                                        @if (rootDept.ManagerContact != null)
+                                        {
+                                            <div class="org-manager">
+                                                <i class="fa fa-user me-1"></i>
+                                                مدیر: @rootDept.ManagerContact.FullName
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="org-manager manager-empty">
+                                                <i class="fa fa-user me-1"></i>
+                                                بدون مدیر
+                                            </div>
+                                        }
+
+                                        <div class="org-stats">
+                                            <div class="stat-item">
+                                                <span class="stat-number">@(rootDept.Positions?.Count(p => p.IsActive) ?? 0)</span>
+                                                <span class="stat-label">سمت</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-number">@(rootDept.Members?.Count(m => m.IsActive) ?? 0)</span>
+                                                <span class="stat-label">عضو</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-number">@(rootDept.ChildDepartments?.Count ?? 0)</span>
+                                                <span class="stat-label">زیربخش</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="org-actions">
+                                            <a asp-action="AddDepartment" 
+                                               asp-route-organizationId="@Model.OrganizationId"
+                                               asp-route-parentDepartmentId="@rootDept.Id"
+                                               class="btn btn-sm btn-light">
+                                                <i class="fa fa-plus"></i> زیربخش
+                                            </a>
+                                            <a asp-action="ManagePositions" asp-route-departmentId="@rootDept.Id" 
+                                               class="btn btn-sm btn-light">
+                                                <i class="fa fa-id-badge"></i> سمت‌ها
+                                            </a>
+                                            <a asp-action="AddMember" asp-route-departmentId="@rootDept.Id" 
+                                               class="btn btn-sm btn-light">
+                                                <i class="fa fa-user-plus"></i> عضو
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    @if (rootDept.ChildDepartments?.Any() == true)
+                                    {
+                                        <div class="child-orgs">
+                                            @foreach (var childDept in rootDept.ChildDepartments)
+                                            {
+                                                @await Html.PartialAsync("_DepartmentNode", childDept)
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state py-5">
+                            <i class="fa fa-building fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">هیچ بخش سازمانی تعریف نشده است</h4>
+                            <p class="text-muted mb-4">برای شروع، اولین بخش سازمانی را ایجاد کنید</p>
+                            <a asp-action="AddDepartment" asp-route-organizationId="@Model.OrganizationId"
+                               class="btn btn-primary">
+                                <i class="fa fa-plus me-1"></i> ایجاد اولین بخش
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* استایل‌های چارت سازمانی */
+        #org-chart-container {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            overflow-x: auto;
+            min-height: 400px;
+        }
+
+        .chart-wrapper {
+            display: inline-block;
+            min-width: 100%;
+        }
+
+        .org-node {
+            display: inline-block;
+            margin: 15px;
+            position: relative;
+            vertical-align: top;
+        }
+
+        .org-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            min-width: 280px;
+            max-width: 350px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .org-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .org-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+        }
+
+        .org-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            word-break: break-word;
+        }
+
+        .org-manager {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .manager-empty {
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+
+        .org-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 10px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.4rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .org-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .org-actions .btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .child-orgs {
+            margin-top: 40px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .child-orgs::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background: #dee2e6;
+        }
+
+        .child-orgs::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #dee2e6;
+            z-index: -1;
+        }
+
+        .child-orgs > .org-node::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background: #dee2e6;
+        }
+
+        /* رنگ‌بندی بر اساس سطح */
+        .org-node[data-level="0"] .org-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .org-node[data-level="1"] .org-card {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        }
+
+        .org-node[data-level="2"] .org-card {
+            background: linear-gradient(135deg, #45b7d1 0%, #96c93d 100%);
+        }
+
+        .org-node[data-level="3"] .org-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .empty-state {
+            background: white;
+            border-radius: 12px;
+            border: 2px dashed #dee2e6;
+            padding: 3rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            #org-chart-container {
+                padding: 10px;
+            }
+
+            .org-card {
+                min-width: 100%;
+                max-width: 100%;
+                padding: 15px;
+            }
+
+            .child-orgs {
+                flex-direction: column;
+                align-items: center;
+                margin-top: 30px;
+                gap: 15px;
+            }
+
+            .child-orgs::after {
+                display: none;
+            }
+        }
+    </style>
+}

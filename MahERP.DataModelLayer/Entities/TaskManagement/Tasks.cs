@@ -1,5 +1,6 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Entities.Organization;
+using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Entities.Core;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -134,9 +135,37 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// </summary>
         public string? DeletedUserInfo { get; set; }
 
+        // ⭐ حفظ فیلد قدیمی برای backward compatibility
+        [Obsolete("Use ContactId and OrganizationId instead")]
         public int? StakeholderId { get; set; }
-        [ForeignKey("StakeholderId")]
-        public virtual Stakeholder? Stakeholder { get; set; }
+        
+        // ⭐⭐⭐ فیلدهای جدید
+        /// <summary>
+        /// ⭐⭐⭐ شناسه فرد (Contact) مرتبط با تسک
+        /// برای تسک‌هایی که یک فرد خاص طرف حساب است
+        /// </summary>
+        [Display(Name = "شناسه فرد")]
+        public int? ContactId { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ شناسه سازمان (Organization) مرتبط با تسک
+        /// برای تسک‌هایی که یک شرکت/سازمان طرف حساب است
+        /// </summary>
+        [Display(Name = "شناسه سازمان")]
+        public int? OrganizationId { get; set; }
+        
+        // Navigation Properties
+        /// <summary>
+        /// فرد مرتبط با تسک (نسخه جدید)
+        /// </summary>
+        [ForeignKey("ContactId")]
+        public virtual Contact Contact { get; set; }
+        
+        /// <summary>
+        /// سازمان مرتبط با تسک (نسخه جدید)
+        /// </summary>
+        [ForeignKey("OrganizationId")]
+        public virtual Organization Organization { get; set; }
 
         public int? ContractId { get; set; }
         [ForeignKey("ContractId")]

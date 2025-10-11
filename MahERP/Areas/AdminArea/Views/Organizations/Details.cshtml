@@ -1,0 +1,336 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationViewModel
+@{
+    ViewData["Title"] = "جزئیات - " + Model.DisplayName;
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-building me-2"></i>
+            @ViewData["Title"]
+        </h3>
+        <div class="block-options">
+            <a asp-action="Index" class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i> بازگشت
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-alt-primary">
+                <i class="fa fa-edit me-1"></i> ویرایش
+            </a>
+            <a asp-action="OrganizationChart" asp-route-organizationId="@Model.Id" class="btn btn-sm btn-alt-success">
+                <i class="fa fa-sitemap me-1"></i> چارت سازمانی
+            </a>
+        </div>
+    </div>
+
+    <div class="block-content">
+        <!-- آمار سریع -->
+        @if (ViewBag.Statistics != null)
+        {
+            var stats = ViewBag.Statistics as MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationStatisticsViewModel;
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="block block-rounded bg-primary-light">
+                        <div class="block-content text-center py-3">
+                            <h3 class="mb-1">@stats.TotalDepartments</h3>
+                            <small>بخش‌ها</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="block block-rounded bg-success-light">
+                        <div class="block-content text-center py-3">
+                            <h3 class="mb-1">@stats.TotalPositions</h3>
+                            <small>سمت‌ها</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="block block-rounded bg-info-light">
+                        <div class="block-content text-center py-3">
+                            <h3 class="mb-1">@stats.TotalMembers</h3>
+                            <small>اعضا</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="block block-rounded bg-warning-light">
+                        <div class="block-content text-center py-3">
+                            <h3 class="mb-1">@stats.TotalContacts</h3>
+                            <small>افراد مرتبط</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row">
+            <!-- اطلاعات اصلی -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fa fa-info-circle me-2"></i> اطلاعات اصلی
+                    </div>
+                    <div class="card-body text-center">
+                        @if (!string.IsNullOrEmpty(Model.LogoPath))
+                        {
+                            <img src="@Model.LogoPath" alt="@Model.DisplayName" 
+                                 class="img-fluid mb-3" style="max-height: 150px;" />
+                        }
+                        else
+                        {
+                            <div class="py-4 bg-primary-light rounded mb-3">
+                                <i class="fa fa-building fa-4x text-primary"></i>
+                            </div>
+                        }
+
+                        <h4 class="mb-1">@Model.Name</h4>
+                        
+                        @if (!string.IsNullOrEmpty(Model.Brand))
+                        {
+                            <p class="text-muted mb-2">@Model.Brand</p>
+                        }
+
+                        <span class="badge bg-info mb-3">@Model.OrganizationTypeText</span>
+
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">فعال</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">غیرفعال</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- اطلاعات قانونی -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <i class="fa fa-file-contract me-2"></i> اطلاعات قانونی
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless table-sm mb-0">
+                            @if (!string.IsNullOrEmpty(Model.RegistrationNumber))
+                            {
+                                <tr>
+                                    <td class="fw-bold" style="width: 45%;">شماره ثبت:</td>
+                                    <td>@Model.RegistrationNumber</td>
+                                </tr>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.EconomicCode))
+                            {
+                                <tr>
+                                    <td class="fw-bold">کد اقتصادی:</td>
+                                    <td>@Model.EconomicCode</td>
+                                </tr>
+                            }
+                            @if (Model.RegistrationDate.HasValue)
+                            {
+                                <tr>
+                                    <td class="fw-bold">تاریخ ثبت:</td>
+                                    <td>@Model.RegistrationDatePersian</td>
+                                </tr>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.LegalRepresentative))
+                            {
+                                <tr>
+                                    <td class="fw-bold">نماینده قانونی:</td>
+                                    <td>@Model.LegalRepresentative</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- اطلاعات تماس -->
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <i class="fa fa-phone me-2"></i> اطلاعات تماس
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-muted">تلفن اصلی</h6>
+                                <p class="mb-0">
+                                    @if (!string.IsNullOrEmpty(Model.PrimaryPhone))
+                                    {
+                                        <i class="fa fa-phone text-primary me-2"></i>
+                                        <strong>@Model.PrimaryPhone</strong>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-muted">تلفن دوم</h6>
+                                <p class="mb-0">
+                                    @if (!string.IsNullOrEmpty(Model.SecondaryPhone))
+                                    {
+                                        <i class="fa fa-phone text-primary me-2"></i>
+                                        @Model.SecondaryPhone
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-muted">ایمیل</h6>
+                                <p class="mb-0">
+                                    @if (!string.IsNullOrEmpty(Model.Email))
+                                    {
+                                        <i class="fa fa-envelope text-primary me-2"></i>
+                                        <a href="mailto:@Model.Email">@Model.Email</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-muted">وب‌سایت</h6>
+                                <p class="mb-0">
+                                    @if (!string.IsNullOrEmpty(Model.Website))
+                                    {
+                                        <i class="fa fa-globe text-primary me-2"></i>
+                                        <a href="@Model.Website" target="_blank">@Model.Website</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-muted">آدرس</h6>
+                                <p>
+                                    <i class="fa fa-map-marker-alt text-primary me-2"></i>
+                                    @(Model.Address ?? "-")
+                                </p>
+                                @if (!string.IsNullOrEmpty(Model.PostalCode))
+                                {
+                                    <p class="small text-muted">کد پستی: @Model.PostalCode</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- بخش‌های سازمانی -->
+                @if (Model.Departments?.Any() == true)
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <i class="fa fa-sitemap me-2"></i> بخش‌های سازمانی
+                            <a asp-action="OrganizationChart" asp-route-organizationId="@Model.Id" 
+                               class="btn btn-sm btn-light float-end">
+                                مشاهده چارت
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>عنوان بخش</th>
+                                            <th>کد</th>
+                                            <th>مدیر</th>
+                                            <th class="text-center">تعداد اعضا</th>
+                                            <th class="text-center">وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var dept in Model.Departments.OrderBy(d => d.Level).ThenBy(d => d.DisplayOrder))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    @for (int i = 0; i < dept.Level; i++)
+                                                    {
+                                                        <span class="text-muted">└─</span>
+                                                    }
+                                                    @dept.Title
+                                                </td>
+                                                <td>@(dept.Code ?? "-")</td>
+                                                <td>@(dept.ManagerName ?? "-")</td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary">@dept.ActiveMembersCount</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (dept.IsActive)
+                                                    {
+                                                        <span class="badge bg-success">فعال</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">غیرفعال</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- توضیحات -->
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <i class="fa fa-sticky-note me-2"></i> توضیحات
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">@Model.Description</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- اطلاعات سیستمی -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa fa-info-circle me-2"></i> اطلاعات سیستمی
+                    </div>
+                    <div class="card-body">
+                        <div class="row small">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <strong>تاریخ ایجاد:</strong><br />
+                                    @Model.CreatedDatePersian
+                                </p>
+                                <p class="mb-0">
+                                    <strong>ایجاد کننده:</strong><br />
+                                    @Model.CreatorName
+                                </p>
+                            </div>
+                            @if (Model.LastUpdateDate.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <p class="mb-0">
+                                        <strong>آخرین بروزرسانی:</strong><br />
+                                        @Model.LastUpdateDatePersian
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

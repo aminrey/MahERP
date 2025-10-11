@@ -1,5 +1,5 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Entities.Organization;
+using MahERP.DataModelLayer.Entities.Core;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

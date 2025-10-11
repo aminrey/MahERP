@@ -1,0 +1,185 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactViewModel>
+@{
+    ViewData["Title"] = "لیست افراد";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-users me-2"></i>
+            @ViewData["Title"]
+        </h3>
+        <div class="block-options">
+            <a asp-action="Statistics" class="btn btn-sm btn-alt-info">
+                <i class="fa fa-chart-bar me-1"></i> آمار
+            </a>
+            <a asp-action="Create" class="btn btn-sm btn-alt-success">
+                <i class="fa fa-plus me-1"></i> فرد جدید
+            </a>
+        </div>
+    </div>
+
+    <div class="block-content">
+        <!-- فیلتر و جستجو -->
+        <form method="get" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="searchTerm" class="form-control" 
+                           placeholder="جستجو (نام، کد ملی، شماره، ایمیل...)" 
+                           value="@ViewBag.SearchTerm" />
+                </div>
+                <div class="col-md-3">
+                    <select name="gender" class="form-select">
+                        <option value="">همه جنسیت‌ها</option>
+                        <option value="0" selected="@(ViewBag.Gender == 0)">مرد</option>
+                        <option value="1" selected="@(ViewBag.Gender == 1)">زن</option>
+                        <option value="2" selected="@(ViewBag.Gender == 2)">سایر</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="includeInactive" class="form-check-input" 
+                               checked="@ViewBag.IncludeInactive" />
+                        <label class="form-check-label">نمایش غیرفعال‌ها</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa fa-search me-1"></i> جستجو
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- آمار سریع -->
+        @if (ViewBag.Statistics != null)
+        {
+            var stats = ViewBag.Statistics as MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactStatisticsViewModel;
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="block block-rounded bg-primary-light">
+                        <div class="block-content text-center py-3">
+                            <h3 class="mb-1">@stats.TotalContacts</h3>
+                            <small>کل افراد</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="block block-rounded bg-info-light">
+                        <div class="block-content text-center py-3">
+                            <h3 class="mb-1">@stats.TotalMale</h3>
+                            <small>مردان</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="block block-rounded bg-success-light">
+                        <div class="block-content text-center py-3">
+                            <h3 class="mb-1">@stats.TotalFemale</h3>
+                            <small>زنان</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="block block-rounded bg-warning-light">
+                        <div class="block-content text-center py-3">
+                            <h3 class="mb-1">@stats.TotalInDepartments</h3>
+                            <small>اعضای سازمان‌ها</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- جدول -->
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-vcenter">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>نام کامل</th>
+                            <th>کد ملی</th>
+                            <th>شماره تماس</th>
+                            <th>ایمیل</th>
+                            <th>جنسیت</th>
+                            <th class="text-center">وضعیت</th>
+                            <th class="text-center" style="width: 200px;">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var contact in Model)
+                        {
+                            <tr>
+                                <td class="text-center">@contact.Id</td>
+                                <td class="fw-semibold">
+                                    <a asp-action="Details" asp-route-id="@contact.Id">
+                                        @contact.FullName
+                                    </a>
+                                </td>
+                                <td>@(contact.NationalCode ?? "-")</td>
+                                <td>
+                                    @if (contact.Phones?.Any() == true)
+                                    {
+                                        var defaultPhone = contact.Phones.FirstOrDefault(p => p.IsDefault);
+                                        @(defaultPhone?.FormattedNumber ?? contact.Phones.First().FormattedNumber)
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>@(contact.PrimaryEmail ?? "-")</td>
+                                <td>@contact.GenderText</td>
+                                <td class="text-center">
+                                    @if (contact.IsActive)
+                                    {
+                                        <span class="badge bg-success">فعال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">غیرفعال</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a asp-action="Details" asp-route-id="@contact.Id" 
+                                           class="btn btn-sm btn-alt-info" title="جزئیات">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@contact.Id" 
+                                           class="btn btn-sm btn-alt-primary" title="ویرایش">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                        <a asp-action="ManagePhones" asp-route-contactId="@contact.Id" 
+                                           class="btn btn-sm btn-alt-warning" title="شماره‌ها">
+                                            <i class="fa fa-phone"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-alt-danger" 
+                                                data-toggle="modal-ajax"
+                                                href="@Url.Action("Delete", new { id = contact.Id })"
+                                                title="حذف">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fa fa-users fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">هیچ فردی یافت نشد</h4>
+                <p class="text-muted">برای شروع، اولین فرد را اضافه کنید</p>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i> افزودن فرد جدید
+                </a>
+            </div>
+        }
+    </div>
+</div>

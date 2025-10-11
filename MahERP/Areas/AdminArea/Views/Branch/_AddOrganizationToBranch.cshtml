@@ -1,0 +1,106 @@
+﻿@{
+    Layout = null;
+}
+
+<div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+        <form asp-controller="Branch" asp-action="AddOrganizationToBranchPost" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="branchId" value="@ViewBag.BranchId" />
+
+            <div class="modal-header @ViewBag.ThemeClass">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-building me-2"></i>
+                    @ViewBag.ModalTitle
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    افزودن سازمان به شعبه: <strong>@ViewBag.BranchName</strong>
+                </div>
+
+                <div class="mb-3">
+                    <label for="organizationId" class="form-label">
+                        انتخاب سازمان <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select js-select2" 
+                            id="organizationId" 
+                            name="organizationId" 
+                            data-placeholder="یک سازمان را انتخاب کنید"
+                            data-container="#modal-action"
+                            required>
+                        <option value="">-- انتخاب کنید --</option>
+                        @foreach (var item in ViewBag.AvailableOrganizations as List<SelectListItem>)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    @if (!(ViewBag.AvailableOrganizations as List<SelectListItem>).Any())
+                    {
+                        <div class="form-text text-warning">
+                            <i class="fa fa-exclamation-triangle me-1"></i>
+                            هیچ سازمان فعالی برای افزودن وجود ندارد
+                        </div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <label for="relationType" class="form-label">
+                        نوع رابطه <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="relationType" name="relationType" required>
+                        <option value="0">مشتری</option>
+                        <option value="1">تامین‌کننده</option>
+                        <option value="2">همکار</option>
+                        <option value="3">شریک</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" 
+                               id="includeAllMembers" name="includeAllMembers" 
+                               checked value="true" />
+                        <label class="form-check-label" for="includeAllMembers">
+                            <strong>نمایش تمام اعضای سازمان در تسک‌ها</strong>
+                        </label>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        در صورت فعال بودن، تمام اعضای این سازمان (از بخش‌های مختلف) در تسک‌های این شعبه قابل انتخاب خواهند بود
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">یادداشت‌ها</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="2" 
+                              placeholder="یادداشت‌های اضافی..."></textarea>
+                </div>
+
+                <div class="alert alert-success mb-0">
+                    <i class="fa fa-lightbulb me-1"></i>
+                    <small>
+                        <strong>نکته:</strong> با افزودن سازمان، می‌توانید به صورت خودکار تمام کارکنان آن را در دسترس قرار دهید
+                    </small>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" 
+                        class="btn btn-success" 
+                        data-save="modal-ajax-save"
+                        @(!(ViewBag.AvailableOrganizations as List<SelectListItem>).Any() ? "disabled" : "")>
+                    <i class="fa fa-check me-1"></i>
+                    افزودن به شعبه
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

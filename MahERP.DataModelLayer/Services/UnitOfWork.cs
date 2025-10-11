@@ -1,10 +1,11 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
-using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Repository;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Threading.Tasks;
@@ -150,6 +151,17 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<StakeholderOrganizationPosition> _stakeholderOrganizationPosition;
         private GenereicClass<StakeholderOrganizationMember> _stakeholderOrganizationMember;
         #endregion
+        // ⭐⭐⭐ NEW: Contacts & Organizations ⭐⭐⭐
+        private GenereicClass<Contact> _contactUW;
+        private GenereicClass<ContactPhone> _contactPhoneUW;
+        private GenereicClass<Organization> _organizationUW;
+        private GenereicClass<OrganizationDepartment> _organizationDepartmentUW;
+        private GenereicClass<DepartmentPosition> _departmentPositionUW;
+        private GenereicClass<DepartmentMember> _departmentMemberUW;
+        private GenereicClass<OrganizationContact> _organizationContactUW;
+
+        private GenereicClass<BranchContact> _branchContactUW;
+        private GenereicClass<BranchOrganization> _branchOrganizationUW;
 
         #region Task Management
         private GenereicClass<Tasks> _taskRepository;
@@ -390,6 +402,98 @@ namespace MahERP.DataModelLayer.Services
         #endregion
 
         #region Stakeholder Management Properties
+
+
+
+        // ⭐⭐⭐ NEW: Contacts & Organizations Properties ⭐⭐⭐
+        public GenereicClass<Contact> ContactUW
+        {
+            get
+            {
+                if (_contactUW == null)
+                    _contactUW = new GenereicClass<Contact>(_Context);
+                return _contactUW;
+            }
+        }
+
+        public GenereicClass<ContactPhone> ContactPhoneUW
+        {
+            get
+            {
+                if (_contactPhoneUW == null)
+                    _contactPhoneUW = new GenereicClass<ContactPhone>(_Context);
+                return _contactPhoneUW;
+            }
+        }
+
+        public GenereicClass<Organization> OrganizationUW
+        {
+            get
+            {
+                if (_organizationUW == null)
+                    _organizationUW = new GenereicClass<Organization>(_Context);
+                return _organizationUW;
+            }
+        }
+
+        public GenereicClass<OrganizationDepartment> OrganizationDepartmentUW
+        {
+            get
+            {
+                if (_organizationDepartmentUW == null)
+                    _organizationDepartmentUW = new GenereicClass<OrganizationDepartment>(_Context);
+                return _organizationDepartmentUW;
+            }
+        }
+
+        public GenereicClass<DepartmentPosition> DepartmentPositionUW
+        {
+            get
+            {
+                if (_departmentPositionUW == null)
+                    _departmentPositionUW = new GenereicClass<DepartmentPosition>(_Context);
+                return _departmentPositionUW;
+            }
+        }
+
+        public GenereicClass<DepartmentMember> DepartmentMemberUW
+        {
+            get
+            {
+                if (_departmentMemberUW == null)
+                    _departmentMemberUW = new GenereicClass<DepartmentMember>(_Context);
+                return _departmentMemberUW;
+            }
+        }
+
+        public GenereicClass<OrganizationContact> OrganizationContactUW
+        {
+            get
+            {
+                if (_organizationContactUW == null)
+                    _organizationContactUW = new GenereicClass<OrganizationContact>(_Context);
+                return _organizationContactUW;
+            }
+        }
+        public GenereicClass<BranchContact> BranchContactUW
+        {
+            get
+            {
+                if (_branchContactUW == null)
+                    _branchContactUW = new GenereicClass<BranchContact>(_Context);
+                return _branchContactUW;
+            }
+        }
+
+        public GenereicClass<BranchOrganization> BranchOrganizationUW
+        {
+            get
+            {
+                if (_branchOrganizationUW == null)
+                    _branchOrganizationUW = new GenereicClass<BranchOrganization>(_Context);
+                return _branchOrganizationUW;
+            }
+        }
 
         public GenereicClass<Stakeholder> StakeholderUW
         {

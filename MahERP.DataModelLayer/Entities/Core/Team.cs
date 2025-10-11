@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
-namespace MahERP.DataModelLayer.Entities.Organization
+namespace MahERP.DataModelLayer.Entities.Core
 {
     /// <summary>
     /// تیم‌ها و گروه‌های سازمانی

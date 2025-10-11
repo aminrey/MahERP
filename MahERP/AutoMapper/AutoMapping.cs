@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Contacts; // ⭐ NEW
+using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
-using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels.ContactViewModels; // ⭐ NEW
 using MahERP.DataModelLayer.ViewModels.CRMViewModels;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
@@ -21,8 +23,59 @@ namespace MahERP.AutoMapper
             CreateMap<AppUsers, AddUserViewModel>().ReverseMap();
             CreateMap<AppUsers, EditUserViewModel>().ReverseMap();
 
-          
 
+
+            // BranchContact -> BranchContactViewModel
+            CreateMap<BranchContact, BranchContactViewModel>()
+                .ForMember(dest => dest.BranchName,
+                    opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
+                .ForMember(dest => dest.ContactName,
+                    opt => opt.MapFrom(src => src.Contact != null ? src.Contact.FullName : ""))
+                .ForMember(dest => dest.ContactPhone,
+                    opt => opt.MapFrom(src => src.Contact != null && src.Contact.DefaultPhone != null
+                        ? src.Contact.DefaultPhone.FormattedNumber
+                        : ""))
+                .ForMember(dest => dest.AssignDatePersian,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.AssignDate, "yyyy/MM/dd")));
+
+            // BranchContactViewModel -> BranchContact
+            CreateMap<BranchContactViewModel, BranchContact>()
+                .ForMember(dest => dest.AssignDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.AssignDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.AssignDatePersian)
+                        : DateTime.Now))
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.Contact, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignedBy, opt => opt.Ignore());
+
+            // BranchOrganization -> BranchOrganizationViewModel
+            CreateMap<BranchOrganization, BranchOrganizationViewModel>()
+                .ForMember(dest => dest.BranchName,
+                    opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
+                .ForMember(dest => dest.OrganizationName,
+                    opt => opt.MapFrom(src => src.Organization != null ? src.Organization.DisplayName : ""))
+                .ForMember(dest => dest.AssignDatePersian,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.AssignDate, "yyyy/MM/dd")))
+                .ForMember(dest => dest.DepartmentsCount,
+                    opt => opt.MapFrom(src => src.Organization != null
+                        ? src.Organization.Departments.Count(d => d.IsActive)
+                        : 0))
+                .ForMember(dest => dest.MembersCount,
+                    opt => opt.MapFrom(src => src.Organization != null
+                        ? src.Organization.Departments
+                            .SelectMany(d => d.Members)
+                            .Count(m => m.IsActive)
+                        : 0));
+
+            // BranchOrganizationViewModel -> BranchOrganization
+            CreateMap<BranchOrganizationViewModel, BranchOrganization>()
+                .ForMember(dest => dest.AssignDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.AssignDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.AssignDatePersian)
+                        : DateTime.Now))
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.Organization, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignedBy, opt => opt.Ignore());
             // Branch -> BranchViewModel
             CreateMap<Branch, BranchViewModel>();
 
@@ -69,15 +122,26 @@ namespace MahERP.AutoMapper
 
             // Tasks mapping
             CreateMap<Tasks, TaskViewModel>()
+                  .ForMember(dest => dest.SelectedContactId, opt => opt.MapFrom(src => src.ContactId))
+    .ForMember(dest => dest.SelectedOrganizationId, opt => opt.MapFrom(src => src.OrganizationId))
+    .ForMember(dest => dest.ContactFullName, opt => opt.MapFrom(src =>
+        src.Contact != null ? $"{src.Contact.FirstName} {src.Contact.LastName}" : null))
+    .ForMember(dest => dest.OrganizationName, opt => opt.MapFrom(src =>
+        src.Organization != null ? src.Organization.DisplayName : null))
                 .ForMember(dest => dest.CategoryTitle, opt => opt.MapFrom(src => src.TaskCategory != null ? src.TaskCategory.Title : null))
                 .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
-                .ForMember(dest => dest.StakeholderName, opt => opt.MapFrom(src => src.Stakeholder != null ? $"{src.Stakeholder.FirstName} {src.Stakeholder.LastName}" : null))
-                .ForMember(dest => dest.ContractTitle, opt => opt.MapFrom(src => src.Contract != null ? src.Contract.Title : null))
+  .ForMember(dest => dest.StakeholderName,
+        opt => opt.Ignore()) // ⭐ این فیلد در Repository محاسبه می‌شود
+                             .ForMember(dest => dest.ContractTitle, opt => opt.MapFrom(src => src.Contract != null ? src.Contract.Title : null))
                 .ForMember(dest => dest.Operations, opt => opt.Ignore())
                 .ForMember(dest => dest.AssignmentsTaskUser, opt => opt.Ignore())
                 .ForMember(dest => dest.Attachments, opt => opt.Ignore());
 
             CreateMap<TaskViewModel, Tasks>()
+                    .ForMember(dest => dest.ContactId, opt => opt.MapFrom(src => src.SelectedContactId))
+   .ForMember(dest => dest.OrganizationId,
+        opt => opt.MapFrom(src => src.SelectedOrganizationId))
+
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
@@ -369,6 +433,277 @@ namespace MahERP.AutoMapper
                         ? ConvertDateTime.ConvertShamsiToMiladi(src.LeaveDate)
                         : (DateTime?)null));
 
+            // ==================== CONTACT MAPPINGS ====================
+
+            // Contact -> ContactViewModel
+            CreateMap<Contact, ContactViewModel>()
+                .ForMember(dest => dest.BirthDatePersian,
+                    opt => opt.MapFrom(src => src.BirthDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.BirthDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.CreatedDatePersian,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd HH:mm")))
+                .ForMember(dest => dest.LastUpdateDatePersian,
+                    opt => opt.MapFrom(src => src.LastUpdateDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.LastUpdateDate.Value, "yyyy/MM/dd HH:mm")
+                        : null))
+                .ForMember(dest => dest.CreatorName,
+                    opt => opt.MapFrom(src => src.Creator != null
+                        ? $"{src.Creator.FirstName} {src.Creator.LastName}"
+                        : ""))
+                .ForMember(dest => dest.Phones,
+                    opt => opt.MapFrom(src => src.Phones.Where(p => p.IsActive)))
+                .ForMember(dest => dest.DepartmentMemberships,
+                    opt => opt.MapFrom(src => src.DepartmentMemberships.Where(dm => dm.IsActive)))
+                .ForMember(dest => dest.OrganizationRelations,
+                    opt => opt.MapFrom(src => src.OrganizationRelations.Where(or => or.IsActive)))
+                .ForMember(dest => dest.FullName,
+        opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
+    .ForMember(dest => dest.PrimaryPhone,
+        opt => opt.MapFrom(src => src.Phones
+            .Where(p => p.IsDefault && p.IsActive)
+            .Select(p => p.PhoneNumber)
+            .FirstOrDefault()));
+
+            // ContactViewModel -> Contact
+            CreateMap<ContactViewModel, Contact>()
+                .ForMember(dest => dest.BirthDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.BirthDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.BirthDatePersian)
+                        : (DateTime?)null))
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdaterUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.Phones, opt => opt.Ignore())
+                .ForMember(dest => dest.DepartmentMemberships, opt => opt.Ignore())
+                .ForMember(dest => dest.OrganizationRelations, opt => opt.Ignore())
+                .ForMember(dest => dest.ManagedDepartments, opt => opt.Ignore());
+
+            // ==================== CONTACT PHONE MAPPINGS ====================
+
+            // ContactPhone -> ContactPhoneViewModel
+            CreateMap<ContactPhone, ContactPhoneViewModel>()
+                .ForMember(dest => dest.FormattedNumber, opt => opt.MapFrom(src => src.FormattedNumber))
+                .ForMember(dest => dest.DisplayText, opt => opt.MapFrom(src => src.DisplayText));
+
+            // ContactPhoneViewModel -> ContactPhone
+            CreateMap<ContactPhoneViewModel, ContactPhone>()
+                .ForMember(dest => dest.Contact, opt => opt.Ignore())
+                .ForMember(dest => dest.VerifiedDate, opt => opt.Ignore());
+
+            // ==================== ORGANIZATION MAPPINGS ====================
+
+            // در بخش Organization Mappings:
+
+            CreateMap<Organization, OrganizationViewModel>()
+                .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.DisplayName))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Brand, opt => opt.MapFrom(src => src.Brand))
+                .ForMember(dest => dest.LogoPath, opt => opt.MapFrom(src => src.LogoPath)) // ✅ اضافه شده
+                .ForMember(dest => dest.RegistrationNumber, opt => opt.MapFrom(src => src.RegistrationNumber))
+                .ForMember(dest => dest.EconomicCode, opt => opt.MapFrom(src => src.EconomicCode))
+                .ForMember(dest => dest.RegistrationDate, opt => opt.MapFrom(src => src.RegistrationDate)) // ✅ اضافه شده
+                .ForMember(dest => dest.LegalRepresentative, opt => opt.MapFrom(src => src.LegalRepresentative))
+                .ForMember(dest => dest.Website, opt => opt.MapFrom(src => src.Website))
+                .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => src.PrimaryPhone))
+                .ForMember(dest => dest.SecondaryPhone, opt => opt.MapFrom(src => src.SecondaryPhone))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Address))
+                .ForMember(dest => dest.PostalCode, opt => opt.MapFrom(src => src.PostalCode))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.OrganizationType, opt => opt.MapFrom(src => src.OrganizationType))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.MapFrom(src => src.LastUpdateDate)) // ✅ اضافه شده
+                .ForMember(dest => dest.RegistrationDatePersian, opt => opt.MapFrom(src =>
+                    src.RegistrationDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.RegistrationDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.CreatedDatePersian, opt => opt.MapFrom(src =>
+                    ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")))
+                .ForMember(dest => dest.LastUpdateDatePersian, opt => opt.MapFrom(src =>
+                    src.LastUpdateDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.LastUpdateDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
+                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
+                .ForMember(dest => dest.Departments, opt => opt.MapFrom(src => src.Departments)) // ✅ اضافه شده
+                .ForMember(dest => dest.Contacts, opt => opt.MapFrom(src => src.Contacts)); // ✅ اضافه شده
+
+            CreateMap<OrganizationViewModel, Organization>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Brand, opt => opt.MapFrom(src => src.Brand))
+                .ForMember(dest => dest.LogoPath, opt => opt.MapFrom(src => src.LogoPath)) // ✅ اضافه شده
+                .ForMember(dest => dest.RegistrationNumber, opt => opt.MapFrom(src => src.RegistrationNumber))
+                .ForMember(dest => dest.EconomicCode, opt => opt.MapFrom(src => src.EconomicCode))
+                .ForMember(dest => dest.LegalRepresentative, opt => opt.MapFrom(src => src.LegalRepresentative))
+                .ForMember(dest => dest.Website, opt => opt.MapFrom(src => src.Website))
+                .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => src.PrimaryPhone))
+                .ForMember(dest => dest.SecondaryPhone, opt => opt.MapFrom(src => src.SecondaryPhone))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Address))
+                .ForMember(dest => dest.PostalCode, opt => opt.MapFrom(src => src.PostalCode))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.OrganizationType, opt => opt.MapFrom(src => src.OrganizationType))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.RegistrationDate, opt => opt.MapFrom(src =>
+                    !string.IsNullOrEmpty(src.RegistrationDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.RegistrationDatePersian)
+                        : src.RegistrationDate))
+                // فیلدهای سیستمی را ignore می‌کنیم
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdaterUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.Departments, opt => opt.Ignore())
+                .ForMember(dest => dest.Contacts, opt => opt.Ignore());
+            // ==================== ORGANIZATION DEPARTMENT MAPPINGS ====================
+
+            // OrganizationDepartment -> OrganizationDepartmentViewModel
+            CreateMap<OrganizationDepartment, OrganizationDepartmentViewModel>()
+                .ForMember(dest => dest.OrganizationName,
+                    opt => opt.MapFrom(src => src.Organization != null ? src.Organization.DisplayName : ""))
+                .ForMember(dest => dest.ParentDepartmentTitle,
+                    opt => opt.MapFrom(src => src.ParentDepartment != null ? src.ParentDepartment.Title : null))
+                .ForMember(dest => dest.ManagerName,
+                    opt => opt.MapFrom(src => src.ManagerContact != null
+                        ? $"{src.ManagerContact.FirstName} {src.ManagerContact.LastName}"
+                        : null))
+                .ForMember(dest => dest.FullPath, opt => opt.MapFrom(src => src.FullPath))
+                .ForMember(dest => dest.ActiveMembersCount, opt => opt.MapFrom(src => src.ActiveMembersCount))
+                .ForMember(dest => dest.ActivePositionsCount, opt => opt.MapFrom(src => src.ActivePositionsCount))
+                .ForMember(dest => dest.ChildDepartments,
+                    opt => opt.MapFrom(src => src.ChildDepartments.Where(cd => cd.IsActive)))
+                .ForMember(dest => dest.Positions,
+                    opt => opt.MapFrom(src => src.Positions.Where(p => p.IsActive)))
+                .ForMember(dest => dest.Members,
+                    opt => opt.MapFrom(src => src.Members.Where(m => m.IsActive)));
+
+            // OrganizationDepartmentViewModel -> OrganizationDepartment
+            CreateMap<OrganizationDepartmentViewModel, OrganizationDepartment>()
+                .ForMember(dest => dest.Organization, opt => opt.Ignore())
+                .ForMember(dest => dest.ParentDepartment, opt => opt.Ignore())
+                .ForMember(dest => dest.ManagerContact, opt => opt.Ignore())
+                .ForMember(dest => dest.ChildDepartments, opt => opt.Ignore())
+                .ForMember(dest => dest.Positions, opt => opt.Ignore())
+                .ForMember(dest => dest.Members, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdaterUserId, opt => opt.Ignore());
+
+            // ==================== DEPARTMENT POSITION MAPPINGS ====================
+
+            // DepartmentPosition -> DepartmentPositionViewModel
+            CreateMap<DepartmentPosition, DepartmentPositionViewModel>()
+                .ForMember(dest => dest.DepartmentTitle,
+                    opt => opt.MapFrom(src => src.Department != null ? src.Department.Title : ""))
+                .ForMember(dest => dest.ActiveMembersCount, opt => opt.MapFrom(src => src.ActiveMembersCount))
+                .ForMember(dest => dest.SalaryRangeText, opt => opt.MapFrom(src => src.SalaryRangeText));
+
+            // DepartmentPositionViewModel -> DepartmentPosition
+            CreateMap<DepartmentPositionViewModel, DepartmentPosition>()
+                .ForMember(dest => dest.Department, opt => opt.Ignore())
+                .ForMember(dest => dest.Members, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
+
+            // ==================== DEPARTMENT MEMBER MAPPINGS ====================
+
+            // DepartmentMember -> DepartmentMemberViewModel
+            CreateMap<DepartmentMember, DepartmentMemberViewModel>()
+                .ForMember(dest => dest.DepartmentTitle,
+                    opt => opt.MapFrom(src => src.Department != null ? src.Department.Title : ""))
+                .ForMember(dest => dest.ContactName,
+                    opt => opt.MapFrom(src => src.Contact != null
+                        ? $"{src.Contact.FirstName} {src.Contact.LastName}"
+                        : ""))
+                .ForMember(dest => dest.ContactPhone,
+                    opt => opt.MapFrom(src => src.Contact != null && src.Contact.DefaultPhone != null
+                        ? src.Contact.DefaultPhone.FormattedNumber
+                        : ""))
+                .ForMember(dest => dest.PositionTitle,
+                    opt => opt.MapFrom(src => src.Position != null ? src.Position.Title : ""))
+                .ForMember(dest => dest.JoinDatePersian,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.JoinDate, "yyyy/MM/dd")))
+                .ForMember(dest => dest.LeaveDatePersian,
+                    opt => opt.MapFrom(src => src.LeaveDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.LeaveDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.ServiceDurationText, opt => opt.MapFrom(src => src.ServiceDurationText));
+
+            // DepartmentMemberViewModel -> DepartmentMember
+            CreateMap<DepartmentMemberViewModel, DepartmentMember>()
+                .ForMember(dest => dest.JoinDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.JoinDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.JoinDatePersian)
+                        : DateTime.Now))
+                .ForMember(dest => dest.LeaveDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.LeaveDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.LeaveDatePersian)
+                        : (DateTime?)null))
+                .ForMember(dest => dest.Department, opt => opt.Ignore())
+                .ForMember(dest => dest.Contact, opt => opt.Ignore())
+                .ForMember(dest => dest.Position, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
+
+            // ==================== ORGANIZATION CONTACT MAPPINGS ====================
+
+            // OrganizationContact -> OrganizationContactViewModel
+            CreateMap<OrganizationContact, OrganizationContactViewModel>()
+                .ForMember(dest => dest.OrganizationName,
+                    opt => opt.MapFrom(src => src.Organization != null ? src.Organization.DisplayName : ""))
+                .ForMember(dest => dest.ContactName,
+                    opt => opt.MapFrom(src => src.Contact != null
+                        ? $"{src.Contact.FirstName} {src.Contact.LastName}"
+                        : ""))
+                .ForMember(dest => dest.ContactPhone,
+                    opt => opt.MapFrom(src => src.Contact != null && src.Contact.DefaultPhone != null
+                        ? src.Contact.DefaultPhone.FormattedNumber
+                        : ""))
+                .ForMember(dest => dest.StartDatePersian,
+                    opt => opt.MapFrom(src => src.StartDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.StartDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.EndDatePersian,
+                    opt => opt.MapFrom(src => src.EndDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.EndDate.Value, "yyyy/MM/dd")
+                        : null));
+
+            // OrganizationContactViewModel -> OrganizationContact
+            CreateMap<OrganizationContactViewModel, OrganizationContact>()
+                .ForMember(dest => dest.StartDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.StartDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.StartDatePersian)
+                        : (DateTime?)null))
+                .ForMember(dest => dest.EndDate,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.EndDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.EndDatePersian)
+                        : (DateTime?)null))
+                .ForMember(dest => dest.Organization, opt => opt.Ignore())
+                .ForMember(dest => dest.Contact, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
+
+            // ==================== STATISTICS MAPPINGS ====================
+
+            // ContactStatisticsViewModel (no reverse mapping needed)
+            CreateMap<ContactStatisticsViewModel, ContactStatisticsViewModel>();
+
+            // OrganizationStatisticsViewModel (no reverse mapping needed)
+            CreateMap<OrganizationStatisticsViewModel, OrganizationStatisticsViewModel>();
+
 
         }
 
@@ -404,6 +739,8 @@ namespace MahERP.AutoMapper
                 "Task" => "تسک‌ها",
                 "CRM" => "مدیریت ارتباط با مشتری",
                 "Stakeholder" => "طرف‌های حساب",
+                "Contact" => "افراد", // ⭐ NEW
+                "Organization" => "سازمان‌ها", // ⭐ NEW
                 "Contract" => "قراردادها",
                 "User" => "کاربران",
                 "RolePattern" => "الگوهای نقش",
@@ -424,6 +761,8 @@ namespace MahERP.AutoMapper
                 "Details" => "جزئیات",
                 "MyTasks" => "تسک‌های من",
                 "ManagePermissions" => "مدیریت دسترسی‌ها",
+                "ManagePhones" => "مدیریت شماره‌ها", // ⭐ NEW
+                "OrganizationChart" => "چارت سازمانی", // ⭐ NEW
                 "*" => "همه عملیات",
                 _ => actionName ?? ""
             };

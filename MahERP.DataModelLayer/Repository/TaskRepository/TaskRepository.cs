@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using MahERP.CommonLayer.PublicClasses;
-using MahERP.DataModelLayer.Entities.Organization;
+using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
@@ -42,6 +44,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         #region Core CRUD Operations
 
+
         public TaskViewModel CreateTaskAndCollectData(string UserId)
         {
             var Tasks = new TaskViewModel();
@@ -58,9 +61,13 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             // مقدار پیش‌فرض برای ورود دستی کد
             Tasks.IsManualTaskCode = false;
 
+            // ⭐⭐⭐ NEW: مقداردهی اولیه لیست‌های Contact/Organization
+            Tasks.ContactsInitial = new List<ContactViewModel>();
+            Tasks.OrganizationsInitial = new List<OrganizationViewModel>();
+            Tasks.ContactOrganizations = new List<OrganizationViewModel>();
+
             return Tasks;
         }
-
         public List<Tasks> GetTasks(bool includeDeleted = false, int? categoryId = null, string assignedUserId = null)
         {
             var query = _context.Tasks_Tbl.AsQueryable();
@@ -630,7 +637,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             }
         }
         /// <summary>
-        /// تبدیل Task Entity به TaskViewModel - اصلاح شده برای جداسازی صحیح assignments
+        /// تبدیل Task Entity به TaskViewModel - اصلاح شده برای حذف Stakeholder
         /// </summary>
         private TaskViewModel MapToTaskViewModel(Tasks task)
         {
@@ -640,9 +647,22 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 .Where(ta => ta.TaskId == task.Id)
                 .ToList();
 
-            // دریافت اطلاعات دسته‌بندی و طرف حساب
+            // دریافت اطلاعات دسته‌بندی
             var category = _context.TaskCategory_Tbl.FirstOrDefault(c => c.Id == task.TaskCategoryId);
-            var stakeholder = _context.Stakeholder_Tbl.FirstOrDefault(s => s.Id == task.StakeholderId);
+
+            // ⭐⭐⭐ دریافت اطلاعات Contact
+            Contact contact = null;
+            if (task.ContactId.HasValue)
+            {
+                contact = _context.Contact_Tbl.FirstOrDefault(c => c.Id == task.ContactId.Value);
+            }
+
+            // ⭐⭐⭐ دریافت اطلاعات Organization
+            Organization organization = null;
+            if (task.OrganizationId.HasValue)
+            {
+                organization = _context.Organization_Tbl.FirstOrDefault(o => o.Id == task.OrganizationId.Value);
+            }
 
             return new TaskViewModel
             {
@@ -658,7 +678,21 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 IsDeleted = task.IsDeleted,
                 BranchId = task.BranchId,
                 CreatorUserId = task.CreatorUserId,
+
+                // ⭐⭐⭐ OLD - Stakeholder (Deprecated - حذف شده)
                 StakeholderId = task.StakeholderId,
+                StakeholderName = null, // ⚠️ دیگر Stakeholder وجود ندارد
+
+                // ⭐⭐⭐ NEW - Contact & Organization
+                SelectedContactId = task.ContactId,
+                ContactFullName = contact != null
+                    ? $"{contact.FirstName} {contact.LastName}"
+                    : null,
+
+                SelectedOrganizationId = task.OrganizationId,
+                OrganizationName = organization?.DisplayName,
+
+                // بقیه فیلدها...
                 TaskType = task.TaskType,
                 CategoryId = task.TaskCategoryId,
                 CategoryTitle = category?.Title,
@@ -669,25 +703,24 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 LastUpdateDate = task.LastUpdateDate,
                 TaskTypeInput = task.TaskTypeInput,
                 CreationMode = task.CreationMode,
-                StakeholderName = stakeholder != null ?
-                    (!string.IsNullOrEmpty(stakeholder.CompanyName) ? stakeholder.CompanyName : $"{stakeholder.FirstName} {stakeholder.LastName}")
-                    : null,
 
-                // ⭐ اصلاح شده: ذخیره همه assignments به صورت دقیق‌تر
+                // Assignments
                 AssignmentsTaskUser = assignments
-                    .Where(a => !string.IsNullOrEmpty(a.AssignedUserId)) // فقط assignments معتبر
+                    .Where(a => !string.IsNullOrEmpty(a.AssignedUserId))
                     .Select(a => new TaskAssignmentViewModel
                     {
                         Id = a.Id,
                         TaskId = a.TaskId,
                         AssignedUserId = a.AssignedUserId,
-                        AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : "نامشخص",
-                        AssignerUserId = a.AssignerUserId, // ⭐ کلیدی: ذخیره AssignerUserId
+                        AssignedUserName = a.AssignedUser != null
+                            ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
+                            : "نامشخص",
+                        AssignerUserId = a.AssignerUserId,
                         AssignDate = a.AssignmentDate,
                         CompletionDate = a.CompletionDate,
                         Description = a.Description,
                         IsFocused = a.IsFocused,
-                        FocusedDate= a.FocusedDate
+                        FocusedDate = a.FocusedDate
                     }).ToList()
             };
         }
@@ -1226,8 +1259,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
                 // مرحله دوم: اجرای کوئری و دریافت داده‌های خام
                 var rawTasks = await tasksQuery
-                    .Include(t => t.Stakeholder)
-                    .Include(t => t.TaskCategory)
+   .Include(t => t.Contact)           
+    .Include(t => t.Organization)
+    .Include(t => t.TaskCategory)
                     .Include(t => t.TaskAssignments)
                     .Select(t => new
                     {
@@ -1246,10 +1280,13 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         t.Important,
                         t.BranchId,
                      t.TaskAssignments, // شامل انتساب‌ها
-                        // اطلاعات طرف حساب
-                        StakeholderFirstName = t.Stakeholder != null ? t.Stakeholder.FirstName : null,
-                        StakeholderLastName = t.Stakeholder != null ? t.Stakeholder.LastName : null,
-                        StakeholderCompanyName = t.Stakeholder != null ? t.Stakeholder.CompanyName : null,
+                                        // اطلاعات طرف حساب
+                                        // ⭐⭐⭐ اطلاعات Contact
+                        ContactFirstName = t.Contact != null ? t.Contact.FirstName : null,
+                        ContactLastName = t.Contact != null ? t.Contact.LastName : null,
+                        // ⭐⭐⭐ اطلاعات Organization
+                        OrganizationName = t.Organization != null ? t.Organization.DisplayName : null,
+
                         // اطلاعات دسته‌بندی
                         CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : null
                     })
@@ -1260,15 +1297,16 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
                 foreach (var task in rawTasks)
                 {
-                    // تعیین نام طرف حساب
-                    string stakeholderName = "ندارد";
-                    if (!string.IsNullOrEmpty(task.StakeholderCompanyName))
+                    // ⭐ تعیین نام (Contact یا Organization)
+                    string displayName = "ندارد";
+
+                    if (!string.IsNullOrEmpty(task.ContactFirstName) || !string.IsNullOrEmpty(task.ContactLastName))
                     {
-                        stakeholderName = task.StakeholderCompanyName;
+                        displayName = $"{task.ContactFirstName} {task.ContactLastName}".Trim();
                     }
-                    else if (!string.IsNullOrEmpty(task.StakeholderFirstName) || !string.IsNullOrEmpty(task.StakeholderLastName))
+                    else if (!string.IsNullOrEmpty(task.OrganizationName))
                     {
-                        stakeholderName = $"{task.StakeholderFirstName} {task.StakeholderLastName}".Trim();
+                        displayName = task.OrganizationName;
                     }
 
                     // تعیین رنگ و وضعیت
@@ -1310,8 +1348,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         EndDate = endDate,      // ⭐ تاریخ پایان
                         IsCompleted = isCompleted,
                         IsOverdue = isOverdue,
-                        StakeholderId = task.StakeholderId,
-                        StakeholderName = stakeholderName,
+
+                        StakeholderName = displayName,
                         CategoryTitle = task.CategoryTitle ?? "ندارد",
                         BranchName = "ندارد", // TODO: اضافه کردن منطق شعبه در صورت نیاز
                         CalendarColor = calendarColor,
@@ -1423,9 +1461,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 Console.WriteLine($"Error adding personal events: {ex.Message}");
             }
         }
- 
         /// <summary>
-        /// آماده‌سازی مدل برای ایجاد تسک جدید (نسخه Async جدید)
+        /// آماده‌سازی مدل برای ایجاد تسک جدید (نسخه Async جدید) - بروزرسانی شده
         /// </summary>
         public async Task<TaskViewModel> PrepareCreateTaskModelAsync(string userId)
         {
@@ -1440,6 +1477,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Error in PrepareCreateTaskModelAsync: {ex.Message}");
+
                 // در صورت خطا، مدل پیش‌فرض برگردان
                 return new TaskViewModel
                 {
@@ -1447,9 +1486,15 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     TaskCategoryInitial = GetAllCategories(),
                     UsersInitial = new List<UserViewModelFull>(),
                     TeamsInitial = new List<TeamViewModel>(),
+
+                    // ⭐⭐⭐ OLD - نگهداری برای backward compatibility
                     StakeholdersInitial = new List<StakeholderViewModel>(),
 
-                    // تولید کد تسک اتوماتیک بر اساس تنظیمات
+                    // ⭐⭐⭐ NEW - سیستم جدید
+                    ContactsInitial = new List<ContactViewModel>(),
+                    OrganizationsInitial = new List<OrganizationViewModel>(),
+                    ContactOrganizations = new List<OrganizationViewModel>(),
+
                     TaskCode = _taskCodeGenerator.GenerateTaskCode(),
                     TaskCodeSettings = _taskCodeGenerator.GetTaskCodeSettings(),
 
@@ -1459,35 +1504,41 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             }
         }
         /// <summary>
-        /// دریافت داده‌های شعبه برای AJAX
+        /// دریافت داده‌های شعبه برای AJAX - بروزرسانی شده
         /// </summary>
         public async Task<BranchSelectResponseViewModel> GetBranchTriggeredDataAsync(int branchId)
         {
             try
             {
-                // دریافت کاربران شعبه انتخاب شده
-                var branchUsers = _BranchRipository.GetBranchUsersByBranchId(branchId, includeInactive: false);
-
-                // دریافت تیم‌های شعبه انتخاب شده
-                var branchTeams = await GetBranchTeamsByBranchId(branchId);
-
-                // دریافت طرف حساب‌های شعبه انتخاب شده
-                var stakeholders = _StakeholderRepo.GetStakeholdersByBranchId(branchId);
-
-                return new BranchSelectResponseViewModel
+                var response = new BranchSelectResponseViewModel
                 {
-                    Users = branchUsers,
-                    Teams = branchTeams,
-                    Stakeholders = stakeholders
+                    // دریافت کاربران شعبه
+                    Users = _BranchRipository.GetBranchUsersByBranchId(branchId, includeInactive: false),
+
+                    // دریافت تیم‌های شعبه
+                    Teams = await GetBranchTeamsByBranchId(branchId),
+
+                    // ⭐⭐⭐ OLD - حفظ برای backward compatibility
+                    Stakeholders = _StakeholderRepo.GetStakeholdersByBranchId(branchId),
+
+                    // ⭐⭐⭐ NEW - سیستم جدید
+                    Contacts = await GetBranchContactsAsync(branchId),
+                    Organizations = await GetBranchOrganizationsAsync(branchId)
                 };
+
+                return response;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Error in GetBranchTriggeredDataAsync: {ex.Message}");
+
                 return new BranchSelectResponseViewModel
                 {
                     Users = new List<BranchUserViewModel>(),
                     Teams = new List<TeamViewModel>(),
-                    Stakeholders = new List<StakeholderViewModel>()
+                    Stakeholders = new List<StakeholderViewModel>(),
+                    Contacts = new List<ContactViewModel>(),
+                    Organizations = new List<OrganizationViewModel>()
                 };
             }
         }
@@ -1526,9 +1577,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         #region Helper Methods for New Async Implementation
 
-      
+
         /// <summary>
-        /// تکمیل داده‌های مدل ایجاد تسک
+        /// تکمیل داده‌های مدل ایجاد تسک - بروزرسانی شده
         /// </summary>
         private async Task PopulateCreateTaskDataAsync(TaskViewModel model, string userId)
         {
@@ -1550,14 +1601,22 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 model.TaskCategoryInitial ??= GetAllCategories();
                 model.UsersInitial ??= new List<UserViewModelFull>();
                 model.TeamsInitial ??= await GetUserRelatedTeamsAsync(userId);
+
+                // ⭐⭐⭐ OLD - نگهداری برای backward compatibility
                 model.StakeholdersInitial ??= new List<StakeholderViewModel>();
+
+                // ⭐⭐⭐ NEW - مقداردهی لیست‌های جدید
+                model.ContactsInitial ??= new List<ContactViewModel>();
+                model.OrganizationsInitial ??= new List<OrganizationViewModel>();
+                model.ContactOrganizations ??= new List<OrganizationViewModel>();
 
                 // اگر شعبه‌ای وجود دارد، داده‌های مربوطه را بارگذاری کن
                 if (model.branchListInitial?.Any() == true)
                 {
                     var firstBranchId = model.branchListInitial.First().Id;
-                    var branchData = await GetBranchTriggeredDataAsync(firstBranchId);
 
+                    // بارگذاری کاربران
+                    var branchData = await GetBranchTriggeredDataAsync(firstBranchId);
                     model.UsersInitial = branchData.Users.Select(u => new UserViewModelFull
                     {
                         Id = u.UserId,
@@ -1565,17 +1624,24 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         IsActive = u.IsActive
                     }).ToList();
 
+                    // ⭐⭐⭐ OLD - بارگذاری Stakeholders
                     model.StakeholdersInitial = branchData.Stakeholders;
+
+                    // ⭐⭐⭐ NEW - بارگذاری Contacts & Organizations
+                    model.ContactsInitial = await GetBranchContactsAsync(firstBranchId);
+                    model.OrganizationsInitial = await GetBranchOrganizationsAsync(firstBranchId);
                 }
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Error in PopulateCreateTaskDataAsync: {ex.Message}");
+
                 // در صورت خطا لیست‌های خالی
                 InitializeEmptyCreateTaskLists(model);
             }
         }
         /// <summary>
-        /// مقداردهی اولیه لیست‌های خالی برای مدل ایجاد تسک
+        /// مقداردهی اولیه لیست‌های خالی برای مدل ایجاد تسک - بروزرسانی شده
         /// </summary>
         private void InitializeEmptyCreateTaskLists(TaskViewModel model)
         {
@@ -1583,7 +1649,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             model.TaskCategoryInitial ??= new List<TaskCategory>();
             model.UsersInitial ??= new List<UserViewModelFull>();
             model.TeamsInitial ??= new List<TeamViewModel>();
+
+            // ⭐⭐⭐ OLD
             model.StakeholdersInitial ??= new List<StakeholderViewModel>();
+
+            // ⭐⭐⭐ NEW
+            model.ContactsInitial ??= new List<ContactViewModel>();
+            model.OrganizationsInitial ??= new List<OrganizationViewModel>();
+            model.ContactOrganizations ??= new List<OrganizationViewModel>();
 
             model.TaskCodeSettings ??= new TaskCodeSettings
             {
@@ -1596,7 +1669,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 model.TaskCode = "TSK-" + DateTime.Now.ToString("yyyyMMddHHmmss");
             }
         }
-
         #endregion
 
         #region Task Reminder Methods
@@ -1692,8 +1764,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     .Include(t => t.TaskAssignments)
                         .ThenInclude(ta => ta.AssignedUser)
                     .Include(t => t.TaskCategory)
-                    .Include(t => t.Stakeholder)
-                    .AsQueryable();
+    .Include(t => t.Contact)       
+    .Include(t => t.Organization)  
+                                    .AsQueryable();
 
                 // اعمال فیلترها
                 query = ApplyFiltersToQuery(query, filters);
@@ -2759,8 +2832,10 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 .Include(tmd => tmd.TaskAssignment)
                     .ThenInclude(ta => ta.Task)
                         .ThenInclude(t => t.TaskCategory)
-                .Include(tmd => tmd.TaskAssignment.Task.Stakeholder)
-                .Where(tmd =>
+  .Include(tmd => tmd.TaskAssignment.Task.Contact)       
+    .Include(tmd => tmd.TaskAssignment.Task.Organization)   
+                                                            
+    .Where(tmd =>
                     tmd.TaskAssignment.AssignedUserId == userId &&
                     !tmd.IsRemoved &&
                     (tmd.PlannedDate.Date == yesterday ||
@@ -2783,7 +2858,16 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 var task = myDayTask.TaskAssignment.Task;
                 var isWorkedOn = !string.IsNullOrEmpty(myDayTask.WorkNote) || myDayTask.WorkStartDate.HasValue;
-
+                // ⭐ تعیین نام (Contact یا Organization)
+                string displayName = "ندارد";
+                if (task.Contact != null)
+                {
+                    displayName = $"{task.Contact.FirstName} {task.Contact.LastName}";
+                }
+                else if (task.Organization != null)
+                {
+                    displayName = task.Organization.DisplayName;
+                }
                 var taskItem = new MyDayTaskItemViewModel
                 {
                     TaskId = task.Id,
@@ -2792,9 +2876,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     TaskTitle = task.Title,
                     TaskDescription = task.Description,
                     CategoryTitle = task.TaskCategory?.Title,
-                    StakeholderName = task.Stakeholder?.CompanyName ??
-                                   (string.IsNullOrEmpty(task.Stakeholder?.FirstName) ? "ندارد" :
-                                    $"{task.Stakeholder.FirstName} {task.Stakeholder.LastName}"),
+                    StakeholderName = displayName,
                     TaskPriority = task.Priority,
                     IsImportant = task.Important,
                     IsFocused = myDayTask.TaskAssignment.IsFocused,
@@ -3087,9 +3169,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return (false, errors);
             }
         }
-
         /// <summary>
-        /// ایجاد entity تسک از ViewModel
+        /// ایجاد entity تسک از ViewModel - بروزرسانی شده
         /// </summary>
         public async Task<Tasks> CreateTaskEntityAsync(TaskViewModel model, string currentUserId, IMapper mapper)
         {
@@ -3106,16 +3187,47 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 task.IsActive = model.IsActive;
                 task.IsDeleted = false;
                 task.TaskTypeInput = 1;
-                
-                // ⭐⭐⭐ اصلاح شده: مقدار پیش‌فرض تیمی
-                task.VisibilityLevel = model.VisibilityLevel > 0 ? model.VisibilityLevel : (byte)2; // پیش‌فرض: تیمی
-                
+
+                // ⭐⭐⭐ مقدار پیش‌فرض تیمی
+                task.VisibilityLevel = model.VisibilityLevel > 0 ? model.VisibilityLevel : (byte)2;
+
                 task.Priority = 0;
                 task.Important = false;
                 task.Status = 0;
                 task.CreationMode = 0;
                 task.TaskCategoryId = model.TaskCategoryIdSelected;
                 task.BranchId = model.BranchIdSelected;
+
+                // ⭐⭐⭐ OLD - Stakeholder (حفظ برای backward compatibility)
+                task.StakeholderId = model.StakeholderId;
+
+                // ⭐⭐⭐ NEW - Contact & Organization
+                task.ContactId = model.SelectedContactId;
+                task.OrganizationId = model.SelectedOrganizationId;
+                if (!task.OrganizationId.HasValue && task.ContactId.HasValue)
+                {
+                    // پیدا کردن اولین سازمان مرتبط با Contact
+                    var contactOrganization = await _context.OrganizationContact_Tbl
+                        .Where(oc => oc.ContactId == task.ContactId.Value && oc.IsActive && oc.IsPrimary)
+                        .FirstOrDefaultAsync();
+
+                    if (contactOrganization != null)
+                    {
+                        task.OrganizationId = contactOrganization.OrganizationId;
+                    }
+                    else
+                    {
+                        // اگر سازمان اصلی نداشت، اولین سازمان را انتخاب کن
+                        var anyContactOrganization = await _context.OrganizationContact_Tbl
+                            .Where(oc => oc.ContactId == task.ContactId.Value && oc.IsActive)
+                            .FirstOrDefaultAsync();
+
+                        if (anyContactOrganization != null)
+                        {
+                            task.OrganizationId = anyContactOrganization.OrganizationId;
+                        }
+                    }
+                }
 
                 // تبدیل تاریخ‌های شمسی
                 if (!string.IsNullOrEmpty(model.SuggestedStartDatePersian))
@@ -3828,7 +3940,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 return await _context.Tasks_Tbl
                     .Include(t => t.TaskCategory)
-                    .Include(t => t.Stakeholder)
+                          .Include(t => t.Contact)
+            .Include(t => t.Organization)
                     .Include(t => t.Creator)
                     .Include(t=> t.TaskAssignments)
                     .FirstOrDefaultAsync(t => t.Id == taskId);
@@ -4414,5 +4527,107 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             };
         }
         #endregion
+
+        public async Task<List<ContactViewModel>> GetBranchContactsAsync(int branchId)
+        {
+            try
+            {
+                var contacts = await _context.BranchContact_Tbl
+                    .Include(bc => bc.Contact)
+                        .ThenInclude(c => c.Phones)
+                    .Where(bc => bc.BranchId == branchId && bc.IsActive)
+                    .Select(bc => new ContactViewModel
+                    {
+                        Id = bc.ContactId,
+                        FirstName = bc.Contact.FirstName,
+                        LastName = bc.Contact.LastName,
+                        FullName = $"{bc.Contact.FirstName} {bc.Contact.LastName}", // ⭐ اکنون قابل نوشتن است
+                        NationalCode = bc.Contact.NationalCode,
+                        PrimaryPhone = bc.Contact.Phones
+                    .Where(p => p.IsDefault && p.IsActive) 
+                            .Select(p => p.PhoneNumber) 
+                            .FirstOrDefault(),
+                        RelationType = bc.RelationType,
+                        IsActive = bc.Contact.IsActive
+                    })
+                    .OrderBy(c => c.LastName)
+                    .ThenBy(c => c.FirstName)
+                    .ToListAsync();
+
+                return contacts;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetBranchContactsAsync: {ex.Message}");
+                return new List<ContactViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت Organizationهای شعبه (سازمان‌های مرتبط با شعبه)
+        /// </summary>
+        public async Task<List<OrganizationViewModel>> GetBranchOrganizationsAsync(int branchId)
+        {
+            try
+            {
+                // دریافت Organization‌های مرتبط با شعبه از طریق BranchOrganization
+                var organizations = await _context.BranchOrganization_Tbl
+                    .Include(bo => bo.Organization)
+                        .ThenInclude(o => o.Departments)
+                    .Where(bo => bo.BranchId == branchId && bo.IsActive)
+                    .Select(bo => new OrganizationViewModel
+                    {
+                        Id = bo.OrganizationId,
+                        DisplayName = bo.Organization.DisplayName,
+                        RegistrationNumber = bo.Organization.RegistrationNumber,
+                        EconomicCode = bo.Organization.EconomicCode,
+                        TotalDepartments = bo.Organization.Departments.Count(d => d.IsActive),
+                        TotalMembers = bo.Organization.Departments
+                            .SelectMany(d => d.Members)
+                            .Count(m => m.IsActive),
+                        IsActive = bo.Organization.IsActive
+                    })
+                    .OrderBy(o => o.DisplayName)
+                    .ToListAsync();
+
+                return organizations;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetBranchOrganizationsAsync: {ex.Message}");
+                return new List<OrganizationViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت سازمان‌هایی که یک Contact در آن‌ها عضو است
+        /// </summary>
+        public async Task<List<OrganizationViewModel>> GetContactOrganizationsAsync(int contactId)
+        {
+            try
+            {
+                // دریافت سازمان‌هایی که Contact از طریق OrganizationContact و DepartmentMember عضو آن‌هاست
+                var organizations = await _context.OrganizationContact_Tbl
+                    .Include(oc => oc.Organization)
+                    .Where(oc => oc.ContactId == contactId && oc.IsActive)
+                    .Select(oc => new OrganizationViewModel
+                    {
+                        Id = oc.OrganizationId,
+                        DisplayName = oc.Organization.DisplayName,
+                        RegistrationNumber = oc.Organization.RegistrationNumber,
+                        IsActive = oc.Organization.IsActive
+                    })
+                    .Distinct()
+                    .OrderBy(o => o.DisplayName)
+                    .ToListAsync();
+
+                return organizations;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetContactOrganizationsAsync: {ex.Message}");
+                return new List<OrganizationViewModel>();
+            }
+        }
     }
 }

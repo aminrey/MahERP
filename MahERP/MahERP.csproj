@@ -4,8 +4,9 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    
-    <!-- ⭐ اضافه کردن ورژن -->
+	  <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+	  <!-- ⭐ اضافه کردن ورژن -->
     <Version>1.0.0</Version>
     
     <!-- ⭐ ثبت تاریخ build به صورت خودکار -->

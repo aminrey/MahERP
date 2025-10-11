@@ -1,0 +1,70 @@
+﻿@model MahERP.DataModelLayer.Entities.Contacts.Organization
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="block block-rounded mb-0">
+            <div class="block-header @ViewBag.themeclass">
+                <h3 class="block-title text-white">
+                    <i class="fa fa-trash me-2"></i>
+                    @ViewBag.ViewTitle
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal">
+                        <i class="fa fa-times text-white"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form asp-action="DeleteConfirmed" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                
+                <div class="block-content">
+                    <div class="alert alert-danger">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <strong>هشدار!</strong> آیا از حذف این سازمان اطمینان دارید؟
+                    </div>
+                    
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="fw-bold">نام سازمان:</td>
+                            <td>@Model.Name</td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.Brand))
+                        {
+                            <tr>
+                                <td class="fw-bold">نام برند:</td>
+                                <td>@Model.Brand</td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.RegistrationNumber))
+                        {
+                            <tr>
+                                <td class="fw-bold">شماره ثبت:</td>
+                                <td>@Model.RegistrationNumber</td>
+                            </tr>
+                        }
+                        <tr>
+                            <td class="fw-bold">نوع:</td>
+                            <td>@Model.OrganizationTypeText</td>
+                        </tr>
+                    </table>
+
+                    <div class="alert alert-warning">
+                        <i class="fa fa-info-circle me-2"></i>
+                        توجه: با حذف سازمان، تمام اطلاعات مرتبط با آن (بخش‌ها، سمت‌ها و اعضا) نیز حذف خواهند شد.
+                    </div>
+                </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i> انصراف
+                    </button>
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fa fa-check me-1"></i> تایید حذف
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

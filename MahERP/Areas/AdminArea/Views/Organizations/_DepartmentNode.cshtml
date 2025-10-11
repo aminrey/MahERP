@@ -1,0 +1,64 @@
+﻿@model OrganizationDepartment
+
+<div class="org-node" data-level="@Model.Level">
+    <div class="org-card">
+        <div class="org-title">@Model.Title</div>
+        
+        @if (Model.ManagerContact != null)
+        {
+            <div class="org-manager">
+                <i class="fa fa-user me-1"></i>
+                مدیر: @Model.ManagerContact.FullName
+            </div>
+        }
+        else
+        {
+            <div class="org-manager manager-empty">
+                <i class="fa fa-user me-1"></i>
+                بدون مدیر
+            </div>
+        }
+
+        <div class="org-stats">
+            <div class="stat-item">
+                <span class="stat-number">@(Model.Positions?.Count(p => p.IsActive) ?? 0)</span>
+                <span class="stat-label">سمت</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">@(Model.Members?.Count(m => m.IsActive) ?? 0)</span>
+                <span class="stat-label">عضو</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">@(Model.ChildDepartments?.Count ?? 0)</span>
+                <span class="stat-label">زیربخش</span>
+            </div>
+        </div>
+
+        <div class="org-actions">
+            <a asp-controller="Organizations" asp-action="AddDepartment" 
+               asp-route-organizationId="@Model.OrganizationId"
+               asp-route-parentDepartmentId="@Model.Id"
+               class="btn btn-sm btn-light">
+                <i class="fa fa-plus"></i> زیربخش
+            </a>
+            <a asp-controller="Organizations" asp-action="ManagePositions" asp-route-departmentId="@Model.Id" 
+               class="btn btn-sm btn-light">
+                <i class="fa fa-id-badge"></i> سمت‌ها
+            </a>
+            <a asp-controller="Organizations" asp-action="AddMember" asp-route-departmentId="@Model.Id" 
+               class="btn btn-sm btn-light">
+                <i class="fa fa-user-plus"></i> عضو
+            </a>
+        </div>
+    </div>
+
+    @if (Model.ChildDepartments?.Any() == true)
+    {
+        <div class="child-orgs">
+            @foreach (var childDept in Model.ChildDepartments)
+            {
+                @await Html.PartialAsync("_DepartmentNode", childDept)
+            }
+        </div>
+    }
+</div>

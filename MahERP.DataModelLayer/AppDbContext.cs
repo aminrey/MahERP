@@ -2,8 +2,8 @@
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
-using MahERP.DataModelLayer.Entities.Organization;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Entities.Contacts; // ⭐ جدید
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,9 +29,22 @@ namespace MahERP.DataModelLayer
         public DbSet<TeamPosition> TeamPosition_Tbl { get; set; }
         public DbSet<TaskReminderSchedule> TaskReminderSchedule_Tbl { get; set; }
         public DbSet<TaskReminderEvent> TaskReminderEvent_Tbl { get; set; }
-        public DbSet<TaskMyDay> TaskMyDay_Tbl { get; set; } // اضافه شده
+        public DbSet<TaskMyDay> TaskMyDay_Tbl { get; set; }
 
-        // Account Control
+        // ⭐⭐⭐ NEW: Contacts & Organizations ⭐⭐⭐
+        public DbSet<Contact> Contact_Tbl { get; set; }
+        public DbSet<ContactPhone> ContactPhone_Tbl { get; set; }
+        public DbSet<Organization> Organization_Tbl { get; set; }
+        public DbSet<OrganizationDepartment> OrganizationDepartment_Tbl { get; set; }
+        public DbSet<DepartmentPosition> DepartmentPosition_Tbl { get; set; }
+        public DbSet<DepartmentMember> DepartmentMember_Tbl { get; set; }
+        public DbSet<OrganizationContact> OrganizationContact_Tbl { get; set; }
+
+        // ✅ NEW: Branch-Contact/Organization
+        public DbSet<BranchContact> BranchContact_Tbl { get; set; }
+        public DbSet<BranchOrganization> BranchOrganization_Tbl { get; set; }
+
+        // Account Control (Old - Keep for migration compatibility)
         public DbSet<Stakeholder> Stakeholder_Tbl { get; set; }
         public DbSet<StakeholderBranch> StakeholderBranch_Tbl { get; set; }
         public DbSet<StakeholderContact> StakeholderContact_Tbl { get; set; }
@@ -52,8 +65,6 @@ namespace MahERP.DataModelLayer
         public DbSet<CoreNotificationDetail> CoreNotificationDetail_Tbl { get; set; }
         public DbSet<CoreNotificationDelivery> CoreNotificationDelivery_Tbl { get; set; }
         public DbSet<CoreNotificationSetting> CoreNotificationSetting_Tbl { get; set; }
-
-
 
         // Task Management
         public DbSet<Tasks> Tasks_Tbl { get; set; }
@@ -77,6 +88,7 @@ namespace MahERP.DataModelLayer
         public DbSet<TaskOperationWorkLog> TaskOperationWorkLog_Tbl { get; set; }
         public DbSet<TaskHistory> TaskHistory_Tbl { get; set; }
         public DbSet<TaskWorkLog> TaskWorkLog_Tbl { get; set; }
+
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
         public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }
@@ -96,6 +108,9 @@ namespace MahERP.DataModelLayer
             SeedDefaultTaskCategories(modelBuilder);
             SeedDefaultPredefinedCopyDescriptions(modelBuilder);
             SeedDefaultRolePatterns(modelBuilder);
+
+            
+         
 
             // ======================== ROLE PATTERN RELATIONSHIPS ========================
             // RolePattern relationships
@@ -762,11 +777,6 @@ namespace MahERP.DataModelLayer
                 .HasForeignKey(t => t.TeamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Tasks>()
-                .HasOne(t => t.Stakeholder)
-                .WithMany()
-                .HasForeignKey(t => t.StakeholderId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Tasks>()
                 .HasOne(t => t.Contract)
@@ -872,6 +882,7 @@ namespace MahERP.DataModelLayer
                 .IsUnique()
                 .HasDatabaseName("IX_RolePattern_PatternName");
         }
+
 
         // ======================== PRIVATE SEED METHODS ========================
 
@@ -1037,12 +1048,10 @@ namespace MahERP.DataModelLayer
                 new RolePatternDetails { Id = 12, RolePatternId = 2, ControllerName = "CRM", ActionName = "Index,Details,Create,Edit", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 1, IsActive = true },
                 new RolePatternDetails { Id = 13, RolePatternId = 2, ControllerName = "Stakeholder", ActionName = "Index,Details", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 1, IsActive = true },
 
-                // الگوی کارشناس فروش
+                // الگوهای کارشناس فروش و کاربر عادی
                 new RolePatternDetails { Id = 14, RolePatternId = 3, ControllerName = "CRM", ActionName = "*", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
                 new RolePatternDetails { Id = 15, RolePatternId = 3, ControllerName = "Stakeholder", ActionName = "Index,Details,Create,Edit", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
                 new RolePatternDetails { Id = 16, RolePatternId = 3, ControllerName = "Tasks", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
-
-                // الگوی کاربر عادی
                 new RolePatternDetails { Id = 17, RolePatternId = 4, ControllerName = "Tasks", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true }
             );
         }
