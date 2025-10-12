@@ -1,0 +1,37 @@
+﻿@model List<OrganizationViewModel>
+
+<select class="js-select2 form-select"
+        id="SelectedOrganizationId"
+        name="SelectedOrganizationId"
+        data-placeholder="انتخاب شرکت/سازمان"
+        style="width: 100%;">
+    <option value="">انتخاب شرکت/سازمان</option>
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var org in Model)
+        {
+            <option value="@org.Id">
+                @org.DisplayName
+                @if (!string.IsNullOrEmpty(org.RegistrationNumber))
+                {
+                    <text> (ثبت: @org.RegistrationNumber)</text>
+                }
+            </option>
+        }
+    }
+</select>
+
+@if (Model == null || !Model.Any())
+{
+    <small class="form-text text-warning mt-1 d-block">
+        <i class="fa fa-exclamation-triangle me-1"></i>
+        در این شعبه هیچ شرکت/سازمانی تعریف نشده است
+    </small>
+}
+else
+{
+    <small class="form-text text-muted mt-1 d-block">
+        <i class="fa fa-building me-1"></i>
+        @Model.Count شرکت/سازمان در این شعبه موجود است
+    </small>
+}

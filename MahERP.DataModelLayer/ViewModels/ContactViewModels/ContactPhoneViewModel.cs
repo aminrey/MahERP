@@ -52,9 +52,9 @@ namespace MahERP.DataModelLayer.ViewModels.ContactViewModels
         };
 
         [Display(Name = "شماره فرمت شده")]
-        public string FormattedNumber { get; set; }
+        public string? FormattedNumber { get; set; }
 
         [Display(Name = "متن نمایشی")]
-        public string DisplayText { get; set; }
+        public string? DisplayText { get; set; }
     }
 }

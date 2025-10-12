@@ -1,0 +1,217 @@
+﻿@model Organization
+@{
+    var organizationId = ViewBag.OrganizationId as int?;
+    var organizationName = ViewBag.OrganizationName as string;
+    var isActive = ViewBag.IsActive as bool?;
+    var modalTitle = ViewBag.ModalTitle as string;
+    var themeClass = ViewBag.ThemeClass as string;
+    var buttonClass = ViewBag.ButtonClass as string;
+    var actionText = ViewBag.ActionText as string;
+}
+
+<!-- Modal Content -->
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <!-- Modal Header -->
+        <div class="block block-rounded block-themed block-transparent mb-0">
+            <div class="block-header @themeClass">
+                <h3 class="block-title">
+                    <i class="fa fa-@(isActive == true ? "ban" : "check-circle") me-2"></i>
+                    @modalTitle
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="block-content block-content-full">
+                <form id="toggleActivationForm" 
+                      asp-action="ToggleActivationPost" 
+                      asp-controller="Organizations" 
+                      asp-area="AdminArea"
+                      method="post">
+                    
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@organizationId" />
+
+                    <!-- Warning Message -->
+                    <div class="alert alert-@(isActive == true ? "warning" : "success") d-flex align-items-center" role="alert">
+                        <i class="fa fa-@(isActive == true ? "exclamation-triangle" : "check-circle") fa-2x me-3"></i>
+                        <div>
+                            <h5 class="alert-heading mb-2">
+                                @if (isActive == true)
+                                {
+                                    <span>آیا از غیرفعال کردن این سازمان اطمینان دارید؟</span>
+                                }
+                                else
+                                {
+                                    <span>آیا می‌خواهید این سازمان را فعال کنید؟</span>
+                                }
+                            </h5>
+                            <p class="mb-0">
+                                <strong>سازمان:</strong> @organizationName
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Organization Details -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted mb-3">
+                                        <i class="fa fa-info-circle me-2"></i>
+                                        اطلاعات سازمان
+                                    </h6>
+                                    
+                                    <table class="table table-borderless table-sm mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td class="fw-bold" style="width: 35%;">نام سازمان:</td>
+                                                <td>@Model.Name</td>
+                                            </tr>
+                                            @if (!string.IsNullOrEmpty(Model.Brand))
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold">نام برند:</td>
+                                                    <td>@Model.Brand</td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td class="fw-bold">نوع سازمان:</td>
+                                                <td>
+                                                    <span class="badge bg-info">@Model.OrganizationTypeText</span>
+                                                </td>
+                                            </tr>
+                                            @if (!string.IsNullOrEmpty(Model.RegistrationNumber))
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold">شماره ثبت:</td>
+                                                    <td>@Model.RegistrationNumber</td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td class="fw-bold">وضعیت فعلی:</td>
+                                                <td>
+                                                    @if (Model.IsActive)
+                                                    {
+                                                        <span class="badge bg-success">
+                                                            <i class="fa fa-check me-1"></i> فعال
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger">
+                                                            <i class="fa fa-ban me-1"></i> غیرفعال
+                                                        </span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Warning Note -->
+                    @if (isActive == true)
+                    {
+                        <div class="alert alert-warning border-warning">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-exclamation-triangle me-2"></i>
+                                توجه
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li>با غیرفعال کردن این سازمان، دیگر در لیست‌ها نمایش داده نخواهد شد</li>
+                                <li>اطلاعات سازمان حذف نمی‌شود و می‌توانید بعداً آن را فعال کنید</li>
+                                <li>بخش‌ها و اعضای سازمان بدون تغییر باقی می‌مانند</li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success border-success">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-check-circle me-2"></i>
+                                فعال‌سازی
+                            </h6>
+                            <p class="mb-0 small">
+                                با فعال کردن این سازمان، دوباره در سیستم قابل استفاده خواهد بود
+                            </p>
+                        </div>
+                    }
+
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="block-content block-content-full block-content-sm text-end bg-body-light">
+                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" 
+                        class="@buttonClass" 
+                        data-save="modal-ajax-save"
+                        onclick="submitToggleForm()">
+                    <i class="fa fa-@(isActive == true ? "ban" : "check") me-1"></i>
+                    @actionText کردن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function submitToggleForm() {
+            const form = $('#toggleActivationForm');
+            const formData = new FormData(form[0]);
+            const actionUrl = form.attr('action');
+
+            $.ajax({
+                url: actionUrl,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log('Response:', response);
+
+                    if (response.status === 'redirect') {
+                        // نمایش پیام
+                        if (response.message && response.message.length > 0) {
+                            SendResposeMessage(response.message);
+                        }
+
+                        // بستن مودال
+                        $('.modal').modal('hide');
+
+                        // ریدایرکت بعد از 500ms
+                        setTimeout(function() {
+                            window.location.href = response.redirectUrl;
+                        }, 500);
+                    } else if (response.status === 'error') {
+                        // نمایش خطا
+                        if (response.message && response.message.length > 0) {
+                            SendResposeMessage(response.message);
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    console.error('AJAX Error:', xhr);
+                    
+                    Dashmix.helpers('jq-notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times me-1',
+                        message: 'خطا در تغییر وضعیت'
+                    });
+                }
+            });
+        }
+    </script>
+}

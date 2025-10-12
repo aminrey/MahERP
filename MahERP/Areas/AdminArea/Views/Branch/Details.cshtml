@@ -20,13 +20,13 @@
     </div>
 </div>
 <!-- END Hero -->
-
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <!-- دکمه‌های عملیاتی - ردیف اول -->
     <div class="row items-push">
+        <!-- ویرایش -->
         <div class="col-6 col-md-4 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" 
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0"
                href="@Url.Action("EditBranch", "Branch", new { id = Model.Id })">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
@@ -36,9 +36,10 @@
                 </div>
             </a>
         </div>
-        
+
+        <!-- فعال/غیرفعال کردن -->
         <div class="col-6 col-md-4 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" 
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0"
                data-toggle="modal-ajax" href="@Url.Action("ToggleActivation", "Branch", new { id = Model.Id })">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
@@ -51,35 +52,51 @@
             </a>
         </div>
 
-    
-
+        <!-- ⭐⭐⭐ افزودن فرد (Contact) - جدید -->
         <div class="col-6 col-md-4 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0"
-               href="@Url.Action("AddStakeholderToBranch", "Branch", new { branchId = ViewContext.RouteData.Values["id"] })"
-               data-toggle="modal-ajax" ">
+               data-toggle="modal-ajax"
+               href="@Url.Action("AddContactToBranch", "Branch", new { branchId = Model.Id })">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
-                        <i class="fa fa-user text-success"></i>
+                        <i class="fa fa-user-plus text-success"></i>
                     </div>
-                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">افزودن طرف حساب</p>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">افزودن فرد</p>
                 </div>
             </a>
         </div>
 
+        <!-- ⭐⭐⭐ افزودن سازمان (Organization) - جدید -->
         <div class="col-6 col-md-4 col-xl-2">
             <a class="block block-rounded block-link-shadow text-center h-100 mb-0"
-               data-toggle="modal-ajax" href="@Url.Action("AssignTaskCategoryToBranch", "BranchTaskCategory", new { area = "AdminArea", branchId = Model.Id }) ">
+               data-toggle="modal-ajax"
+               href="@Url.Action("AddOrganizationToBranch", "Branch", new { branchId = Model.Id })">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
-                        <i class="fa  fa-plus-circle text-warning"></i>
+                        <i class="fa fa-building text-info"></i>
+                    </div>
+                    <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">افزودن سازمان</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- افزودن دسته‌بندی -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0"
+               data-toggle="modal-ajax"
+               href="@Url.Action("AssignTaskCategoryToBranch", "BranchTaskCategory", new { area = "AdminArea", branchId = Model.Id })">
+                <div class="block-content py-5">
+                    <div class="fs-3 fw-semibold mb-1">
+                        <i class="fa fa-plus-circle text-warning"></i>
                     </div>
                     <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">افزودن دسته‌بندی</p>
                 </div>
             </a>
         </div>
 
+        <!-- بازگشت -->
         <div class="col-6 col-md-4 col-xl-2">
-            <a class="block block-rounded block-link-shadow text-center h-100 mb-0" 
+            <a class="block block-rounded block-link-shadow text-center h-100 mb-0"
                href="@Url.Action("Index", "Branch")">
                 <div class="block-content py-5">
                     <div class="fs-3 fw-semibold mb-1">
@@ -91,76 +108,59 @@
         </div>
     </div>
     <!-- END Quick Actions -->
-
     <!-- دکمه‌های بخش‌های جزئیات - ردیف دوم (Tab Navigation) -->
     <div class="block block-rounded">
         <ul class="nav nav-tabs nav-tabs-block justify-content-center" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab-info" data-bs-toggle="tab" 
+                <button class="nav-link active" id="tab-info" data-bs-toggle="tab"
                         data-bs-target="#info-panel" type="button" role="tab">
                     <i class="fa fa-info-circle me-1"></i> اطلاعات پایه
                 </button>
             </li>
-            
+
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-users" data-bs-toggle="tab" 
+                <button class="nav-link" id="tab-users" data-bs-toggle="tab"
                         data-bs-target="#users-panel" type="button" role="tab">
                     <i class="fa fa-users me-1"></i> کاربران شعبه
                 </button>
             </li>
 
+            <!-- ⭐⭐⭐ تب افراد (اولویت اول) -->
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-stakeholders" data-bs-toggle="tab" 
-                        data-bs-target="#stakeholders-panel" type="button" role="tab">
-                    <i class="fa fa-user-tie me-1"></i> طرف حساب‌ها
+                <button class="nav-link" id="tab-contacts" data-bs-toggle="tab"
+                        data-bs-target="#contacts-panel" type="button" role="tab">
+                    <i class="fa fa-user text-success me-1"></i>
+                    افراد
+                    <span class="badge bg-success ms-1">@Model.BranchContacts.Count</span>
                 </button>
             </li>
 
-            @if (Model.ChildBranches != null && Model.ChildBranches.Count > 0)
-            {
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-children" data-bs-toggle="tab" 
-                            data-bs-target="#children-panel" type="button" role="tab">
-                        <i class="fa fa-sitemap me-1"></i> شعبه‌های زیرمجموعه
-                    </button>
-                </li>
-            }
+            <!-- ⭐⭐⭐ تب سازمان‌ها (اولویت دوم) -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-organizations" data-bs-toggle="tab"
+                        data-bs-target="#organizations-panel" type="button" role="tab">
+                    <i class="fa fa-building text-info me-1"></i>
+                    سازمان‌ها
+                    <span class="badge bg-info ms-1">@Model.BranchOrganizations.Count</span>
+                </button>
+            </li>
+
 
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-categories" data-bs-toggle="tab" 
+                <button class="nav-link" id="tab-categories" data-bs-toggle="tab"
                         data-bs-target="#categories-panel" type="button" role="tab">
                     <i class="fa fa-list-alt me-1"></i> دسته‌بندی تسک‌ها
                 </button>
             </li>
 
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-stats" data-bs-toggle="tab" 
+                <button class="nav-link" id="tab-stats" data-bs-toggle="tab"
                         data-bs-target="#stats-panel" type="button" role="tab">
                     <i class="fa fa-chart-bar me-1"></i> آمار و گزارشات
                 </button>
             </li>
 
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-contacts" data-bs-toggle="tab" 
-                        data-bs-target="#contacts-panel" type="button" role="tab">
-                    <i class="fa fa-user me-1"></i> افراد (@Model.BranchContacts.Count)
-                </button>
-            </li>
-
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-organizations" data-bs-toggle="tab" 
-                        data-bs-target="#organizations-panel" type="button" role="tab">
-                    <i class="fa fa-building me-1"></i> سازمان‌ها (@Model.BranchOrganizations.Count)
-                </button>
-            </li>
-
-            <!-- ⚠️ تب قدیمی (Deprecated) -->
-            <li class="nav-item" role="presentation">
-                <button class="nav-link text-muted" id="tab-stakeholders-old" data-bs-toggle="tab" 
-                        data-bs-target="#stakeholders-old-panel" type="button" role="tab">
-                    <i class="fa fa-archive me-1"></i> طرف حساب‌های قدیمی (منسوخ)
-                </button>
-            </li>
+          
         </ul>
 
         <div class="block-content tab-content">
@@ -174,12 +174,14 @@
                 @await Html.PartialAsync("_BranchUsers", Model)
             </div>
 
-            <!-- بخش طرف حساب‌ها -->
-            <div class="tab-pane" id="stakeholders-panel" role="tabpanel">
-                @{
-                    var branchStakeholders = ViewBag.BranchStakeholders as List<StakeholderBranch> ?? new List<StakeholderBranch>();
-                }
-                @await Html.PartialAsync("_BranchStakeholders", branchStakeholders)
+            <!-- ⭐⭐⭐ بخش افراد (سیستم جدید) -->
+            <div class="tab-pane" id="contacts-panel" role="tabpanel">
+                @await Html.PartialAsync("_BranchContacts", Model.BranchContacts)
+            </div>
+
+            <!-- ⭐⭐⭐ بخش سازمان‌ها (سیستم جدید) -->
+            <div class="tab-pane" id="organizations-panel" role="tabpanel">
+                @await Html.PartialAsync("_BranchOrganizations", Model.BranchOrganizations)
             </div>
 
             <!-- بخش شعبه‌های زیرمجموعه -->
@@ -200,31 +202,11 @@
                 @await Html.PartialAsync("_BranchStats", Model)
             </div>
 
-            <!-- بخش افراد -->
-            <div class="tab-pane" id="contacts-panel" role="tabpanel">
-                @await Html.PartialAsync("_BranchContacts", Model.BranchContacts)
-            </div>
-
-            <!-- بخش سازمان‌ها -->
-            <div class="tab-pane" id="organizations-panel" role="tabpanel">
-                @await Html.PartialAsync("_BranchOrganizations", Model.BranchOrganizations)
-            </div>
-
-            <!-- ⚠️ بخش طرف حساب‌های قدیمی (Deprecated) -->
-            <div class="tab-pane" id="stakeholders-old-panel" role="tabpanel">
-                <div class="alert alert-warning">
-                    <i class="fa fa-exclamation-triangle me-2"></i>
-                    <strong>توجه:</strong> این بخش منسوخ شده و فقط برای سازگاری با تسک‌های قدیمی نگه‌داری می‌شود.
-                    لطفاً از تب‌های "افراد" و "سازمان‌ها" استفاده کنید.
-                </div>
-              
-                @await Html.PartialAsync("_BranchStakeholders", branchStakeholders)
-            </div>
+          
         </div>
     </div>
 </div>
 <!-- END Page Content -->
-
 <!-- Modal Container -->
 <div class="modal fade" id="modal-branch" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
@@ -241,10 +223,12 @@
 
 @section scripts {
     <script>
-        
         $(document).ready(function() {
+            // Tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
-            
+
+    
+            // Reset modal content
             $('#modal-branch').on('hidden.bs.modal', function () {
                 $(this).find('.modal-content').html(`
                     <div class="modal-body text-center py-5">
@@ -255,6 +239,70 @@
                     </div>
                 `);
             });
+
+            // ⭐ نمایش آمار در کنسول (اختیاری)
+            console.log('📊 آمار شعبه:');
+            console.log('👤 تعداد افراد:', @Model.BranchContacts.Count);
+            console.log('🏢 تعداد سازمان‌ها:', @Model.BranchOrganizations.Count);
         });
     </script>
+}
+
+@section Styles {
+    <style>
+        /* استایل برای تب منسوخ شده */
+        #tab-stakeholders-old {
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+            #tab-stakeholders-old:hover {
+                opacity: 1;
+            }
+
+            #tab-stakeholders-old .badge {
+                font-size: 0.65rem;
+                vertical-align: middle;
+            }
+
+        /* تأکید بر تب‌های جدید */
+        #tab-contacts .badge,
+        #tab-organizations .badge {
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* استایل برای Alert منسوخ شده */
+        #stakeholders-old-panel .alert-warning {
+            border-left: 4px solid #ff9f43;
+            background: linear-gradient(135deg, #fff7e6 0%, #ffe5cc 100%);
+        }
+
+        /* هایلایت دکمه‌های جدید */
+        .nav-link[id^="tab-contacts"],
+        .nav-link[id^="tab-organizations"] {
+            position: relative;
+        }
+
+            .nav-link[id^="tab-contacts"].active,
+            .nav-link[id^="tab-organizations"].active {
+                background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            }
+
+        /* افکت hover برای دکمه‌های Quick Action */
+        .block-link-shadow:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+    </style>
 }

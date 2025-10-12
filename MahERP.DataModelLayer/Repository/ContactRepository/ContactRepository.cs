@@ -172,6 +172,7 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
                 if (newDefault != null && newDefault.ContactId == contactId)
                 {
                     newDefault.IsDefault = true;
+                     _context.ContactPhone_Tbl.Update(newDefault);
                     await _context.SaveChangesAsync();
                     return true;
                 }

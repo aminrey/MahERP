@@ -7,7 +7,7 @@
         <td>
             <span class="badge bg-primary">@phone.PhoneTypeText</span>
         </td>
-        <td class="fw-semibold">@phone.FormattedNumber</td>
+        <td class="fw-semibold " > <span> @phone.FormattedNumber</span></td>
         <td>@(phone.Extension ?? "-")</td>
         <td class="text-center">
             @if (phone.IsDefault)
@@ -24,16 +24,7 @@
                 </button>
             }
         </td>
-        <td class="text-center">
-            @if (phone.IsVerified)
-            {
-                <i class="fa fa-check-circle text-success"></i>
-            }
-            else
-            {
-                <i class="fa fa-times-circle text-muted"></i>
-            }
-        </td>
+       
         <td class="text-center">
             @if (phone.IsActive)
             {

@@ -1,7 +1,8 @@
-﻿using System;
+﻿using MahERP.DataModelLayer.Entities.AcControl;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace MahERP.DataModelLayer.Entities.Contacts
 {
@@ -67,7 +68,12 @@ namespace MahERP.DataModelLayer.Entities.Contacts
         /// وضعیت فعال/غیرفعال
         /// </summary>
         public bool IsActive { get; set; } = true;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
+        public string CreatorUserId { get; set; }
+
+        [ForeignKey(nameof(CreatorUserId))]
+        public virtual AppUsers? Creator { get; set; }
         /// <summary>
         /// ترتیب نمایش
         /// </summary>

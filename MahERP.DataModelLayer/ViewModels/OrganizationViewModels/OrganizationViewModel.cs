@@ -17,7 +17,7 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public string Name { get; set; }
 
         [Display(Name = "نام نمایشی")]
-        public string DisplayName { get; set; }
+        public string? DisplayName { get; set; }
 
         [Display(Name = "نام برند")]
         [MaxLength(100)]

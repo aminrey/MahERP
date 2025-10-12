@@ -506,7 +506,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             try
             {
                 var task = _taskRepository.GetTaskById(id, includeOperations: true,
-                    includeAssignments: true, includeAttachments: true, includeComments: true);
+                    includeAssignments: true, includeAttachments: true, includeComments: true,includeStakeHolders:true);
 
                 if (task == null)
                 {
@@ -2868,35 +2868,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 // دریافت Organizations
                 var organizations = await _taskRepository.GetBranchOrganizationsAsync(branchId);
 
-                // ساخت HTML برای dropdown Contact
-                var contactsHtml = new System.Text.StringBuilder();
-                contactsHtml.Append("<select class=\"js-select2 form-select\" id=\"SelectedContactId\" name=\"SelectedContactId\" data-placeholder=\"انتخاب فرد\" style=\"width: 100%;\">");
-                contactsHtml.Append("<option value=\"\">انتخاب فرد</option>");
-                foreach (var contact in contacts)
-                {
-                    contactsHtml.Append($"<option value=\"{contact.Id}\">{contact.FullName}");
-                    if (!string.IsNullOrEmpty(contact.NationalCode))
-                    {
-                        contactsHtml.Append($" ({contact.NationalCode})");
-                    }
-                    contactsHtml.Append("</option>");
-                }
-                contactsHtml.Append("</select>");
-
-                // ساخت HTML برای dropdown Organization
-                var organizationsHtml = new System.Text.StringBuilder();
-                organizationsHtml.Append("<select class=\"js-select2 form-select\" id=\"SelectedOrganizationId\" name=\"SelectedOrganizationId\" data-placeholder=\"انتخاب شرکت/سازمان\" style=\"width: 100%;\">");
-                organizationsHtml.Append("<option value=\"\">انتخاب شرکت/سازمان</option>");
-                foreach (var org in organizations)
-                {
-                    organizationsHtml.Append($"<option value=\"{org.Id}\">{org.DisplayName}");
-                    if (!string.IsNullOrEmpty(org.RegistrationNumber))
-                    {
-                        organizationsHtml.Append($" (ثبت: {org.RegistrationNumber})");
-                    }
-                    organizationsHtml.Append("</option>");
-                }
-                organizationsHtml.Append("</select>");
+                // ⭐⭐⭐ رندر Partial Views
+                var contactsHtml = await this.RenderViewToStringAsync("_ContactsDropdown", contacts);
+                var organizationsHtml = await this.RenderViewToStringAsync("_OrganizationsDropdown", organizations);
 
                 return Json(new
                 {
@@ -2904,9 +2878,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     status = "update-view",
                     viewList = new[]
                     {
-                new { elementId = "ContactSelectionDiv", view = new { result = contactsHtml.ToString() } },
-                new { elementId = "OrganizationSelectionDiv", view = new { result = organizationsHtml.ToString() } }
-            }
+                        new { elementId = "ContactSelectionDiv", view = new { result = contactsHtml } },
+                        new { elementId = "OrganizationSelectionDiv", view = new { result = organizationsHtml } }
+                    }
                 });
             }
             catch (Exception ex)

@@ -1,4 +1,4 @@
-﻿@model List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationViewModel>
+﻿@model List<OrganizationViewModel>
 @{
     ViewData["Title"] = "لیست سازمان‌ها";
 }
@@ -34,13 +34,7 @@
                         <option value="3" selected="@(ViewBag.OrganizationType == 3)">نهاد</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <div class="form-check form-switch">
-                        <input type="checkbox" name="includeInactive" class="form-check-input" 
-                               checked="@ViewBag.IncludeInactive" />
-                        <label class="form-check-label">نمایش غیرفعال‌ها</label>
-                    </div>
-                </div>
+            
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fa fa-search me-1"></i> جستجو
@@ -94,19 +88,29 @@
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group">
-                                        <a asp-action="Details" asp-route-id="@org.Id" 
+                                        <a asp-action="Details" asp-route-id="@org.Id"
                                            class="btn btn-sm btn-alt-info" title="جزئیات">
                                             <i class="fa fa-eye"></i>
                                         </a>
-                                        <a asp-action="Edit" asp-route-id="@org.Id" 
+                                        <a asp-action="Edit" asp-route-id="@org.Id"
                                            class="btn btn-sm btn-alt-primary" title="ویرایش">
                                             <i class="fa fa-edit"></i>
                                         </a>
-                                        <a asp-action="OrganizationChart" asp-route-organizationId="@org.Id" 
+
+                                        <!-- ⭐⭐⭐ دکمه فعال/غیرفعال سازی -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-alt-@(org.IsActive ? "warning" : "success")"
+                                                data-toggle="modal-ajax"
+                                                href="@Url.Action("ToggleActivation", new { id = org.Id })"
+                                                title="@(org.IsActive ? "غیرفعال کردن" : "فعال کردن")">
+                                            <i class="fa fa-@(org.IsActive ? "ban" : "check")"></i>
+                                        </button>
+
+                                        <a asp-action="OrganizationChart" asp-route-organizationId="@org.Id"
                                            class="btn btn-sm btn-alt-success" title="چارت سازمانی">
                                             <i class="fa fa-sitemap"></i>
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-alt-danger" 
+                                        <button type="button" class="btn btn-sm btn-alt-danger"
                                                 data-toggle="modal-ajax"
                                                 href="@Url.Action("Delete", new { id = org.Id })"
                                                 title="حذف">
@@ -133,3 +137,34 @@
         }
     </div>
 </div>
+<!-- در انتهای فایل Index.cshtml اضافه کنید -->
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            console.log('Organizations Index loaded');
+
+            // نمایش پیام موفقیت از TempData
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>
+                    Dashmix.helpers('jq-notify', {
+                        type: 'success',
+                        icon: 'fa fa-check me-1',
+                        message: '@TempData["SuccessMessage"]'
+                    });
+                    </text>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>
+                    Dashmix.helpers('jq-notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times me-1',
+                        message: '@TempData["ErrorMessage"]'
+                    });
+                    </text>
+            }
+        });
+    </script>
+}

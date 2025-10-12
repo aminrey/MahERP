@@ -485,58 +485,7 @@
                                     </small>
                                 </div>
 
-                                <!-- تنظیمات نمایش تسک - تیک تسک خصوصی -->
-                                <div class="mb-4">
-                                    <div class="card border-warning">
-                                        <div class="card-header bg-warning-light">
-                                            <h6 class="mb-0">
-                                                <i class="fa fa-shield-alt me-1"></i>
-                                                تنظیمات حریم خصوصی تسک
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="form-check form-switch">
-                                                <input asp-for="IsPrivate" 
-                                                       class="form-check-input" 
-                                                       type="checkbox" 
-                                                       id="IsPrivateToggle"
-                                                       onchange="togglePrivacyWarning()">
-                                                <label class="form-check-label" for="IsPrivateToggle">
-                                                    <strong>
-                                                        <i class="fa fa-lock me-1"></i>
-                                                        تسک خصوصی (محرمانه)
-                                                    </strong>
-                                                </label>
-                                            </div>
-                                            
-                                            <!-- پیام هشدار تسک خصوصی -->
-                                            <div id="privacyWarning" class="alert alert-warning mt-3" style="display: none;">
-                                                <h6 class="alert-heading">
-                                                    <i class="fa fa-exclamation-triangle me-1"></i>
-                                                    توجه: تسک خصوصی
-                                                </h6>
-                                                <hr>
-                                                <ul class="mb-0 small">
-                                                    <li><strong>فقط شما</strong> و <strong>افراد منتصب شده</strong> می‌توانند این تسک را مشاهده کنند</li>
-                                                    <li>حتی <strong>مدیران تیم</strong> و <strong>ناظران</strong> هم دسترسی نخواهند داشت</li>
-                                                    <li>این تسک در <strong>گزارشات عمومی</strong> و <strong>چارت‌های سازمانی</strong> نمایش داده نمی‌شود</li>
-                                                    <li>در صورت نیاز به <strong>نظارت</strong>، از گزینه تسک عمومی استفاده کنید</li>
-                                                </ul>
-                                            </div>
-
-                                            <small class="form-text text-muted d-block mt-2">
-                                                <i class="fa fa-info-circle me-1"></i>
-                                                <strong>تسک خصوصی:</strong> فقط شما و افراد منتسب شده می‌توانید این تسک را مشاهده کنند. 
-                                                حتی مدیران و ناظران هم دسترسی نخواهند داشت.
-                                            </small>
-                                            <small class="form-text text-muted d-block mt-1">
-                                                <i class="fa fa-unlock me-1"></i>
-                                                <strong>تسک عمومی:</strong> تسک طبق قوانین سیستم و سلسله مراتب سازمانی قابل مشاهده خواهد بود.
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-
+                               
                             </div>
                         </div>
                     </div>
@@ -975,7 +924,13 @@
             
             if (options.length === 1) {
                 const branchId = options.first().val();
-                branchSelect.val(branchId).trigger('change');
+                
+                // ⭐ فراخوانی مستقیم loadBranchUsersAndTeams
+                branchSelect.val(branchId);
+                loadBranchUsersAndTeams(branchId);
+                
+                // ⭐ Trigger change برای سایر handler ها (Contacts/Organizations)
+                branchSelect.trigger('change.select2'); // فقط برای Select2
                 
                 if (typeof toastr !== 'undefined') {
                     toastr.info('شعبه به صورت خودکار انتخاب شد', '', {timeOut: 2000});
@@ -985,6 +940,8 @@
 
         // بارگذاری کاربران و تیم‌های شعبه
         function loadBranchUsersAndTeams(branchId) {
+            console.log('🔄 Loading users and teams for branch:', branchId);
+            
             $.ajax({
                 url: '@Url.Action("BranchTriggerSelect", "Tasks")',
                 type: 'POST',
@@ -993,6 +950,8 @@
                     __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
                 },
                 success: function(response) {
+                    console.log('✅ Branch data loaded:', response);
+                    
                     if (response.status === 'update-view' && response.viewList) {
                         // استخراج کاربران
                         const usersHtml = response.viewList.find(v => v.elementId === 'UsersDiv')?.view?.result;
@@ -1005,6 +964,7 @@
                                     name: $(this).text()
                                 });
                             });
+                            console.log('👥 Available users:', availableUsers.length);
                         }
                         
                         // استخراج تیم‌ها
@@ -1018,6 +978,7 @@
                                     name: $(this).text()
                                 });
                             });
+                            console.log('👔 Available teams:', availableTeams.length);
                         }
                         
                         // بروزرسانی تخصیص‌های موجود
@@ -2002,70 +1963,28 @@
             
             return isValid;
         };
-
-        // مدیریت نمایش هشدار تسک خصوصی
-        function togglePrivacyWarning() {
-            const isPrivate = $('#IsPrivateToggle').is(':checked');
-            const warningDiv = $('#privacyWarning');
-            
-            if (isPrivate) {
-                warningDiv.slideDown(300);
-                
-                // نمایش تأییدیه
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        title: 'تسک خصوصی',
-                        html: `
-
-                            <div class="text-start">
-                                <p>با فعال کردن این گزینه:</p>
-                                <ul class="text-muted">
-                                    <li>فقط شما و افراد منتسب شده می‌توانند تسک را ببینند</li>
-                                    <li>مدیران و ناظران دسترسی نخواهند داشت</li>
-                                    <li>تسک در گزارشات عمومی نمایش داده نمی‌شود</li>
-                                </ul>
-                                <p class="mb-0"><strong>آیا مطمئن هستید؟</strong></p>
-                            </div>
-                        `,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'بله، خصوصی باشد',
-                        cancelButtonText: 'انصراف',
-                        confirmButtonColor: '#f0ad4e'
-                    }).then((result) => {
-                        if (!result.isConfirmed) {
-                            $('#IsPrivateToggle').prop('checked', false);
-                            warningDiv.slideUp(300);
-                        }
-                    });
-                }
-            } else {
-                warningDiv.slideUp(300);
-            }
-        }
-
-        // بررسی وضعیت اولیه هنگام لود صفحه
-        $(document).ready(function() {
-            if ($('#IsPrivateToggle').is(':checked')) {
-                $('#privacyWarning').show();
-            }
-            
-            // ... بقیه کدهای ready ...
-        });
+        
+        
     </script>
 
     <script>
-
         $(document).ready(function() {
             // ⭐ مدیریت تغییر شعبه: بروزرسانی Contacts و Organizations
             $('#BranchIdSelected').on('change', function() {
                 const branchId = $(this).val();
 
                 if (!branchId) {
-                    $('#SelectedContactId, #SelectedOrganizationId').prop('disabled', true).empty().append('<option value="">ابتدا شعبه را انتخاب کنید</option>');
+                    $('#SelectedContactId, #SelectedOrganizationId')
+                        .prop('disabled', true)
+                        .empty()
+                        .append('<option value="">ابتدا شعبه را انتخاب کنید</option>');
                     $('#ContactOrganizationsDiv').hide();
                     return;
                 }
+
+                // ⭐ نمایش loading
+                $('#ContactSelectionDiv').html('<div class="text-center py-2"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
+                $('#OrganizationSelectionDiv').html('<div class="text-center py-2"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
 
                 $.ajax({
                     url: '@Url.Action("BranchTriggerSelectForStakeholders", "Tasks")',
@@ -2075,34 +1994,60 @@
                         __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
                     },
                     success: function(response) {
+                        console.log('✅ AJAX Response:', response);
+
                         if (response.success && response.viewList) {
-                            // بروزرسانی Contact dropdown
+                            // ⭐⭐⭐ بروزرسانی Contact dropdown
                             const contactView = response.viewList.find(v => v.elementId === 'ContactSelectionDiv');
-                            if (contactView) {
-                                $('#SelectedContactId').html(contactView.view.result).prop('disabled', false);
+                            if (contactView && contactView.view && contactView.view.result) {
+                                $('#ContactSelectionDiv').html(contactView.view.result);
+
+                                // راه‌اندازی مجدد Select2
+                                $('#SelectedContactId').select2({
+                                    width: '100%',
+                                    placeholder: 'انتخاب فرد',
+                                    allowClear: true
+                                });
                             }
 
-                            // بروزرسانی Organization dropdown
+                            // ⭐⭐⭐ بروزرسانی Organization dropdown
                             const orgView = response.viewList.find(v => v.elementId === 'OrganizationSelectionDiv');
-                            if (orgView) {
-                                $('#SelectedOrganizationId').html(orgView.view.result).prop('disabled', false);
+                            if (orgView && orgView.view && orgView.view.result) {
+                                $('#OrganizationSelectionDiv').html(orgView.view.result);
+
+                                // راه‌اندازی مجدد Select2
+                                $('#SelectedOrganizationId').select2({
+                                    width: '100%',
+                                    placeholder: 'انتخاب شرکت/سازمان',
+                                    allowClear: true
+                                });
                             }
 
                             // پاک کردن بخش سازمان‌های Contact
                             $('#ContactOrganizationsDiv').hide().empty();
 
-                            // بروزرسانی Select2
-                            $('.js-select2').select2();
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success('لیست افراد و سازمان‌ها بروز شد', '', {timeOut: 2000});
+                            }
+                        } else {
+                            throw new Error(response.message || 'خطا در بارگذاری');
                         }
                     },
-                    error: function() {
-                        toastr.error('خطا در بارگذاری اطلاعات');
+                    error: function(xhr, status, error) {
+                        console.error('❌ AJAX Error:', error);
+
+                        $('#ContactSelectionDiv').html('<select class="form-select" disabled><option>خطا در بارگذاری</option></select>');
+                        $('#OrganizationSelectionDiv').html('<select class="form-select" disabled><option>خطا در بارگذاری</option></select>');
+
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('خطا در بارگذاری اطلاعات');
+                        }
                     }
                 });
             });
 
             // ⭐ مدیریت تغییر Contact: نمایش سازمان‌های مرتبط
-            $('#SelectedContactId').on('change', function() {
+            $(document).on('change', '#SelectedContactId', function() {
                 const contactId = $(this).val();
 
                 if (!contactId) {
@@ -2122,7 +2067,11 @@
                     success: function(html) {
                         $('#ContactOrganizationsDiv').html(html);
                         // بروزرسانی Select2 برای dropdown جدید
-                        $('#ContactRelatedOrganizationId').select2();
+                        $('#ContactRelatedOrganizationId').select2({
+                            width: '100%',
+                            placeholder: 'انتخاب سازمان',
+                            allowClear: true
+                        });
                     },
                     error: function() {
                         $('#ContactOrganizationsDiv').html('<div class="alert alert-danger">خطا در بارگذاری سازمان‌ها</div>');

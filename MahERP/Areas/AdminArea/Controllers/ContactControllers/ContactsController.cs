@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.Attributes;
+using MahERP.CommonLayer.Helpers;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
@@ -178,10 +179,10 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ContactViewModel model)
         {
-            // اعتبارسنجی
-            if (string.IsNullOrEmpty(model.FirstName) || string.IsNullOrEmpty(model.LastName))
+            // ⭐ اصلاح شده: فقط نام خانوادگی الزامی است
+            if (string.IsNullOrEmpty(model.LastName))
             {
-                ModelState.AddModelError("", "نام و نام خانوادگی الزامی است");
+                ModelState.AddModelError("LastName", "نام خانوادگی الزامی است");
             }
 
             // بررسی یکتا بودن کد ملی
@@ -202,6 +203,20 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
                 }
             }
 
+            // ⭐⭐⭐ اصلاح شده: نرمال‌سازی و اعتبارسنجی شماره تلفن
+            if (!string.IsNullOrEmpty(model.PrimaryPhone))
+            {
+                if (!PhoneNumberHelper.ValidateIranianPhoneNumber(model.PrimaryPhone, out string phoneError))
+                {
+                    ModelState.AddModelError("PrimaryPhone", phoneError);
+                }
+                else
+                {
+                    // نرمال‌سازی شماره
+                    model.PrimaryPhone = PhoneNumberHelper.NormalizePhoneNumber(model.PrimaryPhone);
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -212,6 +227,25 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
 
                     _uow.ContactUW.Create(contact);
                     _uow.Save();
+
+                    // ⭐⭐⭐ اگر شماره تلفن وارد شده، به جدول ContactPhone اضافه کن
+                    if (!string.IsNullOrEmpty(model.PrimaryPhone))
+                    {
+                        var phone = new ContactPhone
+                        {
+                            ContactId = contact.Id,
+                            PhoneNumber = model.PrimaryPhone, // شماره نرمال شده
+                            PhoneType = PhoneNumberHelper.DetectPhoneType(model.PrimaryPhone),
+                            IsDefault = true,
+                            IsActive = true,
+                            DisplayOrder = 1,
+                            CreatedDate = DateTime.Now,
+                            CreatorUserId = GetUserId()
+                        };
+
+                        _uow.ContactPhoneUW.Create(phone);
+                        _uow.Save();
+                    }
 
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Create,
@@ -271,7 +305,6 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
-
         /// <summary>
         /// ذخیره ویرایش فرد
         /// </summary>
@@ -279,7 +312,13 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ContactViewModel model)
         {
-            // اعتبارسنجی
+            // ⭐ اصلاح شده: بررسی نام خانوادگی
+            if (string.IsNullOrEmpty(model.LastName))
+            {
+                ModelState.AddModelError("LastName", "نام خانوادگی الزامی است");
+            }
+
+            // بررسی یکتا بودن کد ملی
             if (!string.IsNullOrEmpty(model.NationalCode))
             {
                 if (!_contactRepository.IsNationalCodeUnique(model.NationalCode, model.Id))
@@ -288,11 +327,26 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
                 }
             }
 
+            // بررسی یکتا بودن ایمیل
             if (!string.IsNullOrEmpty(model.PrimaryEmail))
             {
                 if (!_contactRepository.IsPrimaryEmailUnique(model.PrimaryEmail, model.Id))
                 {
                     ModelState.AddModelError("PrimaryEmail", "این ایمیل قبلاً ثبت شده است");
+                }
+            }
+
+            // ⭐⭐⭐ اضافه شده: نرمال‌سازی و اعتبارسنجی شماره تلفن
+            if (!string.IsNullOrEmpty(model.PrimaryPhone))
+            {
+                if (!PhoneNumberHelper.ValidateIranianPhoneNumber(model.PrimaryPhone, out string phoneError))
+                {
+                    ModelState.AddModelError("PrimaryPhone", phoneError);
+                }
+                else
+                {
+                    // نرمال‌سازی شماره
+                    model.PrimaryPhone = PhoneNumberHelper.NormalizePhoneNumber(model.PrimaryPhone);
                 }
             }
 
@@ -316,6 +370,9 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
                     var originalCreated = contact.CreatedDate;
                     var originalCreatorId = contact.CreatorUserId;
 
+                    // ⭐⭐⭐ ذخیره شماره تلفن قدیمی قبل از Map
+                    var oldPrimaryPhone = contact.DefaultPhone;
+
                     _mapper.Map(model, contact);
 
                     contact.CreatedDate = originalCreated;
@@ -325,6 +382,51 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
 
                     _uow.ContactUW.Update(contact);
                     _uow.Save();
+
+                    // ⭐⭐⭐ مدیریت شماره تلفن در جدول ContactPhone
+                    if (!string.IsNullOrEmpty(model.PrimaryPhone))
+                    {
+                        // پیدا کردن شماره پیش‌فرض قبلی
+                        var existingPhone = _contactRepository.GetDefaultPhone(model.Id);
+
+                        if (existingPhone != null && existingPhone.PhoneNumber != model.PrimaryPhone)
+                        {
+                            // اگر شماره تغییر کرده، شماره قدیمی را به‌روز کن
+                            existingPhone.PhoneNumber = model.PrimaryPhone;
+                            existingPhone.PhoneType = PhoneNumberHelper.DetectPhoneType(model.PrimaryPhone);
+                            _uow.ContactPhoneUW.Update(existingPhone);
+                            _uow.Save();
+                        }
+                        else if (existingPhone == null)
+                        {
+                            // اگر شماره پیش‌فرض وجود نداشت، ایجاد کن
+                            var newPhone = new ContactPhone
+                            {
+                                ContactId = contact.Id,
+                                PhoneNumber = model.PrimaryPhone,
+                                PhoneType = PhoneNumberHelper.DetectPhoneType(model.PrimaryPhone),
+                                IsDefault = true,
+                                IsActive = true,
+                                DisplayOrder = 1,
+                                CreatedDate = DateTime.Now,
+                                CreatorUserId = GetUserId()
+                            };
+
+                            _uow.ContactPhoneUW.Create(newPhone);
+                            _uow.Save();
+                        }
+                    }
+                    else if (string.IsNullOrEmpty(model.PrimaryPhone) && !string.IsNullOrEmpty(oldPrimaryPhone?.PhoneNumber))
+                    {
+                        // ⭐ اگر شماره حذف شده، شماره پیش‌فرض را غیرفعال کن (اختیاری)
+                        var existingPhone = _contactRepository.GetDefaultPhone(model.Id);
+                        if (existingPhone != null)
+                        {
+                            existingPhone.IsDefault = false;
+                            _uow.ContactPhoneUW.Update(existingPhone);
+                            _uow.Save();
+                        }
+                    }
 
                     var newValues = new
                     {
@@ -497,6 +599,9 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
                     }
 
                     var phone = _mapper.Map<ContactPhone>(model);
+
+                    phone.CreatorUserId = GetUserId();
+                    
                     _uow.ContactPhoneUW.Create(phone);
                     _uow.Save();
 
@@ -507,16 +612,9 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
 
                     return Json(new
                     {
-                        status = "update-view",
-                        message = new[] { new { status = "success", text = "شماره با موفقیت اضافه شد" } },
-                        viewList = new[]
-                        {
-                            new
-                            {
-                                elementId = "phonesTableBody",
-                                view = new { result = renderedView }
-                            }
-                        }
+                        status = "redirect",
+                        redirectUrl = Url.Action(nameof(ManagePhones) , new {contactId = model.ContactId })
+
                     });
                 }
                 catch (Exception ex)

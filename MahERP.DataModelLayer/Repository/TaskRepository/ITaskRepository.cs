@@ -26,8 +26,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <summary>
         /// دریافت تسک بر اساس شناسه با امکان include کردن related entities
         /// </summary>
-        Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false,
-            bool includeAttachments = false, bool includeComments = false);
+        Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false,
+            bool includeComments = false, bool includeStakeHolders = false);
+
 
         /// <summary>
         /// دریافت تسک‌های مرتبط با طرف حساب

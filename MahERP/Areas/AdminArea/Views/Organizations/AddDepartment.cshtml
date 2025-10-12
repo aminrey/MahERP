@@ -1,0 +1,324 @@
+﻿@model OrganizationDepartmentViewModel
+@{
+    ViewData["Title"] = "افزودن بخش جدید";
+    var organizationName = ViewBag.OrganizationName as string;
+    var parentDeptId = ViewBag.ParentDepartmentId as int?;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-plus-circle text-success me-2"></i>
+                افزودن بخش جدید
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">مدیریت</li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">سازمان‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="OrganizationChart" asp-route-organizationId="@Model.OrganizationId">
+                            @organizationName
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">افزودن بخش</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <form asp-action="AddDepartment" method="post">
+        @Html.AntiForgeryToken()
+        <input asp-for="OrganizationId" type="hidden" />
+        <input asp-for="ParentDepartmentId" type="hidden" />
+
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-sitemap me-2"></i>
+                    اطلاعات بخش سازمانی
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-toggle="block-option" data-action="fullscreen_toggle"></button>
+                </div>
+            </div>
+
+            <div class="block-content">
+                <!-- Alert برای نمایش خطاها -->
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            خطاهای اعتبارسنجی
+                        </h5>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <!-- اطلاعات سازمان -->
+                        <div class="alert alert-info d-flex align-items-center mb-4">
+                            <i class="fa fa-building fa-2x me-3"></i>
+                            <div>
+                                <h5 class="mb-1">سازمان: @organizationName</h5>
+                                @if (parentDeptId.HasValue)
+                                {
+                                    <small class="text-muted">این بخش به عنوان زیربخش ایجاد خواهد شد</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">این بخش به عنوان بخش ریشه ایجاد خواهد شد</small>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- عنوان بخش -->
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="Title">
+                                عنوان بخش <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Title" class="form-control form-control-lg" 
+                                   placeholder="مثال: واحد فروش، بخش مالی، دپارتمان IT" 
+                                   autofocus />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <!-- کد بخش -->
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label" asp-for="Code">
+                                    کد بخش
+                                    <small class="text-muted">(اختیاری)</small>
+                                </label>
+                                <input asp-for="Code" class="form-control" 
+                                       placeholder="مثال: SALES-001" />
+                                <span asp-validation-for="Code" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    کد یکتای بخش برای شناسایی سریع
+                                </small>
+                            </div>
+
+                            <!-- ترتیب نمایش -->
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label" asp-for="DisplayOrder">
+                                    ترتیب نمایش
+                                </label>
+                                <input asp-for="DisplayOrder" type="number" min="1" 
+                                       class="form-control" />
+                                <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    عدد کوچکتر = اولویت بالاتر
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- مدیر بخش -->
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="ManagerContactId">
+                                <i class="fa fa-user-tie me-1"></i>
+                                مدیر بخش
+                                <small class="text-muted">(اختیاری)</small>
+                            </label>
+                            <select asp-for="ManagerContactId" 
+                                    asp-items="@ViewBag.AvailableContacts" 
+                                    class="form-select">
+                                <option value="">-- انتخاب کنید --</option>
+                            </select>
+                            <span asp-validation-for="ManagerContactId" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                می‌توانید بعداً مدیر بخش را تعیین کنید
+                            </small>
+                        </div>
+
+                        <!-- توضیحات -->
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="Description">
+                                توضیحات
+                                <small class="text-muted">(اختیاری)</small>
+                            </label>
+                            <textarea asp-for="Description" 
+                                      class="form-control" 
+                                      rows="4" 
+                                      placeholder="شرح وظایف و مسئولیت‌های این بخش..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <!-- وضعیت فعال -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch form-check-lg">
+                                <input asp-for="IsActive" 
+                                       type="checkbox" 
+                                       class="form-check-input" 
+                                       checked />
+                                <label class="form-check-label" asp-for="IsActive">
+                                    <strong>فعال</strong>
+                                    <small class="d-block text-muted">بخش بلافاصله پس از ایجاد فعال باشد</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- راهنما -->
+                        <div class="alert alert-secondary">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-info-circle me-2"></i>
+                                نکات مهم
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li>پس از ایجاد بخش، می‌توانید سمت‌ها و اعضا را به آن اضافه کنید</li>
+                                <li>می‌توانید زیربخش‌های متعدد برای این بخش تعریف کنید</li>
+                                <li>مدیر بخش می‌تواند از بین افراد موجود در سیستم انتخاب شود</li>
+                                <li>کد بخش برای دسترسی سریع و یکتا بودن استفاده می‌شود</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer با دکمه‌ها -->
+            <div class="block-content block-content-full block-content-sm bg-body-light">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="OrganizationChart" 
+                               asp-route-organizationId="@Model.OrganizationId" 
+                               class="btn btn-alt-secondary">
+                                <i class="fa fa-arrow-right me-1"></i>
+                                انصراف
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-check me-1"></i>
+                                ذخیره بخش
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- END Page Content -->
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        $(document).ready(function() {
+            // اضافه کردن Select2 به dropdown مدیر بخش
+            if ($.fn.select2) {
+                $('#ManagerContactId').select2({
+                    placeholder: '-- جستجو و انتخاب مدیر --',
+                    allowClear: true,
+                    language: {
+                        noResults: function() {
+                            return "هیچ نتیجه‌ای یافت نشد";
+                        },
+                        searching: function() {
+                            return "در حال جستجو...";
+                        }
+                    }
+                });
+            }
+
+            // Focus روی فیلد عنوان
+            $('#Title').focus();
+
+            // تولید خودکار کد از روی عنوان (اختیاری)
+            let autoCodeGenerated = false;
+            $('#Title').on('blur', function() {
+                const codeField = $('#Code');
+                if (!autoCodeGenerated && codeField.val() === '') {
+                    const title = $(this).val().trim();
+                    if (title) {
+                        // تبدیل به کد (فقط حروف انگلیسی و اعداد)
+                        const suggestedCode = title
+                            .toUpperCase()
+                            .replace(/[^A-Z0-9]/g, '-')
+                            .substring(0, 20);
+                        
+                        if (suggestedCode) {
+                            Dashmix.helpers('notify', {
+                                type: 'info',
+                                icon: 'fa fa-lightbulb',
+                                message: 'می‌خواهید کد پیشنهادی "' + suggestedCode + '" استفاده شود؟'
+                            });
+                            codeField.val(suggestedCode);
+                            autoCodeGenerated = true;
+                        }
+                    }
+                }
+            });
+
+            // اعتبارسنجی فرم
+            $('form').on('submit', function(e) {
+                const title = $('#Title').val().trim();
+                
+                if (!title) {
+                    e.preventDefault();
+                    Dashmix.helpers('notify', {
+                        type: 'danger',
+                        icon: 'fa fa-exclamation-triangle',
+                        message: 'عنوان بخش الزامی است'
+                    });
+                    $('#Title').focus();
+                    return false;
+                }
+
+                // نمایش لودینگ
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true);
+                submitBtn.html('<i class="fa fa-spinner fa-spin me-1"></i> در حال ذخیره...');
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .form-control-lg {
+            font-size: 1.1rem;
+            padding: 0.75rem 1rem;
+        }
+
+        .alert-info {
+            border-left: 4px solid #0d6efd;
+        }
+
+        .form-check-lg .form-check-input {
+            width: 3rem;
+            height: 1.5rem;
+        }
+
+        .block-content {
+            padding: 2rem;
+        }
+
+        @@media (max-width: 768px) {
+            .block-content {
+                padding: 1rem;
+            }
+        }
+
+        /* Select2 RTL Support */
+        .select2-container {
+            width: 100% !important;
+        }
+    </style>
+}

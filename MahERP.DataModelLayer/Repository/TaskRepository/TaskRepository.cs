@@ -87,7 +87,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             return query.OrderByDescending(t => t.CreateDate).ToList();
         }
 
-        public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false, bool includeComments = false)
+        public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false, bool includeComments = false, bool includeStakeHolders = false)
         {
             var query = _context.Tasks_Tbl.AsQueryable();
 
@@ -104,6 +104,12 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             if (includeComments)
                 query = query.Include(t => t.TaskComments)
                     .ThenInclude(c => c.Creator);
+            if (includeStakeHolders)
+            {
+                query = query.Include(t => t.Contact).ThenInclude(c=> c.Phones);
+                query = query.Include(t => t.Organization).ThenInclude(o=> o.Departments);
+            }
+               
 
             return query.FirstOrDefault(t => t.Id == id);
         }
@@ -4564,33 +4570,49 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         }
 
         /// <summary>
-        /// دریافت Organizationهای شعبه (سازمان‌های مرتبط با شعبه)
+        /// دریافت Organizationهای شعبه (سازمان‌های مرتبط با شعبه) - اصلاح شده
         /// </summary>
         public async Task<List<OrganizationViewModel>> GetBranchOrganizationsAsync(int branchId)
         {
             try
             {
-                // دریافت Organization‌های مرتبط با شعبه از طریق BranchOrganization
+                // ⭐⭐⭐ اصلاح شده: استفاده از Name به جای DisplayName
                 var organizations = await _context.BranchOrganization_Tbl
                     .Include(bo => bo.Organization)
                         .ThenInclude(o => o.Departments)
                     .Where(bo => bo.BranchId == branchId && bo.IsActive)
-                    .Select(bo => new OrganizationViewModel
+                    .Select(bo => new
                     {
-                        Id = bo.OrganizationId,
-                        DisplayName = bo.Organization.DisplayName,
-                        RegistrationNumber = bo.Organization.RegistrationNumber,
-                        EconomicCode = bo.Organization.EconomicCode,
-                        TotalDepartments = bo.Organization.Departments.Count(d => d.IsActive),
-                        TotalMembers = bo.Organization.Departments
-                            .SelectMany(d => d.Members)
-                            .Count(m => m.IsActive),
-                        IsActive = bo.Organization.IsActive
+                        bo.OrganizationId,
+                        bo.Organization.Name,
+                        bo.Organization.Brand,
+                        bo.Organization.RegistrationNumber,
+                        bo.Organization.EconomicCode,
+                        bo.Organization.IsActive,
+                        Departments = bo.Organization.Departments
+                            .Where(d => d.IsActive)
+                            .Select(d => new
+                            {
+                                d.Id,
+                                Members = d.Members.Where(m => m.IsActive).Select(m => m.Id)
+                            })
                     })
-                    .OrderBy(o => o.DisplayName)
+                    .OrderBy(o => o.Name) // ⭐ مرتب‌سازی بر اساس Name
                     .ToListAsync();
 
-                return organizations;
+                // ⭐⭐⭐ محاسبه DisplayName و mapping در Client-Side
+                return organizations.Select(o => new OrganizationViewModel
+                {
+                    Id = o.OrganizationId,
+                    DisplayName = !string.IsNullOrEmpty(o.Brand) ? o.Brand : o.Name, // ⭐ محاسبه DisplayName
+                    Name = o.Name,
+                    Brand = o.Brand,
+                    RegistrationNumber = o.RegistrationNumber,
+                    EconomicCode = o.EconomicCode,
+                    TotalDepartments = o.Departments.Count(),
+                    TotalMembers = o.Departments.SelectMany(d => d.Members).Count(),
+                    IsActive = o.IsActive
+                }).ToList();
             }
             catch (Exception ex)
             {

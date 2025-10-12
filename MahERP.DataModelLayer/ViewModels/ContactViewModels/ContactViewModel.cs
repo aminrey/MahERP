@@ -12,17 +12,17 @@ namespace MahERP.DataModelLayer.ViewModels.ContactViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "نام الزامی است")]
+        //[Required(ErrorMessage = "نام الزامی است")]
         [Display(Name = "نام")]
         [MaxLength(100)]
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; }
 
         [Required(ErrorMessage = "نام خانوادگی الزامی است")]
         [Display(Name = "نام خانوادگی")]
         [MaxLength(100)]
         public string LastName { get; set; }
         [Display(Name = "نام کامل")]
-        public string FullName { get; set; }
+        public string? FullName { get; set; }
 
         [Display(Name = "کد ملی")]
         [StringLength(10, MinimumLength = 10, ErrorMessage = "کد ملی باید 10 رقم باشد")]
@@ -34,10 +34,10 @@ namespace MahERP.DataModelLayer.ViewModels.ContactViewModels
         public string? PrimaryEmail { get; set; }
 
         /// <summary>
-        /// ⭐ اضافه شده
+        /// ⭐ شماره تلفن اصلی (اختیاری)
         /// </summary>
         [Display(Name = "شماره تلفن اصلی")]
-        public string PrimaryPhone { get; set; }
+        public string? PrimaryPhone { get; set; }
 
         /// <summary>
         /// ⭐ اضافه شده
@@ -122,16 +122,16 @@ namespace MahERP.DataModelLayer.ViewModels.ContactViewModels
         public DateTime CreatedDate { get; set; }
 
         [Display(Name = "تاریخ ایجاد (شمسی)")]
-        public string CreatedDatePersian { get; set; }
+        public string? CreatedDatePersian { get; set; }
 
         [Display(Name = "ایجاد کننده")]
-        public string CreatorName { get; set; }
+        public string? CreatorName { get; set; }
 
         [Display(Name = "آخرین بروزرسانی")]
         public DateTime? LastUpdateDate { get; set; }
 
         [Display(Name = "آخرین بروزرسانی (شمسی)")]
-        public string LastUpdateDatePersian { get; set; }
+        public string? LastUpdateDatePersian { get; set; }
     }
 
     /// <summary>
@@ -141,21 +141,21 @@ namespace MahERP.DataModelLayer.ViewModels.ContactViewModels
     {
         public int Id { get; set; }
         
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; }
         
         public string LastName { get; set; }
         
         /// <summary>
         /// نام کامل (برای نمایش در dropdown)
         /// </summary>
-        public string FullName { get; set; }
+        public string? FullName { get; set; }
         
-        public string NationalCode { get; set; }
+        public string? NationalCode { get; set; }
         
         /// <summary>
         /// شماره تلفن اصلی
         /// </summary>
-        public string PrimaryPhone { get; set; }
+        public string? PrimaryPhone { get; set; }
         
         /// <summary>
         /// نوع رابطه با شعبه (اگر از BranchContact گرفته شود)

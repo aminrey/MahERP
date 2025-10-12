@@ -58,7 +58,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// لیست سازمان‌ها
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> Index(string searchTerm = null, byte? organizationType = null, bool includeInactive = false)
+        public async Task<IActionResult> Index(string searchTerm = null, byte? organizationType = null)
         {
             try
             {
@@ -66,18 +66,17 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    organizations = _organizationRepository.SearchOrganizations(searchTerm, organizationType, includeInactive);
+                    organizations = _organizationRepository.SearchOrganizations(searchTerm, organizationType,true);
                 }
                 else
                 {
-                    organizations = _organizationRepository.GetAllOrganizations(includeInactive, organizationType);
+                    organizations = _organizationRepository.GetAllOrganizations(true, organizationType);
                 }
 
                 var viewModels = _mapper.Map<List<OrganizationViewModel>>(organizations);
 
                 ViewBag.SearchTerm = searchTerm;
                 ViewBag.OrganizationType = organizationType;
-                ViewBag.IncludeInactive = includeInactive;
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
@@ -210,6 +209,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     var organization = _mapper.Map<Organization>(model);
                     organization.CreatedDate = DateTime.Now;
                     organization.CreatorUserId = GetUserId();
+                    organization.IsActive = true;
 
                     _uow.OrganizationUW.Create(organization);
                     _uow.Save();
@@ -766,6 +766,138 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             }
 
             return View(model);
+        }
+
+        // ==================== TOGGLE ACTIVATION ====================
+
+        /// <summary>
+        /// نمایش مودال تایید فعال/غیرفعال کردن سازمان
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ToggleActivation(int id)
+        {
+            try
+            {
+                var organization = _uow.OrganizationUW.GetById(id);
+                if (organization == null)
+                {
+                    return NotFound();
+                }
+
+                ViewBag.OrganizationId = id;
+                ViewBag.OrganizationName = organization.DisplayName;
+                ViewBag.IsActive = organization.IsActive;
+
+                if (organization.IsActive)
+                {
+                    ViewBag.ModalTitle = "غیرفعال کردن سازمان";
+                    ViewBag.ThemeClass = "bg-warning";
+                    ViewBag.ButtonClass = "btn btn-warning";
+                    ViewBag.ActionText = "غیرفعال";
+                }
+                else
+                {
+                    ViewBag.ModalTitle = "فعال کردن سازمان";
+                    ViewBag.ThemeClass = "bg-success";
+                    ViewBag.ButtonClass = "btn btn-success";
+                    ViewBag.ActionText = "فعال";
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Organizations",
+                    "ToggleActivation",
+                    $"مشاهده فرم تغییر وضعیت سازمان: {organization.DisplayName}",
+                    recordId: id.ToString()
+                );
+
+                return PartialView("_ToggleActivation", organization);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Organizations",
+                    "ToggleActivation",
+                    "خطا در نمایش فرم",
+                    ex,
+                    recordId: id.ToString()
+                );
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
+        /// فعال/غیرفعال کردن سازمان - پردازش درخواست
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleActivationPost(int id)
+        {
+            try
+            {
+                var organization = _uow.OrganizationUW.GetById(id);
+                if (organization == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "سازمان یافت نشد" } }
+                    });
+                }
+
+                var oldStatus = organization.IsActive;
+                var organizationName = organization.DisplayName;
+
+                // تغییر وضعیت
+                organization.IsActive = !organization.IsActive;
+                organization.LastUpdateDate = DateTime.Now;
+                organization.LastUpdaterUserId = GetUserId();
+
+                _uow.OrganizationUW.Update(organization);
+                _uow.Save();
+
+                var actionText = organization.IsActive ? "فعال" : "غیرفعال";
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Edit,
+                    "Organizations",
+                    "ToggleActivation",
+                    $"تغییر وضعیت سازمان {organizationName} به {actionText}",
+                    recordId: id.ToString(),
+                    entityType: "Organization",
+                    recordTitle: organizationName
+                );
+
+                return Json(new
+                {
+                    status = "redirect",
+                    redirectUrl = Url.Action("Index", "Organizations", new { area = "AdminArea" }),
+                    message = new[]
+                    {
+                        new
+                        {
+                            status = "success",
+                            text = $"سازمان با موفقیت {actionText} شد"
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Organizations",
+                    "ToggleActivation",
+                    "خطا در تغییر وضعیت",
+                    ex,
+                    recordId: id.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در تغییر وضعیت: " + ex.Message } }
+                });
+            }
         }
     }
 }

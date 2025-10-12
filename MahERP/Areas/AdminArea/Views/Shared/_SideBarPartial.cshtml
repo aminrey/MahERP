@@ -349,68 +349,92 @@
                 }
 
                 <!-- ============== 💼 BUSINESS MANAGEMENT ============== -->
-                @if (Html.CanAccessAnyIn("Stakeholder", "Contract", "CRM") || isAdminOrManager)
+                @if (Html.CanAccessAnyIn("Organization", "Contact", "Contract", "CRM") || isAdminOrManager)
                 {
                     <li class="nav-main-heading">مدیریت کسب‌وکار</li>
 
-                    <!-- ========== 🤝 طرف حساب‌ها - به‌روزرسانی شده ========== -->
-                    @if (Html.CanAccess("Stakeholder") || isAdminOrManager)
+                    <!-- ========== 🏢 مدیریت سازمان‌ها - سیستم جدید ========== -->
+                    @if (Html.CanAccess("Organization") || isAdminOrManager)
                     {
-                        <li class="nav-main-item @(IsStakeholderMenuActive(currentController) ? "open" : "")">
-                            <a aria-expanded="@(IsStakeholderMenuActive(currentController) ? "true" : "false")" 
-                               aria-haspopup="true" 
-                               class="nav-main-link nav-main-link-submenu" 
-                               data-toggle="submenu" 
+                        <li class="nav-main-item @(IsOrganizationMenuActive(currentController) ? "open" : "")">
+                            <a aria-expanded="@(IsOrganizationMenuActive(currentController) ? "true" : "false")"
+                               aria-haspopup="true"
+                               class="nav-main-link nav-main-link-submenu"
+                               data-toggle="submenu"
                                href="#">
-                                <i class="nav-main-link-icon fa fa-handshake text-primary"></i>
-                                <span class="nav-main-link-name">طرف حساب‌ها</span>
+                                <i class="nav-main-link-icon fa fa-building text-primary"></i>
+                                <span class="nav-main-link-name">مدیریت سازمان‌ها</span>
                             </a>
                             <ul class="nav-main-submenu">
-                                
+
                                 <!-- 📋 لیست‌ها -->
                                 <li class="nav-main-item nav-submenu-separator">
                                     <div class="nav-submenu-title">
-                                        <small class="text-muted fw-semibold">لیست‌ها</small>
+                                        <small class="text-muted fw-semibold">لیست سازمان‌ها</small>
                                     </div>
                                 </li>
 
-                                <!-- همه طرف حساب‌ها -->
+                                <!-- همه سازمان‌ها -->
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "Index") && string.IsNullOrEmpty(Context.Request.Query["personType"]) ? "active" : "")" 
-                                       asp-area="AdminArea" 
-                                       asp-controller="Stakeholder" 
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Organizations", "Index") && string.IsNullOrEmpty(Context.Request.Query["organizationType"]) ? "active" : "")"
+                                       asp-area="AdminArea"
+                                       asp-controller="Organizations"
                                        asp-action="Index">
                                         <i class="nav-main-link-icon fa fa-list text-info"></i>
-                                        <span class="nav-main-link-name">همه طرف حساب‌ها</span>
+                                        <span class="nav-main-link-name">همه سازمان‌ها</span>
                                     </a>
                                 </li>
 
-                                <!-- اشخاص حقیقی -->
+                                <!-- شرکت‌ها -->
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsStakeholderTypeActive(currentController, currentAction, "0") ? "active" : "")" 
-                                       asp-area="AdminArea" 
-                                       asp-controller="Stakeholder" 
-                                       asp-action="Index" 
-                                       asp-route-personType="0">
-                                        <i class="nav-main-link-icon fa fa-user text-success"></i>
-                                        <span class="nav-main-link-name">اشخاص حقیقی</span>
+                                    <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "0") ? "active" : "")"
+                                       asp-area="AdminArea"
+                                       asp-controller="Organizations"
+                                       asp-action="Index"
+                                       asp-route-organizationType="0">
+                                        <i class="nav-main-link-icon fa fa-briefcase text-primary"></i>
+                                        <span class="nav-main-link-name">شرکت‌ها</span>
                                     </a>
                                 </li>
 
-                                <!-- اشخاص حقوقی -->
+                                <!-- سازمان‌ها -->
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsStakeholderTypeActive(currentController, currentAction, "1") ? "active" : "")" 
-                                       asp-area="AdminArea" 
-                                       asp-controller="Stakeholder" 
-                                       asp-action="Index" 
-                                       asp-route-personType="1">
-                                        <i class="nav-main-link-icon fa fa-building text-primary"></i>
-                                        <span class="nav-main-link-name">اشخاص حقوقی</span>
+                                    <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "1") ? "active" : "")"
+                                       asp-area="AdminArea"
+                                       asp-controller="Organizations"
+                                       asp-action="Index"
+                                       asp-route-organizationType="1">
+                                        <i class="nav-main-link-icon fa fa-university text-info"></i>
+                                        <span class="nav-main-link-name">سازمان‌ها</span>
+                                    </a>
+                                </li>
+
+                                <!-- موسسات -->
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "2") ? "active" : "")"
+                                       asp-area="AdminArea"
+                                       asp-controller="Organizations"
+                                       asp-action="Index"
+                                       asp-route-organizationType="2">
+                                        <i class="nav-main-link-icon fa fa-landmark text-success"></i>
+                                        <span class="nav-main-link-name">موسسات</span>
+                                    </a>
+                                </li>
+
+                                <!-- نهادها -->
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "3") ? "active" : "")"
+                                       asp-area="AdminArea"
+                                       asp-controller="Organizations"
+                                       asp-action="Index"
+                                       asp-route-organizationType="3">
+                                        <i class="nav-main-link-icon fa fa-hands-helping text-warning"></i>
+                                        <span class="nav-main-link-name">نهادها</span>
                                     </a>
                                 </li>
 
                                 <!-- ➕ عملیات -->
-                                @if (Html.CanAccess("Stakeholder", 1) || isAdminOrManager)
+                                @if (Html.CanAccess("Organization", 1) || isAdminOrManager)
                                 {
                                     <li class="nav-main-item nav-submenu-separator mt-2">
                                         <div class="nav-submenu-title">
@@ -419,59 +443,111 @@
                                     </li>
 
                                     <li class="nav-main-item">
-                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "AddStakeholder") ? "active" : "")" 
-                                           asp-area="AdminArea" 
-                                           asp-controller="Stakeholder" 
-                                           asp-action="AddStakeholder">
+                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Organizations", "Create") ? "active" : "")"
+                                           asp-area="AdminArea"
+                                           asp-controller="Organizations"
+                                           asp-action="Create">
                                             <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                            <span class="nav-main-link-name fw-semibold">طرف حساب جدید</span>
+                                            <span class="nav-main-link-name fw-semibold">سازمان جدید</span>
                                         </a>
                                     </li>
                                 }
 
                                 <!-- 🔍 جستجو -->
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link" 
-                                       href="#" 
-                                       data-bs-toggle="modal" 
-                                       data-bs-target="#modal-advanced-search" 
-                                       onclick="loadAdvancedSearchModal()">
+                                    <a class="nav-main-link"
+                                       href="#"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#modal-advanced-search-org"
+                                       onclick="loadOrganizationAdvancedSearchModal()">
                                         <i class="nav-main-link-icon fa fa-search text-secondary"></i>
                                         <span class="nav-main-link-name">جستجوی پیشرفته</span>
                                     </a>
                                 </li>
 
-                                <!-- 👥 مدیریت مخاطبین -->
-                                <li class="nav-main-item nav-submenu-separator mt-2">
+                            </ul>
+                        </li>
+                    }
+
+                    <!-- ========== 👥 مدیریت افراد (Contacts) - سیستم جدید ========== -->
+                    @if (Html.CanAccess("Contact") || isAdminOrManager)
+                    {
+                        <li class="nav-main-item @(IsContactMenuActive(currentController) ? "open" : "")">
+                            <a aria-expanded="@(IsContactMenuActive(currentController) ? "true" : "false")"
+                               aria-haspopup="true"
+                               class="nav-main-link nav-main-link-submenu"
+                               data-toggle="submenu"
+                               href="#">
+                                <i class="nav-main-link-icon fa fa-users text-success"></i>
+                                <span class="nav-main-link-name">مدیریت افراد</span>
+                            </a>
+                            <ul class="nav-main-submenu">
+
+                                <!-- 📋 لیست افراد -->
+                                <li class="nav-main-item nav-submenu-separator">
                                     <div class="nav-submenu-title">
-                                        <small class="text-muted fw-semibold">مدیریت مخاطبین</small>
+                                        <small class="text-muted fw-semibold">لیست‌ها</small>
                                     </div>
                                 </li>
 
+                                <!-- همه افراد -->
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "ContactsList") ? "active" : "")" 
-                                       asp-area="AdminArea" 
-                                       asp-controller="Stakeholder" 
-                                       asp-action="ContactsList">
-                                        <i class="nav-main-link-icon fa fa-address-book text-info"></i>
-                                        <span class="nav-main-link-name">لیست مخاطبین</span>
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contacts", "Index") && string.IsNullOrEmpty(Context.Request.Query["gender"]) ? "active" : "")"
+                                       asp-area="AdminArea"
+                                       asp-controller="Contacts"
+                                       asp-action="Index">
+                                        <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                        <span class="nav-main-link-name">همه افراد</span>
                                     </a>
                                 </li>
 
-                                <!-- 🏢 چارت‌های سازمانی -->
+                               
+                                <!-- ➕ عملیات -->
+                                @if (Html.CanAccess("Contact", 1) || isAdminOrManager)
+                                {
+                                    <li class="nav-main-item nav-submenu-separator mt-2">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">عملیات</small>
+                                        </div>
+                                    </li>
+
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Contacts", "Create") ? "active" : "")"
+                                           asp-area="AdminArea"
+                                           asp-controller="Contacts"
+                                           asp-action="Create">
+                                            <i class="nav-main-link-icon fa fa-user-plus text-success"></i>
+                                            <span class="nav-main-link-name fw-semibold">فرد جدید</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                <!-- 📊 آمار و گزارشات -->
                                 <li class="nav-main-item nav-submenu-separator mt-2">
                                     <div class="nav-submenu-title">
-                                        <small class="text-muted fw-semibold">ساختار سازمانی</small>
+                                        <small class="text-muted fw-semibold">آمار و گزارشات</small>
                                     </div>
                                 </li>
 
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stakeholder", "OrganizationChartList") ? "active" : "")" 
-                                       asp-area="AdminArea" 
-                                       asp-controller="Stakeholder" 
-                                       asp-action="OrganizationChartList">
-                                        <i class="nav-main-link-icon fa fa-sitemap text-purple"></i>
-                                        <span class="nav-main-link-name">چارت‌های سازمانی</span>
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contacts", "Statistics") ? "active" : "")"
+                                       asp-area="AdminArea"
+                                       asp-controller="Contacts"
+                                       asp-action="Statistics">
+                                        <i class="nav-main-link-icon fa fa-chart-pie text-primary"></i>
+                                        <span class="nav-main-link-name">آمار افراد</span>
+                                    </a>
+                                </li>
+
+                                <!-- 🔍 جستجو -->
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link"
+                                       href="#"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#modal-advanced-search-contact"
+                                       onclick="loadContactAdvancedSearchModal()">
+                                        <i class="nav-main-link-icon fa fa-search text-secondary"></i>
+                                        <span class="nav-main-link-name">جستجوی پیشرفته</span>
                                     </a>
                                 </li>
 
@@ -493,9 +569,9 @@
                                         <i class="nav-main-link-icon fa fa-list"></i>
                                         <span class="nav-main-link-name">لیست قراردادها</span>
                                     </a>
-                                </li>              
+                                </li>
 
-                                @if (Html.CanAccess("Contract", 1) || isAdminOrManager) 
+                                @if (Html.CanAccess("Contract", 1) || isAdminOrManager)
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contract", "AddContract") ? "active" : "")" asp-area="AdminArea" asp-controller="Contract" asp-action="AddContract">
@@ -557,6 +633,8 @@
                         </li>
                     }
                 }
+                    
+                
 
                 <!-- ============== 📊 MONITORING & LOGS ============== -->
                 @if (Html.CanAccess("UserActivityLog") || isAdminOrManager)
@@ -780,6 +858,35 @@
     {
         return currentController == "TaskCategory" || currentController == "BranchTaskCategory";
     }
+    /// <summary>
+    /// بررسی active بودن منوی سازمان‌ها
+    /// </summary>
+    public bool IsOrganizationMenuActive(string currentController)
+    {
+        return currentController == "Organizations";
+    }
+
+    /// <summary>
+    /// بررسی active بودن نوع سازمان
+    /// </summary>
+    public bool IsOrganizationTypeActive(string currentController, string currentAction, string organizationType)
+    {
+        if (currentController != "Organizations" || currentAction != "Index")
+            return false;
+
+        var queryOrgType = Context.Request.Query["organizationType"].ToString();
+        return queryOrgType == organizationType;
+    }
+
+    /// <summary>
+    /// بررسی active بودن منوی افراد
+    /// </summary>
+    public bool IsContactMenuActive(string currentController)
+    {
+        return currentController == "Contacts";
+    }
+
+  
 }
 
 <!-- JavaScript for Sidebar Functionality -->

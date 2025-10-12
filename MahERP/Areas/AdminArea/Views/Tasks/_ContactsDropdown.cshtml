@@ -1,0 +1,37 @@
+﻿@model List<ContactViewModel>
+
+<select class="js-select2 form-select"
+        id="SelectedContactId"
+        name="SelectedContactId"
+        data-placeholder="انتخاب فرد"
+        style="width: 100%;">
+    <option value="">انتخاب فرد</option>
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var contact in Model)
+        {
+            <option value="@contact.Id">
+                @contact.FullName
+                @if (!string.IsNullOrEmpty(contact.NationalCode))
+                {
+                    <text> (@contact.NationalCode)</text>
+                }
+            </option>
+        }
+    }
+</select>
+
+@if (Model == null || !Model.Any())
+{
+    <small class="form-text text-warning mt-1 d-block">
+        <i class="fa fa-exclamation-triangle me-1"></i>
+        در این شعبه هیچ فردی تعریف نشده است
+    </small>
+}
+else
+{
+    <small class="form-text text-muted mt-1 d-block">
+        <i class="fa fa-user me-1"></i>
+        @Model.Count فرد در این شعبه موجود است
+    </small>
+}

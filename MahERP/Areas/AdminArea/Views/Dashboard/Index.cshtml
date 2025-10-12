@@ -95,6 +95,8 @@
                     </div>
                 </div>
                 <div class="block-content">
+                    <div class="table-responsive">
+
                     <table class="table table-borderless table-striped table-vcenter fs-sm" id="receivedTasksTable">
                         <tbody>
                             <!-- داده‌ها از طریق AJAX بارگذاری می‌شوند -->
@@ -107,6 +109,7 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
                 </div>
             </div>
             <!-- END تسک‌های دریافتی -->
@@ -266,7 +269,7 @@
         }
 
         // ⭐ تابع پر کردن جدول یادآوری‌ها
-        function populateRemindersTable(reminders) {
+                function populateRemindersTable(reminders) {
             const tbody = $('#remindersTable tbody');
             tbody.empty();
 
@@ -290,12 +293,12 @@
                             ${statusBadge}
                             ${isNewReminder ? '<span class="badge bg-success ms-1">جدید</span>' : ''}
                         </td>
-                        <td>
-                            <div class="fw-medium mb-1">
+                        <td style="max-width: 400px;">
+                            <div class="fw-medium mb-1 text-truncate">
                                 ${priorityIcon}${reminder.title}
                             </div>
-                            <div class="fs-xs text-muted mb-1">${reminder.message || ''}</div>
-                            ${reminder.taskTitle ? `<div class="fs-xs"><span class="text-muted">تسک:</span> <a href="${taskLink}" class="text-decoration-none">${reminder.taskCode} - ${reminder.taskTitle}</a></div>` : ''}
+                            <div class="fs-xs text-muted mb-1 text-truncate">${reminder.message || ''}</div>
+                            ${reminder.taskTitle ? `<div class="fs-xs text-truncate"><span class="text-muted">تسک:</span> <a href="${taskLink}" class="text-decoration-none">${reminder.taskCode} - ${reminder.taskTitle}</a></div>` : ''}
                         </td>
                         <td class="d-none d-sm-table-cell text-center" style="width: 100px;">
                             <div class="fs-xs text-muted">${reminder.timeInfo}</div>
@@ -378,7 +381,7 @@
         }
 
         // اصلاح تابع populateTaskTable برای اضافه کردن data attributes
-        function populateTaskTable(tableSelector, tasks, type) {
+              function populateTaskTable(tableSelector, tasks, type) {
             const tbody = $(tableSelector + ' tbody');
             tbody.empty();
 
@@ -392,7 +395,7 @@
                 const startDate = task.startDate || task.createDate;
                 const formattedDate = formatDate(startDate);
                 const shortDescription = truncateText(task.description || '', 5);
-                
+
                 // ⭐ تشخیص تسک جدید (اگر در 10 دقیقه گذشته ایجاد شده)
                 const isNewTask = new Date(task.createDate) > new Date(Date.now() - 10 * 60 * 1000);
                 const newTaskClass = isNewTask ? 'table-warning notification-blink' : '';
@@ -411,12 +414,12 @@
                         <td class="text-center" style="width: 80px;">
                             <a class="fw-semibold" href="/AdminArea/Tasks/Details/${task.id}">${task.taskCode || 'بدون کد'}</a>
                         </td>
-                        <td>
-                            <div class="fw-medium mb-1">
+                        <td style="max-width: 300px;">
+                            <div class="fw-medium mb-1 text-truncate">
                                 <a href="/AdminArea/Tasks/Details/${task.id}">${task.title}</a>
                             </div>
-                            <div class="fs-xs text-muted mb-1">${shortDescription}</div>
-                            <div class="fs-xs">
+                            <div class="fs-xs text-muted mb-1 text-truncate">${shortDescription}</div>
+                            <div class="fs-xs text-truncate">
                                 <span class="text-muted">${userLabel}</span>
                                 <span class="fw-medium">${userInfo}</span>
                             </div>
@@ -432,7 +435,6 @@
                 tbody.append(row);
             });
         }
-
         function getPriorityBadge(priority, important) {
             if (important || priority === 2) {
                 return '<span class="badge bg-danger">فوری</span>';
