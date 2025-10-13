@@ -21,9 +21,8 @@ namespace MahERP.DataModelLayer.Entities.Contacts
         /// <summary>
         /// نام
         /// </summary>
-        [Required(ErrorMessage = "نام الزامی است")]
         [MaxLength(100)]
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; }
 
         /// <summary>
         /// نام خانوادگی

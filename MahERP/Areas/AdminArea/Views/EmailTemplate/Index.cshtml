@@ -1,0 +1,151 @@
+﻿@model List<EmailTemplate>
+@{
+    ViewData["Title"] = "مدیریت قالب‌های ایمیل";
+}
+
+<main id="main-container">
+    <div class="content">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-envelope me-2"></i>
+                    قالب‌های ایمیل
+                </h3>
+                <div class="block-options">
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i> قالب جدید
+                    </a>
+                </div>
+            </div>
+
+            <div class="block-content">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <i class="fa fa-check-circle me-2"></i>
+                        @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 20%;">عنوان</th>
+                                <th style="width: 25%;">موضوع</th>
+                                <th style="width: 10%;">دسته‌بندی</th>
+                                <th style="width: 10%;">مخاطبین</th>
+                                <th style="width: 10%;">تعداد ارسال</th>
+                                <th style="width: 10%;">وضعیت</th>
+                                <th style="width: 10%;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Any())
+                            {
+                                int counter = 1;
+                                foreach (var template in Model)
+                                {
+                                    <tr>
+                                        <td>@counter</td>
+                                        <td>
+                                            <strong>@template.Title</strong>
+                                            @if (!string.IsNullOrEmpty(template.Description))
+                                            {
+                                                <br />
+                                                <small class="text-muted">@template.Description</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            <small>@template.SubjectTemplate</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">@template.CategoryText</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">@template.TotalRecipients نفر</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">@template.UsageCount بار</span>
+                                        </td>
+                                        <td>
+                                            @if (template.IsActive)
+                                            {
+                                                <span class="badge bg-success">فعال</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">غیرفعال</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a asp-action="Details" asp-route-id="@template.Id" class="btn btn-info" title="جزئیات">
+                                                    <i class="fa fa-eye"></i>
+                                                </a>
+                                                <a asp-action="Edit" asp-route-id="@template.Id" class="btn btn-warning" title="ویرایش">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-danger delete-template" data-id="@template.Id" title="حذف">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    counter++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">
+                                        <i class="fa fa-inbox fa-3x mb-3"></i>
+                                        <p>هنوز قالبی ایجاد نشده است</p>
+                                        <a asp-action="Create" class="btn btn-primary">
+                                            <i class="fa fa-plus me-1"></i> ایجاد اولین قالب
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.delete-template').on('click', function() {
+                const templateId = $(this).data('id');
+                
+                Swal.fire({
+                    title: 'تایید حذف',
+                    text: 'آیا از حذف این قالب اطمینان دارید؟',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'بله، حذف شود',
+                    cancelButtonText: 'خیر'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('@Url.Action("Delete")', {
+                            id: templateId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        }).done(function(response) {
+                            if (response.success) {
+                                Swal.fire('حذف شد', response.message, 'success')
+                                    .then(() => location.reload());
+                            } else {
+                                Swal.fire('خطا', response.message, 'error');
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

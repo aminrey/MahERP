@@ -1,9 +1,12 @@
 ﻿using MahERP.DataModelLayer.AcControl;
+using MahERP.DataModelLayer.Entities;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Contacts; // ⭐ جدید
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Entities.Email;
+using MahERP.DataModelLayer.Entities.Sms;
 using MahERP.DataModelLayer.Entities.TaskManagement;
-using MahERP.DataModelLayer.Entities.Contacts; // ⭐ جدید
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -97,7 +100,19 @@ namespace MahERP.DataModelLayer
         public DbSet<CRMTeam> CRMTeam_Tbl { get; set; }
         public DbSet<StakeholderCRM> StakeholderCRM_Tbl { get; set; }
         public DbSet<TaskCRMDetails> TaskCRMDetails_Tbl { get; set; }
-
+        // SMS Management
+        public DbSet<SmsProvider> SmsProvider_Tbl { get; set; }
+        public DbSet<SmsLog> SmsLog_Tbl { get; set; }
+        public DbSet<SmsTemplate> SmsTemplate_Tbl { get; set; }
+        public DbSet<SmsTemplateRecipient> SmsTemplateRecipient_Tbl { get; set; } // اضافه کردن DbSet
+        // Email Management
+        public DbSet<EmailLog> EmailLog_Tbl { get; set; }
+        public DbSet<EmailTemplate> EmailTemplate_Tbl { get; set; }
+        public DbSet<EmailTemplateRecipient> EmailTemplateRecipient_Tbl { get; set; }
+        // Queue Management
+        public DbSet<SmsQueue> SmsQueue_Tbl { get; set; }
+        public DbSet<EmailQueue> EmailQueue_Tbl { get; set; }
+        public DbSet<Settings> Settings_Tbl { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

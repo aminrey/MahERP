@@ -1,0 +1,378 @@
+﻿@model EmailTemplate
+@{
+    ViewData["Title"] = "جزئیات قالب ایمیل";
+}
+
+<main id="main-container">
+    <div class="bg-image" style="background-image: url('/assets/media/photos/photo13@2x.jpg');">
+        <div class="bg-black-50">
+            <div class="content content-full">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="fw-bold my-2 text-white">
+                        <i class="fa fa-envelope me-2"></i>
+                        @Model.Title
+                    </h1>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2">
+                            <i class="fa fa-edit me-1"></i> ویرایش
+                        </a>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fa fa-arrow-right me-1"></i> بازگشت
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fa fa-check-circle me-2"></i>
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- آمار -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="block block-rounded text-center">
+                    <div class="block-content">
+                        <div class="fs-1 fw-bold text-primary">@Model.TotalRecipients</div>
+                        <div class="text-muted">مخاطبین</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded text-center">
+                    <div class="block-content">
+                        <div class="fs-1 fw-bold text-success">@Model.UsageCount</div>
+                        <div class="text-muted">تعداد ارسال</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded text-center">
+                    <div class="block-content">
+                        <div class="fs-1 fw-bold text-info">@Model.CategoryText</div>
+                        <div class="text-muted">دسته‌بندی</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded text-center">
+                    <div class="block-content">
+                        @if (Model.IsActive)
+                        {
+                            <div class="fs-1 fw-bold text-success">فعال</div>
+                        }
+                        else
+                        {
+                            <div class="fs-1 fw-bold text-secondary">غیرفعال</div>
+                        }
+                        <div class="text-muted">وضعیت</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="block block-rounded">
+            <ul class="nav nav-tabs nav-tabs-block" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-preview">
+                        <i class="fa fa-eye me-1"></i> پیش‌نمایش
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-recipients">
+                        <i class="fa fa-users me-1"></i> مخاطبین (@Model.TotalRecipients)
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-send">
+                        <i class="fa fa-paper-plane me-1"></i> ارسال
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Tab: پیش‌نمایش -->
+                <div class="tab-pane fade show active" id="tab-preview" role="tabpanel">
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>موضوع:</h5>
+                                <div class="alert alert-info">@Model.SubjectTemplate</div>
+
+                                <h5>محتوای HTML:</h5>
+                                <div class="border p-3" style="background: #f9f9f9;">
+                                    @Html.Raw(Model.BodyHtml)
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                @if (!string.IsNullOrEmpty(Model.BodyPlainText))
+                                {
+                                    <h5>متن ساده:</h5>
+                                    <div class="border p-3" style="background: #f9f9f9; white-space: pre-wrap; font-family: monospace;">@Model.BodyPlainText</div>
+                                }
+
+                                <h5 class="mt-4">اطلاعات قالب:</h5>
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th>دسته‌بندی:</th>
+                                        <td><span class="badge bg-info">@Model.CategoryText</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th>تاریخ ایجاد:</th>
+                                        <td>@Model.CreatedDate.ToString("yyyy/MM/dd HH:mm")</td>
+                                    </tr>
+                                    <tr>
+                                        <th>ایجادکننده:</th>
+                                        <td>@Model.Creator.FirstName @Model.Creator.LastName</td>
+                                    </tr>
+                                    @if (Model.LastUpdateDate.HasValue)
+                                    {
+                                        <tr>
+                                            <th>آخرین بروزرسانی:</th>
+                                            <td>@Model.LastUpdateDate.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                                        </tr>
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: مخاطبین -->
+                <div class="tab-pane fade" id="tab-recipients" role="tabpanel">
+                    <div class="block-content">
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-add-recipients">
+                                <i class="fa fa-plus me-1"></i> افزودن مخاطب
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>نوع</th>
+                                        <th>نام</th>
+                                        <th>ایمیل</th>
+                                        <th>تاریخ افزودن</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Recipients.Any())
+                                    {
+                                        int counter = 1;
+                                        foreach (var recipient in Model.Recipients)
+                                        {
+                                            <tr>
+                                                <td>@counter</td>
+                                                <td>
+                                                    @if (recipient.RecipientType == 0)
+                                                    {
+                                                        <span class="badge bg-info">شخص</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-warning">سازمان</span>
+                                                    }
+                                                </td>
+                                                <td>@recipient.RecipientName</td>
+                                                <td>@recipient.RecipientEmail</td>
+                                                <td>@recipient.AddedDate.ToString("yyyy/MM/dd")</td>
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-danger remove-recipient" data-id="@recipient.Id">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            counter++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                هنوز مخاطبی اضافه نشده است
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: ارسال -->
+                <div class="tab-pane fade" id="tab-send" role="tabpanel">
+                    <div class="block-content">
+                        <form id="form-send-email">
+                            <input type="hidden" name="templateId" value="@Model.Id" />
+
+                            <div class="alert alert-info">
+                                <i class="fa fa-info-circle me-2"></i>
+                                این ایمیل به <strong>@Model.TotalRecipients مخاطب</strong> ارسال خواهد شد.
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input class="form-check-input" type="checkbox" name="useQueue" id="useQueue" checked />
+                                <label class="form-check-label" for="useQueue">
+                                    افزودن به صف (ارسال در پس‌زمینه)
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fa fa-paper-plane me-1"></i>
+                                ارسال ایمیل به @Model.TotalRecipients مخاطب
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal: افزودن مخاطب -->
+<div class="modal fade" id="modal-add-recipients" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">افزودن مخاطب به قالب</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-add-recipients">
+                    <div class="mb-3">
+                        <label class="form-label">انتخاب افراد</label>
+                        <select class="form-select" id="select-contacts" multiple></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">انتخاب سازمان‌ها</label>
+                        <select class="form-select" id="select-organizations" multiple></select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" id="btn-save-recipients">
+                    <i class="fa fa-check me-1"></i> ذخیره
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2
+            $('#select-contacts').select2({
+                placeholder: 'جستجو و انتخاب افراد',
+                ajax: {
+                    url: '@Url.Action("SearchContacts", "EmailTemplate")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return { search: params.term };
+                    },
+                    processResults: function(data) {
+                        return { results: data };
+                    }
+                }
+            });
+
+            $('#select-organizations').select2({
+                placeholder: 'جستجو و انتخاب سازمان‌ها',
+                ajax: {
+                    url: '@Url.Action("SearchOrganizations", "EmailTemplate")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return { search: params.term };
+                    },
+                    processResults: function(data) {
+                        return { results: data };
+                    }
+                }
+            });
+
+            // ذخیره مخاطبین
+            $('#btn-save-recipients').on('click', function() {
+                const contactIds = $('#select-contacts').val() || [];
+                const organizationIds = $('#select-organizations').val() || [];
+
+                $.post('@Url.Action("AddRecipients")', {
+                    templateId: @Model.Id,
+                    contactIds: contactIds,
+                    organizationIds: organizationIds
+                }).done(function(response) {
+                    if (response.success) {
+                        Swal.fire('موفق', response.message, 'success')
+                            .then(() => location.reload());
+                    } else {
+                        Swal.fire('خطا', response.message, 'error');
+                    }
+                });
+            });
+
+            // حذف مخاطب
+            $('.remove-recipient').on('click', function() {
+                const recipientId = $(this).data('id');
+
+                Swal.fire({
+                    title: 'تایید حذف',
+                    text: 'آیا از حذف این مخاطب اطمینان دارید؟',
+                    icon: 'warning',
+                    showCancelButton: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('@Url.Action("RemoveRecipient")', { recipientId: recipientId })
+                            .done(function(response) {
+                                if (response.success) {
+                                    Swal.fire('حذف شد', response.message, 'success')
+                                        .then(() => location.reload());
+                                }
+                            });
+                    }
+                });
+            });
+
+            // ارسال ایمیل
+            $('#form-send-email').on('submit', function(e) {
+                e.preventDefault();
+
+                Swal.fire({
+                    title: 'تایید ارسال',
+                    text: 'آیا می‌خواهید این ایمیل را به @Model.TotalRecipients مخاطب ارسال کنید؟',
+                    icon: 'question',
+                    showCancelButton: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('@Url.Action("SendToTemplateRecipients", "EmailSend")', $(this).serialize())
+                            .done(function(response) {
+                                if (response.success) {
+                                    Swal.fire('موفق', response.message, 'success');
+                                } else {
+                                    Swal.fire('خطا', response.message, 'error');
+                                }
+                            });
+                    }
+                });
+            });
+        });
+    </script>
+}

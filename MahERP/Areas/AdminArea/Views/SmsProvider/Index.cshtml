@@ -1,0 +1,283 @@
+﻿@model SmsProviderListViewModel
+@{
+    ViewData["Title"] = "مدیریت خدمات‌دهندگان پیامک";
+}
+
+<main id="main-container">
+    <!-- Hero -->
+    <div class="bg-image" style="background-image: url('/assets/media/photos/photo13@2x.jpg');">
+        <div class="bg-black-50">
+            <div class="content content-full">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="fw-bold my-2 text-white">
+                        <i class="fa fa-sms me-2"></i>
+                        مدیریت خدمات‌دهندگان پیامک
+                    </h1>
+                    <div>
+                        <a asp-action="Create" class="btn btn-success me-2">
+                            <i class="fa fa-plus me-1"></i> افزودن خدمات‌دهنده جدید
+                        </a>
+                        <button type="button" class="btn btn-info" id="update-all-credits">
+                            <i class="fa fa-sync me-1"></i> بروزرسانی اعتبار همه
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero -->
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="m-3">
+        <ol class="breadcrumb breadcrumb-alt bg-body-light px-4 py-2 rounded push">
+            <li class="breadcrumb-item">
+                <a href="javascript:void(0)">داشبورد</a>
+            </li>
+            <li class="breadcrumb-item">
+                تنظیمات پیامک
+            </li>
+            <li aria-current="page" class="breadcrumb-item active">
+                خدمات‌دهندگان
+            </li>
+        </ol>
+    </nav>
+
+    <div class="content">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa fa-check-circle me-2"></i>
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Provider پیش‌فرض -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-star text-warning me-2"></i>
+                    خدمات‌دهنده پیش‌فرض: <strong class="text-primary">@Model.CurrentDefaultProvider</strong>
+                </h3>
+            </div>
+        </div>
+
+        <!-- لیست Providers -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">لیست خدمات‌دهندگان</h3>
+            </div>
+            <div class="block-content">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 15%;">کد</th>
+                                <th style="width: 20%;">نام خدمات‌دهنده</th>
+                                <th style="width: 15%;">نام کاربری</th>
+                                <th style="width: 10%;">وضعیت</th>
+                                <th style="width: 10%;">پیش‌فرض</th>
+                                <th style="width: 15%;">اعتبار</th>
+                                <th style="width: 10%;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Providers.Any())
+                            {
+                                int counter = 1;
+                                foreach (var provider in Model.Providers)
+                                {
+                                    <tr>
+                                        <td class="text-center">@counter</td>
+                                        <td><strong>@provider.ProviderCode</strong></td>
+                                        <td>@provider.ProviderName</td>
+                                        <td>@provider.Username</td>
+                                        <td>
+                                            @if (provider.IsActive)
+                                            {
+                                                <span class="badge bg-success">فعال</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">غیرفعال</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (provider.IsDefault)
+                                            {
+                                                <i class="fa fa-star text-warning fa-lg"></i>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-warning set-default" data-id="@provider.Id">
+                                                    تنظیم پیش‌فرض
+                                                </button>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-2" id="credit-@provider.Id">@provider.CreditDisplay</span>
+                                                <button type="button" class="btn btn-xs btn-info update-credit" data-id="@provider.Id">
+                                                    <i class="fa fa-sync"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-primary test-connection" data-id="@provider.Id" title="تست اتصال">
+                                                    <i class="fa fa-plug"></i>
+                                                </button>
+                                                <a asp-action="Edit" asp-route-id="@provider.Id" class="btn btn-warning" title="ویرایش">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                                @if (!provider.IsDefault)
+                                                {
+                                                    <button type="button" class="btn btn-danger delete-provider" data-id="@provider.Id" title="حذف">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    counter++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">
+                                        هیچ خدمات‌دهنده‌ای ثبت نشده است
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تنظیم پیش‌فرض
+            $('.set-default').on('click', function () {
+                const providerId = $(this).data('id');
+                
+                Swal.fire({
+                    title: 'تایید عملیات',
+                    text: 'آیا می‌خواهید این خدمات‌دهنده را به عنوان پیش‌فرض تنظیم کنید؟',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'بله',
+                    cancelButtonText: 'خیر'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('@Url.Action("SetAsDefault")', { id: providerId })
+                            .done(function (response) {
+                                if (response.success) {
+                                    Swal.fire('موفق', response.message, 'success')
+                                        .then(() => location.reload());
+                                } else {
+                                    Swal.fire('خطا', response.message, 'error');
+                                }
+                            });
+                    }
+                });
+            });
+
+            // تست اتصال
+            $('.test-connection').on('click', function () {
+                const providerId = $(this).data('id');
+                const $btn = $(this);
+                
+                $btn.html('<i class="fa fa-spinner fa-spin"></i>').prop('disabled', true);
+
+                $.post('@Url.Action("TestConnection")', { id: providerId })
+                    .done(function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'موفق',
+                                html: `${response.message}<br><strong>اعتبار: ${response.credit}</strong>`,
+                                icon: 'success'
+                            });
+                        } else {
+                            Swal.fire('خطا', response.message, 'error');
+                        }
+                    })
+                    .always(function () {
+                        $btn.html('<i class="fa fa-plug"></i>').prop('disabled', false);
+                    });
+            });
+
+            // بروزرسانی اعتبار
+            $('.update-credit').on('click', function () {
+                const providerId = $(this).data('id');
+                const $btn = $(this);
+                
+                $btn.html('<i class="fa fa-spinner fa-spin"></i>').prop('disabled', true);
+
+                $.post('@Url.Action("UpdateCredit")', { id: providerId })
+                    .done(function (response) {
+                        if (response.success) {
+                            $(`#credit-${providerId}`).text(response.credit);
+                            toastr.success(response.message);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    })
+                    .always(function () {
+                        $btn.html('<i class="fa fa-sync"></i>').prop('disabled', false);
+                    });
+            });
+
+            // بروزرسانی اعتبار همه
+            $('#update-all-credits').on('click', function () {
+                const $btn = $(this);
+                $btn.html('<i class="fa fa-spinner fa-spin me-1"></i> در حال بروزرسانی...').prop('disabled', true);
+
+                $.post('@Url.Action("UpdateAllCredits")')
+                    .done(function (response) {
+                        if (response.success) {
+                            Swal.fire('موفق', response.message, 'success')
+                                .then(() => location.reload());
+                        } else {
+                            Swal.fire('خطا', response.message, 'error');
+                        }
+                    })
+                    .always(function () {
+                        $btn.html('<i class="fa fa-sync me-1"></i> بروزرسانی اعتبار همه').prop('disabled', false);
+                    });
+            });
+
+            // حذف Provider
+            $('.delete-provider').on('click', function () {
+                const providerId = $(this).data('id');
+                
+                Swal.fire({
+                    title: 'تایید حذف',
+                    text: 'آیا از حذف این خدمات‌دهنده اطمینان دارید؟',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'بله، حذف شود',
+                    cancelButtonText: 'خیر'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('@Url.Action("Delete")', { id: providerId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() })
+                            .done(function (response) {
+                                if (response.success) {
+                                    Swal.fire('حذف شد', response.message, 'success')
+                                        .then(() => location.reload());
+                                } else {
+                                    Swal.fire('خطا', response.message, 'error');
+                                }
+                            });
+                    }
+                });
+            });
+        });
+    </script>
+}

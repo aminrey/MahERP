@@ -13,6 +13,7 @@ using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.Hubs;
 using MahERP.Services;
+using MahERP.WebApp.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -54,6 +55,38 @@ builder.Services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
 builder.Services.AddScoped<IMyDayTaskRepository, MyDayTaskRepository>();
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+// اضافه کردن SmsProviderRepository
+builder.Services.AddScoped<SmsProviderRepository>();
+
+
+builder.Services.AddHostedService<SmsBackgroundService>();
+builder.Services.AddHostedService<SmsDeliveryCheckService>();
+builder.Services.AddHostedService<EmailBackgroundService>();
+
+
+builder.Services.AddScoped<ITaskVisibilityRepository, TaskVisibilityRepository>();
+
+
+// ⭐ اضافه کنید - SMS Services:
+builder.Services.AddScoped<ISmsProviderRepository, SmsProviderRepository>();
+builder.Services.AddScoped<ISmsQueueRepository, SmsQueueRepository>();
+builder.Services.AddScoped<ISmsService, SmsService>();
+builder.Services.AddScoped<ISmsTemplateRepository, SmsTemplateRepository>();
+
+// ⭐ اضافه کنید - Email Services:
+builder.Services.AddScoped<IEmailRepository, EmailRepository>();
+builder.Services.AddScoped<IEmailQueueRepository, EmailQueueRepository>();
+builder.Services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
+
+
+// 1️⃣ EmailService (وابستگی اصلی EmailRepository)
+builder.Services.AddScoped<EmailService>();
+
+// 2️⃣ Logger برای EmailRepository (در صورت نیاز)
+builder.Services.AddLogging();
+
+// 3️⃣ اگر از EmailSettings استفاده می‌کنید:
+
 // ⭐ Services - Scoped
 builder.Services.AddScoped<TaskNotificationService>();
 builder.Services.AddScoped<TaskCodeGenerator>();

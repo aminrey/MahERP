@@ -4,7 +4,7 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     var currentArea = ViewContext.RouteData.Values["area"]?.ToString();
     var taskViewType = Context.Request.Query["TaskViewType"].ToString();
-    
+
     // بررسی دسترسی‌های کلی
     var isAdminOrManager = Html.IsAdminOrManager();
 }
@@ -46,7 +46,6 @@
         </div>
     </div>
     <!-- END Side Header -->
-    
     <!-- Sidebar Scrolling -->
     <div class="js-sidebar-scroll">
         <!-- Side Navigation -->
@@ -71,7 +70,7 @@
                         <span class="nav-main-link-badge badge bg-primary rounded-pill ms-1" id="taskBadgeCount" style="display: none;">0</span>
                     </a>
                     <ul class="nav-main-submenu">
-                     
+
                         <!-- ⚡ عملیات سریع -->
                         <li class="nav-main-item nav-submenu-separator mt-2">
                             <div class="nav-submenu-title">
@@ -98,7 +97,7 @@
                                 <small class="text-muted fw-semibold">صفحات اصلی</small>
                             </div>
                         </li>
-                     
+
 
                         <!-- تسک‌های من -->
                         <li class="nav-main-item">
@@ -141,8 +140,8 @@
                             </a>
                         </li>
 
-                    
-                      
+
+
 
                         <!-- 📊 آمار و گزارشات -->
                         <li class="nav-main-item nav-submenu-separator mt-2">
@@ -232,9 +231,9 @@
                                         <span class="nav-main-link-name">چارت سازمانی</span>
                                     </a>
                                 </li>
-                          
 
-                                @if (Html.CanAccess("Team", 1) || isAdminOrManager) 
+
+                                @if (Html.CanAccess("Team", 1) || isAdminOrManager)
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Team", "Create") ? "active" : "")" asp-area="AdminArea" asp-controller="Team" asp-action="Create">
@@ -268,7 +267,7 @@
                                         <span class="nav-main-link-name">کاربران</span>
                                     </a>
                                 </li>
-                                @if (Html.CanAccess("UserManager", 1) || isAdminOrManager) 
+                                @if (Html.CanAccess("UserManager", 1) || isAdminOrManager)
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserManager", "AddUser") ? "active" : "")" asp-area="AdminArea" asp-controller="UserManager" asp-action="AddUser">
@@ -304,7 +303,7 @@
                                             <span class="nav-main-link-name">الگوهای نقش</span>
                                         </a>
                                     </li>
-                                    @if (Html.CanAccess("RolePattern", 1) || isAdminOrManager) 
+                                    @if (Html.CanAccess("RolePattern", 1) || isAdminOrManager)
                                     {
                                         <li class="nav-main-item">
                                             <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "RolePattern", "Create") ? "active" : "")" asp-area="AdminArea" asp-controller="RolePattern" asp-action="Create">
@@ -501,7 +500,7 @@
                                     </a>
                                 </li>
 
-                               
+
                                 <!-- ➕ عملیات -->
                                 @if (Html.CanAccess("Contact", 1) || isAdminOrManager)
                                 {
@@ -633,8 +632,162 @@
                         </li>
                     }
                 }
-                    
-                
+
+                <!-- ============== 📨 COMMUNICATION MANAGEMENT - بخش جدید ============== -->
+                @if (isAdminOrManager)
+                {
+                    <li class="nav-main-heading">مدیریت ارتباطات</li>
+
+                    <!-- ========== 📱 مدیریت پیامک (SMS) ========== -->
+                    <li class="nav-main-item @(IsSmsMenuActive(currentController) ? "open" : "")">
+                        <a aria-expanded="@(IsSmsMenuActive(currentController) ? "true" : "false")"
+                           aria-haspopup="true"
+                           class="nav-main-link nav-main-link-submenu"
+                           data-toggle="submenu"
+                           href="#">
+                            <i class="nav-main-link-icon fa fa-sms text-info"></i>
+                            <span class="nav-main-link-name">مدیریت پیامک</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <!-- 📤 ارسال پیامک -->
+                            <li class="nav-main-item nav-submenu-separator">
+                                <div class="nav-submenu-title">
+                                    <small class="text-muted fw-semibold">ارسال پیامک</small>
+                                </div>
+                            </li>
+
+                            <li class="nav-main-item">
+                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsSend", "Index") ? "active" : "")"
+                                   asp-area="AdminArea"
+                                   asp-controller="SmsSend"
+                                   asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-paper-plane text-primary"></i>
+                                    <span class="nav-main-link-name">ارسال پیامک</span>
+                                </a>
+                            </li>
+
+                            <!-- 📋 قالب‌های پیامک -->
+                            <li class="nav-main-item nav-submenu-separator mt-2">
+                                <div class="nav-submenu-title">
+                                    <small class="text-muted fw-semibold">قالب‌های پیامک</small>
+                                </div>
+                            </li>
+
+                            <li class="nav-main-item">
+                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsTemplate", "Index") ? "active" : "")"
+                                   asp-area="AdminArea"
+                                   asp-controller="SmsTemplate"
+                                   asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-file-alt text-info"></i>
+                                    <span class="nav-main-link-name">لیست قالب‌ها</span>
+                                </a>
+                            </li>
+
+                            <li class="nav-main-item">
+                                <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "SmsTemplate", "Create") ? "active" : "")"
+                                   asp-area="AdminArea"
+                                   asp-controller="SmsTemplate"
+                                   asp-action="Create">
+                                    <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                    <span class="nav-main-link-name fw-semibold">قالب جدید</span>
+                                </a>
+                            </li>
+
+                            <!-- ⚙️ تنظیمات پیامک -->
+                            <li class="nav-main-item nav-submenu-separator mt-2">
+                                <div class="nav-submenu-title">
+                                    <small class="text-muted fw-semibold">تنظیمات</small>
+                                </div>
+                            </li>
+
+                            <li class="nav-main-item">
+                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsProvider", "Index") ? "active" : "")"
+                                   asp-area="AdminArea"
+                                   asp-controller="SmsProvider"
+                                   asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-server text-warning"></i>
+                                    <span class="nav-main-link-name">خدمات‌دهندگان پیامک</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- ========== 📧 مدیریت ایمیل (Email) ========== -->
+                    <li class="nav-main-item @(IsEmailMenuActive(currentController) ? "open" : "")">
+                        <a aria-expanded="@(IsEmailMenuActive(currentController) ? "true" : "false")"
+                           aria-haspopup="true"
+                           class="nav-main-link nav-main-link-submenu"
+                           data-toggle="submenu"
+                           href="#">
+                            <i class="nav-main-link-icon fa fa-envelope text-primary"></i>
+                            <span class="nav-main-link-name">مدیریت ایمیل</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <!-- 📤 ارسال ایمیل -->
+                            <li class="nav-main-item nav-submenu-separator">
+                                <div class="nav-submenu-title">
+                                    <small class="text-muted fw-semibold">ارسال ایمیل</small>
+                                </div>
+                            </li>
+
+                            <li class="nav-main-item">
+                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "EmailSend", "Index") ? "active" : "")"
+                                   asp-area="AdminArea"
+                                   asp-controller="EmailSend"
+                                   asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-paper-plane text-primary"></i>
+                                    <span class="nav-main-link-name">ارسال ایمیل</span>
+                                </a>
+                            </li>
+
+                            <!-- 📋 قالب‌های ایمیل -->
+                            <li class="nav-main-item nav-submenu-separator mt-2">
+                                <div class="nav-submenu-title">
+                                    <small class="text-muted fw-semibold">قالب‌های ایمیل</small>
+                                </div>
+                            </li>
+
+                            <li class="nav-main-item">
+                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "EmailTemplate", "Index") ? "active" : "")"
+                                   asp-area="AdminArea"
+                                   asp-controller="EmailTemplate"
+                                   asp-action="Index">
+                                    <i class="nav-main-link-icon fa fa-file-alt text-info"></i>
+                                    <span class="nav-main-link-name">لیست قالب‌ها</span>
+                                </a>
+                            </li>
+
+                            <li class="nav-main-item">
+                                <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "EmailTemplate", "Create") ? "active" : "")"
+                                   asp-area="AdminArea"
+                                   asp-controller="EmailTemplate"
+                                   asp-action="Create">
+                                    <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                    <span class="nav-main-link-name fw-semibold">قالب جدید</span>
+                                </a>
+                            </li>
+
+                            <!-- ⚙️ تنظیمات ایمیل -->
+                            <li class="nav-main-item nav-submenu-separator mt-2">
+                                <div class="nav-submenu-title">
+                                    <small class="text-muted fw-semibold">تنظیمات</small>
+                                </div>
+                            </li>
+
+                            <li class="nav-main-item">
+                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Settings", "EmailSettings") ? "active" : "")"
+                                   asp-area="AdminArea"
+                                   asp-controller="Settings"
+                                   asp-action="EmailSettings">
+                                    <i class="nav-main-link-icon fa fa-cog text-warning"></i>
+                                    <span class="nav-main-link-name">تنظیمات ایمیل</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
+
+
 
                 <!-- ============== 📊 MONITORING & LOGS ============== -->
                 @if (Html.CanAccess("UserActivityLog") || isAdminOrManager)
@@ -728,8 +881,6 @@
     <!-- END Sidebar Scrolling -->
 </nav>
 <!-- END Sidebar -->
-
-
 <!-- Modal Advanced Search -->
 <div class="modal fade" id="modal-advanced-search" tabindex="-1" role="dialog" aria-labelledby="modal-advanced-search" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -828,6 +979,8 @@
     }
 
     /// <summary>
+
+    /// <summary>
     /// بررسی active بودن منوی قراردادها
     /// </summary>
     public bool IsContractMenuActive(string currentController)
@@ -886,7 +1039,24 @@
         return currentController == "Contacts";
     }
 
-  
+    /// <summary>
+    /// بررسی active بودن منوی پیامک (SMS)
+    /// </summary>
+    public bool IsSmsMenuActive(string currentController)
+    {
+        return currentController == "SmsSend" ||
+               currentController == "SmsTemplate" ||
+               currentController == "SmsProvider";
+    }
+
+    /// <summary>
+    /// بررسی active بودن منوی ایمیل (Email)
+    /// </summary>
+    public bool IsEmailMenuActive(string currentController)
+    {
+        return currentController == "EmailSend" ||
+               currentController == "EmailTemplate";
+    }
 }
 
 <!-- JavaScript for Sidebar Functionality -->

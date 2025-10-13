@@ -1,0 +1,175 @@
+﻿@{
+    ViewData["Title"] = "ارسال پیامک";
+}
+
+<main id="main-container">
+    <div class="content">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-paper-plane me-2"></i>
+                    ارسال پیامک
+                </h3>
+            </div>
+            <div class="block-content">
+                <ul class="nav nav-tabs nav-tabs-block" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-contacts">
+                            <i class="fa fa-users me-1"></i> ارسال به افراد
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-organization">
+                            <i class="fa fa-building me-1"></i> ارسال به سازمان
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-template">
+                            <i class="fa fa-file-alt me-1"></i> ارسال با قالب
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab: ارسال به افراد -->
+                    <div class="tab-pane fade show active" id="tab-contacts" role="tabpanel">
+                        <form id="form-send-contacts" class="p-4">
+                            <div class="mb-3">
+                                <label class="form-label">انتخاب مخاطبین</label>
+                                <select class="form-select" id="select-contacts" multiple></select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">خدمات‌دهنده</label>
+                                <select class="form-select" name="providerId">
+                                    <option value="">پیش‌فرض</option>
+                                    @foreach (var provider in ViewBag.Providers)
+                                    {
+                                        <option value="@provider.Id">@provider.ProviderName</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">متن پیام</label>
+                                <textarea class="form-control" name="message" rows="4" maxlength="500"></textarea>
+                                <small class="text-muted">حداکثر 500 کاراکتر</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-paper-plane me-1"></i> ارسال
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Tab: ارسال به سازمان -->
+                    <div class="tab-pane fade" id="tab-organization" role="tabpanel">
+                        <form id="form-send-organization" class="p-4">
+                            <div class="mb-3">
+                                <label class="form-label">انتخاب سازمان</label>
+                                <select class="form-select" name="organizationId" required>
+                                    <option value="">-- انتخاب کنید --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="sendToContacts" id="sendToContacts">
+                                    <label class="form-check-label" for="sendToContacts">
+                                        ارسال به تمام افراد مرتبط با سازمان
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">متن پیام</label>
+                                <textarea class="form-control" name="message" rows="4" maxlength="500" required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-paper-plane me-1"></i> ارسال
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Tab: ارسال با قالب -->
+                    <div class="tab-pane fade" id="tab-template" role="tabpanel">
+                        <div class="p-4">
+                            <p class="text-muted">این بخش به زودی اضافه می‌شود...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <script>
+        $(document).ready(function () {
+            // Initialize Select2
+            $('#select-contacts').select2({
+                placeholder: 'جستجو و انتخاب مخاطبین',
+                ajax: {
+                    url: '@Url.Action("GetContacts")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { search: params.term };
+                    },
+                    processResults: function (data) {
+                        return { results: data };
+                    }
+                }
+            });
+
+            // ارسال به افراد
+            $('#form-send-contacts').on('submit', function (e) {
+                e.preventDefault();
+                
+                const contactIds = $('#select-contacts').val();
+                const message = $(this).find('[name="message"]').val();
+                const providerId = $(this).find('[name="providerId"]').val();
+
+                if (!contactIds || contactIds.length === 0) {
+                    toastr.warning('لطفا حداقل یک مخاطب انتخاب کنید');
+                    return;
+                }
+
+                $.post('@Url.Action("SendToContacts")', {
+                    contactIds: contactIds,
+                    message: message,
+                    providerId: providerId
+                }).done(function (response) {
+                    if (response.success) {
+                        Swal.fire('موفق', response.message, 'success');
+                        $('#form-send-contacts')[0].reset();
+                        $('#select-contacts').val(null).trigger('change');
+                    } else {
+                        Swal.fire('خطا', response.message, 'error');
+                    }
+                });
+            });
+
+            // ارسال به سازمان
+            $('#form-send-organization').on('submit', function (e) {
+                e.preventDefault();
+                
+                const formData = $(this).serialize();
+
+                $.post('@Url.Action("SendToOrganization")', formData)
+                    .done(function (response) {
+                        if (response.success) {
+                            Swal.fire('موفق', response.message, 'success');
+                            $('#form-send-organization')[0].reset();
+                        } else {
+                            Swal.fire('خطا', response.message, 'error');
+                        }
+                    });
+            });
+        });
+    </script>
+}

@@ -4,7 +4,9 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts; // ⭐ NEW
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Entities.Sms;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels; // ⭐ NEW
 using MahERP.DataModelLayer.ViewModels.CRMViewModels;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
@@ -704,6 +706,7 @@ namespace MahERP.AutoMapper
             // OrganizationStatisticsViewModel (no reverse mapping needed)
             CreateMap<OrganizationStatisticsViewModel, OrganizationStatisticsViewModel>();
 
+            CreateMap<SmsProvider, SmsProviderViewModel>().ReverseMap();
 
         }
 

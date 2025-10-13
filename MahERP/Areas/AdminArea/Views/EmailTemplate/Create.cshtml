@@ -1,0 +1,138 @@
+﻿@using MahERP.DataModelLayer.Entities.Email
+@model EmailTemplate
+@{
+    ViewData["Title"] = Model.Id == 0 ? "ایجاد قالب ایمیل" : "ویرایش قالب ایمیل";
+}
+
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-envelope me-2"></i>
+                @ViewData["Title"]
+            </h3>
+            <div class="block-options">
+                <a asp-action="Index" class="btn btn-sm btn-secondary">
+                    <i class="fa fa-arrow-right me-1"></i> بازگشت
+                </a>
+            </div>
+        </div>
+
+        <div class="block-content">
+            <form asp-action="@(Model.Id == 0 ? "Create" : "Edit")" method="post" enctype="multipart/form-data">
+                <input type="hidden" asp-for="Id" />
+                
+                <div class="row">
+                    <!-- ستون چپ: فرم -->
+                    <div class="col-lg-4">
+                        <div class="mb-4">
+                            <label class="form-label">عنوان قالب <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">موضوع ایمیل <span class="text-danger">*</span></label>
+                            <input asp-for="SubjectTemplate" class="form-control" placeholder="می‌توانید از {Name}, {Company} استفاده کنید" />
+                            <span asp-validation-for="SubjectTemplate" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">دسته‌بندی</label>
+                            <select asp-for="Category" class="form-select">
+                                <option value="0">عمومی</option>
+                                <option value="1">خوش‌آمدگویی</option>
+                                <option value="2">یادآوری</option>
+                                <option value="3">تبریک</option>
+                                <option value="4">اطلاع‌رسانی</option>
+                                <option value="5">فاکتور</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label">فعال</label>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6>فیلدهای قابل استفاده:</h6>
+                            <ul class="mb-0">
+                                <li><code>{Name}</code> - نام مخاطب</li>
+                                <li><code>{Email}</code> - ایمیل مخاطب</li>
+                                <li><code>{Company}</code> - نام شرکت</li>
+                                <li><code>{Phone}</code> - شماره تلفن</li>
+                                <li><code>{Date}</code> - تاریخ فعلی</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- ستون راست: ویرایشگر -->
+                    <div class="col-lg-8">
+                        <ul class="nav nav-tabs nav-tabs-block" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-html">
+                                    <i class="fa fa-code me-1"></i> HTML
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-plaintext">
+                                    <i class="fa fa-file-alt me-1"></i> متن ساده
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content p-3" style="background: #fff; border: 1px solid #ddd; border-top: 0;">
+                            <div class="tab-pane fade show active" id="tab-html">
+                                <textarea asp-for="BodyHtml" id="emailHtmlEditor"></textarea>
+                                <span asp-validation-for="BodyHtml" class="text-danger"></span>
+                            </div>
+
+                            <div class="tab-pane fade" id="tab-plaintext">
+                                <textarea asp-for="BodyPlainText" id="emailPlainTextEditor" rows="20"></textarea>
+                                <small class="form-text text-muted">
+                                    متن ساده برای کلاینت‌های ایمیلی که HTML را پشتیبانی نمی‌کنند
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-1"></i> ذخیره
+                            </button>
+                            <button type="button" class="btn btn-info" onclick="previewEmail()">
+                                <i class="fa fa-eye me-1"></i> پیش‌نمایش
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/tinymce/tinymce.min.js"></script>
+    <script src="~/assets/js/emailTemplateEditor.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // ویرایشگر HTML
+            initEmailTemplateEditor('emailHtmlEditor', 'طراحی ایمیل HTML خود را اینجا انجام دهید...');
+            
+            // ویرایشگر Plain Text
+            initPlainTextEditor('emailPlainTextEditor');
+        });
+
+        function previewEmail() {
+            const htmlContent = tinymce.get('emailHtmlEditor').getContent();
+            previewEmail(htmlContent);
+        }
+    </script>
+}
