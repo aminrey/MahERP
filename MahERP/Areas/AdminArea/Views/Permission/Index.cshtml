@@ -1,0 +1,191 @@
+﻿@model List<Permission>
+@{
+    ViewData["Title"] = "مدیریت دسترسی‌ها";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-key text-primary me-2"></i>مدیریت دسترسی‌ها
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">دسترسی‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <!-- Quick Actions -->
+    <div class="block block-rounded mb-4">
+        <div class="block-content block-content-full">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <a asp-action="Create" class="btn btn-primary w-100 py-3">
+                        <i class="fa fa-plus-circle fa-2x d-block mb-2"></i>
+                        <strong>دسترسی جدید</strong>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a asp-action="Tree" class="btn btn-info w-100 py-3">
+                        <i class="fa fa-sitemap fa-2x d-block mb-2"></i>
+                        <strong>نمای درختی</strong>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a asp-area="AdminArea" asp-controller="Role" asp-action="Index" class="btn btn-success w-100 py-3">
+                        <i class="fa fa-user-shield fa-2x d-block mb-2"></i>
+                        <strong>مدیریت نقش‌ها</strong>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a asp-area="AdminArea" asp-controller="UserPermission" asp-action="Index" class="btn btn-warning w-100 py-3">
+                        <i class="fa fa-users-cog fa-2x d-block mb-2"></i>
+                        <strong>دسترسی کاربران</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permissions List -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list text-muted me-1"></i>لیست دسترسی‌ها
+            </h3>
+            <div class="block-options">
+                <span class="badge bg-primary">@Model.Count دسترسی</span>
+            </div>
+        </div>
+        <div class="block-content">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-vcenter">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>نام فارسی</th>
+                                <th>نام انگلیسی</th>
+                                <th>کد</th>
+                                <th>دسترسی والد</th>
+                                <th class="text-center">وضعیت</th>
+                                <th class="text-center">نوع</th>
+                                <th class="text-center" style="width: 150px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.OrderBy(p => p.DisplayOrder))
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Icon))
+                                        {
+                                            <i class="@item.Icon" style="color: @item.Color"></i>
+                                        }
+                                    </td>
+                                    <td class="fw-semibold">@item.NameFa</td>
+                                    <td>
+                                        <code>@item.NameEn</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@item.Code</span>
+                                    </td>
+                                    <td>
+                                        @if (item.Parent != null)
+                                        {
+                                            <span class="badge bg-info">@item.Parent.NameFa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fa fa-check me-1"></i>فعال
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="fa fa-times me-1"></i>غیرفعال
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IsSystemPermission)
+                                        {
+                                            <span class="badge bg-warning">
+                                                <i class="fa fa-lock me-1"></i>سیستمی
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary">
+                                                <i class="fa fa-user me-1"></i>سفارشی
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            @if (!item.IsSystemPermission)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@item.Id" 
+                                                   class="btn btn-sm btn-warning" title="ویرایش">
+                                                    <i class="fa fa-pencil-alt"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-danger" 
+                                                        onclick="deletePermission(@item.Id)" title="حذف">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-secondary" disabled title="دسترسی سیستمی">
+                                                    <i class="fa fa-lock"></i>
+                                                </button>
+                                            }
+                                            <a asp-action="Create" asp-route-parentId="@item.Id" 
+                                               class="btn btn-sm btn-success" title="افزودن زیر دسترسی">
+                                                <i class="fa fa-plus"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    هیچ دسترسی تعریف نشده است.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function deletePermission(id) {
+            if (confirm('آیا از حذف این دسترسی مطمئن هستید؟')) {
+                window.location.href = '@Url.Action("Delete")' + '/' + id;
+            }
+        }
+    </script>
+}

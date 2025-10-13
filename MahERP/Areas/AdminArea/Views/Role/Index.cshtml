@@ -1,0 +1,221 @@
+﻿@model List<RoleViewModel>
+@{
+    ViewData["Title"] = "مدیریت نقش‌ها";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-user-shield text-primary me-2"></i>مدیریت نقش‌ها
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">نقش‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="block block-rounded bg-primary text-white">
+                <div class="block-content block-content-full d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="text-white mb-0">@Model.Count</h3>
+                        <div class="fs-sm">تعداد نقش‌ها</div>
+                    </div>
+                    <div>
+                        <i class="fa fa-user-shield fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="block block-rounded bg-success text-white">
+                <div class="block-content block-content-full d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="text-white mb-0">@Model.Sum(r => r.UsersCount)</h3>
+                        <div class="fs-sm">کل کاربران</div>
+                    </div>
+                    <div>
+                        <i class="fa fa-users fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="block block-rounded bg-info text-white">
+                <div class="block-content block-content-full d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="text-white mb-0">@Model.Sum(r => r.PermissionsCount)</h3>
+                        <div class="fs-sm">کل دسترسی‌ها</div>
+                    </div>
+                    <div>
+                        <i class="fa fa-key fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="block block-rounded mb-4">
+        <div class="block-content block-content-full">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <a asp-action="Create" class="btn btn-primary w-100 py-3">
+                        <i class="fa fa-plus-circle fa-2x d-block mb-2"></i>
+                        <strong>نقش جدید</strong>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a asp-area="AdminArea" asp-controller="Permission" asp-action="Index" class="btn btn-info w-100 py-3">
+                        <i class="fa fa-key fa-2x d-block mb-2"></i>
+                        <strong>مدیریت دسترسی‌ها</strong>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a asp-area="AdminArea" asp-controller="UserPermission" asp-action="Index" class="btn btn-success w-100 py-3">
+                        <i class="fa fa-users-cog fa-2x d-block mb-2"></i>
+                        <strong>دسترسی کاربران</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roles List -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list text-muted me-1"></i>لیست نقش‌ها
+            </h3>
+        </div>
+        <div class="block-content">
+            @if (Model.Any())
+            {
+                <div class="row">
+                    @foreach (var role in Model.OrderBy(r => r.Priority))
+                    {
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="block block-rounded h-100 border-start border-4" style="border-color: @role.Color !important;">
+                                <div class="block-content block-content-full">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                                 style="width: 60px; height: 60px; background-color: @role.Color; color: white;">
+                                                <i class="@role.Icon fa-2x"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h4 class="mb-0">@role.NameFa</h4>
+                                            <small class="text-muted">@role.NameEn</small>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-muted mb-3">
+                                        @if (!string.IsNullOrEmpty(role.Description))
+                                        {
+                                            @role.Description
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">بدون توضیحات</span>
+                                        }
+                                    </p>
+
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="fs-sm text-muted mb-1">اولویت</div>
+                                            <div class="fw-semibold">
+                                                <span class="badge bg-info">@role.Priority</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="fs-sm text-muted mb-1">وضعیت</div>
+                                            <div class="fw-semibold">
+                                                @if (role.IsActive)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fa fa-check me-1"></i>فعال
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">
+                                                        <i class="fa fa-times me-1"></i>غیرفعال
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="fs-sm text-muted mb-1">کاربران</div>
+                                            <div class="fw-semibold">
+                                                <span class="badge bg-primary">@role.UsersCount</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="fs-sm text-muted mb-1">دسترسی‌ها</div>
+                                            <div class="fw-semibold">
+                                                <span class="badge bg-success">@role.PermissionsCount</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <a asp-action="ManagePermissions" asp-route-id="@role.Id" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fa fa-key me-1"></i>مدیریت دسترسی‌ها
+                                        </a>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@role.Id" 
+                                               class="btn btn-sm btn-warning">
+                                                <i class="fa fa-pencil-alt me-1"></i>ویرایش
+                                            </a>
+                                            @if (!role.IsActive)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-danger" 
+                                                        onclick="deleteRole(@role.Id)">
+                                                    <i class="fa fa-trash me-1"></i>حذف
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    هیچ نقشی تعریف نشده است.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function deleteRole(id) {
+            if (confirm('آیا از حذف این نقش مطمئن هستید؟\n\nتوجه: دسترسی کاربران مرتبط با این نقش نیز حذف خواهد شد.')) {
+                window.location.href = '@Url.Action("Delete")' + '/' + id;
+            }
+        }
+    </script>
+}

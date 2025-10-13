@@ -1,0 +1,117 @@
+﻿@model Role
+@{
+    ViewData["Title"] = "ایجاد نقش جدید";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-plus-circle text-success me-2"></i>ایجاد نقش جدید
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">نقش‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">ایجاد</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-edit text-muted me-1"></i>فرم ایجاد نقش
+                    </h3>
+                </div>
+                <div class="block-content block-content-full">
+                    <form asp-action="Create" method="post" id="createRoleForm">
+                        <!-- نام فارسی -->
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="NameFa">
+                                نام نقش <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control form-control-lg" asp-for="NameFa"
+                                   placeholder="مثال: مدیر فروش" required autofocus />
+                            <span asp-validation-for="NameFa" class="text-danger"></span>
+                        </div>
+
+                        <!-- دکمه‌ها -->
+                        <div class="row mt-5">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-success btn-lg w-100">
+                                    <i class="fa fa-check me-1"></i>ذخیره
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <a asp-action="Index" class="btn btn-secondary btn-lg w-100">
+                                    <i class="fa fa-arrow-right me-1"></i>بازگشت
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- راهنما -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-info-circle text-info me-1"></i>راهنما
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <ul class="mb-0">
+                        <li class="mb-2">
+                            <strong>نام نقش:</strong> نام قابل نمایش نقش (مثال: مدیر فروش، کارمند)
+                        </li>
+                        <li>
+                            <strong class="text-success">💡 نکته:</strong> بعد از ایجاد نقش، می‌توانید دسترسی‌های مورد نظر را به آن اختصاص دهید.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Auto-generate NameEn from NameFa
+        $('input[name="NameFa"]').on('input', function() {
+            var nameFa = $(this).val();
+            // Simple transliteration (you can customize this)
+            var nameEn = nameFa
+                .replace(/\s+/g, '')
+                .replace(/[^a-zA-Z0-9]/g, '');
+
+            if (!nameEn) {
+                nameEn = 'Role' + new Date().getTime();
+            }
+
+            // Set hidden NameEn field
+            if ($('input[name="NameEn"]').length === 0) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'NameEn',
+                    value: nameEn
+                }).appendTo('#createRoleForm');
+            } else {
+                $('input[name="NameEn"]').val(nameEn);
+            }
+        });
+    </script>
+}

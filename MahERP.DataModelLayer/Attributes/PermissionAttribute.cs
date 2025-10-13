@@ -1,90 +1,145 @@
-﻿using MahERP.DataModelLayer.Services;
-using Microsoft.AspNetCore.Identity;
+﻿using System;
+using System.Threading.Tasks;
+using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Entities.AcControl;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using System;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MahERP.DataModelLayer.Attributes
 {
-    public class PermissionAttribute : Attribute, IAuthorizationFilter
+    /// <summary>
+    /// Attribute برای بررسی دسترسی کاربر به یک Permission خاص
+    /// مثال: [Permission("TASK.CREATE")]
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+    public class PermissionAttribute : Attribute, IAsyncAuthorizationFilter
     {
+        private readonly string _permissionCode; // ✅ تصحیح شده
         private readonly string _controller;
         private readonly string _action;
         private readonly byte _actionType;
 
+        /// <summary>
+        /// سازنده با کد دسترسی
+        /// </summary>
+        /// <param name="permissionCode">کد دسترسی (مثل: TASK.CREATE)</param>
+        public PermissionAttribute(string permissionCode)
+        {
+            _permissionCode = permissionCode;
+        }
+
+        /// <summary>
+        /// سازنده با کنترلر و اکشن (برای سازگاری با کد قدیمی)
+        /// </summary>
         public PermissionAttribute(string controller, string action, byte actionType = 0)
         {
             _controller = controller;
             _action = action;
-            _actionType = actionType; // 0=Read, 1=Create, 2=Edit, 3=Delete, 4=Approve
+            _actionType = actionType;
+            _permissionCode = $"{controller}.{action}"; // ساخت کد از controller و action
         }
 
-        public void OnAuthorization(AuthorizationFilterContext context)
+        /// <summary>
+        /// ✅ پیاده‌سازی صحیح IAsyncAuthorizationFilter
+        /// </summary>
+        public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
-            // Skip authorization if user is not authenticated
-            if (!context.HttpContext.User.Identity.IsAuthenticated)
+            // 1️⃣ بررسی احراز هویت
+            if (context.HttpContext.User?.Identity?.IsAuthenticated != true)
             {
-                context.Result = new ChallengeResult();
+                context.Result = new UnauthorizedResult();
                 return;
             }
 
-            var serviceProvider = context.HttpContext.RequestServices;
-            var roleRepository = serviceProvider.GetService<IRoleRepository>();
-            var userManager = serviceProvider.GetService<UserManager<AppUsers>>();
-
-            if (roleRepository == null || userManager == null)
+            try
             {
-                context.Result = new ForbidResult();
-                return;
+                // 2️⃣ دریافت سرویس‌ها
+                var userManager = context.HttpContext.RequestServices
+                    .GetRequiredService<UserManager<AppUsers>>();
+                var roleRepository = context.HttpContext.RequestServices
+                    .GetRequiredService<IUserRoleRepository>();
+
+                // 3️⃣ دریافت کاربر جاری
+                var user = await userManager.GetUserAsync(context.HttpContext.User);
+                if (user == null)
+                {
+                    context.Result = new UnauthorizedResult();
+                    return;
+                }
+
+                // 4️⃣ اگر Admin است، دسترسی کامل
+                if (user.IsAdmin)
+                {
+                    await LogAccessAsync(
+                        roleRepository, 
+                        user.Id, 
+                        _permissionCode, 
+                        true, 
+                        "Admin bypass", 
+                        context
+                    );
+                    return;
+                }
+
+                // 5️⃣ بررسی دسترسی
+                var hasPermission = await roleRepository.HasPermission(user.Id, _permissionCode);
+
+                // 6️⃣ ثبت لاگ
+                await LogAccessAsync(
+                    roleRepository,
+                    user.Id,
+                    _permissionCode,
+                    hasPermission,
+                    hasPermission ? "Access granted" : "Permission denied",
+                    context
+                );
+
+                // 7️⃣ اگر دسترسی نداشت، Forbid
+                if (!hasPermission)
+                {
+                    context.Result = new ForbidResult();
+                }
             }
-
-            var userId = userManager.GetUserId(context.HttpContext.User);
-
-            if (string.IsNullOrEmpty(userId))
+            catch (Exception ex)
             {
-                context.Result = new ChallengeResult();
-                return;
+                // در صورت خطا، دسترسی رد می‌شود
+                context.Result = new StatusCodeResult(500);
+                
+                // می‌توانید اینجا لاگ خطا ثبت کنید
+                System.Diagnostics.Debug.WriteLine($"PermissionAttribute Error: {ex.Message}");
             }
-
-            // Check if user has permission
-            if (!roleRepository.HasPermission(userId, _controller, _action, _actionType))
-            {
-                // Log access attempt
-                LogPermissionAccess(roleRepository, userId, _controller, _action, _actionType, false, "عدم دسترسی", context.HttpContext);
-
-                context.Result = new ForbidResult();
-                return;
-            }
-
-            // Log successful access
-            LogPermissionAccess(roleRepository, userId, _controller, _action, _actionType, true, null, context.HttpContext);
         }
 
-        private void LogPermissionAccess(IRoleRepository roleRepository, string userId, string controller, string action, byte actionType, bool granted, string denialReason, HttpContext httpContext)
+        /// <summary>
+        /// ✅ متد کمکی برای ثبت لاگ دسترسی
+        /// </summary>
+        private async Task LogAccessAsync(
+            IUserRoleRepository roleRepository,
+            string userId,
+            string permissionCode,
+            bool granted,
+            string notes,
+            AuthorizationFilterContext context)
         {
             try
             {
-                var log = new PermissionLog
-                {
-                    UserId = userId,
-                    Controller = controller,
-                    Action = action,
-                    ActionType = actionType,
-                    AccessGranted = granted,
-                    DenialReason = denialReason,
-                    IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
-                    UserAgent = httpContext.Request.Headers["User-Agent"].ToString()
-                };
+                var actionName = context.ActionDescriptor?.DisplayName 
+                    ?? $"{_controller}.{_action}";
 
-                roleRepository.LogPermissionAccess(log);
+                await roleRepository.LogPermissionAccess(
+                    userId,
+                    permissionCode,
+                    actionName,
+                    granted,
+                    context.HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    context.HttpContext.Request.Headers["User-Agent"].ToString()
+                );
             }
             catch
             {
-                // Silent fail for logging
+                // Silent fail - لاگ نباید باعث خرابی سیستم شود
             }
         }
     }

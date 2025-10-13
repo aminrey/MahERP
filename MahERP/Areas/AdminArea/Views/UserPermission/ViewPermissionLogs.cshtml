@@ -1,0 +1,173 @@
+﻿@model List<PermissionChangeLog>
+@{
+    ViewData["Title"] = "لاگ دسترسی‌های کاربر";
+    var userFullName = ViewBag.UserFullName as string;
+    var permissionId = ViewBag.PermissionId as int?;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-history text-primary me-2"></i>لاگ دسترسی‌ها: @userFullName
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">دسترسی کاربران</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">لاگ‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list text-muted me-1"></i>تاریخچه تغییرات دسترسی‌ها
+            </h3>
+            <div class="block-options">
+                <span class="badge bg-primary">@Model.Count رکورد</span>
+            </div>
+        </div>
+        <div class="block-content">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-vcenter">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>دسترسی</th>
+                                <th>نوع تغییر</th>
+                                <th>توضیحات</th>
+                                <th>وضعیت قبل</th>
+                                <th>وضعیت جدید</th>
+                                <th>تاریخ</th>
+                                <th>تغییر توسط</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in Model.OrderByDescending(l => l.ChangeDate))
+                            {
+                                <tr>
+                                    <td>
+                                        @switch (log.ChangeType)
+                                        {
+                                            case 1:
+                                                <i class="fa fa-plus-circle text-success fa-lg"></i>
+                                                break;
+                                            case 2:
+                                                <i class="fa fa-minus-circle text-danger fa-lg"></i>
+                                                break;
+                                            case 3:
+                                                <i class="fa fa-edit text-warning fa-lg"></i>
+                                                break;
+                                            case 4:
+                                                <i class="fa fa-undo text-info fa-lg"></i>
+                                                break;
+                                            case 5:
+                                                <i class="fa fa-check-circle text-success fa-lg"></i>
+                                                break;
+                                            case 6:
+                                                <i class="fa fa-ban text-danger fa-lg"></i>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@log.Permission.NameFa</strong>
+                                        <br>
+                                        <small class="text-muted">@log.Permission.Code</small>
+                                    </td>
+                                    <td>
+                                        @switch (log.ChangeType)
+                                        {
+                                            case 1:
+                                                <span class="badge bg-success">اضافه شدن از نقش</span>
+                                                break;
+                                            case 2:
+                                                <span class="badge bg-danger">حذف شدن</span>
+                                                break;
+                                            case 3:
+                                                <span class="badge bg-warning">تغییر دستی</span>
+                                                break;
+                                            case 4:
+                                                <span class="badge bg-info">بازگشت به حالت نقش</span>
+                                                break;
+                                            case 5:
+                                                <span class="badge bg-success">دسترسی موفق</span>
+                                                break;
+                                            case 6:
+                                                <span class="badge bg-danger">دسترسی رد شده</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>@log.ChangeDescription</td>
+                                    <td class="text-center">
+                                        @if (log.OldIsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (log.NewIsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small>
+                                            @log.ChangeDate.ToString("yyyy/MM/dd HH:mm")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        @if (log.ChangedByUser != null)
+                                        {
+                                            <span>@log.ChangedByUser.FirstName @log.ChangedByUser.LastName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">سیستم</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    هیچ لاگی برای این کاربر ثبت نشده است.
+                </div>
+            }
+        </div>
+        <div class="block-content block-content-full bg-body-light">
+            <a asp-action="ManageUserPermissions" asp-route-userId="@Model.FirstOrDefault()?.UserId"
+               class="btn btn-primary">
+                <i class="fa fa-arrow-right me-1"></i>بازگشت به دسترسی‌ها
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="fa fa-list me-1"></i>لیست کاربران
+            </a>
+        </div>
+    </div>
+</div>

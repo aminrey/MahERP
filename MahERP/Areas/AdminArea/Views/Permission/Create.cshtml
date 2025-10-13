@@ -1,0 +1,381 @@
+﻿@model Permission
+@{
+    ViewData["Title"] = "ایجاد دسترسی جدید";
+    var parentId = ViewBag.ParentId as int?;
+    var parentName = ViewBag.ParentName as string;
+    var parentHierarchy = ViewBag.ParentHierarchy as List<Permission>;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-plus-circle text-success me-2"></i>ایجاد دسترسی جدید
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">دسترسی‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">ایجاد</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <!-- سلسله مراتب والد - Collapsible -->
+            @if (parentId.HasValue && parentHierarchy != null && parentHierarchy.Any())
+            {
+                <div class="block block-rounded mb-4">
+                    <div class="block-header block-header-default bg-info-light"
+                         style="cursor: pointer;"
+                         data-bs-toggle="collapse"
+                         data-bs-target="#hierarchyCollapse"
+                         aria-expanded="false"
+                         aria-controls="hierarchyCollapse">
+                        <h3 class="block-title mb-0">
+                            <i class="fa fa-sitemap text-info me-2"></i>
+                            <span class="fw-semibold">سلسله مراتب:</span>
+                            @foreach (var p in parentHierarchy)
+                            {
+                                <span class="text-muted">@p.NameFa</span>
+                                @if (p != parentHierarchy.Last())
+                                {
+                                    <i class="fa fa-chevron-left mx-1 small"></i>
+                                }
+                            }
+                        </h3>
+                        <div class="block-options">
+                            <button type="button" class="btn-block-option">
+                                <i class="fa fa-chevron-down" id="hierarchyToggleIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="collapse" id="hierarchyCollapse">
+                        <div class="block-content">
+                            <div class="alert alert-info mb-3">
+                                <i class="fa fa-info-circle me-1"></i>
+                                این دسترسی به عنوان <strong>زیرمجموعه</strong> دسترسی‌های زیر ایجاد می‌شود.
+                            </div>
+
+                            <!-- نمایش درختی والدها -->
+                            <div class="permission-hierarchy">
+                                @for (int i = 0; i < parentHierarchy.Count; i++)
+                                {
+                                    var permission = parentHierarchy[i];
+                                    var indent = i * 30;
+
+                                    <div class="hierarchy-item d-flex align-items-center mb-3 p-3 border rounded"
+                                         style="margin-left: @(indent)px; border-left: 4px solid @permission.Color !important;">
+                                        <div class="flex-shrink-0 me-3">
+                                            @if (!string.IsNullOrEmpty(permission.Icon))
+                                            {
+                                                <i class="@permission.Icon fa-2x" style="color: @permission.Color"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa fa-key fa-2x text-muted"></i>
+                                            }
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <strong class="me-2" style="color: @permission.Color">@permission.NameFa</strong>
+                                                <span class="badge bg-secondary">سطح @(i + 1)</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <code class="bg-light px-2 py-1 rounded">@permission.Code</code>
+                                                <small class="text-muted">(@permission.NameEn)</small>
+                                            </div>
+                                        </div>
+                                        @if (i == parentHierarchy.Count - 1)
+                                        {
+                                            <div class="flex-shrink-0">
+                                                <span class="badge bg-primary">والد مستقیم</span>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    @if (i < parentHierarchy.Count - 1)
+                                    {
+                                        <div class="text-center" style="margin-left: @(indent + 15)px;">
+                                            <i class="fa fa-arrow-down text-muted"></i>
+                                        </div>
+                                    }
+                                }
+
+                                <!-- نمایش دسترسی جدید -->
+                                <div class="text-center" style="margin-left: @(parentHierarchy.Count * 30 + 15)px;">
+                                    <i class="fa fa-arrow-down text-success fa-2x"></i>
+                                </div>
+                                <div class="hierarchy-item d-flex align-items-center mb-0 p-3 border border-success border-2 rounded bg-success-light"
+                                     style="margin-left: @(parentHierarchy.Count * 30)px;">
+                                    <div class="flex-shrink-0 me-3">
+                                        <i class="fa fa-plus-circle fa-2x text-success"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <strong class="text-success">دسترسی جدید (سطح @(parentHierarchy.Count + 1))</strong>
+                                        <br>
+                                        <small class="text-muted">در حال ایجاد...</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- پیشنهاد کد خودکار -->
+                            <div class="alert alert-success mt-4 mb-0">
+                                <i class="fa fa-lightbulb me-1"></i>
+                                <strong>پیشنهاد:</strong> کد دسترسی شما می‌تواند با
+                                <code class="bg-white px-2 py-1 rounded">@(parentHierarchy.LastOrDefault()?.Code).</code>
+                                شروع شود.
+                                <br>
+                                <small class="text-muted">مثلاً: @(parentHierarchy.LastOrDefault()?.Code).CREATE یا @(parentHierarchy.LastOrDefault()?.Code).MANAGE</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- فرم ایجاد -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-edit text-muted me-1"></i>فرم ایجاد دسترسی
+                    </h3>
+                </div>
+                <div class="block-content block-content-full">
+                    <form asp-action="Create" method="post" id="createPermissionForm">
+                        <input type="hidden" asp-for="ParentId" value="@parentId" />
+
+                        <!-- نام فارسی -->
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="NameFa">
+                                نام فارسی <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control form-control-lg" asp-for="NameFa"
+                                   placeholder="مثال: مدیریت تسک‌ها" required autofocus />
+                            <span asp-validation-for="NameFa" class="text-danger"></span>
+                        </div>
+
+                        <!-- نام انگلیسی -->
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="NameEn">
+                                نام انگلیسی <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control form-control-lg" asp-for="NameEn"
+                                   placeholder="TaskManagement" required />
+                            <span asp-validation-for="NameEn" class="text-danger"></span>
+                            <small class="form-text text-muted">فقط حروف انگلیسی، بدون فاصله</small>
+                        </div>
+
+                        <!-- کد دسترسی -->
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="Code">
+                                کد دسترسی <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg" dir="ltr">
+                                @if (parentHierarchy != null && parentHierarchy.Any())
+                                {
+                                    <span class="input-group-text bg-success text-white" style="border-radius: 0.375rem 0 0 0.375rem;">
+                                        @(parentHierarchy.LastOrDefault()?.Code).
+                                    </span>
+                                }
+                                <input type="text" class="form-control" asp-for="Code" id="codeInput"
+                                       style="@(parentHierarchy != null && parentHierarchy.Any() ? "border-radius: 0 0.375rem 0.375rem 0 !important;" : "")"
+                                       placeholder="@(parentHierarchy != null && parentHierarchy.Any() ? "CREATE" : "TASK.MANAGE")"
+                                       required />
+                            </div>
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                @if (parentHierarchy != null && parentHierarchy.Any())
+                                {
+                                    <span>کد کامل: <code id="fullCodePreview" dir="ltr">@(parentHierarchy.LastOrDefault()?.Code).</code></span>
+                                }
+                                else
+                                {
+                                    <span>مثال: <code dir="ltr">TASK.CREATE</code> یا <code dir="ltr">CRM.VIEW</code></span>
+                                }
+                            </small>
+                        </div>
+
+                        <!-- دکمه‌ها -->
+                        <div class="row mt-5">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-success btn-lg w-100">
+                                    <i class="fa fa-check me-1"></i>ذخیره
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <a asp-action="Index" class="btn btn-secondary btn-lg w-100">
+                                    <i class="fa fa-arrow-right me-1"></i>بازگشت
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- راهنما - Collapsible -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default"
+                     style="cursor: pointer;"
+                     data-bs-toggle="collapse"
+                     data-bs-target="#helpCollapse"
+                     aria-expanded="false"
+                     aria-controls="helpCollapse">
+                    <h3 class="block-title mb-0">
+                        <i class="fa fa-info-circle text-info me-2"></i>
+                        <span class="fw-semibold">راهنما:</span>
+                        <span class="text-muted small">نام فارسی، نام انگلیسی، کد دسترسی</span>
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn-block-option">
+                            <i class="fa fa-chevron-down" id="helpToggleIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="collapse" id="helpCollapse">
+                    <div class="block-content">
+                        <ul class="mb-0">
+                            <li class="mb-2">
+                                <strong>نام فارسی:</strong> نام قابل نمایش دسترسی (مثال: مدیریت تسک‌ها)
+                            </li>
+                            <li class="mb-2">
+                                <strong>نام انگلیسی:</strong> نام یکتا برای سیستم (مثال: TaskManagement)
+                            </li>
+                            <li class="mb-2">
+                                <strong>کد دسترسی:</strong> کد منحصر به فرد (مثال: TASK.CREATE، CRM.VIEW)
+                            </li>
+                            @if (parentHierarchy != null && parentHierarchy.Any())
+                            {
+                                <li class="mt-3">
+                                    <strong class="text-success">💡 نکته:</strong> چون این دسترسی زیرمجموعه است، کد آن باید با
+                                    <code>@(parentHierarchy.LastOrDefault()?.Code).</code> شروع شود.
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function() {
+            var parentCode = '@(parentHierarchy?.LastOrDefault()?.Code ?? "")';
+
+            // Auto-generate Code from NameEn
+            $('input[name="NameEn"]').on('input', function() {
+                var nameEn = $(this).val().toUpperCase().replace(/\s+/g, '');
+
+                if (!$('#codeInput').data('manuallyEdited')) {
+                    if (parentCode) {
+                        $('#codeInput').val(nameEn);
+                        updateFullCodePreview(nameEn);
+                    } else {
+                        $('#codeInput').val(nameEn);
+                    }
+                }
+            });
+
+            // Track manual editing
+            $('#codeInput').on('input', function() {
+                $(this).data('manuallyEdited', true);
+
+                if (parentCode) {
+                    updateFullCodePreview($(this).val());
+                }
+            });
+
+            // Update full code preview
+            function updateFullCodePreview(code) {
+                $('#fullCodePreview').text(parentCode + '.' + code);
+            }
+
+            // Submit handler - auto-prepend parent code
+            $('#createPermissionForm').on('submit', function(e) {
+                var codeInput = $('#codeInput');
+                var code = codeInput.val();
+
+                if (parentCode && !code.startsWith(parentCode + '.')) {
+                    codeInput.val(parentCode + '.' + code);
+                }
+            });
+
+            // Toggle icon animation for hierarchy collapse
+            $('#hierarchyCollapse').on('show.bs.collapse', function() {
+                $('#hierarchyToggleIcon').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            }).on('hide.bs.collapse', function() {
+                $('#hierarchyToggleIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            });
+
+            // Toggle icon animation for help collapse
+            $('#helpCollapse').on('show.bs.collapse', function() {
+                $('#helpToggleIcon').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            }).on('hide.bs.collapse', function() {
+                $('#helpToggleIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            });
+        });
+    </script>
+
+    <style>
+        .permission-hierarchy {
+            position: relative;
+        }
+
+        .hierarchy-item {
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+            .hierarchy-item:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+
+        .bg-success-light {
+            background-color: rgba(25, 135, 84, 0.1) !important;
+        }
+
+        .bg-info-light {
+            background-color: rgba(13, 202, 240, 0.1) !important;
+        }
+
+        /* Collapsible header hover effect */
+        .block-header[data-bs-toggle="collapse"] {
+            transition: background-color 0.3s ease;
+        }
+
+            .block-header[data-bs-toggle="collapse"]:hover {
+                background-color: rgba(0, 0, 0, 0.03) !important;
+            }
+
+        /* Icon animation */
+        .btn-block-option i {
+            transition: transform 0.3s ease;
+        }
+
+        .block-title {
+            user-select: none;
+        }
+
+            /* Small text in header */
+            .block-title .text-muted.small {
+                font-size: 0.85rem;
+                font-weight: normal;
+            }
+    </style>
+}

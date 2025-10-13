@@ -1,0 +1,28 @@
+﻿@model List<PermissionTreeViewModel>
+
+@if (Model != null && Model.Any())
+{
+    <ul>
+        @foreach (var permission in Model)
+        {
+            <li data-jstree='{"opened":true}' id="perm-@permission.Id">
+                <i class="@(permission.Icon ?? "fa fa-key")" style="color: @(permission.Color ?? "#333");"></i>
+                <strong>@permission.NameFa</strong>
+                <small class="text-muted">(@permission.Code)</small>
+
+                @if (permission.Children != null && permission.Children.Any())
+                {
+                    @await Html.PartialAsync("_PermissionTreeView", permission.Children)
+                }
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <ul>
+        <li data-jstree='{"opened":true}' class="text-muted">
+            <i class="fa fa-info-circle"></i> هیچ دسترسی موجود نیست
+        </li>
+    </ul>
+}

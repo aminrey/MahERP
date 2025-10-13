@@ -1,0 +1,135 @@
+﻿@model Permission
+@{
+    ViewData["Title"] = "ویرایش دسترسی";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-edit text-warning me-2"></i>ویرایش دسترسی
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">دسترسی‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">ویرایش</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-edit text-muted me-1"></i>فرم ویرایش: @Model.NameFa
+                    </h3>
+                </div>
+                <div class="block-content block-content-full">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="ParentId" />
+                        <input type="hidden" asp-for="CreateDate" />
+                        <input type="hidden" asp-for="CreatorUserId" />
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="NameFa">
+                                    نام فارسی <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" asp-for="NameFa" required />
+                                <span asp-validation-for="NameFa" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="NameEn">
+                                    نام انگلیسی <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" asp-for="NameEn" required />
+                                <span asp-validation-for="NameEn" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="Code">
+                                    کد دسترسی <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" asp-for="Code" required />
+                                <span asp-validation-for="Code" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="DisplayOrder">
+                                    ترتیب نمایش
+                                </label>
+                                <input type="number" class="form-control" asp-for="DisplayOrder" />
+                                <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="Icon">
+                                    آیکون
+                                </label>
+                                <input type="text" class="form-control" asp-for="Icon" />
+                                <span asp-validation-for="Icon" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="Color">
+                                    رنگ
+                                </label>
+                                <input type="color" class="form-control" asp-for="Color" />
+                                <span asp-validation-for="Color" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="Description">
+                                توضیحات
+                            </label>
+                            <textarea class="form-control" asp-for="Description" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" asp-for="IsActive" />
+                            <label class="form-check-label" asp-for="IsActive">
+                                فعال
+                            </label>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-warning btn-lg">
+                                    <i class="fa fa-check me-1"></i>ذخیره تغییرات
+                                </button>
+                            </div>
+                            <div class="col-6 text-end">
+                                <a asp-action="Index" class="btn btn-secondary btn-lg">
+                                    <i class="fa fa-arrow-right me-1"></i>بازگشت
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

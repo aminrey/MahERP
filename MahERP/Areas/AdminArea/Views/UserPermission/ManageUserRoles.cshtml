@@ -1,0 +1,273 @@
+﻿@model List<UserRole>
+@{
+    ViewData["Title"] = "مدیریت نقش‌های کاربر";
+    var userId = ViewBag.UserId as string;
+    var userFullName = ViewBag.UserFullName as string;
+    var availableRoles = ViewBag.AvailableRoles as SelectList;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-user-shield text-primary me-2"></i>مدیریت نقش‌های: @userFullName
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">دسترسی کاربران</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">نقش‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <!-- Current Roles -->
+        <div class="col-lg-7">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-list text-muted me-1"></i>نقش‌های فعلی
+                    </h3>
+                    <div class="block-options">
+                        <span class="badge bg-primary">@Model.Count نقش</span>
+                    </div>
+                </div>
+                <div class="block-content">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover table-vcenter">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 50px;">#</th>
+                                        <th>نام نقش</th>
+                                        <th class="text-center">تاریخ تخصیص</th>
+                                        <th class="text-center">محدودیت زمانی</th>
+                                        <th class="text-center">وضعیت</th>
+                                        <th class="text-center" style="width: 100px;">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var userRole in Model.OrderBy(ur => ur.Role.Priority))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                     style="width: 35px; height: 35px; background-color: @userRole.Role.Color; color: white;">
+                                                    <i class="@userRole.Role.Icon"></i>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>@userRole.Role.NameFa</strong>
+                                                    <br>
+                                                    <small class="text-muted">@userRole.Role.NameEn</small>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <small>@userRole.AssignDate.ToString("yyyy/MM/dd")</small>
+                                            </td>
+                                            <td class="text-center">
+                                                @if (userRole.StartDate.HasValue || userRole.EndDate.HasValue)
+                                                {
+                                                    <div>
+                                                        @if (userRole.StartDate.HasValue)
+                                                        {
+                                                            <small class="d-block">از: @userRole.StartDate.Value.ToString("yyyy/MM/dd")</small>
+                                                        }
+                                                        @if (userRole.EndDate.HasValue)
+                                                        {
+                                                            <small class="d-block">تا: @userRole.EndDate.Value.ToString("yyyy/MM/dd")</small>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-info">نامحدود</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if (userRole.IsActive)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fa fa-check me-1"></i>فعال
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">
+                                                        <i class="fa fa-times me-1"></i>غیرفعال
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-danger"
+                                                        onclick="removeRole('@userId', @userRole.RoleId)"
+                                                        title="حذف نقش">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fa fa-exclamation-triangle me-1"></i>
+                            هیچ نقشی به این کاربر تخصیص داده نشده است.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Assign New Role -->
+        <div class="col-lg-5">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default bg-primary-light">
+                    <h3 class="block-title">
+                        <i class="fa fa-plus-circle text-success me-1"></i>تخصیص نقش جدید
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <form id="assignRoleForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@userId" />
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                نقش <span class="text-danger">*</span>
+                            </label>
+                            <select name="roleId" class="form-select" required>
+                                <option value="">-- انتخاب نقش --</option>
+                                @foreach (SelectListItem item in availableRoles)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">تاریخ شروع</label>
+                                <input type="date" name="startDate" class="form-control" />
+                                <small class="form-text text-muted">اختیاری</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">تاریخ پایان</label>
+                                <input type="date" name="endDate" class="form-control" />
+                                <small class="form-text text-muted">اختیاری</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">یادداشت</label>
+                            <textarea name="notes" class="form-control" rows="2"
+                                      placeholder="یادداشت اختیاری..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-1"></i>
+                            با تخصیص نقش، دسترسی‌های آن به صورت خودکار به کاربر اعمال می‌شود.
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fa fa-check me-1"></i>تخصیص نقش
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-link text-muted me-1"></i>لینک‌های سریع
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="d-grid gap-2">
+                        <a asp-action="ManageUserPermissions" asp-route-userId="@userId"
+                           class="btn btn-primary">
+                            <i class="fa fa-key me-1"></i>مدیریت دسترسی‌ها
+                        </a>
+                        <a asp-action="ViewPermissionLogs" asp-route-userId="@userId"
+                           class="btn btn-info">
+                            <i class="fa fa-history me-1"></i>لاگ دسترسی‌ها
+                        </a>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fa fa-arrow-right me-1"></i>بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('#assignRoleForm').on('submit', function(e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: '@Url.Action("AssignRole")',
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('خطا در تخصیص نقش');
+                }
+            });
+        });
+
+        function removeRole(userId, roleId) {
+            if (confirm('آیا از حذف این نقش مطمئن هستید؟\n\nتوجه: دسترسی‌های مرتبط با این نقش نیز حذف می‌شوند.')) {
+                $.ajax({
+                    url: '@Url.Action("RemoveRole")',
+                    type: 'POST',
+                    data: {
+                        userId: userId,
+                        roleId: roleId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function() {
+                        toastr.error('خطا در حذف نقش');
+                    }
+                });
+            }
+        }
+    </script>
+}

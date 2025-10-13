@@ -119,11 +119,15 @@
                                     </a>
                                 </td>
                                 <td>@(contact.NationalCode ?? "-")</td>
-                                <td>
+                                <td >
                                     @if (contact.Phones?.Any() == true)
                                     {
                                         var defaultPhone = contact.Phones.FirstOrDefault(p => p.IsDefault);
-                                        @(defaultPhone?.FormattedNumber ?? contact.Phones.First().FormattedNumber)
+
+                                        <span dir="ltr">
+                                            @(defaultPhone?.FormattedNumber ?? contact.Phones.First().FormattedNumber)
+
+                                        </span>
                                     }
                                     else
                                     {

@@ -1,0 +1,256 @@
+﻿@model ManageRolePermissionsViewModel
+@{
+    ViewData["Title"] = "مدیریت دسترسی‌های نقش";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-key text-primary me-2"></i>مدیریت دسترسی‌ها: @Model.RoleName
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">نقش‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">دسترسی‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-sitemap text-muted me-1"></i>انتخاب دسترسی‌ها
+            </h3>
+            <div class="block-options">
+                <button type="button" class="btn btn-sm btn-success" onclick="selectAll()">
+                    <i class="fa fa-check-square me-1"></i>انتخاب همه
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="deselectAll()">
+                    <i class="fa fa-square me-1"></i>لغو همه
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="expandAll()">
+                    <i class="fa fa-expand me-1"></i>باز کردن همه
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="collapseAll()">
+                    <i class="fa fa-compress me-1"></i>بستن همه
+                </button>
+            </div>
+        </div>
+        <div class="block-content">
+            <form asp-action="ManagePermissions" method="post" id="permissionsForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="RoleId" />
+                <input type="hidden" asp-for="RoleName" />
+
+                <div class="alert alert-info mb-4">
+                    <i class="fa fa-info-circle me-1"></i>
+                    <strong>راهنما:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>✅ انتخاب <strong>والد:</strong> فقط خود والد انتخاب می‌شود</li>
+                        <li>✅ انتخاب <strong>فرزند:</strong> خود فرزند + تمام والدهای بالاتر انتخاب می‌شوند</li>
+                        <li>دسترسی‌های انتخاب شده به صورت خودکار به کاربران این نقش اعمال می‌شوند</li>
+                    </ul>
+                </div>
+
+                <!-- Permission Tree -->
+                <div id="permission-tree" class="permission-tree-container mb-4">
+                    @if (Model.PermissionTree != null && Model.PermissionTree.Any())
+                    {
+                        @await Html.PartialAsync("_PermissionTreePartial", Model.PermissionTree)
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fa fa-exclamation-triangle me-1"></i>
+                            هیچ دسترسی در سیستم تعریف نشده است.
+                        </div>
+                    }
+                </div>
+
+                <!-- Selected Count -->
+                <div class="alert alert-success">
+                    <i class="fa fa-check-circle me-1"></i>
+                    <strong id="selectedCount">0</strong> دسترسی انتخاب شده
+                </div>
+
+                <!-- Hidden container for selected IDs -->
+                <div id="selectedIdsContainer"></div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fa fa-save me-1"></i>ذخیره دسترسی‌ها
+                        </button>
+                    </div>
+                    <div class="col-6 text-end">
+                        <a asp-action="Index" class="btn btn-secondary btn-lg">
+                            <i class="fa fa-arrow-right me-1"></i>بازگشت
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/themes/default/style.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js"></script>
+
+    <script>
+        $(function () {
+            console.log('=== Initializing jsTree ===');
+
+            // ✅ بر اساس مستندات: ابتدا instance بسازید
+            $('#permission-tree').jstree({
+                'core': {
+                    'themes': {
+                        'responsive': true,
+                        'variant': 'large',
+                        'stripes': true
+                    }
+                },
+                'checkbox': {
+                    'keep_selected_style': false,
+                    'three_state': false,
+                    'cascade': 'up'
+                },
+                'plugins': ['checkbox', 'wholerow']
+            });
+
+            // ✅ بر اساس مستندات: bind به event ها
+            $('#permission-tree').on("changed.jstree", function (e, data) {
+                console.log('✅ Tree changed - Selected nodes:', data.selected);
+                updateHiddenInputs();
+                updateSelectedCount();
+            });
+
+            // ✅ وقتی jsTree آماده شد، انتخاب اولیه را اعمال کنید
+            $('#permission-tree').on("ready.jstree", function (e, data) {
+                console.log('✅ jsTree is ready');
+
+                var selectedIds = @Html.Raw(Json.Serialize(Model.SelectedPermissionIds ?? new List<int>()));
+                console.log('Initially selected IDs:', selectedIds);
+
+                if (selectedIds && selectedIds.length > 0) {
+                    selectedIds.forEach(function(id) {
+                        var nodeId = 'perm-' + id;
+                        // ✅ بر اساس مستندات: سه روش برای select کردن
+                        $('#permission-tree').jstree('select_node', nodeId);
+                    });
+                }
+
+                updateHiddenInputs();
+                updateSelectedCount();
+            });
+
+            // ✅ تابع به‌روزرسانی hidden inputs
+            function updateHiddenInputs() {
+                // ✅ بر اساس مستندات: get_selected برای گرفتن node های انتخاب شده
+                var selectedNodes = $('#permission-tree').jstree('get_selected', true);
+
+                var selectedIds = selectedNodes.map(function(node) {
+                    return parseInt(node.id.replace('perm-', ''));
+                }).filter(function(id) {
+                    return !isNaN(id);
+                });
+
+                console.log('Updating hidden inputs with IDs:', selectedIds);
+
+                // پاک کردن inputs قبلی
+                $('#selectedIdsContainer').empty();
+
+                // اضافه کردن inputs جدید
+                selectedIds.forEach(function(id) {
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'SelectedPermissionIds',
+                        value: id
+                    }).appendTo('#selectedIdsContainer');
+                });
+            }
+
+            function updateSelectedCount() {
+                var count = $('#permission-tree').jstree('get_selected').length;
+                $('#selectedCount').text(count);
+            }
+
+            // ✅ توابع global برای دکمه‌ها
+            window.selectAll = function() {
+                $('#permission-tree').jstree('select_all');
+            };
+
+            window.deselectAll = function() {
+                $('#permission-tree').jstree('deselect_all');
+            };
+
+            window.expandAll = function() {
+                $('#permission-tree').jstree('open_all');
+            };
+
+            window.collapseAll = function() {
+                $('#permission-tree').jstree('close_all');
+            };
+
+            // Form submission
+            $('#permissionsForm').on('submit', function(e) {
+                var selectedIds = $('#selectedIdsContainer input[name="SelectedPermissionIds"]').map(function() {
+                    return $(this).val();
+                }).get();
+
+                console.log('=== Form Submitting ===');
+                console.log('Selected IDs:', selectedIds);
+                console.log('Form data:', $(this).serialize());
+
+                if (selectedIds.length === 0) {
+                    if (!confirm('هیچ دسترسی انتخاب نشده است. آیا مطمئن هستید؟')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+        });
+    </script>
+
+    <style>
+        .permission-tree-container {
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+    
+        .jstree-default .jstree-hovered {
+            background: #e9ecef !important;
+        }
+
+        .jstree-default .jstree-anchor {
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+
+        /* RTL Support */
+        .jstree-default .jstree-node {
+            margin-right: 0;
+        }
+
+        .jstree-default .jstree-icon {
+            margin-left: 5px;
+        }
+    </style>
+}

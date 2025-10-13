@@ -17,7 +17,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("UserManager")]
     public class UserManagerController : BaseController
     {
         private readonly IUnitOfWork _Context;

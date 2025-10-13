@@ -39,7 +39,7 @@ builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ICRMRepository, CRMRepository>();
-builder.Services.AddScoped<IRoleRepository, RoleRepository>(); // اضافه شده
+builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>(); // اضافه شده
 builder.Services.AddScoped<IUserManagerRepository,UserManagerRepository>(); 
 builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>(); // اضافه شده
 builder.Services.AddScoped<ICoreNotificationRepository, CoreNotificationRepository>(); // سیستم نوتیفیشن کلی
@@ -150,6 +150,12 @@ builder.Services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.Ap
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<PersianDateHelper>();
+
+// ✅ Register NEW Permission Services
+builder.Services.AddScoped<IPermissionService, PermissionRepository>();
+builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+builder.Services.AddScoped<IUserPermissionService, UserPermissionRepository>();
+
 
 var app = builder.Build();
 

@@ -113,6 +113,14 @@ namespace MahERP.DataModelLayer
         public DbSet<SmsQueue> SmsQueue_Tbl { get; set; }
         public DbSet<EmailQueue> EmailQueue_Tbl { get; set; }
         public DbSet<Settings> Settings_Tbl { get; set; }
+        // ✅ NEW: Permission System
+        public DbSet<Permission> Permission_Tbl { get; set; }
+        public DbSet<Role> Role_Tbl { get; set; }
+        public DbSet<RolePermission> RolePermission_Tbl { get; set; }
+        public DbSet<UserRole> UserRole_Tbl { get; set; }
+        public DbSet<UserPermission> UserPermission_Tbl { get; set; }
+        public DbSet<PermissionChangeLog> PermissionChangeLog_Tbl { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

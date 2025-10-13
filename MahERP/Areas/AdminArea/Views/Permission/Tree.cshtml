@@ -1,0 +1,109 @@
+﻿@model List<PermissionTreeViewModel>
+@{
+    ViewData["Title"] = "درخت دسترسی‌ها";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-sitemap text-primary me-2"></i>درخت دسترسی‌ها
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">دسترسی‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">نمای درختی</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <div class="col-12">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-sitemap text-muted me-1"></i>ساختار درختی دسترسی‌ها
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="expandAll()">
+                            <i class="fa fa-expand me-1"></i>باز کردن همه
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="collapseAll()">
+                            <i class="fa fa-compress me-1"></i>بستن همه
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div id="permission-tree-view" class="p-3">
+                        @await Html.PartialAsync("_PermissionTreeView", Model)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jstree/jstree.min.js"></script>
+    <link href="~/lib/jstree/themes/default/style.min.css" rel="stylesheet" />
+
+    <script>
+        $(document).ready(function() {
+            $('#permission-tree-view').jstree({
+                'core': {
+                    'themes': {
+                        'responsive': true,
+                        'variant': 'large'
+                    }
+                },
+                'plugins': ['wholerow']
+            });
+        });
+
+        function expandAll() {
+            $('#permission-tree-view').jstree('open_all');
+        }
+
+        function collapseAll() {
+            $('#permission-tree-view').jstree('close_all');
+        }
+    </script>
+
+    <style>
+        .jstree-default .jstree-node {
+            margin: 5px 0;
+        }
+
+        .jstree-default .jstree-anchor {
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .jstree-default .jstree-hovered {
+            background: #e9ecef;
+        }
+
+        .permission-tree-node {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+
+        .permission-tree-node:hover {
+            background: #e9ecef;
+        }
+    </style>
+}
