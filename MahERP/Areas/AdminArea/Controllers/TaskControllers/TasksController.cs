@@ -292,7 +292,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 {
                     filters = new TaskFilterViewModel();
                 }
-
+                if (filters.StatusFilters == null || !filters.StatusFilters.Any())
+                    filters.StatusFilters = new List<byte> { 0, 1 };
                 // ⭐⭐⭐ بررسی TaskViewType از query string
                 if (!string.IsNullOrEmpty(Request.Query["viewType"]))
                 {

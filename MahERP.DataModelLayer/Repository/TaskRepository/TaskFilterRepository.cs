@@ -9,6 +9,7 @@ using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.EntityFrameworkCore;
+using static NuGet.Packaging.PackagingConstants;
 
 namespace MahERP.DataModelLayer.Repository.TaskRepository
 {
@@ -469,7 +470,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
 
                 AssignedByMe = tasks.Count(t => t.CreatorUserId == userId),
 
-                // ⭐⭐⭐ اصلاح شده: بررسی CompletionDate کاربر فعلی
+                // ⭐⭐⭐ اصلاح شده: بررسی CompletionDate کاربر فعالی
                 CompletedTasks = tasks.Count(t =>
                     t.AssignmentsTaskUser?.Any(a =>
                         a.AssignedUserId == userId &&
@@ -478,7 +479,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 // ⭐⭐⭐ اصلاح شده: عقب افتاده‌ها
                 OverdueTasks = tasks.Count(t =>
                 {
-                    // بررسی اینکه آیا کاربر فعلی تسک را تکمیل کرده؟
+                    // بررسی اینکه آیا کاربر فعالی تسک را تکمیل کرده؟
                     var myAssignment = t.AssignmentsTaskUser?
                         .FirstOrDefault(a => a.AssignedUserId == userId);
 
@@ -562,7 +563,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 }).ToList()
             };
 
-            // ⭐ بررسی "روز من" و فوکوس برای کاربر فعلی
+            // ⭐ بررسی "روز من" و فوکوس برای کاربر فعالی
             if (!string.IsNullOrEmpty(currentUserId))
             {
                 // ⭐⭐⭐ اصلاح شده: بررسی IsInMyDay از طریق TaskAssignment
@@ -583,7 +584,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 }
                 else
                 {
-                    // کاربر فعلی عضو این تسک نیست
+                    // کاربر فعالی عضو این تسک نیست
                     taskViewModel.IsInMyDay = false;
                     taskViewModel.IsFocused = false;
                 }
@@ -635,7 +636,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 }).ToList()
             };
 
-            // ⭐ بررسی "روز من" و فوکوس برای کاربر فعلی (نسخه Async)
+            // ⭐ بررسی "روز من" و فوکوس برای کاربر فعالی (نسخه Async)
             if (!string.IsNullOrEmpty(currentUserId))
             {
                 // ⭐⭐⭐ اصلاح شده: بررسی IsInMyDay از طریق TaskAssignment
@@ -837,8 +838,11 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
         {
             try
             {
+                var filters = new TaskFilterViewModel { StatusFilters = new List<byte> { 0, 1 } };
+
                 var tasks = await _context.Tasks_Tbl
-                    .Where(t => !t.IsDeleted && t.CreatorUserId == userId &&
+                    .Where(t => !t.IsDeleted && t.CreatorUserId == userId && filters.StatusFilters.Contains(t.Status) &&
+
                                t.TaskAssignments.Any(ta => ta.AssignedUserId != null && ta.AssignedUserId != userId))
                     .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
                     .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedInTeam)
@@ -864,8 +868,12 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
         {
             try
             {
+                var filters = new TaskFilterViewModel { StatusFilters = new List<byte> { 0, 1 } };
+
                 var tasks = await _context.Tasks_Tbl
                     .Where(t => !t.IsDeleted &&
+                                       filters.StatusFilters.Contains(t.Status) &&
+
                                t.TaskAssignments.Any(ta => ta.AssignedUserId == userId))
                     .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
                     .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedInTeam)
@@ -1322,5 +1330,84 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
         }
 
         #endregion
+
+        /// <summary>
+/// اعمال فیلتر وضعیت در سطح دیتابیس (بهینه‌سازی شده)
+/// </summary>
+private IQueryable<Tasks> ApplyStatusFilter(IQueryable<Tasks> query, List<byte> statusFilters)
+{
+    // اگر فیلتر وضعیت تنظیم شده باشد، آن را در Query اعمال کن
+    if (statusFilters != null && statusFilters.Any())
+    {
+        query = query.Where(t => statusFilters.Contains(t.Status));
+    }
+
+    return query;
+}
+
+/// <summary>
+/// دریافت تسک‌ها با فیلتر وضعیت در سطح دیتابیس
+/// </summary>
+public async Task<TaskFilterResultViewModel> GetAllVisibleTasksAsync(string userId, TaskFilterViewModel filters = null)
+{
+    try
+    {
+        // پیش‌فرض: فقط تسک‌های Created (0) و InProgress (1)
+        if (filters == null)
+        {
+            filters = new TaskFilterViewModel { StatusFilters = new List<byte> { 0, 1 } };
+        }
+        else if (filters.StatusFilters == null || !filters.StatusFilters.Any())
+        {
+            filters.StatusFilters = new List<byte> { 0, 1 };
+        }
+
+        // ⭐ دریافت IDs قابل مشاهده
+        var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
+
+        // ⭐⭐⭐ کوئری اصلی با فیلتر وضعیت در Database Level
+        var query = _context.Tasks_Tbl
+            .Where(t => visibleTaskIds.Contains(t.Id) && 
+                       !t.IsDeleted &&
+                       filters.StatusFilters.Contains(t.Status)) // ⭐ فیلتر قبل از ToList
+            .Include(t => t.Creator)
+            .Include(t => t.TaskAssignments)
+                .ThenInclude(ta => ta.AssignedUser)
+            .Include(t => t.TaskCategory)
+            .Include(t => t.Team)
+            .Include(t => t.Contact)
+            .Include(t => t.Organization);
+
+        // ⭐ اجرای Query و گروه‌بندی
+        var tasks = await query.OrderBy(t => t.CreateDate).ToListAsync();
+                var taskViewModels = new List<TaskViewModel>();
+                foreach (var task in tasks)
+                {
+                    var taskViewModel = await MapToViewModelAsync(task, userId);
+                    taskViewModels.Add(taskViewModel);
+                }
+
+                // ⭐ گروه‌بندی
+                var grouped = await GroupTasksByTeamAndPersonFromViewModelsAsync(taskViewModels, userId);
+
+
+                return new TaskFilterResultViewModel
+        {
+            FilterName = "تسک‌های قابل مشاهده",
+            TotalCount = tasks.Count,
+            GroupedTasks = grouped
+                };
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERROR in GetAllVisibleTasksAsync: {ex.Message}\n{ex.StackTrace}");
+        return new TaskFilterResultViewModel
+        {
+            FilterName = "خطا",
+            TotalCount = 0,
+            GroupedTasks = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>()
+        };
+    }
+}
     }
 }

@@ -4041,6 +4041,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     assignment.UserReport = model.CompletionReport;
                     assignment.ReportDate = DateTime.Now;
                     task.LastUpdateDate = DateTime.Now;
+                    task.Status = 2;
 
                     _context.TaskAssignment_Tbl.Update(assignment);
                 }

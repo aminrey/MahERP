@@ -149,7 +149,6 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         [Display(Name = "نوع تسک")]
         public TaskPriorityFilter? TaskPriority { get; set; }
 
-        [Display(Name = "دسته‌بندی")]
         public int? CategoryId { get; set; }
 
         [Display(Name = "وضعیت تسک")]
@@ -166,6 +165,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
         [Display(Name = "جستجو در متن")]
         public string? SearchTerm { get; set; }
+        public List<byte>? StatusFilters { get; set; }
 
         // خاصیت کمکی برای تشخیص وجود فیلتر فعال
         public bool HasActiveFilters =>
