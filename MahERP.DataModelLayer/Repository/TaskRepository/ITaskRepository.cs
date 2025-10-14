@@ -671,5 +671,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         Task<List<OrganizationViewModel>> GetContactOrganizationsAsync(int contactId);
 
         #endregion
+
+        Task<List<ContactViewModel>> GetOrganizationContactsAsync(int organizationId);
+
     }
 }

@@ -442,49 +442,11 @@
                                         asp-controller="Organizations"
                                         asp-action="Index">
                                             <i class="nav-main-link-icon fa fa-list text-info"></i>
-                                            <span class="nav-main-link-name">همه سازمان‌ها</span>
+                                            <span class="nav-main-link-name">لیست سازمان‌ها</span>
                                         </a>
                                     </li>
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "0") ? "active" : "")"
-                                        asp-area="AdminArea"
-                                        asp-controller="Organizations"
-                                        asp-action="Index"
-                                        asp-route-organizationType="0">
-                                            <i class="nav-main-link-icon fa fa-briefcase text-primary"></i>
-                                            <span class="nav-main-link-name">شرکت‌ها</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "1") ? "active" : "")"
-                                        asp-area="AdminArea"
-                                        asp-controller="Organizations"
-                                        asp-action="Index"
-                                        asp-route-organizationType="1">
-                                            <i class="nav-main-link-icon fa fa-university text-info"></i>
-                                            <span class="nav-main-link-name">سازمان‌ها</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "2") ? "active" : "")"
-                                        asp-area="AdminArea"
-                                        asp-controller="Organizations"
-                                        asp-action="Index"
-                                        asp-route-organizationType="2">
-                                            <i class="nav-main-link-icon fa fa-landmark text-success"></i>
-                                            <span class="nav-main-link-name">موسسات</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "3") ? "active" : "")"
-                                        asp-area="AdminArea"
-                                        asp-controller="Organizations"
-                                        asp-action="Index"
-                                        asp-route-organizationType="3">
-                                            <i class="nav-main-link-icon fa fa-hands-helping text-warning"></i>
-                                            <span class="nav-main-link-name">نهادها</span>
-                                        </a>
-                                    </li>
+                                 
+                                   
                                 }
                                 @if (Html.CanAccessAny("ORG", "ORG.CREATE"))
                                 {
@@ -562,7 +524,7 @@
                                             <small class="text-muted fw-semibold">آمار و گزارشات</small>
                                         </div>
                                     </li>
-                                    <li class="nav-main-item">
+                                   @*  <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contacts", "Statistics") ? "active" : "")"
                                            asp-area="AdminArea"
                                            asp-controller="Contacts"
@@ -570,7 +532,7 @@
                                             <i class="nav-main-link-icon fa fa-chart-pie text-primary"></i>
                                             <span class="nav-main-link-name">آمار افراد</span>
                                         </a>
-                                    </li>
+                                    </li> *@
                                 }
                             </ul>
                         </li>

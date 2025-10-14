@@ -1,0 +1,136 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.DepartmentMemberViewModel
+@{
+    ViewData["Title"] = "افزودن عضو به بخش";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-user-plus me-2"></i>
+            افزودن عضو به بخش: @ViewBag.DepartmentTitle
+        </h3>
+        <div class="block-options">
+            <a asp-action="OrganizationChart" asp-route-organizationId="@ViewBag.OrganizationId"
+               class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i> بازگشت
+            </a>
+        </div>
+    </div>
+
+    <div class="block-content block-content-full">
+        <form asp-action="AddMember" method="post" class="row g-3">
+            <input type="hidden" asp-for="DepartmentId" />
+
+
+            <!-- انتخاب فرد با جستجو -->
+            <div class="col-md-6">
+                <label asp-for="ContactId" class="form-label">
+                    <i class="fa fa-user text-primary me-1"></i>
+                    فرد <span class="text-danger">*</span>
+                </label>
+                <select asp-for="ContactId" asp-items="ViewBag.AvailableContacts"
+                        class="form-select select2-search"
+                        id="contactSelect"
+                        data-placeholder="جستجوی نام، کد ملی، شماره تماس..."
+                        required>
+                    <option value="">-- جستجو و انتخاب کنید --</option>
+                </select>
+                <span asp-validation-for="ContactId" class="text-danger"></span>
+                <small class="form-text text-muted">
+                    <i class="fa fa-search"></i> می‌توانید با تایپ نام، کد ملی یا شماره تماس جستجو کنید
+                </small>
+            </div>
+
+
+            <!-- انتخاب سمت (اختیاری) -->
+            <div class="col-md-6">
+                <label asp-for="PositionId" class="form-label">
+                    <i class="fa fa-briefcase text-info me-1"></i>
+                    سمت (اختیاری)
+                </label>
+                <select asp-for="PositionId" asp-items="ViewBag.Positions" class="form-select">
+                    <option value="0">-- بدون سمت (عضو عادی) --</option>
+                </select>
+                <span asp-validation-for="PositionId" class="text-danger"></span>
+                <small class="form-text text-muted">
+                    <i class="fa fa-info-circle"></i>
+                    اگر سمتی انتخاب نکنید، به صورت خودکار سمت "عضو" اختصاص داده می‌شود
+                </small>
+            </div>
+
+           
+
+            <!-- وضعیت فعال -->
+            <div class="col-md-6">
+                <div class="form-check form-switch mt-4">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                    <label asp-for="IsActive" class="form-check-label">
+                        <i class="fa fa-check-circle text-success me-1"></i>
+                        فعال
+                    </label>
+                </div>
+            </div>
+
+            <!-- یادداشت‌ها -->
+            <div class="col-12">
+                <label asp-for="Notes" class="form-label">
+                    <i class="fa fa-sticky-note text-secondary me-1"></i>
+                    یادداشت‌ها
+                </label>
+                <textarea asp-for="Notes" class="form-control" rows="3"
+                          placeholder="توضیحات اضافی..."></textarea>
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+
+            <!-- دکمه‌ها -->
+            <div class="col-12">
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="OrganizationChart"
+                       asp-route-organizationId="@ViewBag.OrganizationId"
+                       class="btn btn-secondary">
+                        <i class="fa fa-times me-1"></i> انصراف
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save me-1"></i> ذخیره
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function() {
+            // تنظیم Date Picker برای تاریخ شمسی
+            $('.date-picker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,
+                autoClose: true
+            });
+
+            // نمایش اطلاعات فرد انتخاب شده
+            $('#ContactId').on('change', function() {
+                var contactId = $(this).val();
+                if (contactId) {
+                    // می‌توانید با AJAX اطلاعات بیشتری را دریافت کنید
+                    console.log('Selected contact:', contactId);
+                }
+            });
+
+            // هشدار در صورت عدم انتخاب سمت
+            $('form').on('submit', function(e) {
+                var positionId = $('#PositionId').val();
+                if (!positionId || positionId === '0') {
+                    var confirmed = confirm('شما سمتی انتخاب نکرده‌اید. سمت "عضو" به صورت پیش‌فرض اختصاص داده می‌شود. ادامه می‌دهید؟');
+                    if (!confirmed) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            });
+        });
+    </script>
+}

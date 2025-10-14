@@ -17,11 +17,13 @@ using MahERP.WebApp.Services;
 using MahERP.DataModelLayer.Services;
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.Attributes;
 
 namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE")]
     public class EmailTemplateController : BaseController
     {
         private readonly IEmailTemplateRepository _templateRepo;
@@ -47,8 +49,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== GET: Index ==========
-        
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.VIEW")]
         public async Task<IActionResult> Index()
         {
             var templates = await _templateRepo.GetAllTemplatesAsync();
@@ -56,17 +58,17 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== GET: Create ==========
-        
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.CREATE")]
         public IActionResult Create()
         {
             return View(new EmailTemplate());
         }
 
         // ========== POST: Create ==========
-        
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.CREATE")]
         public async Task<IActionResult> Create(EmailTemplate model)
         {
             if (!ModelState.IsValid)
@@ -92,8 +94,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== GET: Edit ==========
-        
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.CREATE")]
         public async Task<IActionResult> Edit(int id)
         {
             var template = await _templateRepo.GetTemplateByIdAsync(id);
@@ -104,9 +106,9 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== POST: Edit ==========
-        
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.CREATE")]
         public async Task<IActionResult> Edit(int id, EmailTemplate model)
         {
             if (id != model.Id)
@@ -146,8 +148,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== POST: Upload Image (برای TinyMCE) ==========
-        
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.CREATE")]
         public async Task<IActionResult> UploadImage(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -177,8 +179,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== GET: Details ==========
-        
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.VIEW")]
         public async Task<IActionResult> Details(int id)
         {
             var template = await _templateRepo.GetTemplateWithDetailsAsync(id);
@@ -189,9 +191,9 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== POST: Delete ==========
-        
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.CREATE")]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -211,8 +213,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== جستجوی Contacts ==========
-        
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.VIEW")]
         public async Task<IActionResult> SearchContacts(string search = "")
         {
             var contacts = await _templateRepo.SearchContactsAsync(search);
@@ -220,8 +222,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== جستجوی Organizations ==========
-        
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.VIEW")]
         public async Task<IActionResult> SearchOrganizations(string search = "")
         {
             var organizations = await _templateRepo.SearchOrganizationsAsync(search);
@@ -229,8 +231,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== افزودن مخاطبین ==========
-        
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.CREATE")]
         public async Task<IActionResult> AddRecipients(
             int templateId,
             List<int> contactIds,
@@ -256,8 +258,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== حذف مخاطب ==========
-        
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.EMAIL.TEMPLATE.CREATE")]
         public async Task<IActionResult> RemoveRecipient(int recipientId)
         {
             try

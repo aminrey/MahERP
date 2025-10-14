@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using MahERP.Attributes;
+
 using System;
 using System.Threading.Tasks;
 
@@ -15,6 +17,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("TASK.MYDAY")]
     public class MyDayTaskController : BaseController
     {
         private readonly IMyDayTaskRepository _myDayTaskRepository;

@@ -19,6 +19,9 @@
             <a asp-action="OrganizationChart" asp-route-organizationId="@Model.Id" class="btn btn-sm btn-alt-success">
                 <i class="fa fa-sitemap me-1"></i> چارت سازمانی
             </a>
+            <a asp-action="AddOrganizationContact" asp-route-organizationId="@Model.Id" class="btn btn-sm btn-alt-info">
+                <i class="fa fa-user-plus me-1"></i> افزودن اعضا
+            </a>
         </div>
     </div>
 
@@ -73,7 +76,7 @@
                     <div class="card-body text-center">
                         @if (!string.IsNullOrEmpty(Model.LogoPath))
                         {
-                            <img src="@Model.LogoPath" alt="@Model.DisplayName" 
+                            <img src="@Model.LogoPath" alt="@Model.DisplayName"
                                  class="img-fluid mb-3" style="max-height: 150px;" />
                         }
                         else
@@ -84,7 +87,7 @@
                         }
 
                         <h4 class="mb-1">@Model.Name</h4>
-                        
+
                         @if (!string.IsNullOrEmpty(Model.Brand))
                         {
                             <p class="text-muted mb-2">@Model.Brand</p>
@@ -141,9 +144,40 @@
                         </table>
                     </div>
                 </div>
+                <!-- اطلاعات سیستمی -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa fa-info-circle me-2"></i> اطلاعات سیستمی
+                    </div>
+                    <div class="card-body">
+                        <div class="row small">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <strong>تاریخ ایجاد:</strong><br />
+                                    @Model.CreatedDatePersian
+                                </p>
+                                <p class="mb-0">
+                                    <strong>ایجاد کننده:</strong><br />
+                                    @Model.CreatorName
+                                </p>
+                            </div>
+                            @if (Model.LastUpdateDate.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <p class="mb-0">
+                                        <strong>آخرین بروزرسانی:</strong><br />
+                                        @Model.LastUpdateDatePersian
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+
             </div>
 
-            <!-- اطلاعات تماس -->
+            <!-- اطلاعات تماس و سایر بخش‌ها -->
             <div class="col-md-8">
                 <div class="card mb-4">
                     <div class="card-header bg-info text-white">
@@ -229,6 +263,142 @@
                         </div>
                     </div>
                 </div>
+                <!-- توضیحات -->
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <i class="fa fa-sticky-note me-2"></i> توضیحات
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">@Model.Description</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- ⭐⭐⭐ NEW: اعضای سازمان ⭐⭐⭐ -->
+                @if (Model.Contacts != null)
+                {
+
+                    if (Model.Contacts?.Any() ?? false)
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <i class="fa fa-users me-2"></i> اعضای سازمان
+                                <span class="badge bg-white text-info float-end">@Model.Contacts.Count() نفر</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;">#</th>
+                                                <th>نام و نام خانوادگی</th>
+                                                <th>نوع رابطه</th>
+                                                <th>شماره تماس</th>
+                                                <th class="text-center">وضعیت</th>
+                                                <th class="text-center" style="width: 120px;">عملیات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var orgContact in Model.Contacts.OrderByDescending(c => c.IsPrimary).ThenByDescending(c => c.ImportanceLevel))
+                                            {
+                                                <tr class="@(orgContact.IsPrimary ? "table-warning" : "")">
+                                                    <td class="text-center">@orgContact.Id</td>
+                                                    <td>
+                                                        <strong>@orgContact.Contact.FullName</strong>
+                                                        @if (orgContact.IsPrimary)
+                                                        {
+                                                            <span class="badge bg-warning text-dark ms-2">
+                                                                <i class="fa fa-star"></i> اصلی
+                                                            </span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-@(orgContact.RelationType switch
+                                                              {
+                                                                  0 => "primary",
+                                                                  1 => "success",
+                                                                  2 => "info",
+                                                                  3 => "warning",
+                                                                  4 => "secondary",
+                                                                  _ => "light"
+                                                              })">
+                                                            @(orgContact.RelationType switch
+                                                            {
+                                                                0 => "مدیرعامل",
+                                                                1 => "مدیر",
+                                                                2 => "حسابدار",
+                                                                3 => "کارمند",
+                                                                _ => "سایر"
+                                                            })
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if (orgContact.Contact.Phones?.Any() == true)
+                                                        {
+                                                            var defaultPhone = orgContact.Contact.Phones.FirstOrDefault(p => p.IsDefault);
+                                                            <span dir="ltr">
+                                                                @(defaultPhone?.FormattedNumber ?? orgContact.Contact.Phones.First().FormattedNumber)
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">-</span>
+                                                        }
+                                                    </td>
+                                                   
+                                                    <td class="text-center">
+                                                        @if (orgContact.IsActive)
+                                                        {
+                                                            <span class="badge bg-success">فعال</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-secondary">غیرفعال</span>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="btn-group btn-group-sm">
+                                                            <a asp-controller="Contacts"
+                                                               asp-action="Details"
+                                                               asp-route-id="@orgContact.ContactId"
+                                                               class="btn btn-sm btn-alt-info"
+                                                               title="جزئیات">
+                                                                <i class="fa fa-eye"></i>
+                                                            </a>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-alt-danger"
+                                                                    title="حذف از سازمان"
+                                                                    onclick="removeOrganizationContact(@orgContact.Id, '@orgContact.Contact.FullName')">
+                                                                <i class="fa fa-times"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <i class="fa fa-users me-2"></i> اعضای سازمان
+                            </div>
+                            <div class="card-body text-center py-4">
+                                <i class="fa fa-users fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">هیچ عضوی به این سازمان اضافه نشده است</h5>
+                                <a asp-action="AddOrganizationContact" asp-route-organizationId="@Model.Id" class="btn btn-info mt-3">
+                                    <i class="fa fa-plus me-1"></i> افزودن اولین عضو
+                                </a>
+                            </div>
+                        </div>
+                    }
+                }
 
                 <!-- بخش‌های سازمانی -->
                 @if (Model.Departments?.Any() == true)
@@ -236,7 +406,7 @@
                     <div class="card mb-4">
                         <div class="card-header bg-warning text-dark">
                             <i class="fa fa-sitemap me-2"></i> بخش‌های سازمانی
-                            <a asp-action="OrganizationChart" asp-route-organizationId="@Model.Id" 
+                            <a asp-action="OrganizationChart" asp-route-organizationId="@Model.Id"
                                class="btn btn-sm btn-light float-end">
                                 مشاهده چارت
                             </a>
@@ -288,49 +458,49 @@
                     </div>
                 }
 
-                <!-- توضیحات -->
-                @if (!string.IsNullOrEmpty(Model.Description))
-                {
-                    <div class="card mb-4">
-                        <div class="card-header bg-secondary text-white">
-                            <i class="fa fa-sticky-note me-2"></i> توضیحات
-                        </div>
-                        <div class="card-body">
-                            <p class="mb-0">@Model.Description</p>
-                        </div>
-                    </div>
-                }
-
-                <!-- اطلاعات سیستمی -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fa fa-info-circle me-2"></i> اطلاعات سیستمی
-                    </div>
-                    <div class="card-body">
-                        <div class="row small">
-                            <div class="col-md-6">
-                                <p class="mb-2">
-                                    <strong>تاریخ ایجاد:</strong><br />
-                                    @Model.CreatedDatePersian
-                                </p>
-                                <p class="mb-0">
-                                    <strong>ایجاد کننده:</strong><br />
-                                    @Model.CreatorName
-                                </p>
-                            </div>
-                            @if (Model.LastUpdateDate.HasValue)
-                            {
-                                <div class="col-md-6">
-                                    <p class="mb-0">
-                                        <strong>آخرین بروزرسانی:</strong><br />
-                                        @Model.LastUpdateDatePersian
-                                    </p>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
+               
+               
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function removeOrganizationContact(contactId, contactName) {
+            Swal.fire({
+                title: 'حذف عضو',
+                text: `آیا از حذف "${contactName}" از این سازمان اطمینان دارید؟`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف شود',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // ارسال درخواست حذف به سرور
+                    $.ajax({
+                        url: '@Url.Action("RemoveOrganizationContact", "Organizations")',
+                        type: 'POST',
+                        data: {
+                            id: contactId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function(response) {
+                            if (response.status === 'success' || response.status === 'redirect') {
+                                Swal.fire('حذف شد!', 'عضو با موفقیت حذف شد.', 'success')
+                                    .then(() => location.reload());
+                            } else {
+                                Swal.fire('خطا!', response.message || 'خطا در حذف عضو', 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('خطا!', 'خطا در ارتباط با سرور', 'error');
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

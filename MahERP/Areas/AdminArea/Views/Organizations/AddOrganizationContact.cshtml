@@ -1,0 +1,107 @@
+﻿@model OrganizationContactViewModel
+@{
+    ViewData["Title"] = "افزودن عضو به سازمان";
+}
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-user-plus me-2"></i>
+            افزودن عضو به سازمان: @ViewBag.OrganizationName
+        </h3>
+        <div class="block-options">
+            <a asp-action="Details" asp-route-id="@ViewBag.OrganizationId" 
+               class="btn btn-sm btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i> بازگشت
+            </a>
+        </div>
+    </div>
+
+    <div class="block-content block-content-full">
+        <form asp-action="AddOrganizationContact" method="post" class="row g-3">
+            <input type="hidden" asp-for="OrganizationId" />
+
+
+            <div class="col-md-6">
+                <label asp-for="ContactId" class="form-label">
+                    <i class="fa fa-user text-primary me-1"></i>
+                    فرد <span class="text-danger">*</span>
+                </label>
+                <select asp-for="ContactId" asp-items="ViewBag.AvailableContacts"
+                        class="js-select2 form-select"
+                        id="contactSelect"
+                        data-placeholder="جستجوی نام فرد..."
+                        style="width: 100%;"
+                        required>
+                    <option></option>
+                </select>
+                <span asp-validation-for="ContactId" class="text-danger"></span>
+                <small class="form-text text-muted">
+                    <i class="fa fa-search"></i> برای جستجو شروع به تایپ کنید
+                </small>
+            </div>
+
+
+            <!-- نوع رابطه -->
+            <div class="col-md-6">
+                <label asp-for="RelationType" class="form-label">
+                    <i class="fa fa-link text-info me-1"></i>
+                    نوع رابطه <span class="text-danger">*</span>
+                </label>
+                <select asp-for="RelationType" class="form-select" required>
+                    <option value="0">مدیرعامل</option>
+                    <option value="1">مدیر</option>
+                    <option value="2">حسابدار</option>
+                    <option value="3">کارمند</option>
+                    <option value="5">سایر</option>
+                </select>
+                <span asp-validation-for="RelationType" class="text-danger"></span>
+            </div>
+
+            
+
+           
+           
+
+        
+            <!-- وضعیت فعال -->
+            <div class="col-md-6">
+                <div class="form-check form-switch mt-4">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                    <label asp-for="IsActive" class="form-check-label">
+                        <i class="fa fa-check-circle text-success me-1"></i>
+                        فعال
+                    </label>
+                </div>
+            </div>
+
+            <!-- یادداشت‌ها -->
+            <div class="col-12">
+                <label asp-for="Notes" class="form-label">
+                    <i class="fa fa-sticky-note text-secondary me-1"></i>
+                    یادداشت‌ها
+                </label>
+                <textarea asp-for="Notes" class="form-control" rows="3" 
+                          placeholder="توضیحات اضافی..."></textarea>
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+
+            <!-- دکمه‌ها -->
+            <div class="col-12">
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Details" asp-route-id="@ViewBag.OrganizationId" 
+                       class="btn btn-secondary">
+                        <i class="fa fa-times me-1"></i> انصراف
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save me-1"></i> ذخیره
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

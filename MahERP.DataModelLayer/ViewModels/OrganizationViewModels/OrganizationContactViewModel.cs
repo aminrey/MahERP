@@ -14,17 +14,17 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public int OrganizationId { get; set; }
 
         [Display(Name = "نام سازمان")]
-        public string OrganizationName { get; set; }
+        public string? OrganizationName { get; set; }
 
         [Required(ErrorMessage = "انتخاب فرد الزامی است")]
         [Display(Name = "فرد")]
         public int ContactId { get; set; }
 
         [Display(Name = "نام فرد")]
-        public string ContactName { get; set; }
+        public string? ContactName { get; set; }
 
         [Display(Name = "شماره تماس")]
-        public string ContactPhone { get; set; }
+        public string? ContactPhone { get; set; }
 
         [Required(ErrorMessage = "نوع رابطه الزامی است")]
         [Display(Name = "نوع رابطه")]

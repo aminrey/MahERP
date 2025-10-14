@@ -18,7 +18,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("Contract")]
+    [PermissionRequired("CONTRACT.VIEW")]
 
     public class ContractController : BaseController
     {
@@ -475,7 +475,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             return PartialView("_ToggleActivation", viewModel);
         }
 
-        // فعال/غیرفعال کردن قرارداد - پردازش درخواست
+        // 활성/비활성 계약 - 요청 처리
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ToggleActivationPost(int id)

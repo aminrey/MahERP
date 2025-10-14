@@ -17,7 +17,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("Branch")]
+    [PermissionRequired("CORE.BRANCH.DEFINITIONS.USER")]
 
     public class BranchUserController : BaseController
     {

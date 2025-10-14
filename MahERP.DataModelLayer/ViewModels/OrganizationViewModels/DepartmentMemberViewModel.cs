@@ -24,14 +24,13 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public string ContactName { get; set; }
 
         [Display(Name = "شماره تماس")]
-        public string ContactPhone { get; set; }
+        public string? ContactPhone { get; set; }
 
-        [Required(ErrorMessage = "انتخاب سمت الزامی است")]
         [Display(Name = "سمت")]
-        public int PositionId { get; set; }
+        public int? PositionId { get; set; } 
 
         [Display(Name = "نام سمت")]
-        public string PositionTitle { get; set; }
+        public string? PositionTitle { get; set; }
 
         [Required(ErrorMessage = "تاریخ پیوستن الزامی است")]
         [Display(Name = "تاریخ پیوستن")]
@@ -39,7 +38,7 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public DateTime JoinDate { get; set; } = DateTime.Now;
 
         [Display(Name = "تاریخ پیوستن (شمسی)")]
-        public string JoinDatePersian { get; set; }
+        public string? JoinDatePersian { get; set; }
 
         [Display(Name = "تاریخ ترک")]
         [DataType(DataType.Date)]
@@ -74,6 +73,6 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         };
 
         [Display(Name = "مدت خدمت")]
-        public string ServiceDurationText { get; set; }
+        public string? ServiceDurationText { get; set; }
     }
 }

@@ -1,0 +1,65 @@
+﻿@model UserRole
+
+<div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+        <form asp-action="RemoveRoleConfirmed" method="POST">
+            <input hidden type="text" asp-for="UserId"/>
+            <input hidden type="text" asp-for="RoleId"/>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fa fa-exclamation-triangle me-2"></i>حذف نقش
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    <strong>هشدار!</strong>
+                    <p class="mb-0 mt-2">
+                        آیا از حذف نقش <strong class="text-danger">@Model.Role.NameFa</strong> از کاربر
+                        <strong>@Model.User.FirstName @Model.User.LastName</strong> مطمئن هستید؟
+                    </p>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    <strong>توجه:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>دسترسی‌های مربوط به این نقش از کاربر <strong>حذف</strong> می‌شوند</li>
+                        <li>دسترسی‌های دستی کاربر <strong>حفظ</strong> می‌شوند</li>
+                        <li>این عملیات قابل بازگشت است</li>
+                    </ul>
+                </div>
+
+                <!-- اطلاعات نقش -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center me-3"
+                                 style="width: 50px; height: 50px; background-color: @Model.Role.Color; color: white;">
+                                <i class="@Model.Role.Icon fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">@Model.Role.NameFa</h6>
+                                <small class="text-muted">@Model.Role.NameEn</small>
+                                <br>
+                                <small class="text-muted">تخصیص داده شده در: @Model.AssignDate.ToString("yyyy/MM/dd HH:mm")</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>انصراف
+                </button>
+                <button type="button" class="btn btn-danger" data-save="modal">
+                    <i class="fa fa-trash me-1"></i>بله، حذف شود
+                </button>
+            </div>
+        </form>
+
+        </div>
+
+
+</div>

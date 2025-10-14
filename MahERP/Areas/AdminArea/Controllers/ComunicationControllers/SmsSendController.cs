@@ -15,11 +15,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using MahERP.Attributes;
 
 namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("COMMUNICATION.SMS")]
     public class SmsSendController : BaseController
     {
         private readonly ISmsService _smsService;
@@ -50,8 +52,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== صفحه اصلی ارسال ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.SEND")]
         public async Task<IActionResult> Index()
         {
             ViewBag.Providers = _providerRepo.GetActiveProviders();
@@ -61,8 +63,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ارسال به افراد انتخابی ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.SMS.SEND")]
         public async Task<IActionResult> SendToContacts(
             List<int> contactIds,
             string message,
@@ -100,8 +102,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ارسال به سازمان ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.SMS.SEND")]
         public async Task<IActionResult> SendToOrganization(
             int organizationId,
             string message,
@@ -154,8 +156,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ارسال با قالب ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.SMS.SEND")]
         public async Task<IActionResult> SendWithTemplate(
             int contactId,
             int templateId,
@@ -185,8 +187,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== دریافت لیست مخاطبین برای انتخاب ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.SEND")]
         public async Task<IActionResult> GetContacts(string search = "")
         {
             var contacts = await _templateRepo.SearchContactsAsync(search);
@@ -194,8 +196,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== افزودن به صف ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.SMS.SEND")]
         public async Task<IActionResult> SendToContactsQueued(
             List<int> contactIds,
             string message,
@@ -249,8 +251,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ارسال به دریافت کنندگان قالب ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.SMS.SEND")]
         public async Task<IActionResult> SendToTemplateRecipients(
             int templateId,
             bool useQueue = true)

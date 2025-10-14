@@ -380,8 +380,39 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
                 .Any(m => m.ContactId == contactId && m.DepartmentId == departmentId && m.IsActive);
         }
 
+        /// <summary>
+        /// افزودن عضو به بخش بدون نیاز به سمت
+        /// </summary>
         public async Task<int> AddMemberToDepartmentAsync(DepartmentMember member)
         {
+            // ⭐ اگر سمت مشخص نشده، سمت پیش‌فرض را انتخاب کن
+            if ( member.PositionId == 0)
+            {
+                var defaultPosition = GetDefaultPosition(member.DepartmentId);
+
+                // اگر سمت پیش‌فرض وجود نداشت، یک سمت عمومی ایجاد کن
+                if (defaultPosition == null)
+                {
+                    defaultPosition = new DepartmentPosition
+                    {
+                        DepartmentId = member.DepartmentId,
+                        Title = "عضو",
+                        Description = "سمت عمومی",
+                        IsDefault = true,
+                        IsActive = true,
+                        DisplayOrder = 999,
+                        PowerLevel = 50,
+                        CreatedDate = DateTime.Now,
+                        CreatorUserId = member.CreatorUserId
+                    };
+
+                    _context.DepartmentPosition_Tbl.Add(defaultPosition);
+                    await _context.SaveChangesAsync();
+                }
+
+                member.PositionId = defaultPosition.Id;
+            }
+
             member.CreatedDate = DateTime.Now;
             _context.DepartmentMember_Tbl.Add(member);
             await _context.SaveChangesAsync();

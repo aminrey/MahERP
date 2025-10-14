@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
@@ -16,6 +17,7 @@ namespace MahERP.Areas.AdminArea.Controllers.BaseControllers
 {
     [Authorize]
     [Area("AdminArea")]
+    [PermissionRequired("DASHBOARD.VIEW")]
     public class DashboardController : BaseController
     {
         private readonly IUnitOfWork _Context;

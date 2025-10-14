@@ -60,7 +60,7 @@
                                 <tbody>
                                     @foreach (var userRole in Model.OrderBy(ur => ur.Role.Priority))
                                     {
-                                        <tr>
+                                        <tr id="userRoleRow_@userRole.Id">
                                             <td>
                                                 <div class="rounded-circle d-inline-flex align-items-center justify-content-center"
                                                      style="width: 35px; height: 35px; background-color: @userRole.Role.Color; color: white;">
@@ -111,8 +111,16 @@
                                                 }
                                             </td>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-sm btn-danger"
-                                                        onclick="removeRole('@userId', @userRole.RoleId)"
+                                                <!-- ⭐ دکمه حذف با modal-ajax -->
+                                                <button type="button"
+                                                        class="btn btn-sm btn-danger"
+                                                        data-toggle="modal-ajax"
+                                                        data-user-id="@userId"
+                                                        data-role-id="@userRole.RoleId"
+                                                        data-role-name="@userRole.Role.NameFa"
+                                                        asp-action="DeleteRoleConfirmation"
+                                                        asp-route-userId="@userId"
+                                                        asp-route-roleId="@userRole.RoleId"
                                                         title="حذف نقش">
                                                     <i class="fa fa-trash"></i>
                                                 </button>
@@ -184,7 +192,8 @@
                             با تخصیص نقش، دسترسی‌های آن به صورت خودکار به کاربر اعمال می‌شود.
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100">
+                        <!-- ⭐ دکمه با id برای دسترسی در JavaScript -->
+                        <button type="submit" class="btn btn-success w-100" id="assignRoleBtn">
                             <i class="fa fa-check me-1"></i>تخصیص نقش
                         </button>
                     </form>
@@ -220,29 +229,62 @@
 
 @section Scripts {
     <script>
+        // ⭐⭐⭐ فرم تخصیص نقش با AJAX + Spinner + Reload
         $('#assignRoleForm').on('submit', function(e) {
             e.preventDefault();
+
+            const $form = $(this);
+            const $submitBtn = $('#assignRoleBtn');
+            const originalBtnContent = $submitBtn.html();
+
+            // ✅ Disable button و نمایش Spinner
+            $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>در حال پردازش...');
 
             $.ajax({
                 url: '@Url.Action("AssignRole")',
                 type: 'POST',
-                data: $(this).serialize(),
+                data: $form.serialize(),
                 success: function(response) {
                     if (response.success) {
-                        toastr.success(response.message);
+                        // ✅ نمایش پیام موفقیت با NotificationHelper
+                        if (typeof NotificationHelper !== 'undefined') {
+                            NotificationHelper.success(response.message || 'نقش با موفقیت تخصیص داده شد');
+                        } else {
+                            alert(response.message || 'نقش با موفقیت تخصیص داده شد');
+                        }
+
+                        // ⭐ Reload صفحه بعد از 1 ثانیه
                         setTimeout(function() {
                             location.reload();
                         }, 1000);
                     } else {
-                        toastr.error(response.message);
+                        // ❌ خطا - بازگرداندن وضعیت دکمه
+                        $submitBtn.prop('disabled', false).html(originalBtnContent);
+
+                        if (typeof NotificationHelper !== 'undefined') {
+                            NotificationHelper.error(response.message || 'خطا در تخصیص نقش');
+                        } else {
+                            alert(response.message || 'خطا در تخصیص نقش');
+                        }
                     }
                 },
-                error: function() {
-                    toastr.error('خطا در تخصیص نقش');
+                error: function(xhr, status, error) {
+                    // ❌ خطا - بازگرداندن وضعیت دکمه
+                    $submitBtn.prop('disabled', false).html(originalBtnContent);
+
+                    console.error('AJAX Error:', xhr, status, error);
+
+                    if (typeof NotificationHelper !== 'undefined') {
+                        NotificationHelper.error('خطا در تخصیص نقش');
+                    } else {
+                        alert('خطا در تخصیص نقش');
+                    }
                 }
             });
         });
 
+        // ⭐⭐⭐ حذف نقش - این تابع دیگر لازم نیست چون از modal-ajax استفاده می‌کنیم
+        // اما برای سازگاری با کدهای قدیمی نگه می‌داریم
         function removeRole(userId, roleId) {
             if (confirm('آیا از حذف این نقش مطمئن هستید؟\n\nتوجه: دسترسی‌های مرتبط با این نقش نیز حذف می‌شوند.')) {
                 $.ajax({
@@ -255,16 +297,29 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            toastr.success(response.message);
+                            if (typeof NotificationHelper !== 'undefined') {
+                                NotificationHelper.success(response.message);
+                            } else {
+                                alert(response.message);
+                            }
+
                             setTimeout(function() {
                                 location.reload();
                             }, 1000);
                         } else {
-                            toastr.error(response.message);
+                            if (typeof NotificationHelper !== 'undefined') {
+                                NotificationHelper.error(response.message);
+                            } else {
+                                alert(response.message);
+                            }
                         }
                     },
                     error: function() {
-                        toastr.error('خطا در حذف نقش');
+                        if (typeof NotificationHelper !== 'undefined') {
+                            NotificationHelper.error('خطا در حذف نقش');
+                        } else {
+                            alert('خطا در حذف نقش');
+                        }
                     }
                 });
             }

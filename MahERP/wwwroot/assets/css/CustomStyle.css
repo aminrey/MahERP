@@ -476,13 +476,7 @@ body {
 }
 
 /* فیکس برای card ها */
-.card {
-    overflow: visible !important;
-}
 
-.card-body {
-    overflow: visible !important;
-}
 
 /* فیکس برای modal ها */
 .modal .dropdown-menu {

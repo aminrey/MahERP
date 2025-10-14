@@ -96,7 +96,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
             if (includeAssignments)
                 query = query.Include(t => t.TaskAssignments)
-                    .ThenInclude(a => a.AssignedUser);
+                    .ThenInclude(a => a.AssignedUser).Include(t => t.TaskAssignments)
+                    .ThenInclude(a => a.AssignerUser);
 
             if (includeAttachments)
                 query = query.Include(t => t.TaskAttachments);
@@ -4649,6 +4650,42 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 Console.WriteLine($"❌ Error in GetContactOrganizationsAsync: {ex.Message}");
                 return new List<OrganizationViewModel>();
+            }
+        }
+        /// <summary>
+        /// دریافت افراد عضو یک سازمان
+        /// </summary>
+        public async Task<List<ContactViewModel>> GetOrganizationContactsAsync(int organizationId)
+        {
+            try
+            {
+                var contacts = await _context.OrganizationContact_Tbl
+                    .Include(oc => oc.Contact)
+                        .ThenInclude(c => c.Phones)
+                    .Where(oc => oc.OrganizationId == organizationId && oc.IsActive)
+                    .Select(oc => new ContactViewModel
+                    {
+                        Id = oc.ContactId,
+                        FirstName = oc.Contact.FirstName,
+                        LastName = oc.Contact.LastName,
+                        FullName = $"{oc.Contact.FirstName} {oc.Contact.LastName}",
+                        NationalCode = oc.Contact.NationalCode,
+                        PrimaryPhone = oc.Contact.Phones
+                            .Where(p => p.IsDefault && p.IsActive)
+                            .Select(p => p.PhoneNumber)
+                            .FirstOrDefault(),
+                        IsActive = oc.Contact.IsActive
+                    })
+                    .OrderBy(c => c.LastName)
+                    .ThenBy(c => c.FirstName)
+                    .ToListAsync();
+
+                return contacts;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetOrganizationContactsAsync: {ex.Message}");
+                return new List<ContactViewModel>();
             }
         }
     }

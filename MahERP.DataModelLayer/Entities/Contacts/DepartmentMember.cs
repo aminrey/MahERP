@@ -37,8 +37,7 @@ namespace MahERP.DataModelLayer.Entities.Contacts
         /// <summary>
         /// شناسه سمت
         /// </summary>
-        [Required]
-        public int PositionId { get; set; }
+        public int? PositionId { get; set; }
 
         [ForeignKey(nameof(PositionId))]
         public virtual DepartmentPosition? Position { get; set; }

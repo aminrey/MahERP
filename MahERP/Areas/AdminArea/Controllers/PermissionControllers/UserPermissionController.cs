@@ -1,5 +1,6 @@
 ﻿using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.Attributes;
+using MahERP.CommonLayer.PublicClasses;
 using MahERP.CommonLayer.ViewModels;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Services;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
@@ -95,7 +97,31 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
             }
         }
 
-        // POST: UserPermission/AssignRole
+        /// <summary>
+        /// ⭐⭐⭐ POST: UserPermission/AssignRole
+        /// 
+        /// تخصیص نقش به کاربر با استفاده از ResponseMessage برای پیام‌های استاندارد
+        /// 
+        /// 📖 توضیحات:
+        /// - از ResponseMessage.CreateSuccessResponse برای پیام موفقیت
+        /// - از ResponseMessage.CreateErrorResponse برای پیام خطا
+        /// - پیام‌ها با SendResposeMessage در main.js نمایش داده می‌شوند
+        /// 
+        /// ⚙️ پارامترها:
+        /// - userId: شناسه کاربر
+        /// - roleId: شناسه نقش
+        /// - startDate: تاریخ شروع (اختیاری)
+        /// - endDate: تاریخ پایان (اختیاری)
+        /// - notes: یادداشت (اختیاری)
+        /// 
+        /// 🔧 توسعه آینده:
+        /// - می‌توان از ResponseMessage.CreateWarningResponse برای هشدارها استفاده کرد
+        /// - می‌توان از ResponseMessage.CreateInfoResponse برای اطلاعات استفاده کرد
+        /// 
+        /// 📝 نکات:
+        /// - بازگشت JSON با success و message
+        /// - message از نوع List<WebResponseMessageViewModel> است
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AssignRole(string userId, int roleId, DateTime? startDate, DateTime? endDate, string notes)
@@ -120,15 +146,39 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
                         recordTitle: $"{user.FirstName} {user.LastName}"
                     );
 
-                    return Json(new { success = true, message = "نقش با موفقیت تخصیص داده شد و دسترسی‌ها همگام‌سازی شدند" });
+                    // ⭐ استفاده از ResponseMessage.CreateSuccessResponse
+                    return Json(new
+                    {
+                        success = true,
+                        message = ResponseMessage.CreateSuccessResponse(
+                            $"نقش '{role.NameFa}' با موفقیت به کاربر '{user.FirstName} {user.LastName}' تخصیص داده شد",
+                            "دسترسی‌ها به صورت خودکار همگام‌سازی شدند"
+                        )
+                    });
                 }
 
-                return Json(new { success = false, message = "خطا در تخصیص نقش یا این نقش قبلاً به کاربر داده شده است" });
+                // ⭐ استفاده از ResponseMessage.CreateWarningResponse برای وضعیت تکراری
+                return Json(new
+                {
+                    success = false,
+                    message = ResponseMessage.CreateWarningResponse(
+                        "این نقش قبلاً به کاربر تخصیص داده شده است"
+                    )
+                });
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("UserPermission", "AssignRole", "خطا در تخصیص نقش", ex, recordId: userId);
-                return Json(new { success = false, message = "خطا در تخصیص نقش" });
+
+                // ⭐ استفاده از ResponseMessage.CreateErrorResponse
+                return Json(new
+                {
+                    success = false,
+                    message = ResponseMessage.CreateErrorResponse(
+                        "خطا در تخصیص نقش",
+                        ex.Message
+                    )
+                });
             }
         }
 
@@ -156,15 +206,31 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
                         recordTitle: $"{user.FirstName} {user.LastName}"
                     );
 
-                    return Json(new { success = true, message = "نقش با موفقیت حذف شد" });
+                    // ⭐ استفاده از ResponseMessage
+                    return Json(new
+                    {
+                        success = true,
+                        message = ResponseMessage.CreateSuccessResponse(
+                            $"نقش '{role.NameFa}' با موفقیت از کاربر حذف شد"
+                        )
+                    });
                 }
 
-                return Json(new { success = false, message = "خطا در حذف نقش" });
+                return Json(new
+                {
+                    success = false,
+                    message = ResponseMessage.CreateErrorResponse("خطا در حذف نقش")
+                });
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("UserPermission", "RemoveRole", "خطا در حذف نقش", ex, recordId: userId);
-                return Json(new { success = false, message = "خطا در حذف نقش" });
+                
+                return Json(new
+                {
+                    success = false,
+                    message = ResponseMessage.CreateErrorResponse("خطا در حذف نقش", ex.Message)
+                });
             }
         }
 
@@ -187,7 +253,7 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
                 {
                     UserId = userId,
                     UserFullName = $"{user.FirstName} {user.LastName}",
-                    UserName = user.UserName, // ✅ اضافه شد
+                    UserName = user.UserName,
                     UserRoles = userRoles.Select(ur => new UserRoleInfo
                     {
                         RoleId = ur.RoleId,
@@ -201,14 +267,14 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
                     {
                         PermissionId = up.PermissionId,
                         PermissionName = up.Permission.NameFa,
-                        PermissionCode = up.Permission.Code, // ✅ اضافه شد
+                        PermissionCode = up.Permission.Code,
                         SourceType = up.SourceType == 1 ? "Role" : (up.SourceType == 2 ? "Manual" : "Combined"),
                         SourceRoleId = up.SourceRoleId,
                         SourceRoleName = up.SourceRole?.NameFa,
                         IsManuallyModified = up.IsManuallyModified,
                         IsActive = up.IsActive
                     }).ToList(),
-                    SelectedPermissionIds = userPermissionIds // ✅ اضافه شد
+                    SelectedPermissionIds = userPermissionIds
                 };
 
                 return View(viewModel);
@@ -247,17 +313,12 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
                         recordTitle: model.UserFullName
                     );
 
-                    // ✅ استفاده از ResponseMessages
-                    var responseMessages = new List<WebResponseMessageViewModel>
-            {
-                new WebResponseMessageViewModel
-                {
-                    status = "success",
-                    text = "دسترسی‌های کاربر با موفقیت به‌روزرسانی شد"
-                }
-            };
-
-                    TempData["ResponseMessages"] = System.Text.Json.JsonSerializer.Serialize(responseMessages);
+                    // ⭐ استفاده از ResponseMessage
+                    TempData["ResponseMessages"] = System.Text.Json.JsonSerializer.Serialize(
+                        ResponseMessage.CreateSuccessResponse(
+                            "دسترسی‌های کاربر با موفقیت به‌روزرسانی شد"
+                        )
+                    );
 
                     return RedirectToAction(nameof(ManageUserPermissions), new { userId = model.UserId });
                 }
@@ -269,19 +330,110 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
             {
                 await _activityLogger.LogErrorAsync("UserPermission", "ManageUserPermissions", "خطا در به‌روزرسانی دسترسی‌های کاربر", ex, recordId: model.UserId);
 
-                // ✅ پیام خطا هم به همین صورت
-                var errorMessages = new List<WebResponseMessageViewModel>
-        {
-            new WebResponseMessageViewModel
-            {
-                status = "error",
-                text = "خطا در به‌روزرسانی دسترسی‌ها: " + ex.Message
-            }
-        };
-
-                TempData["ResponseMessages"] = System.Text.Json.JsonSerializer.Serialize(errorMessages);
+                // ⭐ استفاده از ResponseMessage
+                TempData["ResponseMessages"] = System.Text.Json.JsonSerializer.Serialize(
+                    ResponseMessage.CreateErrorResponse(
+                        "خطا در به‌روزرسانی دسترسی‌ها",
+                        ex.Message
+                    )
+                );
 
                 return View(model);
+            }
+        }
+
+        // GET: UserPermission/DeleteRoleConfirmation
+        [HttpGet]
+        public async Task<IActionResult> DeleteRoleConfirmation(string userId, int roleId)
+        {
+            try
+            {
+                var userRole = await _userPermissionService.GetUserRoleForDeleteAsync(userId, roleId);
+
+                if (userRole == null)
+                {
+                    return Json(new { status = "error", message = "نقش یافت نشد" });
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "UserPermission",
+                    "DeleteRoleConfirmation",
+                    $"نمایش مودال حذف نقش '{userRole.Role.NameFa}' از کاربر '{userRole.User.FirstName} {userRole.User.LastName}'",
+                    recordId: userId,
+                    entityType: "UserRole"
+                );
+
+                return PartialView("_DeleteRoleConfirmation", userRole);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("UserPermission", "DeleteRoleConfirmation",
+                    "خطا در نمایش مودال حذف نقش", ex, recordId: userId);
+                return Json(new { status = "error", message = "خطا در بارگذاری مودال" });
+            }
+        }
+
+        // POST: UserPermission/RemoveRoleConfirmed
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveRoleConfirmed(string userId, int roleId)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                var role = await _roleService.GetRoleByIdAsync(roleId);
+
+                if (user == null || role == null)
+                {
+                    TempData["ErrorMessage"] = "کاربر یا نقش یافت نشد";
+                    return RedirectToAction(nameof(ManageUserRoles), new { userId });
+                }
+
+                var result = await _userPermissionService.RemoveRoleFromUserAsync(userId, roleId);
+
+                if (result)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Delete,
+                        "UserPermission",
+                        "RemoveRoleConfirmed",
+                        $"حذف نقش '{role.NameFa}' از کاربر '{user.FirstName} {user.LastName}' (از طریق Modal)",
+                        recordId: userId,
+                        entityType: "UserRole",
+                        recordTitle: $"{user.FirstName} {user.LastName}"
+                    );
+
+                    TempData["SuccessMessage"] = $"نقش '{role.NameFa}' با موفقیت از کاربر حذف شد";
+                    return RedirectToAction(nameof(ManageUserRoles), new { userId });
+                }
+                else
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Error,
+                        "UserPermission",
+                        "RemoveRoleConfirmed",
+                        $"خطا در حذف نقش '{role.NameFa}' از کاربر '{user.FirstName} {user.LastName}'",
+                        recordId: userId,
+                        entityType: "UserRole"
+                    );
+
+                    TempData["ErrorMessage"] = "خطا در حذف نقش";
+                    return RedirectToAction(nameof(ManageUserRoles), new { userId });
+                }
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "UserPermission",
+                    "RemoveRoleConfirmed",
+                    "خطا در حذف نقش از کاربر",
+                    ex,
+                    recordId: userId
+                );
+
+                TempData["ErrorMessage"] = $"خطا در حذف نقش: {ex.Message}";
+                return RedirectToAction(nameof(ManageUserRoles), new { userId });
             }
         }
     }

@@ -24,7 +24,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("Organization")]
+    [PermissionRequired("ORG")]
     public class OrganizationsController : BaseController
     {
         private readonly IOrganizationRepository _organizationRepository;
@@ -58,6 +58,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// لیست سازمان‌ها
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.VIEW")]
         public async Task<IActionResult> Index(string searchTerm = null, byte? organizationType = null)
         {
             try
@@ -66,7 +67,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    organizations = _organizationRepository.SearchOrganizations(searchTerm, organizationType,true);
+                    organizations = _organizationRepository.SearchOrganizations(searchTerm, organizationType, true);
                 }
                 else
                 {
@@ -100,12 +101,13 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// جزئیات سازمان
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.VIEW")]
         public async Task<IActionResult> Details(int id)
         {
             try
             {
-                var organization = await _organizationRepository.GetOrganizationByIdAsync(id, 
-                    includeDepartments: true, 
+                var organization = await _organizationRepository.GetOrganizationByIdAsync(id,
+                    includeDepartments: true,
                     includeContacts: true);
 
                 if (organization == null)
@@ -151,6 +153,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// نمایش فرم افزودن سازمان جدید
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.CREATE")]
         public async Task<IActionResult> Create()
         {
             try
@@ -176,6 +179,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("ORG.CREATE")]
         public async Task<IActionResult> Create(OrganizationViewModel model)
         {
             // اعتبارسنجی
@@ -243,6 +247,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// نمایش فرم ویرایش سازمان
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -278,6 +283,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> Edit(OrganizationViewModel model)
         {
             // اعتبارسنجی
@@ -365,6 +371,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// نمایش مودال تایید حذف
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.DELETE")]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -390,6 +397,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("ORG.DELETE")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try
@@ -435,6 +443,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// نمایش چارت سازمانی
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.VIEW")]
         public async Task<IActionResult> OrganizationChart(int organizationId)
         {
             try
@@ -469,6 +478,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// افزودن بخش جدید - نمایش فرم
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> AddDepartment(int organizationId, int? parentDepartmentId = null)
         {
             try
@@ -479,7 +489,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
                 // دریافت لیست افراد برای انتخاب مدیر
                 var contacts = _contactRepository.GetAllContacts(includeInactive: false);
-                
+
                 ViewBag.OrganizationId = organizationId;
                 ViewBag.OrganizationName = organization.DisplayName;
                 ViewBag.ParentDepartmentId = parentDepartmentId;
@@ -507,6 +517,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> AddDepartment(OrganizationDepartmentViewModel model)
         {
             if (ModelState.IsValid)
@@ -539,7 +550,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             // بازگشت به فرم در صورت خطا
             var organization = await _organizationRepository.GetOrganizationByIdAsync(model.OrganizationId);
             var contacts = _contactRepository.GetAllContacts(includeInactive: false);
-            
+
             ViewBag.OrganizationId = model.OrganizationId;
             ViewBag.OrganizationName = organization?.DisplayName;
             ViewBag.ParentDepartmentId = model.ParentDepartmentId;
@@ -554,6 +565,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// مدیریت سمت‌ها
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.VIEW")]
         public async Task<IActionResult> ManagePositions(int departmentId)
         {
             try
@@ -582,10 +594,11 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// افزودن سمت جدید - Modal
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.EDIT")]
         public IActionResult AddPositionModal(int departmentId)
         {
             var department = _organizationRepository.GetDepartmentById(departmentId);
-            
+
             ViewBag.DepartmentTitle = department?.Title;
 
             var model = new DepartmentPositionViewModel
@@ -604,6 +617,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> AddPosition(DepartmentPositionViewModel model)
         {
             if (ModelState.IsValid)
@@ -663,6 +677,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// افزودن عضو به بخش - نمایش فرم
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> AddMember(int departmentId)
         {
             try
@@ -673,7 +688,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
                 // دریافت افراد موجود
                 var contacts = _contactRepository.GetAllContacts(includeInactive: false);
-                
+
                 // دریافت سمت‌های بخش
                 var positions = _organizationRepository.GetDepartmentPositions(departmentId, includeInactive: false);
 
@@ -703,8 +718,15 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> AddMember(DepartmentMemberViewModel model)
         {
+            // ⭐ حذف الزام بودن PositionId از ModelState
+            if (model.PositionId == 0)
+            {
+                ModelState.Remove(nameof(model.PositionId));
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -713,7 +735,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     if (_organizationRepository.IsContactMemberOfDepartment(model.ContactId, model.DepartmentId))
                     {
                         ModelState.AddModelError("", "این شخص قبلاً به این بخش اضافه شده است");
-                        
+
                         // بازگشت به فرم
                         var department = _organizationRepository.GetDepartmentById(model.DepartmentId, includePositions: true);
                         var contacts = _contactRepository.GetAllContacts(includeInactive: false);
@@ -729,6 +751,12 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 
                     var member = _mapper.Map<DepartmentMember>(model);
                     member.CreatorUserId = GetUserId();
+                    
+                    // ⭐ اگر سمت انتخاب نشده، null بگذار (Repository خودش رسیدگی می‌کند)
+                    if (member.PositionId == 0)
+                    {
+                        member.PositionId = null;
+                    }
 
                     var memberId = await _organizationRepository.AddMemberToDepartmentAsync(member);
 
@@ -741,7 +769,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                     );
 
                     TempData["SuccessMessage"] = "عضو با موفقیت اضافه شد";
-                    
+
                     // بازگشت به چارت سازمانی
                     var dept = _organizationRepository.GetDepartmentById(model.DepartmentId);
                     return RedirectToAction(nameof(OrganizationChart), new { organizationId = dept.OrganizationId });
@@ -774,6 +802,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// نمایش مودال تایید فعال/غیرفعال کردن سازمان
         /// </summary>
         [HttpGet]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> ToggleActivation(int id)
         {
             try
@@ -831,6 +860,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("ORG.EDIT")]
         public async Task<IActionResult> ToggleActivationPost(int id)
         {
             try
@@ -896,6 +926,174 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
                 {
                     status = "error",
                     message = new[] { new { status = "error", text = "خطا در تغییر وضعیت: " + ex.Message } }
+                });
+            }
+        }
+
+        // ==================== ADD ORGANIZATION CONTACT ====================
+
+        /// <summary>
+        /// افزودن عضو/فرد به سازمان - نمایش فرم
+        /// </summary>
+        [HttpGet]
+        [PermissionRequired("ORG.EDIT")]
+        public async Task<IActionResult> AddOrganizationContact(int organizationId)
+        {
+            try
+            {
+                var organization = await _organizationRepository.GetOrganizationByIdAsync(organizationId);
+                if (organization == null)
+                    return RedirectToAction("ErrorView", "Home");
+
+                // دریافت افراد موجود
+                var contacts = _contactRepository.GetAllContacts(includeInactive: false);
+
+                ViewBag.OrganizationId = organizationId;
+                ViewBag.OrganizationName = organization.DisplayName;
+                ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+
+                var model = new OrganizationContactViewModel
+                {
+                    OrganizationId = organizationId,
+                    IsActive = true,
+                    IsPrimary = false,
+                    ImportanceLevel = 50,
+                    RelationType = 0 // پیش‌فرض
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "AddOrganizationContact", "خطا در نمایش فرم", ex);
+                return RedirectToAction("ErrorView", "Home");
+            }
+        }
+
+        /// <summary>
+        /// ذخیره عضو/فرد جدید به سازمان
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [PermissionRequired("ORG.EDIT")]
+        public async Task<IActionResult> AddOrganizationContact(OrganizationContactViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // بررسی وجود قبلی
+                    var existingContact = _organizationRepository.GetOrganizationContacts(model.OrganizationId,false)
+                        .FirstOrDefault(oc => oc.ContactId == model.ContactId && oc.IsActive);
+
+                    if (existingContact != null)
+                    {
+                        ModelState.AddModelError("", "این شخص قبلاً به این سازمان اضافه شده است");
+
+                        var organization = await _organizationRepository.GetOrganizationByIdAsync(model.OrganizationId);
+                        var contacts = _contactRepository.GetAllContacts(includeInactive: false);
+
+                        ViewBag.OrganizationId = model.OrganizationId;
+                        ViewBag.OrganizationName = organization?.DisplayName;
+                        ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+
+                        return View(model);
+                    }
+
+                    var organizationContact = _mapper.Map<OrganizationContact>(model);
+                    organizationContact.CreatorUserId = GetUserId();
+
+                    var contactId = await _organizationRepository.AddContactToOrganizationAsync(organizationContact);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "Organizations",
+                        "AddOrganizationContact",
+                        $"افزودن فرد به سازمان",
+                        recordId: contactId.ToString()
+                    );
+
+                    TempData["SuccessMessage"] = "فرد با موفقیت به سازمان اضافه شد";
+                    return RedirectToAction(nameof(Details), new { id = model.OrganizationId });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync("Organizations", "AddOrganizationContact", "خطا در افزودن فرد", ex);
+                    ModelState.AddModelError("", "خطا در ذخیره: " + ex.Message);
+                }
+            }
+
+            // بازگشت به فرم در صورت خطا
+            {
+                var organization = await _organizationRepository.GetOrganizationByIdAsync(model.OrganizationId);
+                var contacts = _contactRepository.GetAllContacts(includeInactive: false);
+
+                ViewBag.OrganizationId = model.OrganizationId;
+                ViewBag.OrganizationName = organization?.DisplayName;
+                ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
+            }
+
+            return View(model);
+        }
+
+        /// <summary>
+        /// حذف عضو از سازمان
+        /// </summary>
+        [HttpPost]
+        [PermissionRequired("ORG.EDIT")]
+        public async Task<IActionResult> RemoveOrganizationContact(int id)
+        {
+            try
+            {
+                var organizationContact = _organizationRepository.GetOrganizationContactById(id);
+                if (organizationContact == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "عضو یافت نشد"
+                    });
+                }
+
+                var contactName = organizationContact.Contact.FullName;
+                var organizationId = organizationContact.OrganizationId;
+
+                var result = await _organizationRepository.RemoveContactFromOrganizationAsync(id);
+
+                if (result)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Delete,
+                        "Organizations",
+                        "RemoveOrganizationContact",
+                        $"حذف {contactName} از سازمان",
+                        recordId: id.ToString()
+                    );
+
+                    return Json(new
+                    {
+                        status = "redirect",
+                        redirectUrl = Url.Action("Details", new { id = organizationId }),
+                        message = new[]
+                        {
+                            new { status = "success", text = "عضو با موفقیت حذف شد" }
+                        }
+                    });
+                }
+
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا در حذف عضو"
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Organizations", "RemoveOrganizationContact", "خطا در حذف عضو", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا: " + ex.Message
                 });
             }
         }

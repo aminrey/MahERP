@@ -36,6 +36,49 @@ namespace MahERP.DataModelLayer.Repository
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// ⭐⭐⭐ دریافت UserRole برای نمایش در Modal حذف
+        /// 
+        /// 📖 توضیحات:
+        /// این متد برای دریافت اطلاعات کامل UserRole همراه با User و Role استفاده می‌شود.
+        /// معمولاً برای نمایش در Modal تایید حذف فراخوانی می‌شود.
+        /// 
+        /// ⚙️ Include ها:
+        /// - User: برای نمایش نام کاربر
+        /// - Role: برای نمایش نام نقش، آیکون و رنگ
+        /// 
+        /// 🔧 توسعه آینده:
+        /// - می‌توان AssignedByUser را هم Include کرد
+        /// - می‌توان آمار دسترسی‌های این نقش را برگرداند
+        /// 
+        /// 📝 نکات:
+        /// - فقط UserRole های فعال (IsActive = true) را برمی‌گرداند
+        /// - در صورت عدم وجود، null برمی‌گرداند
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="roleId">شناسه نقش</param>
+        /// <returns>UserRole با Include شده User و Role یا null</returns>
+        public async Task<UserRole?> GetUserRoleForDeleteAsync(string userId, int roleId)
+        {
+            try
+            {
+                return await _context.UserRole_Tbl
+                    .Include(ur => ur.User)              // ⭐ برای نام کاربر
+                    .Include(ur => ur.Role)              // ⭐ برای نام نقش، آیکون و رنگ
+                    .Include(ur => ur.AssignedByUser)    // ⭐ برای نمایش چه کسی این نقش را داده
+                    .FirstOrDefaultAsync(ur => 
+                        ur.UserId == userId && 
+                        ur.RoleId == roleId && 
+                        ur.IsActive);
+            }
+            catch (Exception ex)
+            {
+                // لاگ کردن خطا
+                Console.WriteLine($"Error in GetUserRoleForDeleteAsync: {ex.Message}");
+                return null;
+            }
+        }
+
         public async Task<bool> AssignRoleToUserAsync(string userId, int roleId, string assignedByUserId, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
@@ -84,6 +127,7 @@ namespace MahERP.DataModelLayer.Repository
                     return false;
 
                 userRole.IsActive = false;
+                userRole.LastUpdateDate = DateTime.Now;
 
                 // حذف دسترسی‌هایی که از این نقش آمده‌اند
                 var permissions = await _context.UserPermission_Tbl
@@ -138,7 +182,6 @@ namespace MahERP.DataModelLayer.Repository
                 if (existingManualPermissions.Any())
                 {
                     _context.UserPermission_Tbl.RemoveRange(existingManualPermissions);
-
                 }
 
                 // 2️⃣ دریافت دسترسی‌های از نقش (برای جلوگیری از تکراری)
@@ -183,14 +226,14 @@ namespace MahERP.DataModelLayer.Repository
                 }
 
                 // ذخیره تمام تغییرات یکجا
-                var savedCount = await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
                 ClearPermissionCache();
 
-                // بازگشت true در صورت موفقیت یا عدم وجود تغییر
                 return true;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error in ManageUserPermissionsAsync: {ex.Message}");
                 return false;
             }
         }
@@ -261,7 +304,6 @@ namespace MahERP.DataModelLayer.Repository
                     return false;
 
                 var oldIsActive = userPermission.IsActive;
-                var oldSourceType = userPermission.SourceType;
 
                 userPermission.IsActive = isActive;
                 userPermission.IsManuallyModified = true;
@@ -401,10 +443,6 @@ namespace MahERP.DataModelLayer.Repository
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// بررسی دسترسی کاربر به یک Permission والد یا هر یک از فرزندانش
-        /// با استفاده از ساختار درختی Permission (ParentId)
-        /// </summary>
         public async Task<bool> UserHasAccessToAnyInAsync(string userId, params string[] parentPermissionCodes)
         {
             if (parentPermissionCodes == null || !parentPermissionCodes.Any())
@@ -412,7 +450,6 @@ namespace MahERP.DataModelLayer.Repository
 
             try
             {
-                // 1️⃣ دریافت تمام دسترسی‌های فعال کاربر
                 var userPermissionIds = await _context.UserPermission_Tbl
                     .Where(up => up.UserId == userId && up.IsActive)
                     .Select(up => up.PermissionId)
@@ -421,27 +458,22 @@ namespace MahERP.DataModelLayer.Repository
                 if (!userPermissionIds.Any())
                     return false;
 
-                // 2️⃣ دریافت تمام Permissions (برای ساختار درختی)
                 var allPermissions = await _context.Permission_Tbl
                     .Where(p => p.IsActive)
                     .Select(p => new { p.Id, p.Code, p.ParentId })
                     .ToListAsync();
 
-                // 3️⃣ بررسی هر کد والد
                 foreach (var parentCode in parentPermissionCodes)
                 {
-                    // پیدا کردن Permission والد
                     var parentPermission = allPermissions.FirstOrDefault(p => 
                         p.Code.Equals(parentCode, StringComparison.OrdinalIgnoreCase));
 
                     if (parentPermission == null)
                         continue;
 
-                    // بررسی دسترسی مستقیم به والد
                     if (userPermissionIds.Contains(parentPermission.Id))
                         return true;
 
-                    // بررسی دسترسی به فرزندان با استفاده از Cache
                     if (!_childPermissionsCache.TryGetValue(parentPermission.Id, out var childIds))
                     {
                         var children = GetAllChildPermissionIds(parentPermission.Id, allPermissions);
@@ -449,7 +481,6 @@ namespace MahERP.DataModelLayer.Repository
                         _childPermissionsCache.TryAdd(parentPermission.Id, childIds);
                     }
 
-                    // بررسی دسترسی به یکی از فرزندان
                     if (childIds.Any(childId => userPermissionIds.Contains(childId)))
                         return true;
                 }
@@ -458,21 +489,15 @@ namespace MahERP.DataModelLayer.Repository
             }
             catch (Exception ex)
             {
-                // لاگ کردن خطا
                 Console.WriteLine($"Error in UserHasAccessToAnyInAsync: {ex.Message}");
                 return false;
             }
         }
 
-        /// <summary>
-        /// دریافت تمام ID های فرزندان یک Permission (بازگشتی)
-        /// از ساختار درختی Permission با استفاده از ParentId
-        /// </summary>
         public async Task<List<int>> GetAllChildPermissionIdsAsync(int parentPermissionId)
         {
             try
             {
-                // دریافت تمام Permissions برای پیمایش درخت
                 var allPermissions = await _context.Permission_Tbl
                     .Where(p => p.IsActive)
                     .Select(p => new { p.Id, p.ParentId })
@@ -486,34 +511,23 @@ namespace MahERP.DataModelLayer.Repository
             }
         }
 
-        /// <summary>
-        /// متد کمکی برای دریافت بازگشتی فرزندان
-        /// </summary>
         private List<int> GetAllChildPermissionIds(int parentId, IEnumerable<dynamic> allPermissions)
         {
             var result = new List<int>();
             
-            // پیدا کردن فرزندان مستقیم
             var directChildren = allPermissions
                 .Where(p => p.ParentId == parentId)
                 .ToList();
 
             foreach (var child in directChildren)
             {
-                // اضافه کردن فرزند
                 result.Add(child.Id);
-                
-                // اضافه کردن فرزندان این فرزند (بازگشتی)
                 result.AddRange(GetAllChildPermissionIds(child.Id, allPermissions));
             }
 
             return result;
         }
 
-        /// <summary>
-        /// پاک کردن Cache برای زمانی که Permissions تغییر می‌کنند
-        /// باید در PermissionService بعد از Create/Update/Delete صدا زده شود
-        /// </summary>
         public static void ClearPermissionCache()
         {
             _childPermissionsCache.Clear();

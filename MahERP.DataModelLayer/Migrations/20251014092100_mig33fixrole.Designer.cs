@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251014092100_mig33fixrole")]
+    partial class mig33fixrole
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1743,12 +1746,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("LastUpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LastUpdaterUserId")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -2007,7 +2004,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<int?>("PositionId")
+                    b.Property<int>("PositionId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -6535,7 +6532,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.DepartmentPosition", "Position")
                         .WithMany("Members")
-                        .HasForeignKey("PositionId");
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Contact");
 

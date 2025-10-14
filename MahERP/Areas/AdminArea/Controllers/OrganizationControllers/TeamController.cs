@@ -26,7 +26,7 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("Team")]
+    [PermissionRequired("CORE.TEAM")]
 
     public class TeamController : BaseController
     {

@@ -15,11 +15,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using MahERP.Attributes;
 
 namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("COMMUNICATION.EMAIL")]
     public class EmailSendController : BaseController
     {
         private readonly IEmailRepository _emailRepo;
@@ -47,8 +49,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== صفحه اصلی ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.SEND")]
         public async Task<IActionResult> Index()
         {
             ViewBag.Templates = await _templateRepo.GetActiveTemplatesAsync();
@@ -56,8 +58,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ارسال به افراد ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.EMAIL.SEND")]
         public async Task<IActionResult> SendToContacts(
             List<int> contactIds,
             string subject,
@@ -126,8 +128,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ارسال به سازمان ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.EMAIL.SEND")]
         public async Task<IActionResult> SendToOrganization(
             int organizationId,
             string subject,
@@ -176,8 +178,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== جستجوی مخاطبین ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.SEND")]
         public async Task<IActionResult> GetContacts(string search = "")
         {
             var contacts = await _templateRepo.SearchContactsAsync(search);
@@ -185,8 +187,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== آمار ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.EMAIL.SEND")]
         public async Task<IActionResult> Statistics()
         {
             var stats = await _emailRepo.GetStatisticsAsync();
@@ -200,8 +202,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ارسال به گیرندگان قالب ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.EMAIL.SEND")]
         public async Task<IActionResult> SendToTemplateRecipients(
             int templateId,
             bool useQueue = true)

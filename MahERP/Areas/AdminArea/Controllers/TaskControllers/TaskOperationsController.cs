@@ -19,6 +19,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("TASK.OPERATIONS")]
     public class TaskOperationsController : Controller
     {
         private readonly ITaskOperationsRepository _operationsRepository;

@@ -7,7 +7,7 @@
         <td>
             <span class="badge bg-primary">@phone.PhoneTypeText</span>
         </td>
-        <td class="fw-semibold " > <span> @phone.FormattedNumber</span></td>
+        <td class="fw-semibold " > <span dir="ltr" > @phone.FormattedNumber</span></td>
         <td>@(phone.Extension ?? "-")</td>
         <td class="text-center">
             @if (phone.IsDefault)

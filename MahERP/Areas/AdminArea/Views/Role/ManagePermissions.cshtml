@@ -103,6 +103,7 @@
         </div>
     </div>
 </div>
+
 @section Scripts {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/themes/default/style.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js"></script>
@@ -145,7 +146,6 @@
                 if (selectedIds && selectedIds.length > 0) {
                     selectedIds.forEach(function(id) {
                         var nodeId = 'perm-' + id;
-                        // ✅ بر اساس مستندات: سه روش برای select کردن
                         $('#permission-tree').jstree('select_node', nodeId);
                     });
                 }
@@ -156,7 +156,6 @@
 
             // ✅ تابع به‌روزرسانی hidden inputs
             function updateHiddenInputs() {
-                // ✅ بر اساس مستندات: get_selected برای گرفتن node های انتخاب شده
                 var selectedNodes = $('#permission-tree').jstree('get_selected', true);
 
                 var selectedIds = selectedNodes.map(function(node) {
@@ -167,10 +166,8 @@
 
                 console.log('Updating hidden inputs with IDs:', selectedIds);
 
-                // پاک کردن inputs قبلی
                 $('#selectedIdsContainer').empty();
 
-                // اضافه کردن inputs جدید
                 selectedIds.forEach(function(id) {
                     $('<input>').attr({
                         type: 'hidden',
@@ -202,24 +199,63 @@
                 $('#permission-tree').jstree('close_all');
             };
 
-            // Form submission
+            // ⭐⭐⭐ Form submission با AJAX و Reload صفحه
             $('#permissionsForm').on('submit', function(e) {
+                e.preventDefault(); // جلوگیری از submit عادی
+
                 var selectedIds = $('#selectedIdsContainer input[name="SelectedPermissionIds"]').map(function() {
                     return $(this).val();
                 }).get();
 
-                console.log('=== Form Submitting ===');
+                console.log('=== Form Submitting via AJAX ===');
                 console.log('Selected IDs:', selectedIds);
-                console.log('Form data:', $(this).serialize());
 
                 if (selectedIds.length === 0) {
                     if (!confirm('هیچ دسترسی انتخاب نشده است. آیا مطمئن هستید؟')) {
-                        e.preventDefault();
                         return false;
                     }
                 }
 
-                return true;
+                // Disable submit button
+                var $submitBtn = $(this).find('button[type="submit"]');
+                $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ذخیره...');
+
+                // ارسال AJAX
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        console.log('✅ AJAX Response:', response);
+
+                        // نمایش پیام موفقیت با استفاده از NotificationHelper (از main.js)
+                        if (typeof NotificationHelper !== 'undefined') {
+                            NotificationHelper.success('دسترسی‌های نقش با موفقیت به‌روزرسانی شد');
+                        } else {
+                            alert('دسترسی‌های نقش با موفقیت به‌روزرسانی شد');
+                        }
+
+                        // ⭐ Reload صفحه بعد از 1 ثانیه
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ AJAX Error:', xhr, status, error);
+
+                        // نمایش پیام خطا
+                        if (typeof NotificationHelper !== 'undefined') {
+                            NotificationHelper.error('خطا در ذخیره دسترسی‌ها: ' + (xhr.responseJSON?.message || error));
+                        } else {
+                            alert('خطا در ذخیره دسترسی‌ها');
+                        }
+
+                        // Enable submit button
+                        $submitBtn.prop('disabled', false).html('<i class="fa fa-save me-1"></i>ذخیره دسترسی‌ها');
+                    }
+                });
+
+                return false;
             });
         });
     </script>
@@ -234,7 +270,6 @@
             overflow-y: auto;
         }
 
-    
         .jstree-default .jstree-hovered {
             background: #e9ecef !important;
         }
@@ -244,7 +279,6 @@
             border-radius: 4px;
         }
 
-        /* RTL Support */
         .jstree-default .jstree-node {
             margin-right: 0;
         }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -177,6 +177,95 @@ namespace MahERP.DataModelLayer.Repository
         {
             return await _context.Permission_Tbl
                 .AnyAsync(p => p.ParentId == permissionId && p.IsActive);
+        }
+
+        // ⭐⭐⭐ متدهای جدید برای Import از JSON
+        
+        /// <summary>
+        /// دریافت دسترسی بر اساس Code
+        /// </summary>
+        public async Task<Permission> GetPermissionByCodeAsync(string code)
+        {
+            return await _context.Permission_Tbl
+                .FirstOrDefaultAsync(p => p.Code == code);
+        }
+
+        /// <summary>
+        /// ایجاد یا به‌روزرسانی دسترسی (Upsert Pattern)
+        /// 
+        /// این متد به صورت خودکار تشخیص می‌دهد که دسترسی موجود است یا خیر:
+        /// - اگر موجود باشد → به‌روزرسانی می‌کند
+        /// - اگر جدید باشد → ایجاد می‌کند
+        /// 
+        /// خروجی:
+        /// - success: آیا عملیات موفق بود؟
+        /// - permissionId: شناسه دسترسی (برای ایجاد یا بروزرسانی)
+        /// - isNew: آیا دسترسی جدید ایجاد شد؟ (true = جدید، false = بروزرسانی)
+        /// </summary>
+        public async Task<(bool success, int permissionId, bool isNew)> UpsertPermissionAsync(
+            string code,
+            string nameEn,
+            string nameFa,
+            string description,
+            string icon,
+            string color,
+            int? parentId,
+            int displayOrder,
+            bool isSystemPermission,
+            string currentUserId)
+        {
+            try
+            {
+                var existingPermission = await GetPermissionByCodeAsync(code);
+
+                if (existingPermission != null)
+                {
+                    // ⭐ به‌روزرسانی دسترسی موجود
+                    existingPermission.NameEn = nameEn;
+                    existingPermission.NameFa = nameFa;
+                    existingPermission.Description = description;
+                    existingPermission.Icon = icon;
+                    existingPermission.Color = color;
+                    existingPermission.ParentId = parentId;
+                    existingPermission.DisplayOrder = displayOrder;
+                    existingPermission.IsSystemPermission = isSystemPermission;
+                    existingPermission.LastUpdaterUserId = currentUserId;
+                    existingPermission.LastUpdateDate = DateTime.Now;
+
+                    _context.Permission_Tbl.Update(existingPermission);
+                    await _context.SaveChangesAsync();
+
+                    return (true, existingPermission.Id, false); // موفق، شناسه، بروزرسانی شده
+                }
+                else
+                {
+                    // ⭐ ایجاد دسترسی جدید
+                    var newPermission = new Permission
+                    {
+                        Code = code,
+                        NameEn = nameEn,
+                        NameFa = nameFa,
+                        Description = description,
+                        Icon = icon,
+                        Color = color,
+                        ParentId = parentId,
+                        DisplayOrder = displayOrder,
+                        IsActive = true,
+                        IsSystemPermission = isSystemPermission,
+                        CreateDate = DateTime.Now,
+                        CreatorUserId = currentUserId
+                    };
+
+                    _context.Permission_Tbl.Add(newPermission);
+                    await _context.SaveChangesAsync();
+
+                    return (true, newPermission.Id, true); // موفق، شناسه، جدید ایجاد شده
+                }
+            }
+            catch
+            {
+                return (false, 0, false); // ناموفق
+            }
         }
     }
 }

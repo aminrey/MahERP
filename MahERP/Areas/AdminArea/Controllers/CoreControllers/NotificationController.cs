@@ -20,7 +20,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CoreControllers
     /// </summary>
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("Notification")]
+    [PermissionRequired("CORE.NOTIFICATION")]
 
     public class NotificationController : BaseController
     {

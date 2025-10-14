@@ -18,7 +18,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("Branch")]
+    [PermissionRequired("CORE.BRANCH")]
 
     public class BranchTaskCategoryController : BaseController
     {

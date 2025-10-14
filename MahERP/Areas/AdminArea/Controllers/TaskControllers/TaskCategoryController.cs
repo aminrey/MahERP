@@ -20,7 +20,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("TaskInitialSettings")] // دسترسی به تعاریف اولیه
+    [PermissionRequired("CORE.TASKCATEGORY")]
     public class TaskCategoryController : BaseController
     {
         private readonly IUnitOfWork _uow;

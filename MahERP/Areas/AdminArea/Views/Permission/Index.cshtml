@@ -56,6 +56,39 @@
         </div>
     </div>
 
+    <!-- ⭐⭐⭐ Import Permissions Section -->
+    <div class="block block-rounded mb-4">
+        <div class="block-header bg-warning text-dark">
+            <h3 class="block-title text-dark mb-0">
+                <i class="fa fa-download me-2"></i>بارگذاری دسترسی‌ها از فایل JSON
+            </h3>
+        </div>
+        <div class="block-content">
+            <div class="alert alert-info d-flex align-items-start">
+                <i class="fa fa-info-circle fa-2x me-3"></i>
+                <div>
+                    <h6 class="mb-1">راهنما:</h6>
+                    <p class="mb-0">
+                        با استفاده از این ابزار می‌توانید دسترسی‌های استاندارد سیستم را از فایل
+                        <code>Permissions.json</code> در مسیر <code>/Data/SeedData/</code> بارگذاری کنید.
+                        <br />
+                        <strong class="text-danger">توجه:</strong> این عملیات دسترسی‌های تکراری را به‌روزرسانی می‌کند
+                        و دسترسی‌های جدید را اضافه می‌نماید.
+                    </p>
+                </div>
+            </div>
+            <div class="text-center">
+                <!-- ⭐ استفاده از onclick به جای data-bs-toggle -->
+                <button type="button"
+                        class="btn btn-warning btn-lg px-5"
+                        onclick="showImportPermissionsConfirmation()">
+                    <i class="fa fa-file-import fa-lg me-2"></i>
+                    <strong>بارگذاری دسترسی‌ها از JSON</strong>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Permissions List -->
     <div class="block block-rounded">
         <div class="block-header block-header-default">
@@ -142,7 +175,7 @@
                                         <div class="btn-group" role="group">
                                             @if (!item.IsSystemPermission)
                                             {
-                                                <a asp-action="Edit" asp-route-id="@item.Id" 
+                                                <a asp-action="Edit" asp-route-id="@item.Id"
                                                    class="btn btn-sm btn-warning" title="ویرایش">
                                                     <i class="fa fa-pencil-alt"></i>
                                                 </a>
@@ -157,7 +190,7 @@
                                                     <i class="fa fa-lock"></i>
                                                 </button>
                                             }
-                                            <a asp-action="Create" asp-route-parentId="@item.Id" 
+                                            <a asp-action="Create" asp-route-parentId="@item.Id"
                                                class="btn btn-sm btn-success" title="افزودن زیر دسترسی">
                                                 <i class="fa fa-plus"></i>
                                             </a>
@@ -186,6 +219,162 @@
             if (confirm('آیا از حذف این دسترسی مطمئن هستید؟')) {
                 window.location.href = '@Url.Action("Delete")' + '/' + id;
             }
+        }
+
+        /**
+         * ⭐⭐⭐ نمایش تایید Import دسترسی‌ها
+         * از توابع SweetAlert موجود در main.js استفاده می‌کند
+         */
+        async function showImportPermissionsConfirmation() {
+            // استفاده از showConfirmationSwal از main.js
+            const confirmed = await showConfirmationSwal({
+                title: 'بارگذاری دسترسی‌ها از JSON',
+                html: `
+                    <div class="text-start">
+                        <p class="mb-3">آیا از بارگذاری دسترسی‌ها از فایل JSON اطمینان دارید؟</p>
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading"><i class="fa fa-exclamation-triangle me-2"></i>هشدار مهم</h6>
+                            <ul class="mb-0 text-start" style="font-size: 0.9rem;">
+                                <li>دسترسی‌های تکراری (با همان Code) <strong>به‌روزرسانی</strong> می‌شوند</li>
+                                <li>دسترسی‌های جدید به دیتابیس <strong>اضافه</strong> می‌شوند</li>
+                                <li>دسترسی‌های موجود که در JSON نیستند <strong>حذف نمی‌شوند</strong></li>
+                                <li>ساختار درختی (Parent-Child) حفظ خواهد شد</li>
+                            </ul>
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                confirmButtonText: '<i class="fa fa-check me-1"></i> بله، بارگذاری شود',
+                cancelButtonText: '<i class="fa fa-times me-1"></i> خیر، انصراف',
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                width: '600px'
+            });
+
+            if (confirmed) {
+                startImportProcess();
+            }
+        }
+
+        /**
+         * ⭐ شروع فرآیند Import
+         */
+        function startImportProcess() {
+            // نمایش Loading با SweetAlert
+            Swal.fire({
+                title: 'در حال بارگذاری...',
+                html: `
+                    <div class="text-center">
+                        <i class="fa fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                        <p>لطفاً صبر کنید، در حال پردازش فایل JSON...</p>
+                    </div>
+                `,
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // ارسال درخواست AJAX
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("ImportPermissionsFromJson", "Permission", new { area = "AdminArea" })',
+                type: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                },
+                data: {
+                    __RequestVerificationToken: token
+                },
+                success: function(response) {
+                    handleImportSuccess(response);
+                },
+                error: function(xhr, status, error) {
+                    handleImportError(xhr, error);
+                }
+            });
+        }
+
+        /**
+         * ⭐ مدیریت پاسخ موفق
+         */
+        function handleImportSuccess(response) {
+            if (response.success) {
+                // نمایش پیام موفقیت با جزئیات
+                Swal.fire({
+                    title: '<i class="fa fa-check-circle text-success"></i> بارگذاری موفق',
+                    html: `
+                        <div class="text-start">
+                            <div class="alert alert-success mb-3">
+                                <h6 class="mb-2"><i class="fa fa-info-circle me-1"></i>نتیجه عملیات:</h6>
+                                <ul class="mb-0">
+                                    <li><strong>تعداد کل پردازش شده:</strong> ${response.totalProcessed}</li>
+                                    <li><strong>دسترسی‌های جدید:</strong> ${response.newPermissions}</li>
+                                    <li><strong>دسترسی‌های به‌روزرسانی شده:</strong> ${response.updatedPermissions}</li>
+                                    <li><strong>زمان پردازش:</strong> ${response.processingTime}</li>
+                                </ul>
+                            </div>
+                            <p class="text-muted mb-0">صفحه برای نمایش تغییرات بارگذاری مجدد می‌شود...</p>
+                        </div>
+                    `,
+                    icon: 'success',
+                    confirmButtonText: '<i class="fa fa-sync me-1"></i> بارگذاری مجدد صفحه',
+                    allowOutsideClick: false,
+                    customClass: {
+                        confirmButton: 'btn btn-success'
+                    },
+                    buttonsStyling: false
+                }).then(() => {
+                    // بارگذاری مجدد صفحه
+                    location.reload();
+                });
+
+                // نمایش نوتیفیکیشن موفقیت (استفاده از NotificationHelper در main.js)
+                if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.success('دسترسی‌ها با موفقیت بارگذاری شدند');
+                }
+            } else {
+                // نمایش خطا
+                showErrorSwal(
+                    'خطا در بارگذاری',
+                    response.message || 'خطای نامشخص در بارگذاری دسترسی‌ها'
+                );
+            }
+        }
+
+        /**
+         * ⭐ مدیریت خطا
+         */
+        function handleImportError(xhr, error) {
+            let errorMessage = 'خطای نامشخص در ارتباط با سرور';
+
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            } else if (xhr.status === 404) {
+                errorMessage = 'آدرس درخواست یافت نشد (404)';
+            } else if (xhr.status === 500) {
+                errorMessage = 'خطای داخلی سرور (500)';
+            } else if (xhr.status === 403) {
+                errorMessage = 'دسترسی مجاز نیست (403)';
+            } else if (xhr.statusText) {
+                errorMessage = xhr.statusText;
+            }
+
+            // استفاده از showErrorSwal از main.js
+            showErrorSwal(
+                'خطا در بارگذاری',
+                errorMessage
+            );
+
+            // Log برای debugging
+            console.error('Import Error:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                error: error,
+                response: xhr.responseJSON
+            });
         }
     </script>
 }

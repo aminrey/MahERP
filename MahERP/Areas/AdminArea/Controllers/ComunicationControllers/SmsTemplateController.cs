@@ -13,11 +13,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using MahERP.Attributes;
 
 namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("COMMUNICATION.SMS.TEMPLATE")]
     public class SmsTemplateController : BaseController
     {
         private readonly ISmsTemplateRepository _templateRepo;
@@ -36,8 +38,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== لیست قالب‌ها ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
         public async Task<IActionResult> Index()
         {
             var templates = await _templateRepo.GetAllTemplatesAsync();
@@ -45,8 +47,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== جزئیات قالب ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
         public async Task<IActionResult> Details(int id)
         {
             var viewModel = await _templateRepo.GetTemplateDetailAsync(id);
@@ -57,8 +59,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ایجاد قالب ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public IActionResult Create()
         {
             return View();
@@ -66,6 +68,7 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public async Task<IActionResult> Create(SmsTemplate model)
         {
             if (!ModelState.IsValid)
@@ -90,8 +93,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== ویرایش قالب ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public async Task<IActionResult> Edit(int id)
         {
             var template = await _templateRepo.GetTemplateByIdAsync(id);
@@ -103,6 +106,7 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public async Task<IActionResult> Edit(int id, SmsTemplate model)
         {
             if (id != model.Id)
@@ -140,9 +144,9 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== حذف قالب ==========
-
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -157,8 +161,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== مدیریت مخاطبین ==========
-
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public async Task<IActionResult> AddRecipients(
             int templateId,
             List<int> contactIds,
@@ -183,6 +187,7 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         [HttpPost]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public async Task<IActionResult> RemoveRecipient(int recipientId)
         {
             try
@@ -197,8 +202,8 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         // ========== جستجو ==========
-
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
         public async Task<IActionResult> SearchContacts(string search = "")
         {
             var contacts = await _templateRepo.SearchContactsAsync(search);
@@ -206,6 +211,7 @@ namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
         }
 
         [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
         public async Task<IActionResult> SearchOrganizations(string search = "")
         {
             var organizations = await _templateRepo.SearchOrganizationsAsync(search);

@@ -1,0 +1,48 @@
+﻿@model dynamic
+
+<div class="card border-info">
+    <div class="card-header bg-light">
+        <h6 class="mb-0">
+            <i class="fa fa-users text-info me-1"></i>
+            افراد عضو این سازمان
+        </h6>
+    </div>
+    <div class="card-body">
+        @if (Model.Contacts != null && Model.Contacts.Count > 0)
+        {
+            <select class="js-select2 form-select"
+                    id="OrganizationRelatedContactId"
+                    name="OrganizationRelatedContactId"
+                    data-placeholder="انتخاب فرد از سازمان"
+                    style="width: 100%;">
+                <option value="">-- انتخاب فرد --</option>
+                @foreach (var contact in Model.Contacts)
+                {
+                    <option value="@contact.Id">
+                        @contact.FullName
+                        @if (!string.IsNullOrEmpty(contact.NationalCode))
+                        {
+                            <text> (کد ملی: @contact.NationalCode)</text>
+                        }
+                        @if (!string.IsNullOrEmpty(contact.PrimaryPhone))
+                        {
+                            <text> - @contact.PrimaryPhone</text>
+                        }
+                    </option>
+                }
+            </select>
+
+            <small class="form-text text-muted mt-2">
+                <i class="fa fa-info-circle me-1"></i>
+                @Model.Contacts.Count نفر در این سازمان عضو هستند
+            </small>
+        }
+        else
+        {
+            <div class="alert alert-warning mb-0">
+                <i class="fa fa-exclamation-triangle me-1"></i>
+                هیچ فردی در این سازمان ثبت نشده است
+            </div>
+        }
+    </div>
+</div>

@@ -100,10 +100,9 @@
                         <tr>
                             <th style="width: 50px;">#</th>
                             <th>نام کامل</th>
-                            <th>کد ملی</th>
                             <th>شماره تماس</th>
-                            <th>ایمیل</th>
                             <th>جنسیت</th>
+                            <th>توضیحات</th>
                             <th class="text-center">وضعیت</th>
                             <th class="text-center" style="width: 200px;">عملیات</th>
                         </tr>
@@ -118,7 +117,6 @@
                                         @contact.FullName
                                     </a>
                                 </td>
-                                <td>@(contact.NationalCode ?? "-")</td>
                                 <td >
                                     @if (contact.Phones?.Any() == true)
                                     {
@@ -134,8 +132,8 @@
                                         <span class="text-muted">-</span>
                                     }
                                 </td>
-                                <td>@(contact.PrimaryEmail ?? "-")</td>
                                 <td>@contact.GenderText</td>
+                                <td>@(contact.Notes?.Length > 70 ? contact.Notes.Substring(0, 70) + "..." : contact.Notes)</td>
                                 <td class="text-center">
                                     @if (contact.IsActive)
                                     {

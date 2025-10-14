@@ -11,6 +11,7 @@ using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.Hubs;
 using MahERP.Services;
 using MahERP.WebApp.Services;
@@ -55,6 +56,8 @@ builder.Services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
 builder.Services.AddScoped<IMyDayTaskRepository, MyDayTaskRepository>();
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+builder.Services.AddHostedService<ExpiredRoleCleanupService>();
+
 // اضافه کردن SmsProviderRepository
 builder.Services.AddScoped<SmsProviderRepository>();
 

@@ -14,7 +14,7 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public int OrganizationId { get; set; }
 
         [Display(Name = "نام سازمان")]
-        public string OrganizationName { get; set; }
+        public string? OrganizationName { get; set; }
 
         [Display(Name = "بخش والد")]
         public int? ParentDepartmentId { get; set; }
@@ -53,7 +53,7 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         // ========== Computed Properties ==========
         
         [Display(Name = "مسیر کامل")]
-        public string FullPath { get; set; }
+        public string? FullPath { get; set; }
 
         [Display(Name = "تعداد اعضا")]
         public int ActiveMembersCount { get; set; }

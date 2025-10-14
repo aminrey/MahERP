@@ -44,5 +44,13 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="parentPermissionId">ID والد</param>
         /// <returns>لیست ID های تمام فرزندان</returns>
         Task<List<int>> GetAllChildPermissionIdsAsync(int parentPermissionId);
+        /// <summary>
+        /// دریافت اطلاعات UserRole همراه با User و Role برای نمایش در Modal حذف
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="roleId">شناسه نقش</param>
+        /// <returns>UserRole با Include شده User و Role</returns>
+        Task<UserRole?> GetUserRoleForDeleteAsync(string userId, int roleId);
+
     }
 }

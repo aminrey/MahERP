@@ -23,7 +23,7 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("Contact")]
+    [PermissionRequired("CONTACT.VIEW")]
     public class ContactsController : BaseController
     {
         private readonly IContactRepository _contactRepository;

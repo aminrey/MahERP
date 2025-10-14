@@ -11,6 +11,7 @@ using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
@@ -29,6 +30,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
 {
     [Area("AdminArea")]
     [Authorize]
+    [PermissionRequired("TASK")]
+
     public class TasksController : BaseController
     {
         private readonly ITaskRepository _taskRepository;
@@ -42,6 +45,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         protected readonly IUserManagerRepository _userRepository;
         private readonly ITaskFilterRepository _taskFilterRepository; // اضافه کردن dependency
         private readonly ITaskHistoryRepository _taskHistoryRepository;
+        private readonly ITaskVisibilityRepository _TaskVisibilityRepository;
 
 
         public TasksController(
@@ -58,6 +62,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             TaskNotificationService taskNotificationService,
             TaskCodeGenerator taskCodeGenerator,
             IUserManagerRepository userRepository,
+            ITaskVisibilityRepository taskVisibilityRepository,
             ITaskFilterRepository taskFilterRepository,ITaskHistoryRepository taskHistoryRepository) 
             : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
@@ -72,6 +77,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             _userRepository = userRepository;
             _taskFilterRepository = taskFilterRepository;
             _taskHistoryRepository = taskHistoryRepository;
+            _TaskVisibilityRepository = taskVisibilityRepository;
 
         }
 
@@ -521,8 +527,31 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 viewModel.AssignmentsTaskUser = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
 
                 // علامت‌گذاری نوتیفیکیشن‌ها به عنوان خوانده شده
+                // Get current userId
                 var currentUserId = _userManager.GetUserId(User);
-                await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
+
+                // Check if user is admin (can use PermissionExtensions or your own logic)
+                var isAdmin = User.IsInRole("Admin"); // Or use your IsAdmin() extension
+
+                // Check if user is manager of the task's team
+                bool isManager = false;
+                if (task.TeamId.HasValue)
+                {
+                    // Use TaskVisibilityRepository to check
+                    isManager = await _TaskVisibilityRepository.IsUserTeamManagerAsync(currentUserId, task.TeamId.Value);
+                }
+
+                // Check if user is supervisor (based on your business logic, e.g. position power)
+                bool isSupervisor = false;
+                if (task.TeamId.HasValue)
+                {
+                    isSupervisor = await _TaskVisibilityRepository.CanViewBasedOnPositionAsync(currentUserId, task);
+                }
+
+                // Pass these to the ViewBag or ViewModel
+                ViewBag.IsAdmin = isAdmin;
+                ViewBag.IsManager = isManager;
+                ViewBag.IsSupervisor = isSupervisor; await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
 
                 // ⭐⭐⭐ بررسی اینکه آیا تسک در "روز من" کاربر فعلی است
                 var isInMyDay = await _taskRepository.IsTaskInMyDayAsync(id, currentUserId);
@@ -1694,6 +1723,8 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 });
             }
         }
+
+
         [HttpGet]
         public async Task<IActionResult> GetTaskHistory(int taskId)
         {
@@ -2037,7 +2068,7 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "AddToMyDayModal", "خطا در نمایش مودال", ex);
+                await _activityLogger.LogErrorAsync("Tasks", "AddToMyDayModal", "خطا در نمایش مودال افزودن تسک به روز من", ex);
                 return Json(new { status = "error", message = "خطا در بارگذاری مودال" });
             }
         }
@@ -2101,8 +2132,10 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                     });
                 }
 
-                // ⭐ ثبت در تاریخچه
+                // ⭐ دریافت اطلاعات تسک برای ثبت در تاریخچه
                 var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
+                
+                // ⭐ ثبت در تاریخچه
                 await _taskHistoryRepository.LogTaskAddedToMyDayAsync(
                     model.TaskId,
                     userId,
@@ -2132,7 +2165,6 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 });
             }
         }
-
         /// <summary>
         /// حذف تسک از "روز من"
         /// </summary>
@@ -2934,6 +2966,40 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
                 );
 
                 return PartialView("_ContactOrganizationsSelection", new List<OrganizationViewModel>());
+            }
+        }
+        /// <summary>
+        /// بارگذاری افراد مرتبط با Organization انتخاب شده
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> OrganizationTriggerSelect(int organizationId)
+        {
+            try
+            {
+                var contacts = await _taskRepository.GetOrganizationContactsAsync(organizationId);
+
+                var model = new
+                {
+                    Contacts = contacts,
+                    OrganizationId = organizationId
+                };
+
+                return PartialView("_OrganizationContactsPartial", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "OrganizationTriggerSelect",
+                    "خطا در بارگذاری افراد سازمان",
+                    ex
+                );
+
+                return PartialView("_OrganizationContactsPartial", new
+                {
+                    Contacts = new List<ContactViewModel>(),
+                    OrganizationId = organizationId
+                });
             }
         }
     }

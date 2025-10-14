@@ -14,7 +14,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CoreControllers
     /// </summary>
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("UserActivityLog")]
+    [PermissionRequired("CORE.ACTIVITYLOG")]
 
     public class UserActivityLogController : Controller
     {

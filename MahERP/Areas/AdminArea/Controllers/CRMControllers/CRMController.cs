@@ -17,7 +17,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CRMControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("CRM")]
+    [PermissionRequired("CRM.VIEW")]
 
     public class CRMController : BaseController
     {

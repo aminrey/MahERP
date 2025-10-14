@@ -4,9 +4,9 @@
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var isAssignedToCurrentUser = Model.AssignmentsTaskUser?.Any(a => a.AssignedUserId == currentUserId) ?? false;
     var isCreator = Model.CreatorUserId == currentUserId;
-    var isManager = User.IsInRole("Admin") || User.IsInRole("Manager");
-    var isSupervisor = User.IsInRole("Supervisor") || isManager;
-    var isAdminOrManager = Html.IsAdminOrManager();
+    var isAdmin = ViewBag.IsAdmin ?? false;
+    var isManager = ViewBag.IsManager ?? false;
+    var isSupervisor = ViewBag.IsSupervisor ?? false;
     var isCompletedByMe = Model.AssignmentsTaskUser?.Any(a=> a.CompletionDate.HasValue && a.AssignedUserId == currentUserId) ?? false;
     var isFocused = Model.AssignmentsTaskUser?.Any(a=> a.IsFocused && a.AssignedUserId == currentUserId) ?? false;
 
@@ -322,7 +322,7 @@
 
            
 
-                @if (isAdminOrManager)
+                @if (isAdmin || isManager)
                 {
                     <li><hr class="dropdown-divider"></li>
                     <li>
