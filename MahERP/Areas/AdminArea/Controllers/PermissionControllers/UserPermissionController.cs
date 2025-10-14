@@ -1,17 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
+using MahERP.CommonLayer.ViewModels;
+using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
-using MahERP.Areas.AdminArea.Controllers.BaseControllers;
-using MahERP.Attributes;
-using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Services;
-using MahERP.DataModelLayer.ViewModels.UserViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
 {
@@ -227,11 +228,10 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
             try
             {
                 var currentUserId = _userManager.GetUserId(User);
-                
-                // ✅ استفاده از متد جدید Repository
+
                 var result = await _userPermissionService.ManageUserPermissionsAsync(
-                    model.UserId, 
-                    model.SelectedPermissionIds, 
+                    model.UserId,
+                    model.SelectedPermissionIds,
                     currentUserId
                 );
 
@@ -247,7 +247,18 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
                         recordTitle: model.UserFullName
                     );
 
-                    TempData["SuccessMessage"] = "دسترسی‌های کاربر با موفقیت به‌روزرسانی شد";
+                    // ✅ استفاده از ResponseMessages
+                    var responseMessages = new List<WebResponseMessageViewModel>
+            {
+                new WebResponseMessageViewModel
+                {
+                    status = "success",
+                    text = "دسترسی‌های کاربر با موفقیت به‌روزرسانی شد"
+                }
+            };
+
+                    TempData["ResponseMessages"] = System.Text.Json.JsonSerializer.Serialize(responseMessages);
+
                     return RedirectToAction(nameof(ManageUserPermissions), new { userId = model.UserId });
                 }
 
@@ -257,7 +268,19 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("UserPermission", "ManageUserPermissions", "خطا در به‌روزرسانی دسترسی‌های کاربر", ex, recordId: model.UserId);
-                ModelState.AddModelError("", "خطا در به‌روزرسانی دسترسی‌ها");
+
+                // ✅ پیام خطا هم به همین صورت
+                var errorMessages = new List<WebResponseMessageViewModel>
+        {
+            new WebResponseMessageViewModel
+            {
+                status = "error",
+                text = "خطا در به‌روزرسانی دسترسی‌ها: " + ex.Message
+            }
+        };
+
+                TempData["ResponseMessages"] = System.Text.Json.JsonSerializer.Serialize(errorMessages);
+
                 return View(model);
             }
         }

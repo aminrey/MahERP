@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
@@ -29,5 +29,20 @@ namespace MahERP.DataModelLayer.Services
         Task<bool> LogPermissionChangeAsync(PermissionChangeLog log);
         Task<List<PermissionChangeLog>> GetUserPermissionLogsAsync(string userId, int? permissionId = null);
         Task<bool> ManageUserPermissionsAsync(string userId, List<int> selectedPermissionIds, string currentUserId);
+
+        /// <summary>
+        /// بررسی دسترسی کاربر به یک Permission والد یا هر یک از فرزندانش
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="parentPermissionCodes">کدهای دسترسی والد</param>
+        /// <returns>true اگر کاربر به والد یا یکی از فرزندانش دسترسی داشته باشد</returns>
+        Task<bool> UserHasAccessToAnyInAsync(string userId, params string[] parentPermissionCodes);
+
+        /// <summary>
+        /// دریافت تمام ID های فرزندان یک Permission (بازگشتی)
+        /// </summary>
+        /// <param name="parentPermissionId">ID والد</param>
+        /// <returns>لیست ID های تمام فرزندان</returns>
+        Task<List<int>> GetAllChildPermissionIdsAsync(int parentPermissionId);
     }
 }

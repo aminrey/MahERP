@@ -1,69 +1,66 @@
-﻿@model Permission
-@{
-    Layout = null;
-}
+﻿@model MahERP.DataModelLayer.Entities.AcControl.Permission
 
-<div class="modal-dialog modal-dialog-centered">
+<div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-        <form asp-controller="Permission" asp-action="DeleteConfirmed" method="post">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="id" value="@Model.Id" />
+        <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+                <i class="fa fa-trash me-2"></i>حذف دسترسی
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
-            <div class="modal-header bg-danger">
-                <h5 class="modal-title text-white">
-                    <i class="fa fa-trash me-2"></i>
-                    حذف دسترسی
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+        <form asp-action="DeleteConfirmed" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
 
             <div class="modal-body">
-                <div class="text-center py-4">
-                    <div class="mb-4">
-                        <i class="fa fa-exclamation-triangle fa-4x text-danger"></i>
-                    </div>
-                    
-                    <h4 class="mb-3">حذف دسترسی</h4>
-                    
-                    <div class="alert alert-danger">
-                        <p class="mb-2">
-                            آیا از حذف دسترسی 
-                            <strong class="text-dark">@Model.NameFa</strong> 
-                            مطمئن هستید؟
-                        </p>
-                        <p class="mb-0 small">
-                            <strong>کد:</strong> @Model.Code
-                        </p>
-                    </div>
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    <strong>هشدار:</strong> این عملیات قابل بازگشت نیست!
+                </div>
 
-                    @if (!string.IsNullOrEmpty(Model.Description))
-                    {
-                        <div class="alert alert-light text-start">
-                            <strong>توضیحات:</strong>
-                            <p class="mb-0 small">@Model.Description</p>
+                <div class="text-center mb-3">
+                    <i class="fa fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <h6>آیا از حذف این دسترسی اطمینان دارید؟</h6>
+                </div>
+
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>نام فارسی:</strong>
+                            </div>
+                            <div class="col-6">
+                                @Model.NameFa
+                            </div>
                         </div>
-                    }
-
-                    <div class="alert alert-warning">
-                        <i class="fa fa-exclamation-triangle me-1"></i>
-                        <strong>توجه:</strong>
-                        <ul class="mb-0 mt-2 text-start small">
-                            <li>این عملیات قابل بازگشت نیست</li>
-                            <li>اگر نقش‌هایی این دسترسی را دارند، از آنها حذف خواهد شد</li>
-                            <li>اگر این دسترسی زیرمجموعه دارد، ابتدا آنها را حذف کنید</li>
-                        </ul>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <strong>نام انگلیسی:</strong>
+                            </div>
+                            <div class="col-6">
+                                @Model.NameEn
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <strong>کد:</strong>
+                            </div>
+                            <div class="col-6">
+                                <code>@Model.Code</code>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fa fa-times me-1"></i>
-                    انصراف
+                    <i class="fa fa-times me-1"></i>انصراف
                 </button>
-                <button type="submit" class="btn btn-danger">
-                    <i class="fa fa-trash me-1"></i>
-                    حذف قطعی
+                <!-- ✅ استفاده از data-save="modal-ajax-save" -->
+                <button type="button" class="btn btn-danger" data-save="modal-ajax-save">
+                    <i class="fa fa-trash me-1"></i>حذف قطعی
                 </button>
             </div>
         </form>

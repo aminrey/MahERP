@@ -11,10 +11,10 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public int Id { get; set; }
 
         public string UserId { get; set; }
-        public AppUsers User { get; set; }
+        public AppUsers? User { get; set; }
 
         public int PermissionId { get; set; }
-        public Permission Permission { get; set; }
+        public Permission? Permission { get; set; }
 
         /// <summary>
         /// منبع دسترسی:
@@ -25,7 +25,7 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public byte SourceType { get; set; } = 1;
 
         public int? SourceRoleId { get; set; } // اگر از نقش باشد
-        public Role SourceRole { get; set; }
+        public Role? SourceRole { get; set; }
 
         public bool IsActive { get; set; } = true;
         public bool IsManuallyModified { get; set; } // آیا دستی تغییر کرده؟
@@ -33,13 +33,13 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public DateTime AssignDate { get; set; } = DateTime.Now;
         public DateTime? ModifiedDate { get; set; }
 
-        public string AssignedByUserId { get; set; }
-        public AppUsers AssignedByUser { get; set; }
+        public string? AssignedByUserId { get; set; }
+        public AppUsers? AssignedByUser { get; set; }
 
-        public string ModifiedByUserId { get; set; }
-        public AppUsers ModifiedByUser { get; set; }
+        public string? ModifiedByUserId { get; set; }
+        public AppUsers? ModifiedByUser { get; set; }
 
         [StringLength(500)]
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
     }
 }

@@ -62,7 +62,7 @@
                 </li>
 
                 <!-- ============== 📋 TASK MANAGEMENT SECTION ============== -->
-                @if (Html.CanAccessAny("TASK", "TASK.CREATE", "TASK.VIEW"))
+                @if (Html.CanAccessAnyIn("TASK"))
                 {
                     <li class="nav-main-heading">مدیریت تسک‌ها</li>
                     <li class="nav-main-item @(IsTaskMenuActive(currentController) ? "open" : "")">
@@ -80,7 +80,7 @@
                                 </div>
                             </li>
 
-                            @if (Html.CanAccess("TASK.CREATE"))
+                            @if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.CREATE"))
                             {
                                 <li class="nav-main-item">
                                     <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Tasks", "CreateNewTask") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="CreateNewTask" asp-route-AddressRouteInComingUrl="side">
@@ -90,9 +90,8 @@
                                 </li>
                             }
 
-                            @if (Html.CanAccess("TASK.VIEW"))
+                            @if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.VIEW"))
                             {
-                                <!-- همه تسک‌ها -->
                                 <li class="nav-main-item">
                                     <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "AllTasks") ? "active" : "")" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-ViewType="AllTasks">
                                         <i class="nav-main-link-icon fa fa-list text-info"></i>
@@ -136,7 +135,7 @@
                             </li>
 
                             <!-- 📅 تقویم -->
-                            @if (Html.CanAccess("TASK.CALENDAR"))
+                            @if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.CALENDAR"))
                             {
                                 <li class="nav-main-item nav-submenu-separator mt-2">
                                     <div class="nav-submenu-title">
@@ -153,7 +152,7 @@
                             }
 
                             <!-- 📊 آمار و گزارشات -->
-                            @if (Html.CanAccess("TASK.DASHBOARD"))
+                            @if (Html.CanAccessAny("TASK", "TASK.DASHBOARD"))
                             {
                                 <li class="nav-main-item nav-submenu-separator mt-2">
                                     <div class="nav-submenu-title">
@@ -173,7 +172,7 @@
                 }
 
                 <!-- ============== 🔔 NOTIFICATIONS ============== -->
-                @if (Html.CanAccess("NOTIFICATION"))
+                @if (Html.CanAccessAnyIn("CORE.NOTIFICATION"))
                 {
                     <li class="nav-main-item">
                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Notification", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Notification" asp-action="Index">
@@ -185,12 +184,12 @@
                 }
 
                 <!-- ============== 🏢 ORGANIZATION SETUP ============== -->
-                @if (Html.CanAccessAny("CORE.BRANCH", "CORE.TEAM", "CORE.USER"))
+                @if (Html.CanAccessAnyIn("CORE.BRANCH", "CORE.TEAM", "CORE.USER"))
                 {
                     <li class="nav-main-heading">تعاریف سازمانی</li>
 
                     <!-- مدیریت شعب -->
-                    @if (Html.CanAccessAny("CORE.BRANCH", "CORE.BRANCH.USER"))
+                    @if (Html.CanAccessAnyIn("CORE.BRANCH"))
                     {
                         <li class="nav-main-item @(IsBranchMenuActive(currentController) ? "open" : "")">
                             <a aria-expanded="@(IsBranchMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
@@ -198,7 +197,7 @@
                                 <span class="nav-main-link-name">مدیریت شعب</span>
                             </a>
                             <ul class="nav-main-submenu">
-                                @if (Html.CanAccess("CORE.BRANCH"))
+                                @if (Html.CanAccessAny("CORE.BRANCH", "CORE.BRANCH.DEFINITIONS.LIST"))
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Branch", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Branch" asp-action="Index">
@@ -207,7 +206,7 @@
                                         </a>
                                     </li>
                                 }
-                                @if (Html.CanAccess("CORE.BRANCH.CREATE"))
+                                @if (Html.CanAccessAny("CORE.BRANCH", "CORE.BRANCH.DEFINITIONS.CREATE"))
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Branch", "AddBranch") ? "active" : "")" asp-area="AdminArea" asp-controller="Branch" asp-action="AddBranch">
@@ -216,7 +215,7 @@
                                         </a>
                                     </li>
                                 }
-                                @if (Html.CanAccess("CORE.BRANCH.USER"))
+                                @if (Html.CanAccessAny("CORE.BRANCH", "CORE.BRANCH.DEFINITIONS.USER"))
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "BranchUser", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="BranchUser" asp-action="Index">
@@ -230,7 +229,7 @@
                     }
 
                     <!-- مدیریت تیم‌ها -->
-                    @if (Html.CanAccess("CORE.TEAM"))
+                    @if (Html.CanAccessAnyIn("CORE.TEAM"))
                     {
                         <li class="nav-main-item @(IsTeamMenuActive(currentController) ? "open" : "")">
                             <a aria-expanded="@(IsTeamMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
@@ -238,14 +237,17 @@
                                 <span class="nav-main-link-name">مدیریت تیم‌ها</span>
                             </a>
                             <ul class="nav-main-submenu">
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Team", "OrganizationalChart") ? "active" : "")" asp-area="AdminArea" asp-controller="Team" asp-action="OrganizationalChart">
-                                        <i class="nav-main-link-icon fa fa-sitemap"></i>
-                                        <span class="nav-main-link-name">چارت سازمانی</span>
-                                    </a>
-                                </li>
+                                @if (Html.CanAccessAny("CORE.TEAM", "CORE.TEAM.VIEW"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Team", "OrganizationalChart") ? "active" : "")" asp-area="AdminArea" asp-controller="Team" asp-action="OrganizationalChart">
+                                            <i class="nav-main-link-icon fa fa-sitemap"></i>
+                                            <span class="nav-main-link-name">چارت سازمانی</span>
+                                        </a>
+                                    </li>
+                                }
 
-                                @if (Html.CanAccess("CORE.TEAM.CREATE"))
+                                @if (Html.CanAccessAny("CORE.TEAM", "CORE.TEAM.CREATE"))
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Team", "Create") ? "active" : "")" asp-area="AdminArea" asp-controller="Team" asp-action="Create">
@@ -259,7 +261,7 @@
                     }
 
                     <!-- مدیریت کاربران -->
-                    @if (Html.CanAccess("CORE.USER"))
+                    @if (Html.CanAccessAnyIn("CORE.USER"))
                     {
                         <li class="nav-main-item @(IsUserManagementMenuActive(currentController) ? "open" : "")">
                             <a aria-expanded="@(IsUserManagementMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
@@ -267,19 +269,25 @@
                                 <span class="nav-main-link-name">مدیریت کاربران</span>
                             </a>
                             <ul class="nav-main-submenu">
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserManager", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-user-shield"></i>
-                                        <span class="nav-main-link-name">مدیران سیستم</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserManager", "Users") ? "active" : "")" asp-area="AdminArea" asp-controller="UserManager" asp-action="Users">
-                                        <i class="nav-main-link-icon fa fa-users"></i>
-                                        <span class="nav-main-link-name">کاربران</span>
-                                    </a>
-                                </li>
-                                @if (Html.CanAccess("CORE.USER.CREATE"))
+                                @if (Html.CanAccessAny("CORE.USER", "CORE.USER.VIEW.ADMINS"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserManager", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="UserManager" asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-user-shield"></i>
+                                            <span class="nav-main-link-name">مدیران سیستم</span>
+                                        </a>
+                                    </li>
+                                }
+                                @if (Html.CanAccessAny("CORE.USER", "CORE.USER.VIEW.USERS"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserManager", "Users") ? "active" : "")" asp-area="AdminArea" asp-controller="UserManager" asp-action="Users">
+                                            <i class="nav-main-link-icon fa fa-users"></i>
+                                            <span class="nav-main-link-name">کاربران</span>
+                                        </a>
+                                    </li>                    
+                                }
+                                @if (Html.CanAccessAny("CORE.USER", "CORE.USER.CREATE"))
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserManager", "AddUser") ? "active" : "")" asp-area="AdminArea" asp-controller="UserManager" asp-action="AddUser">
@@ -292,8 +300,8 @@
                         </li>
                     }
 
-                    <!-- ✅ NEW: مدیریت دسترسی‌ها و نقش‌ها - سیستم جدید -->
-                    @if (Html.CanAccessAny("CORE.PERMISSION", "CORE.ROLE", "CORE.USER.PERMISSION"))
+                    <!-- ✅ مدیریت دسترسی‌ها و نقش‌ها -->
+                    @if (Html.CanAccessAnyIn("CORE.PERMISSION", "CORE.ROLE", "CORE.USER.PERMISSION"))
                     {
                         <li class="nav-main-item @(IsPermissionMenuActive(currentController) ? "open" : "")">
                             <a aria-expanded="@(IsPermissionMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
@@ -302,26 +310,31 @@
                             </a>
                             <ul class="nav-main-submenu">
                                 <!-- 🔑 مدیریت دسترسی‌ها -->
-                                @if (Html.CanAccess("CORE.PERMISSION"))
+                                @if (Html.CanAccessAnyIn("CORE.PERMISSION"))
                                 {
                                     <li class="nav-main-item nav-submenu-separator">
                                         <div class="nav-submenu-title">
                                             <small class="text-muted fw-semibold">دسترسی‌ها</small>
                                         </div>
                                     </li>
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Permission", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Permission" asp-action="Index">
-                                            <i class="nav-main-link-icon fa fa-key text-primary"></i>
-                                            <span class="nav-main-link-name">لیست دسترسی‌ها</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Permission", "Tree") ? "active" : "")" asp-area="AdminArea" asp-controller="Permission" asp-action="Tree">
-                                            <i class="nav-main-link-icon fa fa-sitemap text-info"></i>
-                                            <span class="nav-main-link-name">درخت دسترسی‌ها</span>
-                                        </a>
-                                    </li>
-                                    @if (Html.CanAccess("CORE.PERMISSION.CREATE"))
+                                    
+                                    @if (Html.CanAccessAny("CORE.PERMISSION", "CORE.PERMISSION.VIEW"))
+                                    {
+                                        <li class="nav-main-item">
+                                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Permission", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Permission" asp-action="Index">
+                                                <i class="nav-main-link-icon fa fa-key text-primary"></i>
+                                                <span class="nav-main-link-name">لیست دسترسی‌ها</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-main-item">
+                                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Permission", "Tree") ? "active" : "")" asp-area="AdminArea" asp-controller="Permission" asp-action="Tree">
+                                                <i class="nav-main-link-icon fa fa-sitemap text-info"></i>
+                                                <span class="nav-main-link-name">درخت دسترسی‌ها</span>
+                                            </a>
+                                        </li>
+                                    }
+                                    
+                                    @if (Html.CanAccessAny("CORE.PERMISSION", "CORE.PERMISSION.CREATE"))
                                     {
                                         <li class="nav-main-item">
                                             <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Permission", "Create") ? "active" : "")" asp-area="AdminArea" asp-controller="Permission" asp-action="Create">
@@ -333,20 +346,25 @@
                                 }
 
                                 <!-- 👥 مدیریت نقش‌ها -->
-                                @if (Html.CanAccess("CORE.ROLE"))
+                                @if (Html.CanAccessAnyIn("CORE.ROLE"))
                                 {
                                     <li class="nav-main-item nav-submenu-separator mt-2">
                                         <div class="nav-submenu-title">
                                             <small class="text-muted fw-semibold">نقش‌ها</small>
                                         </div>
                                     </li>
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Role", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Role" asp-action="Index">
-                                            <i class="nav-main-link-icon fa fa-user-shield text-primary"></i>
-                                            <span class="nav-main-link-name">لیست نقش‌ها</span>
-                                        </a>
-                                    </li>
-                                    @if (Html.CanAccess("CORE.ROLE.CREATE"))
+                                    
+                                    @if (Html.CanAccessAny("CORE.ROLE", "CORE.ROLE.VIEW"))
+                                    {
+                                        <li class="nav-main-item">
+                                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Role", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Role" asp-action="Index">
+                                                <i class="nav-main-link-icon fa fa-user-shield text-primary"></i>
+                                                <span class="nav-main-link-name">لیست نقش‌ها</span>
+                                            </a>
+                                        </li>
+                                    }
+                                    
+                                    @if (Html.CanAccessAny("CORE.ROLE", "CORE.ROLE.CREATE"))
                                     {
                                         <li class="nav-main-item">
                                             <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Role", "Create") ? "active" : "")" asp-area="AdminArea" asp-controller="Role" asp-action="Create">
@@ -358,7 +376,7 @@
                                 }
 
                                 <!-- 🔐 دسترسی کاربران -->
-                                @if (Html.CanAccess("CORE.USER.PERMISSION"))
+                                @if (Html.CanAccessAnyIn("CORE.USER.PERMISSION"))
                                 {
                                     <li class="nav-main-item nav-submenu-separator mt-2">
                                         <div class="nav-submenu-title">
@@ -374,7 +392,7 @@
                                 }
 
                                 <!-- 📊 گزارشات و لاگ‌ها -->
-                                @if (Html.CanAccess("CORE.PERMISSION.LOG"))
+                                @if (Html.CanAccessAny("CORE.PERMISSION", "CORE.PERMISSION.LOG"))
                                 {
                                     <li class="nav-main-item nav-submenu-separator mt-2">
                                         <div class="nav-submenu-title">
@@ -394,12 +412,12 @@
                 }
 
                 <!-- ============== 💼 BUSINESS MANAGEMENT ============== -->
-                @if (Html.CanAccessAny("ORG", "CONTACT", "CONTRACT", "CRM"))
+                @if (Html.CanAccessAnyIn("ORG", "CONTACT", "CONTRACT", "CRM"))
                 {
                     <li class="nav-main-heading">مدیریت کسب‌وکار</li>
 
                     <!-- ========== 🏢 مدیریت سازمان‌ها ========== -->
-                    @if (Html.CanAccess("ORG"))
+                    @if (Html.CanAccessAnyIn("ORG"))
                     {
                         <li class="nav-main-item @(IsOrganizationMenuActive(currentController) ? "open" : "")">
                             <a aria-expanded="@(IsOrganizationMenuActive(currentController) ? "true" : "false")"
@@ -411,62 +429,64 @@
                                 <span class="nav-main-link-name">مدیریت سازمان‌ها</span>
                             </a>
                             <ul class="nav-main-submenu">
-                                <li class="nav-main-item nav-submenu-separator">
-                                    <div class="nav-submenu-title">
-                                        <small class="text-muted fw-semibold">لیست سازمان‌ها</small>
-                                    </div>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Organizations", "Index") && string.IsNullOrEmpty(Context.Request.Query["organizationType"]) ? "active" : "")"
-                                       asp-area="AdminArea"
-                                       asp-controller="Organizations"
-                                       asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-list text-info"></i>
-                                        <span class="nav-main-link-name">همه سازمان‌ها</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "0") ? "active" : "")"
-                                       asp-area="AdminArea"
-                                       asp-controller="Organizations"
-                                       asp-action="Index"
-                                       asp-route-organizationType="0">
-                                        <i class="nav-main-link-icon fa fa-briefcase text-primary"></i>
-                                        <span class="nav-main-link-name">شرکت‌ها</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "1") ? "active" : "")"
-                                       asp-area="AdminArea"
-                                       asp-controller="Organizations"
-                                       asp-action="Index"
-                                       asp-route-organizationType="1">
-                                        <i class="nav-main-link-icon fa fa-university text-info"></i>
-                                        <span class="nav-main-link-name">سازمان‌ها</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "2") ? "active" : "")"
-                                       asp-area="AdminArea"
-                                       asp-controller="Organizations"
-                                       asp-action="Index"
-                                       asp-route-organizationType="2">
-                                        <i class="nav-main-link-icon fa fa-landmark text-success"></i>
-                                        <span class="nav-main-link-name">موسسات</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "3") ? "active" : "")"
-                                       asp-area="AdminArea"
-                                       asp-controller="Organizations"
-                                       asp-action="Index"
-                                       asp-route-organizationType="3">
-                                        <i class="nav-main-link-icon fa fa-hands-helping text-warning"></i>
-                                        <span class="nav-main-link-name">نهادها</span>
-                                    </a>
-                                </li>
-
-                                @if (Html.CanAccess("ORG.CREATE"))
+                                @if (Html.CanAccessAny("ORG", "ORG.VIEW"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">لیست سازمان‌ها</small>
+                                        </div>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Organizations", "Index") && string.IsNullOrEmpty(Context.Request.Query["organizationType"]) ? "active" : "")"
+                                        asp-area="AdminArea"
+                                        asp-controller="Organizations"
+                                        asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                            <span class="nav-main-link-name">همه سازمان‌ها</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "0") ? "active" : "")"
+                                        asp-area="AdminArea"
+                                        asp-controller="Organizations"
+                                        asp-action="Index"
+                                        asp-route-organizationType="0">
+                                            <i class="nav-main-link-icon fa fa-briefcase text-primary"></i>
+                                            <span class="nav-main-link-name">شرکت‌ها</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "1") ? "active" : "")"
+                                        asp-area="AdminArea"
+                                        asp-controller="Organizations"
+                                        asp-action="Index"
+                                        asp-route-organizationType="1">
+                                            <i class="nav-main-link-icon fa fa-university text-info"></i>
+                                            <span class="nav-main-link-name">سازمان‌ها</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "2") ? "active" : "")"
+                                        asp-area="AdminArea"
+                                        asp-controller="Organizations"
+                                        asp-action="Index"
+                                        asp-route-organizationType="2">
+                                            <i class="nav-main-link-icon fa fa-landmark text-success"></i>
+                                            <span class="nav-main-link-name">موسسات</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsOrganizationTypeActive(currentController, currentAction, "3") ? "active" : "")"
+                                        asp-area="AdminArea"
+                                        asp-controller="Organizations"
+                                        asp-action="Index"
+                                        asp-route-organizationType="3">
+                                            <i class="nav-main-link-icon fa fa-hands-helping text-warning"></i>
+                                            <span class="nav-main-link-name">نهادها</span>
+                                        </a>
+                                    </li>
+                                }
+                                @if (Html.CanAccessAny("ORG", "ORG.CREATE"))
                                 {
                                     <li class="nav-main-item nav-submenu-separator mt-2">
                                         <div class="nav-submenu-title">
@@ -488,7 +508,7 @@
                     }
 
                     <!-- ========== 👥 مدیریت افراد ========== -->
-                    @if (Html.CanAccess("CONTACT"))
+                    @if (Html.CanAccessAnyIn("CONTACT"))
                     {
                         <li class="nav-main-item @(IsContactMenuActive(currentController) ? "open" : "")">
                             <a aria-expanded="@(IsContactMenuActive(currentController) ? "true" : "false")"
@@ -500,22 +520,24 @@
                                 <span class="nav-main-link-name">مدیریت افراد</span>
                             </a>
                             <ul class="nav-main-submenu">
-                                <li class="nav-main-item nav-submenu-separator">
-                                    <div class="nav-submenu-title">
-                                        <small class="text-muted fw-semibold">لیست‌ها</small>
-                                    </div>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contacts", "Index") ? "active" : "")"
-                                       asp-area="AdminArea"
-                                       asp-controller="Contacts"
-                                       asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-list text-info"></i>
-                                        <span class="nav-main-link-name">همه افراد</span>
-                                    </a>
-                                </li>
-
-                                @if (Html.CanAccess("CONTACT.CREATE"))
+                                @if (Html.CanAccessAny("CONTACT", "CONTACT.VIEW"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">لیست‌ها</small>
+                                        </div>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contacts", "Index") ? "active" : "")"
+                                        asp-area="AdminArea"
+                                        asp-controller="Contacts"
+                                        asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                            <span class="nav-main-link-name">همه افراد</span>
+                                        </a>
+                                    </li>
+                                }
+                                @if (Html.CanAccessAny("CONTACT", "CONTACT.CREATE"))
                                 {
                                     <li class="nav-main-item nav-submenu-separator mt-2">
                                         <div class="nav-submenu-title">
@@ -533,7 +555,7 @@
                                     </li>
                                 }
 
-                                @if (Html.CanAccess("CONTACT.STATISTICS"))
+                                @if (Html.CanAccessAny("CONTACT", "CONTACT.STATISTICS"))
                                 {
                                     <li class="nav-main-item nav-submenu-separator mt-2">
                                         <div class="nav-submenu-title">
@@ -555,22 +577,25 @@
                     }
 
                     <!-- قراردادها -->
-                    @if (Html.CanAccess("CONTRACT"))
+                    @if (Html.CanAccessAnyIn("CONTRACT"))
                     {
                         <li class="nav-main-item @(IsContractMenuActive(currentController) ? "open" : "")">
                             <a aria-expanded="@(IsContractMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
                                 <i class="nav-main-link-icon fa fa-file-contract text-info"></i>
                                 <span class="nav-main-link-name">قراردادها</span>
                             </a>
-                            <ul class="nav-main-submenu">
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contract", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Contract" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-list"></i>
-                                        <span class="nav-main-link-name">لیست قراردادها</span>
-                                    </a>
-                                </li>
 
-                                @if (Html.CanAccess("CONTRACT.CREATE"))
+                            <ul class="nav-main-submenu">
+                                @if (Html.CanAccessAny("CONTRACT", "CONTRACT.VIEW"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contract", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Contract" asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-list"></i>
+                                            <span class="nav-main-link-name">لیست قراردادها</span>
+                                        </a>
+                                    </li>
+                                }
+                                @if (Html.CanAccessAny("CONTRACT", "CONTRACT.CREATE"))
                                 {
                                     <li class="nav-main-item">
                                         <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Contract", "AddContract") ? "active" : "")" asp-area="AdminArea" asp-controller="Contract" asp-action="AddContract">
@@ -584,7 +609,7 @@
                     }
 
                     <!-- مدیریت CRM -->
-                    @if (Html.CanAccess("CRM"))
+                    @if (Html.CanAccessAnyIn("CRM"))
                     {
                         <li class="nav-main-item @(IsCRMMenuActive(currentController) ? "open" : "")">
                             <a aria-expanded="@(IsCRMMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
@@ -592,179 +617,238 @@
                                 <span class="nav-main-link-name">مدیریت CRM</span>
                             </a>
                             <ul class="nav-main-submenu">
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-tachometer-alt"></i>
-                                        <span class="nav-main-link-name">داشبورد CRM</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "LeadManagement") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="LeadManagement">
-                                        <i class="nav-main-link-icon fa fa-user-plus"></i>
-                                        <span class="nav-main-link-name">مدیریت سرنخ‌ها</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "OpportunityManagement") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="OpportunityManagement">
-                                        <i class="nav-main-link-icon fa fa-bullseye"></i>
-                                        <span class="nav-main-link-name">مدیریت فرصت‌ها</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "CustomerFollowUp") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="CustomerFollowUp">
-                                        <i class="nav-main-link-icon fa fa-phone"></i>
-                                        <span class="nav-main-link-name">پیگیری مشتریان</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "SalesReports") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="SalesReports">
-                                        <i class="nav-main-link-icon fa fa-chart-bar"></i>
-                                        <span class="nav-main-link-name">گزارشات فروش</span>
-                                    </a>
-                                </li>
+                                @if (Html.CanAccessAny("CRM", "CRM.DASHBOARD"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-tachometer-alt"></i>
+                                            <span class="nav-main-link-name">داشبورد CRM</span>
+                                        </a>
+                                    </li>
+                                }
+                                @if (Html.CanAccessAny("CRM", "CRM.LEAD"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "LeadManagement") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="LeadManagement">
+                                            <i class="nav-main-link-icon fa fa-user-plus"></i>
+                                            <span class="nav-main-link-name">مدیریت سرنخ‌ها</span>
+                                        </a>
+                                    </li>
+                                }
+                                @if (Html.CanAccessAny("CRM", "CRM.OPPORTUNITY"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "OpportunityManagement") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="OpportunityManagement">
+                                            <i class="nav-main-link-icon fa fa-bullseye"></i>
+                                            <span class="nav-main-link-name">مدیریت فرصت‌ها</span>
+                                        </a>
+                                    </li>
+                                }
+                                @if (Html.CanAccessAny("CRM", "CRM.FOLLOWUP"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "CustomerFollowUp") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="CustomerFollowUp">
+                                            <i class="nav-main-link-icon fa fa-phone"></i>
+                                            <span class="nav-main-link-name">پیگیری مشتریان</span>
+                                        </a>
+                                    </li>
+                                }
+                                @if (Html.CanAccessAny("CRM", "CRM.REPORTS"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "SalesReports") ? "active" : "")" asp-area="AdminArea" asp-controller="CRM" asp-action="SalesReports">
+                                            <i class="nav-main-link-icon fa fa-chart-bar"></i>
+                                            <span class="nav-main-link-name">گزارشات فروش</span>
+                                        </a>
+                                    </li>
+                                }
                             </ul>
                         </li>
                     }
                 }
 
                 <!-- ============== 📨 COMMUNICATION MANAGEMENT ============== -->
-                @if (isAdmin)
+                @if (Html.CanAccessAnyIn("COMMUNICATION.SMS", "COMMUNICATION.EMAIL"))
                 {
                     <li class="nav-main-heading">مدیریت ارتباطات</li>
 
                     <!-- مدیریت پیامک -->
-                    <li class="nav-main-item @(IsSmsMenuActive(currentController) ? "open" : "")">
-                        <a aria-expanded="@(IsSmsMenuActive(currentController) ? "true" : "false")"
-                           aria-haspopup="true"
-                           class="nav-main-link nav-main-link-submenu"
-                           data-toggle="submenu"
-                           href="#">
-                            <i class="nav-main-link-icon fa fa-sms text-info"></i>
-                            <span class="nav-main-link-name">مدیریت پیامک</span>
-                        </a>
-                        <ul class="nav-main-submenu">
-                            <li class="nav-main-item nav-submenu-separator">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">ارسال پیامک</small>
-                                </div>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsSend", "Index") ? "active" : "")"
-                                   asp-area="AdminArea"
-                                   asp-controller="SmsSend"
-                                   asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-paper-plane text-primary"></i>
-                                    <span class="nav-main-link-name">ارسال پیامک</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item nav-submenu-separator mt-2">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">قالب‌های پیامک</small>
-                                </div>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsTemplate", "Index") ? "active" : "")"
-                                   asp-area="AdminArea"
-                                   asp-controller="SmsTemplate"
-                                   asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-file-alt text-info"></i>
-                                    <span class="nav-main-link-name">لیست قالب‌ها</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "SmsTemplate", "Create") ? "active" : "")"
-                                   asp-area="AdminArea"
-                                   asp-controller="SmsTemplate"
-                                   asp-action="Create">
-                                    <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                    <span class="nav-main-link-name fw-semibold">قالب جدید</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item nav-submenu-separator mt-2">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">تنظیمات</small>
-                                </div>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsProvider", "Index") ? "active" : "")"
-                                   asp-area="AdminArea"
-                                   asp-controller="SmsProvider"
-                                   asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-server text-warning"></i>
-                                    <span class="nav-main-link-name">خدمات‌دهندگان پیامک</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                    @if (Html.CanAccessAnyIn("COMMUNICATION.SMS"))
+                    {
+                        <li class="nav-main-item @(IsSmsMenuActive(currentController) ? "open" : "")">
+                            <a aria-expanded="@(IsSmsMenuActive(currentController) ? "true" : "false")"
+                               aria-haspopup="true"
+                               class="nav-main-link nav-main-link-submenu"
+                               data-toggle="submenu"
+                               href="#">
+                                <i class="nav-main-link-icon fa fa-sms text-info"></i>
+                                <span class="nav-main-link-name">مدیریت پیامک</span>
+                            </a>
+                            <ul class="nav-main-submenu">
+                                @if (Html.CanAccessAny("COMMUNICATION.SMS", "COMMUNICATION.SMS.SEND"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">ارسال پیامک</small>
+                                        </div>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsSend", "Index") ? "active" : "")"
+                                           asp-area="AdminArea"
+                                           asp-controller="SmsSend"
+                                           asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-paper-plane text-primary"></i>
+                                            <span class="nav-main-link-name">ارسال پیامک</span>
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @if (Html.CanAccessAnyIn("COMMUNICATION.SMS.TEMPLATE"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator mt-2">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">قالب‌های پیامک</small>
+                                        </div>
+                                    </li>
+                                    
+                                    @if (Html.CanAccessAny("COMMUNICATION.SMS.TEMPLATE", "COMMUNICATION.SMS.TEMPLATE.VIEW"))
+                                    {
+                                        <li class="nav-main-item">
+                                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsTemplate", "Index") ? "active" : "")"
+                                               asp-area="AdminArea"
+                                               asp-controller="SmsTemplate"
+                                               asp-action="Index">
+                                                <i class="nav-main-link-icon fa fa-file-alt text-info"></i>
+                                                <span class="nav-main-link-name">لیست قالب‌ها</span>
+                                            </a>
+                                        </li>
+                                    }
+                                    
+                                    @if (Html.CanAccessAny("COMMUNICATION.SMS.TEMPLATE", "COMMUNICATION.SMS.TEMPLATE.CREATE"))
+                                    {
+                                        <li class="nav-main-item">
+                                            <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "SmsTemplate", "Create") ? "active" : "")"
+                                               asp-area="AdminArea"
+                                               asp-controller="SmsTemplate"
+                                               asp-action="Create">
+                                                <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                                <span class="nav-main-link-name fw-semibold">قالب جدید</span>
+                                            </a>
+                                        </li>
+                                    }
+                                }
+                                
+                                @if (Html.CanAccessAny("COMMUNICATION.SMS", "COMMUNICATION.SMS.PROVIDER"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator mt-2">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">تنظیمات</small>
+                                        </div>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "SmsProvider", "Index") ? "active" : "")"
+                                           asp-area="AdminArea"
+                                           asp-controller="SmsProvider"
+                                           asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-server text-warning"></i>
+                                            <span class="nav-main-link-name">خدمات‌دهندگان پیامک</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
 
                     <!-- مدیریت ایمیل -->
-                    <li class="nav-main-item @(IsEmailMenuActive(currentController) ? "open" : "")">
-                        <a aria-expanded="@(IsEmailMenuActive(currentController) ? "true" : "false")"
-                           aria-haspopup="true"
-                           class="nav-main-link nav-main-link-submenu"
-                           data-toggle="submenu"
-                           href="#">
-                            <i class="nav-main-link-icon fa fa-envelope text-primary"></i>
-                            <span class="nav-main-link-name">مدیریت ایمیل</span>
-                        </a>
-                        <ul class="nav-main-submenu">
-                            <li class="nav-main-item nav-submenu-separator">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">ارسال ایمیل</small>
-                                </div>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "EmailSend", "Index") ? "active" : "")"
-                                   asp-area="AdminArea"
-                                   asp-controller="EmailSend"
-                                   asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-paper-plane text-primary"></i>
-                                    <span class="nav-main-link-name">ارسال ایمیل</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item nav-submenu-separator mt-2">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">قالب‌های ایمیل</small>
-                                </div>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "EmailTemplate", "Index") ? "active" : "")"
-                                   asp-area="AdminArea"
-                                   asp-controller="EmailTemplate"
-                                   asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-file-alt text-info"></i>
-                                    <span class="nav-main-link-name">لیست قالب‌ها</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "EmailTemplate", "Create") ? "active" : "")"
-                                   asp-area="AdminArea"
-                                   asp-controller="EmailTemplate"
-                                   asp-action="Create">
-                                    <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                    <span class="nav-main-link-name fw-semibold">قالب جدید</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item nav-submenu-separator mt-2">
-                                <div class="nav-submenu-title">
-                                    <small class="text-muted fw-semibold">تنظیمات</small>
-                                </div>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Settings", "EmailSettings") ? "active" : "")"
-                                   asp-area="AdminArea"
-                                   asp-controller="Settings"
-                                   asp-action="EmailSettings">
-                                    <i class="nav-main-link-icon fa fa-cog text-warning"></i>
-                                    <span class="nav-main-link-name">تنظیمات ایمیل</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                    @if (Html.CanAccessAnyIn("COMMUNICATION.EMAIL"))
+                    {
+                        <li class="nav-main-item @(IsEmailMenuActive(currentController) ? "open" : "")">
+                            <a aria-expanded="@(IsEmailMenuActive(currentController) ? "true" : "false")"
+                               aria-haspopup="true"
+                               class="nav-main-link nav-main-link-submenu"
+                               data-toggle="submenu"
+                               href="#">
+                                <i class="nav-main-link-icon fa fa-envelope text-primary"></i>
+                                <span class="nav-main-link-name">مدیریت ایمیل</span>
+                            </a>
+                            <ul class="nav-main-submenu">
+                                @if (Html.CanAccessAny("COMMUNICATION.EMAIL", "COMMUNICATION.EMAIL.SEND"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">ارسال ایمیل</small>
+                                        </div>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "EmailSend", "Index") ? "active" : "")"
+                                           asp-area="AdminArea"
+                                           asp-controller="EmailSend"
+                                           asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-paper-plane text-primary"></i>
+                                            <span class="nav-main-link-name">ارسال ایمیل</span>
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @if (Html.CanAccessAnyIn("COMMUNICATION.EMAIL.TEMPLATE"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator mt-2">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">قالب‌های ایمیل</small>
+                                        </div>
+                                    </li>
+                                    
+                                    @if (Html.CanAccessAny("COMMUNICATION.EMAIL.TEMPLATE", "COMMUNICATION.EMAIL.TEMPLATE.VIEW"))
+                                    {
+                                        <li class="nav-main-item">
+                                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "EmailTemplate", "Index") ? "active" : "")"
+                                               asp-area="AdminArea"
+                                               asp-controller="EmailTemplate"
+                                               asp-action="Index">
+                                                <i class="nav-main-link-icon fa fa-file-alt text-info"></i>
+                                                <span class="nav-main-link-name">لیست قالب‌ها</span>
+                                            </a>
+                                        </li>
+                                    }
+                                    
+                                    @if (Html.CanAccessAny("COMMUNICATION.EMAIL.TEMPLATE", "COMMUNICATION.EMAIL.TEMPLATE.CREATE"))
+                                    {
+                                        <li class="nav-main-item">
+                                            <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "EmailTemplate", "Create") ? "active" : "")"
+                                               asp-area="AdminArea"
+                                               asp-controller="EmailTemplate"
+                                               asp-action="Create">
+                                                <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                                <span class="nav-main-link-name fw-semibold">قالب جدید</span>
+                                            </a>
+                                        </li>
+                                    }
+                                }
+                                
+                                @if (Html.CanAccessAny("COMMUNICATION.EMAIL", "COMMUNICATION.EMAIL.SETTINGS"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator mt-2">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">تنظیمات</small>
+                                        </div>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Settings", "EmailSettings") ? "active" : "")"
+                                           asp-area="AdminArea"
+                                           asp-controller="Settings"
+                                           asp-action="EmailSettings">
+                                            <i class="nav-main-link-icon fa fa-cog text-warning"></i>
+                                            <span class="nav-main-link-name">تنظیمات ایمیل</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
                 }
 
                 <!-- ============== 📊 MONITORING & LOGS ============== -->
-                @if (Html.CanAccess("CORE.ACTIVITYLOG"))
+                @if (Html.CanAccessAnyIn("CORE.ACTIVITYLOG"))
                 {
                     <li class="nav-main-heading">نظارت و لاگ‌ها</li>
 
@@ -774,61 +858,93 @@
                             <span class="nav-main-link-name">لاگ فعالیت‌ها</span>
                         </a>
                         <ul class="nav-main-submenu">
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserActivityLog", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
-                                    <i class="nav-main-link-icon fa fa-list"></i>
-                                    <span class="nav-main-link-name">لیست فعالیت‌ها</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserActivityLog", "Search") ? "active" : "")" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Search">
-                                    <i class="nav-main-link-icon fa fa-search"></i>
-                                    <span class="nav-main-link-name">جستجوی پیشرفته</span>
-                                </a>
-                            </li>
-                            <li class="nav-main-item">
-                                <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserActivityLog", "Statistics") ? "active" : "")" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Statistics">
-                                    <i class="nav-main-link-icon fa fa-chart-line"></i>
-                                    <span class="nav-main-link-name">آمار و گزارشات</span>
-                                </a>
-                            </li>
+                            @if (Html.CanAccessAny("CORE.ACTIVITYLOG", "CORE.ACTIVITYLOG.VIEW"))
+                            {
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserActivityLog", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Index">
+                                        <i class="nav-main-link-icon fa fa-list"></i>
+                                        <span class="nav-main-link-name">لیست فعالیت‌ها</span>
+                                    </a>
+                                </li>
+                            }
+                            
+                            @if (Html.CanAccessAny("CORE.ACTIVITYLOG", "CORE.ACTIVITYLOG.SEARCH"))
+                            {
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserActivityLog", "Search") ? "active" : "")" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Search">
+                                        <i class="nav-main-link-icon fa fa-search"></i>
+                                        <span class="nav-main-link-name">جستجوی پیشرفته</span>
+                                    </a>
+                                </li>
+                            }
+                            
+                            @if (Html.CanAccessAny("CORE.ACTIVITYLOG", "CORE.ACTIVITYLOG.STATISTICS"))
+                            {
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "UserActivityLog", "Statistics") ? "active" : "")" asp-area="AdminArea" asp-controller="UserActivityLog" asp-action="Statistics">
+                                        <i class="nav-main-link-icon fa fa-chart-line"></i>
+                                        <span class="nav-main-link-name">آمار و گزارشات</span>
+                                    </a>
+                                </li>
+                            }
                         </ul>
                     </li>
                 }
 
                 <!-- ============== 🏷️ SYSTEM CONFIGURATION ============== -->
-                @if (Html.CanAccessAny("CORE.TASKCATEGORY", "SETTINGS"))
+                @if (Html.CanAccessAnyIn("CORE.TASKCATEGORY", "SETTINGS"))
                 {
                     <li class="nav-main-heading">تنظیمات سیستم</li>
 
-                    @if (Html.CanAccess("CORE.TASKCATEGORY"))
+                    @if (Html.CanAccessAnyIn("CORE.TASKCATEGORY"))
                     {
                         <li class="nav-main-item @(IsTaskCategoryMenuActive(currentController) ? "open" : "")">
-                            <a aria-expanded="@(IsTaskCategoryMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <a aria-expanded="@(IsTaskCategoryMenuActive(currentController) ? "true" : "false")" 
+                               aria-haspopup="true" 
+                               class="nav-main-link nav-main-link-submenu" 
+                               data-toggle="submenu" 
+                               href="#">
                                 <i class="nav-main-link-icon fa fa-tags text-secondary"></i>
                                 <span class="nav-main-link-name">دسته‌بندی تسک‌ها</span>
                             </a>
                             <ul class="nav-main-submenu">
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "TaskCategory", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="TaskCategory" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-list"></i>
-                                        <span class="nav-main-link-name">دسته‌بندی‌های عمومی</span>
-                                    </a>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "BranchTaskCategory", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="BranchTaskCategory" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-building"></i>
-                                        <span class="nav-main-link-name">دسته‌بندی‌های شعب</span>
-                                    </a>
-                                </li>
+                                @if (Html.CanAccessAny("CORE.TASKCATEGORY", "CORE.TASKCATEGORY.GLOBAL"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "TaskCategory", "Index") ? "active" : "")" 
+                                           asp-area="AdminArea" 
+                                           asp-controller="TaskCategory" 
+                                           asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-list"></i>
+                                            <span class="nav-main-link-name">دسته‌بندی‌های عمومی</span>
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @if (Html.CanAccessAny("CORE.TASKCATEGORY", "CORE.TASKCATEGORY.BRANCH"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "BranchTaskCategory", "Index") ? "active" : "")" 
+                                           asp-area="AdminArea" 
+                                           asp-controller="BranchTaskCategory" 
+                                           asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-building"></i>
+                                            <span class="nav-main-link-name">دسته‌بندی‌های شعب</span>
+                                        </a>
+                                    </li>
+                                }
                             </ul>
                         </li>
                     }
 
-                    @if (Html.CanAccess("SETTINGS"))
+                    @if (Html.CanAccessAnyIn("SETTINGS"))
                     {
+                       
                         <li class="nav-main-item">
-                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Settings", "Index") ? "active" : "")" asp-area="AdminArea" asp-controller="Settings" asp-action="Index">
+                            <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Settings", "Index") ? "active" : "")" 
+                               asp-area="AdminArea" 
+                               asp-controller="Settings" 
+                               asp-action="Index">
                                 <i class="nav-main-link-icon fa fa-cogs text-primary"></i>
                                 <span class="nav-main-link-name">تنظیمات عمومی</span>
                             </a>

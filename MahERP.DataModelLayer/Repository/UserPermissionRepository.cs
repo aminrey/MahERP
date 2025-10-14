@@ -5,12 +5,17 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Services;
+using System.Collections.Concurrent;
 
 namespace MahERP.DataModelLayer.Repository
 {
     public class UserPermissionRepository : IUserPermissionService
     {
         private readonly AppDbContext _context;
+        
+        // Cache برای بهبود عملکرد
+        private static readonly ConcurrentDictionary<int, HashSet<int>> _childPermissionsCache 
+            = new ConcurrentDictionary<int, HashSet<int>>();
 
         public UserPermissionRepository(AppDbContext context)
         {
@@ -130,8 +135,11 @@ namespace MahERP.DataModelLayer.Repository
                 var existingManualPermissions = await _context.UserPermission_Tbl
                     .Where(up => up.UserId == userId && up.SourceType == 2)
                     .ToListAsync();
+                if (existingManualPermissions.Any())
+                {
+                    _context.UserPermission_Tbl.RemoveRange(existingManualPermissions);
 
-                _context.UserPermission_Tbl.RemoveRange(existingManualPermissions);
+                }
 
                 // 2️⃣ دریافت دسترسی‌های از نقش (برای جلوگیری از تکراری)
                 var roleBasedPermissionIds = await _context.UserPermission_Tbl
@@ -174,9 +182,14 @@ namespace MahERP.DataModelLayer.Repository
                     }
                 }
 
-                return await _context.SaveChangesAsync() > 0;
+                // ذخیره تمام تغییرات یکجا
+                var savedCount = await _context.SaveChangesAsync();
+                ClearPermissionCache();
+
+                // بازگشت true در صورت موفقیت یا عدم وجود تغییر
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
                 return false;
             }
@@ -386,6 +399,124 @@ namespace MahERP.DataModelLayer.Repository
                 .Select(p => p.Code)
                 .Distinct()
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// بررسی دسترسی کاربر به یک Permission والد یا هر یک از فرزندانش
+        /// با استفاده از ساختار درختی Permission (ParentId)
+        /// </summary>
+        public async Task<bool> UserHasAccessToAnyInAsync(string userId, params string[] parentPermissionCodes)
+        {
+            if (parentPermissionCodes == null || !parentPermissionCodes.Any())
+                return false;
+
+            try
+            {
+                // 1️⃣ دریافت تمام دسترسی‌های فعال کاربر
+                var userPermissionIds = await _context.UserPermission_Tbl
+                    .Where(up => up.UserId == userId && up.IsActive)
+                    .Select(up => up.PermissionId)
+                    .ToHashSetAsync();
+
+                if (!userPermissionIds.Any())
+                    return false;
+
+                // 2️⃣ دریافت تمام Permissions (برای ساختار درختی)
+                var allPermissions = await _context.Permission_Tbl
+                    .Where(p => p.IsActive)
+                    .Select(p => new { p.Id, p.Code, p.ParentId })
+                    .ToListAsync();
+
+                // 3️⃣ بررسی هر کد والد
+                foreach (var parentCode in parentPermissionCodes)
+                {
+                    // پیدا کردن Permission والد
+                    var parentPermission = allPermissions.FirstOrDefault(p => 
+                        p.Code.Equals(parentCode, StringComparison.OrdinalIgnoreCase));
+
+                    if (parentPermission == null)
+                        continue;
+
+                    // بررسی دسترسی مستقیم به والد
+                    if (userPermissionIds.Contains(parentPermission.Id))
+                        return true;
+
+                    // بررسی دسترسی به فرزندان با استفاده از Cache
+                    if (!_childPermissionsCache.TryGetValue(parentPermission.Id, out var childIds))
+                    {
+                        var children = GetAllChildPermissionIds(parentPermission.Id, allPermissions);
+                        childIds = children.ToHashSet();
+                        _childPermissionsCache.TryAdd(parentPermission.Id, childIds);
+                    }
+
+                    // بررسی دسترسی به یکی از فرزندان
+                    if (childIds.Any(childId => userPermissionIds.Contains(childId)))
+                        return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // لاگ کردن خطا
+                Console.WriteLine($"Error in UserHasAccessToAnyInAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// دریافت تمام ID های فرزندان یک Permission (بازگشتی)
+        /// از ساختار درختی Permission با استفاده از ParentId
+        /// </summary>
+        public async Task<List<int>> GetAllChildPermissionIdsAsync(int parentPermissionId)
+        {
+            try
+            {
+                // دریافت تمام Permissions برای پیمایش درخت
+                var allPermissions = await _context.Permission_Tbl
+                    .Where(p => p.IsActive)
+                    .Select(p => new { p.Id, p.ParentId })
+                    .ToListAsync();
+
+                return GetAllChildPermissionIds(parentPermissionId, allPermissions);
+            }
+            catch
+            {
+                return new List<int>();
+            }
+        }
+
+        /// <summary>
+        /// متد کمکی برای دریافت بازگشتی فرزندان
+        /// </summary>
+        private List<int> GetAllChildPermissionIds(int parentId, IEnumerable<dynamic> allPermissions)
+        {
+            var result = new List<int>();
+            
+            // پیدا کردن فرزندان مستقیم
+            var directChildren = allPermissions
+                .Where(p => p.ParentId == parentId)
+                .ToList();
+
+            foreach (var child in directChildren)
+            {
+                // اضافه کردن فرزند
+                result.Add(child.Id);
+                
+                // اضافه کردن فرزندان این فرزند (بازگشتی)
+                result.AddRange(GetAllChildPermissionIds(child.Id, allPermissions));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// پاک کردن Cache برای زمانی که Permissions تغییر می‌کنند
+        /// باید در PermissionService بعد از Create/Update/Delete صدا زده شود
+        /// </summary>
+        public static void ClearPermissionCache()
+        {
+            _childPermissionsCache.Clear();
         }
 
         #endregion

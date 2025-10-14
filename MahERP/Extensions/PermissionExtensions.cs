@@ -10,19 +10,13 @@ using MahERP.DataModelLayer.Services;
 
 namespace MahERP.Extensions
 {
-    /// <summary>
-    /// Extension Methods برای استفاده در View ها (Razor Pages)
-    /// </summary>
     public static class PermissionExtensions
     {
-        #region ✅ NEW: Permission-Based Methods
+        #region ✅ Permission-Based Methods
 
         /// <summary>
         /// بررسی دسترسی کاربر به یک Permission خاص
         /// </summary>
-        /// <param name="htmlHelper">IHtmlHelper</param>
-        /// <param name="permissionCode">کد دسترسی (مثل: TASK.CREATE)</param>
-        /// <returns>true اگر کاربر دسترسی داشته باشد</returns>
         public static bool CanAccess(this IHtmlHelper htmlHelper, string permissionCode)
         {
             var httpContext = htmlHelper.ViewContext.HttpContext;
@@ -41,7 +35,6 @@ namespace MahERP.Extensions
             if (user?.IsAdmin == true)
                 return true;
 
-            // بررسی دسترسی (تبدیل async به sync برای استفاده در View)
             return Task.Run(async () =>
                 await userPermissionService.UserHasPermissionAsync(userId, permissionCode)
             ).GetAwaiter().GetResult();
@@ -50,9 +43,6 @@ namespace MahERP.Extensions
         /// <summary>
         /// بررسی دسترسی به یکی از Permissions (OR logic)
         /// </summary>
-        /// <param name="htmlHelper">IHtmlHelper</param>
-        /// <param name="permissionCodes">کدهای دسترسی</param>
-        /// <returns>true اگر کاربر حداقل یک دسترسی داشته باشد</returns>
         public static bool CanAccessAny(this IHtmlHelper htmlHelper, params string[] permissionCodes)
         {
             if (permissionCodes == null || !permissionCodes.Any())
@@ -68,11 +58,42 @@ namespace MahERP.Extensions
         }
 
         /// <summary>
+        /// بررسی دسترسی به یک Permission والد یا هر یک از فرزندانش
+        /// با استفاده از ساختار درختی (ParentId)
+        /// مثال: CanAccessAnyIn("CORE.TEAM") شامل CORE.TEAM و تمام فرزندانش می‌شود
+        /// </summary>
+        public static bool CanAccessAnyIn(
+            this IHtmlHelper htmlHelper,
+            params string[] parentPermissionCodes)
+        {
+            if (parentPermissionCodes == null || !parentPermissionCodes.Any())
+                return false;
+
+            var httpContext = htmlHelper.ViewContext.HttpContext;
+            var userPermissionService = httpContext.RequestServices.GetService<IUserPermissionService>();
+            var userManager = httpContext.RequestServices.GetService<UserManager<AppUsers>>();
+
+            if (userPermissionService == null || userManager == null)
+                return false;
+
+            var userId = userManager.GetUserId(httpContext.User);
+            if (string.IsNullOrEmpty(userId))
+                return false;
+
+            // بررسی Admin
+            var user = userManager.Users.FirstOrDefault(u => u.Id == userId);
+            if (user?.IsAdmin == true)
+                return true;
+
+            // ✅ استفاده از متد Repository
+            return Task.Run(async () =>
+                await userPermissionService.UserHasAccessToAnyInAsync(userId, parentPermissionCodes)
+            ).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// بررسی دسترسی به همه Permissions (AND logic)
         /// </summary>
-        /// <param name="htmlHelper">IHtmlHelper</param>
-        /// <param name="permissionCodes">کدهای دسترسی</param>
-        /// <returns>true اگر کاربر همه دسترسی‌ها را داشته باشد</returns>
         public static bool CanAccessAll(this IHtmlHelper htmlHelper, params string[] permissionCodes)
         {
             if (permissionCodes == null || !permissionCodes.Any())
@@ -90,8 +111,6 @@ namespace MahERP.Extensions
         /// <summary>
         /// بررسی اینکه کاربر Admin است
         /// </summary>
-        /// <param name="htmlHelper">IHtmlHelper</param>
-        /// <returns>true اگر کاربر Admin باشد</returns>
         public static bool IsAdmin(this IHtmlHelper htmlHelper)
         {
             var httpContext = htmlHelper.ViewContext.HttpContext;
@@ -213,46 +232,6 @@ namespace MahERP.Extensions
                 return new HtmlString("");
 
             return new HtmlString($"<li class=\"nav-main-item\">{menuContent}</li>");
-        }
-
-        /// <summary>
-        /// نمایش بخش کامل منو اگر حداقل یک دسترسی داشته باشد
-        /// </summary>
-        /// <param name="htmlHelper">IHtmlHelper</param>
-        /// <param name="permissionCodes">کدهای دسترسی</param>
-        /// <returns>true اگر حداقل یک دسترسی داشته باشد</returns>
-        public static bool CanAccessAnyIn(
-            this IHtmlHelper htmlHelper,
-            params string[] permissionCodes)
-        {
-            return htmlHelper.CanAccessAny(permissionCodes);
-        }
-
-        #endregion
-
-        #region 🔴 DEPRECATED: Old Methods (برای سازگاری با کد قدیمی)
-
-        /// <summary>
-        /// ⚠️ DEPRECATED: استفاده از CanAccess(permissionCode) توصیه می‌شود
-        /// </summary>
-        [Obsolete("Use CanAccess(permissionCode) instead")]
-        public static bool CanAccess(
-            this IHtmlHelper htmlHelper,
-            string controller,
-            byte actionType = 0)
-        {
-            // تبدیل به سیستم جدید
-            string permissionCode = $"{controller}.General";
-            return htmlHelper.CanAccess(permissionCode);
-        }
-
-        /// <summary>
-        /// ⚠️ DEPRECATED: استفاده از IsAdminOrHasRole توصیه می‌شود
-        /// </summary>
-        [Obsolete("Use IsAdmin() or IsAdminOrHasRole() instead")]
-        public static bool IsAdminOrManager(this IHtmlHelper htmlHelper)
-        {
-            return htmlHelper.IsAdminOrHasRole("Manager");
         }
 
         #endregion

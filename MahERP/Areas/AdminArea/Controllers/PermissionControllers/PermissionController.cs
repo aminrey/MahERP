@@ -1,14 +1,15 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using MahERP.Areas.AdminArea.Controllers.BaseControllers;
+using MahERP.Attributes;
+using MahERP.CommonLayer.ViewModels;
+using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
-using MahERP.Areas.AdminArea.Controllers.BaseControllers;
-using MahERP.Attributes;
-using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Services;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
 {
@@ -38,7 +39,7 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
             try
             {
                 var permissions = await _permissionService.GetAllPermissionsAsync();
-                
+
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Permission",
@@ -157,7 +158,7 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
             try
             {
                 var permission = await _permissionService.GetPermissionByIdAsync(id);
-                
+
                 if (permission == null || permission.IsSystemPermission)
                     return RedirectToAction("ErrorView", "Home");
 
@@ -222,7 +223,7 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
             try
             {
                 var permission = await _permissionService.GetPermissionByIdAsync(id);
-                
+
                 if (permission == null || permission.IsSystemPermission)
                     return RedirectToAction("ErrorView", "Home");
 
@@ -234,7 +235,6 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
                 return Json(new { status = "error", message = "خطا در بارگذاری مودال" });
             }
         }
-
         // POST: Permission/DeleteConfirmed
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -243,20 +243,38 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
             try
             {
                 var permission = await _permissionService.GetPermissionByIdAsync(id);
-                
+
                 if (permission == null)
-                    return Json(new { status = "error", message = "دسترسی یافت نشد" });
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "دسترسی یافت نشد"
+                    });
+                }
 
                 if (permission.IsSystemPermission)
-                    return Json(new { status = "error", message = "نمی‌توان دسترسی سیستمی را حذف کرد" });
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "نمی‌توان دسترسی سیستمی را حذف کرد"
+                    });
+                }
 
                 // چک کردن وجود زیرمجموعه
                 var hasChildren = await _permissionService.HasChildrenAsync(id);
                 if (hasChildren)
-                    return Json(new { status = "error", message = "ابتدا زیرمجموعه‌های این دسترسی را حذف کنید" });
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "ابتدا زیرمجموعه‌های این دسترسی را حذف کنید"
+                    });
+                }
 
                 var result = await _permissionService.DeletePermissionAsync(id);
-                
+
                 if (result)
                 {
                     await _activityLogger.LogActivityAsync(
@@ -269,15 +287,42 @@ namespace MahERP.Areas.AdminArea.Controllers.PermissionControllers
                         recordTitle: permission.NameFa
                     );
 
-                    return Json(new { status = "success", message = "دسترسی با موفقیت حذف شد" });
+                    // ✅ بازگشت با status = "update-view" برای حذف ردیف از جدول
+                    return Json(new
+                    {
+                        status = "update-view",
+                        message = new[]
+                        {
+            new { status = "success", text = "دسترسی با موفقیت حذف شد" }
+        },
+                        viewList = new[]
+                        {
+            new
+            {
+                elementId = "permissionRow_" + id,
+                view = new { result = "" }, // خالی = حذف عنصر
+                appendMode = false
+            }
+        }
+                    });
                 }
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا در حذف دسترسی"
+                });
 
-                return Json(new { status = "error", message = "خطا در حذف دسترسی" });
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("Permission", "DeleteConfirmed", "خطا در حذف دسترسی", ex, recordId: id.ToString());
-                return Json(new { status = "error", message = "خطا در حذف دسترسی" });
+
+                // ✅ بازگشت JSON با پیام خطا
+                return Json(new
+                {
+                    status = "error",
+                    message = $"خطا در حذف دسترسی: {ex.Message}"
+                });
             }
         }
     }

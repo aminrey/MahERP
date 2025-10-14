@@ -131,6 +131,7 @@ namespace MahERP.DataModelLayer.Repository
                 }).ToList();
 
                 await _context.RolePermission_Tbl.AddRangeAsync(newPermissions);
+
                 return await _context.SaveChangesAsync() > 0;
             }
             catch

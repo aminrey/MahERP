@@ -86,7 +86,7 @@
                         <tbody>
                             @foreach (var item in Model.OrderBy(p => p.DisplayOrder))
                             {
-                                <tr>
+                                <tr id="permissionRow_@item.Id">
                                     <td>
                                         @if (!string.IsNullOrEmpty(item.Icon))
                                         {
@@ -146,8 +146,8 @@
                                                    class="btn btn-sm btn-warning" title="ویرایش">
                                                     <i class="fa fa-pencil-alt"></i>
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-danger" 
-                                                        onclick="deletePermission(@item.Id)" title="حذف">
+                                                <button data-toggle="modal-ajax" type="button" class="btn btn-sm btn-danger"
+                                                        asp-action="Delete" asp-route-id="@item.Id" title="حذف">
                                                     <i class="fa fa-trash"></i>
                                                 </button>
                                             }
