@@ -467,7 +467,10 @@ public class TaskAssignmentViewModel
         /// فقط یک تسک از تسک‌های کاربر می‌تواند فوکوس باشد
         /// </summary>
         public bool IsFocused { get; set; } = false;
-
+        /// <summary>
+        /// ⭐ نام تیم (برای گروه‌بندی در View)
+        /// </summary>
+        public string? AssignedInTeamName { get; set; }
         /// <summary>
         /// تاریخ فوکوس شدن تسک
         /// </summary>

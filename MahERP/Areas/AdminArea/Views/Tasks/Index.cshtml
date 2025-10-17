@@ -1,6 +1,8 @@
 ﻿@model TaskIndexViewModel
+
 @{
     ViewData["Title"] = "مدیریت تسک‌ها";
+    var filterCounts = ViewBag.FilterCounts as TaskFilterCountsViewModel;
 }
 
 <!-- Hero Section - بنر مدرن -->
@@ -259,7 +261,7 @@
         <div class="block-content" id="tasks-container">
             @if (Model.FilterResult.TotalCount > 0)
             {
-                <partial name="_TasksGroupedPartial" model="@Model.FilterResult" />
+                @await Html.PartialAsync("_TasksGroupedPartial", Model)
             }
             else
             {
@@ -436,48 +438,5 @@
             }
         }
 
-        /* Group Styles */
-        .team-group {
-            border-right: 3px solid #0d6efd;
-            margin-bottom: 1.5rem;
-            background: #f8f9fa;
-        }
-
-        .team-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .team-header:hover {
-            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-        }
-
-        .person-group {
-            border-right: 2px solid #6c757d;
-            margin-bottom: 1rem;
-            background: white;
-        }
-
-        .person-header {
-            background: #e9ecef;
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .person-header:hover {
-            background: #dee2e6;
-        }
-
-        .toggle-icon {
-            transition: transform 0.3s ease;
-        }
-
-        .collapsed .toggle-icon {
-            transform: rotate(-90deg);
-        }
     </style>
 }

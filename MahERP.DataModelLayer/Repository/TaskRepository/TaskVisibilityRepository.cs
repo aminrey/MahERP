@@ -96,124 +96,304 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return false;
             }
         }
-        /// <summary>
-        /// دریافت لیست شناسه تسک‌هایی که کاربر می‌تواند مشاهده کند - اصلاح شده برای چند شعبه
-        /// </summary>
-        public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId = null, int? teamId = null)
+/// <summary>
+/// دریافت لیست شناسه تسک‌هایی که کاربر می‌تواند مشاهده کند - بازنویسی شده
+/// </summary>
+public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId = null, int? teamId = null)
+{
+    var visibleTaskIds = new HashSet<int>();
+    var currentTime = DateTime.Now;
+
+    // ⭐ 0. دریافت شعبه‌های کاربر
+    List<int> userBranchIds;
+    if (branchId.HasValue)
+    {
+        userBranchIds = new List<int> { branchId.Value };
+    }
+    else
+    {
+        userBranchIds = await _context.BranchUser_Tbl
+            .Where(bu => bu.UserId == userId && bu.IsActive)
+            .Select(bu => bu.BranchId)
+            .Distinct()
+            .ToListAsync();
+
+        if (!userBranchIds.Any())
         {
-            var visibleTaskIds = new HashSet<int>();
-            var currentTime = DateTime.Now;
+            Console.WriteLine($"⚠️ کاربر {userId} در هیچ شعبه‌ای عضو نیست");
+            return new List<int>();
+        }
+    }
 
-            // ⭐⭐⭐ 0. دریافت همه شعبه‌های کاربر (اگر مشخص نشده)
-            List<int> userBranchIds;
-            if (branchId.HasValue)
-            {
-                userBranchIds = new List<int> { branchId.Value };
-            }
-            else
-            {
-                // ⭐ اصلاح شده: دریافت همه شعبه‌ها
-                userBranchIds = await _context.BranchUser_Tbl
-                    .Where(bu => bu.UserId == userId && bu.IsActive)
-                    .Select(bu => bu.BranchId)
-                    .Distinct()
-                    .ToListAsync();
+    Console.WriteLine($"🔍 شعبه‌های کاربر: {string.Join(", ", userBranchIds)}");
 
-                if (!userBranchIds.Any())
+    // ⭐ 1. تسک‌های ساخته شده توسط کاربر (در شعبه‌های خودش)
+    var createdTasks = await _context.Tasks_Tbl
+        .Where(t => t.CreatorUserId == userId &&
+                    userBranchIds.Contains(t.BranchId ?? 0) &&
+                    !t.IsDeleted)
+        .Select(t => t.Id)
+        .ToListAsync();
+    visibleTaskIds.UnionWith(createdTasks);
+    Console.WriteLine($"   ✅ تسک‌های ساخته شده: {createdTasks.Count}");
+
+    // ⭐ 2. تسک‌های مستقیماً منتصب شده به کاربر
+    var assignedTasks = await _context.TaskAssignment_Tbl
+        .Where(ta => ta.AssignedUserId == userId &&
+                    userBranchIds.Contains(ta.Task.BranchId ?? 0) &&
+                    !ta.Task.IsDeleted)
+        .Select(ta => ta.TaskId)
+        .Distinct()
+        .ToListAsync();
+    visibleTaskIds.UnionWith(assignedTasks);
+    Console.WriteLine($"   ✅ تسک‌های منتصب شده: {assignedTasks.Count}");
+
+    // ⭐ 3. تسک‌های تیم‌های تحت مدیریت مستقیم
+    foreach (var branchIdItem in userBranchIds)
+    {
+        var managedTeams = await _context.Team_Tbl
+            .Where(t => t.ManagerUserId == userId && 
+                       t.BranchId == branchIdItem && 
+                       t.IsActive)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        if (managedTeams.Any())
+        {
+            var managedTeamTasks = await _context.Tasks_Tbl
+                .Where(t => t.TeamId.HasValue &&
+                           managedTeams.Contains(t.TeamId.Value) &&
+                           t.BranchId == branchIdItem &&
+                           !t.IsDeleted &&
+                           !t.IsPrivate)
+                .Select(t => t.Id)
+                .ToListAsync();
+
+            visibleTaskIds.UnionWith(managedTeamTasks);
+            Console.WriteLine($"   ✅ تسک‌های تیم‌های مدیریت شده (شعبه {branchIdItem}): {managedTeamTasks.Count}");
+        }
+    }
+
+    // ⭐ 4. تسک‌های قابل مشاهده بر اساس سمت در تیم
+    foreach (var branchIdItem in userBranchIds)
+    {
+        var userMemberships = await _context.TeamMember_Tbl
+            .Include(tm => tm.Position)
+            .Include(tm => tm.Team)
+            .Where(tm => tm.UserId == userId &&
+                        tm.Team.BranchId == branchIdItem &&
+                        tm.IsActive)
+            .ToListAsync();
+
+        foreach (var membership in userMemberships)
+        {
+            // 4.1 - اگر عضو دارای سمت است
+            if (membership.Position != null)
+            {
+                // 4.1.1 - تسک‌های زیردستان (بر اساس PowerLevel)
+                if (membership.Position.CanViewSubordinateTasks)
                 {
-                    userBranchIds = new List<int> { 1 }; // شعبه پیش‌فرض
+                    var subordinateUserIds = await _context.TeamMember_Tbl
+                        .Include(tm => tm.Position)
+                        .Where(tm => tm.TeamId == membership.TeamId &&
+                                    tm.IsActive &&
+                                    tm.Position != null &&
+                                    tm.Position.PowerLevel > membership.Position.PowerLevel)
+                        .Select(tm => tm.UserId)
+                        .ToListAsync();
+
+                    if (subordinateUserIds.Any())
+                    {
+                        var subordinateTasks = await _context.TaskAssignment_Tbl
+                            .Where(ta => subordinateUserIds.Contains(ta.AssignedUserId) &&
+                                        ta.Task.BranchId == branchIdItem &&
+                                        !ta.Task.IsDeleted)
+                            .Select(ta => ta.TaskId)
+                            .Distinct()
+                            .ToListAsync();
+
+                        visibleTaskIds.UnionWith(subordinateTasks);
+                        Console.WriteLine($"   ✅ تسک‌های زیردستان (تیم {membership.TeamId}): {subordinateTasks.Count}");
+                    }
+                }
+
+                // 4.1.2 - تسک‌های همسطح‌ها (بر اساس PowerLevel)
+                if (membership.Position.CanViewPeerTasks)
+                {
+                    var peerUserIds = await _context.TeamMember_Tbl
+                        .Include(tm => tm.Position)
+                        .Where(tm => tm.TeamId == membership.TeamId &&
+                                    tm.IsActive &&
+                                    tm.UserId != userId &&
+                                    tm.Position != null &&
+                                    tm.Position.PowerLevel == membership.Position.PowerLevel)
+                        .Select(tm => tm.UserId)
+                        .ToListAsync();
+
+                    if (peerUserIds.Any())
+                    {
+                        var peerTasks = await _context.TaskAssignment_Tbl
+                            .Where(ta => peerUserIds.Contains(ta.AssignedUserId) &&
+                                        ta.Task.BranchId == branchIdItem &&
+                                        !ta.Task.IsDeleted)
+                            .Select(ta => ta.TaskId)
+                            .Distinct()
+                            .ToListAsync();
+
+                        visibleTaskIds.UnionWith(peerTasks);
+                        Console.WriteLine($"   ✅ تسک‌های همسطح (تیم {membership.TeamId}): {peerTasks.Count}");
+                    }
                 }
             }
 
-            // ⭐⭐⭐ 1. همه تسک‌های غیرخصوصی همه شعبه‌های کاربر
-            var branchTasks = await _context.Tasks_Tbl
-                .Where(t => userBranchIds.Contains(t.BranchId ?? 0) &&
-                           !t.IsDeleted &&
-                           !t.IsPrivate &&
-                           t.VisibilityLevel >= 2) // سطح تیمی یا بالاتر
-                .Select(t => t.Id)
-                .ToListAsync();
-            visibleTaskIds.UnionWith(branchTasks);
-
-            // ⭐ 2. تسک‌های خصوصی که کاربر دسترسی دارد
-            var privateTasksCreated = await _context.Tasks_Tbl
-                .Where(t => (t.IsPrivate || t.VisibilityLevel == 1) &&
-                            t.CreatorUserId == userId &&
-                            !t.IsDeleted)
-                .Select(t => t.Id)
-                .ToListAsync();
-            visibleTaskIds.UnionWith(privateTasksCreated);
-
-            var privateTasksAssigned = await _context.TaskAssignment_Tbl
-                .Where(ta => ta.AssignedUserId == userId &&
-                            (ta.Task.IsPrivate || ta.Task.VisibilityLevel == 1))
-                .Select(ta => ta.TaskId)
-                .ToListAsync();
-            visibleTaskIds.UnionWith(privateTasksAssigned);
-
-            // 3. تسک‌های مالکیت خود کاربر (غیر خصوصی)
-            var ownTasks = await _context.Tasks_Tbl
-                .Where(t => t.CreatorUserId == userId &&
-                            !t.IsDeleted &&
-                            !t.IsPrivate &&
-                            t.VisibilityLevel != 1)
-                .Select(t => t.Id)
-                .ToListAsync();
-            visibleTaskIds.UnionWith(ownTasks);
-
-            // 4. تسک‌های منتصب شده (غیر خصوصی)
-            var assignedTasks = await _context.TaskAssignment_Tbl
-                .Where(ta => ta.AssignedUserId == userId &&
-                            !ta.Task.IsPrivate &&
-                            ta.Task.VisibilityLevel != 1)
-                .Select(ta => ta.TaskId)
-                .ToListAsync();
-            visibleTaskIds.UnionWith(assignedTasks);
-
-            // 5. تسک‌های با مجوز مستقیم (غیر خصوصی)
-            var directPermissionTasks = await _context.TaskViewer_Tbl
-                .Where(tv => tv.UserId == userId &&
-                            tv.TaskId > 0 &&
-                            tv.IsActive &&
-                            (tv.StartDate == null || tv.StartDate <= currentTime) &&
-                            (tv.EndDate == null || tv.EndDate > currentTime) &&
-                            !tv.Task.IsPrivate &&
-                            tv.Task.VisibilityLevel != 1)
-                .Select(tv => tv.TaskId)
-                .ToListAsync();
-            visibleTaskIds.UnionWith(directPermissionTasks);
-
-            // 6. تسک‌های تیم‌های تحت مدیریت مستقیم (برای همه شعبه‌ها)
-            foreach (var branchIdItem in userBranchIds)
+            // 4.2 - اگر ناظر است (MembershipType = 1)
+            if (membership.MembershipType == 1)
             {
-                var managedTeamTasks = await GetManagedTeamTasksAsync(userId, branchIdItem);
-                visibleTaskIds.UnionWith(managedTeamTasks);
+                var supervisedUserIds = await _context.TeamMember_Tbl
+                    .Where(tm => tm.TeamId == membership.TeamId &&
+                                tm.IsActive &&
+                                tm.UserId != userId &&
+                                tm.MembershipType == 0) // فقط اعضای عادی
+                    .Select(tm => tm.UserId)
+                    .ToListAsync();
+
+                if (supervisedUserIds.Any())
+                {
+                    var supervisedTasks = await _context.TaskAssignment_Tbl
+                        .Where(ta => supervisedUserIds.Contains(ta.AssignedUserId) &&
+                                    ta.Task.BranchId == branchIdItem &&
+                                    !ta.Task.IsDeleted)
+                        .Select(ta => ta.TaskId)
+                        .Distinct()
+                        .ToListAsync();
+
+                    visibleTaskIds.UnionWith(supervisedTasks);
+                    Console.WriteLine($"   ✅ تسک‌های نظارتی (تیم {membership.TeamId}): {supervisedTasks.Count}");
+                }
             }
 
-            // 7. تسک‌های قابل مشاهده بر اساس سمت (برای همه شعبه‌ها)
-            foreach (var branchIdItem in userBranchIds)
+            // 4.3 - تسک‌های تیم با VisibilityLevel >= 2 (تیمی)
+            if (membership.Team != null)
             {
-                var positionBasedTasks = await GetPositionBasedVisibleTasksAsync(userId, branchIdItem, teamId);
-                visibleTaskIds.UnionWith(positionBasedTasks);
+                var teamVisibleTasks = await _context.Tasks_Tbl
+                    .Where(t => t.TeamId == membership.TeamId &&
+                               t.BranchId == branchIdItem &&
+                               t.VisibilityLevel >= 2 &&
+                               !t.IsDeleted &&
+                               !t.IsPrivate)
+                    .Select(t => t.Id)
+                    .ToListAsync();
+
+                visibleTaskIds.UnionWith(teamVisibleTasks);
+                Console.WriteLine($"   ✅ تسک‌های تیمی قابل مشاهده (تیم {membership.TeamId}): {teamVisibleTasks.Count}");
             }
-
-            // 8. تسک‌های با مجوز خاص (غیر خصوصی)
-            var specialPermissionTasks = await GetSpecialPermissionTasksAsync(userId);
-            visibleTaskIds.UnionWith(specialPermissionTasks);
-
-            // 9. تسک‌های عمومی (غیر خصوصی)
-            var publicTasks = await _context.Tasks_Tbl
-                .Where(t => t.VisibilityLevel >= 3 &&
-                            !t.IsDeleted &&
-                            !t.IsPrivate)
-                .Select(t => t.Id)
-                .ToListAsync();
-            visibleTaskIds.UnionWith(publicTasks);
-
-            Console.WriteLine($"✅ GetVisibleTaskIdsAsync: شعبه‌ها={string.Join(", ", userBranchIds)}, مجموع تسک‌ها={visibleTaskIds.Count}");
-
-            return visibleTaskIds.ToList();
         }
+    }
+
+    // ⭐ 5. تسک‌های با مجوز خاص (TaskViewPermission)
+    var specialPermissions = await _context.TaskViewPermission_Tbl
+        .Include(tvp => tvp.TargetUser)
+        .Include(tvp => tvp.TargetTeam)
+        .Where(tvp => tvp.GranteeUserId == userId &&
+                     tvp.IsActive &&
+                     (tvp.StartDate == null || tvp.StartDate <= currentTime) &&
+                     (tvp.EndDate == null || tvp.EndDate > currentTime))
+        .ToListAsync();
+
+    foreach (var permission in specialPermissions)
+    {
+        List<int> permissionTasks = new List<int>();
+
+        switch (permission.PermissionType)
+        {
+            case 0: // مشاهده تسک‌های یک کاربر خاص
+                if (!string.IsNullOrEmpty(permission.TargetUserId))
+                {
+                    permissionTasks = await _context.TaskAssignment_Tbl
+                        .Where(ta => ta.AssignedUserId == permission.TargetUserId &&
+                                    userBranchIds.Contains(ta.Task.BranchId ?? 0) &&
+                                    !ta.Task.IsDeleted &&
+                                    !ta.Task.IsPrivate)
+                        .Select(ta => ta.TaskId)
+                        .Distinct()
+                        .ToListAsync();
+                }
+                break;
+
+            case 1: // مشاهده تسک‌های یک تیم خاص
+                if (permission.TargetTeamId.HasValue)
+                {
+                    var targetTeam = await _context.Team_Tbl.FindAsync(permission.TargetTeamId.Value);
+                    if (targetTeam != null && userBranchIds.Contains(targetTeam.BranchId))
+                    {
+                        permissionTasks = await _context.Tasks_Tbl
+                            .Where(t => t.TeamId == permission.TargetTeamId &&
+                                       t.BranchId == targetTeam.BranchId &&
+                                       !t.IsDeleted &&
+                                       !t.IsPrivate)
+                            .Select(t => t.Id)
+                            .ToListAsync();
+                    }
+                }
+                break;
+
+            case 2: // مشاهده تسک‌های تیم و زیرتیم‌ها
+                if (permission.TargetTeamId.HasValue)
+                {
+                    var targetTeam = await _context.Team_Tbl.FindAsync(permission.TargetTeamId.Value);
+                    if (targetTeam != null && userBranchIds.Contains(targetTeam.BranchId))
+                    {
+                        var allSubTeamIds = await GetAllSubTeamIdsAsync(permission.TargetTeamId.Value);
+                        allSubTeamIds.Add(permission.TargetTeamId.Value);
+
+                        permissionTasks = await _context.Tasks_Tbl
+                            .Where(t => t.TeamId.HasValue &&
+                                       allSubTeamIds.Contains(t.TeamId.Value) &&
+                                       t.BranchId == targetTeam.BranchId &&
+                                       !t.IsDeleted &&
+                                       !t.IsPrivate)
+                            .Select(t => t.Id)
+                            .ToListAsync();
+                    }
+                }
+                break;
+        }
+
+        visibleTaskIds.UnionWith(permissionTasks);
+        if (permissionTasks.Any())
+        {
+            Console.WriteLine($"   ✅ تسک‌های مجوز خاص (نوع {permission.PermissionType}): {permissionTasks.Count}");
+        }
+    }
+
+    // ⭐ 6. تسک‌های با مجوز مستقیم (TaskViewer)
+    var directPermissionTasks = await _context.TaskViewer_Tbl
+        .Where(tv => tv.UserId == userId &&
+                    tv.TaskId > 0 &&
+                    tv.IsActive &&
+                    (tv.StartDate == null || tv.StartDate <= currentTime) &&
+                    (tv.EndDate == null || tv.EndDate > currentTime) &&
+                    userBranchIds.Contains(tv.Task.BranchId ?? 0) &&
+                    !tv.Task.IsDeleted)
+        .Select(tv => tv.TaskId)
+        .ToListAsync();
+    visibleTaskIds.UnionWith(directPermissionTasks);
+    Console.WriteLine($"   ✅ تسک‌های مجوز مستقیم: {directPermissionTasks.Count}");
+
+    // ⭐ 7. تسک‌های عمومی (VisibilityLevel = 3) فقط در شعبه‌های کاربر
+    var publicTasks = await _context.Tasks_Tbl
+        .Where(t => t.VisibilityLevel >= 3 &&
+                    userBranchIds.Contains(t.BranchId ?? 0) &&
+                    !t.IsDeleted &&
+                    !t.IsPrivate)
+        .Select(t => t.Id)
+        .ToListAsync();
+    visibleTaskIds.UnionWith(publicTasks);
+    Console.WriteLine($"   ✅ تسک‌های عمومی: {publicTasks.Count}");
+
+    Console.WriteLine($"📊 مجموع تسک‌های قابل مشاهده: {visibleTaskIds.Count}");
+    return visibleTaskIds.ToList();
+}
         #endregion
 
         #region Position-Based Visibility

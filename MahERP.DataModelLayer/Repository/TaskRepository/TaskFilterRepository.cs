@@ -206,121 +206,300 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                     break;
             }
         }
+        /// <summary>
+         /// بارگذاری تسک‌های منتصب به من
+         /// </summary>
+        private async Task LoadAssignedToMeAsync(TaskIndexViewModel model, string userId)
+        {
+            var fiveDaysAgo = DateTime.Now.AddDays(-5);
+
+            // ⭐ دریافت Assignments کاربر
+            var userAssignments = await _context.TaskAssignment_Tbl
+                .Where(ta => ta.AssignedUserId == userId &&
+                            !ta.Task.IsDeleted &&
+                            ta.Task.CreatorUserId != userId && // ⭐ فقط تسک‌هایی که من نساخته‌ام
+                            (
+                                !ta.CompletionDate.HasValue ||
+                                (ta.CompletionDate.HasValue && ta.CompletionDate >= fiveDaysAgo)
+                            ))
+                .Select(ta => ta.TaskId)
+                .Distinct()
+                .ToListAsync();
+
+            var tasks = await _context.Tasks_Tbl
+                .Where(t => userAssignments.Contains(t.Id))
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedInTeam)
+                .Include(t => t.TaskCategory)
+                .Include(t => t.Creator)
+                .Include(t => t.Contact)
+                .Include(t => t.Organization)
+                .OrderByDescending(t => t.CreateDate)
+                .ToListAsync();
+
+            var taskViewModels = new List<TaskViewModel>();
+            foreach (var task in tasks)
+            {
+                var taskViewModel = await MapToViewModelAsync(task, userId);
+                taskViewModels.Add(taskViewModel);
+            }
+
+            model.Tasks = taskViewModels;
+            model.PendingTasks = taskViewModels.Where(t => !t.CompletionDate.HasValue).ToList();
+            model.CompletedTasks = taskViewModels.Where(t => t.CompletionDate.HasValue).ToList();
+        }
 
         /// <summary>
-/// بارگذاری همه تسک‌ها
-/// </summary>
-private async Task LoadAllTasksAsync(TaskIndexViewModel model, string userId)
-{
-    var userBranchIds = await GetUserBranchIdsAsync(userId);
-    var allTasks = await GetTasksByBranchesAsync(userBranchIds);
-    
-    // ⭐⭐⭐ تبدیل به Async و ارسال userId
-    var taskViewModels = new List<TaskViewModel>();
-    foreach (var task in allTasks)
-    {
-        var taskViewModel = await MapToViewModelAsync(task, userId);
-        taskViewModels.Add(taskViewModel);
-    }
-    model.Tasks = taskViewModels;
-}
+        /// بارگذاری همه تسک‌های مرتبط با کاربر (اصلاح شده - بر اساس CompletionDate)
+        /// </summary>
+        private async Task LoadAllTasksAsync(TaskIndexViewModel model, string userId)
+        {
+            Console.WriteLine($"🔍 LoadAllTasksAsync START - UserId: {userId}");
 
-/// <summary>
-/// بارگذاری تسک‌های من
-/// </summary>
-private async Task LoadMyTasksAsync(TaskIndexViewModel model, string userId)
-{
-    var tasks = await _taskRepository.GetTasksByUserWithPermissionsAsync(
-        userId,
-        includeAssigned: true,
-        includeCreated: true);
+            var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
 
-    // ⭐⭐⭐ ارسال userId برای بررسی IsInMyDay
-    var taskViewModels = new List<TaskViewModel>();
-    foreach (var task in tasks)
-    {
-        var taskViewModel = await MapToViewModelAsync(task, userId);
-        taskViewModels.Add(taskViewModel);
-    }
-    model.Tasks = taskViewModels;
+            Console.WriteLine($"   ✅ Visible task IDs: {visibleTaskIds.Count}");
 
-    await GroupMyTasksAsync(model, userId);
-}
+            if (!visibleTaskIds.Any())
+            {
+                model.Tasks = new List<TaskViewModel>();
+                return;
+            }
 
-/// <summary>
-/// بارگذاری تسک‌های منتصب به من
-/// </summary>
-private async Task LoadAssignedToMeAsync(TaskIndexViewModel model, string userId)
-{
-    var tasks = await _taskRepository.GetTasksByUserWithPermissionsAsync(
-        userId,
-        includeAssigned: true,
-        includeCreated: false);
+            // ⭐⭐⭐ محاسبه 5 روز قبل
+            var fiveDaysAgo = DateTime.Now.AddDays(-5);
 
-    // ⭐⭐⭐ ارسال userId
-    var taskViewModels = new List<TaskViewModel>();
-    foreach (var task in tasks.Where(t => t.CreatorUserId != userId))
-    {
-        var taskViewModel = await MapToViewModelAsync(task, userId);
-        taskViewModels.Add(taskViewModel);
-    }
-    model.Tasks = taskViewModels;
-}
+            // 🔹 دریافت تمام TaskAssignments کاربر
+            var userAssignments = await _context.TaskAssignment_Tbl
+                .Where(ta => ta.AssignedUserId == userId &&
+                            visibleTaskIds.Contains(ta.TaskId))
+                .Select(ta => new
+                {
+                    ta.TaskId,
+                    ta.CompletionDate
+                })
+                .ToListAsync();
 
-/// <summary>
-/// بارگذاری تسک‌های واگذار شده توسط من
-/// </summary>
-private async Task LoadAssignedByMeAsync(TaskIndexViewModel model, string userId)
-{
-    var tasks = await _context.Tasks_Tbl
-        .Where(t => !t.IsDeleted &&
-                   t.CreatorUserId == userId &&
-                   t.TaskAssignments.Any(ta => ta.AssignedUserId != null && ta.AssignedUserId != userId))
-        .Include(t => t.TaskAssignments)
-            .ThenInclude(ta => ta.AssignedUser)
-        .Include(t => t.TaskAssignments)
-            .ThenInclude(ta => ta.AssignedInTeam)
-        .Include(t => t.TaskCategory)
-        .Include(t => t.Creator)
-        .OrderByDescending(t => t.CreateDate)
-        .ToListAsync();
+            // ⭐ تفکیک بر اساس CompletionDate
+            var pendingTaskIds = userAssignments
+                .Where(a => !a.CompletionDate.HasValue)
+                .Select(a => a.TaskId)
+                .Distinct()
+                .ToList();
 
-    // ⭐⭐⭐ ارسال userId
-    var taskViewModels = new List<TaskViewModel>();
-    foreach (var task in tasks)
-    {
-        var taskViewModel = await MapToViewModelAsync(task, userId);
-        taskViewModels.Add(taskViewModel);
-    }
-    model.Tasks = taskViewModels;
+            var completedTaskIds = userAssignments
+                .Where(a => a.CompletionDate.HasValue && a.CompletionDate >= fiveDaysAgo)
+                .Select(a => a.TaskId)
+                .Distinct()
+                .ToList();
 
-    await GroupAssignedByMeTasksAsync(model, userId);
-}
+            var allRelevantTaskIds = pendingTaskIds.Union(completedTaskIds).ToList();
 
-/// <summary>
-/// بارگذاری تسک‌های تیمی
-/// </summary>
-private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
-{
-    var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
-    var tasks = await _context.Tasks_Tbl
-        .Where(t => visibleTaskIds.Contains(t.Id) && !t.IsDeleted)
-        .Include(t => t.TaskAssignments)
-            .ThenInclude(ta => ta.AssignedUser)
-        .Include(t => t.TaskCategory)
-        .ToListAsync();
+            Console.WriteLine($"   📊 Pending: {pendingTaskIds.Count}, Completed (5d): {completedTaskIds.Count}");
 
-    // ⭐⭐⭐ ارسال userId
-    var taskViewModels = new List<TaskViewModel>();
-    foreach (var task in tasks)
-    {
-        var taskViewModel = await MapToViewModelAsync(task, userId);
-        taskViewModels.Add(taskViewModel);
-    }
-    model.Tasks = taskViewModels;
+            // 🔹 دریافت تسک‌ها
+            var allTasks = await _context.Tasks_Tbl
+                .Where(t => allRelevantTaskIds.Contains(t.Id) && !t.IsDeleted)
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedInTeam)
+                .Include(t => t.TaskCategory)
+                .Include(t => t.Creator)
+                .Include(t => t.Contact)
+                .Include(t => t.Organization)
+                .OrderByDescending(t => t.CreateDate)
+                .ToListAsync();
 
-    await GroupTeamTasksAsync(model, userId);
-}
+            // تبدیل به ViewModel
+            var taskViewModels = new List<TaskViewModel>();
+            foreach (var task in allTasks)
+            {
+                var taskViewModel = await MapToViewModelAsync(task, userId);
+                taskViewModels.Add(taskViewModel);
+            }
+
+            model.Tasks = taskViewModels;
+
+            // ⭐⭐⭐ جداسازی بر اساس CompletionDate کاربر فعلی
+            model.PendingTasks = taskViewModels
+                .Where(t => !t.CompletionDate.HasValue) // CompletionDate از MapToViewModelAsync
+                .ToList();
+
+            model.CompletedTasks = taskViewModels
+                .Where(t => t.CompletionDate.HasValue)
+                .ToList();
+
+            Console.WriteLine($"📊 END - Pending: {model.PendingTasks.Count}, Completed: {model.CompletedTasks.Count}");
+        }
+
+
+        /// <summary>
+        /// بارگذاری تسک‌های من (اصلاح شده)
+        /// </summary>
+        private async Task LoadMyTasksAsync(TaskIndexViewModel model, string userId)
+        {
+            var fiveDaysAgo = DateTime.Now.AddDays(-5);
+
+            // ⭐ دریافت Assignments کاربر
+            var userAssignments = await _context.TaskAssignment_Tbl
+                .Where(ta => ta.AssignedUserId == userId &&
+                            !ta.Task.IsDeleted &&
+                            (
+                                !ta.CompletionDate.HasValue ||
+                                (ta.CompletionDate.HasValue && ta.CompletionDate >= fiveDaysAgo)
+                            ))
+                .Select(ta => ta.TaskId)
+                .Distinct()
+                .ToListAsync();
+
+            var tasks = await _context.Tasks_Tbl
+                .Where(t => userAssignments.Contains(t.Id))
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedInTeam)
+                .Include(t => t.TaskCategory)
+                .Include(t => t.Creator)
+                .Include(t => t.Contact)
+                .Include(t => t.Organization)
+                .OrderByDescending(t => t.CreateDate)
+                .ToListAsync();
+
+            var taskViewModels = new List<TaskViewModel>();
+            foreach (var task in tasks)
+            {
+                var taskViewModel = await MapToViewModelAsync(task, userId);
+                taskViewModels.Add(taskViewModel);
+            }
+
+            model.Tasks = taskViewModels;
+            model.PendingTasks = taskViewModels.Where(t => !t.CompletionDate.HasValue).ToList();
+            model.CompletedTasks = taskViewModels.Where(t => t.CompletionDate.HasValue).ToList();
+
+            await GroupMyTasksAsync(model, userId);
+        }
+
+        /// <summary>
+        /// بارگذاری تسک‌های واگذار شده توسط من (اصلاح شده)
+        /// </summary>
+        private async Task LoadAssignedByMeAsync(TaskIndexViewModel model, string userId)
+        {
+            var fiveDaysAgo = DateTime.Now.AddDays(-5);
+
+            // ⭐ تسک‌هایی که من ساخته‌ام و به دیگران داده‌ام
+            var myCreatedTasks = await _context.Tasks_Tbl
+                .Where(t => !t.IsDeleted &&
+                           t.CreatorUserId == userId &&
+                           t.TaskAssignments.Any(ta => ta.AssignedUserId != null && ta.AssignedUserId != userId))
+                .Select(t => t.Id)
+                .ToListAsync();
+
+            // ⭐ بررسی CompletionDate برای هر Assignment
+            var relevantAssignments = await _context.TaskAssignment_Tbl
+                .Where(ta => myCreatedTasks.Contains(ta.TaskId) &&
+                            ta.AssignedUserId != userId &&
+                            (
+                                !ta.CompletionDate.HasValue ||
+                                (ta.CompletionDate.HasValue && ta.CompletionDate >= fiveDaysAgo)
+                            ))
+                .Select(ta => ta.TaskId)
+                .Distinct()
+                .ToListAsync();
+
+            var tasks = await _context.Tasks_Tbl
+                .Where(t => relevantAssignments.Contains(t.Id))
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedInTeam)
+                .Include(t => t.TaskCategory)
+                .Include(t => t.Creator)
+                .Include(t => t.Contact)
+                .Include(t => t.Organization)
+                .OrderByDescending(t => t.CreateDate)
+                .ToListAsync();
+
+            var taskViewModels = new List<TaskViewModel>();
+            foreach (var task in tasks)
+            {
+                var taskViewModel = await MapToViewModelAsync(task, userId);
+                taskViewModels.Add(taskViewModel);
+            }
+
+            model.Tasks = taskViewModels;
+
+            // ⭐ برای "واگذار شده توسط من"، باید CompletionDate افراد دیگر را بررسی کنیم
+            model.PendingTasks = taskViewModels
+                .Where(t => t.AssignmentsTaskUser?.Any(a => 
+                    a.AssignedUserId != userId && !a.CompletionDate.HasValue) == true)
+                .ToList();
+
+            model.CompletedTasks = taskViewModels
+                .Where(t => t.AssignmentsTaskUser?.Any(a => 
+                    a.AssignedUserId != userId && a.CompletionDate.HasValue) == true)
+                .ToList();
+
+            await GroupAssignedByMeTasksAsync(model, userId);
+        }
+
+        /// <summary>
+        /// بارگذاری تسک‌های تیم (اصلاح شده)
+        /// </summary>
+        private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
+        {
+            var fiveDaysAgo = DateTime.Now.AddDays(-5);
+
+            var userTeamIds = await _context.TeamMember_Tbl
+                .Where(tm => tm.UserId == userId && tm.IsActive)
+                .Select(tm => tm.TeamId)
+                .ToListAsync();
+
+            if (!userTeamIds.Any())
+            {
+                model.Tasks = new List<TaskViewModel>();
+                model.PendingTasks = new List<TaskViewModel>();
+                model.CompletedTasks = new List<TaskViewModel>();
+                return;
+            }
+
+            // ⭐ دریافت تمام Assignments تیمی
+            var teamAssignments = await _context.TaskAssignment_Tbl
+                .Where(ta => userTeamIds.Contains(ta.AssignedInTeamId ?? 0) &&
+                            !ta.Task.IsDeleted &&
+                            (
+                                !ta.CompletionDate.HasValue ||
+                                (ta.CompletionDate.HasValue && ta.CompletionDate >= fiveDaysAgo)
+                            ))
+                .Select(ta => ta.TaskId)
+                .Distinct()
+                .ToListAsync();
+
+            var tasks = await _context.Tasks_Tbl
+                .Where(t => teamAssignments.Contains(t.Id))
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
+                .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedInTeam)
+                .Include(t => t.TaskCategory)
+                .Include(t => t.Creator)
+                .Include(t => t.Contact)
+                .Include(t => t.Organization)
+                .OrderByDescending(t => t.CreateDate)
+                .ToListAsync();
+
+            var taskViewModels = new List<TaskViewModel>();
+            foreach (var task in tasks)
+            {
+                var taskViewModel = await MapToViewModelAsync(task, userId);
+                taskViewModels.Add(taskViewModel);
+            }
+
+            model.Tasks = taskViewModels;
+
+            // ⭐ برای تسک‌های تیمی، بررسی CompletionDate کاربر فعلی
+            model.PendingTasks = taskViewModels.Where(t => !t.CompletionDate.HasValue).ToList();
+            model.CompletedTasks = taskViewModels.Where(t => t.CompletionDate.HasValue).ToList();
+
+            await GroupTeamTasksAsync(model, userId);
+        }
+
+
+
+
+
 
         /// <summary>
         /// گروه‌بندی تسک‌های من
@@ -603,8 +782,11 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                 .Where(ta => ta.TaskId == task.Id)
                 .ToListAsync();
 
+            // ⭐ دریافت نام سازنده
             var category = await _context.TaskCategory_Tbl
                 .FirstOrDefaultAsync(c => c.Id == task.TaskCategoryId);
+
+            var creator = await _context.Users.FirstOrDefaultAsync(u => u.Id == task.CreatorUserId);
 
             var taskViewModel = new TaskViewModel
             {
@@ -631,6 +813,8 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
                     AssignedUserId = a.AssignedUserId,
                     AssignedUserName = $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}",
                     AssignerUserId = a.AssignerUserId,
+                    AssignedInTeamName = a.AssignedInTeam?.Title, 
+
                     AssignDate = a.AssignmentDate,
                     CompletionDate = a.CompletionDate
                 }).ToList()
@@ -773,8 +957,7 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
 
             foreach (var task in tasks)
             {
-                var assignments = task.AssignmentsTaskUser?.Where(ta => !string.IsNullOrEmpty(ta.AssignedUserId)).ToList()
-                    ?? new List<TaskAssignmentViewModel>();
+                var assignments = task.AssignmentsTaskUser?.Where(ta => !string.IsNullOrEmpty(ta.AssignedUserId)).ToList();
 
                 if (!assignments.Any())
                 {
@@ -1306,7 +1489,8 @@ private async Task LoadTeamTasksAsync(TaskIndexViewModel model, string userId)
         }
 
         private void AddTaskToGroup(
-            Dictionary<string, Dictionary<string, List<TaskViewModel>>> groups,
+            Dictionary<string, Dictionary<string, List<TaskViewModel>>>
+            groups,
             string teamName,
             string personName,
             Tasks task, string highlightUserId = null)

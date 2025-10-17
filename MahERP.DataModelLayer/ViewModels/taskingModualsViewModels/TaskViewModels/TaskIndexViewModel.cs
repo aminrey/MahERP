@@ -85,6 +85,17 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
         #endregion
 
+
+        /// <summary>
+        /// ⭐ تسک‌های انجام نشده (Status < 2)
+        /// </summary>
+        public List<TaskViewModel> PendingTasks { get; set; } = new List<TaskViewModel>();
+
+        /// <summary>
+        /// ⭐ تسک‌های انجام شده 5 روز اخیر (Status >= 2)
+        /// </summary>
+        public List<TaskViewModel> CompletedTasks { get; set; } = new List<TaskViewModel>();
+
         #region متدهای کمکی
 
         /// <summary>
@@ -134,6 +145,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
     public class TaskFilterViewModel
     {
+
         [Display(Name = "نوع نمایش")]
         public TaskViewType ViewType { get; set; } = TaskViewType.MyTasks;
 
@@ -166,6 +178,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         [Display(Name = "جستجو در متن")]
         public string? SearchTerm { get; set; }
         public List<byte>? StatusFilters { get; set; }
+
 
         // خاصیت کمکی برای تشخیص وجود فیلتر فعال
         public bool HasActiveFilters =>

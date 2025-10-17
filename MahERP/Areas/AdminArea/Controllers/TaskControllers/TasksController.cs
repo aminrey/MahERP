@@ -355,8 +355,9 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
         }
         // در قسمت AJAX Actions، بعد از GetCalendarEvents
 
+
         /// <summary>
-        /// دریافت تسک‌های فیلتر شده برای Quick Filters
+        /// دریافت تسک‌های فیلتر شده برای Quick Filters - اصلاح شده
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetFilteredTasks(int filterType)
@@ -364,76 +365,82 @@ namespace MahERP.Areas.AdminArea.Controllers.TaskControllers
             try
             {
                 var userId = _userManager.GetUserId(User);
-                TaskFilterResultViewModel result;
 
-                switch ((QuickFilterType)filterType)
+                // ⭐⭐⭐ ساخت TaskFilterViewModel بر اساس filterType
+                var filters = new TaskFilterViewModel
                 {
-                    case QuickFilterType.AllVisible:
-                        result = await _taskFilterRepository.GetAllVisibleTasksAsync(userId);
-                        break;
+                    ViewType = (QuickFilterType)filterType switch
+                    {
+                        QuickFilterType.AllVisible => TaskViewType.AllTasks,
+                        QuickFilterType.MyAssigned => TaskViewType.MyTasks,
+                        QuickFilterType.AssignedByMe => TaskViewType.AssignedByMe,
+                        QuickFilterType.MyTeams => TaskViewType.MyTeamsHierarchy,
+                        QuickFilterType.Supervised => TaskViewType.SupervisedTasks,
+                        _ => TaskViewType.AllTasks
+                    },
+                    StatusFilters = new List<byte> { 0, 1 } // فقط در حال انجام
+                };
 
-                    case QuickFilterType.MyAssigned:
-                        result = await _taskFilterRepository.GetMyAssignedTasksAsync(userId);
-                        break;
+                // ⭐⭐⭐ استفاده از GetTasksForIndexAsync - مشابه Index
+                var model = await _taskFilterRepository.GetTasksForIndexAsync(userId, filters);
 
-                    case QuickFilterType.AssignedByMe:
-                        result = await _taskFilterRepository.GetAssignedByMeTasksAsync(userId);
-                        break;
-
-                    case QuickFilterType.MyTeams:
-                        result = await _taskFilterRepository.GetMyTeamsTasksAsync(userId);
-                        break;
-
-                    case QuickFilterType.Supervised:
-                        result = await _taskFilterRepository.GetSupervisedTasksAsync(userId);
-                        break;
-
-                    default:
-                        result = await _taskFilterRepository.GetAllVisibleTasksAsync(userId);
-                        break;
+                // ⭐⭐⭐ بررسی FilterCounts
+                if (model.FilterCounts == null)
+                {
+                    Console.WriteLine("⚠️ FilterCounts is NULL in GetFilteredTasks! Re-calculating...");
+                    model.FilterCounts = await _taskFilterRepository.GetAllFilterCountsAsync(userId);
                 }
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "GetFilteredTasks",
                     $"دریافت تسک‌های فیلتر شده - نوع: {(QuickFilterType)filterType}");
-                // ⭐⭐⭐ دریافت تعداد همه فیلترها و ارسال به View
 
-                var filterCounts = await _taskFilterRepository.GetAllFilterCountsAsync(userId);
-                ViewBag.FilterCounts = filterCounts;
-        // ⭐⭐⭐ رندر Partial View
-        var partialHtml = await this.RenderViewToStringAsync("_TasksGroupedPartial", result);
+                // ⭐⭐⭐ رندر Partial View با مدل کامل
+                var partialHtml = await this.RenderViewToStringAsync("_TasksGroupedPartial", model);
 
-        // ⭐⭐⭐ برگرداندن JSON با HTML و اطلاعات اضافی
-        return Json(new
-        {
-            success = true,
-            html = partialHtml,
-            filterName = result.FilterName,
-            totalCount = result.TotalCount,
-            filterCounts = new
-            {
-                allVisibleCount = filterCounts.AllVisibleCount,
-                myAssignedCount = filterCounts.MyAssignedCount,
-                assignedByMeCount = filterCounts.AssignedByMeCount,
-                myTeamsCount = filterCounts.MyTeamsCount,
-                supervisedCount = filterCounts.SupervisedCount
-            }
-        });
+                // ⭐⭐⭐ برگرداندن JSON با HTML و اطلاعات اضافی
+                return Json(new
+                {
+                    success = true,
+                    html = partialHtml,
+                    filterName = filters.ViewType.ToString(),
+                    totalCount = model.Tasks?.Count ?? 0,
+                    filterCounts = new
+                    {
+                        allVisibleCount = model.FilterCounts.AllVisibleCount,
+                        myAssignedCount = model.FilterCounts.MyAssignedCount,
+                        assignedByMeCount = model.FilterCounts.AssignedByMeCount,
+                        myTeamsCount = model.FilterCounts.MyTeamsCount,
+                        supervisedCount = model.FilterCounts.SupervisedCount
+                    }
+                });
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("Tasks", "GetFilteredTasks",
                     "خطا در دریافت تسک‌های فیلتر شده", ex);
 
-                return PartialView("_TasksFilteredView", new TaskFilterResultViewModel
+                // ⭐⭐⭐ در صورت خطا، یک مدل خالی برگردان
+                var emptyModel = new TaskIndexViewModel
                 {
-                    FilterName = "خطا",
-                    TotalCount = 0,
-                    GroupedTasks = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>()
+                    UserLoginid = _userManager.GetUserId(User),
+                    Filters = new TaskFilterViewModel(),
+                    Tasks = new List<TaskViewModel>(),
+                    PendingTasks = new List<TaskViewModel>(),
+                    CompletedTasks = new List<TaskViewModel>(),
+                    FilterCounts = new TaskFilterCountsViewModel()
+                };
+
+                var errorHtml = await this.RenderViewToStringAsync("_TasksGroupedPartial", emptyModel);
+
+                return Json(new
+                {
+                    success = false,
+                    html = errorHtml,
+                    message = "خطا در دریافت تسک‌ها"
                 });
             }
         }
-
         /// <summary>
         /// دریافت تعداد فیلترها برای Quick Filters (AJAX)
         /// </summary>

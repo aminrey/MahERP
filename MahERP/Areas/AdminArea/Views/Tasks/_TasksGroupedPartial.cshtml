@@ -1,366 +1,310 @@
-﻿@model TaskFilterResultViewModel
+﻿@model TaskIndexViewModel
 @{
     var filterCounts = ViewBag.FilterCounts as MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskFilterCountsViewModel;
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-}
 
-@if (Model.GroupedTasks.Any())
-{
-    @foreach (var teamGroup in Model.GroupedTasks.OrderBy(t => t.Key))
+    // ⭐⭐⭐ گروه‌بندی مجدد Pending Tasks - اصلاح شده
+    var pendingGrouped = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>();
+    
+    if (Model.PendingTasks != null && Model.PendingTasks.Any())
     {
-        var teamId = teamGroup.Key.GetHashCode();
-        var teamName = teamGroup.Key;
-        var totalTeamTasks = teamGroup.Value.Sum(p => p.Value.Count);
+        var pendingFlat = Model.PendingTasks
+            .Where(t => t.AssignmentsTaskUser != null)
+            .SelectMany(t => t.AssignmentsTaskUser.Select(a => new 
+            { 
+                Task = t, 
+                TeamName = a.AssignedInTeamName ?? "بدون تیم",
+                PersonName = a.AssignedUserName ?? "نامشخص"
+            }));
 
-        <div class="team-group mb-3">
-            <!-- Team Header -->
-            <div class="team-header team-toggle"
-                 data-bs-toggle="collapse"
-                 data-bs-target="#team-@teamId"
-                 onclick="toggleTeam('@teamId')">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <i class="fa fa-chevron-down toggle-icon me-2"></i>
-                        <i class="fa fa-users me-2"></i>
-                        <h5 class="mb-0">@teamName</h5>
+        pendingGrouped = pendingFlat
+            .GroupBy(x => x.TeamName)
+            .ToDictionary(
+                g => g.Key,
+                g => g.GroupBy(x => x.PersonName)
+                      .ToDictionary(
+                          pg => pg.Key, 
+                          pg => pg.Select(x => x.Task).Distinct().ToList()
+                      )
+            );
+    }
+
+    // ⭐⭐⭐ گروه‌بندی مجدد Completed Tasks - اصلاح شده
+    var completedGrouped = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>();
+    
+    if (Model.CompletedTasks != null && Model.CompletedTasks.Any())
+    {
+        var completedFlat = Model.CompletedTasks
+            .Where(t => t.AssignmentsTaskUser != null)
+            .SelectMany(t => t.AssignmentsTaskUser.Select(a => new 
+            { 
+                Task = t, 
+                TeamName = a.AssignedInTeamName ?? "بدون تیم",
+                PersonName = a.AssignedUserName ?? "نامشخص"
+            }));
+
+        completedGrouped = completedFlat
+            .GroupBy(x => x.TeamName)
+            .ToDictionary(
+                g => g.Key,
+                g => g.GroupBy(x => x.PersonName)
+                      .ToDictionary(
+                          pg => pg.Key, 
+                          pg => pg.Select(x => x.Task).Distinct().ToList()
+                      )
+            );
+    }
+}
+@* ⭐⭐⭐ بخش اول: تسک‌های در حال انجام *@
+<div class="pending-tasks-section mb-5">
+    <div class="section-header bg-body-light p-3 rounded mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="fa fa-tasks text-primary me-2"></i>
+                تسک‌های در حال انجام
+            </h4>
+            <span class="badge bg-primary fs-5">
+                @(Model.PendingTasks?.Count ?? 0) تسک
+            </span>
+        </div>
+    </div>
+
+    @if (pendingGrouped.Any())
+    {
+        @foreach (var teamGroup in pendingGrouped.OrderBy(t => t.Key))
+        {
+            var teamId = teamGroup.Key.GetHashCode();
+            var teamName = teamGroup.Key;
+            var pendingTeamTasks = teamGroup.Value.Sum(p => p.Value.Count);
+
+            <div class="team-group mb-3">
+                <div class="team-header team-toggle"
+                     data-bs-toggle="collapse"
+                     data-bs-target="#team-pending-@teamId">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fa fa-chevron-down toggle-icon me-2"></i>
+                            <i class="fa fa-users me-2"></i>
+                            <h5 class="mb-0">@teamName</h5>
+                        </div>
+                        <span class="badge bg-light text-dark">@pendingTeamTasks تسک</span>
                     </div>
-                    <span class="badge bg-light text-dark">@totalTeamTasks تسک</span>
+                </div>
+
+                <div id="team-pending-@teamId" class="collapse show">
+                    @foreach (var personGroup in teamGroup.Value.OrderBy(p => p.Key))
+                    {
+                        var personId = personGroup.Key.GetHashCode();
+                        var personName = personGroup.Key;
+                        var pendingPersonTasks = personGroup.Value;
+
+                        <div class="person-group ms-3 mt-2">
+                            <div class="person-header person-toggle"
+                                 data-bs-toggle="collapse"
+                                 data-bs-target="#person-pending-@teamId-@personId">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa fa-chevron-down toggle-icon me-2"></i>
+                                        <i class="fa fa-user me-2 text-primary"></i>
+                                        <strong>@personName</strong>
+                                    </div>
+                                    <span class="badge bg-secondary">@pendingPersonTasks.Count تسک</span>
+                                </div>
+                            </div>
+
+                            <div id="person-pending-@teamId-@personId" class="collapse show">
+                                @await Html.PartialAsync("_TaskTablePartial", new
+                                {
+                                    Tasks = pendingPersonTasks,
+                                    CurrentUserId = currentUserId,
+                                    PersonName = personName,
+                                    IsCompleted = false
+                                })
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
-
-            <!-- Team Content -->
-            <div id="team-@teamId" class="collapse show">
-                @foreach (var personGroup in teamGroup.Value.OrderBy(p => p.Key))
-                {
-                    var personId = personGroup.Key.GetHashCode();
-                    var personName = personGroup.Key;
-                    var personTasks = personGroup.Value;
-
-                    <div class="person-group ms-3 mt-2">
-                        <!-- Person Header -->
-                        <div class="person-header person-toggle"
-                             data-bs-toggle="collapse"
-                             data-bs-target="#person-@teamId-@personId"
-                             onclick="togglePerson('@teamId', '@personId')">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <i class="fa fa-chevron-down toggle-icon me-2"></i>
-                                    <i class="fa fa-user me-2 text-primary"></i>
-                                    <strong>@personName</strong>
-                                </div>
-                                <span class="badge bg-secondary">@personTasks.Count تسک</span>
-                            </div>
-                        </div>
-
-                        <!-- Person Tasks -->
-                        <div id="person-@teamId-@personId" class="collapse show">
-                            <div class="table-responsive">
-                                <table class="table table-hover table-vcenter mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 50px;"></th>
-                                            <th>کد</th>
-                                            <th>عنوان</th>
-                                            <th class="text-center d-none d-md-table-cell">دسته‌بندی</th>
-                                            <th class="text-center d-none d-lg-table-cell">طرف حساب</th> <!-- ⭐ NEW -->
-                                            <th class="text-center">وضعیت</th>
-                                            <th class="text-center d-none d-lg-table-cell">سازنده</th>
-                                            <th class="text-center d-none d-sm-table-cell">مهلت</th>
-                                            <th class="text-center" style="width: 120px;">عملیات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var task in personTasks.OrderByDescending(t => t.CreateDate))
-                                        {
-                                            var currentUserAssignment = task.AssignmentsTaskUser?.FirstOrDefault(a => a.AssignedUserId == currentUserId && a.AssignedUserName == personName);
-                                            var isTaskAssignedToCurrentUser = currentUserAssignment != null;
-                                            var isInMyDay = task.IsInMyDay;
-                                            var isFocused = task.IsFocused ?? false;
-
-                                            @* ⭐⭐⭐ کلاس‌های استایل برای highlight *@
-                                            var rowClass = task.IsOverdue ? "table-warning" : "";
-                                            if (isFocused)
-                                            {
-                                                rowClass += " task-focused-row";
-                                            }
-
-                                            <tr class="@rowClass">
-                                                <td class="text-center">
-                                                    @* ⭐⭐⭐ آیکون تمرکز در ستون اول *@
-                                                    @if (isFocused)
-                                                    {
-                                                        <i class="fa fa-bullseye text-warning fa-lg"
-                                                           title="متمرکز روی این تسک"
-                                                           data-bs-toggle="tooltip"
-                                                           style="animation: focusPulse 2s infinite;"></i>
-                                                    }
-                                                    else if (task.Priority == 2)
-                                                    {
-                                                        <i class="fa fa-exclamation-triangle text-danger"
-                                                           title="فوری" data-bs-toggle="tooltip"></i>
-                                                    }
-                                                    else if (task.Important)
-                                                    {
-                                                        <i class="fa fa-star text-warning"
-                                                           title="مهم" data-bs-toggle="tooltip"></i>
-                                                    }
-                                                    else
-                                                    {
-                                                        <i class="fa fa-circle text-muted" style="font-size: 0.5rem;"></i>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">@task.TaskCode</small>
-                                                    @* ⭐ Badge تمرکز *@
-                                                    @if (isFocused)
-                                                    {
-                                                        <br />
-                                                        <span class="badge bg-warning text-dark mt-1" style="font-size: 0.7rem;">
-                                                            <i class="fa fa-star me-1"></i>متمرکز
-                                                        </span>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    <a asp-action="Details" asp-route-id="@task.Id"
-                                                       class="fw-bold text-decoration-none @(isFocused ? "text-warning" : "")">
-                                                        @if (isFocused)
-                                                        {
-                                                            <i class="fa fa-bullseye me-1"></i>
-                                                        }
-                                                        @task.Title
-                                                    </a>
-                                                    @if (!string.IsNullOrEmpty(task.Description))
-                                                    {
-                                                        <br />
-                                                        <small class="text-muted">
-                                                            @(task.Description.Length > 50
-                                                                                                    ? task.Description.Substring(0, 50) + "..."
-                                                                                                    : task.Description)
-                                                        </small>
-                                                    }
-                                                </td>
-                                                <td class="text-center d-none d-md-table-cell">
-                                                    @if (!string.IsNullOrEmpty(task.CategoryTitle))
-                                                    {
-                                                        <span class="badge bg-info">@task.CategoryTitle</span>
-                                                    }
-                                                </td>
-                                                <td class="text-center d-none d-lg-table-cell">
-                                                    @if (task.SelectedContactId.HasValue)
-                                                    {
-                                                        <span class="badge bg-primary" title="فرد: @task.ContactFullName">
-                                                            <i class="fa fa-user me-1"></i>
-                                                            @(task.ContactFullName?.Length > 15 
-                                                                ? task.ContactFullName.Substring(0, 15) + "..." 
-                                                                : task.ContactFullName)
-                                                        </span>
-                                                        @if (task.SelectedOrganizationId.HasValue)
-                                                        {
-                                                            <br />
-                                                            <small class="text-muted" title="سازمان: @task.OrganizationName">
-                                                                <i class="fa fa-building"></i> @(task.OrganizationName?.Length > 15 
-                                                                    ? task.OrganizationName.Substring(0, 15) + "..." 
-                                                                    : task.OrganizationName)
-                                                            </small>
-                                                        }
-                                                    }
-                                                    else if (task.SelectedOrganizationId.HasValue)
-                                                    {
-                                                        <span class="badge bg-info" title="سازمان: @task.OrganizationName">
-                                                            <i class="fa fa-building me-1"></i>
-                                                            @(task.OrganizationName?.Length > 15 
-                                                                ? task.OrganizationName.Substring(0, 15) + "..." 
-                                                                : task.OrganizationName)
-                                                        </span>
-                                                    }
-                                                    else if (task.StakeholderId.HasValue)
-                                                    {
-                                                        <!-- ⚠️ Fallback -->
-                                                        <small class="text-muted">
-                                                            <i class="fa fa-archive"></i> @task.StakeholderName
-                                                        </small>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-muted">-</span>
-                                                    }
-                                                </td>
-                                                <td class="text-center">
-                                                    @{
-                                                        var statusClass = task.Status switch
-                                                        {
-                                                            0 => "bg-secondary",
-                                                            1 => "bg-warning",
-                                                            2 => "bg-success",
-                                                            3 => "bg-info",
-                                                            4 => "bg-danger",
-                                                            _ => "bg-dark"
-                                                        };
-
-                                                        var statusText = task.Status switch
-                                                        {
-                                                            0 => "ایجاد",
-                                                            1 => "انجام",
-                                                            2 => "تکمیل",
-                                                            3 => "تأیید",
-                                                            4 => "رد",
-                                                            _ => "؟"
-                                                        };
-                                                    }
-                                                    <span class="badge @statusClass">@statusText</span>
-                                                </td>
-                                                <td class="text-center d-none d-lg-table-cell">
-                                                    <small class="text-muted">@task.CreatorName</small>
-                                                </td>
-                                                <td class="text-center d-none d-sm-table-cell">
-                                                    @if (task.DueDate.HasValue)
-                                                    {
-                                                        var isOverdue = task.DueDate.Value < DateTime.Now && !task.CompletionDate.HasValue;
-                                                        <small class="@(isOverdue ? "text-danger fw-bold" : "text-muted")">
-                                                            @ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd")
-                                                        </small>
-                                                    }
-                                                    else
-                                                    {
-                                                        <small class="text-muted">-</small>
-                                                    }
-                                                </td>
-                                                <td class="text-center">
-                                                    <div class="btn-group btn-group-sm" role="group">
-                                                        <a asp-action="Details" asp-route-id="@task.Id"
-                                                           class="btn btn-alt-secondary"
-                                                           title="جزئیات" data-bs-toggle="tooltip">
-                                                            <i class="fa fa-eye"></i>
-                                                        </a>
-
-                                                        @if (isTaskAssignedToCurrentUser)
-                                                        {
-                                                            @if (isInMyDay)
-                                                            {
-                                                                <button type="button"
-                                                                        class="btn btn-sm btn-success"
-                                                                        title="در روز من قرار دارد"
-                                                                        data-bs-toggle="tooltip">
-                                                                    <i class="fa fa-check-circle"></i>
-                                                                </button>
-                                                            }
-                                                            else
-                                                            {
-                                                                <button type="button"
-                                                                        class="btn btn-sm btn-outline-primary btn-add-to-myday"
-                                                                        data-toggle="modal-ajax"
-                                                                        href="@Url.Action("AddToMyDayModal", "Tasks", new { taskId = task.Id })"
-                                                                        title="افزودن به روز من"
-                                                                        data-bs-toggle="tooltip">
-                                                                    <i class="fa fa-calendar-day"></i>
-                                                                </button>
-                                                            }
-
-                                                            @if (isFocused)
-                                                            {
-                                                                <button type="button"
-                                                                        class="btn btn-sm btn-warning"
-                                                                        onclick="removeTaskFocus(@task.Id)"
-                                                                        title="حذف از تمرکز"
-                                                                        data-bs-toggle="tooltip">
-                                                                    <i class="fa fa-star"></i>
-                                                                </button>
-                                                            }
-                                                            else
-                                                            {
-                                                                <button type="button"
-                                                                        class="btn btn-sm btn-outline-secondary"
-                                                                        onclick="setTaskFocus(@task.Id)"
-                                                                        title="تنظیم به عنوان تمرکز"
-                                                                        data-bs-toggle="tooltip">
-                                                                    <i class="fa fa-bullseye"></i>
-                                                                </button>
-                                                            }
-                                                        }
-
-                                                        <a href="#"
-                                                           onclick="showComingSoonNotification(event, 'ویرایش تسک')"
-                                                           class="btn btn-sm btn-warning">
-                                                            <i class="fa fa-pencil-alt"></i>
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">تسک انجام نشده‌ای یافت نشد</h5>
         </div>
     }
-}
-else
-{
-    <div class="text-center py-5">
-        <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
-        <h5 class="text-muted">تسکی یافت نشد</h5>
+</div>
+
+@* ⭐⭐⭐ بخش دوم: تسک‌های انجام شده (5 روز اخیر) *@
+<div class="completed-tasks-section mt-5">
+    <div class="section-header bg-success-light p-3 rounded mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 text-success">
+                <i class="fa fa-check-circle me-2"></i>
+                گزارش تسک‌های انجام شده (5 روز اخیر)
+            </h4>
+            <span class="badge bg-success fs-5">
+                @(Model.CompletedTasks?.Count ?? 0) تسک
+            </span>
+        </div>
     </div>
-}
 
-@* ⭐⭐⭐ استایل‌های مخصوص تسک متمرکز *@
+    @if (completedGrouped.Any())
+    {
+        @foreach (var teamGroup in completedGrouped.OrderBy(t => t.Key))
+        {
+            var teamId = teamGroup.Key.GetHashCode();
+            var teamName = teamGroup.Key;
+            var completedTeamTasks = teamGroup.Value.Sum(p => p.Value.Count);
+
+            <div class="team-group mb-3 completed-team-group">
+                <div class="team-header team-toggle bg-success-light"
+                     data-bs-toggle="collapse"
+                     data-bs-target="#team-completed-@teamId">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fa fa-chevron-down toggle-icon me-2 text-success"></i>
+                            <i class="fa fa-users me-2 text-success"></i>
+                            <h5 class="mb-0 text-success">@teamName</h5>
+                        </div>
+                        <span class="badge bg-success">@completedTeamTasks تسک تکمیل شده</span>
+                    </div>
+                </div>
+
+                <div id="team-completed-@teamId" class="collapse">
+                    @foreach (var personGroup in teamGroup.Value.OrderBy(p => p.Key))
+                    {
+                        var personId = personGroup.Key.GetHashCode();
+                        var personName = personGroup.Key;
+                        var completedPersonTasks = personGroup.Value;
+
+                        <div class="person-group ms-3 mt-2">
+                            <div class="person-header person-toggle bg-success-light"
+                                 data-bs-toggle="collapse"
+                                 data-bs-target="#person-completed-@teamId-@personId">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa fa-chevron-down toggle-icon me-2 text-success"></i>
+                                        <i class="fa fa-user-check me-2 text-success"></i>
+                                        <strong class="text-success">@personName</strong>
+                                    </div>
+                                    <span class="badge bg-success">@completedPersonTasks.Count تسک</span>
+                                </div>
+                            </div>
+
+                            <div id="person-completed-@teamId-@personId" class="collapse">
+                                @await Html.PartialAsync("_TaskTablePartial", new
+                                {
+                                    Tasks = completedPersonTasks,
+                                    CurrentUserId = currentUserId,
+                                    PersonName = personName,
+                                    IsCompleted = true
+                                })
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fa fa-clipboard-check fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">تسک انجام شده‌ای در 5 روز اخیر یافت نشد</h5>
+        </div>
+    }
+</div>
+
 <style>
-    /* ردیف تسک متمرکز شده */
-    .task-focused-row {
-        background: linear-gradient(90deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 193, 7, 0.05) 100%) !important;
-        border-left: 4px solid #ffc107 !important;
-        box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
-        animation: focusGlow 3s ease-in-out infinite;
+    .pending-tasks-section .team-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    /* Group Styles */
+    .team-group {
+        border-right: 3px solid #0d6efd;
+        margin-bottom: 1.5rem;
+        background: #f8f9fa;
     }
 
-        .task-focused-row:hover {
-            background: linear-gradient(90deg, rgba(255, 193, 7, 0.25) 0%, rgba(255, 193, 7, 0.1) 100%) !important;
-            box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
-        }
-
-    /* انیمیشن pulse برای آیکون تمرکز */
-    @@keyframes focusPulse {
-        0%, 100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        50% {
-            transform: scale(1.2);
-            opacity: 0.8;
-        }
+    .team-header {
+        color: white;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
     }
 
-    /* انیمیشن گلو برای ردیف */
-    @@keyframes focusGlow {
-        0%, 100% {
-            box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
+    .pending-tasks-section .team-header:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
         }
 
-        50% {
-            box-shadow: 0 0 25px rgba(255, 193, 7, 0.5);
-        }
+    .person-group {
+        border-right: 2px solid #6c757d;
+        margin-bottom: 1rem;
+        background: white;
     }
 
-    /* لینک عنوان تسک متمرکز شده */
-    .text-warning {
-        font-weight: 700 !important;
+    .person-header {
+        background: #e9ecef;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
     }
 
-    /* Badge تمرکز */
-    .badge.bg-warning {
-        animation: badgePulse 2s infinite;
+        .person-header:hover {
+            background: #dee2e6;
+        }
+
+    .toggle-icon {
+        transition: transform 0.3s ease;
     }
 
-    @@keyframes badgePulse {
-        0%, 100% {
-            transform: scale(1);
-        }
+    .collapsed .toggle-icon {
+        transform: rotate(-90deg);
+    }
 
-        50% {
-            transform: scale(1.05);
-        }
+    .completed-tasks-section {
+        border-top: 3px solid #46c37b;
+        padding-top: 2rem;
+    }
+
+    .bg-success-light {
+        background-color: rgba(70, 195, 123, 0.1) !important;
+    }
+
+    .completed-team-group .team-header {
+        border-left: 4px solid #46c37b;
+    }
+
+    .team-header {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-left: 4px solid #0d6efd;
+    }
+
+  
+
+    .person-header {
+        background: #ffffff;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-left: 3px solid #6c757d;
+    }
+
+    .person-header:hover {
+        background: #f8f9fa;
+    }
+
+    .toggle-icon {
+        transition: transform 0.3s;
+    }
+
+    [aria-expanded="false"] .toggle-icon {
+        transform: rotate(-90deg);
     }
 </style>
