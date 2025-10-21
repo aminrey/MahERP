@@ -19,7 +19,7 @@ using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.Attributes;
 
-namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
+namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
 {
     [Area("AdminArea")]
     [Authorize]

@@ -708,6 +708,42 @@ namespace MahERP.AutoMapper
 
             CreateMap<SmsProvider, SmsProviderViewModel>().ReverseMap();
 
+            // ContactGroup -> ContactGroupViewModel
+            CreateMap<ContactGroup, ContactGroupViewModel>()
+                .ForMember(dest => dest.MembersCount,
+                    opt => opt.MapFrom(src => src.ActiveMembersCount))
+                .ForMember(dest => dest.CreatedDatePersian,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")))
+                .ForMember(dest => dest.CreatorName,
+                    opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : ""));
+
+            // ContactGroupViewModel -> ContactGroup
+            CreateMap<ContactGroupViewModel, ContactGroup>()
+                .ForMember(dest => dest.Members, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
+
+            // BranchContactGroup -> BranchContactGroupViewModel
+            CreateMap<BranchContactGroup, BranchContactGroupViewModel>()
+                .ForMember(dest => dest.BranchName,
+                    opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
+                .ForMember(dest => dest.MembersCount,
+                    opt => opt.MapFrom(src => src.ActiveMembersCount))
+                .ForMember(dest => dest.CreatedDatePersian,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")));
+
+            // BranchContactGroupViewModel -> BranchContactGroup
+            CreateMap<BranchContactGroupViewModel, BranchContactGroup>()
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.Members, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
+
+
         }
 
         // Helper methods for mapping

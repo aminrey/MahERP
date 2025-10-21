@@ -1,0 +1,92 @@
+﻿@{
+    var groupId = ViewBag.GroupId;
+    var groupTitle = ViewBag.GroupTitle;
+    var availableContacts = ViewBag.AvailableContacts as List<Contact>;
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">
+        <i class="fa fa-user-plus me-2"></i>
+        افزودن عضو به گروه: @groupTitle
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<form id="addMemberForm" action="@Url.Action("AddMember")" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="groupId" value="@groupId" />
+
+    <div class="modal-body">
+        @if (availableContacts != null && availableContacts.Any())
+        {
+            <div class="mb-3">
+                <label class="form-label">
+                    انتخاب فرد <span class="text-danger">*</span>
+                </label>
+                <select name="contactId" class="form-select" required>
+                    <option value="">-- انتخاب کنید --</option>
+                    @foreach (var contact in availableContacts)
+                    {
+                        <option value="@contact.Id">
+                            @contact.FullName
+                            @if (!string.IsNullOrEmpty(contact.PrimaryEmail))
+                            {
+                                <text> - @contact.PrimaryEmail</text>
+                            }
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">یادداشت (اختیاری)</label>
+                <textarea name="notes" class="form-control" rows="3" placeholder="توضیحات درباره افزودن این فرد..."></textarea>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle me-2"></i>
+                تمام افراد فعال سیستم قبلاً به این گروه اضافه شده‌اند.
+            </div>
+        }
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fa fa-times me-1"></i>
+            انصراف
+        </button>
+        @if (availableContacts != null && availableContacts.Any())
+        {
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-check me-1"></i>
+                افزودن
+            </button>
+        }
+    </div>
+</form>
+
+<script>
+    $(document).ready(function() {
+        $('#addMemberForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.status === 'redirect') {
+                        window.location.href = response.redirectUrl;
+                    } else {
+                        alert(response.message[0].text);
+                    }
+                },
+                error: function() {
+                    alert('خطا در ارسال درخواست');
+                }
+            });
+        });
+    });
+</script>

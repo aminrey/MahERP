@@ -4,6 +4,7 @@ using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Repository.ContactGroupRepository;
 using MahERP.DataModelLayer.Repository.ContactRepository;
 using MahERP.DataModelLayer.Repository.MyDayTaskRepository;
 using MahERP.DataModelLayer.Repository.OrganizationRepository;
@@ -158,6 +159,13 @@ builder.Services.AddScoped<PersianDateHelper>();
 builder.Services.AddScoped<IPermissionService, PermissionRepository>();
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 builder.Services.AddScoped<IUserPermissionService, UserPermissionRepository>();
+
+// ⭐⭐⭐ Contact Group Repository
+builder.Services.AddScoped<IContactGroupRepository, ContactGroupRepository>();
+
+// ⭐⭐⭐ Communication Services (اگر قبلاً ثبت نشده‌اند)
+builder.Services.AddScoped<IEmailRepository, EmailRepository>();
+builder.Services.AddScoped<ISmsService, SmsService>();
 
 
 var app = builder.Build();

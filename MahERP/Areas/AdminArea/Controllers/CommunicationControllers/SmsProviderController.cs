@@ -15,7 +15,7 @@ using System;
 using System.Threading.Tasks;
 using MahERP.Attributes;
 
-namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
+namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
 {
     [Area("AdminArea")]
     [Authorize]

@@ -2,7 +2,9 @@
 using MahERP.Areas.AdminArea.Controllers.BaseControllers;
 using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Repository.ContactGroupRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using MahERP.Extentions;
@@ -28,6 +30,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
         protected readonly IUserManagerRepository _userRepository;
+        private readonly IContactGroupRepository _groupRepository;
+
 
         public BranchController(
             IUnitOfWork uow,
@@ -36,7 +40,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger,
+            ActivityLoggerService activityLogger, IContactGroupRepository groupRepository,
             IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _uow = uow;
@@ -44,6 +48,8 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             _userManager = userManager;
             _mapper = mapper;
             _userRepository = userRepository;
+            _groupRepository = groupRepository; 
+
         }
 
         // لیست شعبه‌ها
@@ -54,38 +60,70 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             List<BranchViewModel> branches = _branchRepository.GetBrnachListByUserId(UserLogin);
             return View(branches);
         }
-
-        // جزئیات شعبه
+        /// <summary>
+        /// جزئیات شعبه
+        /// </summary>
+        [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
             try
             {
-                var currentUserId = _userManager.GetUserId(User);
-                var branchDetails = _branchRepository.GetBranchDetailsById(id, currentUserId,includeInactiveStakeholders:true);
-
-                if (branchDetails == null)
-                {
+                // ⭐ دریافت شعبه از Repository
+                var branch = _branchRepository.GetBranchById(id);
+                if (branch == null)
                     return RedirectToAction("ErrorView", "Home");
+
+                // ⭐ دریافت اطلاعات کامل از Repository
+                var model = new BranchDetailsViewModel
+                {
+                    Id = branch.Id,
+                    Name = branch.Name,
+                    Description = branch.Description,
+                    Address = branch.Address,
+                    Phone = branch.Phone,
+                    Email = branch.Email,
+                    IsActive = branch.IsActive,
+                    IsMainBranch = branch.IsMainBranch,
+                    ParentId = branch.ParentId,
+                    ParentBranchName = branch.ParentBranch?.Name,
+                    CreateDate = branch.CreateDate,
+                    LastUpdateDate = branch.LastUpdateDate,
+
+                    // ⭐ دریافت BranchContacts از Repository
+                    BranchContacts = _branchRepository.GetBranchContacts(id),
+
+                    // ⭐ دریافت BranchOrganizations از Repository
+                    BranchOrganizations = _branchRepository.GetBranchOrganizations(id)
+                };
+
+                // ⭐ دریافت گروه‌های شعبه برای فیلتر
+                var branchGroups = _groupRepository.GetBranchGroups(id, includeInactive: false);
+                ViewBag.BranchGroups = branchGroups;
+
+                // ⭐ دریافت گروه‌های هر BranchContact (برای نمایش در جدول)
+                var branchContactIds = model.BranchContacts.Select(bc => bc.Id).ToList();
+                var branchContactGroupsDict = new Dictionary<int, List<BranchContactGroup>>();
+
+                foreach (var bcId in branchContactIds)
+                {
+                    branchContactGroupsDict[bcId] = _groupRepository.GetBranchContactGroups(bcId);
                 }
+                ViewBag.BranchContactGroupsDict = branchContactGroupsDict;
 
-                // ✅ انتقال BranchStakeholders به ViewBag
-                ViewBag.BranchStakeholders = branchDetails.BranchStakeholders;
-
+                // لاگ فعالیت
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
                     "Branch",
                     "Details",
-                    $"مشاهده جزئیات شعبه: {branchDetails.Name}",
-                    recordId: id.ToString(),
-                    entityType: "Branch",
-                    recordTitle: branchDetails.Name
+                    $"مشاهده جزئیات شعبه: {branch.Name}",
+                    recordId: id.ToString()
                 );
 
-                return View(branchDetails);
+                return View(model);
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Branch", "Details", "خطا در دریافت جزئیات", ex, recordId: id.ToString());
+                await _activityLogger.LogErrorAsync("Branch", "Details", "خطا در دریافت جزئیات", ex);
                 return RedirectToAction("ErrorView", "Home");
             }
         }
@@ -918,9 +956,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         }
         #region BranchContact Management
 
-        /// <summary>
-        /// افزودن فرد به شعبه - نمایش مودال
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> AddContactToBranch(int branchId)
         {
@@ -932,7 +967,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     return NotFound();
                 }
 
-                // دریافت افراد قابل اضافه شدن
+                // ⭐ استفاده از Repository
                 var availableContacts = _branchRepository.GetAvailableContactsForBranch(branchId)
                     .Select(c => new SelectListItem
                     {
@@ -969,10 +1004,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return StatusCode(500);
             }
         }
-
-        /// <summary>
-        /// افزودن فرد به شعبه - پردازش درخواست
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddContactToBranchPost(int branchId, int contactId, byte relationType, string notes)
@@ -999,7 +1030,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     });
                 }
 
-                // بررسی عدم تکراری بودن
+                // ⭐ استفاده از Repository
                 if (_branchRepository.IsContactAssignedToBranch(branchId, contactId))
                 {
                     return Json(new
@@ -1009,7 +1040,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     });
                 }
 
-                // ایجاد رکورد جدید
                 var branchContact = new BranchContact
                 {
                     BranchId = branchId,
@@ -1032,7 +1062,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     recordId: branchId.ToString()
                 );
 
-                // رندر کردن لیست به‌روزرسانی شده
+                // ⭐ استفاده از Repository
                 var branchContacts = _branchRepository.GetBranchContacts(branchId);
                 var renderedView = await this.RenderViewToStringAsync("_BranchContactsTableRows", branchContacts);
 
@@ -1067,15 +1097,12 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 });
             }
         }
-
-        /// <summary>
-        /// حذف فرد از شعبه - نمایش مودال تأیید
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> RemoveContactFromBranch(int id)
         {
             try
             {
+                // ⭐ استفاده از Repository
                 var branchContact = _branchRepository.GetBranchContactById(id);
                 if (branchContact == null)
                 {
@@ -1110,16 +1137,13 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return StatusCode(500);
             }
         }
-
-        /// <summary>
-        /// حذف فرد از شعبه - پردازش درخواست
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveContactFromBranchPost(int id)
         {
             try
             {
+                // ⭐ استفاده از Repository
                 var branchContact = _branchRepository.GetBranchContactById(id);
                 if (branchContact == null)
                 {
@@ -1134,7 +1158,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 var contactName = branchContact.Contact?.FullName;
                 var branchName = branchContact.Branch?.Name;
 
-                // غیرفعال کردن (soft delete)
                 branchContact.IsActive = false;
                 _uow.BranchContactUW.Update(branchContact);
                 _uow.Save();
@@ -1147,7 +1170,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     recordId: id.ToString()
                 );
 
-                // رندر کردن لیست به‌روزرسانی شده
+                // ⭐ استفاده از Repository
                 var branchContacts = _branchRepository.GetBranchContacts(branchId);
                 var renderedView = await this.RenderViewToStringAsync("_BranchContactsTableRows", branchContacts);
 
@@ -1186,10 +1209,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
         #endregion
 
         #region BranchOrganization Management
-
-        /// <summary>
-        /// افزودن سازمان به شعبه - نمایش مودال
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> AddOrganizationToBranch(int branchId)
         {
@@ -1201,7 +1220,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     return NotFound();
                 }
 
-                // دریافت سازمان‌های قابل اضافه شدن
+                // ⭐ استفاده از Repository
                 var availableOrganizations = _branchRepository.GetAvailableOrganizationsForBranch(branchId)
                     .Select(o => new SelectListItem
                     {
@@ -1238,10 +1257,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return StatusCode(500);
             }
         }
-
-        /// <summary>
-        /// افزودن سازمان به شعبه - پردازش درخواست
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddOrganizationToBranchPost(int branchId, int organizationId, byte relationType, bool includeAllMembers, string notes)
@@ -1268,7 +1283,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     });
                 }
 
-                // بررسی عدم تکراری بودن
+                // ⭐ استفاده از Repository
                 if (_branchRepository.IsOrganizationAssignedToBranch(branchId, organizationId))
                 {
                     return Json(new
@@ -1278,7 +1293,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     });
                 }
 
-                // ایجاد رکورد جدید
                 var branchOrganization = new BranchOrganization
                 {
                     BranchId = branchId,
@@ -1302,7 +1316,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     recordId: branchId.ToString()
                 );
 
-                // رندر کردن لیست به‌روزرسانی شده
+                // ⭐ استفاده از Repository
                 var branchOrganizations = _branchRepository.GetBranchOrganizations(branchId);
                 var renderedView = await this.RenderViewToStringAsync("_BranchOrganizationsTableRows", branchOrganizations);
 
@@ -1337,15 +1351,13 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 });
             }
         }
-
-        /// <summary>
-        /// حذف سازمان از شعبه - نمایش مودال تأیید
-        /// </summary>
+        // GET
         [HttpGet]
         public async Task<IActionResult> RemoveOrganizationFromBranch(int id)
         {
             try
             {
+                // ⭐ استفاده از Repository
                 var branchOrganization = _branchRepository.GetBranchOrganizationById(id);
                 if (branchOrganization == null)
                 {
@@ -1381,15 +1393,14 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
             }
         }
 
-        /// <summary>
-        /// حذف سازمان از شعبه - پردازش درخواست
-        /// </summary>
+        // POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveOrganizationFromBranchPost(int id)
         {
             try
             {
+                // ⭐ استفاده از Repository
                 var branchOrganization = _branchRepository.GetBranchOrganizationById(id);
                 if (branchOrganization == null)
                 {
@@ -1404,7 +1415,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 var organizationName = branchOrganization.Organization?.DisplayName;
                 var branchName = branchOrganization.Branch?.Name;
 
-                // غیرفعال کردن (soft delete)
                 branchOrganization.IsActive = false;
                 _uow.BranchOrganizationUW.Update(branchOrganization);
                 _uow.Save();
@@ -1417,7 +1427,7 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                     recordId: id.ToString()
                 );
 
-                // رندر کردن لیست به‌روزرسانی شده
+                // ⭐ استفاده از Repository
                 var branchOrganizations = _branchRepository.GetBranchOrganizations(branchId);
                 var renderedView = await this.RenderViewToStringAsync("_BranchOrganizationsTableRows", branchOrganizations);
 
@@ -1452,16 +1462,13 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 });
             }
         }
-
-        /// <summary>
-        /// تغییر وضعیت نمایش اعضای سازمان
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleOrganizationIncludeMembers(int id)
         {
             try
             {
+                // ⭐ استفاده از Repository
                 var branchOrganization = _branchRepository.GetBranchOrganizationById(id);
                 if (branchOrganization == null)
                 {
@@ -1500,7 +1507,6 @@ namespace MahERP.Areas.AdminArea.Controllers.UserControllers
                 return Json(new { success = false, message = "خطا در عملیات" });
             }
         }
-
         #endregion
     }
 }

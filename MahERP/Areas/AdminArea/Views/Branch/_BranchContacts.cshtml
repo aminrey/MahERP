@@ -1,4 +1,9 @@
 ﻿@model List<BranchContact>
+@{
+    var branchId = ViewContext.RouteData.Values["id"] as string;
+    var branchGroups = ViewBag.BranchGroups as List<BranchContactGroup> ?? new List<BranchContactGroup>();
+    var selectedGroupId = ViewBag.SelectedBranchGroupId as int?;
+}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4>
@@ -6,11 +11,19 @@
         افراد شعبه
         <span class="badge bg-primary">@Model.Count نفر</span>
     </h4>
-    <button type="button" class="btn btn-sm btn-primary"
-            data-toggle="modal-ajax"
-            href="@Url.Action("AddContactToBranch", "Branch", new { branchId = ViewContext.RouteData.Values["id"] })">
-        <i class="fa fa-plus me-1"></i> افزودن فرد
-    </button>
+    <div class="btn-group" role="group">
+        <!-- افزودن فرد -->
+        <button type="button" class="btn btn-sm btn-primary"
+                data-toggle="modal-ajax"
+                href="@Url.Action("AddContactToBranch", "Branch", new { branchId })">
+            <i class="fa fa-plus me-1"></i> افزودن فرد
+        </button>
+        <!-- مدیریت گروه‌ها -->
+        <a href="@Url.Action("Index", "BranchContactGroups", new { branchId })" 
+           class="btn btn-sm btn-info">
+            <i class="fa fa-layer-group me-1"></i> مدیریت گروه‌ها
+        </a>
+    </div>
 </div>
 
 <div class="alert alert-info">
@@ -18,16 +31,60 @@
     <strong>افراد مستقیم:</strong> این افراد به صورت تکی به شعبه اضافه شده‌اند و در تسک‌های این شعبه قابل انتخاب هستند.
 </div>
 
+<!-- ⭐⭐⭐ فیلتر گروه‌های شعبه (داینامیک) ⭐⭐⭐ -->
+@if (branchGroups.Any())
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fa fa-filter me-2 text-primary"></i>
+                فیلتر بر اساس گروه
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="btn-group-container d-flex flex-wrap gap-2">
+                <!-- دکمه همه افراد -->
+                <button type="button" 
+                        class="btn btn-group-filter @(selectedGroupId == null ? "btn-primary" : "btn-outline-secondary")"
+                        onclick="filterBranchContacts(null)">
+                    <i class="fa fa-users me-1"></i>
+                    همه افراد
+                    <span class="badge bg-white text-dark ms-1">@Model.Count</span>
+                </button>
+
+                <!-- دکمه‌های گروه‌ها -->
+                @foreach (var group in branchGroups)
+                {
+                    <button type="button" 
+                            class="btn btn-group-filter @(selectedGroupId == group.Id ? "btn-primary" : "btn-outline-secondary")"
+                            style="border-color: @group.DisplayColorHex; @(selectedGroupId == group.Id ? $"background-color: {group.DisplayColorHex}; border-color: {group.DisplayColorHex};" : "")"
+                            onclick="filterBranchContacts(@group.Id)">
+                        <i class="fa @group.DisplayIconClass me-1"></i>
+                        @group.Title
+                        <span class="badge bg-white text-dark ms-1">@group.ActiveMembersCount</span>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- جدول افراد -->
 @if (Model != null && Model.Any())
 {
     <div class="table-responsive">
-        <table class="table table-striped table-vcenter">
+        <table class="table table-striped table-vcenter" id="branchContactsTable">
             <thead>
                 <tr>
+                    <th>
+                        <input type="checkbox" id="selectAll" class="form-check-input" 
+                               onchange="toggleSelectAll(this)">
+                    </th>
                     <th>نام فرد</th>
                     <th>شماره تماس</th>
                     <th>ایمیل</th>
                     <th>نوع رابطه</th>
+                    <th>گروه‌ها</th>
                     <th>تاریخ اختصاص</th>
                     <th class="text-center">وضعیت</th>
                     <th class="text-center">عملیات</th>
@@ -38,6 +95,36 @@
             </tbody>
         </table>
     </div>
+
+    <!-- ⭐⭐⭐ دکمه‌های عملیات دسته‌جمعی ⭐⭐⭐ -->
+    <div class="card mt-3" id="bulkActionsPanel" style="display: none;">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="fa fa-tasks me-2"></i>
+                عملیات دسته‌جمعی
+                <span class="badge bg-primary ms-2" id="selectedCountBadge">0 نفر انتخاب شده</span>
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="btn-group" role="group">
+                <!-- افزودن به گروه -->
+                <button type="button" class="btn btn-info" onclick="showAddToGroupModal()">
+                    <i class="fa fa-layer-group me-1"></i>
+                    افزودن به گروه
+                </button>
+                <!-- ارسال SMS -->
+                <button type="button" class="btn btn-success" onclick="showSendSmsModal()">
+                    <i class="fa fa-sms me-1"></i>
+                    ارسال پیامک
+                </button>
+                <!-- ارسال ایمیل -->
+                <button type="button" class="btn btn-warning" onclick="showSendEmailModal()">
+                    <i class="fa fa-envelope me-1"></i>
+                    ارسال ایمیل
+                </button>
+            </div>
+        </div>
+    </div>
 }
 else
 {
@@ -46,8 +133,365 @@ else
         <p class="text-muted">هیچ فردی به این شعبه اختصاص نیافته است</p>
         <button type="button" class="btn btn-primary"
                 data-toggle="modal-ajax"
-                href="@Url.Action("AddContactToBranch", "Branch", new { branchId = ViewContext.RouteData.Values["id"] })">
+                href="@Url.Action("AddContactToBranch", "Branch", new { branchId })">
             <i class="fa fa-plus me-1"></i> افزودن اولین فرد
         </button>
     </div>
+}
+
+@section Scripts {
+    <script>
+        // متغیرهای سراسری
+        let selectedBranchContacts = [];
+        const branchId = @branchId;
+
+        // ⭐⭐⭐ فیلتر افراد بر اساس گروه
+        function filterBranchContacts(groupId) {
+            const url = groupId 
+                ? `/AdminArea/BranchContactGroups/GetGroupMembers?groupId=${groupId}`
+                : null;
+
+            if (!url) {
+                // نمایش همه افراد
+                $('#branchContactsTableBody tr').show();
+                return;
+            }
+
+            // درخواست AJAX
+            $.get(url, function(response) {
+                if (response.success) {
+                    const memberIds = response.data.map(m => m.Id);
+                    
+                    // مخفی کردن همه ردیف‌ها
+                    $('#branchContactsTableBody tr').hide();
+                    
+                    // نمایش فقط اعضای گروه
+                    memberIds.forEach(id => {
+                        $(`#branchContactsTableBody tr[data-branch-contact-id="${id}"]`).show();
+                    });
+                }
+            });
+        }
+
+        // ⭐⭐⭐ انتخاب همه
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('#branchContactsTableBody input[type="checkbox"]:visible');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            updateSelectedContacts();
+        }
+
+        // ⭐⭐⭐ بروزرسانی لیست افراد انتخاب شده
+        function updateSelectedContacts() {
+            selectedBranchContacts = [];
+            const checkboxes = document.querySelectorAll('#branchContactsTableBody input[type="checkbox"]:checked');
+            
+            checkboxes.forEach(cb => {
+                const row = cb.closest('tr');
+                selectedBranchContacts.push({
+                    branchContactId: parseInt(row.dataset.branchContactId),
+                    contactId: parseInt(row.dataset.contactId),
+                    name: row.dataset.contactName,
+                    phone: row.dataset.contactPhone,
+                    email: row.dataset.contactEmail
+                });
+            });
+
+            // نمایش/مخفی کردن پنل عملیات
+            const panel = document.getElementById('bulkActionsPanel');
+            const badge = document.getElementById('selectedCountBadge');
+            
+            if (selectedBranchContacts.length > 0) {
+                panel.style.display = 'block';
+                badge.textContent = `${selectedBranchContacts.length} نفر انتخاب شده`;
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        // ⭐⭐⭐ نمایش مودال افزودن به گروه
+        function showAddToGroupModal() {
+            if (selectedBranchContacts.length === 0) {
+                alert('لطفاً ابتدا افراد مورد نظر را انتخاب کنید');
+                return;
+            }
+
+            // ایجاد HTML مودال
+            const modalHtml = `
+                <div class="modal fade" id="addToGroupModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">افزودن ${selectedBranchContacts.length} نفر به گروه</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">انتخاب گروه</label>
+                                    <select id="targetGroupId" class="form-select">
+                                        <option value="">-- انتخاب کنید --</option>
+                                        @foreach (var group in branchGroups)
+                                        {
+                                            <option value="@group.Id">@group.Title</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">یادداشت (اختیاری)</label>
+                                    <textarea id="groupNotes" class="form-control" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                <button type="button" class="btn btn-primary" onclick="submitAddToGroup()">
+                                    <i class="fa fa-check me-1"></i> افزودن
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // حذف مودال قبلی (اگر وجود دارد)
+            $('#addToGroupModal').remove();
+            
+            // اضافه کردن به DOM و نمایش
+            $('body').append(modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('addToGroupModal'));
+            modal.show();
+        }
+
+        // ⭐⭐⭐ ارسال افزودن به گروه
+        function submitAddToGroup() {
+            const groupId = document.getElementById('targetGroupId').value;
+            const notes = document.getElementById('groupNotes').value;
+
+            if (!groupId) {
+                alert('لطفاً یک گروه انتخاب کنید');
+                return;
+            }
+
+            const promises = selectedBranchContacts.map(contact => {
+                return $.post('/AdminArea/BranchContactGroups/AddMember', {
+                    groupId: groupId,
+                    branchContactId: contact.branchContactId,
+                    notes: notes,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                });
+            });
+
+            Promise.all(promises)
+                .then(() => {
+                    alert('افراد با موفقیت به گروه اضافه شدند');
+                    location.reload();
+                })
+                .catch(error => {
+                    alert('خطا در افزودن به گروه');
+                    console.error(error);
+                });
+        }
+
+        // ⭐⭐⭐ نمایش مودال ارسال SMS
+        function showSendSmsModal() {
+            if (selectedBranchContacts.length === 0) {
+                alert('لطفاً ابتدا افراد مورد نظر را انتخاب کنید');
+                return;
+            }
+
+            const recipientsList = selectedBranchContacts.map(c => 
+                `<li>${c.name} - ${c.phone || 'بدون شماره'}</li>`
+            ).join('');
+
+            const modalHtml = `
+                <div class="modal fade" id="sendSmsModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">ارسال پیامک به ${selectedBranchContacts.length} نفر</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <strong>گیرندگان:</strong>
+                                    <ul class="mb-0">${recipientsList}</ul>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">متن پیام (حداکثر 612 کاراکتر)</label>
+                                    <textarea id="smsMessage" class="form-control" rows="5" maxlength="612"></textarea>
+                                    <small class="text-muted">تعداد کاراکتر: <span id="smsCharCount">0</span>/612</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                <button type="button" class="btn btn-success" onclick="submitSendSms()">
+                                    <i class="fa fa-paper-plane me-1"></i> ارسال پیامک
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#sendSmsModal').remove();
+            $('body').append(modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('sendSmsModal'));
+            modal.show();
+
+            // شمارنده کاراکتر
+            $('#smsMessage').on('input', function() {
+                $('#smsCharCount').text($(this).val().length);
+            });
+        }
+
+        // ⭐⭐⭐ ارسال SMS
+        function submitSendSms() {
+            const message = document.getElementById('smsMessage').value.trim();
+            
+            if (!message) {
+                alert('لطفاً متن پیام را وارد کنید');
+                return;
+            }
+
+            const contactIds = selectedBranchContacts.map(c => c.contactId);
+
+            $.post('/AdminArea/Communication/SendBulkSms', {
+                contactIds: contactIds,
+                message: message,
+                branchId: branchId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            })
+            .done(function(response) {
+                if (response.success) {
+                    alert(`پیامک با موفقیت به ${response.successCount} نفر ارسال شد`);
+                    $('#sendSmsModal').modal('hide');
+                } else {
+                    alert('خطا در ارسال پیامک: ' + response.message);
+                }
+            })
+            .fail(function() {
+                alert('خطا در ارسال پیامک');
+            });
+        }
+
+        // ⭐⭐⭐ نمایش مودال ارسال Email
+        function showSendEmailModal() {
+            if (selectedBranchContacts.length === 0) {
+                alert('لطفاً ابتدا افراد مورد نظر را انتخاب کنید');
+                return;
+            }
+
+            const recipientsList = selectedBranchContacts.map(c => 
+                `<li>${c.name} - ${c.email || 'بدون ایمیل'}</li>`
+            ).join('');
+
+            const modalHtml = `
+                <div class="modal fade" id="sendEmailModal" tabindex="-1">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">ارسال ایمیل به ${selectedBranchContacts.length} نفر</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <strong>گیرندگان:</strong>
+                                    <ul class="mb-0">${recipientsList}</ul>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">موضوع</label>
+                                    <input type="text" id="emailSubject" class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">متن ایمیل</label>
+                                    <textarea id="emailBody" class="form-control" rows="10"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                <button type="button" class="btn btn-warning" onclick="submitSendEmail()">
+                                    <i class="fa fa-paper-plane me-1"></i> ارسال ایمیل
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#sendEmailModal').remove();
+            $('body').append(modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('sendEmailModal'));
+            modal.show();
+        }
+
+        // ⭐⭐⭐ ارسال Email
+        function submitSendEmail() {
+            const subject = document.getElementById('emailSubject').value.trim();
+            const body = document.getElementById('emailBody').value.trim();
+            
+            if (!subject || !body) {
+                alert('لطفا موضوع و متن ایمیل را وارد کنید');
+                return;
+            }
+
+            const contactIds = selectedBranchContacts.map(c => c.contactId);
+
+            $.post('/AdminArea/Communication/SendBulkEmail', {
+                contactIds: contactIds,
+                subject: subject,
+                body: body,
+                branchId: branchId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            })
+            .done(function(response) {
+                if (response.success) {
+                    alert(`ایمیل با موفقیت به ${response.successCount} نفر ارسال شد`);
+                    $('#sendEmailModal').modal('hide');
+                } else {
+                    alert('خطا در ارسال ایمیل: ' + response.message);
+                }
+            })
+            .fail(function() {
+                alert('خطا در ارسال ایمیل');
+            });
+        }
+
+        // ⭐ رویداد تغییر checkbox ها
+        $(document).on('change', '#branchContactsTableBody input[type="checkbox"]', function() {
+            updateSelectedContacts();
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .btn-group-filter {
+            transition: all 0.3s ease;
+        }
+
+        .btn-group-filter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-group-container {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        #bulkActionsPanel {
+            animation: slideDown 0.3s ease;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 }

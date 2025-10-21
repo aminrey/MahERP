@@ -101,7 +101,7 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         public int TotalVisibleMembersCount { get; set; }
 
         // خصوصیات محاسبه شده
-        public string ParentBranchName => ParentBranch?.Name;
+        public string ParentBranchName { get; set; }
         public string StatusText => IsActive ? "فعال" : "غیرفعال";
         public string BranchTypeText => IsMainBranch ? "شعبه اصلی" : "شعبه فرعی";
     }

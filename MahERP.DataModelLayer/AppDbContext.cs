@@ -121,6 +121,27 @@ namespace MahERP.DataModelLayer
         public DbSet<UserPermission> UserPermission_Tbl { get; set; }
         public DbSet<PermissionChangeLog> PermissionChangeLog_Tbl { get; set; }
 
+
+        /// <summary>
+        /// گروه‌های افراد در سطح کل سیستم
+        /// </summary>
+        public DbSet<ContactGroup> ContactGroup_Tbl { get; set; }
+
+        /// <summary>
+        /// اعضای گروه‌های کل سیستم
+        /// </summary>
+        public DbSet<ContactGroupMember> ContactGroupMember_Tbl { get; set; }
+
+        /// <summary>
+        /// گروه‌های افراد در سطح شعبه
+        /// </summary>
+        public DbSet<BranchContactGroup> BranchContactGroup_Tbl { get; set; }
+
+        /// <summary>
+        /// اعضای گروه‌های شعبه
+        /// </summary>
+        public DbSet<BranchContactGroupMember> BranchContactGroupMember_Tbl { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

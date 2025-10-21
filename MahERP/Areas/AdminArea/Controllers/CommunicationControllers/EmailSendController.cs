@@ -17,7 +17,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MahERP.Attributes;
 
-namespace MahERP.Areas.AdminArea.Controllers.ComunicationControllers
+namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
 {
     [Area("AdminArea")]
     [Authorize]

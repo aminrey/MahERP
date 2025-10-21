@@ -353,6 +353,139 @@ namespace MahERP.DataModelLayer.Repository
 
             return updatedCount;
         }
+
+        // ====================  ارسال به گروه‌ها ====================
+
+        /// <summary>
+        /// ارسال پیامک به یک گروه کامل (System Level)
+        /// </summary>
+        public async Task<SmsBulkResult> SendToContactGroupAsync(
+            int groupId,
+            string message,
+            string senderUserId,
+            int? providerId = null)
+        {
+            var result = new SmsBulkResult
+            {
+                GroupId = groupId,
+                GroupType = "System"
+            };
+
+            try
+            {
+                // دریافت گروه
+                var group = _context.ContactGroup_Tbl
+                    .Include(g => g.Members.Where(m => m.IsActive))
+                        .ThenInclude(m => m.Contact)
+                    .FirstOrDefault(g => g.Id == groupId);
+
+                if (group == null)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = "گروه یافت نشد";
+                    return result;
+                }
+
+                result.GroupTitle = group.Title;
+
+                // دریافت Contact IDs
+                var contactIds = group.Members
+                    .Where(m => m.IsActive && m.Contact != null)
+                    .Select(m => m.ContactId)
+                    .ToList();
+
+                if (!contactIds.Any())
+                {
+                    result.Success = false;
+                    result.ErrorMessage = "گروه خالی است";
+                    return result;
+                }
+
+                // ارسال دسته‌جمعی
+                var logs = await SendToMultipleContactsAsync(contactIds, message, senderUserId, providerId);
+
+                result.Logs = logs;
+                result.TotalSent = logs.Count;
+                result.SuccessCount = logs.Count(l => l.IsSuccess);
+                result.FailedCount = logs.Count - result.SuccessCount;
+                result.Success = true;
+                result.Message = $"پیامک به {result.SuccessCount} نفر از {result.TotalSent} نفر گروه '{group.Title}' ارسال شد";
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"خطا در ارسال: {ex.Message}";
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// ارسال پیامک به گروه شعبه (Branch Level)
+        /// </summary>
+        public async Task<SmsBulkResult> SendToBranchContactGroupAsync(
+            int branchGroupId,
+            string message,
+            string senderUserId,
+            int? providerId = null)
+        {
+            var result = new SmsBulkResult
+            {
+                GroupId = branchGroupId,
+                GroupType = "Branch"
+            };
+
+            try
+            {
+                // دریافت گروه شعبه
+                var group = _context.BranchContactGroup_Tbl
+                    .Include(g => g.Members.Where(m => m.IsActive))
+                        .ThenInclude(m => m.BranchContact)
+                            .ThenInclude(bc => bc.Contact)
+                    .FirstOrDefault(g => g.Id == branchGroupId);
+
+                if (group == null)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = "گروه شعبه یافت نشد";
+                    return result;
+                }
+
+                result.GroupTitle = group.Title;
+
+                // دریافت Contact IDs
+                var contactIds = group.Members
+                    .Where(m => m.IsActive && m.BranchContact?.Contact != null)
+                    .Select(m => m.BranchContact.ContactId)
+                    .ToList();
+
+                if (!contactIds.Any())
+                {
+                    result.Success = false;
+                    result.ErrorMessage = "گروه شعبه خالی است";
+                    return result;
+                }
+
+                // ارسال دسته‌جمعی
+                var logs = await SendToMultipleContactsAsync(contactIds, message, senderUserId, providerId);
+
+                result.Logs = logs;
+                result.TotalSent = logs.Count;
+                result.SuccessCount = logs.Count(l => l.IsSuccess);
+                result.FailedCount = logs.Count - result.SuccessCount;
+                result.Success = true;
+                result.Message = $"پیامک به {result.SuccessCount} نفر از {result.TotalSent} نفر گروه شعبه '{group.Title}' ارسال شد";
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"خطا در ارسال: {ex.Message}";
+                return result;
+            }
+        }
     }
 
     // ========== مدل آمار ==========

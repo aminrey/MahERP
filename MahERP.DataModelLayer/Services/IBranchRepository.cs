@@ -159,42 +159,56 @@ namespace MahERP.DataModelLayer.Services
         /// </summary>
         List<BranchContact> GetBranchContacts(int branchId, bool includeInactive = false);
 
-        /// <summary>
-        /// دریافت یک BranchContact با شناسه
-        /// </summary>
-        BranchContact GetBranchContactById(int id);
+
+
+
 
         /// <summary>
-        /// بررسی اینکه آیا فرد قبلاً به شعبه اضافه شده
+        /// ⭐ NEW: دریافت افراد قابل افزودن به شعبه
+        /// (افرادی که هنوز به این شعبه اختصاص نیافته‌اند)
+        /// </summary>
+        List<Contact> GetAvailableContactsForBranch(int branchId);
+
+        /// <summary>
+        /// ⭐ NEW: دریافت سازمان‌های قابل افزودن به شعبه
+        /// (سازمان‌هایی که هنوز به این شعبه اختصاص نیافته‌اند)
+        /// </summary>
+        List<Organization> GetAvailableOrganizationsForBranch(int branchId);
+
+        /// <summary>
+        /// ⭐ NEW: بررسی اینکه آیا فرد قبلاً به شعبه اختصاص یافته است
         /// </summary>
         bool IsContactAssignedToBranch(int branchId, int contactId);
 
         /// <summary>
-        /// دریافت لیست افراد قابل اضافه شدن به شعبه (افرادی که قبلاً اضافه نشده‌اند)
-        /// </summary>
-        List<MahERP.DataModelLayer.Entities.Contacts.Contact> GetAvailableContactsForBranch(int branchId);
-
-        // ⭐⭐⭐ NEW: BranchOrganization Methods ⭐⭐⭐
-
-        /// <summary>
-        /// دریافت لیست سازمان‌های مرتبط با شعبه
-        /// </summary>
-        List<BranchOrganization> GetBranchOrganizations(int branchId, bool includeInactive = false);
-
-        /// <summary>
-        /// دریافت یک BranchOrganization با شناسه
-        /// </summary>
-        BranchOrganization GetBranchOrganizationById(int id);
-
-        /// <summary>
-        /// بررسی اینکه آیا سازمان قبلاً به شعبه اضافه شده
+        /// ⭐ NEW: بررسی اینکه آیا سازمان قبلاً به شعبه اختصاص یافته است
         /// </summary>
         bool IsOrganizationAssignedToBranch(int branchId, int organizationId);
 
         /// <summary>
-        /// دریافت لیست سازمان‌های قابل اضافه شدن به شعبه
+        /// ⭐ NEW: دریافت BranchContact با شناسه
         /// </summary>
-        List<Organization> GetAvailableOrganizationsForBranch(int branchId);
+        BranchContact GetBranchContactById(int id);
+
+        /// <summary>
+        /// ⭐ NEW: دریافت BranchOrganization با شناسه
+        /// </summary>
+        BranchOrganization GetBranchOrganizationById(int id);
+
+        /// <summary>
+        /// ⭐ NEW: دریافت لیست BranchContacts یک شعبه
+        /// </summary>
+        List<BranchContact> GetBranchContacts(int branchId);
+
+        /// <summary>
+        /// ⭐ NEW: دریافت لیست BranchOrganizations یک شعبه
+        /// </summary>
+        List<BranchOrganization> GetBranchOrganizations(int branchId);
+
+
+
+
+
 
         /// <summary>
         /// دریافت تمام افراد نمایان در شعبه (افراد مستقیم + اعضای سازمان‌ها)

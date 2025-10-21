@@ -6,6 +6,7 @@ using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Repository.ContactGroupRepository;
 using MahERP.DataModelLayer.Repository.ContactRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels;
@@ -27,12 +28,14 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
     public class ContactsController : BaseController
     {
         private readonly IContactRepository _contactRepository;
+        private readonly IContactGroupRepository _groupRepository; // ⭐ NEW
         private readonly IUnitOfWork _uow;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
 
         public ContactsController(
             IContactRepository contactRepository,
+            IContactGroupRepository groupRepository, // ⭐ NEW
             IUnitOfWork uow,
             UserManager<AppUsers> userManager,
             IMapper mapper,
@@ -43,6 +46,7 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
             : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _contactRepository = contactRepository;
+            _groupRepository = groupRepository; // ⭐ NEW
             _uow = uow;
             _userManager = userManager;
             _mapper = mapper;
@@ -54,16 +58,24 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
         /// لیست افراد
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> Index(string searchTerm = null, byte? gender = null, bool includeInactive = false)
+        public async Task<IActionResult> Index(string searchTerm = null, byte? gender = null, int? groupId = null, bool includeInactive = false)
         {
             try
             {
                 List<Contact> contacts;
 
-                if (!string.IsNullOrWhiteSpace(searchTerm))
+                // اگر گروه انتخاب شده
+                if (groupId.HasValue)
+                {
+                    contacts = _groupRepository.GetGroupContacts(groupId.Value, includeInactive);
+                    ViewBag.SelectedGroupId = groupId.Value;
+                }
+                // جستجو
+                else if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     contacts = _contactRepository.SearchContacts(searchTerm, gender, includeInactive);
                 }
+                // همه افراد
                 else
                 {
                     contacts = _contactRepository.GetAllContacts(includeInactive);
@@ -73,6 +85,19 @@ namespace MahERP.Areas.AdminArea.Controllers.ContactControllers
                 }
 
                 var viewModels = _mapper.Map<List<ContactViewModel>>(contacts);
+
+                // ⭐ دریافت لیست گروه‌ها برای فیلتر
+                var allGroups = _groupRepository.GetAllGroups(includeInactive: false);
+                ViewBag.ContactGroups = allGroups;
+
+                // ⭐ دریافت گروه‌های هر فرد (برای نمایش در جدول)
+                var contactIds = contacts.Select(c => c.Id).ToList();
+                var contactGroupsDict = new Dictionary<int, List<ContactGroup>>();
+                foreach (var contactId in contactIds)
+                {
+                    contactGroupsDict[contactId] = _groupRepository.GetContactGroups(contactId);
+                }
+                ViewBag.ContactGroupsDict = contactGroupsDict;
 
                 ViewBag.SearchTerm = searchTerm;
                 ViewBag.Gender = gender;
