@@ -5,7 +5,9 @@ using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Entities.Organizations;
 using MahERP.DataModelLayer.Repository.ContactRepository;
+using MahERP.DataModelLayer.Repository.OrganizationGroupRepository;
 using MahERP.DataModelLayer.Repository.OrganizationRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
@@ -32,11 +34,15 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
         private readonly IUnitOfWork _uow;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
+        private readonly IOrganizationGroupRepository _organizationGroupRepository;
+
 
         public OrganizationsController(
             IOrganizationRepository organizationRepository,
             IContactRepository contactRepository,
             IUnitOfWork uow,
+                IOrganizationGroupRepository organizationGroupRepository, 
+
             UserManager<AppUsers> userManager,
             IMapper mapper,
             PersianDateHelper persianDateHelper,
@@ -50,31 +56,51 @@ namespace MahERP.Areas.AdminArea.Controllers.OrganizationControllers
             _uow = uow;
             _userManager = userManager;
             _mapper = mapper;
+            _organizationGroupRepository = organizationGroupRepository; 
+
         }
 
         // ==================== INDEX ====================
 
-        /// <summary>
-        /// لیست سازمان‌ها
-        /// </summary>
         [HttpGet]
         [PermissionRequired("ORG.VIEW")]
-        public async Task<IActionResult> Index(string searchTerm = null, byte? organizationType = null)
+        public async Task<IActionResult> Index(string searchTerm = null, byte? organizationType = null, int? groupId = null)
         {
             try
             {
                 List<Organization> organizations;
 
-                if (!string.IsNullOrWhiteSpace(searchTerm))
+                // اگر گروه انتخاب شده
+                if (groupId.HasValue)
+                {
+                    organizations = _organizationGroupRepository.GetGroupOrganizations(groupId.Value, includeInactive: false);
+                    ViewBag.SelectedGroupId = groupId.Value;
+                }
+                // جستجو
+                else if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     organizations = _organizationRepository.SearchOrganizations(searchTerm, organizationType, true);
                 }
+                // همه سازمان‌ها
                 else
                 {
                     organizations = _organizationRepository.GetAllOrganizations(true, organizationType);
                 }
 
                 var viewModels = _mapper.Map<List<OrganizationViewModel>>(organizations);
+
+                // ⭐ دریافت لیست گروه‌ها برای فیلتر
+                var allGroups = _organizationGroupRepository.GetAllGroups(includeInactive: false);
+                ViewBag.OrganizationGroups = allGroups;
+
+                // ⭐ دریافت گروه‌های هر سازمان (برای نمایش در جدول)
+                var organizationIds = organizations.Select(o => o.Id).ToList();
+                var organizationGroupsDict = new Dictionary<int, List<OrganizationGroup>>();
+                foreach (var orgId in organizationIds)
+                {
+                    organizationGroupsDict[orgId] = _organizationGroupRepository.GetOrganizationGroups(orgId);
+                }
+                ViewBag.OrganizationGroupsDict = organizationGroupsDict;
 
                 ViewBag.SearchTerm = searchTerm;
                 ViewBag.OrganizationType = organizationType;

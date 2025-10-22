@@ -47,4 +47,38 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         [Display(Name = "عمیق‌ترین سطح سلسله مراتب")]
         public int MaxDepartmentDepth { get; set; }
     }
+
+        /// <summary>
+        /// آمار کلی گروه‌های سازمان‌ها
+        /// </summary>
+        public class OrganizationGroupStatisticsViewModel
+        {
+            /// <summary>
+            /// کل تعداد گروه‌ها
+            /// </summary>
+            public int TotalGroups { get; set; }
+
+            /// <summary>
+            /// تعداد گروه‌های فعال
+            /// </summary>
+            public int ActiveGroups { get; set; }
+
+            /// <summary>
+            /// کل تعداد سازمان‌ها در سیستم
+            /// </summary>
+            public int TotalOrganizations { get; set; }
+
+            /// <summary>
+            /// تعداد سازمان‌هایی که حداقل در یک گروه هستند
+            /// </summary>
+            public int GroupedOrganizations { get; set; }
+
+            /// <summary>
+            /// درصد سازمان‌های گروه‌بندی شده
+            /// </summary>
+            public decimal GroupedPercentage => TotalOrganizations > 0
+                ? Math.Round((decimal)GroupedOrganizations / TotalOrganizations * 100, 2)
+                : 0;
+        }
+    
 }

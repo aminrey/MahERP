@@ -1,7 +1,8 @@
-﻿@{
+﻿@using MahERP.DataModelLayer.Entities.Contacts
+@{
     var groupId = ViewBag.GroupId;
     var groupTitle = ViewBag.GroupTitle;
-    var availableContacts = ViewBag.AvailableContacts as List<Contact>;
+    var availableOrganizations = ViewBag.AvailableOrganizations as List<Organization>;
 }
 
 <div class="modal-dialog modal-lg">
@@ -9,8 +10,8 @@
         <div class="block block-rounded mb-0">
             <div class="block-header bg-primary-dark">
                 <h3 class="block-title text-white">
-                    <i class="fa fa-user-plus me-2"></i>
-                    افزودن عضو به گروه: @groupTitle
+                    <i class="fa fa-building me-2"></i>
+                    افزودن سازمان به گروه: @groupTitle
                 </h3>
                 <div class="block-options">
                     <button type="button" class="btn-block-option" data-bs-dismiss="modal">
@@ -24,35 +25,36 @@
                 <input type="hidden" name="groupId" value="@groupId" />
 
                 <div class="block-content">
-                    @if (availableContacts != null && availableContacts.Any())
+                    @if (availableOrganizations != null && availableOrganizations.Any())
                     {
                         <div class="mb-4">
                             <div class="form-floating">
-                                <select name="contactId" class="form-select" id="contactId" required>
+                                <select name="organizationId" class="form-select" id="organizationId" required>
                                     <option value="">-- انتخاب کنید --</option>
-                                    @foreach (var contact in availableContacts)
+                                    @foreach (var org in availableOrganizations)
                                     {
-                                        <option value="@contact.Id">
-                                            @contact.FullName
-                                            @if (!string.IsNullOrEmpty(contact.PrimaryEmail))
+                                        <option value="@org.Id">
+                                            @org.DisplayName
+                                            @if (!string.IsNullOrEmpty(org.RegistrationNumber))
                                             {
-                                                <text> - @contact.PrimaryEmail</text>
+                                                <text> - ثبت: @org.RegistrationNumber</text>
                                             }
+                                            - @org.OrganizationTypeText
                                         </option>
                                     }
                                 </select>
-                                <label for="contactId">انتخاب فرد *</label>
+                                <label for="organizationId">انتخاب سازمان *</label>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <div class="form-floating">
-                                <textarea name="notes"
-                                      class="form-control"
-                                      id="notes"
-                                      rows="3"
-                                      style="height: 100px;"
-                                      placeholder="توضیحات درباره افزودن این فرد..."></textarea>
+                                <textarea name="notes" 
+                                          class="form-control" 
+                                          id="notes" 
+                                          rows="3" 
+                                          style="height: 100px;"
+                                          placeholder="توضیحات درباره افزودن این سازمان..."></textarea>
                                 <label for="notes">یادداشت (اختیاری)</label>
                             </div>
                         </div>
@@ -66,7 +68,7 @@
                                 </div>
                                 <div class="flex-grow-1 ms-3">
                                     <p class="mb-0">
-                                        تمام افراد فعال سیستم قبلاً به این گروه اضافه شده‌اند.
+                                        تمام سازمان‌های فعال سیستم قبلاً به این گروه اضافه شده‌اند.
                                     </p>
                                 </div>
                             </div>
@@ -78,7 +80,7 @@
                     <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal">
                         <i class="fa fa-times me-1"></i> انصراف
                     </button>
-                    @if (availableContacts != null && availableContacts.Any())
+                    @if (availableOrganizations != null && availableOrganizations.Any())
                     {
                         <button type="button" class="btn btn-sm btn-primary" data-save="modal-ajax-save">
                             <i class="fa fa-check me-1"></i> افزودن

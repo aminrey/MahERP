@@ -14,15 +14,17 @@ using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Threading.Tasks;
 using MahERP.Attributes;
+using AutoMapper;
 
 namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
 {
     [Area("AdminArea")]
     [Authorize]
-    [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+    [PermissionRequired("COMMUNICATION.SMS")]
     public class SmsProviderController : BaseController
     {
         private readonly ISmsProviderRepository _providerRepo;
+        private readonly IMapper _Mapper;
 
         public SmsProviderController(
             ISmsProviderRepository providerRepo,
@@ -30,17 +32,19 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
             UserManager<AppUsers> userManager,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
+            IMapper Mapper,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository)
             : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository)
         {
             _providerRepo = providerRepo;
+            _Mapper = Mapper;
         }
 
         // ========== لیست Providers ==========
 
         [HttpGet]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public IActionResult Index()
         {
             var providers = _providerRepo.GetAllProviders();
@@ -67,16 +71,16 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
         // ========== ایجاد Provider جدید ==========
 
         [HttpGet]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public IActionResult Create()
         {
-            return View(new SmsProvider());
+            return View(new SmsProviderViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
-        public async Task<IActionResult> Create(SmsProvider model)
+        [PermissionRequired("COMMUNICATION.SMS")]
+        public async Task<IActionResult> Create(SmsProviderViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -88,11 +92,11 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
                 model.ProviderCode = model.ProviderCode.ToUpper();
                 model.CreatedDate = DateTime.Now;
                 model.CreatorUserId = currentUser.Id;
+                var mappedModel = _Mapper.Map<SmsProvider>(model);
+                _providerRepo.CreateProvider(mappedModel);
 
-                _providerRepo.CreateProvider(model);
-
-                if (model.IsDefault)
-                    _providerRepo.SetAsDefaultProvider(model.Id);
+                if (mappedModel.IsDefault)
+                    _providerRepo.SetAsDefaultProvider(mappedModel.Id);
 
                 TempData["SuccessMessage"] = "خدمات‌دهنده با موفقیت ایجاد شد";
                 return RedirectToAction(nameof(Index));
@@ -107,7 +111,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
         // ========== ویرایش Provider ==========
 
         [HttpGet]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public IActionResult Edit(int id)
         {
             var providers = _providerRepo.GetAllProviders();
@@ -121,7 +125,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public async Task<IActionResult> Edit(int id, SmsProvider model)
         {
             if (id != model.Id)
@@ -156,7 +160,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public IActionResult Delete(int id)
         {
             try
@@ -180,7 +184,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
         // ========== تنظیم پیش‌فرض ==========
 
         [HttpPost]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public IActionResult SetAsDefault(int id)
         {
             try
@@ -197,7 +201,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
         // ========== تست اتصال ==========
 
         [HttpPost]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public async Task<IActionResult> TestConnection(int id)
         {
             try
@@ -233,7 +237,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
         // ========== بروزرسانی اعتبار ==========
 
         [HttpPost]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public async Task<IActionResult> UpdateCredit(int id)
         {
             try
@@ -258,7 +262,7 @@ namespace MahERP.Areas.AdminArea.Controllers.CommunicationControllers
         // ========== بروزرسانی اعتبار همه ==========
 
         [HttpPost]
-        [PermissionRequired("COMMUNICATION.SMS.PROVIDER")]
+        [PermissionRequired("COMMUNICATION.SMS")]
         public async Task<IActionResult> UpdateAllCredits()
         {
             try

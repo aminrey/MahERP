@@ -16,24 +16,24 @@ namespace MahERP.DataModelLayer.ViewModels
         public string ProviderName { get; set; }
 
         [Display(Name = "توضیحات")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [Required(ErrorMessage = "نام کاربری الزامی است")]
         [Display(Name = "نام کاربری")]
-        public string Username { get; set; }
+        public string? Username { get; set; }
 
         [Required(ErrorMessage = "رمز عبور الزامی است")]
         [Display(Name = "رمز عبور")]
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         [Display(Name = "شماره اختصاصی")]
-        public string SenderNumber { get; set; }
+        public string? SenderNumber { get; set; }
 
         [Display(Name = "API URL")]
-        public string ApiUrl { get; set; }
+        public string? ApiUrl { get; set; }
 
         [Display(Name = "API Key")]
-        public string ApiKey { get; set; }
+        public string? ApiKey { get; set; }
 
         [Display(Name = "پیش‌فرض")]
         public bool IsDefault { get; set; }
@@ -46,7 +46,7 @@ namespace MahERP.DataModelLayer.ViewModels
 
         public DateTime? LastCreditCheckDate { get; set; }
         public DateTime CreatedDate { get; set; }
-        public string CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; }
 
         // برای نمایش
         public string StatusText => IsActive ? "فعال" : "غیرفعال";

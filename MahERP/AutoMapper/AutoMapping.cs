@@ -4,6 +4,7 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts; // ⭐ NEW
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Entities.Organizations;
 using MahERP.DataModelLayer.Entities.Sms;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels;
@@ -743,6 +744,40 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
 
+            // OrganizationGroup -> OrganizationGroupViewModel
+            CreateMap<OrganizationGroup, OrganizationGroupViewModel>()
+                .ForMember(dest => dest.MembersCount,
+                    opt => opt.MapFrom(src => src.ActiveMembersCount))
+                .ForMember(dest => dest.CreatedDatePersian,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")))
+                .ForMember(dest => dest.CreatorName,
+                    opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : ""));
+
+            // OrganizationGroupViewModel -> OrganizationGroup
+            CreateMap<OrganizationGroupViewModel, OrganizationGroup>()
+                .ForMember(dest => dest.Members, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
+
+            // BranchOrganizationGroup -> BranchOrganizationGroupViewModel
+            CreateMap<BranchOrganizationGroup, BranchOrganizationGroupViewModel>()
+                .ForMember(dest => dest.BranchName,
+                    opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
+                .ForMember(dest => dest.MembersCount,
+                    opt => opt.MapFrom(src => src.ActiveMembersCount))
+                .ForMember(dest => dest.CreatedDatePersian,
+                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")));
+
+            // BranchOrganizationGroupViewModel -> BranchOrganizationGroup
+            CreateMap<BranchOrganizationGroupViewModel, BranchOrganizationGroup>()
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.Members, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
 
         }
 

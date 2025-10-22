@@ -1,0 +1,140 @@
+﻿@model OrganizationGroupViewModel
+@{
+    ViewData["Title"] = "افزودن گروه جدید";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
+            <div class="flex-grow-1">
+                <h1 class="h3 fw-bold mb-1">افزودن گروه جدید</h1>
+            </div>
+            <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-alt">
+                    <li class="breadcrumb-item">
+                        <a class="link-fx" href="@Url.Action("Index", "Home")">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a class="link-fx" href="@Url.Action("Index")">گروه‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item" aria-current="page">افزودن</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">اطلاعات گروه</h3>
+        </div>
+        <div class="block-content block-content-full">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row push">
+                    <!-- عنوان گروه -->
+                    <div class="col-lg-6 col-xl-4">
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="Title">
+                                عنوان گروه <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" asp-for="Title" placeholder="مثال: مشتریان ویژه">
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- کد گروه -->
+                    <div class="col-lg-6 col-xl-4">
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="Code">
+                                کد گروه <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" asp-for="Code" placeholder="مثال: VIP_CUSTOMERS">
+                            <small class="form-text text-muted">
+                                فقط حروف انگلیسی، اعداد و خط تیره (_)
+                            </small>
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- ترتیب نمایش -->
+                    <div class="col-lg-6 col-xl-4">
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="DisplayOrder">ترتیب نمایش</label>
+                            <input type="number" class="form-control" asp-for="DisplayOrder" min="1">
+                            <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- رنگ -->
+                    <div class="col-lg-6 col-xl-4">
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="ColorHex">رنگ گروه</label>
+                            <div class="input-group">
+                                <input type="color" class="form-control form-control-color" asp-for="ColorHex" value="#6c757d">
+                                <input type="text" class="form-control" asp-for="ColorHex" placeholder="#6c757d">
+                            </div>
+                            <span asp-validation-for="ColorHex" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- آیکون -->
+                    <div class="col-lg-6 col-xl-4">
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="IconClass">آیکون (FontAwesome)</label>
+                            <input type="text" class="form-control" asp-for="IconClass" placeholder="مثال: fa-users">
+                            <small class="form-text text-muted">
+                                <a href="https://fontawesome.com/icons" target="_blank">جستجوی آیکون</a>
+                            </small>
+                            <span asp-validation-for="IconClass" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- وضعیت -->
+                    <div class="col-lg-6 col-xl-4">
+                        <div class="mb-4">
+                            <label class="form-label d-block">وضعیت</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive" checked>
+                                <label class="form-check-label" asp-for="IsActive">فعال</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- توضیحات -->
+                    <div class="col-12">
+                        <div class="mb-4">
+                            <label class="form-label" asp-for="Description">توضیحات</label>
+                            <textarea class="form-control" asp-for="Description" rows="3" placeholder="توضیحات اختیاری..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- دکمه‌ها -->
+                <div class="row push">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-check me-1"></i>
+                            ذخیره
+                        </button>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fa fa-times me-1"></i>
+                            انصراف
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

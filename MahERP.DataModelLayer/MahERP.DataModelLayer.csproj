@@ -38,4 +38,8 @@
     <Folder Include="AminPropt\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Entities\Contacts\BranchOrganizationGroupMember.cs" />
+  </ItemGroup>
+
 </Project>

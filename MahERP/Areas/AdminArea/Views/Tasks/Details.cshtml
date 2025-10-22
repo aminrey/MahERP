@@ -842,12 +842,13 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="input-group input-group-lg">
-                                        <input class="form-control border-2"
+                                        <textarea class="form-control border-2"
                                                id="newOperationTitleInput"
                                                placeholder="عنوان عملیات جدید را وارد کنید و Enter بزنید..."
                                                type="text"
+                                               rows="2"
                                                autocomplete="off"
-                                               maxlength="200" />
+                                               ></textarea>
                                         <button class="btn btn-primary px-4" type="button" id="addNewOperationBtn">
                                             <i class="fa fa-plus me-1"></i>افزودن
                                         </button>
@@ -1421,7 +1422,7 @@ function loadTaskReminders() {
                     success: function(result) {
                         if (result.success) {
                             NotificationHelper.success('عملیات اضافه شد');
-                            $('#newOperationTitleInput').val('');
+                            $('#newOperationTitleInput').text('');
 
                             setTimeout(() => {
                                 DynamicOperationsManager.refreshGroup('pending');

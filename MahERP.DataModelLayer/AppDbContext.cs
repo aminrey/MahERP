@@ -5,6 +5,7 @@ using MahERP.DataModelLayer.Entities.Contacts; // ⭐ جدید
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.Email;
+using MahERP.DataModelLayer.Entities.Organizations;
 using MahERP.DataModelLayer.Entities.Sms;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -142,6 +143,28 @@ namespace MahERP.DataModelLayer
         /// </summary>
         public DbSet<BranchContactGroupMember> BranchContactGroupMember_Tbl { get; set; }
 
+        // ⭐⭐⭐ NEW: Organization Grouping System ⭐⭐⭐
+        
+        /// <summary>
+        /// گروه‌های سازمان‌ها در سطح کل سیستم
+        /// </summary>
+        public DbSet<OrganizationGroup> OrganizationGroup_Tbl { get; set; }
+        
+        /// <summary>
+        /// اعضای گروه‌های کل سیستم
+        /// </summary>
+        public DbSet<OrganizationGroupMember> OrganizationGroupMember_Tbl { get; set; }
+        
+        /// <summary>
+        /// گروه‌های سازمان‌ها در سطح شعبه
+        /// </summary>
+        public DbSet<BranchOrganizationGroup> BranchOrganizationGroup_Tbl { get; set; }
+        
+        /// <summary>
+        /// اعضای گروه‌های شعبه
+        /// </summary>
+        public DbSet<BranchOrganizationGroupMember> BranchOrganizationGroupMember_Tbl { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -153,8 +176,6 @@ namespace MahERP.DataModelLayer
             SeedDefaultPredefinedCopyDescriptions(modelBuilder);
             SeedDefaultRolePatterns(modelBuilder);
 
-            
-         
 
             // ======================== ROLE PATTERN RELATIONSHIPS ========================
             // RolePattern relationships

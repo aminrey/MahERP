@@ -1,0 +1,225 @@
+﻿@model List<OrganizationGroupViewModel>
+@{
+    ViewData["Title"] = "مدیریت گروه‌های سازمان‌ها";
+    var stats = ViewBag.Statistics as OrganizationGroupStatisticsViewModel;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
+            <div class="flex-grow-1">
+                <h1 class="h3 fw-bold mb-1">
+                    <i class="fa fa-layer-group text-primary me-2"></i>
+                    گروه‌های سازمان‌ها
+                </h1>
+                <h2 class="fs-base lh-base fw-medium text-muted mb-0">
+                    مدیریت و دسته‌بندی سازمان‌ها
+                </h2>
+            </div>
+            <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-alt">
+                    <li class="breadcrumb-item">
+                        <a class="link-fx" href="@Url.Action("Index", "Home")">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item" aria-current="page">گروه‌های سازمان‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content">
+    <!-- آمار کلی -->
+    @if (stats != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="block block-rounded bg-primary">
+                    <div class="block-content text-center py-4">
+                        <div class="fs-1 fw-bold text-white mb-1">@stats.TotalGroups</div>
+                        <div class="fs-sm text-white-75">کل گروه‌ها</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-success">
+                    <div class="block-content text-center py-4">
+                        <div class="fs-1 fw-bold text-white mb-1">@stats.ActiveGroups</div>
+                        <div class="fs-sm text-white-75">گروه فعال</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-info">
+                    <div class="block-content text-center py-4">
+                        <div class="fs-1 fw-bold text-white mb-1">@stats.TotalOrganizations</div>
+                        <div class="fs-sm text-white-75">کل سازمان‌ها</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="block block-rounded bg-warning">
+                    <div class="block-content text-center py-4">
+                        <div class="fs-1 fw-bold text-white mb-1">@stats.GroupedOrganizations</div>
+                        <div class="fs-sm text-white-75">سازمان گروه‌بندی شده</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- دکمه افزودن -->
+    <div class="block block-rounded mb-4">
+        <div class="block-content block-content-full">
+            <a href="@Url.Action("Create")" class="btn btn-primary">
+                <i class="fa fa-plus me-1"></i>
+                افزودن گروه جدید
+            </a>
+            <a href="@Url.Action("Index", "Organizations")" class="btn btn-secondary">
+                <i class="fa fa-building me-1"></i>
+                بازگشت به سازمان‌ها
+            </a>
+        </div>
+    </div>
+
+    <!-- لیست گروه‌ها -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                لیست گروه‌ها
+                <span class="badge bg-primary ms-2">@Model.Count گروه</span>
+            </h3>
+        </div>
+        <div class="block-content">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;"></th>
+                                <th>عنوان گروه</th>
+                                <th>کد</th>
+                                <th>توضیحات</th>
+                                <th class="text-center">تعداد اعضا</th>
+                                <th class="text-center">ترتیب</th>
+                                <th class="text-center">وضعیت</th>
+                                <th class="text-center" style="width: 180px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var group in Model.OrderBy(g => g.DisplayOrder))
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            @if (!string.IsNullOrEmpty(group.ColorHex))
+                                            {
+                                                <div class="me-2" style="width: 24px; height: 24px; background-color: @group.ColorHex; border-radius: 4px;"></div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(group.IconClass))
+                                            {
+                                                <i class="fa @group.IconClass fa-lg" style="color: @(group.ColorHex ?? "#6c757d");"></i>
+                                            }
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>@group.Title</strong>
+                                </td>
+                                <td>
+                                    <code>@group.Code</code>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        @(string.IsNullOrEmpty(group.Description) ? "-" :
+                                                                            group.Description.Length > 50 ? group.Description.Substring(0, 50) + "..." : group.Description)
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">@group.MembersCount</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @group.DisplayOrder
+                                    </td>
+                                    <td class="text-center">
+                                        @if (group.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="@Url.Action("ManageMembers", new { groupId = group.Id })"
+                                               class="btn btn-info"
+                                               title="مدیریت اعضا">
+                                                <i class="fa fa-users"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = group.Id })"
+                                               class="btn btn-warning"
+                                               title="ویرایش">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-danger"
+                                                    onclick="deleteGroup(@group.Id, '@group.Title')"
+                                                    title="حذف">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fa fa-layer-group fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">هیچ گروهی یافت نشد</p>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i>
+                        افزودن اولین گروه
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+@section Scripts {
+    <script>
+        function deleteGroup(groupId, groupTitle) {
+            if (confirm(`آیا از حذف گروه "${groupTitle}" اطمینان دارید؟\n\nتوجه: این عمل قابل بازگشت نیست.`)) {
+                $.ajax({
+                    url: '@Url.Action("Delete")',
+                    type: 'POST',
+                    data: {
+                        id: groupId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('خطا: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('خطا در ارتباط با سرور');
+                    }
+                });
+            }
+        }
+    </script>
+}
+
+@Html.AntiForgeryToken()
