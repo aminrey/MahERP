@@ -1,0 +1,195 @@
+﻿@{
+    var errors = ViewData.ModelState.Values.SelectMany(v => v.Errors);
+    // دریافت پیام‌های ResponseMessage از TempData
+    List<MahERP.CommonLayer.ViewModels.WebResponseMessageViewModel> responseMessages = null;
+    if (TempData["ResponseMessages"] != null)
+    {
+        var jsonString = TempData["ResponseMessages"].ToString();
+        try
+        {
+            responseMessages = System.Text.Json.JsonSerializer.Deserialize<List<MahERP.CommonLayer.ViewModels.WebResponseMessageViewModel>>(jsonString);
+        }
+        catch
+        {
+            // در صورت خطا در deserialize، نادیده گرفته می‌شود
+        }
+    }
+}
+
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width,initial-scale=1.0" name="viewport" />
+
+    <title>MahERP Systems</title>
+
+    <meta content="سیستم برنامه‌ریزی منابع سازمانی" name="description" />
+    <meta content="MahERP" name="author" />
+    <meta content="noindex, nofollow" name="robots" />
+
+    <!-- Open Graph Meta -->
+    <meta content="MahERP" property="og:title" />
+    <meta content="MahERP" property="og:site_name" />
+    <meta content="سیستم برنامه‌ریزی منابع سازمانی" property="og:description" />
+    <meta content="website" property="og:type" />
+    <meta content="" property="og:url" />
+    <meta content="" property="og:image" />
+
+    <!-- Icons -->
+    <!-- The following icons can be replaced with your own, they are used by desktop and mobile browsers -->
+    <link href="/assets/media/favicons/favicon.png" rel="shortcut icon" />
+    <link href="/assets/media/favicons/favicon-192x192.png" rel="icon" sizes="192x192" type="image/png" />
+    <link href="/assets/media/favicons/apple-touch-icon-180x180.png" rel="apple-touch-icon" sizes="180x180" />
+    <!-- END Icons -->
+    <!-- Stylesheets -->
+    <!-- Page JS Plugins CSS -->
+    <link href="/assets/js/plugins/datatables-bs5/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="/assets/js/plugins/datatables-buttons-bs5/css/buttons.bootstrap5.min.css" rel="stylesheet" />
+    <link href="/assets/js/plugins/datatables-responsive-bs5/css/responsive.bootstrap5.min.css" rel="stylesheet" />
+    <link href="/assets/js/plugins/raty-js/jquery.raty.css" rel="stylesheet" />
+    <link href="/assets/js/plugins/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet" />
+    <link href="/assets/js/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="/assets/js/plugins/dropzone/min/dropzone.min.css" rel="stylesheet" />
+    <link href="/assets/js/plugins/flatpickr/flatpickr.min.css" rel="stylesheet" />
+    <!-- Dashmix framework -->
+    <link href="/assets/css/dashmix.min.css" id="css-main" rel="stylesheet" />
+	<link href="~/assets/js/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <!-- 💙 Core Theme: xDream (Blue Dream) -->
+    <link rel="stylesheet" id="css-theme" href="/assets/css/themes/xeco.min.css">
+    <!-- You can include a specific file from css/themes/ folder to alter the default color theme of the template -->
+    <link rel="stylesheet" id="css-theme" href="/assets/css/themes/xpro.min.css">
+    <link href="/assets/css/notifications.css" rel="stylesheet" />
+	<link href="~/assets/css/taskingstyles.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link href="/assets/css/custom-fonts.css" rel="stylesheet" />
+    <link href="/assets/css/CustomStyle.css" rel="stylesheet" />
+    @RenderSection("styles", required: false)
+
+</head>
+
+<body>
+    <!-- Page Container -->
+    <div class="rtl-support sidebar-o sidebar-dark enable-page-overlay side-scroll page-header-fixed main-content-narrow remember-theme" id="page-container">
+
+        <!-- Side Overlay-->
+        <partial name="_SideOverlay" />
+        <!-- END Side Overlay -->
+        <!-- Sidebar -->
+        <partial name="_SideBarPartial" />
+        <!-- END Sidebar -->
+        <!-- Header -->
+        <partial name="_Headerpartial" />
+        <!-- END Header -->
+        <!-- Main Container -->
+        <main id="main-container" class="content-top-padding">
+            @RenderBody()
+        </main>
+        <!-- END Main Container -->
+        <!-- Footer -->
+        <partial name="_FooterPartial" />
+        <!-- END Footer -->
+    </div>
+    <!-- END Page Container -->
+    <!--
+      Dashmix JS
+      Core libraries and functionality
+    -->
+    <script src="/assets/js/dashmix.app.min.js"></script>
+    <script src="/assets/js/lib/jquery.min.js"></script>
+    <script src="/assets/js/main.js"></script>
+
+    <!-- Page JS Plugins -->
+    <script src="/assets/js/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="/assets/js/plugins/select2/js/select2.full.min.js"></script>
+    <script src="/assets/js/plugins/bootstrap-notify/bootstrap-notify.min.js"></script>
+    <script src="/assets/js/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="/assets/js/plugins/dropzone/min/dropzone.min.js"></script>
+    <script src="/assets/js/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="/assets/js/plugins/datatables-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="/assets/js/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="/assets/js/plugins/datatables-responsive-bs5/js/responsive.bootstrap5.min.js"></script>
+    <script src="/assets/js/plugins/datatables-buttons/dataTables.buttons.min.js"></script>
+    <script src="/assets/js/plugins/datatables-buttons-bs5/js/buttons.bootstrap5.min.js"></script>
+    <script src="/assets/js/plugins/datatables-buttons-jszip/jszip.min.js"></script>
+    <script src="/assets/js/plugins/datatables-buttons-pdfmake/pdfmake.min.js"></script>
+    <script src="/assets/js/plugins/datatables-buttons-pdfmake/vfs_fonts.js"></script>
+    <script src="/assets/js/plugins/datatables-buttons/buttons.print.min.js"></script>
+    <script src="/assets/js/plugins/datatables-buttons/buttons.html5.min.js"></script>
+    <script src="/assets/js/plugins/raty-js/jquery.raty.js"></script>
+    <script src="/assets/js/plugins/flatpickr/flatpickr.min.js"></script>
+    <!-- Page JS Code -->
+    <script src="/assets/js/pages/be_tables_datatables.min.js"></script>
+    <script src="/assets/js/pages/be_comp_rating.min.js"></script>
+	<script src="~/assets/js/plugins/sweetalert2/sweetalert2.all.min.js"></script>
+	
+    <script src="~/lib/tinymce/tinymce.min.js"></script>
+    <script src="~/assets/js/tinymceConfig.js"></script>
+
+    <!-- Page JS Helpers -->
+    <script>
+        Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-select2', 'dm-table-tools-sections', 'jq-slick', 'bs-tooltip', 'jq-notify']);
+    </script>
+
+    <!-- Error notifications from ModelState -->
+    <script>
+        @foreach (var item in errors)
+        {
+                <text>
+                    Dashmix.helpers('jq-notify', { type: 'danger', icon: 'fa fa-times me-1', message: "@Html.Raw(item.ErrorMessage) " });
+                </text>
+        }
+    </script>
+
+    <!-- Response Messages from TempData -->
+    <script>
+        @if (responseMessages != null && responseMessages.Any())
+        {
+                foreach (var message in responseMessages)
+                {
+                        var notificationType = message.status switch
+                        {
+                                "success" => "success",
+                                "warning" => "warning",
+                                "info" => "info",
+                                "error" => "danger",
+                                _ => "info"
+                        };
+
+                        var icon = message.status switch
+                        {
+                                "success" => "fa fa-check me-1",
+                                "warning" => "fa fa-exclamation-triangle me-1",
+                                "info" => "fa fa-info me-1",
+                                "error" => "fa fa-times me-1",
+                                _ => "fa fa-info me-1"
+                        };
+
+                        <text>
+                            Dashmix.helpers('jq-notify', { type: '@notificationType', icon: '@icon', message: "@Html.Raw(message.text)" });
+                        </text>
+                }
+        }
+    </script>
+
+    <script>
+        // جلوگیری از نمایش خطاهای DataTable
+        $.fn.dataTable.ext.errMode = 'none';
+
+        window.reinitDataTable = function(tableId, options) {
+            try {
+                if ($.fn.DataTable.isDataTable('#' + tableId)) {
+                    $('#' + tableId).DataTable().destroy();
+                }
+                $('#' + tableId).DataTable(options);
+            } catch (error) {
+                console.warn('مشکل در initialize کردن DataTable:', error);
+            }
+        };
+    </script>
+    <script src="/assets/js/notifications.js"></script>
+	<script src="~/assets/js/methods.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

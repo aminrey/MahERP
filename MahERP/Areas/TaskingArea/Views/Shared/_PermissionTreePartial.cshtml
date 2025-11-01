@@ -1,0 +1,18 @@
+@model List<PermissionTreeViewModel>
+
+<ul>
+    @foreach (var permission in Model)
+    {
+        <li data-jstree='{"icon":"@permission.Icon", "opened":true}' id="perm-@permission.Id">
+            <span style="color: @permission.Color; font-weight: 600;">
+                @permission.NameFa
+            </span>
+            <small class="text-muted">(@permission.NameEn - @permission.Code)</small>
+            
+            @if (permission.Children.Any())
+            {
+                @await Html.PartialAsync("_PermissionTreePartial", permission.Children)
+            }
+        </li>
+    }
+</ul>

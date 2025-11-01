@@ -1087,3 +1087,72 @@ body {
             background: linear-gradient(135deg, #cff4fc 0%, #b8daff 100%);
             border-left: 4px solid #17a2b8;
         }
+
+/* ============== MODULE SELECTOR STYLES ============== */
+.module-item {
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    margin: 0.25rem;
+}
+
+    .module-item:hover:not(.disabled) {
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.15));
+        transform: translateX(-3px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .module-item.current-module {
+        background: linear-gradient(135deg, rgba(25, 135, 84, 0.1), rgba(25, 135, 84, 0.2));
+        border-left: 4px solid #198754;
+        font-weight: 600;
+    }
+
+    .module-item.disabled {
+        cursor: not-allowed;
+        background-color: rgba(0,0,0,0.02);
+    }
+
+.module-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.module-item:hover:not(.disabled) .module-icon {
+    transform: scale(1.1);
+    background: rgba(13, 110, 253, 0.1);
+}
+
+.module-item.current-module .module-icon {
+    background: rgba(25, 135, 84, 0.15);
+}
+
+/* Module Selector Button Active State */
+#module-selector-dropdown.active {
+    background-color: rgba(13, 110, 253, 0.15);
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+/* Animation for module switch */
+.module-item {
+    animation: moduleItemFadeIn 0.3s ease;
+}
+
+@keyframes moduleItemFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

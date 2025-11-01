@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.AcControl;
+using MahERP.DataModelLayer.Entities;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Core;
@@ -38,6 +39,7 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<CoreNotificationDetail> CoreNotificationDetailUW { get; }
         GenereicClass<CoreNotificationDelivery> CoreNotificationDeliveryUW { get; }
         GenereicClass<CoreNotificationSetting> CoreNotificationSettingUW { get; }
+        GenereicClass<Settings> SettingsUW { get; }
         #endregion
 
 

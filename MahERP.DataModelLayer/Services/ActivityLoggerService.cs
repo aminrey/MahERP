@@ -547,6 +547,10 @@ namespace MahERP.DataModelLayer.Services
         /// ارسال پیامک
         /// </summary>
         SMS = 13,
+        /// <summary>
+        /// ثبت تنظیمات نرم افزار
+        /// </summary>
+        Settings = 14,
 
         /// <summary>
         /// خطا

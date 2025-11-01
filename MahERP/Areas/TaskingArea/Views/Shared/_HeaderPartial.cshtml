@@ -1,0 +1,668 @@
+﻿@{
+    var currentUser = ViewBag.CurrentUser as dynamic;
+    var userName = ViewBag.UserName as string ?? User.Identity.Name;
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var currentArea = ViewContext.RouteData.Values["area"]?.ToString();
+}
+
+<!-- Header -->
+<header id="page-header">
+    <!-- Header Content -->
+    <div class="content-header">
+        <!-- Left Section -->
+        <div class="space-x-1">
+            <!-- Toggle Sidebar -->
+            <button class="btn btn-alt-secondary" data-action="sidebar_toggle" data-toggle="layout" type="button">
+                <i class="fa fa-fw fa-bars"></i>
+            </button>
+            <!-- END Toggle Sidebar -->
+            <!-- Open Search Section -->
+          
+            <!-- END Open Search Section -->
+            <!-- ============== 🎨 MODULE SELECTOR ============== -->
+            @{
+                var isTaskingEnabled = ViewBag.IsTaskingModuleEnabled ?? true;
+                var isCrmEnabled = ViewBag.IsCrmModuleEnabled ?? true;
+                var isAdmin = User.IsInRole("Admin");
+            }
+
+            @if (isTaskingEnabled || isCrmEnabled || isAdmin)
+            {
+                <div class="dropdown d-inline-block">
+                    <button aria-expanded="false" aria-haspopup="true"
+                            class="btn btn-alt-secondary @(currentArea != "AppCoreArea" ? "active" : "")"
+                            data-bs-toggle="dropdown" id="module-selector-dropdown" type="button">
+                        <i class="fa fa-fw fa-th-large d-sm-none"></i>
+                        <span class="d-none d-sm-inline-block">
+                            @if (currentArea == "TaskingArea")
+                            {
+                                <i class="fa fa-tasks me-1"></i>
+
+                                <text>تسکینگ</text>
+                            }
+                            else if (currentArea == "CrmArea")
+                            {
+                                <i class="fa fa-chart-line me-1"></i>
+
+                                <text>CRM</text>
+                            }
+                            else
+                            {
+                                <i class="fa fa-home me-1"></i>
+
+                                <text>هسته مرکزی</text>
+                            }
+                        </span>
+                        <i class="fa fa-fw fa-angle-down opacity-50 ms-1 d-none d-sm-inline-block"></i>
+                    </button>
+
+                    <div aria-labelledby="module-selector-dropdown" class="dropdown-menu dropdown-menu-lg p-0" style="min-width: 300px;">
+                        <!-- Header -->
+                        <div class="bg-primary-dark rounded-top fw-semibold text-white text-center p-3">
+                            <i class="fa fa-cube me-2"></i>
+                            انتخاب ماژول
+                        </div>
+
+                        <!-- Modules List -->
+                        <div class="p-2">
+                            <!-- Core Module (Always Available for Admin) -->
+                            @if (isAdmin)
+                            {
+                                <a class="dropdown-item module-item d-flex align-items-center @(currentArea == "AppCoreArea" ? "active current-module" : "")"
+                                   asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">
+                                    <div class="module-icon me-3">
+                                        <i class="fa fa-home fa-2x text-primary"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">هسته مرکزی</div>
+                                        <div class="fs-xs text-muted">مدیریت سیستم و تنظیمات</div>
+                                    </div>
+                                    @if (currentArea == "AppCoreArea")
+                                    {
+                                        <i class="fa fa-check-circle text-success ms-2"></i>
+                                    }
+                                </a>
+                            }
+
+                            <!-- Tasking Module -->
+                            @if (isTaskingEnabled)
+                            {
+                                <a class="dropdown-item module-item d-flex align-items-center @(currentArea == "TaskingArea" ? "active current-module" : "")"
+                                   asp-area="TaskingArea" asp-controller="Dashboard" asp-action="Index">
+                                    <div class="module-icon me-3">
+                                        <i class="fa fa-tasks fa-2x text-success"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">مدیریت تسک‌ها</div>
+                                        <div class="fs-xs text-muted">تسکینگ و زمان‌بندی</div>
+                                    </div>
+                                    @if (currentArea == "TaskingArea")
+                                    {
+                                        <i class="fa fa-check-circle text-success ms-2"></i>
+                                    }
+                                </a>
+                            }
+                            else if (isAdmin)
+                            {
+                                <div class="dropdown-item module-item disabled d-flex align-items-center opacity-50">
+                                    <div class="module-icon me-3">
+                                        <i class="fa fa-tasks fa-2x text-muted"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">مدیریت تسک‌ها</div>
+                                        <div class="fs-xs text-muted">
+                                            <i class="fa fa-lock me-1"></i>غیرفعال
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- CRM Module -->
+                            @if (isCrmEnabled)
+                            {
+                                <a class="dropdown-item module-item d-flex align-items-center @(currentArea == "CrmArea" ? "active current-module" : "")"
+                                   asp-area="CrmArea" asp-controller="Dashboard" asp-action="Index">
+                                    <div class="module-icon me-3">
+                                        <i class="fa fa-chart-line fa-2x text-info"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">مدیریت CRM</div>
+                                        <div class="fs-xs text-muted">ارتباط با مشتری</div>
+                                    </div>
+                                    @if (currentArea == "CrmArea")
+                                    {
+                                        <i class="fa fa-check-circle text-success ms-2"></i>
+                                    }
+                                </a>
+                            }
+                            else if (isAdmin)
+                            {
+                                <div class="dropdown-item module-item disabled d-flex align-items-center opacity-50">
+                                    <div class="module-icon me-3">
+                                        <i class="fa fa-chart-line fa-2x text-muted"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">مدیریت CRM</div>
+                                        <div class="fs-xs text-muted">
+                                            <i class="fa fa-lock me-1"></i>غیرفعال
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Footer for Admin -->
+                        @if (isAdmin)
+                        {
+                            <div class="p-2 border-top bg-body-light">
+                                <a class="dropdown-item text-center fw-semibold text-primary"
+                                   asp-area="AppCoreArea" asp-controller="Settings" asp-action="ModuleSettings">
+                                    <i class="fa fa-cog me-1"></i> تنظیمات ماژول‌ها
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+
+
+            <!-- ============== END MODULE SELECTOR ============== -->
+        </div>
+        <!-- END Left Section -->
+        <!-- Right Section -->
+        <div class="space-x-1">
+            <!-- ⭐ User Dropdown - Enhanced -->
+            <div class="dropdown d-inline-block">
+                <button aria-expanded="false" aria-haspopup="true"
+                        class="btn btn-alt-secondary @(IsUserMenuActive(currentController, currentAction) ? "active" : "")"
+                        data-bs-toggle="dropdown" id="page-header-user-dropdown" type="button">
+                    <!-- ⭐ Avatar Image -->
+                    <img alt="تصویر پروفایل" class="img-avatar img-avatar32 img-avatar-thumb d-none d-sm-inline-block me-1"
+                         src=" @(!string.IsNullOrEmpty(currentUser.ProfileImagePath) ? currentUser.ProfileImagePath : " /assets/media/avatars/avatar0.jpg")"
+                         style="border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);" />
+
+                    <!-- ⭐ User Icon for mobile -->
+                    <i class="fa fa-fw fa-user d-sm-none"></i>
+
+                    <!-- ⭐ User Name -->
+                    <span class="d-none d-sm-inline-block">@userName</span>
+                    <i class="fa fa-fw fa-angle-down opacity-50 ms-1 d-none d-sm-inline-block"></i>
+                </button>
+
+                <!-- ⭐ Enhanced Dropdown Menu -->
+                <div aria-labelledby="page-header-user-dropdown" class="dropdown-menu dropdown-menu-end dropdown-menu-lg p-0" style="min-width: 320px;">
+                    <!-- ⭐ User Profile Header -->
+                    <div class="rounded-top fw-semibold text-center p-3 border-bottom bg-primary-dark text-white">
+                        <div class="mb-2">
+                            <img alt="تصویر پروفایل" class="img-avatar img-avatar48 img-avatar-thumb"
+                                 src=" @(!string.IsNullOrEmpty(currentUser.ProfileImagePath) ? currentUser.ProfileImagePath : " /assets/media/avatars/avatar0.jpg")"
+                                 style="border: 3px solid rgba(255,255,255,0.3);" />
+                        </div>
+
+                        @if (currentUser != null)
+                        {
+                            <div class="fw-semibold fs-5 mb-1">@currentUser.FullName</div>
+                            <div class="fs-sm opacity-75">@currentUser.PositionName</div>
+                            @if (!string.IsNullOrEmpty(currentUser.Email))
+                            {
+                                <div class="fs-xs opacity-75 mt-1">
+                                    <i class="fa fa-envelope me-1"></i>@currentUser.Email
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="fw-semibold fs-5 mb-1">@userName</div>
+                            <div class="fs-sm opacity-75">کاربر سیستم</div>
+                        }
+                    </div>
+
+                    <!-- ⭐ User Details Section -->
+                    @if (currentUser != null)
+                    {
+                        <div class="p-3 border-bottom bg-body-light">
+                            <div class="row text-center">
+                                @if (!string.IsNullOrEmpty(currentUser.CompanyName))
+                                {
+                                    <div class="col-12 mb-2">
+                                        <div class="fs-xs text-muted">شرکت</div>
+                                        <div class="fw-semibold fs-sm">@currentUser.CompanyName</div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(currentUser.PhoneNumber))
+                                {
+                                    <div class="col-6">
+                                        <div class="fs-xs text-muted">تلفن</div>
+                                        <div class="fw-semibold fs-sm" dir="ltr">@currentUser.PhoneNumber</div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(currentUser.City))
+                                {
+                                    <div class="col-6">
+                                        <div class="fs-xs text-muted">شهر</div>
+                                        <div class="fw-semibold fs-sm">@currentUser.City</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- ⭐ Menu Items -->
+                    <div class="p-2">
+                        <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "UserManager", "Profile") ? "active" : "")"
+                           asp-area="AdminArea" asp-controller="UserManager" asp-action="Profile">
+                            <i class="fa fa-fw fa-user me-2 text-primary"></i>
+                            <div>
+                                <div class="fw-semibold">پروفایل من</div>
+                                <div class="fs-xs text-muted">مشاهده و ویرایش اطلاعات</div>
+                            </div>
+                        </a>
+
+                        <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "UserManager", "Settings") ? "active" : "")"
+                           onclick="showComingSoonNotification(event, 'تنظیمات کاربری')" href="#">
+                            <i class="fa fa-fw fa-cog me-2 text-info"></i>
+                            <div>
+                                <div class="fw-semibold">تنظیمات</div>
+                                <div class="fs-xs text-muted">تنظیمات شخصی</div>
+                            </div>
+                        </a>
+
+                        <div class="dropdown-divider"></div>
+
+                      
+
+                        <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")"
+                           asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
+                            <i class="fa fa-fw fa-bell me-2 text-success"></i>
+                            <div>
+                                <div class="fw-semibold">یادآوری‌ها</div>
+                                <div class="fs-xs text-muted">یادآوری‌های فعال</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- ⭐ Logout Section -->
+                    <div class="p-2">
+                        <a class="dropdown-item text-center fw-semibold text-danger" href="/Account/LogOut">
+                            <i class="fa fa-fw fa-sign-out-alt me-1"></i> خروج از سیستم
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- END User Dropdown -->
+            <!-- ⭐ Notifications Dropdown -->
+            <div class="dropdown d-inline-block">
+                <button aria-expanded="false" aria-haspopup="true"
+                        class="btn btn-alt-secondary position-relative @(IsNotificationMenuActive(currentController, currentAction) ? "active" : "")"
+                        data-bs-toggle="dropdown" id="page-header-notifications-dropdown" type="button">
+                    <i class="fa fa-fw fa-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="headerNotificationBadge" style="font-size: 0.65em; display: none;">
+                        0
+                    </span>
+                </button>
+                <div aria-labelledby="page-header-notifications-dropdown" class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0" style="width: 380px; max-height: 500px;">
+                    <!-- Notification Header -->
+                    <div class="bg-primary-dark rounded-top fw-semibold text-white text-center p-3 d-flex justify-content-between align-items-center">
+                        <span>نوتیفیکیشن‌ها</span>
+                        <div>
+                            <button class="btn btn-sm btn-outline-light me-1" onclick="markAllHeaderNotificationsAsRead()" title="همه را خوانده شده علامت‌گذاری کن">
+                                <i class="fa fa-check-double fa-xs"></i>
+                            </button>
+                            <a href="@Url.Action("Index", "Notification", new { area = "AdminArea" })" class="btn btn-sm btn-outline-light" title="مشاهده همه">
+                                <i class="fa fa-external-link-alt fa-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Notification List -->
+                    <div id="headerNotificationsList" style="max-height: 350px; overflow-y: auto;">
+                        <div class="text-center p-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">در حال بارگذاری...</span>
+                            </div>
+                            <div class="mt-2 text-muted small">در حال بارگذاری...</div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="p-2 border-top">
+                        <a class="btn btn-alt-primary w-100 text-center" href="@Url.Action("Index", "Notification", new { area = "AdminArea" })">
+                            <i class="fa fa-fw fa-eye opacity-50 me-1"></i> مشاهده همه
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- END Notifications Dropdown -->
+            <!-- Toggle Side Overlay -->
+           
+            <!-- END Toggle Side Overlay -->
+        </div>
+        <!-- END Right Section -->
+    </div>
+    <!-- END Header Content -->
+    <!-- Header Search -->
+    <div class="overlay-header bg-header-dark" id="page-header-search">
+        <div class="bg-white-10">
+            <div class="content-header">
+                <form action="be_pages_generic_search.html" class="w-100" method="POST">
+                    <div class="input-group">
+                        <button class="btn btn-alt-primary" data-action="header_search_off" data-toggle="layout" type="button">
+                            <i class="fa fa-fw fa-times-circle"></i>
+                        </button>
+                        <input class="form-control border-0" id="page-header-search-input" name="page-header-search-input" placeholder="جستجو کنید یا ESC را بزنید" type="text" />
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- END Header Search -->
+    <!-- Header Loader -->
+    <div class="overlay-header bg-header-dark" id="page-header-loader">
+        <div class="bg-white-10">
+            <div class="content-header">
+                <div class="w-100 text-center">
+                    <i class="fa fa-fw fa-sun fa-spin text-white"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Header Loader -->
+    <!-- ⭐ Audio notification element -->
+    <audio id="notificationSound" preload="auto">
+        <source src="/assets/sounds/notification.mp3" type="audio/mpeg">
+        <source src="/assets/sounds/notification.wav" type="audio/wav">
+    </audio>
+</header>
+<!-- END Header -->
+@functions {
+    /// <summary>
+    /// بررسی active بودن منوی کاربر
+    /// </summary>
+    public bool IsUserMenuActive(string currentController, string currentAction)
+    {
+        var userMenuControllers = new[] { "UserManager" };
+        var userMenuActions = new[] { "Profile", "Settings", "Index", "Edit" };
+
+        return userMenuControllers.Contains(currentController) &&
+               userMenuActions.Contains(currentAction);
+    }
+
+    /// <summary>
+    /// بررسی active بودن منوی نوتیفیکیشن
+    /// </summary>
+    public bool IsNotificationMenuActive(string currentController, string currentAction)
+    {
+        return currentController == "Notification";
+    }
+
+    /// <summary>
+    /// بررسی active بودن آیتم‌های منو
+    /// </summary>
+    public bool IsMenuItemActive(string currentController, string currentAction, string targetController, string targetAction)
+    {
+        return currentController == targetController && currentAction == targetAction;
+    }
+}
+
+<!-- ⭐ JavaScript for User Stats and Active States -->
+<script>
+    $(document).ready(function() {
+        loadUserHeaderStats();
+        initializeActiveStates();
+
+        // بروزرسانی آمار هر 2 دقیقه
+        setInterval(loadUserHeaderStats, 120000);
+    });
+
+    function loadUserHeaderStats() {
+        $.get('@Url.Action("GetUserHeaderStats", "Dashboard", new { area = "AdminArea" })').done(function(data) {
+            if (data.success) {
+                $('#userStatsMyTasks').text(data.myTasksCount || 0);
+                $('#userStatsReminders').text(data.remindersCount || 0);
+                $('#userStatsNotifications').text(data.notificationsCount || 0);
+            }
+        }).catch(function() {
+            // در صورت خطا، اعداد را صفر نشان بده
+            $('#userStatsMyTasks, #userStatsReminders, #userStatsNotifications').text('0');
+        });
+    }
+
+    function initializeActiveStates() {
+        // اضافه کردن کلاس active به dropdown اگر باز باشد
+        $('.dropdown').on('show.bs.dropdown', function() {
+            $(this).find('.dropdown-toggle').addClass('dropdown-active');
+        });
+
+        $('.dropdown').on('hide.bs.dropdown', function() {
+            $(this).find('.dropdown-toggle').removeClass('dropdown-active');
+        });
+
+        // تشخیص کلیک روی آیتم‌های منو
+        $('.dropdown-item').on('click', function() {
+            // اضافه کردن انیمیشن کلیک
+            $(this).addClass('clicked');
+            setTimeout(() => {
+                $(this).removeClass('clicked');
+            }, 300);
+        });
+    }
+
+    // تابع برای highlight کردن منوی فعال
+    function highlightActiveMenu() {
+        var currentPath = window.location.pathname.toLowerCase();
+
+        // بررسی منوی کاربر
+        if (currentPath.includes('/usermanager/')) {
+            $('#page-header-user-dropdown').addClass('menu-active');
+        }
+
+        // بررسی منوی نوتیفیکیشن
+        if (currentPath.includes('/notification/')) {
+            $('#page-header-notifications-dropdown').addClass('menu-active');
+        }
+
+        // highlight کردن آیتم‌های منوی dropdown
+        $('.dropdown-item').each(function() {
+            var href = $(this).attr('href');
+            if (href && currentPath.includes(href.toLowerCase())) {
+                $(this).addClass('current-page');
+            }
+        });
+    }
+
+    // اجرای تابع پس از بارگذاری صفحه
+    $(document).ready(function() {
+        highlightActiveMenu();
+    });
+</script>
+
+<!-- ⭐ Enhanced Styles for Active States -->
+<style>
+    /* ============== USER DROPDOWN ENHANCEMENTS ============== */
+    .img-avatar-thumb {
+        object-fit: cover;
+        transition: all 0.3s ease;
+    }
+
+        .img-avatar-thumb:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+    /* ============== ACTIVE BUTTON STATES ============== */
+    .btn-alt-secondary.active,
+    .btn-alt-secondary.menu-active {
+        background-color: rgba(13, 110, 253, 0.2);
+        border-color: #0d6efd;
+        color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    .btn-alt-secondary.dropdown-active {
+        background-color: rgba(13, 110, 253, 0.15);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+    /* ============== DROPDOWN ITEM ENHANCEMENTS ============== */
+    .dropdown-item {
+        transition: all 0.2s ease;
+        border-radius: 0.375rem;
+        margin: 0.125rem 0.25rem;
+        position: relative;
+    }
+
+        .dropdown-item:hover {
+            background-color: rgba(0,123,255,0.1);
+            transform: translateX(-2px);
+        }
+
+        .dropdown-item.active,
+        .dropdown-item.current-page {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.15), rgba(13, 110, 253, 0.25));
+            border-left: 3px solid #0d6efd;
+            font-weight: 600;
+        }
+
+            .dropdown-item.active::before,
+            .dropdown-item.current-page::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 4px;
+                height: 60%;
+                background: linear-gradient(135deg, #0d6efd, #6610f2);
+                border-radius: 0 2px 2px 0;
+            }
+
+        .dropdown-item.clicked {
+            transform: scale(0.98);
+            background-color: rgba(13, 110, 253, 0.2);
+        }
+
+    /* ============== STATS NUMBERS ANIMATION ============== */
+    #userStatsMyTasks, #userStatsReminders, #userStatsNotifications {
+        transition: all 0.3s ease;
+    }
+
+        #userStatsMyTasks:hover, #userStatsReminders:hover, #userStatsNotifications:hover {
+            transform: scale(1.1);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+    /* ============== USER PROFILE SECTION ============== */
+    .bg-primary-dark {
+        background: linear-gradient(135deg, #0d6efd, #6610f2);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .bg-primary-dark::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+    @@keyframes shimmer {
+        0%
+
+    {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+
+    }
+
+    /* ============== NOTIFICATION BADGE ENHANCEMENTS ============== */
+    #headerNotificationBadge {
+        animation: badgePulse 2s infinite;
+        box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+    }
+
+    @@keyframes badgePulse {
+        0%
+
+    {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+    }
+
+    /* ============== MOBILE RESPONSIVE ============== */
+    @@media (max-width: 576px) {
+        .dropdown-menu-lg
+
+    {
+        width: 100vw !important;
+        max-width: none !important;
+        left: 0 !important;
+        right: 0 !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    .dropdown-item {
+        padding: 1rem 0.75rem;
+    }
+
+        .dropdown-item.active::before,
+        .dropdown-item.current-page::before {
+            width: 6px;
+        }
+
+    }
+
+    /* ============== HOVER EFFECTS ============== */
+    .content-header .btn {
+        transition: all 0.3s ease;
+    }
+
+        .content-header .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+    /* ============== DROPDOWN ANIMATIONS ============== */
+    .dropdown-menu {
+        animation: dropdownFadeIn 0.3s ease;
+        transform-origin: top;
+    }
+
+    @@keyframes dropdownFadeIn {
+        0%
+
+    {
+        opacity: 0;
+        transform: scaleY(0.8) translateY(-10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scaleY(1) translateY(0);
+    }
+
+    }
+</style>

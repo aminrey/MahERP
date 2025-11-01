@@ -1,0 +1,63 @@
+﻿@{
+    ViewData["Title"] = "عدم دسترسی";
+    var controller = ViewData["Controller"]?.ToString();
+    var action = ViewData["Action"]?.ToString();
+    var message = ViewData["Message"]?.ToString();
+}
+
+<div class="hero bg-danger">
+    <div class="hero-inner">
+        <div class="content content-full text-center">
+            <div class="py-4">
+                <div class="display-3 fw-bold text-white">
+                    <i class="fa fa-lock"></i>
+                </div>
+                <h1 class="h2 fw-bold text-white mb-2">دسترسی مجاز نیست</h1>
+                <h2 class="h4 fw-normal text-white-75 mb-0">شما دسترسی لازم برای مشاهده این صفحه را ندارید</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content content-full">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-exclamation-triangle text-warning me-1"></i>
+                        عدم دسترسی
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">
+                            <i class="fa fa-ban me-1"></i>دسترسی محدود شده
+                        </h4>
+                        <p class="mb-0">@message</p>
+                        @if (!string.IsNullOrEmpty(controller))
+                        {
+                            <hr>
+                            <small class="text-muted">
+                                بخش: <strong>@controller</strong>
+                                @if (!string.IsNullOrEmpty(action))
+                                {
+                                    <span> | عملیات: <strong>@action</strong></span>
+                                }
+                            </small>
+                        }
+                    </div>
+
+                    <div class="text-center">
+                        <a href="javascript:history.back()" class="btn btn-alt-secondary">
+                            <i class="fa fa-arrow-left me-1"></i>بازگشت
+                        </a>
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">
+                            <i class="fa fa-home me-1"></i>داشبورد
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

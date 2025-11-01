@@ -120,7 +120,7 @@ namespace MahERP.Controllers
                                 recordTitle: $"{LoggedUser.FirstName} {LoggedUser.LastName}"
                             );
                             
-                            return Redirect("/AdminArea/Dashboard/Index");
+                            return Redirect("/AppCoreArea/Dashboard/Index");
                         }
                         else
                         {

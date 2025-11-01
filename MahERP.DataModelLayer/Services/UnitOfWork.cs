@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.AcControl;
+using MahERP.DataModelLayer.Entities;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Core;
@@ -162,6 +163,7 @@ namespace MahERP.DataModelLayer.Services
 
         private GenereicClass<BranchContact> _branchContactUW;
         private GenereicClass<BranchOrganization> _branchOrganizationUW;
+        private GenereicClass<Settings> _SettingsUW;
 
         #region Task Management
         private GenereicClass<Tasks> _taskRepository;
@@ -351,6 +353,17 @@ namespace MahERP.DataModelLayer.Services
 
         #region Core Notification System Properties
 
+        public GenereicClass<Settings> SettingsUW
+        {
+            get
+            {
+                if (_SettingsUW == null)
+                {
+                    _SettingsUW = new GenereicClass<Settings>(_Context);
+                }
+                return _SettingsUW;
+            }
+        }
         public GenereicClass<CoreNotification> CoreNotificationUW
         {
             get

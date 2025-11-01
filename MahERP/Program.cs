@@ -59,6 +59,9 @@ builder.Services.AddScoped<IMyDayTaskRepository, MyDayTaskRepository>();
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IOrganizationGroupRepository, OrganizationGroupRepository>();
+builder.Services.AddScoped<IBaseRepository, BaseRepository>();
+
+
 
 builder.Services.AddHostedService<ExpiredRoleCleanupService>();
 

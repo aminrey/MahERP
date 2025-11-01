@@ -12,6 +12,7 @@ namespace MahERP.DataModelLayer.Entities
         [Key]
         public int id { get; set; }
 
+        // ============== SMTP SETTINGS ==============
         /// <summary>
         /// SMTP Server Host
         /// </summary>
@@ -57,5 +58,28 @@ namespace MahERP.DataModelLayer.Entities
         /// حداکثر حجم پیوست (MB)
         /// </summary>
         public int MaxAttachmentSizeMB { get; set; } = 25;
+
+        // ============== MODULE ACTIVATION SETTINGS ==============
+        /// <summary>
+        /// فعال‌سازی ماژول Task Management
+        /// </summary>
+        public bool IsTaskingModuleEnabled { get; set; } = true;
+
+        /// <summary>
+        /// فعال‌سازی ماژول CRM
+        /// </summary>
+        public bool IsCrmModuleEnabled { get; set; } = true;
+
+     
+        /// <summary>
+        /// تاریخ آخرین بروزرسانی تنظیمات
+        /// </summary>
+        public DateTime? LastModified { get; set; }
+
+        /// <summary>
+        /// کاربری که آخرین بار تنظیمات را تغییر داده
+        /// </summary>
+        [MaxLength(450)]
+        public string? LastModifiedByUserId { get; set; }
     }
 }
