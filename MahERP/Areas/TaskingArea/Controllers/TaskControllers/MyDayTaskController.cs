@@ -1,10 +1,12 @@
-﻿using MahERP.Areas.AppCoreArea.Controllers.BaseControllers;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using MahERP.Areas.AppCoreArea.Controllers.BaseControllers;
 using MahERP.Attributes;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.MyDayTaskRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -30,8 +32,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
-            UserManager<AppUsers> userManager, IBaseRepository BaseRepository)
-            : base(Context, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository)
+            UserManager<AppUsers> userManager, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(Context, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _myDayTaskRepository = myDayTaskRepository;
             _userManager = userManager;

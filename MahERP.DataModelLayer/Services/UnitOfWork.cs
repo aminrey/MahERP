@@ -936,6 +936,61 @@ namespace MahERP.DataModelLayer.Services
 
         #endregion
 
+        #region Module Access Management
+        private GenereicClass<UserModulePermission> _userModulePermission;
+        private GenereicClass<TeamModulePermission> _teamModulePermission;
+        private GenereicClass<BranchModulePermission> _branchModulePermission;
+        private GenereicClass<UserModulePreference> _userModulePreference;
+
+        public GenereicClass<UserModulePermission> UserModulePermissionUW
+        {
+            get
+            {
+                if (_userModulePermission == null)
+                {
+                    _userModulePermission = new GenereicClass<UserModulePermission>(_Context);
+                }
+                return _userModulePermission;
+            }
+        }
+
+        public GenereicClass<TeamModulePermission> TeamModulePermissionUW
+        {
+            get
+            {
+                if (_teamModulePermission == null)
+                {
+                    _teamModulePermission = new GenereicClass<TeamModulePermission>(_Context);
+                }
+                return _teamModulePermission;
+            }
+        }
+
+        public GenereicClass<BranchModulePermission> BranchModulePermissionUW
+        {
+            get
+            {
+                if (_branchModulePermission == null)
+                {
+                    _branchModulePermission = new GenereicClass<BranchModulePermission>(_Context);
+                }
+                return _branchModulePermission;
+            }
+        }
+
+        public GenereicClass<UserModulePreference> UserModulePreferenceUW
+        {
+            get
+            {
+                if (_userModulePreference == null)
+                {
+                    _userModulePreference = new GenereicClass<UserModulePreference>(_Context);
+                }
+                return _userModulePreference;
+            }
+        }
+        #endregion
+
         #region Save Methods
 
         /// <summary>

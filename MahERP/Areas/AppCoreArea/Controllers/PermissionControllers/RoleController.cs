@@ -4,6 +4,7 @@ using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.RoleViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -33,8 +34,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.PermissionControllers
             IUserManagerRepository userRepository,
             IUserRoleRepository roleService,
             IPermissionService permissionService,
-            IMapper mapper, IBaseRepository BaseRepository)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository , BaseRepository)
+            IMapper mapper, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _roleService = roleService;
             _permissionService = permissionService;

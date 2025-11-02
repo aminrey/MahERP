@@ -7,6 +7,7 @@ using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -38,7 +39,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger, IBaseRepository BaseRepository,
-            IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository)
+            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _uow = uow;
             _taskRepository = taskRepository;

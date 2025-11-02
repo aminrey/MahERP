@@ -1,0 +1,296 @@
+﻿@model GrantModuleAccessViewModel
+@{
+    ViewData["Title"] = "افزودن دسترسی ماژول";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-plus-circle text-success me-2"></i>افزودن دسترسی ماژول
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">دسترسی ماژول‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">افزودن دسترسی</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-plus-circle me-1"></i>فرم افزودن دسترسی
+                    </h3>
+                </div>
+                <div class="block-content block-content-full">
+                    <form asp-action="GrantAccess" method="post" id="grantAccessForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <!-- نوع هدف -->
+                        <div class="mb-4">
+                            <label class="form-label" for="TargetType">
+                                نوع هدف <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="TargetType" 
+                                    class="form-select" 
+                                    id="TargetType"
+                                    onchange="handleTargetTypeChange()">
+                                <option value="">انتخاب کنید</option>
+                                <option value="User">کاربر</option>
+                                <option value="Team">تیم</option>
+                                <option value="Branch">شعبه</option>
+                            </select>
+                            <span asp-validation-for="TargetType" class="text-danger"></span>
+                        </div>
+
+                        <!-- انتخاب هدف -->
+                        <div class="mb-4" id="targetSelectContainer" style="display: none;">
+                            <label class="form-label" for="TargetId">
+                                <span id="targetLabel">انتخاب</span> <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="TargetId" 
+                                    class="js-select2 form-select" 
+                                    id="TargetId"
+                                    data-placeholder="جستجو..."
+                                    style="width: 100%;">
+                                <option></option>
+                            </select>
+                            <span asp-validation-for="TargetId" class="text-danger"></span>
+                        </div>
+
+                        <!-- ⭐⭐⭐ انتخاب ماژول‌ها (چندتایی) -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                ماژول‌ها (یک یا چند ماژول را انتخاب کنید) <span class="text-danger">*</span>
+                            </label>
+                            <div class="alert alert-info">
+                                <i class="fa fa-info-circle me-1"></i>
+                                می‌توانید همزمان چند ماژول را انتخاب کنید. دسترسی به همه آنها اعطا خواهد شد.
+                            </div>
+                            <div class="row g-3">
+                                <!-- Core Module -->
+                                <div class="col-md-4">
+                                    <div class="form-check form-block">
+                                        <input type="checkbox" 
+                                               class="form-check-input module-checkbox" 
+                                               name="SelectedModules" 
+                                               id="moduleCore" 
+                                               value="0">
+                                        <label class="form-check-label" for="moduleCore">
+                                            <span class="d-flex flex-column align-items-center p-3 border rounded hover-shadow">
+                                                <i class="fa fa-home fa-3x text-primary mb-3"></i>
+                                                <strong class="fs-5">هسته مرکزی</strong>
+                                                <span class="text-muted small">Core</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Tasking Module -->
+                                <div class="col-md-4">
+                                    <div class="form-check form-block">
+                                        <input type="checkbox" 
+                                               class="form-check-input module-checkbox" 
+                                               name="SelectedModules" 
+                                               id="moduleTasking" 
+                                               value="1">
+                                        <label class="form-check-label" for="moduleTasking">
+                                            <span class="d-flex flex-column align-items-center p-3 border rounded hover-shadow">
+                                                <i class="fa fa-tasks fa-3x text-success mb-3"></i>
+                                                <strong class="fs-5">تسکینگ</strong>
+                                                <span class="text-muted small">Tasking</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- CRM Module -->
+                                <div class="col-md-4">
+                                    <div class="form-check form-block">
+                                        <input type="checkbox" 
+                                               class="form-check-input module-checkbox" 
+                                               name="SelectedModules" 
+                                               id="moduleCRM" 
+                                               value="2">
+                                        <label class="form-check-label" for="moduleCRM">
+                                            <span class="d-flex flex-column align-items-center p-3 border rounded hover-shadow">
+                                                <i class="fa fa-chart-line fa-3x text-info mb-3"></i>
+                                                <strong class="fs-5">CRM</strong>
+                                                <span class="text-muted small">Customer Relations</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-danger" id="moduleError" style="display: none;">
+                                    حداقل یک ماژول را انتخاب کنید
+                                </span>
+                            </div>
+                            <!-- ⭐ نمایش تعداد انتخاب شده -->
+                            <div class="mt-3">
+                                <div class="alert alert-success" id="selectedModulesDisplay" style="display: none;">
+                                    <i class="fa fa-check-circle me-1"></i>
+                                    <strong id="selectedCount">0</strong> ماژول انتخاب شده
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- یادداشت -->
+                        <div class="mb-4">
+                            <label class="form-label" for="Notes">یادداشت (اختیاری)</label>
+                            <textarea asp-for="Notes" 
+                                      class="form-control" 
+                                      id="Notes" 
+                                      rows="3" 
+                                      placeholder="توضیحات اضافی..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+
+                        <!-- دکمه‌های عملیات -->
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-check me-1"></i>ذخیره دسترسی
+                                </button>
+                                <a asp-action="Index" class="btn btn-alt-secondary">
+                                    <i class="fa fa-times me-1"></i>انصراف
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2
+            $('#TargetId').select2({
+                ajax: {
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data
+                        };
+                    }
+                }
+            });
+
+            // ⭐ بروزرسانی تعداد ماژول‌های انتخاب شده
+            $('.module-checkbox').on('change', function() {
+                updateSelectedModulesCount();
+            });
+
+            // ⭐ Validation قبل از Submit
+            $('#grantAccessForm').on('submit', function(e) {
+                const checkedModules = $('.module-checkbox:checked').length;
+                
+                if (checkedModules === 0) {
+                    e.preventDefault();
+                    $('#moduleError').show();
+                    $('html, body').animate({
+                        scrollTop: $('#moduleError').offset().top - 100
+                    }, 500);
+                    return false;
+                }
+                
+                $('#moduleError').hide();
+                return true;
+            });
+        });
+
+        function handleTargetTypeChange() {
+            const targetType = $('#TargetType').val();
+            const $container = $('#targetSelectContainer');
+            const $select = $('#TargetId');
+            const $label = $('#targetLabel');
+
+            if (!targetType) {
+                $container.hide();
+                return;
+            }
+
+            // تنظیم label
+            const labels = {
+                'User': 'انتخاب کاربر',
+                'Team': 'انتخاب تیم',
+                'Branch': 'انتخاب شعبه'
+            };
+            $label.text(labels[targetType]);
+
+            // تنظیم URL برای AJAX
+            const urls = {
+                'User': '@Url.Action("GetUsers")',
+                'Team': '@Url.Action("GetTeams")',
+                'Branch': '@Url.Action("GetBranches")'
+            };
+
+            // Reset و تنظیم مجدد Select2
+            $select.empty().select2('destroy');
+            $select.select2({
+                placeholder: 'جستجو...',
+                allowClear: true,
+                ajax: {
+                    url: urls[targetType],
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data
+                        };
+                    },
+                    cache: true
+                }
+            });
+
+            $container.show();
+        }
+
+        // ⭐ تابع بروزرسانی تعداد انتخاب شده
+        function updateSelectedModulesCount() {
+            const checkedCount = $('.module-checkbox:checked').length;
+            const $display = $('#selectedModulesDisplay');
+            const $count = $('#selectedCount');
+            
+            if (checkedCount > 0) {
+                $count.text(checkedCount);
+                $display.show();
+                $('#moduleError').hide();
+            } else {
+                $display.hide();
+            }
+        }
+    </script>
+
+    }

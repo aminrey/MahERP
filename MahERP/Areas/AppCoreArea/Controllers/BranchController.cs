@@ -6,6 +6,7 @@ using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.ContactGroupRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using MahERP.Extentions;
 using Microsoft.AspNetCore.Authorization;
@@ -41,7 +42,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger, IContactGroupRepository groupRepository, IBaseRepository BaseRepository,
-            IUserManagerRepository userRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository , BaseRepository)
+            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _uow = uow;
             _branchRepository = branchRepository;

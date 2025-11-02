@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using MahERP.Areas.CrmArea.Controllers.BaseControllers;
+using MahERP.Attributes;
 using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Email;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.Services;
 using MahERP.WebApp.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,8 +13,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using MahERP.Attributes;
-using MahERP.Areas.CrmArea.Controllers.BaseControllers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
 {
@@ -39,8 +40,10 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
-            ILogger<EmailSendController> logger, IBaseRepository BaseRepository)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository)
+            ILogger<EmailSendController> logger, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _emailRepo = emailRepo;
             _queueRepo = queueRepo;

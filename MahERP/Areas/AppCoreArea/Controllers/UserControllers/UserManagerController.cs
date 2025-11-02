@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Spreadsheet;
 using MahERP.Areas.AppCoreArea.Controllers.BaseControllers;
 using MahERP.Attributes;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -33,8 +36,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.UserControllers
             IUserManagerRepository userrepository, // تصحیح نوع پارامتر
             PersianDateHelper persianDateHelper, 
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger, IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository)
-            : base(context, userManager, persianDateHelper, memoryCache, activityLogger , userrepository , BaseRepository)
+            ActivityLoggerService activityLogger, IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(context, userManager, persianDateHelper, memoryCache, activityLogger, userrepository, BaseRepository, moduleTracking)
         {
             _Context = context;
             _UserManager = userManager;

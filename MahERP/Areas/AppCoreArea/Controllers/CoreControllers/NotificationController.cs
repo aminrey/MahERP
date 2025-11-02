@@ -6,6 +6,7 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.Core.NotificationViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -40,7 +41,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository , BaseRepository)
+            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _coreNotificationRepository = coreNotificationRepository;
             _taskNotificationService = taskNotificationService;

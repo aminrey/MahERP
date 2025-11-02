@@ -1,0 +1,37 @@
+﻿@model RevokeModuleAccessViewModel
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">حذف دسترسی</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <p>آیا از حذف دسترسی <strong>@Model.ModuleName</strong> برای <strong>@Model.TargetName</strong> اطمینان دارید؟</p>
+        </div>
+        <div class="modal-footer">
+            <form asp-action="RevokeAccessConfirmed" method="post" id="revokeForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="targetType" value="@Model.TargetType" />
+                <input type="hidden" name="targetId" value="@Model.TargetId" />
+                <input type="hidden" name="moduleType" value="@Model.ModuleType" />
+                
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="btn btn-danger">حذف</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('#revokeForm').on('submit', function(e) {
+        e.preventDefault();
+        $.post($(this).attr('action'), $(this).serialize())
+            .done(function(response) {
+                $('#revokeModal').modal('hide');
+                if (response.status === 'success') {
+                    location.reload();
+                }
+            });
+    });
+</script>

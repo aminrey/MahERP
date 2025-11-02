@@ -1,0 +1,178 @@
+﻿@model ModuleAccessIndexViewModel
+@{
+    ViewData["Title"] = "مدیریت دسترسی ماژول‌ها";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-cube text-primary me-2"></i>مدیریت دسترسی ماژول‌ها
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">دسترسی ماژول‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- محتوا -->
+<div class="content">
+    <!-- دکمه افزودن -->
+    <div class="block block-rounded mb-4">
+        <div class="block-content block-content-full">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <a asp-action="GrantAccess" class="btn btn-primary w-100 py-3">
+                        <i class="fa fa-plus-circle fa-2x d-block mb-2"></i>
+                        <strong>افزودن دسترسی جدید</strong>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a asp-action="AllModulesReport" class="btn btn-info w-100 py-3">
+                        <i class="fa fa-chart-bar fa-2x d-block mb-2"></i>
+                        <strong>گزارش کامل دسترسی‌ها</strong>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a asp-area="AppCoreArea" asp-controller="Settings" asp-action="ModuleSettings" class="btn btn-success w-100 py-3">
+                        <i class="fa fa-cog fa-2x d-block mb-2"></i>
+                        <strong>تنظیمات ماژول‌ها</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- فیلترها -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-filter me-1"></i>فیلترها
+            </h3>
+        </div>
+        <div class="block-content">
+            <form asp-action="Index" method="get">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>ماژول:</label>
+                        <select name="moduleFilter" class="form-select">
+                            <option value="">همه</option>
+                            <option value="0">Core</option>
+                            <option value="1">Tasking</option>
+                            <option value="2">CRM</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label>نوع هدف:</label>
+                        <select name="targetTypeFilter" class="form-select">
+                            <option value="">همه</option>
+                            <option value="User">کاربر</option>
+                            <option value="Team">تیم</option>
+                            <option value="Branch">شعبه</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fa fa-search me-1"></i>جستجو
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- جدول دسترسی‌ها -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                لیست دسترسی‌ها
+                <span class="badge bg-primary ms-2">@Model.AccessList.Count مورد</span>
+            </h3>
+        </div>
+        <div class="block-content">
+            @if (Model.AccessList.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th>ماژول</th>
+                                <th>نوع</th>
+                                <th>نام</th>
+                                <th class="text-center">وضعیت</th>
+                                <th>تاریخ</th>
+                                <th>توسط</th>
+                                <th class="text-center">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.AccessList)
+                            {
+                                <tr>
+                                    <td>
+                                        <i class="@item.ModuleIcon me-1"></i>
+                                        <strong>@item.ModuleName</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@item.TargetType</span>
+                                    </td>
+                                    <td>@item.TargetName</td>
+                                    <td class="text-center">
+                                        @if (item.IsEnabled)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>@item.GrantedDate.ToString("yyyy/MM/dd")</td>
+                                    <td><small>@item.GrantedByUserName</small></td>
+                                    <td class="text-center">
+                                        <button type="button"
+                                                onclick="revokeAccess('@item.TargetType', '@item.TargetIdentifier', @item.ModuleType)"
+                                                class="btn btn-sm btn-danger">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fa fa-cube fa-3x text-muted mb-3"></i>
+                    <p>هیچ دسترسی تعریف نشده است</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="revokeModal" tabindex="-1">
+    <div id="revokeModalContent"></div>
+</div>
+
+@section Scripts {
+    <script>
+        function revokeAccess(targetType, targetId, moduleType) {
+            $.get('@Url.Action("RevokeAccess")', { targetType, targetId, moduleType })
+                .done(function(html) {
+                    $('#revokeModalContent').html(html);
+                    $('#revokeModal').modal('show');
+                });
+        }
+    </script>
+}

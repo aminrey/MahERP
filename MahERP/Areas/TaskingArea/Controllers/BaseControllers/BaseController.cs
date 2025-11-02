@@ -1,8 +1,10 @@
 ﻿using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.Entities;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +24,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
         protected readonly ActivityLoggerService _activityLogger;
         protected readonly IUserManagerRepository _userRepository;
         protected readonly IBaseRepository _baseRepository;
+        protected readonly ModuleTrackingBackgroundService _moduleTracking;
 
         public BaseController(
             IUnitOfWork uow,
@@ -30,7 +33,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
-            IBaseRepository baseRepository)
+            IBaseRepository baseRepository, ModuleTrackingBackgroundService moduleTracking)
         {
             _uow = uow;
             _userManager = userManager;
@@ -39,6 +42,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             _activityLogger = activityLogger;
             _userRepository = userRepository;
             _baseRepository = baseRepository;
+            _moduleTracking = moduleTracking;
+
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -47,7 +52,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             {
                 SetUserInfoInViewBag();
                 SetModuleSettingsInViewBag();
-                
+                TrackCurrentModule(context);
+
                 // بررسی فعال بودن ماژول Tasking
                 if (!_baseRepository.IsTaskingModuleEnabled())
                 {
@@ -57,7 +63,41 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             }
             base.OnActionExecuting(context);
         }
+        /// <summary>
+        /// ⭐⭐⭐ ردیابی ماژول فعلی کاربر در Background
+        /// </summary>
+        private void TrackCurrentModule(ActionExecutingContext context)
+        {
+            try
+            {
+                var userId = GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                    return;
 
+                // ⭐ تشخیص ماژول بر اساس Area
+                var area = context.RouteData.Values["area"]?.ToString();
+
+                ModuleType? currentModule = area switch
+                {
+                    "AppCoreArea" => ModuleType.Core,
+                    "TaskingArea" => ModuleType.Tasking,
+                    "CrmArea" => ModuleType.CRM,
+                    _ => null // برای Account یا صفحات عمومی
+                };
+
+                // ⭐ اگر ماژول مشخص بود، در Background ذخیره کن
+                if (currentModule.HasValue)
+                {
+                    _moduleTracking.EnqueueModuleTracking(userId, currentModule.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Silent fail - نباید باعث خطا در صفحه شود
+                // می‌توانید در اینجا Log کنید
+                System.Diagnostics.Debug.WriteLine($"⚠️ TrackCurrentModule failed: {ex.Message}");
+            }
+        }
         public string GetUserId()
         {
             string userId = null;

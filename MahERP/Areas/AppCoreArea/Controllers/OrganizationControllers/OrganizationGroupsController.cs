@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using MahERP.Areas.AppCoreArea.Controllers.BaseControllers;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer;
@@ -12,12 +8,17 @@ using MahERP.DataModelLayer.Entities.Organizations;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.OrganizationGroupRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
 {
@@ -38,8 +39,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository , BaseRepository)
+            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _groupRepository = groupRepository;
             _uow = uow;

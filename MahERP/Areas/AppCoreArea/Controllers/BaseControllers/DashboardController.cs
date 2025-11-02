@@ -5,6 +5,7 @@ using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
@@ -45,9 +46,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
             ActivityLoggerService activityLogger,
             IMainDashboardRepository mainDashboardRepository,
             IBaseRepository BaseRepository,
-                    IUserManagerRepository userRepository)
+                    IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking)
 
- : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger , userRepository, BaseRepository)
+
+ : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger , userRepository, BaseRepository, moduleTracking)
         {
             _Context = Context;
             _UserManager = UserManager;

@@ -11,6 +11,7 @@ using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
@@ -63,8 +64,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             TaskCodeGenerator taskCodeGenerator,
             IUserManagerRepository userRepository, IBaseRepository BaseRepository,
             ITaskVisibilityRepository taskVisibilityRepository,
-            ITaskFilterRepository taskFilterRepository,ITaskHistoryRepository taskHistoryRepository) 
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository)
+            ITaskFilterRepository taskFilterRepository,ITaskHistoryRepository taskHistoryRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _taskRepository = taskRepository;
             _stakeholderRepository = stakeholderRepository;

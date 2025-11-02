@@ -8,6 +8,7 @@ using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
@@ -47,7 +48,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             IBranchRepository branchRepository,
             IUserManagerRepository userRepository,
             IMapper mapper, IBaseRepository BaseRepository,
-            ITaskVisibilityRepository taskVisibilityRepository) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository , BaseRepository)
+            ITaskVisibilityRepository taskVisibilityRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _teamRepository = teamRepository;
             _branchRepository = branchRepository;

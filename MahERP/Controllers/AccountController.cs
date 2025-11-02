@@ -2,6 +2,7 @@
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using MahERP.Helpers;
+using MahERP.DataModelLayer.Enums; // ⭐ NEW
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,17 +14,20 @@ namespace MahERP.Controllers
         private readonly UserManager<AppUsers> _UserManager;
         private readonly IUnitOfWork _Context;
         private readonly ActivityLoggerService _activityLogger;
+        private readonly IModuleAccessService _moduleAccessService; // ⭐ NEW
 
         public AccountController(
             UserManager<AppUsers> usermanager, 
             SignInManager<AppUsers> signInManager, 
             IUnitOfWork Context,
-            ActivityLoggerService activityLogger)
+            ActivityLoggerService activityLogger,
+            IModuleAccessService moduleAccessService) // ⭐ NEW
         {
             _signInManager = signInManager;
             _UserManager = usermanager;
             _Context = Context;
             _activityLogger = activityLogger;
+            _moduleAccessService = moduleAccessService; // ⭐ NEW
         }
 
         private void GetVersionInfo()
@@ -42,6 +46,7 @@ namespace MahERP.Controllers
                 var Users = _Context.UserManagerUW.Get();
                 if (Users.Count() == 0)
                 {
+                    // ⭐⭐⭐ ایجاد کاربر Admin
                     AppUsers User = new()
                     {
                         UserName = "Admin",
@@ -67,9 +72,9 @@ namespace MahERP.Controllers
                         var adminRolePattern = new UserRolePattern
                         {
                             UserId = User.Id,
-                            RolePatternId = 1, // الگوی مدیریت کامل
+                            RolePatternId = 1,
                             AssignDate = DateTime.Now,
-                            AssignedByUserId = User.Id, // خود کاربر
+                            AssignedByUserId = User.Id,
                             IsActive = true,
                             StartDate = DateTime.Now,
                             Notes = "تخصیص خودکار هنگام ایجاد کاربر Admin"
@@ -81,13 +86,22 @@ namespace MahERP.Controllers
                         var branchUser = new BranchUser
                         {
                             UserId = User.Id,
-                            BranchId = 1, // شعبه اصلی
+                            BranchId = 1,
                             AssignedByUserId = User.Id,
                             AssignDate = DateTime.Now,
                             IsActive = true
                         };
 
                         _Context.BranchUserUW.Create(branchUser);
+
+                        // ⭐⭐⭐ NEW: اعطای دسترسی به تمام ماژول‌ها برای Admin
+                        await _moduleAccessService.GrantModuleAccessToUserAsync(
+                            User.Id, ModuleType.Core, User.Id, "دسترسی پیش‌فرض Admin");
+                        await _moduleAccessService.GrantModuleAccessToUserAsync(
+                            User.Id, ModuleType.Tasking, User.Id, "دسترسی پیش‌فرض Admin");
+                        await _moduleAccessService.GrantModuleAccessToUserAsync(
+                            User.Id, ModuleType.CRM, User.Id, "دسترسی پیش‌فرض Admin");
+
                         _Context.Save();
 
                         // ثبت لاگ ایجاد کاربر Admin اولیه
@@ -107,26 +121,15 @@ namespace MahERP.Controllers
                     if (User.Identity.IsAuthenticated)
                     {
                         var LoggedUser = _Context.UserManagerUW.GetById(_UserManager.GetUserId(HttpContext.User));
-                        if (LoggedUser != null && LoggedUser.IsAdmin == true)
+                        if (LoggedUser != null)
                         {
-                            // ثبت لاگ ورود مجدد کاربر لاگین شده
-                            await _activityLogger.LogActivityAsync(
-                                ActivityTypeEnum.View,
-                                "Authentication",
-                                "AlreadyLoggedIn",
-                                $"کاربر از قبل وارد سیستم شده: {LoggedUser.FirstName} {LoggedUser.LastName}",
-                                recordId: LoggedUser.Id,
-                                entityType: "AppUsers",
-                                recordTitle: $"{LoggedUser.FirstName} {LoggedUser.LastName}"
-                            );
-                            
-                            return Redirect("/AppCoreArea/Dashboard/Index");
+                            // ⭐⭐⭐ NEW: ریدایرکت به ماژول مناسب
+                            return await RedirectToDefaultModuleAsync(LoggedUser.Id);
                         }
                         else
                         {
                             await _signInManager.SignOutAsync();
                             
-                            // ثبت لاگ خروج اجباری
                             await _activityLogger.LogActivityAsync(
                                 ActivityTypeEnum.Logout,
                                 "Authentication",
@@ -170,31 +173,18 @@ namespace MahERP.Controllers
                     if (result.Succeeded)
                     {
                         var ThisUser = await _UserManager.FindByNameAsync(model.UserName);
-                        //if (ThisUser.IsAdmin == false)
-                        //{
-                        //    await _signInManager.SignOutAsync();
-
-                        //    // ثبت لاگ تلاش ورود کاربر غیرمجاز
-                        //    await _activityLogger.LogLoginAsync(
-                        //        false, 
-                        //        model.UserName, 
-                        //        "کاربر دسترسی مدیریت ندارد"
-                        //    );
-
-                        //    ModelState.AddModelError("UserName", "اطلاعات ورود صحیح نیست");
-                        //    return View(model);
-                        //}
 
                         // ثبت لاگ ورود موفق
                         await _activityLogger.LogLoginAsync(true, ThisUser.UserName);
 
-                        if (ReturnUrl == null)
+                        // ⭐⭐⭐ NEW: بررسی دسترسی به ماژول‌ها و ریدایرکت
+                        if (!string.IsNullOrEmpty(ReturnUrl))
                         {
-                            return Redirect("/AdminArea/Dashboard/Index");
+                            return Redirect(ReturnUrl);
                         }
                         else
                         {
-                            return Redirect(ReturnUrl);
+                            return await RedirectToDefaultModuleAsync(ThisUser.Id);
                         }
                     }
                     else
@@ -228,6 +218,122 @@ namespace MahERP.Controllers
                 }
             }
             return View(model);
+        }
+
+        // ⭐⭐⭐ NEW: متد کمکی برای ریدایرکت به ماژول مناسب
+        private async Task<IActionResult> RedirectToDefaultModuleAsync(string userId)
+        {
+            try
+            {
+                // 1. دریافت لیست ماژول‌های فعال
+                var enabledModules = await _moduleAccessService.GetUserEnabledModulesAsync(userId);
+
+                if (!enabledModules.Any())
+                {
+                    // ❌ هیچ ماژولی فعال نیست
+                    return RedirectToAction("NoAccess", "Account");
+                }
+
+                if (enabledModules.Count == 1)
+                {
+                    // ✅ فقط یک ماژول فعال است
+                    var singleModule = enabledModules.First();
+                    await _moduleAccessService.SaveLastUsedModuleAsync(userId, singleModule);
+                    return Redirect(singleModule.GetBaseUrl());
+                }
+
+                // ✅ چند ماژول فعال است
+                // بررسی آخرین ماژول استفاده شده
+                var defaultModule = await _moduleAccessService.GetDefaultModuleForLoginAsync(userId);
+
+                if (defaultModule.HasValue)
+                {
+                    await _moduleAccessService.SaveLastUsedModuleAsync(userId, defaultModule.Value);
+                    return Redirect(defaultModule.Value.GetBaseUrl());
+                }
+
+                // ⭐ نمایش صفحه انتخاب ماژول
+                return RedirectToAction("SelectModule", "Account");
+            }
+            catch
+            {
+                // در صورت خطا، به Core می‌رویم
+                return Redirect("/AppCoreArea/Dashboard/Index");
+            }
+        }
+
+        // ⭐⭐⭐ NEW: صفحه عدم دسترسی
+        [HttpGet]
+        public IActionResult NoAccess()
+        {
+            ViewBag.Title = "عدم دسترسی";
+            return View();
+        }
+
+        // ⭐⭐⭐ NEW: صفحه انتخاب ماژول
+        [HttpGet]
+        public async Task<IActionResult> SelectModule()
+        {
+            try
+            {
+                var userId = _UserManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login");
+                }
+
+                var enabledModules = await _moduleAccessService.GetUserEnabledModulesAsync(userId);
+                
+                if (!enabledModules.Any())
+                {
+                    return RedirectToAction("NoAccess");
+                }
+
+                if (enabledModules.Count == 1)
+                {
+                    // اگر فقط یک ماژول بود، مستقیم redirect
+                    return Redirect(enabledModules.First().GetBaseUrl());
+                }
+
+                ViewBag.EnabledModules = enabledModules;
+                return View();
+            }
+            catch
+            {
+                return RedirectToAction("Login");
+            }
+        }
+
+        // ⭐⭐⭐ NEW: انتخاب ماژول توسط کاربر
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SelectModule(byte moduleType, bool setAsDefault = false)
+        {
+            try
+            {
+                var userId = _UserManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login");
+                }
+
+                var selectedModule = (ModuleType)moduleType;
+
+                // ذخیره آخرین استفاده
+                await _moduleAccessService.SaveLastUsedModuleAsync(userId, selectedModule);
+
+                // اگر کاربر خواست پیش‌فرض شود
+                if (setAsDefault)
+                {
+                    await _moduleAccessService.SetUserDefaultModuleAsync(userId, selectedModule);
+                }
+
+                return Redirect(selectedModule.GetBaseUrl());
+            }
+            catch
+            {
+                return RedirectToAction("Login");
+            }
         }
 
         [Route("/Account/LogOut")]

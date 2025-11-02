@@ -100,6 +100,13 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<TaskCRMDetails> TaskCRMDetailsUW { get; }
         #endregion
 
+        #region Module Access Management
+        GenereicClass<UserModulePermission> UserModulePermissionUW { get; }
+        GenereicClass<TeamModulePermission> TeamModulePermissionUW { get; }
+        GenereicClass<BranchModulePermission> BranchModulePermissionUW { get; }
+        GenereicClass<UserModulePreference> UserModulePreferenceUW { get; }
+        #endregion
+
         int Save();
             Task<int> SaveAsync();
 

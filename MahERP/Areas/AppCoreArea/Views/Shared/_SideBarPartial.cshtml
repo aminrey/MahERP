@@ -409,7 +409,12 @@
            </li>
          }
      }
-
+                <li class="nav-item">
+                    <a class="nav-link"  asp-controller="ModuleAccess" asp-action="Index">
+                        <i class="nav-icon fa fa-cube"></i>
+                        <span class="nav-text">دسترسی ماژول‌ها</span>
+                    </a>
+                </li>
                 <!-- ============== 🔔 NOTIFICATIONS ============== -->
               @if (Html.CanAccessAnyIn("CORE.NOTIFICATION"))
     {
@@ -463,6 +468,7 @@
                     <span class="nav-main-link-name">خروج از سیستم</span>
         </a>
    </li>
+  
 
   </ul>
         </div>

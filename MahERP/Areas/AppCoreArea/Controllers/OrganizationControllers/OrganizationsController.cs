@@ -11,6 +11,7 @@ using MahERP.DataModelLayer.Repository.ContactRepository;
 using MahERP.DataModelLayer.Repository.OrganizationGroupRepository;
 using MahERP.DataModelLayer.Repository.OrganizationRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.Extentions;
 using Microsoft.AspNetCore.Authorization;
@@ -49,8 +50,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository)
+            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _organizationRepository = organizationRepository;
             _contactRepository = contactRepository;

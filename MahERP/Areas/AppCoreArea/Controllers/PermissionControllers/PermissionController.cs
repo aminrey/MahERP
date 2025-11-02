@@ -4,6 +4,7 @@ using MahERP.CommonLayer.ViewModels;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -34,8 +35,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.PermissionControllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IPermissionService permissionService,
-            IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository ,BaseRepository)
+            IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _permissionService = permissionService;
             _webHostEnvironment = webHostEnvironment;

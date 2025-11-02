@@ -165,6 +165,12 @@ namespace MahERP.DataModelLayer
         /// </summary>
         public DbSet<BranchOrganizationGroupMember> BranchOrganizationGroupMember_Tbl { get; set; }
 
+        // ⭐⭐⭐ NEW: Module Access Management
+        public DbSet<UserModulePermission> UserModulePermission_Tbl { get; set; }
+        public DbSet<TeamModulePermission> TeamModulePermission_Tbl { get; set; }
+        public DbSet<BranchModulePermission> BranchModulePermission_Tbl { get; set; }
+        public DbSet<UserModulePreference> UserModulePreference_Tbl { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -1,0 +1,134 @@
+﻿@model ModuleAccessReportViewModel
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header bg-primary-dark text-white">
+            <h5 class="modal-title">
+                <i class="@Model.ModuleIcon me-2"></i>
+                گزارش دسترسی ماژول @Model.ModuleName
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <!-- آمار کلی -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="block block-rounded bg-primary-light text-center mb-0">
+                        <div class="block-content py-3">
+                            <div class="fs-3 fw-bold text-primary">@Model.DirectUsers.Count</div>
+                            <div class="fs-sm">کاربران مستقیم</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="block block-rounded bg-success-light text-center mb-0">
+                        <div class="block-content py-3">
+                            <div class="fs-3 fw-bold text-success">@Model.Teams.Count</div>
+                            <div class="fs-sm">تیم‌ها</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="block block-rounded bg-info-light text-center mb-0">
+                        <div class="block-content py-3">
+                            <div class="fs-3 fw-bold text-info">@Model.Branches.Count</div>
+                            <div class="fs-sm">شعب</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- کاربران مستقیم -->
+            @if (Model.DirectUsers.Any())
+            {
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">
+                        <i class="fa fa-user text-primary me-1"></i>
+                        کاربران دارای دسترسی مستقیم
+                    </h6>
+                    <div class="list-group">
+                        @foreach (var user in Model.DirectUsers)
+                        {
+                            <div class="list-group-item">
+                                <i class="fa fa-user-circle text-primary me-2"></i>
+                                @user
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    هیچ کاربری دسترسی مستقیم ندارد
+                </div>
+            }
+
+            <!-- تیم‌ها -->
+            @if (Model.Teams.Any())
+            {
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">
+                        <i class="fa fa-users text-success me-1"></i>
+                        تیم‌های دارای دسترسی
+                    </h6>
+                    <div class="list-group">
+                        @foreach (var team in Model.Teams)
+                        {
+                            <div class="list-group-item">
+                                <i class="fa fa-users text-success me-2"></i>
+                                @team
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    هیچ تیمی دسترسی ندارد
+                </div>
+            }
+
+            <!-- شعب -->
+            @if (Model.Branches.Any())
+            {
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">
+                        <i class="fa fa-building text-info me-1"></i>
+                        شعب دارای دسترسی
+                    </h6>
+                    <div class="list-group">
+                        @foreach (var branch in Model.Branches)
+                        {
+                            <div class="list-group-item">
+                                <i class="fa fa-building text-info me-2"></i>
+                                @branch
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    هیچ شعبه‌ای دسترسی ندارد
+                </div>
+            }
+
+            <!-- جمع کل -->
+            <div class="alert alert-success">
+                <strong>جمع کل:</strong>
+                @Model.TotalCount دسترسی فعال برای ماژول @Model.ModuleName
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-1"></i>بستن
+            </button>
+        </div>
+    </div>
+</div>

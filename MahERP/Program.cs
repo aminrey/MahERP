@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
+;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,8 +62,11 @@ builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IOrganizationGroupRepository, OrganizationGroupRepository>();
 builder.Services.AddScoped<IBaseRepository, BaseRepository>();
 
+builder.Services.AddScoped<IModuleAccessService, ModuleAccessService>();
 
-
+// ⭐ یا اگر می‌خواهید به صورت Singleton در Dependency Injection باشد:
+builder.Services.AddSingleton<ModuleTrackingBackgroundService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<ModuleTrackingBackgroundService>());
 builder.Services.AddHostedService<ExpiredRoleCleanupService>();
 
 // اضافه کردن SmsProviderRepository

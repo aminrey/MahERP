@@ -1,0 +1,91 @@
+﻿@{
+    ViewData["Title"] = "عدم دسترسی";
+}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="~/assets/css/oneui.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="page-container" class="main-content-boxed">
+        <main id="main-container">
+            <div class="hero bg-danger">
+                <div class="hero-inner">
+                    <div class="content content-full text-center">
+                        <div class="py-5">
+                            <div class="display-1 fw-bold text-white mb-3">
+                                <i class="fa fa-lock"></i>
+                            </div>
+                            <h1 class="h2 fw-bold text-white mb-3">عدم دسترسی به سیستم</h1>
+                            <h2 class="h4 fw-normal text-white-75 mb-0">
+                                شما در حال حاضر به هیچ ماژولی دسترسی ندارید
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content content-full">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6">
+                        <div class="block block-rounded">
+                            <div class="block-header block-header-default bg-danger">
+                                <h3 class="block-title text-white">
+                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                    دسترسی محدود شده
+                                </h3>
+                            </div>
+                            <div class="block-content">
+                                <div class="alert alert-danger d-flex align-items-start">
+                                    <i class="fa fa-ban fa-2x me-3"></i>
+                                    <div>
+                                        <h5 class="alert-heading">دسترسی رد شد</h5>
+                                        <p class="mb-0">
+                                            حساب کاربری شما هیچ دسترسی به ماژول‌های سیستم ندارد.
+                                            لطفاً با مدیر سیستم تماس بگیرید.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="block block-rounded bg-body-light mb-0">
+                                    <div class="block-content">
+                                        <h6 class="mb-2">
+                                            <i class="fa fa-info-circle text-primary me-1"></i>
+                                            راه‌حل‌های پیشنهادی:
+                                        </h6>
+                                        <ul class="list-unstyled">
+                                            <li class="mb-2">
+                                                <i class="fa fa-check text-success me-2"></i>
+                                                با مدیر سیستم تماس بگیرید تا دسترسی لازم به شما اعطا شود
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fa fa-check text-success me-2"></i>
+                                                ممکن است عضو تیم یا شعبه‌ای نباشید که دسترسی داشته باشد
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fa fa-check text-success me-2"></i>
+                                                حساب کاربری شما ممکن است غیرفعال شده باشد
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="text-center mt-4">
+                                    <a href="/Account/LogOut" class="btn btn-danger">
+                                        <i class="fa fa-sign-out-alt me-1"></i>
+                                        خروج از سیستم
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

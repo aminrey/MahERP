@@ -1,8 +1,12 @@
-﻿using MahERP.DataModelLayer;
+﻿using AutoMapper;
+using MahERP.Areas.CrmArea.Controllers.BaseControllers;
+using MahERP.Attributes;
+using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Sms;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels;
 using MahERP.Services;
 using MahERP.WebApp.Services;
@@ -12,9 +16,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Threading.Tasks;
-using MahERP.Attributes;
-using AutoMapper;
-using MahERP.Areas.CrmArea.Controllers.BaseControllers;
 
 namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
 {
@@ -34,8 +35,10 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
             IMemoryCache memoryCache,
             IMapper Mapper,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository ,BaseRepository)
+            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _providerRepo = providerRepo;
             _Mapper = Mapper;

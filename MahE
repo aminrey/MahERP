@@ -1,0 +1,235 @@
+﻿RP\Areas\AppCoreArea\Views\ModuleAccess\Index.cshtml
+@model ModuleAccessIndexViewModel
+@{
+    ViewData["Title"] = "مدیریت دسترسی ماژول‌ها";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-cube text-primary me-2"></i>مدیریت دسترسی ماژول‌ها
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AdminArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">دسترسی ماژول‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Page Content -->
+<div class="content">
+    <!-- Quick Actions -->
+    <div class="block block-rounded mb-4">
+        <div class="block-content block-content-full">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <a asp-action="GrantAccess" class="btn btn-primary w-100 py-3">
+                        <i class="fa fa-plus-circle fa-2x d-block mb-2"></i>
+                        <strong>افزودن دسترسی</strong>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a asp-action="AllModulesReport" class="btn btn-info w-100 py-3">
+                        <i class="fa fa-chart-bar fa-2x d-block mb-2"></i>
+                        <strong>گزارش کامل</strong>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" onclick="showModuleReport(0)" class="btn btn-success w-100 py-3">
+                        <i class="fa fa-home fa-2x d-block mb-2"></i>
+                        <strong>گزارش Core</strong>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="block block-rounded mb-4">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-filter me-1"></i>فیلترها
+            </h3>
+        </div>
+        <div class="block-content">
+            <form method="get" asp-action="Index" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">ماژول:</label>
+                    <select name="moduleFilter" class="form-select">
+                        <option value="">همه ماژول‌ها</option>
+                        <option value="0" selected="@(Model.ModuleFilter == 0)">هسته مرکزی</option>
+                        <option value="1" selected="@(Model.ModuleFilter == 1)">تسکینگ</option>
+                        <option value="2" selected="@(Model.ModuleFilter == 2)">CRM</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">نوع هدف:</label>
+                    <select name="targetTypeFilter" class="form-select">
+                        <option value="">همه</option>
+                        <option value="User" selected="@(Model.TargetTypeFilter == "User")">کاربر</option>
+                        <option value="Team" selected="@(Model.TargetTypeFilter == "Team")">تیم</option>
+                        <option value="Branch" selected="@(Model.TargetTypeFilter == "Branch")">شعبه</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fa fa-search me-1"></i>اعمال فیلتر
+                    </button>
+                    <a asp-action="Index" class="btn btn-alt-secondary">
+                        <i class="fa fa-times me-1"></i>حذف فیلتر
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Access List -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list me-1"></i>لیست دسترسی‌ها
+                <span class="badge bg-primary ms-2">@Model.AccessList.Count</span>
+            </h3>
+        </div>
+        <div class="block-content">
+            @if (Model.AccessList.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 60px;">#</th>
+                                <th>نوع</th>
+                                <th>هدف</th>
+                                <th>ماژول</th>
+                                <th class="text-center">وضعیت</th>
+                                <th class="text-center">تاریخ اعطا</th>
+                                <th>اعطا کننده</th>
+                                <th class="text-center" style="width: 120px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int counter = 1; }
+                            @foreach (var item in Model.AccessList)
+                            {
+                                <tr>
+                                    <td class="text-center">@counter</td>
+                                    <td>
+                                        @if (item.TargetType == "User")
+                                        {
+                                            <span class="badge bg-primary">
+                                                <i class="fa fa-user me-1"></i>کاربر
+                                            </span>
+                                        }
+                                        else if (item.TargetType == "Team")
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fa fa-users me-1"></i>تیم
+                                            </span>
+                                        }
+                                        else if (item.TargetType == "Branch")
+                                        {
+                                            <span class="badge bg-info">
+                                                <i class="fa fa-building me-1"></i>شعبه
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="fw-semibold">@item.TargetName</td>
+                                    <td>
+                                        <i class="@item.ModuleIcon text-@MahERP.DataModelLayer.Enums.ModuleTypeExtensions.GetColor((MahERP.DataModelLayer.Enums.ModuleType)item.ModuleType) me-1"></i>
+                                        @item.ModuleName
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IsEnabled)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fa fa-check me-1"></i>فعال
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="fa fa-times me-1"></i>غیرفعال
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @item.GrantedDate.ToString("yyyy/MM/dd")
+                                    </td>
+                                    <td>@item.GrantedByUserName</td>
+                                    <td class="text-center">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-danger"
+                                                onclick="revokeAccess('@item.TargetType', '@item.TargetIdentifier', @item.ModuleType)">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                counter++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    دسترسی برای نمایش وجود ندارد.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Container -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true"></div>
+
+@section Scripts {
+<script>
+    function showModuleReport(moduleType) {
+        $.get('@Url.Action("ModuleReport")', { moduleType: moduleType })
+            .done(function(data) {
+                $('#reportModal').html(data).modal('show');
+            })
+            .fail(function(xhr) {
+                Swal.fire('خطا', 'خطا در دریافت گزارش', 'error');
+            });
+    }
+
+    async function revokeAccess(targetType, targetId, moduleType) {
+        const confirmed = await showConfirmationSwal({
+            title: 'حذف دسترسی',
+            text: 'آیا از حذف این دسترسی اطمینان دارید؟',
+            confirmButtonText: 'بله، حذف شود'
+        });
+
+        if (confirmed) {
+            $.post('@Url.Action("RevokeAccessConfirmed")', {
+                targetType: targetType,
+                targetId: targetId,
+                moduleType: moduleType,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            })
+            .done(function(response) {
+                if (response.status === 'success') {
+                    Swal.fire('موفق', response.message, 'success')
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire('خطا', response.message, 'error');
+                }
+            })
+            .fail(function() {
+                Swal.fire('خطا', 'خطا در حذف دسترسی', 'error');
+            });
+        }
+    }
+</script>
+}

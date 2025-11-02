@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Spreadsheet;
 using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
@@ -44,9 +46,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             INotificationService notify,
             ActivityLoggerService activityLogger,
             IMainDashboardRepository mainDashboardRepository,
-                    IUserManagerRepository userRepository,IBaseRepository BaseRepository)
+                    IUserManagerRepository userRepository,IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
 
- : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger , userRepository, BaseRepository)
+
+ : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _Context = Context;
             _UserManager = UserManager;

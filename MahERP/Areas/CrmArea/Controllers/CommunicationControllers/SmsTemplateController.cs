@@ -1,19 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using MahERP.Areas.CrmArea.Controllers.BaseControllers;
+using MahERP.Attributes;
 using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Sms;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.Services;
 using MahERP.WebApp.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
-using MahERP.Attributes;
-using MahERP.Areas.CrmArea.Controllers.BaseControllers;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
 {
@@ -31,8 +32,10 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository ,BaseRepository)
+            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
         {
             _templateRepo = templateRepo;
         }

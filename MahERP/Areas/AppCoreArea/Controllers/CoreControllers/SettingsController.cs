@@ -4,6 +4,7 @@ using MahERP.DataModelLayer.Entities;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -25,8 +26,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
-            IBaseRepository baseRepository)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository)
+            IBaseRepository baseRepository, ModuleTrackingBackgroundService moduleTracking)
+
+
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking)
         {
         }
 
