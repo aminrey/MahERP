@@ -160,8 +160,22 @@ public class TaskViewModel
         [Display(Name = "در روز من")]
         public bool IsInMyDay { get; set; }
 
+
+        /// <summary>
+        /// ⭐⭐⭐ نوع تکمیل تسک (0=مشترک, 1=مستقل)
+        /// </summary>
+        [Display(Name = "نوع تکمیل تسک")]
+        public byte CompletionMode { get; set; } = 0;
         // Progress calculation
+
+        /// <summary>
+        /// ⭐⭐⭐ نوع تکمیل تسک (false=مشترک, true=مستقل)
+        /// </summary>
+        [Display(Name = "نوع تکمیل تسک")]
+        public bool IsIndependentCompletion { get; set; } = false;
+
         [Display(Name = "درصد پیشرفت")]
+
     public int ProgressPercentage
     {
         get

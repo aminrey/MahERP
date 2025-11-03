@@ -4,11 +4,13 @@ using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskReminderFilterViewModel;
 
 namespace MahERP.DataModelLayer.Repository
 {
@@ -95,75 +97,83 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// محاسبه آمار تسک‌ها - بازنویسی شده با استفاده از متد جامع
+        /// محاسبه آمار تسک‌ها - بازنویسی کامل با حذف تکرار
         /// </summary>
         public async Task<TasksStatsViewModel> CalculateTaskStatsAsync(string userId)
         {
             try
             {
-
-                // ⭐ استفاده از متد جامع برای دریافت همه انواع تسک‌ها
-                var userTasks = await _taskRepository.GetUserTasksComprehensiveAsync(
-                    userId,
-                    includeCreatedTasks: true,     // تسک‌های ایجاد شده توسط من
-                    includeAssignedTasks: true,    // تسک‌های واگذار شده به من
-                    includeSupervisedTasks: true,  // تسک‌های تحت نظارت
-                    includeDeletedTasks: false     // بدون تسک‌های حذف شده
-                );
-
-
                 var today = DateTime.Now.Date;
+                var fiveDaysAgo = today.AddDays(-5);
 
-                // ⭐ فیلتر کردن تسک‌های ناتمام از تسک‌های ایجاد شده
-                var incompleteCreatedTasks = userTasks.CreatedTasks
-                    .Where(t => !t.IsDeleted && t.Status != 2)
-                    .ToList();
+                // ⭐⭐⭐ 1. تسک‌های فعال کاربر (Distinct بر اساس TaskId)
+                var myActiveTaskIds = await _context.TaskAssignment_Tbl
+                    .Where(ta => ta.AssignedUserId == userId &&
+                                !ta.Task.IsDeleted &&
+                                (
+                                    !ta.CompletionDate.HasValue ||
+                                    (ta.CompletionDate.HasValue && ta.CompletionDate >= fiveDaysAgo)
+                                ))
+                    .Select(ta => ta.TaskId)
+                    .Distinct()
+                    .ToListAsync();
 
-                // ⭐ فیلتر کردن تسک‌های ناتمام از تسک‌های واگذار شده
-                var incompleteAssignedTasks = userTasks.AssignedTasks
-                    .Where(t => !t.IsDeleted && t.Status != 2)
-                    .ToList();
+                // ⭐⭐⭐ 2. تسک‌های ساخته شده توسط من
+                var createdByMeTaskIds = await _context.Tasks_Tbl
+                    .Where(t => t.CreatorUserId == userId &&
+                               !t.IsDeleted &&
+                               t.TaskAssignments.Any(ta => ta.AssignedUserId != userId))
+                    .Select(t => t.Id)
+                    .Distinct()
+                    .ToListAsync();
 
-                // ⭐ ترکیب همه تسک‌های فعال کاربر برای محاسبه آمار زمانی
-                var allActiveTasks = userTasks.CreatedTasks
-                    .Concat(userTasks.AssignedTasks)
-                    .Where(t => !t.IsDeleted)
-                    .ToList();
+                // ⭐⭐⭐ 3. دریافت تسک‌های کامل (یکبار Query)
+                var allMyTasks = await _context.Tasks_Tbl
+                    .Where(t => myActiveTaskIds.Contains(t.Id))
+                    .Include(t => t.TaskAssignments)
+                    .ToListAsync();
 
+                // ⭐⭐⭐ 4. محاسبه آمار
                 var result = new TasksStatsViewModel
                 {
-                    // ⭐ تسک‌های شخصی فعال: تسک‌های ناتمام ایجاد شده + واگذار شده
-                    MyTasksCount = incompleteCreatedTasks.Count + incompleteAssignedTasks.Count,
+                    // تعداد تسک‌های فعال من (Distinct)
+                    MyTasksCount = myActiveTaskIds.Count,
 
-                    // ⭐ تسک‌های واگذار شده توسط من (ناتمام)
-                    AssignedByMeCount = incompleteCreatedTasks.Count,
+                    // تسک‌های ساخته شده توسط من
+                    AssignedByMeCount = createdByMeTaskIds.Count,
 
-                    // ⭐ تسک‌های تحت نظارت (فعال)
-                    SupervisedTasksCount = userTasks.SupervisedTasks
-                        .Count(t => !t.IsDeleted),
+                    // تسک‌های تحت نظارت
+                    SupervisedTasksCount = await GetSupervisedTasksCountAsync(userId),
 
-                    // ⭐ تسک‌های امروز (از همه تسک‌های فعال)
-                    TodayTasksCount = allActiveTasks.Count(t =>
-                        t.DueDate.HasValue &&
-                        t.DueDate.Value.Date == today &&
-                        t.Status != 2),
+                    // تسک‌های امروز (از تسک‌های من)
+                    TodayTasksCount = allMyTasks.Count(t =>
+                    {
+                        var myAssignment = t.TaskAssignments.FirstOrDefault(ta => ta.AssignedUserId == userId);
+                        return t.DueDate.HasValue &&
+                               t.DueDate.Value.Date == today &&
+                               (!myAssignment?.CompletionDate.HasValue ?? false);
+                    }),
 
-                    // ⭐ تسک‌های عقب افتاده (از همه تسک‌های فعال)
-                    OverdueTasksCount = allActiveTasks.Count(t =>
-                        t.DueDate.HasValue &&
-                        t.DueDate.Value.Date < today &&
-                        t.Status != 2),
+                    // تسک‌های عقب افتاده (از تسک‌های من)
+                    OverdueTasksCount = allMyTasks.Count(t =>
+                    {
+                        var myAssignment = t.TaskAssignments.FirstOrDefault(ta => ta.AssignedUserId == userId);
+                        return t.DueDate.HasValue &&
+                               t.DueDate.Value.Date < today &&
+                               (!myAssignment?.CompletionDate.HasValue ?? false);
+                    }),
 
-                    // ⭐ تسک‌های به موقع (از همه تسک‌های فعال)
-                    OnTimeTasksCount = allActiveTasks.Count(t =>
-                        (!t.DueDate.HasValue || t.DueDate.Value.Date >= today || t.Status == 2) &&
-                        t.Status != 2),
+                    // تسک‌های به موقع (از تسک‌های من)
+                    OnTimeTasksCount = allMyTasks.Count(t =>
+                    {
+                        var myAssignment = t.TaskAssignments.FirstOrDefault(ta => ta.AssignedUserId == userId);
+                        return (!t.DueDate.HasValue || t.DueDate.Value.Date >= today) &&
+                               (!myAssignment?.CompletionDate.HasValue ?? false);
+                    }),
 
-                    // ⭐ یادآوری‌ها (بدون تغییر)
+                    // یادآوری‌ها
                     RemindersCount = await CalculateActiveRemindersCountAsync(userId)
                 };
-
-
 
                 return result;
             }
@@ -173,6 +183,45 @@ namespace MahERP.DataModelLayer.Repository
                 return new TasksStatsViewModel();
             }
         }
+
+        /// <summary>
+        /// محاسبه تعداد تسک‌های نظارتی - متد جدید
+        /// </summary>
+        private async Task<int> GetSupervisedTasksCountAsync(string userId)
+        {
+            try
+            {
+                // تیم‌هایی که کاربر ناظر آن‌هاست (عضو است ولی مدیر نیست)
+                var managedTeamIds = await _context.Team_Tbl
+                    .Where(t => t.ManagerUserId == userId && t.IsActive)
+                    .Select(t => t.Id)
+                    .ToListAsync();
+
+                var memberTeamIds = await _context.TeamMember_Tbl
+                    .Where(tm => tm.UserId == userId && tm.IsActive)
+                    .Select(tm => tm.TeamId)
+                    .ToListAsync();
+
+                var supervisedTeamIds = memberTeamIds.Except(managedTeamIds).ToList();
+
+                if (!supervisedTeamIds.Any())
+                    return 0;
+
+                // تسک‌های منتصب شده به این تیم‌ها (Distinct)
+                return await _context.TaskAssignment_Tbl
+                    .Where(ta => supervisedTeamIds.Contains(ta.AssignedInTeamId ?? 0) &&
+                                ta.AssignedUserId != userId &&
+                                !ta.Task.IsDeleted)
+                    .Select(ta => ta.TaskId)
+                    .Distinct()
+                    .CountAsync();
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         /// <summary>
         /// محاسبه آمار قراردادها
         /// </summary>
@@ -344,6 +393,156 @@ namespace MahERP.DataModelLayer.Repository
                 5 => "bg-primary",
                 _ => "bg-dark"
             };
+        }
+        /// <summary>
+        /// دریافت آخرین تسک‌های دریافتی کاربر - با استفاده از Include
+        /// </summary>
+        public async Task<List<RecentTaskViewModel>> GetRecentReceivedTasksAsync(string userId, int take = 5)
+        {
+            try
+            {
+                // ⭐⭐⭐ مرحله 1: دریافت داده‌ها با Include
+                var assignments = await _context.TaskAssignment_Tbl
+                    .Where(ta => ta.AssignedUserId == userId &&
+                                !ta.Task.IsDeleted &&
+                                ta.Task.CreatorUserId != userId)
+                    .Include(ta => ta.Task)
+                        .ThenInclude(t => t.TaskCategory)
+                    .Include(ta => ta.Task.Creator)
+                    .OrderByDescending(ta => ta.AssignmentDate)
+                    .Take(take)
+                    .ToListAsync(); // ⭐ ابتدا ToListAsync بگیر
+
+                // ⭐⭐⭐ مرحله 2: Projection در حافظه (بدون Expression Tree)
+                var recentTasks = assignments.Select(ta => new RecentTaskViewModel
+                {
+                    Id = ta.TaskId,
+                    TaskCode = ta.Task.TaskCode,
+                    Title = ta.Task.Title,
+                    Description = ta.Task.Description,
+                    Priority = ta.Task.Priority,
+                    Important = ta.Task.Important,
+                    StartDate = ta.Task.StartDate,
+                    CreateDate = ta.Task.CreateDate,
+                    AssignmentDate = ta.AssignmentDate,
+
+                    // ⭐ حل شده: بدون ?. در Expression Tree
+                    CreatorName = ta.Task.Creator != null
+                        ? $"{ta.Task.Creator.FirstName} {ta.Task.Creator.LastName}"
+                        : "نامشخص",
+
+                    // ⭐ حل شده: جایگزین با ?? در LINQ to Objects
+                    CategoryTitle = ta.Task.TaskCategory != null
+                        ? ta.Task.TaskCategory.Title ?? "بدون دسته‌بندی"
+                        : "بدون دسته‌بندی",
+
+                    IsCompleted = ta.CompletionDate.HasValue,
+                    CompletionDate = ta.CompletionDate,
+                    DueDate = ta.Task.DueDate,
+                    Status = ta.Task.Status,
+                    IsOverdue = ta.Task.DueDate.HasValue &&
+                               ta.Task.DueDate.Value < DateTime.Now &&
+                               !ta.CompletionDate.HasValue
+                }).ToList();
+
+                return recentTasks;
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("MainDashboardRepository",
+                    "GetRecentReceivedTasksAsync", "خطا در دریافت تسک‌های دریافتی", ex);
+                return new List<RecentTaskViewModel>();
+            }
+        }
+        /// <summary>
+        /// دریافت آخرین تسک‌های واگذار شده توسط کاربر - با استفاده از Include
+        /// </summary>
+        public async Task<List<RecentAssignedTaskViewModel>> GetRecentAssignedTasksAsync(string userId, int take = 5)
+        {
+            try
+            {
+                // ⭐⭐⭐ مرحله 1: دریافت داده‌ها با Include
+                var tasks = await _context.Tasks_Tbl
+                    .Where(t => t.CreatorUserId == userId &&
+                               !t.IsDeleted &&
+                               t.TaskAssignments.Any(ta => ta.AssignedUserId != userId))
+                    .Include(t => t.TaskCategory)
+                    .Include(t => t.TaskAssignments)
+                        .ThenInclude(ta => ta.AssignedUser)
+                    .OrderByDescending(t => t.CreateDate)
+                    .Take(take)
+                    .ToListAsync(); // ⭐ ابتدا ToListAsync بگیر
+
+                // ⭐⭐⭐ مرحله 2: Projection در حافظه
+                var recentTasks = tasks.Select(t => new RecentAssignedTaskViewModel
+                {
+                    Id = t.Id,
+                    TaskCode = t.TaskCode,
+                    Title = t.Title,
+                    Description = t.Description,
+                    Priority = t.Priority,
+                    Important = t.Important,
+                    StartDate = t.StartDate,
+                    CreateDate = t.CreateDate,
+
+                    // ⭐ حل شده: بدون ?. در LINQ to Objects
+                    CategoryTitle = t.TaskCategory != null
+                        ? t.TaskCategory.Title ?? "بدون دسته‌بندی"
+                        : "بدون دسته‌بندی",
+
+                    // تعداد اعضا
+                    AssigneesCount = t.TaskAssignments.Count(ta => ta.AssignedUserId != userId),
+
+                    // اولین عضو + تعداد بقیه
+                    AssignedToName = GetAssigneesDisplayName(t.TaskAssignments, userId),
+
+                    // ⭐⭐⭐ حل شده: استفاده از fully qualified name برای AssigneeInfo
+                   
+
+                    // آمار تکمیل
+                    CompletedCount = t.TaskAssignments.Count(ta =>
+                        ta.AssignedUserId != userId && ta.CompletionDate.HasValue),
+                    TotalAssignees = t.TaskAssignments.Count(ta => ta.AssignedUserId != userId),
+
+                    // وضعیت کلی
+                    DueDate = t.DueDate,
+                    Status = t.Status,
+                    HasOverdueAssignees = t.TaskAssignments.Any(ta =>
+                        ta.AssignedUserId != userId &&
+                        !ta.CompletionDate.HasValue &&
+                        t.DueDate.HasValue &&
+                        t.DueDate.Value < DateTime.Now)
+                }).ToList();
+
+                return recentTasks;
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("MainDashboardRepository",
+                    "GetRecentAssignedTasksAsync", "خطا در دریافت تسک‌های واگذار شده", ex);
+                return new List<RecentAssignedTaskViewModel>();
+            }
+        }
+        /// <summary>
+        /// متد کمکی: ساخت نام نمایشی اعضا
+        /// </summary>
+        private string GetAssigneesDisplayName(ICollection<TaskAssignment> assignments, string excludeUserId)
+        {
+            var assignees = assignments
+                .Where(ta => ta.AssignedUserId != excludeUserId)
+                .ToList();
+
+            if (!assignees.Any())
+                return "بدون عضو";
+
+            var firstName = assignees.First().AssignedUser != null
+                ? $"{assignees.First().AssignedUser.FirstName} {assignees.First().AssignedUser.LastName}"
+                : "نامشخص";
+
+            if (assignees.Count == 1)
+                return firstName;
+
+            return $"{firstName} و {assignees.Count - 1} نفر دیگر";
         }
     }
 }

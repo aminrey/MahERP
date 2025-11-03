@@ -771,22 +771,16 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
 
             return taskViewModel;
         }
-
         /// <summary>
-        /// تبدیل Entity به ViewModel (نسخه Async) - اصلاح شده
+        /// تبدیل Entity به ViewModel - اصلاح شده برای حذف تکرار
         /// </summary>
         private async Task<TaskViewModel> MapToViewModelAsync(Tasks task, string? currentUserId = null)
         {
-            var assignments = await _context.TaskAssignment_Tbl
-                .Include(ta => ta.AssignedUser)
-                .Where(ta => ta.TaskId == task.Id)
-                .ToListAsync();
+            // ⭐⭐⭐ یکبار Assignment‌ها را دریافت کن
+            var assignments = task.TaskAssignments?.ToList() ?? new List<TaskAssignment>();
 
-            // ⭐ دریافت نام سازنده
-            var category = await _context.TaskCategory_Tbl
-                .FirstOrDefaultAsync(c => c.Id == task.TaskCategoryId);
-
-            var creator = await _context.Users.FirstOrDefaultAsync(u => u.Id == task.CreatorUserId);
+            var category = task.TaskCategory;
+            var creator = task.Creator;
 
             var taskViewModel = new TaskViewModel
             {
@@ -806,44 +800,39 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 Important = task.Important,
                 Status = task.Status,
 
+                // ⭐⭐⭐ Mapping تمام Assignments (بدون تکرار)
                 AssignmentsTaskUser = assignments.Select(a => new TaskAssignmentViewModel
                 {
                     Id = a.Id,
                     TaskId = a.TaskId,
                     AssignedUserId = a.AssignedUserId,
-                    AssignedUserName = $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}",
+                    AssignedUserName = a.AssignedUser != null
+                        ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
+                        : "نامشخص",
                     AssignerUserId = a.AssignerUserId,
-                    AssignedInTeamName = a.AssignedInTeam?.Title, 
-
+                    AssignedInTeamName = a.AssignedInTeam?.Title,
                     AssignDate = a.AssignmentDate,
                     CompletionDate = a.CompletionDate
                 }).ToList()
             };
 
-            // ⭐ بررسی "روز من" و فوکوس برای کاربر فعالی (نسخه Async)
+            // ⭐⭐⭐ بررسی وضعیت کاربر فعلی (یکبار)
             if (!string.IsNullOrEmpty(currentUserId))
             {
-                // ⭐⭐⭐ اصلاح شده: بررسی IsInMyDay از طریق TaskAssignment
                 var currentUserAssignment = assignments.FirstOrDefault(a => a.AssignedUserId == currentUserId);
 
                 if (currentUserAssignment != null)
                 {
-                    // بررسی وجود رکورد در TaskMyDay برای این Assignment (نسخه Async)
+                    // بررسی "روز من"
                     taskViewModel.IsInMyDay = await _context.TaskMyDay_Tbl
                         .AsNoTracking()
                         .AnyAsync(tmd => tmd.TaskAssignmentId == currentUserAssignment.Id &&
                                         !tmd.IsRemoved &&
-                                        tmd.PlannedDate.Date == DateTime.Now.Date); // ⭐ فقط امروز
+                                        tmd.PlannedDate.Date == DateTime.Now.Date);
 
-                    // بررسی IsFocused از TaskAssignment
+                    // بررسی فوکوس
                     taskViewModel.IsFocused = currentUserAssignment.IsFocused;
                     taskViewModel.CompletionDate = currentUserAssignment.CompletionDate;
-                }
-                else
-                {
-                    // کاربر فعلی عضو این تسک نیست
-                    taskViewModel.IsInMyDay = false;
-                    taskViewModel.IsFocused = false;
                 }
             }
 
@@ -993,30 +982,6 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             return result;
         }
 
-        /// <summary>
-        /// افزودن تسک به گروه (نسخه ViewModel)
-        /// </summary>
-        private void AddTaskToGroupViewModel(
-            Dictionary<string, Dictionary<string, List<TaskViewModel>>> groups,
-            string teamName,
-            string personName,
-            TaskViewModel task)
-        {
-            if (!groups.ContainsKey(teamName))
-            {
-                groups[teamName] = new Dictionary<string, List<TaskViewModel>>();
-            }
-
-            if (!groups[teamName].ContainsKey(personName))
-            {
-                groups[teamName][personName] = new List<TaskViewModel>();
-            }
-
-            if (!groups[teamName][personName].Any(t => t.Id == task.Id))
-            {
-                groups[teamName][personName].Add(task);
-            }
-        }
         public async Task<TaskFilterResultViewModel> GetAssignedByMeTasksAsync(string userId)
         {
             try
@@ -1453,47 +1418,55 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
 
         #region Grouping Helper Methods
 
+        /// <summary>
+        /// گروه‌بندی تسک‌ها بر اساس تیم و شخص - اصلاح شده برای حذف تکرار
+        /// </summary>
         private async Task<Dictionary<string, Dictionary<string, List<TaskViewModel>>>> GroupTasksByTeamAndPersonAsync(
             List<Tasks> tasks,
             string? highlightUserId = null)
         {
             var result = new Dictionary<string, Dictionary<string, List<TaskViewModel>>>();
 
+            // ⭐⭐⭐ ابتدا تمام تسک‌ها را به ViewModel تبدیل کن
+            var taskViewModels = new List<TaskViewModel>();
             foreach (var task in tasks)
             {
-                var assignments = task.TaskAssignments?.Where(ta => !string.IsNullOrEmpty(ta.AssignedUserId)).ToList()
-                    ?? new List<TaskAssignment>();
+                var taskViewModel = await MapToViewModelAsync(task, highlightUserId);
+                taskViewModels.Add(taskViewModel);
+            }
+
+            // ⭐⭐⭐ سپس گروه‌بندی کن (هر تسک یکبار ظاهر می‌شود)
+            foreach (var taskViewModel in taskViewModels)
+            {
+                var assignments = taskViewModel.AssignmentsTaskUser ?? new List<TaskAssignmentViewModel>();
 
                 if (!assignments.Any())
                 {
-                    AddTaskToGroup(result, "بدون انتساب", "بدون کاربر", task);
+                    AddTaskToGroupViewModel(result, "بدون انتساب", "بدون کاربر", taskViewModel);
                     continue;
                 }
 
+                // ⭐⭐⭐ برای هر assignment، تسک را اضافه کن (ولی تکراری نشود)
                 foreach (var assignment in assignments)
                 {
-                    var teamName = assignment.AssignedInTeam?.Title ?? "بدون تیم";
-                    var personName = assignment.AssignedUser != null
-                        ? $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}".Trim()
-                        : "نامشخص";
+                    var teamName = assignment.AssignedInTeamName ?? "بدون تیم";
+                    var personName = assignment.AssignedUserName ?? "نامشخص";
 
-                    if (string.IsNullOrEmpty(personName))
-                        personName = "نامشخص";
-
-
-                    AddTaskToGroup(result, teamName, personName, task, highlightUserId);
+                    AddTaskToGroupViewModel(result, teamName, personName, taskViewModel);
                 }
             }
 
             return result;
         }
 
-        private void AddTaskToGroup(
-            Dictionary<string, Dictionary<string, List<TaskViewModel>>>
-            groups,
+        /// <summary>
+        /// افزودن تسک به گروه - با بررسی تکراری نبودن
+        /// </summary>
+        private void AddTaskToGroupViewModel(
+            Dictionary<string, Dictionary<string, List<TaskViewModel>>> groups,
             string teamName,
             string personName,
-            Tasks task, string highlightUserId = null)
+            TaskViewModel task)
         {
             if (!groups.ContainsKey(teamName))
             {
@@ -1505,20 +1478,19 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 groups[teamName][personName] = new List<TaskViewModel>();
             }
 
-            var taskViewModel = MapToViewModel(task, highlightUserId);
-
-            if (!groups[teamName][personName].Any(t => t.Id == taskViewModel.Id))
+            // ⭐⭐⭐ بررسی تکراری نبودن
+            if (!groups[teamName][personName].Any(t => t.Id == task.Id))
             {
-                groups[teamName][personName].Add(taskViewModel);
+                groups[teamName][personName].Add(task);
             }
         }
 
         #endregion
 
         /// <summary>
-/// اعمال فیلتر وضعیت در سطح دیتابیس (بهینه‌سازی شده)
-/// </summary>
-private IQueryable<Tasks> ApplyStatusFilter(IQueryable<Tasks> query, List<byte> statusFilters)
+        /// اعمال فیلتر وضعیت در سطح دیتابیس (بهینه‌سازی شده)
+        /// </summary>
+        private IQueryable<Tasks> ApplyStatusFilter(IQueryable<Tasks> query, List<byte> statusFilters)
 {
     // اگر فیلتر وضعیت تنظیم شده باشد، آن را در Query اعمال کن
     if (statusFilters != null && statusFilters.Any())

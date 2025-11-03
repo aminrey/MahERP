@@ -428,7 +428,24 @@
                                         <i class="fa fa-info-circle me-1"></i>
                                         برای هر کاربر باید تیم مربوطه را مشخص کنید (در صورتی که کاربر در چند تیم عضو باشد)
                                     </div>
-
+                                    <!-- ⭐⭐⭐ تیک نوع تکمیل -->
+                                    <div class="alert alert-info mb-3" id="completion-mode-info" style="display: none;">
+                                        <div class="form-check form-switch">
+                                            <input asp-for="IsIndependentCompletion"
+                                                   class="form-check-input"
+                                                   type="checkbox"
+                                                   id="completionModeSwitch">
+                                            <label asp-for="IsIndependentCompletion" class="form-check-label">
+                                                <strong>تکمیل مستقل (هر نفر جداگانه باید تسک را تکمیل کند)</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            <span id="completion-mode-desc">
+                                                <strong>حالت فعلی: مشترک</strong> - یکنفر تکمیل کند، برای همه تکمیل می‌شود
+                                            </span>
+                                        </small>
+                                    </div>
                                     <div id="user-assignments-container">
                                         <!-- ردیف‌های تخصیص کاربر-تیم به صورت دینامیک اضافه می‌شوند -->
                                     </div>
@@ -1024,11 +1041,10 @@
                 }
             }
         }
-
         // بارگذاری کاربران و تیم‌های شعبه
         function loadBranchUsersAndTeams(branchId) {
             console.log('🔄 Loading users and teams for branch:', branchId);
-            
+
             $.ajax({
                 url: '@Url.Action("BranchTriggerSelect", "Tasks")',
                 type: 'POST',
@@ -1038,7 +1054,7 @@
                 },
                 success: function(response) {
                     console.log('✅ Branch data loaded:', response);
-                    
+
                     if (response.status === 'update-view' && response.viewList) {
                         // استخراج کاربران
                         const usersHtml = response.viewList.find(v => v.elementId === 'UsersDiv')?.view?.result;
@@ -1048,33 +1064,46 @@
                             tempDiv.find('option[value!=""]').each(function() {
                                 availableUsers.push({
                                     id: $(this).val(),
-                                    name: $(this).text()
+                                    name: $(this).text(),
+                                    profileImage: $(this).data('profile-image') || '/images/default-avatar.png',
+                                    displayName: $(this).data('display-name') || $(this).text()
                                 });
                             });
                             console.log('👥 Available users:', availableUsers.length);
                         }
-                        
-                        // استخراج تیم‌ها
+
+                        // ⭐⭐⭐ استخراج تیم‌ها با اطلاعات کامل مدیر
                         const teamsHtml = response.viewList.find(v => v.elementId === 'TeamsDiv')?.view?.result;
                         if (teamsHtml) {
                             const tempDiv = $('<div>').html(teamsHtml);
                             availableTeams = [];
                             tempDiv.find('option[value!=""]').each(function() {
+                                const $option = $(this);
                                 availableTeams.push({
-                                    id: $(this).val(),
-                                    name: $(this).text()
+                                    id: $option.val(),
+                                    name: $option.text(),
+                                    managerId: $option.data('manager-id') || null,
+                                    managerName: $option.data('manager-name') || null,
+                                    memberCount: $option.data('member-count') || 0
                                 });
                             });
                             console.log('👔 Available teams:', availableTeams.length);
+                            console.log('📊 Teams with managers:', availableTeams.filter(t => t.managerName).length);
                         }
-                        
+
                         // بروزرسانی تخصیص‌های موجود
                         refreshUserAssignmentSelects();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Error loading branch data:', error);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در بارگذاری داده‌های شعبه');
                     }
                 }
             });
         }
-                // ادامه تابع addUserAssignmentRow
+        // ادامه تابع addUserAssignmentRow
         function addUserAssignmentRow(userId = '', teamId = '') {
             assignmentCounter++;
             const rowId = `assignment-row-${assignmentCounter}`;
@@ -1125,12 +1154,7 @@
             const $row = $(`#${rowId}`);
             const $userSelect = $row.find('.user-select');
 
-            // راه‌اندازی Select2
-            $userSelect.select2({
-                width: '100%',
-                dropdownParent: $row,
-                placeholder: 'انتخاب کاربر...'
-            });
+                initializeUserSelect($userSelect); // ⭐ استفاده از تابع جدید
 
             // رویداد change کاربر
             $userSelect.on('change', function() {
@@ -1156,57 +1180,66 @@
                 `);
 
                 // AJAX
-                $.ajax({
-                    url: '@Url.Action("GetUserTeams", "Tasks")',
-                    type: 'POST',
-                    data: {
-                        userId: selectedUserId,
-                        branchId: branchId,
-                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(response) {
-                        if (response.status === 'update-view' && response.viewList) {
-                            // بروزرسانی HTML
-                            response.viewList.forEach(function(item) {
-                                $(`#${teamContainerId}`).html(item.view.result);
+                    $.ajax({
+        url: '@Url.Action("GetUserTeams", "Tasks")',
+        type: 'POST',
+        data: {
+            userId: selectedUserId,
+            branchId: branchId,
+            __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+        },
+        success: function(response) {
+            if (response.status === 'update-view' && response.viewList) {
+                // بروزرسانی HTML
+                response.viewList.forEach(function(item) {
+                    $(`#${teamContainerId}`).html(item.view.result);
 
-                                // راه‌اندازی Select2 برای تیم
-                                const $teamSelect = $(`#${teamContainerId} .team-select`);
-                                $teamSelect.select2({
-                                    width: '100%',
-                                    dropdownParent: $row,
-                                    placeholder: 'انتخاب تیم...'
-                                });
+                    // ⭐⭐⭐ استخراج تیم‌ها با نام مدیر
+                    const $teamSelect = $(`#${teamContainerId} .team-select`);
+                    const teamOptions = [];
+                    $teamSelect.find('option[value!=""]').each(function() {
+                        const $opt = $(this);
+                        teamOptions.push({
+                            id: $opt.val(),
+                            text: $opt.text(),
+                            managerName: $opt.data('manager-name') || '',
+                            memberCount: $opt.data('member-count') || 0
+                        });
+                    });
 
-                                // رویداد change برای تیم
-                                $teamSelect.on('change', updateUserAssignmentsData);
+                    console.log('👔 User teams loaded:', teamOptions.length);
+                    console.log('📊 Teams:', teamOptions);
 
-                                // ⭐ مدیریت انتخاب خودکار
-                                if (response.hasNoTeam === true) {
-                                    // اگر تیمی ندارد، گزینه "بدون تیم" (value=0) خودکار انتخاب می‌شود
-                                    $teamSelect.val('0').trigger('change');
+                    // راه‌اندازی Select2 برای تیم
+                    $teamSelect.select2({
+                        width: '100%',
+                        dropdownParent: $row,
+                        placeholder: 'انتخاب تیم...'
+                    });
 
-                                    if (typeof toastr !== 'undefined') {
-                                        toastr.warning('این کاربر در هیچ تیمی عضو نیست - تسک به صورت فردی انجام می‌شود', '', {timeOut: 3000});
-                                    }
-                                } else {
-                                    // انتخاب خودکار اگر فقط یک تیم باشد
-                                    const options = $teamSelect.find('option[value!=""][value!="0"]');
-                                    if (options.length === 1) {
-                                        $teamSelect.val(options.first().val()).trigger('change');
+                    // رویداد change برای تیم
+                    $teamSelect.on('change', updateUserAssignmentsData);
 
-                                        if (typeof toastr !== 'undefined') {
-                                            toastr.info(`تیم "${options.first().text()}" خودکار انتخاب شد`, '', {timeOut: 2000});
-                                        }
-                                    }
-                                }
-                            });
-
-                            updateUserAssignmentsData();
-                        } else {
-                            throw new Error(response.message || 'خطا در بارگذاری');
+                    // ⭐ مدیریت انتخاب خودکار
+                    if (response.hasNoTeam === true) {
+                        $teamSelect.val('0').trigger('change');
+                        if (typeof toastr !== 'undefined') {
+                            toastr.warning('این کاربر در هیچ تیمی عضو نیست', '', {timeOut: 3000});
                         }
-                    },
+                    } else {
+                        const options = $teamSelect.find('option[value!=""][value!="0"]');
+                        if (options.length === 1) {
+                            $teamSelect.val(options.first().val()).trigger('change');
+                            if (typeof toastr !== 'undefined') {
+                                toastr.info(`تیم "${options.first().text()}" خودکار انتخاب شد`, '', {timeOut: 2000});
+                            }
+                        }
+                    }
+                });
+
+                updateUserAssignmentsData();
+            }
+        },
                     error: function(xhr, status, error) {
                         console.error('AJAX Error:', error);
                         $(`#${teamContainerId}`).html(`
@@ -1240,34 +1273,65 @@
                 $userSelect.val(userId).trigger('change');
             }
 
-            updateUserAssignmentsData();
-        }
+        updateCompletionModeVisibility();
+
+        updateUserAssignmentsData();        }
 
         // حذف ردیف تخصیص
         function removeUserAssignmentRow(rowId) {
             $(`#assignment-row-${rowId}`).remove();
             updateUserAssignmentsData();
         }
-
-        // بروزرسانی سلکت‌های موجود
+                // بروزرسانی سلکت‌های موجود
         function refreshUserAssignmentSelects() {
             $('.user-assignment-row').each(function() {
                 const rowId = $(this).data('row-id');
                 const currentUserId = $(this).find('.user-select').val();
                 const currentTeamId = $(this).find('.team-select').val();
 
-                // بروزرسانی options
-                const userOptions = availableUsers.map(u =>
-                    `<option value="${u.id}" ${u.id === currentUserId ? 'selected' : ''}>${u.name}</option>`
-                ).join('');
+                // ⭐⭐⭐ بروزرسانی options کاربران با data attributes
+                let userOptions = availableUsers.map(u => {
+                    const selected = u.id === currentUserId ? 'selected' : '';
+                    return `<option value="${u.id}"
+                                   data-profile-image="${u.profileImage}"
+                                   data-display-name="${u.displayName}"
+                                   ${selected}>
+                                ${u.name}
+                            </option>`;
+                }).join('');
 
-                const teamOptions = availableTeams.map(t =>
-                    `<option value="${t.id}" ${t.id === currentTeamId ? 'selected' : ''}>${t.name}</option>`
-                ).join('');
+                // ⭐⭐⭐ بروزرسانی options تیم‌ها با data attributes و نام مدیر
+                let teamOptions = availableTeams.map(t => {
+                    const selected = t.id == currentTeamId ? 'selected' : '';
+                    const managerInfo = t.managerName ? ` (مدیر: ${t.managerName})` : '';
+                    return `<option value="${t.id}"
+                                   data-manager-id="${t.managerId || ''}"
+                                   data-manager-name="${t.managerName || ''}"
+                                   data-member-count="${t.memberCount}"
+                                   ${selected}>
+                                ${t.name}${managerInfo}
+                            </option>`;
+                }).join('');
 
                 $(this).find('.user-select').html('<option value="">انتخاب کاربر...</option>' + userOptions);
                 $(this).find('.team-select').html('<option value="">انتخاب تیم...</option>' + teamOptions);
+
+                // ⭐ راه‌اندازی مجدد Select2
+                $(this).find('.user-select').select2('destroy').select2({
+                    width: '100%',
+                    placeholder: 'انتخاب کاربر...',
+                    templateResult: formatUserWithImage,
+                    templateSelection: formatUserWithImage,
+                    escapeMarkup: function(markup) { return markup; }
+                });
+
+                $(this).find('.team-select').select2('destroy').select2({
+                    width: '100%',
+                    placeholder: 'انتخاب تیم...'
+                });
             });
+
+            console.log('✅ Assignment selects refreshed with manager names');
         }
 
         // ⭐⭐⭐ اصلاح تابع updateUserAssignmentsData
@@ -1854,5 +1918,88 @@
                 }
             });
         });
+    </script>
+
+    <script>
+            // ⭐⭐⭐ نمایش تیک CompletionMode فقط وقتی بیش از یک نفر منتصب شود
+        function updateCompletionModeVisibility() {
+            const assignmentsCount = $('.user-assignment-row').length;
+
+            if (assignmentsCount > 1) {
+                $('#completion-mode-info').fadeIn();
+            } else {
+                $('#completion-mode-info').fadeOut();
+                // ⭐ ریست به حالت مشترک (0)
+                $('#completionModeSwitch').prop('checked', false);
+                $('#completionModeHidden').val(0);
+                updateCompletionModeDescription(false);
+            }
+        }
+
+              // ⭐⭐⭐ تابع جدید: بروزرسانی توضیحات
+        function updateCompletionModeDescription(isIndependent) {
+            const desc = isIndependent
+                ? '<strong>حالت فعلی: مستقل</strong> - هر نفر باید جداگانه تسک را تکمیل کند'
+                : '<strong>حالت فعلی: مشترک</strong> - یک نفر تکمیل کند، برای همه تکمیل می‌شود';
+
+            $('#completion-mode-desc').html(`<i class="fa fa-info-circle me-1"></i>${desc}`);
+        }
+
+            $(document).ready(function() {
+            $('#completionModeSwitch').on('change', function() {
+                const isIndependent = $(this).is(':checked');
+
+                // ⭐ بروزرسانی hidden input
+                $('#completionModeHidden').val(isIndependent ? 1 : 0);
+
+                // ⭐ بروزرسانی توضیحات
+                updateCompletionModeDescription(isIndependent);
+
+                console.log('✅ CompletionMode changed to:', isIndependent ? 'مستقل (1)' : 'مشترک (0)');
+            });
+        });
+
+    
+
+        function removeUserAssignmentRow(rowId) {
+            $(`#assignment-row-${rowId}`).remove();
+            updateUserAssignmentsData();
+            updateCompletionModeVisibility(); // ⭐ اضافه شده
+        }
+
+                // ⭐⭐⭐ فرمت سفارشی برای Select2 با تصویر
+        function formatUserWithImage(user) {
+            if (!user.id) {
+                return user.text;
+            }
+
+            const $user = $(user.element);
+            const imageUrl = $user.data('profile-image') || '/images/default-avatar.png';
+            const displayName = $user.data('display-name') || user.text;
+
+            return $(`
+                <div class="d-flex align-items-center">
+                    <img src="${imageUrl}"
+                         class="rounded-circle me-2"
+                         style="width: 24px; height: 24px; object-fit: cover;"
+                         onerror="this.src='/images/default-avatar.png'">
+                    <span>${displayName}</span>
+                </div>
+            `);
+        }
+
+        // ⭐ اعمال به User Select
+        function initializeUserSelect($select) {
+            $select.select2({
+                width: '100%',
+                placeholder: 'انتخاب کاربر...',
+                templateResult: formatUserWithImage,
+                templateSelection: formatUserWithImage,
+                escapeMarkup: function(markup) {
+                    return markup;
+                }
+            });
+        }
+
     </script>
 }

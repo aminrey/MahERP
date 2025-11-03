@@ -673,6 +673,11 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         #endregion
 
         Task<List<ContactViewModel>> GetOrganizationContactsAsync(int organizationId);
-
+        /// <summary>
+        /// ⭐⭐⭐ دریافت تیم‌های شعبه با اطلاعات کامل مدیر و اعضا
+        /// </summary>
+        /// <param name="branchId">شناسه شعبه</param>
+        /// <returns>لیست تیم‌های شعبه با اطلاعات کامل</returns>
+        Task<List<TeamViewModel>> GetBranchTeamsWithManagersAsync(int branchId);
     }
 }

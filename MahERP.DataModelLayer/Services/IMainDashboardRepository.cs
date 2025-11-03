@@ -1,6 +1,7 @@
 ﻿using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using System.Threading.Tasks;
+using static MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskReminderFilterViewModel;
 
 namespace MahERP.DataModelLayer.Services
 {
@@ -65,5 +66,8 @@ namespace MahERP.DataModelLayer.Services
         /// دریافت کلاس badge برای وضعیت تسک
         /// </summary>
         string GetTaskStatusBadgeClass(byte status);
+
+        Task<List<RecentTaskViewModel>> GetRecentReceivedTasksAsync(string userId, int take = 5);
+        Task<List<RecentAssignedTaskViewModel>> GetRecentAssignedTasksAsync(string userId, int take = 5);
     }
 }

@@ -301,6 +301,19 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         [Display(Name = "تاخیردار")]
         Overdue = 99
     }
+    /// <summary>
+    /// اطلاعات عضو منتصب شده - ویژه Dashboard
+    /// </summary>
+    public class DashboardAssigneeInfo
+    {
+        public string UserId { get; set; }
+        public string UserName { get; set; }
+        public bool IsCompleted { get; set; }
+        public DateTime? CompletionDate { get; set; }
+        public DateTime AssignmentDate { get; set; }
+    }
+
+ 
 
     /// <summary>
     /// اطلاعات شخص یا تیم منتصب شده

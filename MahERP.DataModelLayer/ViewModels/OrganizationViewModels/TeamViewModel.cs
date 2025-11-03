@@ -25,10 +25,27 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public int? ParentTeamId { get; set; }
         public string? ParentTeamTitle { get; set; }
 
-        [Display(Name = "مدیر تیم")]
-        public string? ManagerUserId { get; set; }
+
         public string? ManagerFullName { get; set; }
 
+        // ⭐⭐⭐ فیلدهای جدید برای مدیر تیم
+        /// <summary>
+        /// شناسه مدیر تیم
+        /// </summary>
+        [Display(Name = "شناسه مدیر")]
+        public string? ManagerUserId { get; set; }
+
+        /// <summary>
+        /// نام کامل مدیر تیم
+        /// </summary>
+        [Display(Name = "مدیر تیم")]
+        public string? ManagerName { get; set; }
+
+        /// <summary>
+        /// تعداد اعضای فعال تیم
+        /// </summary>
+        [Display(Name = "تعداد اعضا")]
+        public int MemberCount { get; set; }
         [Display(Name = "شعبه")]
         public int BranchId { get; set; }
         public string? BranchName { get; set; }
@@ -89,6 +106,7 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
             TeamMembers.Where(m => m.IsActive && m.HasFormalPosition)
                        .OrderBy(m => m.PowerLevel)
                        .ToList();
+
     }
 
     /// <summary>

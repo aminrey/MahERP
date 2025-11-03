@@ -82,7 +82,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
         }
 
         /// <summary>
-        /// دریافت آمار کلی برای داشبورد
+        /// دریافت آمار کلی برای داشبورد - اصلاح شده با حذف تکرار
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetDashboardSummary()
@@ -90,6 +90,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             try
             {
                 var userId = _UserManager.GetUserId(User);
+                
+                // ⭐⭐⭐ استفاده از متد بهینه شده TaskFilterRepository
                 var stats = await _mainDashboardRepository.GetUserDashboardStatsAsync(userId);
 
                 return Json(new
@@ -98,7 +100,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
                     tasksStats = new
                     {
                         myTasksCount = stats.TasksStats.MyTasksCount,
-                        ActivePersonalTasksCount = stats.TasksStats.MyTasksCount, // ⭐ اضافه کنید این خط را
                         onTimeTasksCount = stats.TasksStats.OnTimeTasksCount,
                         overdueTasksCount = stats.TasksStats.OverdueTasksCount,
                         supervisedTasksCount = stats.TasksStats.SupervisedTasksCount,
@@ -114,8 +115,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
                 return Json(new { success = false, message = "خطا در دریافت آمار" });
             }
         }
+
+        
         /// <summary>
-        /// دریافت آخرین تسک‌های دریافتی کاربر
+        /// دریافت آخرین تسک‌های دریافتی - استفاده از Repository
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetRecentReceivedTasks()
@@ -124,42 +127,21 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             {
                 var userId = _UserManager.GetUserId(User);
 
-                // دریافت آخرین 5 تسک دریافتی با جزئیات کامل
-                var userTasks = await _taskrepository.GetUserTasksComprehensiveAsync(
-                    userId,
-                    includeCreatedTasks: false,
-                    includeAssignedTasks: true,
-                    includeSupervisedTasks: false,
-                    includeDeletedTasks: false
-                );
-
-                var recentTasks = userTasks.AssignedTasks
-                    .OrderByDescending(t => t.CreateDate)
-                    .Take(5)
-                    .Select(t => new {
-                        id = t.Id,
-                        taskCode = t.TaskCode,
-                        title = t.Title,
-                        description = t.Description,
-                        priority = t.Priority,
-                        important = t.Important,
-                        startDate = t.StartDate?.ToString("yyyy-MM-dd"),
-                        createDate = t.CreateDate.ToString("yyyy-MM-dd"),
-                        // ⭐ نام کسی که تسک را به من داده (سازنده تسک)
-                        creatorName = GetTaskCreatorName(t.CreatorUserId)
-                    })
-                    .ToList();
+                // ⭐⭐⭐ استفاده از Repository
+                var recentTasks = await _mainDashboardRepository.GetRecentReceivedTasksAsync(userId, 5);
 
                 return Json(new { success = true, tasks = recentTasks });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Dashboard", "GetRecentReceivedTasks", "خطا در دریافت تسک‌های دریافتی", ex);
+                await _activityLogger.LogErrorAsync("Dashboard", "GetRecentReceivedTasks", 
+                    "خطا در دریافت تسک‌های دریافتی", ex);
                 return Json(new { success = false, message = "خطا در دریافت داده‌ها" });
             }
         }
+
         /// <summary>
-        /// دریافت آخرین تسک‌های واگذار شده توسط کاربر
+        /// دریافت آخرین تسک‌های واگذار شده - استفاده از Repository
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetRecentAssignedTasks()
@@ -168,38 +150,15 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             {
                 var userId = _UserManager.GetUserId(User);
 
-                // دریافت آخرین 5 تسک واگذار شده با جزئیات کامل
-                var userTasks = await _taskrepository.GetUserTasksComprehensiveAsync(
-                    userId,
-                    includeCreatedTasks: true,    // ⭐ تغییر: باید CreatedTasks باشد نه AssignedTasks
-                    includeAssignedTasks: false,  // ⭐ تغییر: برای تسک‌های واگذار شده
-                    includeSupervisedTasks: false,
-                    includeDeletedTasks: false
-                );
-
-                var recentTasks = userTasks.CreatedTasks  // ⭐ درست است - تسک‌هایی که من ایجاد کرده‌ام
-                    .Where(t => t.AssignmentsTaskUser != null && t.AssignmentsTaskUser.Any())
-                    .OrderByDescending(t => t.CreateDate)
-                    .Take(5)
-                    .Select(t => new {
-                        id = t.Id,
-                        taskCode = t.TaskCode,
-                        title = t.Title,
-                        description = t.Description,
-                        priority = t.Priority,
-                        important = t.Important,
-                        startDate = t.StartDate?.ToString("yyyy-MM-dd"),
-                        createDate = t.CreateDate.ToString("yyyy-MM-dd"),
-                        // ⭐ اصلاح: حذف assignments مربوط به خود سازنده
-                        assignedToName = GetMainAssigneeName(t.AssignmentsTaskUser, userId)
-                    })
-                    .ToList();
+                // ⭐⭐⭐ استفاده از Repository
+                var recentTasks = await _mainDashboardRepository.GetRecentAssignedTasksAsync(userId, 5);
 
                 return Json(new { success = true, tasks = recentTasks });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Dashboard", "GetRecentAssignedTasks", "خطا در دریافت تسک‌های واگذار شده", ex);
+                await _activityLogger.LogErrorAsync("Dashboard", "GetRecentAssignedTasks", 
+                    "خطا در دریافت تسک‌های واگذار شده", ex);
                 return Json(new { success = false, message = "خطا در دریافت داده‌ها" });
             }
         }

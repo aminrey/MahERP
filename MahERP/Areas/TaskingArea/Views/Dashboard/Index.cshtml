@@ -214,7 +214,7 @@
 
         function loadDashboardData() {
             // بارگذاری آمار کلی
-            $.get('@Url.Action("GetDashboardSummary", "Dashboard", new { area = "AdminArea" })')
+            $.get('@Url.Action("GetDashboardSummary", "Dashboard", new { area = "TaskingArea" })')
                 .done(function(response) {
                     if (response.success) {
                         $('#mytasks').text(response.tasksStats.activePersonalTasksCount || response.tasksStats.myTasksCount || 0);
@@ -233,7 +233,7 @@
 
         function loadRecentTasks() {
             // بارگذاری تسک‌های دریافتی
-            $.get('@Url.Action("GetRecentReceivedTasks", "Dashboard", new { area = "AdminArea" })')
+            $.get('@Url.Action("GetRecentReceivedTasks", "Dashboard", new { area = "TaskingArea" })')
                 .done(function(response) {
                     if (response.success && response.tasks) {
                         populateTaskTable('#receivedTasksTable', response.tasks, 'received');
@@ -244,7 +244,7 @@
                 });
 
             // بارگذاری تسک‌های واگذار شده
-            $.get('@Url.Action("GetRecentAssignedTasks", "Dashboard", new { area = "AdminArea" })')
+            $.get('@Url.Action("GetRecentAssignedTasks", "Dashboard", new { area = "TaskingArea" })')
                 .done(function(response) {
                     if (response.success && response.tasks) {
                         populateTaskTable('#assignedTasksTable', response.tasks, 'assigned');
@@ -257,7 +257,7 @@
 
         // ⭐ تابع جدید برای بارگذاری یادآوری‌ها
         function loadReminders() {
-            $.get('@Url.Action("GetDashboardReminders", "Dashboard", new { area = "AdminArea" })')
+            $.get('@Url.Action("GetDashboardReminders", "Dashboard", new { area = "TaskingArea" })')
                 .done(function(response) {
                     if (response.success && response.reminders) {
                         populateRemindersTable(response.reminders);
@@ -336,7 +336,7 @@
 
         // ⭐ علامت‌گذاری یادآوری به عنوان خوانده شده
         function markReminderAsRead(reminderId) {
-            $.post('@Url.Action("MarkReminderAsRead", "Tasks", new { area = "AdminArea" })', { reminderId: reminderId })
+            $.post('@Url.Action("MarkReminderAsRead", "Tasks", new { area = "TaskingArea" })', { reminderId: reminderId })
                 .done(function(response) {
                     if (response.success) {
                         loadReminders(); // بروزرسانی جدول
@@ -351,7 +351,7 @@
         // ⭐ علامت‌گذاری همه یادآوری‌ها به عنوان خوانده شده
         function markAllRemindersAsRead() {
             if (confirm('آیا مطمئنید که می‌خواهید همه یادآوری‌ها را به عنوان خوانده شده علامت‌گذاری کنید؟')) {
-                $.post('@Url.Action("MarkAllRemindersAsRead", "Tasks", new { area = "AdminArea" })')
+                $.post('@Url.Action("MarkAllRemindersAsRead", "Tasks", new { area = "TaskingArea" })')
                     .done(function(response) {
                         if (response.success) {
                             loadReminders(); // بروزرسانی جدول
@@ -367,7 +367,7 @@
         // ⭐ حذف یادآوری
         function deleteReminder(reminderId) {
             if (confirm('آیا مطمئنید که می‌خواهید این یادآوری را حذف کنید؟')) {
-                $.post('@Url.Action("DeleteReminder", "Tasks", new { area = "AdminArea" })', { reminderId: reminderId })
+                $.post('@Url.Action("DeleteReminder", "Tasks", new { area = "TaskingArea" })', { reminderId: reminderId })
                     .done(function(response) {
                         if (response.success) {
                             loadReminders(); // بروزرسانی جدول

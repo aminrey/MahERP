@@ -116,7 +116,12 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// 1- خودکار (ایجاد شده توسط زمان‌بندی)
         /// </summary>
         public byte CreationMode { get; set; }
-  
+
+        /// <summary>
+        /// ⭐⭐⭐ نوع تکمیل تسک (false=مشترک, true=مستقل)
+        /// </summary>
+        [Display(Name = "نوع تکمیل تسک")]
+        public bool IsIndependentCompletion { get; set; } = false;
         public int? ParentTaskId { get; set; }
         [ForeignKey("ParentTaskId")]
         public virtual Tasks? ParentTask { get; set; }
@@ -182,7 +187,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public bool IsArchived { get; set; }
         
         public bool IsDeleted { get; set; }
-
+        /// <summary>
+        /// ⭐⭐⭐ نوع تکمیل تسک
+        /// 0 = مشترک (Shared): یک نفر تکمیل کند، برای همه تکمیل می‌شود
+        /// 1 = مستقل (Independent): هر نفر باید جداگانه تکمیل کند
+        /// </summary>
+        [Display(Name = "نوع تکمیل تسک")]
+        public byte CompletionMode { get; set; } = 0; // پیش‌فرض: مشترک
         /// <summary>
         /// تاریخ آخرین بروزرسانی
         /// </summary>

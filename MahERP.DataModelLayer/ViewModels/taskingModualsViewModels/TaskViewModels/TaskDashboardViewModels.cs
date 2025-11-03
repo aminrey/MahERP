@@ -230,5 +230,81 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
                 IsRead = false
             };
         }
+        /// <summary>
+        /// ViewModel برای نمایش تسک‌های اخیر دریافتی
+        /// </summary>
+        public class RecentTaskViewModel
+        {
+            public int Id { get; set; }
+            public string TaskCode { get; set; }
+            public string Title { get; set; }
+            public string Description { get; set; }
+            public byte Priority { get; set; }
+            public bool Important { get; set; }
+            public DateTime? StartDate { get; set; }
+            public DateTime CreateDate { get; set; }
+            public DateTime AssignmentDate { get; set; }
+            public string CreatorName { get; set; }
+            public string CategoryTitle { get; set; }
+            public bool IsCompleted { get; set; }
+            public DateTime? CompletionDate { get; set; }
+            public DateTime? DueDate { get; set; }
+            public byte Status { get; set; }
+            public bool IsOverdue { get; set; }
+
+            // فیلدهای محاسباتی
+            public string PriorityText => Priority switch
+            {
+                0 => "عادی",
+                1 => "مهم",
+                2 => "فوری",
+                _ => "نامشخص"
+            };
+
+            public string StatusBadgeClass => IsCompleted ? "bg-success" :
+                                             IsOverdue ? "bg-danger" :
+                                             "bg-warning";
+        }
+
+        /// <summary>
+        /// ViewModel برای نمایش تسک‌های واگذار شده
+        /// </summary>
+        public class RecentAssignedTaskViewModel
+        {
+            public int Id { get; set; }
+            public string TaskCode { get; set; }
+            public string Title { get; set; }
+            public string Description { get; set; }
+            public byte Priority { get; set; }
+            public bool Important { get; set; }
+            public DateTime? StartDate { get; set; }
+            public DateTime CreateDate { get; set; }
+            public string CategoryTitle { get; set; }
+
+            // اطلاعات اعضا
+            public int AssigneesCount { get; set; }
+            public string AssignedToName { get; set; }
+            public List<DashboardAssigneeInfo> Assignees { get; set; }
+
+            // آمار تکمیل
+            public int CompletedCount { get; set; }
+            public int TotalAssignees { get; set; }
+            public double CompletionPercentage => TotalAssignees > 0
+                ? (double)CompletedCount / TotalAssignees * 100
+                : 0;
+
+            // وضعیت
+            public DateTime? DueDate { get; set; }
+            public byte Status { get; set; }
+            public bool HasOverdueAssignees { get; set; }
+
+            // فیلدهای محاسباتی
+            public string ProgressBadgeClass => CompletionPercentage == 100 ? "bg-success" :
+                                               CompletionPercentage >= 50 ? "bg-info" :
+                                               HasOverdueAssignees ? "bg-danger" :
+                                               "bg-warning";
+        }
+
+        
     }
 }

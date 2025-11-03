@@ -1473,42 +1473,80 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         public async Task<TaskViewModel> PrepareCreateTaskModelAsync(string userId)
         {
-            try
+            var model = new TaskViewModel
             {
-                var model = CreateTaskAndCollectData(userId);
-
-                // تکمیل داده‌های اضافی به صورت async
-                await PopulateCreateTaskDataAsync(model, userId);
-
-                return model;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error in PrepareCreateTaskModelAsync: {ex.Message}");
-
-                // در صورت خطا، مدل پیش‌فرض برگردان
-                return new TaskViewModel
+                CreateDate = DateTime.Now,
+                IsActive = true,
+                TaskCode = _taskCodeGenerator.GenerateTaskCode(),
+                TaskCodeSettings = new TaskCodeSettings
                 {
-                    branchListInitial = _BranchRipository.GetBrnachListByUserId(userId) ?? new List<BranchViewModel>(),
-                    TaskCategoryInitial = GetAllCategories(),
-                    UsersInitial = new List<UserViewModelFull>(),
-                    TeamsInitial = new List<TeamViewModel>(),
+                    AllowManualInput = true,
+                    SystemPrefix = "TSK"
+                }
+            };
 
-                    // ⭐⭐⭐ OLD - نگهداری برای backward compatibility
-                    StakeholdersInitial = new List<StakeholderViewModel>(),
+            // دریافت شعبه‌های کاربر
+            var userBranches = _BranchRipository.GetBrnachListByUserId(userId);
+            model.branchListInitial = userBranches;
 
-                    // ⭐⭐⭐ NEW - سیستم جدید
-                    ContactsInitial = new List<ContactViewModel>(),
-                    OrganizationsInitial = new List<OrganizationViewModel>(),
-                    ContactOrganizations = new List<OrganizationViewModel>(),
+            // ⭐⭐⭐ اگر فقط یک شعبه باشد، خودکار پر کن
+            if (userBranches?.Count() == 1)
+            {
+                var singleBranch = userBranches.First();
+                model.BranchIdSelected = singleBranch.Id;
 
-                    TaskCode = _taskCodeGenerator.GenerateTaskCode(),
-                    TaskCodeSettings = _taskCodeGenerator.GetTaskCodeSettings(),
+                // بارگذاری کاربران شعبه با "خودم" در صدر
+                var branchUsers = await GetBranchUsersWithCurrentUserFirstAsync(singleBranch.Id, userId);
+                model.UsersInitial = branchUsers;
 
-                    IsManualTaskCode = false,
-                    IsActive = true
-                };
+                // بارگذاری تیم‌ها
+                model.TeamsInitial = await GetBranchTeamsWithManagersAsync(singleBranch.Id);
+
+                // بارگذاری Contacts و Organizations
+                model.ContactsInitial = await GetBranchContactsAsync(singleBranch.Id);
+                model.OrganizationsInitial = await GetBranchOrganizationsAsync(singleBranch.Id);
             }
+
+            return model;
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ متد جدید: دریافت کاربران با "خودم" در صدر
+        /// </summary>
+        private async Task<List<UserViewModelFull>> GetBranchUsersWithCurrentUserFirstAsync(int branchId, string currentUserId)
+        {
+            var allUsers = _context.BranchUser_Tbl.Where(
+                bu => bu.BranchId == branchId && bu.IsActive
+            ).Include(bu => bu.User)
+            .Where(bu => bu.User != null && bu.User.IsActive)
+            .Select(bu => new UserViewModelFull
+            {
+                Id = bu.UserId,
+                FirstName = bu.User.FirstName,
+                LastName = bu.User.LastName,
+                UserName = bu.User.UserName,
+                Email = bu.User.Email,
+                // ⭐ افزودن فیلد برای تصویر پروفایل
+                ProfileImagePath = bu.User.ProfileImagePath ?? "/images/default-avatar.png"
+            })
+            .ToList();
+
+            // ⭐⭐⭐ جدا کردن کاربر جاری
+            var currentUser = allUsers.FirstOrDefault(u => u.Id == currentUserId);
+            var otherUsers = allUsers.Where(u => u.Id != currentUserId).OrderBy(u => u.FirstName).ToList();
+
+            // ⭐⭐⭐ ساخت لیست نهایی با "خودم" در صدر
+            var result = new List<UserViewModelFull>();
+
+            if (currentUser != null)
+            {
+                // ⭐ تغییر نمایش به "خودم"
+                currentUser.FullNamesString = $"خودم ({currentUser.FirstName} {currentUser.LastName})";
+                result.Add(currentUser);
+            }
+
+            result.AddRange(otherUsers);
+            return result;
         }
         /// <summary>
         /// دریافت داده‌های شعبه برای AJAX - بروزرسانی شده
@@ -3343,97 +3381,66 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 throw new Exception($"خطا در مدیریت انتصاب‌ها: {ex.Message}", ex);
             }
         }
-        
+
         /// <summary>
         /// ذخیره فایل‌های پیوست تسک
         /// </summary>
         public async Task SaveTaskAttachmentsAsync(int taskId, List<IFormFile> files, string uploaderUserId, string webRootPath)
         {
-            try
+            if (files == null || files.Count == 0)
             {
-                // تنظیمات اعتبارسنجی
-                var allowedExtensions = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png", ".zip", ".rar" };
-                var maxFileSize = 10 * 1024 * 1024; // 10 MB
+                Console.WriteLine("⚠️ No files to save");
+                return;
+            }
 
-                string uploadsFolder = Path.Combine(webRootPath, "uploads", "tasks", taskId.ToString());
+            // ⭐ ایجاد پوشه uploads
+            var uploadsFolder = Path.Combine(webRootPath, "uploads", "tasks", taskId.ToString());
 
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+                Console.WriteLine($"📁 Created folder: {uploadsFolder}");
+            }
 
-                var attachments = new List<TaskAttachment>();
-
-                foreach (var file in files)
+            foreach (var file in files)
+            {
+                if (file.Length > 0)
                 {
-                    if (file.Length <= 0) continue;
-
-                    var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
-
-                    // اعتبارسنجی فرمت
-                    if (!allowedExtensions.Contains(fileExtension))
-                    {
-                        Console.WriteLine($"فرمت فایل {file.FileName} مجاز نیست");
-                        continue;
-                    }
-
-                    // اعتبارسنجی حجم
-                    if (file.Length > maxFileSize)
-                    {
-                        Console.WriteLine($"حجم فایل {file.FileName} بیش از حد مجاز است");
-                        continue;
-                    }
-
                     try
                     {
-                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                        // ⭐ نام فایل یکتا
+                        var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+                        var filePath = Path.Combine(uploadsFolder, fileName);
 
+                        // ⭐ ذخیره فایل
                         using (var stream = new FileStream(filePath, FileMode.Create))
                         {
                             await file.CopyToAsync(stream);
                         }
 
-                        attachments.Add(new TaskAttachment
+                        // ⭐ ذخیره رکورد در دیتابیس
+                        var attachment = new TaskAttachment
                         {
                             TaskId = taskId,
                             FileName = file.FileName,
+                            FilePath = $"/uploads/tasks/{taskId}/{fileName}",
                             FileSize = file.Length,
-                            FilePath = $"/uploads/tasks/{taskId}/{uniqueFileName}",
-                            FileType = file.ContentType,
-                            UploadDate = DateTime.Now,
                             UploaderUserId = uploaderUserId,
-                        });
+                            UploadDate = DateTime.Now
+                        };
+
+                        _context.TaskAttachment_Tbl.Add(attachment);
+                        Console.WriteLine($"✅ File saved: {file.FileName} ({file.Length} bytes)");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"خطا در ذخیره فایل {file.FileName}: {ex.Message}");
-
-                        // Rollback: حذف پوشه
-                        if (Directory.Exists(uploadsFolder))
-                        {
-                            try
-                            {
-                                Directory.Delete(uploadsFolder, true);
-                            }
-                            catch { }
-                        }
+                        Console.WriteLine($"❌ Error saving file {file.FileName}: {ex.Message}");
                         throw;
                     }
                 }
+            }
 
-                // ذخیره در دیتابیس
-                if (attachments.Any())
-                {
-                    foreach (var attachment in attachments)
-                    {
-                        _unitOfWork.TaskAttachmentUW.Create(attachment);
-                    }
-                    await _unitOfWork.SaveAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"خطا در ذخیره فایل‌های پیوست: {ex.Message}", ex);
-            }
+            _context.SaveChanges();
         }
 
         #endregion
@@ -3720,31 +3727,33 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 throw new Exception($"خطا در مدیریت انتصاب‌ها: {ex.Message}", ex);
             }
         }
-
         /// <summary>
-        /// دریافت تیم‌های یک کاربر در شعبه مشخص - تبدیل به public
+        /// دریافت تیم‌های کاربر در شعبه مشخص - با اطلاعات کامل مدیر
         /// </summary>
         public async Task<List<TeamViewModel>> GetUserTeamsByBranchAsync(string userId, int branchId)
         {
             try
             {
-                if (string.IsNullOrEmpty(userId) || branchId <= 0)
-                {
-                    return new List<TeamViewModel>();
-                }
+                Console.WriteLine($"🔍 GetUserTeamsByBranchAsync: UserId={userId}, BranchId={branchId}");
 
-                // دریافت تیم‌های کاربر در شعبه مشخص
                 var userTeams = await _context.TeamMember_Tbl
+                    .Where(tm =>
+                        tm.UserId == userId &&
+                        tm.IsActive &&
+                        tm.Team.BranchId == branchId &&
+                        tm.Team.IsActive)
                     .Include(tm => tm.Team)
-                    .Where(tm => tm.UserId == userId &&
-                                tm.IsActive &&
-                                tm.Team.BranchId == branchId &&
-                                tm.Team.IsActive)
+                        .ThenInclude(t => t.Manager) // ⭐⭐⭐ Include Manager
+                    .Include(tm => tm.Team.TeamMembers.Where(m => m.IsActive))
                     .Select(tm => new TeamViewModel
                     {
                         Id = tm.Team.Id,
                         Title = tm.Team.Title,
-                        Description = tm.Team.Description,
+                        ManagerUserId = tm.Team.ManagerUserId,
+                        ManagerName = tm.Team.Manager != null
+                            ? $"{tm.Team.Manager.FirstName} {tm.Team.Manager.LastName}"
+                            : null,
+                        MemberCount = tm.Team.TeamMembers.Count(m => m.IsActive),
                         BranchId = tm.Team.BranchId,
                         IsActive = tm.Team.IsActive
                     })
@@ -3752,12 +3761,48 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     .OrderBy(t => t.Title)
                     .ToListAsync();
 
+                Console.WriteLine($"✅ Found {userTeams.Count} teams");
+                foreach (var team in userTeams)
+                {
+                    Console.WriteLine($"   - Team: {team.Title}, Manager: {team.ManagerName ?? "بدون مدیر"}, Members: {team.MemberCount}");
+                }
+
+                // ⭐⭐⭐ اگر هیچ تیمی نیافت، گزینه "بدون تیم" برگردان
+                if (!userTeams.Any())
+                {
+                    Console.WriteLine("⚠️ No teams found, returning 'بدون تیم' option");
+                    return new List<TeamViewModel>
+            {
+                new TeamViewModel
+                {
+                    Id = 0,
+                    Title = "بدون تیم",
+                    ManagerName = null,
+                    MemberCount = 0,
+                    BranchId = branchId,
+                    IsActive = true
+                }
+            };
+                }
+
                 return userTeams;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"خطا در GetUserTeamsByBranchAsync: {ex.Message}");
-                return new List<TeamViewModel>();
+                Console.WriteLine($"❌ Error in GetUserTeamsByBranchAsync: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                // در صورت خطا، لیست خالی با گزینه "بدون تیم" برگردان
+                return new List<TeamViewModel>
+        {
+            new TeamViewModel
+            {
+                Id = 0,
+                Title = "بدون تیم (خطا)",
+                ManagerName = null,
+                MemberCount = 0
+            }
+        };
             }
         }
 
@@ -4651,6 +4696,44 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 Console.WriteLine($"❌ Error in GetContactOrganizationsAsync: {ex.Message}");
                 return new List<OrganizationViewModel>();
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت تیم‌های شعبه با اطلاعات کامل مدیر و اعضا
+        /// </summary>
+        public async Task<List<TeamViewModel>> GetBranchTeamsWithManagersAsync(int branchId)
+        {
+            try
+            {
+                Console.WriteLine($"🔍 Fetching teams for branch: {branchId}");
+
+                var teams = await _context.Team_Tbl
+                    .Where(t => t.BranchId == branchId && t.IsActive)
+                    .Include(t => t.Manager)
+                    .Include(t => t.TeamMembers.Where(tm => tm.IsActive))
+                    .Select(t => new TeamViewModel
+                    {
+                        Id = t.Id,
+                        Title = t.Title,
+                        ManagerUserId = t.ManagerUserId,
+                        ManagerName = t.Manager != null
+                            ? $"{t.Manager.FirstName} {t.Manager.LastName}"
+                            : "بدون مدیر",
+                        MemberCount = t.TeamMembers.Count(tm => tm.IsActive)
+                    })
+                    .OrderBy(t => t.Title)
+                    .ToListAsync();
+
+                Console.WriteLine($"✅ Found {teams.Count} teams");
+                Console.WriteLine($"📊 Teams with managers: {teams.Count(t => t.ManagerName != "بدون مدیر")}");
+
+                return teams;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error: {ex.Message}");
+                throw;
             }
         }
         /// <summary>

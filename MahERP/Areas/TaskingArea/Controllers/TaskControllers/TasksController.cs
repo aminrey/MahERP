@@ -1206,10 +1206,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
         }
 
-
-        /// <summary>
-        /// بروزرسانی داده‌های وابسته به شعبه
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BranchTriggerSelect(int branchId)
@@ -1217,31 +1213,33 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             try
             {
                 var branchData = await _taskRepository.GetBranchTriggeredDataAsync(branchId);
-                
+
+                // ⭐⭐⭐ استفاده از Repository به جای متد محلی
+                var teamsWithManagers = await _taskRepository.GetBranchTeamsWithManagersAsync(branchId);
+
                 var viewList = new List<object>
-                {
-                    new {
-                        elementId = "UsersDiv",
-                        view = new { result = await this.RenderViewToStringAsync("_BranchUsersSelect", branchData.Users) }
-                    },
-                    new {
-                        elementId = "TeamsDiv", 
-                        view = new { result = await this.RenderViewToStringAsync("_BranchTeamsSelect", branchData.Teams) }
-                    },
-                    new {
-                        elementId = "StakeholdersDiv",
-                        view = new { result = await this.RenderViewToStringAsync("_BranchStakeholdersSelect", branchData.Stakeholders) }
-                    },
-                    new {
-                        elementId = "TaskCategoriesDiv",
-                        view = new { result = "" }
-                    }
-                };
+        {
+            new {
+                elementId = "UsersDiv",
+                view = new { result = await this.RenderViewToStringAsync("_BranchUsersSelect", branchData.Users) }
+            },
+            new {
+                elementId = "TeamsDiv",
+                view = new { result = await this.RenderViewToStringAsync("_BranchTeamsSelect", teamsWithManagers) }
+            },
+            new {
+                elementId = "StakeholdersDiv",
+                view = new { result = await this.RenderViewToStringAsync("_BranchStakeholdersSelect", branchData.Stakeholders) }
+            },
+            new {
+                elementId = "TaskCategoriesDiv",
+                view = new { result = "" }
+            }
+        };
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "BranchTriggerSelect",
                     $"بارگذاری داده‌های شعبه {branchId}");
-
 
                 return Json(new { status = "update-view", viewList = viewList });
             }
@@ -1251,6 +1249,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return Json(new { status = "error", message = "خطا در بارگذاری داده‌های شعبه" });
             }
         }
+
+       
 
         /// <summary>
         /// بروزرسانی دسته‌بندی‌ها بر اساس طرف حساب
@@ -1669,7 +1669,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         }
 
         /// <summary>
-        /// دریافت تیم‌های یک کاربر در شعبه مشخص (AJAX) - نسخه استاندارد با Partial View و گزینه بدون تیم
+        /// دریافت تیم‌های یک کاربر در شعبه مشخص (AJAX)
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1679,24 +1679,38 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             {
                 if (string.IsNullOrEmpty(userId) || branchId <= 0)
                 {
-                    return Json(new { 
-                        status = "error", 
-                        message = "اطلاعات ورودی نامعتبر است" 
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "اطلاعات ورودی نامعتبر است"
                     });
                 }
 
-                // ⭐ استفاده از Repository
+                Console.WriteLine($"🔍 GetUserTeams: UserId={userId}, BranchId={branchId}");
+
+                // ⭐ دریافت تیم‌های کاربر از Repository
                 var userTeams = await _taskRepository.GetUserTeamsByBranchAsync(userId, branchId);
 
-                // ⭐ رندر Partial View (مشابه BranchTriggerSelect)
+                Console.WriteLine($"✅ Found {userTeams.Count} teams");
+                foreach (var team in userTeams)
+                {
+                    Console.WriteLine($"   - {team.Title}, Manager: {team.ManagerName ?? "N/A"}");
+                }
+
+                // ⭐⭐⭐ رندر Partial View با داده‌های کامل
                 var partialHtml = await this.RenderViewToStringAsync("_UserTeamsSelect", userTeams);
 
-                // ⭐ ID دینامیک - باید با counter هماهنگ باشد
-                // در JavaScript باید counter را ارسال کنیم یا از userId استفاده کنیم
+                // ⭐ بررسی اینکه HTML تولید شده خالی نباشد
+                if (string.IsNullOrWhiteSpace(partialHtml))
+                {
+                    Console.WriteLine("⚠️ Warning: Partial view rendered empty HTML");
+                    throw new Exception("Partial view rendering failed");
+                }
+
                 var viewList = new List<object>
                 {
                     new {
-                        elementId = $"team-select-container", // ⭐ نام ثابت - JavaScript باید آن را تطبیق دهد
+                        elementId = "team-select-container",
                         view = new { result = partialHtml }
                     }
                 };
@@ -1705,22 +1719,33 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     ActivityTypeEnum.View, "Tasks", "GetUserTeams",
                     $"بارگذاری تیم‌های کاربر {userId} در شعبه {branchId} - تعداد: {userTeams.Count}");
 
-                return Json(new { 
-                    status = "update-view", 
+                return Json(new
+                {
+                    status = "update-view",
                     viewList = viewList,
                     teamsCount = userTeams.Count,
-                    hasNoTeam = !userTeams.Any()
+                    hasNoTeam = !userTeams.Any() || userTeams.All(t => t.Id == 0)
                 });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "GetUserTeams", 
+                Console.WriteLine($"❌ Error in GetUserTeams: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                await _activityLogger.LogErrorAsync("Tasks", "GetUserTeams",
                     "خطا در دریافت تیم‌های کاربر", ex);
-                
-                // ⭐ در صورت خطا، باز هم partial view با لیست خالی برگردان
-                var errorHtml = await this.RenderViewToStringAsync("_UserTeamsSelect", new List<TeamViewModel>());
-                
-                return Json(new { 
+
+                // ⭐ در صورت خطا، HTML ساده برگردان
+                var errorHtml = @"<select class='form-select form-select-sm team-select' disabled>
+                                    <option value='0'>بدون تیم (خطا در بارگذاری)</option>
+                                  </select>
+                                  <small class='form-text text-danger mt-1'>
+                                    <i class='fa fa-times-circle me-1'></i>
+                                    خطا در بارگذاری تیم‌ها
+                                  </small>";
+
+                return Json(new
+                {
                     status = "update-view",
                     viewList = new List<object>
                     {
@@ -2631,6 +2656,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// <summary>
         /// دریافت تیم‌های کاربر برای AJAX
         /// </summary>
+    
         [HttpPost]
         public async Task<IActionResult> GetUserTeamsForAssignment(string userId, int branchId)
         {
@@ -2645,6 +2671,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
+                // ⭐ دریافت تیم‌ها با اطلاعات کامل (شامل مدیر)
                 var userTeams = await _taskRepository.GetUserTeamsByBranchAsync(userId, branchId);
 
                 var html = "";
@@ -2652,23 +2679,34 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 if (!userTeams.Any())
                 {
                     html = @"<select class='form-select team-select' name='SelectedTeamId' required disabled>
-                        <option value='0'>بدون تیم</option>
-                     </select>
-                     <small class='form-text text-warning mt-1'>
-                        <i class='fa fa-exclamation-triangle me-1'></i>
-                        این کاربر در هیچ تیمی عضو نیست
-                     </small>";
+                <option value='0'>بدون تیم</option>
+             </select>
+             <small class='form-text text-warning mt-1'>
+                <i class='fa fa-exclamation-triangle me-1'></i>
+                این کاربر در هیچ تیمی عضو نیست
+             </small>";
                 }
                 else if (userTeams.Count == 1)
                 {
                     var team = userTeams.First();
+                    // ⭐⭐⭐ اضافه کردن data attributes برای مدیر
+                    var managerInfo = !string.IsNullOrEmpty(team.ManagerName)
+                        ? $" (مدیر: {team.ManagerName})"
+                        : "";
+
                     html = $@"<select class='form-select team-select' name='SelectedTeamId' required>
-                        <option value='{team.Id}' selected>{team.Title}</option>
-                      </select>
-                      <small class='form-text text-success mt-1'>
-                        <i class='fa fa-check me-1'></i>
-                        تیم به صورت خودکار انتخاب شد
-                      </small>";
+                <option value='{team.Id}' 
+                        data-manager-id='{team.ManagerUserId}' 
+                        data-manager-name='{team.ManagerName}' 
+                        data-member-count='{team.MemberCount}' 
+                        selected>
+                    {team.Title}{managerInfo}
+                </option>
+              </select>
+              <small class='form-text text-success mt-1'>
+                <i class='fa fa-check me-1'></i>
+                تیم به صورت خودکار انتخاب شد
+              </small>";
                 }
                 else
                 {
@@ -2677,14 +2715,31 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                     foreach (var team in userTeams)
                     {
-                        html += $"<option value='{team.Id}'>{team.Title}</option>";
+                        // ⭐⭐⭐ اضافه کردن نام مدیر به متن و data attributes
+                        var managerInfo = !string.IsNullOrEmpty(team.ManagerName)
+                            ? $" (مدیر: {team.ManagerName})"
+                            : "";
+
+                        html += $@"<option value='{team.Id}' 
+                                  data-manager-id='{team.ManagerUserId ?? ""}' 
+                                  data-manager-name='{team.ManagerName ?? ""}' 
+                                  data-member-count='{team.MemberCount}'>
+                              {team.Title}{managerInfo}
+                          </option>";
                     }
 
                     html += "</select>";
                     html += @"<small class='form-text text-muted mt-1'>
-                        <i class='fa fa-info-circle me-1'></i>
-                        لطفاً تیم مربوطه را انتخاب کنید
-                      </small>";
+                <i class='fa fa-info-circle me-1'></i>
+                لطفاً تیم مربوطه را انتخاب کنید
+              </small>";
+                }
+
+                // ⭐⭐⭐ لاگ برای debug
+                Console.WriteLine($"✅ GetUserTeamsForAssignment: User {userId}, Teams: {userTeams.Count}");
+                foreach (var team in userTeams)
+                {
+                    Console.WriteLine($"   - {team.Title}, Manager: {team.ManagerName ?? "N/A"}");
                 }
 
                 return Json(new
@@ -2704,7 +2759,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetUserTeamsForAssignment: {ex.Message}");
+                Console.WriteLine($"❌ Error in GetUserTeamsForAssignment: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
 
                 return Json(new
                 {
@@ -3013,5 +3069,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 });
             }
         }
+
     }
 }
