@@ -19,10 +19,10 @@
                     <div class="block block-rounded block-link-shadow block-transparent bg-black-50 text-center mb-0 mx-auto">
                         <div class="block-content block-content-full px-4 py-3">
                             <div class="d-grid gap-2">
-                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="MyDayTasks" class="btn btn-primary">
+                                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="MyDayTasks" class="btn btn-primary">
                                     <i class="fa fa-calendar-day me-1"></i> تسک‌های امروز من
                                 </a>
-                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskCalendar" class="btn btn-alt-secondary">
+                                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskCalendar" class="btn btn-alt-secondary">
                                     <i class="fa fa-calendar me-1"></i> تقویم تسک‌ها
                                 </a>
                             </div>
@@ -39,7 +39,7 @@
     <div class="row">
         <!-- تسک‌های من -->
         <div class="col-6 col-lg-3">
-            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="MyTasks">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="MyTasks">
                 <div class="block-content block-content-full">
                     <div class="fs-2 fw-bold text-primary" id="mytasks">-</div>
                     <div class="fs-sm fw-semibold text-uppercase text-muted">تسک‌های فعال من</div>
@@ -50,7 +50,7 @@
 
         <!-- تسک‌های به موقع -->
         <div class="col-6 col-lg-3">
-            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="ontime">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="ontime">
                 <div class="block-content block-content-full">
                     <div class="fs-2 fw-bold text-success" id="onTimeTasksCount">-</div>
                     <div class="fs-sm fw-semibold text-uppercase text-muted">به موقع</div>
@@ -60,7 +60,7 @@
 
         <!-- تسک‌های عقب افتاده -->
         <div class="col-6 col-lg-3">
-            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="overdue">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" asp-route-filter="overdue">
                 <div class="block-content block-content-full">
                     <div class="fs-2 fw-bold text-danger" id="overdueTasksCount">-</div>
                     <div class="fs-sm fw-semibold text-uppercase text-muted">عقب افتاده</div>
@@ -70,7 +70,7 @@
 
         <!-- تسک‌های نظارتی -->
         <div class="col-6 col-lg-3">
-            <a class="block block-rounded block-link-shadow text-center" asp-area="AdminArea" asp-controller="Tasks" asp-action="SupervisedTasks">
+            <a class="block block-rounded block-link-shadow text-center" asp-area="TaskingArea" asp-controller="Tasks" asp-action="SupervisedTasks">
                 <div class="block-content block-content-full">
                     <div class="fs-2 fw-bold text-info" id="supervisedtasks">-</div>
                     <div class="fs-sm fw-semibold text-uppercase text-muted">تحت نظارت</div>
@@ -167,7 +167,7 @@
                                 <a class="dropdown-item" href="#" onclick="markAllRemindersAsRead()">
                                     <i class="fa fa-check me-1"></i> علامت‌گذاری همه به عنوان خوانده شده
                                 </a>
-                                <a class="dropdown-item" href="/AdminArea/Tasks/Reminders">
+                                <a class="dropdown-item" href="/TaskingArea/Tasks/Reminders">
                                     <i class="fa fa-list me-1"></i> مشاهده همه یادآوری‌ها
                                 </a>
                             </div>
@@ -281,7 +281,7 @@
             reminders.forEach(function(reminder) {
                 const statusBadge = getReminderStatusBadge(reminder.status);
                 const priorityIcon = reminder.priority === 1 ? '<i class="fa fa-exclamation-triangle text-warning me-1"></i>' : '';
-                const taskLink = reminder.taskId ? `/AdminArea/Tasks/Details/${reminder.taskId}` : '#';
+                const taskLink = reminder.taskId ? `/TaskingArea/Tasks/Details/${reminder.taskId}` : '#';
 
                 // ⭐ تشخیص یادآوری جدید
                 const isNewReminder = !reminder.isRead && reminder.status !== 'read';
@@ -412,11 +412,11 @@
                 const row = `
                     <tr>
                         <td class="text-center" style="width: 80px;">
-                            <a class="fw-semibold" href="/AdminArea/Tasks/Details/${task.id}">${task.taskCode || 'بدون کد'}</a>
+                            <a class="fw-semibold" href="/TaskingArea/Tasks/Details/${task.id}">${task.taskCode || 'بدون کد'}</a>
                         </td>
                         <td style="max-width: 300px;">
                             <div class="fw-medium mb-1 text-truncate">
-                                <a href="/AdminArea/Tasks/Details/${task.id}">${task.title}</a>
+                                <a href="/TaskingArea/Tasks/Details/${task.id}">${task.title}</a>
                             </div>
                             <div class="fs-xs text-muted mb-1 text-truncate">${shortDescription}</div>
                             <div class="fs-xs text-truncate">

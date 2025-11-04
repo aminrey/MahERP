@@ -166,6 +166,14 @@ public class TaskViewModel
         /// </summary>
         [Display(Name = "نوع تکمیل تسک")]
         public byte CompletionMode { get; set; } = 0;
+
+            /// <summary>
+    /// لیست کامنت‌های تسک
+    /// </summary>
+    public List<TaskCommentViewModel> Comments { get; set; } = new();
+
+
+
         // Progress calculation
 
         /// <summary>
@@ -466,11 +474,12 @@ public class TaskAssignmentViewModel
 
     [Display(Name = "تاریخ تخصیص")]
     public DateTime AssignDate { get; set; }
+        public string? AssignedUserProfileImage { get; set; }
 
-    /// <summary>
-    /// ⭐ متد کمکی: آیا این assignment برای خود سازنده است؟
-    /// </summary>
-    public bool IsSelfAssignment => AssignedUserId == AssignerUserId;
+        /// <summary>
+        /// ⭐ متد کمکی: آیا این assignment برای خود سازنده است؟
+        /// </summary>
+        public bool IsSelfAssignment => AssignedUserId == AssignerUserId;
 
     /// <summary>
     /// ⭐ متد کمکی: آیا این یک assignment واقعی است؟ (نه self-assignment)
@@ -489,6 +498,11 @@ public class TaskAssignmentViewModel
         /// تاریخ فوکوس شدن تسک
         /// </summary>
         public DateTime? FocusedDate { get; set; }
+        // ⭐⭐⭐ تاریخ‌های شخصی
+        public DateTime? PersonalStartDate { get; set; }
+        public DateTime? PersonalDueDate { get; set; }
+
+        public string? CompletionNote { get; set; }
     }
 
 public class TaskCategoryViewModel

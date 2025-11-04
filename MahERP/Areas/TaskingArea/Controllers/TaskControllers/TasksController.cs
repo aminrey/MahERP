@@ -3069,6 +3069,385 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 });
             }
         }
+        /// <summary>
+        /// دریافت آمار Hero Section
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetTaskHeroStats(int taskId)
+        {
+            var task = _taskRepository.GetTaskById(taskId, includeOperations: true);
 
+            if (task == null)
+                return Json(new { success = false });
+
+            return Json(new
+            {
+                success = true,
+                progressPercentage = task.TaskOperations.Any()
+                    ? (task.TaskOperations.Count(o => o.IsCompleted) * 100 / task.TaskOperations.Count)
+                    : 0,
+                completedOperations = task.TaskOperations.Count(o => o.IsCompleted),
+                totalOperations = task.TaskOperations.Count
+            });
+        }
+
+        /// <summary>
+        /// دریافت درصد پیشرفت
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetTaskProgress(int taskId)
+        {
+            var task = _taskRepository.GetTaskById(taskId, includeOperations: true);
+
+            if (task == null)
+                return Json(new { success = false });
+
+            var percentage = task.TaskOperations.Any()
+                ? (task.TaskOperations.Count(o => o.IsCompleted) * 100 / task.TaskOperations.Count)
+                : 0;
+
+            return Json(new { success = true, percentage });
+        }
+
+        /// <summary>
+        /// دریافت آمار Sidebar
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetTaskSidebarStats(int taskId)
+        {
+            var task = _taskRepository.GetTaskById(taskId, includeOperations: true, includeAssignments: true);
+
+            if (task == null)
+                return Json(new { success = false });
+
+            return Json(new
+            {
+                success = true,
+                completedOps = task.TaskOperations.Count(o => o.IsCompleted),
+                pendingOps = task.TaskOperations.Count(o => !o.IsCompleted),
+                teamMembers = task.TaskAssignments.Count,
+                progress = task.TaskOperations.Any()
+                    ? (task.TaskOperations.Count(o => o.IsCompleted) * 100 / task.TaskOperations.Count)
+                    : 0
+            });
+        }
+        #region Task Comments Management
+
+        /// <summary>
+        /// افزودن کامنت/پیام جدید به تسک
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> AddTaskComment(TaskCommentViewModel model, List<IFormFile> Attachments)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => new { status = "error", text = e.ErrorMessage })
+                        .ToArray();
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = errors
+                    });
+                }
+
+                var currentUserId = _userManager.GetUserId(User);
+
+                // بررسی دسترسی به تسک
+                var hasAccess = await _taskRepository.CanUserViewTaskAsync(currentUserId, model.TaskId);
+                if (!hasAccess)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "شما به این تسک دسترسی ندارید"
+                    });
+                }
+
+                // ⭐ بررسی اینکه آیا تسک تکمیل شده؟
+                var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
+                var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, model.TaskId);
+                var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
+
+                if (isTaskCompletedForCurrentUser)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "این تسک تکمیل شده و امکان ارسال پیام وجود ندارد"
+                    });
+                }
+
+                // ایجاد کامنت
+                var comment = new TaskComment
+                {
+                    TaskId = model.TaskId,
+                    CommentText = model.CommentText.Trim(),
+                    IsImportant = model.IsImportant,
+                    IsPrivate = model.IsPrivate,
+                    CommentType = model.CommentType,
+                    CreatorUserId = currentUserId,
+                    CreateDate = DateTime.Now,
+                    ParentCommentId = model.ParentCommentId
+                };
+
+                _uow.TaskCommentUW.Create(comment);
+                _uow.Save();
+
+                // ⭐⭐⭐ مدیریت فایل‌های پیوست
+                if (Attachments != null && Attachments.Any())
+                {
+                    foreach (var file in Attachments)
+                    {
+                        if (file.Length > 0)
+                        {
+                            // ذخیره فایل
+                            var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "task-comments", model.TaskId.ToString());
+                            Directory.CreateDirectory(uploadsFolder);
+
+                            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+                            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                            using (var fileStream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await file.CopyToAsync(fileStream);
+                            }
+
+                            // ایجاد رکورد پیوست
+                            var attachment = new TaskCommentAttachment
+                            {
+                                CommentId = comment.Id,
+                                FileName = file.FileName,
+                                FilePath = $"/uploads/task-comments/{model.TaskId}/{uniqueFileName}",
+                                FileExtension = Path.GetExtension(file.FileName),
+                                FileSize = file.Length.ToString(),
+                                FileUUID = uniqueFileName,
+                                UploadDate = DateTime.Now,
+                                UploaderUserId = currentUserId
+                            };
+
+                            _uow.TaskCommentAttachmentUW.Create(attachment);
+                        }
+                    }
+
+                    _uow.Save();
+                }
+
+                // ⭐ ثبت در تاریخچه
+                await _taskHistoryRepository.LogCommentAddedAsync(
+                    model.TaskId,
+                    currentUserId,
+                    comment.Id,
+                    model.CommentText.Substring(0, Math.Min(50, model.CommentText.Length))
+                );
+
+                // ⭐ ارسال نوتیفیکیشن به اعضای تسک
+                await _taskNotificationService.NotifyNewCommentAsync(model.TaskId, currentUserId, comment.Id);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Tasks",
+                    "AddTaskComment",
+                    $"افزودن کامنت به تسک {task.TaskCode}",
+                    recordId: model.TaskId.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: task.Title
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    message = "پیام با موفقیت ارسال شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "AddTaskComment", "خطا در افزودن کامنت", ex);
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در ارسال پیام: " + ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت کامنت‌های یک تسک (برای Refresh)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetTaskComments(int taskId)
+        {
+            try
+            {
+                var currentUserId = _userManager.GetUserId(User);
+
+                // بررسی دسترسی
+                var hasAccess = await _taskRepository.CanUserViewTaskAsync(currentUserId, taskId);
+                if (!hasAccess)
+                {
+                    return Json(new { success = false, message = "شما به این تسک دسترسی ندارید" });
+                }
+
+                // دریافت کامنت‌ها
+                var comments = await _taskRepository.GetTaskCommentsAsync(taskId);
+
+                // رندر Partial View
+                var html = await this.RenderViewToStringAsync("_TaskCommentsPartial", comments);
+
+                return Json(new
+                {
+                    success = true,
+                    html = html
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetTaskComments", "خطا در دریافت کامنت‌ها", ex);
+                return Json(new { success = false, message = "خطا در بارگذاری پیام‌ها" });
+            }
+        }
+
+        /// <summary>
+        /// حذف کامنت
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTaskComment(int id)
+        {
+            try
+            {
+                var currentUserId = _userManager.GetUserId(User);
+
+                // دریافت کامنت
+                var comment =  _uow.TaskCommentUW.GetById(id);
+                if (comment == null)
+                {
+                    return Json(new { success = false, message = "پیام یافت نشد" });
+                }
+
+                // بررسی سازنده
+                if (comment.CreatorUserId != currentUserId)
+                {
+                    return Json(new { success = false, message = "شما فقط می‌توانید پیام‌های خود را حذف کنید" });
+                }
+
+                // ⭐ بررسی اینکه آیا تسک تکمیل شده؟
+                var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, comment.TaskId);
+                var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
+
+                if (isTaskCompletedForCurrentUser)
+                {
+                    return Json(new { success = false, message = "این تسک تکمیل شده و امکان حذف پیام وجود ندارد" });
+                }
+
+                // حذف فایل‌های پیوست
+                var attachments =  _uow.TaskCommentAttachmentUW
+                    .Get(a => a.CommentId == id).ToList();
+
+                foreach (var attachment in attachments)
+                {
+                    // حذف فیزیکی فایل
+                    var fullPath = Path.Combine(_webHostEnvironment.WebRootPath, attachment.FilePath.TrimStart('/'));
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        System.IO.File.Delete(fullPath);
+                    }
+
+                    _uow.TaskCommentAttachmentUW.Delete(attachment);
+                }
+
+                // حذف کامنت
+                _uow.TaskCommentUW.Delete(comment);
+                _uow.Save();
+
+                // ⭐ ثبت در تاریخچه
+                await _taskHistoryRepository.LogCommentDeletedAsync(
+                    comment.TaskId,
+                    currentUserId,
+                    id
+                );
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Delete,
+                    "Tasks",
+                    "DeleteTaskComment",
+                    $"حذف کامنت از تسک {comment.TaskId}",
+                    recordId: comment.TaskId.ToString(),
+                    entityType: "Tasks"
+                );
+
+                return Json(new { success = true, message = "پیام با موفقیت حذف شد" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "DeleteTaskComment", "خطا در حذف کامنت", ex);
+                return Json(new { success = false, message = "خطا در حذف پیام" });
+            }
+        }
+
+        /// <summary>
+        /// ویرایش کامنت
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditTaskComment(int id, string commentText)
+        {
+            try
+            {
+                var currentUserId = _userManager.GetUserId(User);
+
+                // دریافت کامنت
+                var comment =  _uow.TaskCommentUW.GetById(id);
+                if (comment == null)
+                {
+                    return Json(new { success = false, message = "پیام یافت نشد" });
+                }
+
+                // بررسی سازنده
+                if (comment.CreatorUserId != currentUserId)
+                {
+                    return Json(new { success = false, message = "شما فقط می‌توانید پیام‌های خود را ویرایش کنید" });
+                }
+
+                // ⭐ بررسی تکمیل تسک
+                var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, comment.TaskId);
+                var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
+
+                if (isTaskCompletedForCurrentUser)
+                {
+                    return Json(new { success = false, message = "این تسک تکمیل شده و امکان ویرایش پیام وجود ندارد" });
+                }
+
+                // بروزرسانی
+                comment.CommentText = commentText.Trim();
+                comment.IsEdited = true;
+                comment.EditDate = DateTime.Now;
+
+                _uow.TaskCommentUW.Update(comment);
+                _uow.Save();
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Update,
+                    "Tasks",
+                    "EditTaskComment",
+                    $"ویرایش کامنت در تسک {comment.TaskId}",
+                    recordId: comment.TaskId.ToString(),
+                    entityType: "Tasks"
+                );
+
+                return Json(new { success = true, message = "پیام با موفقیت ویرایش شد" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "EditTaskComment", "خطا در ویرایش کامنت", ex);
+                return Json(new { success = false, message = "خطا در ویرایش پیام" });
+            }
+        }
+
+        #endregion
     }
 }

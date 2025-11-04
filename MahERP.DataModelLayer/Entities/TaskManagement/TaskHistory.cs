@@ -15,11 +15,11 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 
         public int TaskId { get; set; }
         [ForeignKey("TaskId")]
-        public virtual Tasks Task { get; set; }
+        public virtual Tasks? Task { get; set; }
 
         public string UserId { get; set; }
         [ForeignKey("UserId")]
-        public virtual AppUsers User { get; set; }
+        public virtual AppUsers? User { get; set; }
 
         /// <summary>
         /// نوع تغییر:
@@ -50,13 +50,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// </summary>
         [Required]
         [MaxLength(200)]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         /// <summary>
         /// توضیحات کامل تغییر
         /// </summary>
         [MaxLength(1000)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// شناسه آیتم مرتبط (مثل OperationId، WorkLogId، ReminderId)
@@ -67,17 +67,17 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// نوع آیتم مرتبط (TaskOperation, WorkLog, Reminder, etc.)
         /// </summary>
         [MaxLength(100)]
-        public string RelatedItemType { get; set; }
+        public string? RelatedItemType { get; set; }
 
         /// <summary>
         /// اطلاعات قبلی (JSON)
         /// </summary>
-        public string OldValue { get; set; }
+        public string? OldValue { get; set; }
 
         /// <summary>
         /// اطلاعات جدید (JSON)
         /// </summary>
-        public string NewValue { get; set; }
+        public string? NewValue { get; set; }
 
         /// <summary>
         /// تاریخ انجام تغییر
@@ -89,13 +89,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// IP کاربر (اختیاری)
         /// </summary>
         [MaxLength(50)]
-        public string UserIp { get; set; }
+        public string? UserIp { get; set; }
 
         /// <summary>
         /// User Agent (اختیاری)
         /// </summary>
         [MaxLength(500)]
-        public string UserAgent { get; set; }
+        public string? UserAgent { get; set; }
     }
     /// <summary>
     /// انواع تغییرات قابل ثبت در تاریخچه تسک
@@ -170,6 +170,8 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 
         /// <summary>22 - ثبت کار روی تسک در روز من</summary>
         WorkLoggedOnMyDay = 22,
-        TaskWorkLogAdded = 23
+        TaskWorkLogAdded = 23,
+        CommentAdded = 24,
+        CommentDeleted = 25,
     }
 }

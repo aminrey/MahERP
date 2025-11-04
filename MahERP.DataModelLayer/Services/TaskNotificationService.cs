@@ -19,17 +19,20 @@ namespace MahERP.DataModelLayer.Services
     {
         private readonly ICoreNotificationRepository _coreNotificationRepository;
         private readonly ITaskRepository _taskRepository;
+        private readonly AppDbContext _context;
         private readonly UserManager<AppUsers> _userManager;
         private const byte TASK_SYSTEM_ID = 7; // شناسه سیستم تسک‌ها
 
         public TaskNotificationService(
             ICoreNotificationRepository coreNotificationRepository,
             ITaskRepository taskRepository,
+            AppDbContext context,
             UserManager<AppUsers> userManager)
         {
             _coreNotificationRepository = coreNotificationRepository;
             _taskRepository = taskRepository;
             _userManager = userManager;
+            _context = context;
         }
 
         #region نوتیفیکیشن‌های ایجاد تسک - Task Creation Notifications
@@ -415,6 +418,7 @@ namespace MahERP.DataModelLayer.Services
 
         #endregion
 
+
         #region مدیریت نوتیفیکیشن‌های کاربر - User Notification Management
 
         /// <summary>
@@ -429,8 +433,8 @@ namespace MahERP.DataModelLayer.Services
             try
             {
                 return await _coreNotificationRepository.MarkRelatedNotificationsAsReadAsync(
-                    userId, 
-                    TASK_SYSTEM_ID, 
+                    userId,
+                    TASK_SYSTEM_ID,
                     taskId.ToString()
                 );
             }
@@ -449,18 +453,18 @@ namespace MahERP.DataModelLayer.Services
         /// <param name="pageSize">تعداد در هر صفحه</param>
         /// <returns>لیست نوتیفیکیشن‌های تسک</returns>
         public async Task<CoreNotificationListViewModel> GetUserTaskNotificationsAsync(
-            string userId, 
-            bool unreadOnly = false, 
-            int pageNumber = 1, 
+            string userId,
+            bool unreadOnly = false,
+            int pageNumber = 1,
             int pageSize = 20)
         {
             try
             {
                 return await _coreNotificationRepository.GetUserNotificationsAsync(
-                    userId, 
-                    TASK_SYSTEM_ID, 
-                    unreadOnly, 
-                    pageNumber, 
+                    userId,
+                    TASK_SYSTEM_ID,
+                    unreadOnly,
+                    pageNumber,
                     pageSize
                 );
             }
@@ -488,12 +492,114 @@ namespace MahERP.DataModelLayer.Services
         }
 
         #endregion
-    }
 
-    /// <summary>
-    /// کلاس کمکی برای نگهداری اطلاعات تغییرات تسک
-    /// </summary>
-    public class TaskChangeDetail
+
+
+        /// <summary>
+        /// ارسال نوتیفیکیشن برای کامنت/پیام جدید در تسک
+        /// </summary>
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="senderUserId">شناسه کاربر ارسال‌کننده کامنت</param>
+        /// <param name="commentId">شناسه کامنت</param>
+        public async Task NotifyNewCommentAsync(int taskId, string senderUserId, int commentId)
+        {
+            try
+            {
+                // دریافت اطلاعات تسک
+                var task = await _taskRepository.GetTaskByIdAsync(taskId);
+                if (task == null)
+                {
+                    Console.WriteLine($"⚠️ Task {taskId} not found for notification");
+                    return;
+                }
+
+                // دریافت اطلاعات کاربر فرستنده
+                var sender = await _userManager.FindByIdAsync(senderUserId);
+                var senderName = sender != null
+                    ? $"{sender.FirstName} {sender.LastName}"
+                    : "کاربر";
+
+                // ⭐ استفاده از متد موجود GetTaskAssignments
+                var taskAssignments = _taskRepository.GetTaskAssignments(taskId);
+
+                // استخراج UserId های یکتا (به جز فرستنده)
+                var recipientUserIds = taskAssignments
+                    .Where(a => a.AssignedUserId != senderUserId)
+                    .Select(a => a.AssignedUserId)
+                    .Distinct()
+                    .ToList();
+
+                if (!recipientUserIds.Any())
+                {
+                    Console.WriteLine($"ℹ️ No recipients found for task {taskId} comment notification");
+                    return;
+                }
+
+                // ایجاد نوتیفیکیشن برای هر کاربر
+                var notifications = new List<CoreNotification>();
+
+                foreach (var recipientId in recipientUserIds)
+                {
+                    var notification = new CoreNotification
+                    {
+                        // ⭐ SystemId = 7 برای سیستم مدیریت پروژه و تسک‌ها
+                        SystemId = 7,
+                        SystemName = "مدیریت تسک‌ها",
+
+                        // ⭐⭐⭐ اصلاح نام پراپرتی‌ها
+                        RecipientUserId = recipientId,
+                        SenderUserId = senderUserId,
+
+                        // ⭐ NotificationTypeGeneral
+                        // 0 = عمومی، 1 = ایجاد، 2 = ویرایش، 3 = حذف، 4 = تایید/رد
+                        // 5 = هشدار، 6 = یادآوری، 7 = خطا، 8 = تکمیل، 9 = اختصاص، 10 = تغییر وضعیت
+                        NotificationTypeGeneral = 1, // ایجاد رکورد جدید (کامنت جدید)
+
+                        Title = "پیام جدید در تسک",
+                        Message = $"{senderName} در تسک \"{task.Title}\" پیام جدیدی ارسال کرد",
+
+                        IsRead = false,
+                        CreateDate = DateTime.Now,
+
+                        // ⭐ Priority: 0 = عادی، 1 = مهم، 2 = فوری، 3 = بحرانی
+                        Priority = 0,
+
+                        ActionUrl = $"/TaskingArea/Tasks/Details/{taskId}#chat-tab",
+
+                        // ⭐⭐⭐ استفاده از نام‌های صحیح
+                        RelatedRecordType = "TaskComment",
+                        RelatedRecordId = commentId.ToString(),
+                        RelatedRecordTitle = $"کامنت در تسک {task.TaskCode}",
+
+                        IsActive = true,
+                        BranchId = task.BranchId
+                    };
+
+                    notifications.Add(notification);
+                }
+
+                // ⭐ ذخیره نوتیفیکیشن‌ها
+                foreach (var notification in notifications)
+                {
+                    await _context.CoreNotification_Tbl.AddAsync(notification);
+                }
+
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Sent {notifications.Count} comment notifications for task {taskId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in NotifyNewCommentAsync: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                // عدم throw برای جلوگیری از مختل شدن فرآیند اصلی
+            }
+        }
+    }
+        /// <summary>
+        /// کلاس کمکی برای نگهداری اطلاعات تغییرات تسک
+        /// </summary>
+        public class TaskChangeDetail
     {
         public string FieldName { get; set; }
         public string OldValue { get; set; }

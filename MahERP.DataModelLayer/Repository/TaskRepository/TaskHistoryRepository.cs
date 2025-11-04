@@ -537,6 +537,40 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 Console.WriteLine($"❌ Error logging reminder deactivation: {ex.Message}");
             }
         }
+
+        public async Task LogCommentAddedAsync(int taskId, string userId, int commentId, string commentPreview)
+        {
+            var history = new TaskHistory
+            {
+                TaskId = taskId,
+                UserId = userId,
+                ActionType = 24,
+                ActionDate = DateTime.Now,
+                Description = $"افزودن کامنت: {commentPreview}...",
+                OldValue = null,
+                NewValue = commentId.ToString()
+            };
+
+            await _context.TaskHistory_Tbl.AddAsync(history);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task LogCommentDeletedAsync(int taskId, string userId, int commentId)
+        {
+            var history = new TaskHistory
+            {
+                TaskId = taskId,
+                UserId = userId,
+                ActionType = 25,
+                ActionDate = DateTime.Now,
+                Description = "حذف کامنت",
+                OldValue = commentId.ToString(),
+                NewValue = null
+            };
+
+            await _context.TaskHistory_Tbl.AddAsync(history);
+            await _context.SaveChangesAsync();
+        }
         #region Helper Methods
         /// <summary>
         /// ثبت گزارش کار روی تسک (سطح کلی)

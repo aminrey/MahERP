@@ -1,0 +1,40 @@
+﻿@model dynamic
+
+@if (Model.Starred.Any())
+{
+    ViewBag.GroupType = "starred";
+    ViewBag.GroupTitle = "عملیات ستاره‌دار";
+    ViewBag.GroupIcon = "star";
+    ViewBag.GroupColor = "warning";
+    ViewBag.GroupDescription = "عملیات‌های با اولویت بالا";
+    
+    <div id="starred-group-placeholder" data-order="1">
+        <partial name="_OperationsGroup" model="Model.Starred" />
+    </div>
+}
+
+@if (Model.Pending.Any())
+{
+    ViewBag.GroupType = "pending";
+    ViewBag.GroupTitle = "در انتظار انجام";
+    ViewBag.GroupIcon = "clock";
+    ViewBag.GroupColor = "primary";
+    ViewBag.GroupDescription = "عملیات‌های در حال انجام";
+    
+    <div id="pending-group-placeholder" data-order="2">
+        <partial name="_OperationsGroup" model="Model.Pending" />
+    </div>
+}
+
+@if (Model.Completed.Any())
+{
+    ViewBag.GroupType = "completed";
+    ViewBag.GroupTitle = "تکمیل شده";
+    ViewBag.GroupIcon = "check-circle";
+    ViewBag.GroupColor = "success";
+    ViewBag.GroupDescription = "عملیات‌های به اتمام رسیده";
+    
+    <div id="completed-group-placeholder" data-order="3">
+        <partial name="_OperationsGroup" model="Model.Completed" />
+    </div>
+}

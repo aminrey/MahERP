@@ -28,7 +28,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// کد تسک
         /// </summary>
         public string? TaskCode { get; set; }
-
+        public string? UserProfileImage { get; set; }
         /// <summary>
         /// توضیحات کار انجام شده - اجباری
         /// </summary>

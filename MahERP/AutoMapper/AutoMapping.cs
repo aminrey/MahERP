@@ -14,6 +14,7 @@ using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 
 namespace MahERP.AutoMapper
@@ -778,7 +779,11 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
-
+            CreateMap<TaskWorkLog, TaskWorkLogViewModel>()
+    .ForMember(dest => dest.UserName,
+        opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"))
+    .ForMember(dest => dest.UserProfileImage,
+        opt => opt.MapFrom(src => src.User.ProfileImagePath ?? "/images/default-avatar.png"));
         }
 
         // Helper methods for mapping

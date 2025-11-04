@@ -365,6 +365,17 @@
                 <span class="d-none d-sm-inline">نگاه کلی</span>
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="work-logs-tab" data-bs-toggle="tab" data-bs-target="#tab-work-logs" type="button" role="tab">
+                <i class="fa fa-clipboard-list me-1"></i>
+                <span class="d-none d-sm-inline">گزارش‌های کاری</span>
+                @if (Model.WorkLogs?.Any() == true)
+                {
+                    <span class="badge bg-info rounded-pill ms-1">@Model.WorkLogs.Count</span>
+                }
+            </button>
+        </li>
+
         <li class="nav-item">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-operations" 
                     type="button" role="tab">
@@ -383,6 +394,18 @@
                 @if (Model.AssignmentsTaskUser?.Any() == true) {
                     <span class="badge bg-info rounded-pill ms-1">@Model.AssignmentsTaskUser.Count</span>
                 }
+            </button>
+        </li>
+        <!-- در nav-tabs -->
+
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="chat-tab" data-bs-toggle="tab" data-bs-target="#tab-chat" type="button" role="tab">
+                <i class="fa fa-comments me-1"></i>
+                <span class="d-none d-sm-inline">گفتگوها</span>
+                <!-- ⭐ اضافه کردن ID -->
+                <span class="badge bg-primary rounded-pill ms-1" id="chat-badge-count">
+                    @(Model.Comments?.Count ?? 0)
+                </span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -428,7 +451,134 @@
                             }
                         </div>
                     </div>
-                    
+                    <!-- در تب اول (tab-overview) بعد از بخش "توضیحات تسک" -->
+                    @if (Model.CompletionDate.HasValue)
+                    {
+                        <!-- ⭐⭐⭐ گزارش تکمیل تسک -->
+                        <div class="block block-rounded block-fx-shadow">
+                            <div class="block-header bg-success text-white">
+                                <h3 class="block-title text-white mb-0">
+                                    <i class="fa fa-check-circle me-2"></i>گزارش تکمیل تسک
+                                </h3>
+                                <div class="block-options">
+                                    <span class="badge bg-light text-success">
+                                        @ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate.Value, "yyyy/MM/dd HH:mm")
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="block-content">
+                                @{
+                                    var completionAssignment = Model.AssignmentsTaskUser?
+                                    .FirstOrDefault(a => a.CompletionDate.HasValue);
+                                }
+
+                                @if (completionAssignment != null)
+                                {
+                                    <div class="row g-3">
+                                        <!-- عکس و اطلاعات تکمیل کننده -->
+                                        <div class="col-md-4">
+                                            <div class="p-3 bg-body-light rounded-3 text-center">
+                                                <div class="mb-3">
+                                                    <img src="@(completionAssignment.AssignedUserProfileImage ?? "/images/default-avatar.png")"
+                                                         class="rounded-circle"
+                                                         style="width: 80px; height: 80px; object-fit: cover;"
+                                                         alt="@completionAssignment.AssignedUserName">
+                                                </div>
+                                                <h6 class="mb-1">@completionAssignment.AssignedUserName</h6>
+                                                <small class="text-muted">تکمیل کننده تسک</small>
+                                            </div>
+                                        </div>
+
+                                        <!-- گزارش تکمیل -->
+                                        <div class="col-md-8">
+                                            <div class="p-3 bg-body-light rounded-3">
+                                                <h6 class="mb-2">
+                                                    <i class="fa fa-file-alt text-success me-1"></i>
+                                                    گزارش تکمیل:
+                                                </h6>
+                                                @if (!string.IsNullOrEmpty(completionAssignment.CompletionNote))
+                                                {
+                                                    <p class="mb-2">@Html.Raw(completionAssignment.CompletionNote.Replace("\n", "<br/>"))</p>
+                                                }
+                                                else
+                                                {
+                                                    <p class="text-muted mb-2">
+                                                        <i class="fa fa-info-circle me-1"></i>
+                                                        بدون توضیحات
+                                                    </p>
+                                                }
+
+                                            <!-- آمار عملیات -->
+                                            <div class="row g-2 mt-3">
+                                                <div class="col-6">
+                                                    <div class="p-2 bg-white rounded text-center">
+                                                        <div class="fs-3 fw-bold text-success">
+                                                            @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)/@(Model.Operations?.Count ?? 0)
+                                                        </div>
+                                                        <small class="text-muted">عملیات تکمیل شده</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="p-2 bg-white rounded text-center">
+                                                        <div class="fs-3 fw-bold text-primary">
+                                                            @Model.ProgressPercentage%
+                                                        </div>
+                                                        <small class="text-muted">درصد پیشرفت</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- اطلاعات بیشتر -->
+                                <div class="row g-2 mt-3">
+                                    <div class="col-md-4">
+                                        <div class="p-2 bg-body-light rounded">
+                                            <small class="text-muted d-block">تاریخ شروع</small>
+                                            <strong>
+                                                @(completionAssignment.PersonalStartDate.HasValue
+                                                                                            ? ConvertDateTime.ConvertMiladiToShamsi(completionAssignment.PersonalStartDate.Value, "yyyy/MM/dd HH:mm")
+                                                                                            : "ثبت نشده")
+                                                </strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="p-2 bg-body-light rounded">
+                                                <small class="text-muted d-block">تاریخ تکمیل</small>
+                                                <strong>
+                                                    @ConvertDateTime.ConvertMiladiToShamsi(completionAssignment.CompletionDate.Value, "yyyy/MM/dd HH:mm")
+                                                </strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="p-2 bg-body-light rounded">
+                                                <small class="text-muted d-block">مدت زمان</small>
+                                                <strong>
+                                                    @if (completionAssignment.PersonalStartDate.HasValue)
+                                                    {
+                                                        var duration = completionAssignment.CompletionDate.Value - completionAssignment.PersonalStartDate.Value;
+                                                        <text>@duration.Days روز، @duration.Hours ساعت</text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <text>نامشخص</text>
+                                                    }
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="fa fa-info-circle fa-2x mb-2"></i>
+                                        <p class="mb-0">اطلاعات تکمیل یافت نشد</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
                     <!-- اطلاعات جزئیات -->
                     <div class="block block-rounded block-fx-shadow">
                         <div class="block-header block-header-default">
@@ -457,7 +607,6 @@
                                 
                             <!-- در بخش نمایش اطلاعات تسک، جایگزین بخش Stakeholder قدیمی: -->
 
-<!-- ⭐⭐⭐ نمایش Contact/Organization جدید -->
 <div class="col-sm-6">
     <div class="p-3 bg-body-light rounded-3">
         <div class="d-flex align-items-center mb-2">
@@ -775,8 +924,113 @@
                 </div>
             </div>
         </div>
+        <!-- Tab 2: گزارش های کاری-->
+<div class="tab-pane fade" id="tab-work-logs" role="tabpanel">
+    <div class="block block-rounded block-fx-shadow">
+        <div class="block-header bg-info text-white">
+            <h3 class="block-title text-white mb-0">
+                <i class="fa fa-clipboard-list me-2"></i>گزارش‌های کاری ثبت شده
+            </h3>
+            <div class="block-options">
+                @if (isAssignedToCurrentUser && !isCompletedByMe)
+                {
+                    <button type="button" 
+                            class="btn btn-sm btn-light" 
+                            data-toggle="modal-ajax" 
+                            href="@Url.Action("LogTaskWorkModal", "Tasks", new { taskId = Model.Id })">
+                        <i class="fa fa-plus me-1"></i>ثبت گزارش جدید
+                    </button>
+                }
+            </div>
+        </div>
+        <div class="block-content">
+            <div id="work-logs-container">
+                @if (Model.WorkLogs?.Any() == true)
+                {
+                    <!-- Timeline Design -->
+                    <div class="timeline timeline-alt py-0">
+                        @foreach (var log in Model.WorkLogs.OrderByDescending(w => w.WorkDate))
+                        {
+                            <div class="timeline-event">
+                                <div class="timeline-event-icon bg-info">
+                                    <i class="fa fa-clipboard-check"></i>
+                                </div>
+                                <div class="timeline-event-block block block-rounded block-fx-shadow">
+                                    <div class="block-header">
+                                        <div class="d-flex align-items-center w-100">
+                                            <!-- عکس کاربر -->
+                                            <div class="flex-shrink-0 me-3">
+                                                <img src="@(log.UserProfileImage ?? "/images/default-avatar.png")"
+                                                     class="rounded-circle"
+                                                     style="width: 48px; height: 48px; object-fit: cover;"
+                                                     alt="@log.UserName">
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-0">@log.UserName</h6>
+                                                <small class="text-muted">
+                                                    <i class="fa fa-calendar me-1"></i>
+                                                    @ConvertDateTime.ConvertMiladiToShamsi(log.WorkDate, "yyyy/MM/dd")
+                                                    <i class="fa fa-clock me-1 ms-2"></i>
+                                                    @log.WorkDate.ToString("HH:mm")
+                                                </small>
+                                            </div>
+                                            @if (log.DurationMinutes.HasValue)
+                                            {
+                                                <div class="flex-shrink-0">
+                                                    <span class="badge bg-primary rounded-pill">
+                                                        <i class="fa fa-hourglass-half me-1"></i>
+                                                        @log.DurationMinutes دقیقه
+                                                    </span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="block-content">
+                                        <p class="mb-2">@Html.Raw(log.WorkDescription.Replace("\n", "<br/>"))</p>
+                                        
+                                        @if (log.ProgressPercentage.HasValue)
+                                        {
+                                            <div class="mt-3">
+                                                <small class="text-muted">پیشرفت پس از این کار:</small>
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-success" 
+                                                         style="width: @log.ProgressPercentage%" 
+                                                         role="progressbar">
+                                                    </div>
+                                                </div>
+                                                <small class="text-success fw-bold">@log.ProgressPercentage%</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- Empty State -->
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa fa-clipboard-list fa-4x opacity-25 mb-3"></i>
+                        <h5>هیچ گزارشی ثبت نشده است</h5>
+                        @if (isAssignedToCurrentUser)
+                        {
+                            <p class="mb-3">برای ثبت اولین گزارش کاری، از دکمه زیر استفاده کنید</p>
+                            <button type="button" 
+                                    class="btn btn-primary" 
+                                    data-toggle="modal-ajax" 
+                                    href="@Url.Action("LogTaskWorkModal", "Tasks", new { taskId = Model.Id })">
+                                <i class="fa fa-plus me-1"></i>ثبت گزارش جدید
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
 
-        <!-- Tab 2: عملیات‌ها - نسخه نهایی با گروه‌بندی -->
+        <!-- Tab 3: عملیات‌ها - نسخه نهایی با گروه‌بندی -->
         <div class="tab-pane fade" id="tab-operations" role="tabpanel">
             <div class="block block-rounded block-fx-shadow">
                 <!-- ⭐ هدینگ بنفش با متن سفید -->
@@ -1045,6 +1299,179 @@ else if (isCompletedByMe)
         </div>
     </div>
 </div>
+
+
+        <div class="tab-pane fade" id="tab-chat" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header bg-primary text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-comments me-2"></i>گفتگوها و پیام‌ها
+                    </h3>
+                </div>
+                <div class="block-content block-content-full">
+                    <!-- Chat Container -->
+                    <div class="chat-container" style="height: 600px; display: flex; flex-direction: column;">
+                        <!-- Messages Area -->
+                        <div class="chat-messages flex-grow-1 overflow-auto mb-3"
+                             id="chat-messages-container"
+                             style="max-height: 500px;">
+
+                            @if (Model.Comments?.Any() == true)
+                            {
+                                @foreach (var comment in Model.Comments.OrderBy(c => c.CreateDate))
+                                {
+                                    var isMyMessage = comment.CreatorUserId == currentUserId;
+                                    var alignment = isMyMessage ? "flex-row-reverse" : "flex-row";
+                                    var bgColor = isMyMessage ? "bg-primary-light" : "bg-body-light";
+
+                                    <div class="d-flex @alignment mb-3 chat-message" data-comment-id="@comment.Id">
+                                        <!-- Avatar -->
+                                        <div class="flex-shrink-0">
+                                            <img src="@(comment.CreatorProfileImage ?? "/images/default-avatar.png")"
+                                                 class="rounded-circle"
+                                                 style="width: 40px; height: 40px; object-fit: cover;"
+                                                 alt="@comment.CreatorName">
+                                        </div>
+
+                                        <!-- Message Bubble -->
+                                        <div class="flex-grow-1 @(isMyMessage ? "me-3" : "ms-3")" style="max-width: 70%;">
+                                            <div class="p-3 rounded-3 @bgColor">
+                                                <!-- Header -->
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <strong class="@(isMyMessage ? "text-primary" : "")">
+                                                        @(isMyMessage ? "شما" : comment.CreatorName)
+                                                    </strong>
+                                                    <small class="text-muted">
+                                                        @ConvertDateTime.ConvertMiladiToShamsi(comment.CreateDate, "HH:mm")
+                                                    </small>
+                                                </div>
+
+                                                <!-- Message Text -->
+                                                <p class="mb-1">@Html.Raw(comment.CommentText.Replace("\n", "<br/>"))</p>
+
+                                                <!-- Attachments -->
+                                                @if (comment.Attachments?.Any() == true)
+                                                {
+                                                    <div class="mt-2">
+                                                        @foreach (var attachment in comment.Attachments)
+                                                        {
+                                                            <a href="@attachment.FilePath"
+                                                               class="btn btn-sm btn-outline-secondary mb-1"
+                                                               target="_blank">
+                                                                <i class="fa fa-paperclip me-1"></i>
+                                                                @attachment.FileName
+                                                            </a>
+                                                        }
+                                                    </div>
+                                                }
+
+                                                <!-- Badges -->
+                                                <div class="mt-1">
+                                                    @if (comment.IsImportant)
+                                                    {
+                                                        <span class="badge bg-danger badge-sm me-1">
+                                                            <i class="fa fa-exclamation-circle"></i> مهم
+                                                        </span>
+                                                    }
+                                                    @if (comment.IsEdited)
+                                                    {
+                                                        <small class="text-muted fst-italic">
+                                                            (ویرایش شده)
+                                                        </small>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <!-- Actions -->
+                                            @if (isMyMessage && !isCompletedByMe)
+                                            {
+                                                <div class="mt-1 @(isMyMessage ? "text-end" : "")">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-link text-muted"
+                                                            onclick="editComment(@comment.Id)">
+                                                        <i class="fa fa-edit"></i> ویرایش
+                                                    </button>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-link text-danger"
+                                                            onclick="deleteComment(@comment.Id)">
+                                                        <i class="fa fa-trash"></i> حذف
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fa fa-comments fa-4x opacity-25 mb-3"></i>
+                                    <p class="mb-0">هنوز پیامی ارسال نشده است</p>
+                                    <small>اولین نفری باشید که پیام می‌فرستد!</small>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Input Area -->
+                        @if (!isCompletedByMe)
+                        {
+                            <div class="chat-input border-top pt-3">
+                                <form id="chat-form" onsubmit="return sendChatMessage(event);">
+                                    <div class="input-group">
+                                        <!-- File Upload -->
+                                        <button class="btn btn-outline-secondary"
+                                                type="button"
+                                                onclick="$('#chat-file-input').click()">
+                                            <i class="fa fa-paperclip"></i>
+                                        </button>
+                                        <input type="file"
+                                               id="chat-file-input"
+                                               multiple
+                                               style="display: none;"
+                                               onchange="handleChatFileSelect(this)">
+
+                                        <!-- Message Input -->
+                                        <textarea class="form-control"
+                                              id="chat-message-input"
+                                              placeholder="پیام خود را بنویسید..."
+                                              rows="1"
+                                              style="resize: none;"
+                                              onkeydown="handleChatKeyPress(event)"></textarea>
+
+                                        <!-- Send Button -->
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fa fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Selected Files Display -->
+                                    <div id="chat-selected-files" class="mt-2" style="display: none;"></div>
+
+                                    <!-- Important Checkbox -->
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               id="chat-important-check">
+                                        <label class="form-check-label" for="chat-important-check">
+                                            <i class="fa fa-exclamation-circle text-danger me-1"></i>
+                                            پیام مهم
+                                        </label>
+                                    </div>
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning mb-0">
+                                <i class="fa fa-lock me-2"></i>
+                                تسک تکمیل شده - ارسال پیام امکان‌پذیر نیست
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
        <!-- تب یادآوری‌ها -->
 <div class="tab-pane fade" id="tab-reminders" role="tabpanel">
     <div class="block block-rounded block-fx-shadow">
@@ -1112,870 +1539,31 @@ else if (isCompletedByMe)
 </div>
 
 @section Scripts {
-    
-<script>
-$(document).ready(function() {
-    // بارگذاری یادآوری‌ها هنگام کلیک روی تب
-    $('#reminders-tab').on('click', function() {
-        loadTaskReminders();
-    });
-});
+        <script>
+        window.TaskDetailConfig = {
+             taskId: @Model.Id,
+             isTaskCompleted: @(Model.CompletionDate.HasValue ? "true" : "false"),
+             urls: {
+                 getTaskComments: '@Url.Action("GetTaskComments", "Tasks")',
+                 addTaskComment: '@Url.Action("AddTaskComment", "Tasks")',
+                 deleteTaskComment: '@Url.Action("DeleteTaskComment", "Tasks")',
+                 getTaskHeroStats: '@Url.Action("GetTaskHeroStats", "Tasks")',
+                 getTaskProgress: '@Url.Action("GetTaskProgress", "Tasks")',
+                 getTaskSidebarStats: '@Url.Action("GetTaskSidebarStats", "Tasks")',
+                 getTaskReminders: '@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })',
+                 getTaskHistory: '@Url.Action("GetTaskHistory", "Tasks", new { area = "AdminArea" })',
+                 approveTaskByManager: '@Url.Action("ApproveTaskByManager", "Tasks")',
+                 getOperationsGroup: '@Url.Action("GetOperationsGroup", "TaskOperations", new { area = "AdminArea" })',
+                 toggleOperationComplete: '@Url.Action("ToggleOperationComplete", "TaskOperations", new { area = "AdminArea" })',
+                 toggleOperationStar: '@Url.Action("ToggleOperationStar", "TaskOperations", new { area = "AdminArea" })',
+                 deleteOperation: '@Url.Action("DeleteOperation", "TaskOperations", new { area = "AdminArea" })',
+                 addOperation: '@Url.Action("AddOperation", "TaskOperations", new { area = "AdminArea" })',
+                 getAllOperations: '@Url.Action("GetAllOperations", "TaskOperations", new { area = "AdminArea" })'
+             }
+         };
 
-function loadTaskReminders() {
-    $('#reminders-list-container').html(`
-        <div class="text-center py-4">
-            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
-            <p class="text-muted mt-2">در حال بارگذاری...</p>
-        </div>
-    `);
-    
-    $('#reminders-list-container').load('@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })');
-}
-</script>
-    <script>
-        // بارگذاری تاریخچه با AJAX
-        function loadTaskHistory() {
-            $.ajax({
-                url: '@Url.Action("GetTaskHistory", "Tasks", new { area = "AdminArea" })',
-                type: 'GET',
-                data: { taskId: @Model.Id },
-                success: function(result) {
-                    $('#task-timeline-container').html(result);
-                },
-                error: function() {
-                    Dashmix.helpers('jq-notify', {
-                        type: 'danger',
-                        icon: 'fa fa-times me-1',
-                        message: 'خطا در بارگذاری تاریخچه'
-                    });
-                }
-            });
-        }
-
-        // بارگذاری یادآوری‌ها هنگام کلیک روی تب
-        $(document).ready(function() {
-            $('#reminders-tab').on('click', function() {
-                loadReminders();
-            });
-        });
-
-        function loadReminders() {
-            $('#reminders-list-container').html(`
-                <div class="text-center py-4">
-                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
-                    <p class="text-muted mt-2">در حال بارگذاری...</p>
-                </div>
-            `);
-            
-            $('#reminders-list-container').load('@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })');
-        }
     </script>
-<script>
 
-
-        // ========================================
-        // ⭐ Dynamic Operations Manager
-        // ========================================
-                      const DynamicOperationsManager = {
-            taskId: @Model.Id,
-
-            refreshGroup: function(groupType) {
-                if (!groupType || typeof groupType !== 'string' || groupType.trim() === '') {
-                    console.error('❌ Invalid GroupType:', groupType);
-                    NotificationHelper.error('خطا: نوع گروه نامعتبر است');
-                    return;
-                }
-
-                const normalizedGroupType = groupType.trim().toLowerCase();
-
-                if (!['starred', 'pending', 'completed'].includes(normalizedGroupType)) {
-                    console.error('❌ Unknown GroupType:', normalizedGroupType);
-                    NotificationHelper.error(`نوع گروه نامعتبر: ${normalizedGroupType}`);
-                    return;
-                }
-
-                console.log(`🔄 Refreshing group: "${normalizedGroupType}"`);
-
-                $.ajax({
-                    url: '@Url.Action("GetOperationsGroup", "TaskOperations", new { area = "AdminArea" })',
-                    type: 'GET',
-                    data: {
-                        taskId: this.taskId,
-                        groupType: normalizedGroupType
-                    },
-                    success: function(result) {
-                        console.log(`📦 Response for "${normalizedGroupType}":`, result);
-
-                        if (!result || typeof result !== 'object') {
-                            console.error('❌ Invalid response format:', result);
-                            NotificationHelper.error('خطا در دریافت پاسخ سرور');
-                            return;
-                        }
-
-                        if (result.success) {
-                            // ⭐ حذف گروه قدیمی
-                            const groupId = `${normalizedGroupType}-group`;
-                            $(`#${groupId}`).remove();
-                            $(`.operations-group[data-group="${normalizedGroupType}"]`).remove();
-
-                            console.log(`🗑️ Removed old group: #${groupId}`);
-
-                            // ⭐ اضافه کردن به placeholder مربوطه (برای حفظ ترتیب)
-                            const placeholderId = `${normalizedGroupType}-group-placeholder`;
-
-                            if (result.html && typeof result.html === 'string' && result.html.trim() !== '') {
-                                $(`#${placeholderId}`).html(result.html);
-                                console.log(`✅ Added group "${normalizedGroupType}" to placeholder with ${result.count} operations`);
-                            } else {
-                                // ⭐ خالی کردن placeholder اگر گروه خالی شد
-                                $(`#${placeholderId}`).empty();
-                                console.log(`ℹ️ Group "${normalizedGroupType}" is empty - placeholder cleared`);
-                            }
-
-                            // بروزرسانی آمار
-                            DynamicOperationsManager.updateStats();
-                        } else {
-                            console.error(`❌ Server error:`, result.message);
-                            NotificationHelper.error(result.message || 'خطا در سرور');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(`❌ AJAX error for "${normalizedGroupType}":`, xhr);
-                        NotificationHelper.error('خطا در ارتباط با سرور');
-                    }
-                });
-            },
-
-            // بروزرسانی آمار
-            updateStats: function() {
-                const total = $('.operation-item-card').length;
-                const completed = $('.operation-item-card[data-completed="true"]').length;
-                const starred = $('.operation-item-card[data-starred="true"]').length;
-                const withWorkLog = $('.operation-item-card .btn-info:not(.btn-outline-info)').length;
-
-                $('#totalOpsCount').text(total);
-                $('#completedOpsCount').text(completed);
-                $('#starredOpsCount').text(starred);
-                $('#withWorkLogCount').text(withWorkLog);
-
-                console.log(`📊 Stats - Total: ${total}, Completed: ${completed}, Starred: ${starred}`);
-            },
-
-            // Toggle Complete
-            toggleComplete: function(operationId) {
-                const $card = $(`#operation-card-${operationId}`);
-                if (!$card.length) {
-                    console.error(`❌ Card not found: operation-card-${operationId}`);
-                    return;
-                }
-
-                const $spinner = $card.find('.operation-spinner');
-                const wasCompleted = $card.attr('data-completed') === 'true';
-                const isStarred = $card.attr('data-starred') === 'true';
-
-                console.log(`🔄 Toggle operation ${operationId}:`, {
-                    wasCompleted,
-                    isStarred,
-                    willMoveTo: wasCompleted ? 'pending' : 'completed'
-                });
-
-                $card.css('opacity', '0.6');
-                $spinner.show();
-
-                $.ajax({
-                    url: '@Url.Action("ToggleOperationComplete", "TaskOperations", new { area = "AdminArea" })',
-                    type: 'POST',
-                    data: {
-                        id: operationId,
-                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(result) {
-                        if (result.success) {
-                            NotificationHelper.success(result.message || 'وضعیت تغییر کرد');
-
-                            // ⭐ حذف کارت
-                            $card.fadeOut(200, function() {
-                                $(this).remove();
-                                console.log(`✅ Card ${operationId} removed`);
-
-                                // ⭐ بروزرسانی گروه‌ها بر اساس حالت قبلی
-                                if (wasCompleted) {
-                                    // از completed به pending یا starred
-                                    setTimeout(() => DynamicOperationsManager.refreshGroup('completed'), 100);
-                                    setTimeout(() => DynamicOperationsManager.refreshGroup(isStarred ? 'starred' : 'pending'), 300);
-                                } else {
-                                    // از pending/starred به completed
-                                    setTimeout(() => DynamicOperationsManager.refreshGroup(isStarred ? 'starred' : 'pending'), 100);
-                                    setTimeout(() => DynamicOperationsManager.refreshGroup('completed'), 300);
-                                }
-                            });
-                        } else {
-                            console.error('❌ Toggle failed:', result.message);
-                            NotificationHelper.error(result.message);
-                            $card.css('opacity', '1');
-                            $spinner.hide();
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error('❌ Toggle error:', xhr);
-                        NotificationHelper.error('خطا در ذخیره');
-                        $card.css('opacity', '1');
-                        $spinner.hide();
-                    }
-                });
-            },
-
-            // Toggle Star
-            toggleStar: function(operationId) {
-                const $card = $(`#operation-card-${operationId}`);
-                if (!$card.length) return;
-
-                const $spinner = $card.find('.operation-spinner');
-                console.log(`⭐ Toggling star for operation ${operationId}`);
-
-                $card.css('opacity', '0.6');
-                $spinner.show();
-
-                $.ajax({
-                    url: '@Url.Action("ToggleOperationStar", "TaskOperations", new { area = "AdminArea" })',
-                    type: 'POST',
-                    data: {
-                        id: operationId,
-                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(result) {
-                        if (result.success) {
-                            NotificationHelper.success(result.message || 'ستاره تغییر کرد');
-
-                            $card.fadeOut(200, function() {
-                                $(this).remove();
-
-                                setTimeout(() => {
-                                    DynamicOperationsManager.refreshGroup('starred');
-                                }, 100);
-
-                                setTimeout(() => {
-                                    DynamicOperationsManager.refreshGroup('pending');
-                                }, 300);
-                            });
-                        } else {
-                            NotificationHelper.error(result.message);
-                            $card.css('opacity', '1');
-                            $spinner.hide();
-                        }
-                    },
-                    error: function() {
-                        NotificationHelper.error('خطا در ذخیره');
-                        $card.css('opacity', '1');
-                        $spinner.hide();
-                    }
-                });
-            },
-
-            deleteOperation: function(operationId) {
-                if (!confirm('آیا از حذف این عملیات اطمینان دارید؟')) return;
-
-                const $card = $(`#operation-card-${operationId}`);
-
-                $.ajax({
-                    url: '@Url.Action("DeleteOperation", "TaskOperations", new { area = "AdminArea" })',
-                    type: 'POST',
-                    data: {
-                        id: operationId,
-                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(result) {
-                        if (result.success) {
-                            NotificationHelper.success('عملیات حذف شد');
-
-                            $card.fadeOut(300, function() {
-                                $(this).remove();
-                                DynamicOperationsManager.updateStats();
-                            });
-                        } else {
-                            NotificationHelper.error(result.message);
-                        }
-                    },
-                    error: function() {
-                        NotificationHelper.error('خطا در حذف');
-                    }
-                });
-            },
-
-            addOperation: function() {
-                const title = $('#newOperationTitleInput').val().trim();
-
-                if (!title) {
-                    NotificationHelper.warning('لطفاً عنوان عملیات را وارد کنید');
-                    $('#newOperationTitleInput').focus();
-                    return;
-                }
-
-                $.ajax({
-                    url: '@Url.Action("AddOperation", "TaskOperations", new { area = "AdminArea" })',
-                    type: 'POST',
-                    data: {
-                        taskId: this.taskId,
-                        title: title,
-                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(result) {
-                        if (result.success) {
-                            NotificationHelper.success('عملیات اضافه شد');
-                            $('#newOperationTitleInput').text('');
-
-                            setTimeout(() => {
-                                DynamicOperationsManager.refreshGroup('pending');
-                            }, 200);
-                        } else {
-                            NotificationHelper.error(result.message);
-                        }
-                    },
-                    error: function() {
-                        NotificationHelper.error('خطا در افزودن عملیات');
-                    }
-                });
-            }
-        };
-// ========================================
-// ⭐ Global Functions
-// ========================================
-function dynamicToggleComplete(checkbox, operationId) {
-    DynamicOperationsManager.toggleComplete(operationId);
-}
-
-function dynamicToggleStar(operationId) {
-    DynamicOperationsManager.toggleStar(operationId);
-}
-
-function dynamicDeleteOperation(operationId) {
-    DynamicOperationsManager.deleteOperation(operationId);
-}
-
-// ========================================
-// ⭐ Document Ready
-// ========================================
-$(document).ready(function() {
-    // افزودن عملیات با Enter
-    $('#newOperationTitleInput').on('keypress', function(e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            DynamicOperationsManager.addOperation();
-        }
-    });
-    
-    // افزودن عملیات با کلیک
-    $('#addNewOperationBtn').on('click', function() {
-        DynamicOperationsManager.addOperation();
-    });
-    
-    // بروزرسانی اولیه آمار
-    DynamicOperationsManager.updateStats();
-    
-    console.log('✅ Dynamic Operations Manager initialized');
-});
-
-
-       
-
-
-        function approveByManager(taskId) {
-            $.ajax({
-                url: '@Url.Action("ApproveTaskByManager")',
-                type: 'POST',
-                data: {
-                    id: taskId,
-                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                },
-                success: function (result) {
-                    if (result.success) {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.success('تسک با موفقیت تایید شد');
-                        }
-                        location.reload();
-                    } else {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(result.message || 'خطا در تایید تسک');
-                        } else {
-                            alert('خطا: ' + (result.message || 'خطا در تایید تسک'));
-                        }
-                    }
-                },
-                error: function () {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error('خطا در ارتباط با سرور');
-                    } else {
-                        alert('خطا در ارتباط با سرور');
-                    }
-                }
-            });
-        }
-
-        $(document).ready(function() {
-            // راه‌اندازی tooltip ها
-            $('[data-bs-toggle="tooltip"]').tooltip();
-
-            // مدیریت بسته شدن modal
-            $(document).on('modalClosed', function(event, response) {
-                if (response && response.success && response.refreshPage) {
-                    location.reload();
-                }
-            });
-
-            // اضافه کردن انیمیشن hover برای کارت‌ها
-            $('.operation-item .card').hover(
-                function() {
-                    $(this).addClass('shadow-sm');
-                },
-                function() {
-                    $(this).removeClass('shadow-sm');
-                }
-            );
-
-            // راه‌اندازی Smooth Scrolling
-            $('a[href*="#"]').on('click', function(e) {
-                if (this.hash !== '') {
-                    e.preventDefault();
-                    var hash = this.hash;
-                    $('html, body').animate({
-                        scrollTop: $(hash).offset().top - 100
-                    }, 800);
-                }
-            });
-
-            // Auto-hide alerts بعد از 5 ثانیه
-            setTimeout(function() {
-                $('.alert').fadeOut('slow');
-            }, 5000);
-
-            // نمایش تعداد کاراکترها در textarea
-            $('textarea').on('input', function() {
-                var maxLength = $(this).attr('maxlength');
-                if (maxLength) {
-                    var currentLength = $(this).val().length;
-                    var counterElement = $(this).siblings('.char-counter');
-                    if (counterElement.length) {
-                        counterElement.text(currentLength + ' / ' + maxLength);
-                    }
-                }
-            });
-
-            // Confirm قبل از حذف
-            $('[data-confirm-delete]').on('click', function(e) {
-                if (!confirm('آیا از حذف این مورد اطمینان دارید؟')) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
-
-            // بارگذاری lazy برای تصاویر
-            if ('loading' in HTMLImageElement.prototype) {
-                const images = document.querySelectorAll('img[loading="lazy"]');
-                images.forEach(img => {
-                    img.src = img.dataset.src;
-                });
-            }
-
-            // تنظیم ارتفاع یکسان برای کارت‌ها
-            function equalizeCardHeights() {
-                var maxHeight = 0;
-                $('.operation-item .card').each(function() {
-                    if ($(this).height() > maxHeight) {
-                        maxHeight = $(this).height();
-                    }
-                });
-                // اختیاری: می‌توانید ارتفاع یکسان تنظیم کنید
-                // $('.operation-item .card').height(maxHeight);
-            }
-            equalizeCardHeights();
-            $(window).resize(equalizeCardHeights);
-
-            // Progress bar animation
-            $('.progress-bar').each(function() {
-                var width = $(this).attr('aria-valuenow');
-                $(this).css('width', '0%').animate({
-                    width: width + '%'
-                }, 1500);
-            });
-
-            // Highlight فیلد‌های خالی در فرم‌ها
-            $('form').on('submit', function() {
-                $(this).find('input[required], textarea[required], select[required]').each(function() {
-                    if (!$(this).val()) {
-                        $(this).addClass('is-invalid');
-                    } else {
-                        $(this).removeClass('is-invalid');
-                    }
-                });
-            });
-
-            // Clear validation on input change
-            $('input, textarea, select').on('change input', function() {
-                $(this).removeClass('is-invalid');
-            });
-
-            // Auto-resize textarea
-            $('textarea').each(function() {
-                this.setAttribute('style', 'height:' + (this.scrollHeight) + 'px;overflow-y:hidden;');
-            }).on('input', function() {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-            });
-
-            // کپی کردن کد تسک
-            $('.copy-task-code').on('click', function() {
-                var taskCode = $(this).data('task-code') || '@Model.TaskCode';
-                var tempInput = $('<input>');
-                $('body').append(tempInput);
-                tempInput.val(taskCode).select();
-                document.execCommand('copy');
-                tempInput.remove();
-
-                if (typeof toastr !== 'undefined') {
-                    toastr.success('کد تسک کپی شد: ' + taskCode);
-                } else {
-                    alert('کد تسک کپی شد: ' + taskCode);
-                }
-            });
-
-            // Keyboard shortcuts
-            $(document).keydown(function(e) {
-                // Ctrl/Cmd + S برای ذخیره
-                if ((e.ctrlKey || e.metaKey) && e.keyCode == 83) {
-                    e.preventDefault();
-                    $('form').submit();
-                    return false;
-                }
-
-                // Escape برای بستن modal
-                if (e.keyCode == 27) {
-                    $('.modal').modal('hide');
-                }
-            });
-
-            // Real-time search در لیست عملیات
-            $('#operationSearch').on('keyup', function() {
-                var searchText = $(this).val().toLowerCase();
-                $('.operation-item').each(function() {
-                    var operationText = $(this).text().toLowerCase();
-                    if (operationText.indexOf(searchText) > -1) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-            });
-
-            // نمایش تعداد عملیات فیلتر شده
-            function updateOperationCount() {
-                var visibleCount = $('.operation-item:visible').length;
-                var totalCount = $('.operation-item').length;
-                $('#operationCount').text(visibleCount + ' از ' + totalCount + ' عملیات');
-            }
-
-            // فراخوانی بعد از فیلتر
-            $('.operation-item').on('hide.bs.collapse show.bs.collapse', updateOperationCount);
-
-            // Drag and Drop برای مرتب‌سازی عملیات (اختیاری)
-            if (typeof Sortable !== 'undefined') {
-                var operationsList = document.getElementById('operationsList');
-                if (operationsList) {
-                    new Sortable(operationsList, {
-                        animation: 150,
-                        handle: '.operation-drag-handle',
-                        onEnd: function(evt) {
-                            // ارسال ترتیب جدید به سرور
-                            var newOrder = [];
-                            $('.operation-item').each(function(index) {
-                                newOrder.push({
-                                    id: $(this).data('operation-id'),
-                                    order: index + 1
-                                });
-                            });
-
-                            $.ajax({
-                                url: '@Url.Action("UpdateOperationOrder")',
-                                type: 'POST',
-                                data: JSON.stringify(newOrder),
-                                contentType: 'application/json',
-                                headers: {
-                                    'RequestVerificationToken': $('[name="__RequestVerificationToken"]').val()
-                                },
-                                success: function(result) {
-                                    if (result.success) {
-                                        toastr.success('ترتیب عملیات با موفقیت ذخیره شد');
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-            }
-
-            // Print functionality
-            $('#printTask').on('click', function() {
-                window.print();
-            });
-
-    
-
-            // Show loading spinner on AJAX calls
-            $(document).ajaxStart(function() {
-                $('#loadingSpinner').show();
-            }).ajaxStop(function() {
-                $('#loadingSpinner').hide();
-            });
-
-            // مدیریت تاریخ و زمان شمسی
-            if (typeof moment !== 'undefined' && typeof moment.loadPersian !== 'undefined') {
-                moment.loadPersian({
-                    usePersianDigits: true,
-                    dialect: 'persian-modern'
-                });
-
-                $('.persian-date').each(function() {
-                    var dateValue = $(this).data('date');
-                    if (dateValue) {
-                        var persianDate = moment(dateValue).format('jYYYY/jMM/jDD HH:mm');
-                        $(this).text(persianDate);
-                    }
-                });
-            }
-
-            // Notification bell animation
-            $('.notification-bell').on('click', function() {
-                $(this).addClass('shake-animation');
-                setTimeout(() => {
-                    $(this).removeClass('shake-animation');
-                }, 500);
-            });
-
-            // Auto-save draft (ذخیره خودکار پیش‌نویس)
-            var autoSaveInterval = setInterval(function() {
-                var formData = $('form').serialize();
-                localStorage.setItem('taskDraft_@Model.Id', formData);
-            }, 30000); // هر 30 ثانیه
-
-            // بازیابی پیش‌نویس
-            if (localStorage.getItem('taskDraft_@Model.Id')) {
-                var savedDraft = localStorage.getItem('taskDraft_@Model.Id');
-                // می‌توانید از کاربر بپرسید آیا می‌خواهد پیش‌نویس را بازیابی کند
-            }
-
-            // Track user activity
-            var activityTimeout;
-            function resetActivityTimer() {
-                clearTimeout(activityTimeout);
-                activityTimeout = setTimeout(function() {
-                    // کاربر 5 دقیقه غیرفعال بوده
-                    console.log('User inactive');
-                }, 300000); // 5 دقیقه
-            }
-
-            $(document).on('mousemove keypress scroll', resetActivityTimer);
-            resetActivityTimer();
-
-            // Badge pulse animation
-            $('.badge-pulse').each(function() {
-                setInterval(() => {
-                    $(this).addClass('pulse-once');
-                    setTimeout(() => {
-                        $(this).removeClass('pulse-once');
-                    }, 1000);
-                }, 3000);
-            });
-
-            // Cleanup on page unload
-            $(window).on('beforeunload', function() {
-                clearInterval(autoSaveInterval);
-                clearTimeout(activityTimeout);
-            });
-
-            console.log('Task Details page initialized successfully');
-        });
-    </script>
-<script>
-$(document).ready(function() {
-    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
-    
-    // ⭐ غیرفعال کردن تمام دکمه‌های ویرایش اگر تسک تکمیل شده
-    if (isTaskCompleted) {
-        console.log('🔒 Task is locked - disabling edit features');
-        
-        // غیرفعال کردن checkbox عملیات
-        $('.operation-checkbox').prop('disabled', true).css('cursor', 'not-allowed');
-        
-        // غیرفعال کردن دکمه ستاره
-        $('[onclick^="dynamicToggleStar"]').prop('disabled', true).addClass('disabled');
-        
-        // غیرفعال کردن دکمه حذف
-        $('[onclick^="dynamicDeleteOperation"]').hide();
-        
-        // غیرفعال کردن input افزودن عملیات
-        $('#newOperationTitleInput, #addNewOperationBtn').prop('disabled', true);
-        
-        // اضافه کردن نشان قفل به عملیات‌ها
-        $('.operation-item-card').each(function() {
-            $(this).css('opacity', '0.7');
-            $(this).prepend('<span class="badge bg-secondary position-absolute top-0 end-0 m-2"><i class="fa fa-lock"></i></span>');
-        });
-    }
-    
-    // ⭐ بروزرسانی Progress Bar به 100%
-    if (isTaskCompleted) {
-        $('.progress-bar').removeClass('bg-primary').addClass('bg-success');
-        $('.progress-bar').css('width', '100%').attr('aria-valuenow', 100).text('100%');
-        $('.stat-value').filter(function() {
-            return $(this).text().includes('%');
-        }).text('100%');
-    }
-});
-
-// ⭐ Override تابع dynamicToggleComplete
-const originalToggleComplete = window.dynamicToggleComplete;
-window.dynamicToggleComplete = function(checkbox, operationId) {
-    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
-    
-    if (isTaskCompleted) {
-        NotificationHelper.warning('این تسک تکمیل شده و قابل ویرایش نیست');
-        if (checkbox) {
-            checkbox.checked = !checkbox.checked; // بازگرداندن به حالت قبل
-        }
-        return false;
-    }
-    
-    // اجرای تابع اصلی
-    if (typeof originalToggleComplete === 'function') {
-        originalToggleComplete(checkbox, operationId);
-    } else {
-        DynamicOperationsManager.toggleComplete(operationId);
-    }
-};
-</script>
-
-<script>
-$(document).ready(function() {
-    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
-    
-    // بارگذاری یادآوری‌ها هنگام کلیک روی تب
-    $('#reminders-tab').on('click', function() {
-        loadTaskReminders();
-    });
-    
-    // ⭐ غیرفعال کردن تمام دکمه‌های ویرایش اگر تسک تکمیل شده
-    if (isTaskCompleted) {
-        console.log('🔒 Task is locked - disabling edit features');
-        
-        // غیرفعال کردن checkbox عملیات
-        $('.operation-checkbox').prop('disabled', true).css('cursor', 'not-allowed');
-        
-        // غیرفعال کردن دکمه ستاره
-        $('[onclick^="dynamicToggleStar"]').prop('disabled', true).addClass('disabled');
-        
-        // غیرفعال کردن دکمه حذف
-        $('[onclick^="dynamicDeleteOperation"]').hide();
-        
-        // غیرفعال کردن input افزودن عملیات
-        $('#newOperationTitleInput, #addNewOperationBtn').prop('disabled', true);
-        
-        // ⭐⭐⭐ غیرفعال کردن دکمه‌های یادآوری
-        disableReminders();
-        
-        // اضافه کردن نشان قفل به عملیات‌ها
-        $('.operation-item-card').each(function() {
-            $(this).css('opacity', '0.7');
-            $(this).prepend('<span class="badge bg-secondary position-absolute top-0 end-0 m-2"><i class="fa fa-lock"></i></span>');
-        });
-    }
-    
-    // ⭐ بروزرسانی Progress Bar به 100%
-    if (isTaskCompleted) {
-        $('.progress-bar').removeClass('bg-primary').addClass('bg-success');
-        $('.progress-bar').css('width', '100%').attr('aria-valuenow', 100).text('100%');
-        $('.stat-value').filter(function() {
-            return $(this).text().includes('%');
-        }).text('100%');
-    }
-});
-
-function loadTaskReminders() {
-    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
-    
-    $('#reminders-list-container').html(`
-        <div class="text-center py-4">
-            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
-            <p class="text-muted mt-2">در حال بارگذاری...</p>
-        </div>
-    `);
-    
-    $('#reminders-list-container').load('@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })', function() {
-        // ⭐ بعد از بارگذاری، دکمه‌ها را غیرفعال کن
-        if (isTaskCompleted) {
-            console.log('🔒 Disabling reminder actions after load');
-            disableReminders();
-        }
-    });
-}
-
-// ⭐⭐⭐ تابع جدید: غیرفعال کردن یادآوری‌ها
-function disableReminders() {
-    setTimeout(function() {
-        // غیرفعال کردن دکمه حذف یادآوری
-        $('.delete-reminder-btn, [data-reminder-delete]').prop('disabled', true)
-            .addClass('disabled')
-            .css('cursor', 'not-allowed')
-            .attr('onclick', 'return false;');
-        
-        // غیرفعال کردن دکمه ویرایش یادآوری
-        $('.edit-reminder-btn, [data-reminder-edit]').prop('disabled', true)
-            .addClass('disabled')
-            .css('cursor', 'not-allowed')
-            .attr('onclick', 'return false;');
-        
-        // غیرفعال کردن toggle وضعیت یادآوری
-        $('.toggle-reminder-btn, [data-reminder-toggle]').prop('disabled', true)
-            .addClass('disabled')
-            .css('cursor', 'not-allowed')
-            .attr('onclick', 'return false;');
-        
-        // مخفی کردن دکمه‌های خطرناک
-        $('.delete-reminder-btn, [data-reminder-delete]').hide();
-        
-        // اضافه کردن نشان قفل
-        $('.reminder-item').each(function() {
-            if (!$(this).find('.lock-badge').length) {
-                $(this).css('opacity', '0.7')
-                    .prepend('<span class="badge bg-secondary lock-badge position-absolute top-0 end-0 m-2"><i class="fa fa-lock"></i></span>');
-            }
-        });
-        
-        console.log('✅ Reminders disabled successfully');
-    }, 500); // تاخیر برای اطمینان از بارگذاری DOM
-}
-
-// ⭐ Override تابع dynamicToggleComplete
-const originalToggleComplete = window.dynamicToggleComplete;
-window.dynamicToggleComplete = function(checkbox, operationId) {
-    const isTaskCompleted = @(Model.CompletionDate.HasValue ? "true" : "false");
-    
-    if (isTaskCompleted) {
-        NotificationHelper.warning('این تسک تکمیل شده و قابل ویرایش نیست');
-        if (checkbox) {
-            checkbox.checked = !checkbox.checked;
-        }
-        return false;
-    }
-    
-    if (typeof originalToggleComplete === 'function') {
-        originalToggleComplete(checkbox, operationId);
-    } else {
-        DynamicOperationsManager.toggleComplete(operationId);
-    }
-};
-</script>
-
-<script>
-
-</script>
+<script src="~/assets/js/taskdetail.js"></script>
 }
 

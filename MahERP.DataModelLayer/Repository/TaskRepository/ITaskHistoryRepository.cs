@@ -181,5 +181,8 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         int workLogId,
         string workDescription,
         int? durationMinutes = null);
+    
+    Task LogCommentAddedAsync(int taskId, string userId, int commentId, string commentPreview);
+        Task LogCommentDeletedAsync(int taskId, string userId, int commentId);
     }
-}
+    }

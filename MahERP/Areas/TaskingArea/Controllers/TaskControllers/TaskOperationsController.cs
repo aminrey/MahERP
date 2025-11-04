@@ -817,5 +817,36 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 });
             }
         }
+/// <summary>
+/// دریافت تمام عملیات یک تسک (برای refresh کامل)
+/// </summary>
+[HttpGet]
+public async Task<IActionResult> GetAllOperations(int taskId)
+        {
+            try
+            {
+                var operations = await _operationsRepository.GetTaskOperationsAsync(taskId);
+
+                if (!operations.Any())
+                {
+                    return Content(""); // خالی برای نمایش empty state
+                }
+
+                // گروه‌بندی
+                var viewModel = new
+                {
+                    Starred = operations.Where(o => o.IsStarred && !o.IsCompleted).ToList(),
+                    Pending = operations.Where(o => !o.IsStarred && !o.IsCompleted).ToList(),
+                    Completed = operations.Where(o => o.IsCompleted).ToList()
+                };
+
+                return PartialView("_AllOperationsGroups", viewModel);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetAllOperations: {ex.Message}");
+                return Content("");
+            }
+        }
     }
 }

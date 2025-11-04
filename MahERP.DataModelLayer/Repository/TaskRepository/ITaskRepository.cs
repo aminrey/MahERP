@@ -679,5 +679,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <param name="branchId">شناسه شعبه</param>
         /// <returns>لیست تیم‌های شعبه با اطلاعات کامل</returns>
         Task<List<TeamViewModel>> GetBranchTeamsWithManagersAsync(int branchId);
+/// <summary>
+/// دریافت کامنت‌های یک تسک
+/// </summary>
+Task<List<TaskCommentViewModel>> GetTaskCommentsAsync(int taskId);
     }
 }

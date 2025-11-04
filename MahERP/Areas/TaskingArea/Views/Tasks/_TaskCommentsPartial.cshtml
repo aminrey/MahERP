@@ -1,0 +1,95 @@
+﻿@model List<TaskCommentViewModel>
+
+@if (Model?.Any() == true)
+{
+    @foreach (var comment in Model)
+    {
+        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var isMyMessage = comment.CreatorUserId == currentUserId;
+        var alignment = isMyMessage ? "flex-row-reverse" : "flex-row";
+        var bgColor = isMyMessage ? "bg-primary-light" : "bg-body-light";
+
+        <div class="d-flex @alignment mb-3 chat-message" data-comment-id="@comment.Id">
+            <!-- Avatar -->
+            <div class="flex-shrink-0">
+                <img src="@(comment.CreatorProfileImage ?? "/images/default-avatar.png")"
+                     class="rounded-circle"
+                     style="width: 40px; height: 40px; object-fit: cover;"
+                     alt="@comment.CreatorName">
+            </div>
+
+            <!-- Message Bubble -->
+            <div class="flex-grow-1 @(isMyMessage ? "me-3" : "ms-3")" style="max-width: 70%;">
+                <div class="p-3 rounded-3 @bgColor">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="@(isMyMessage ? "text-primary" : "")">
+                            @(isMyMessage ? "شما" : comment.CreatorName)
+                        </strong>
+                        <small class="text-muted">
+                            @ConvertDateTime.ConvertMiladiToShamsi(comment.CreateDate, "HH:mm")
+                        </small>
+                    </div>
+
+                    <!-- Message Text -->
+                    <p class="mb-1">@Html.Raw(comment.CommentText.Replace("\n", "<br/>"))</p>
+
+                    <!-- Attachments -->
+                    @if (comment.Attachments?.Any() == true)
+                    {
+                        <div class="mt-2">
+                            @foreach (var attachment in comment.Attachments)
+                            {
+                                <a href="@attachment.FilePath"
+                                   class="btn btn-sm btn-outline-secondary mb-1"
+                                   target="_blank">
+                                    <i class="fa fa-paperclip me-1"></i>
+                                    @attachment.FileName
+                                </a>
+                            }
+                        </div>
+                    }
+
+                    <!-- Badges -->
+                    <div class="mt-1">
+                        @if (comment.IsImportant)
+                        {
+                            <span class="badge bg-danger badge-sm me-1">
+                                <i class="fa fa-exclamation-circle"></i> مهم
+                            </span>
+                        }
+                        @if (comment.IsEdited)
+                        {
+                            <small class="text-muted fst-italic">(ویرایش شده)</small>
+                        }
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                @if (isMyMessage)
+                {
+                    <div class="mt-1 @(isMyMessage ? "text-end" : "")">
+                        <button type="button"
+                                class="btn btn-sm btn-link text-muted"
+                                onclick="editComment(@comment.Id)">
+                            <i class="fa fa-edit"></i> ویرایش
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm btn-link text-danger"
+                                onclick="deleteComment(@comment.Id)">
+                            <i class="fa fa-trash"></i> حذف
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="text-center py-5 text-muted">
+        <i class="fa fa-comments fa-4x opacity-25 mb-3"></i>
+        <p class="mb-0">هنوز پیامی ارسال نشده است</p>
+        <small>اولین نفری باشید که پیام می‌فرستد!</small>
+    </div>
+}

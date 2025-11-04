@@ -27,10 +27,11 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         private readonly TaskCodeGenerator _taskCodeGenerator;
         private readonly ITaskVisibilityRepository _taskVisibilityRepository;
         private readonly ITaskHistoryRepository _taskHistoryRepository;
+        private readonly IMapper _mapper;
 
         public TaskRepository(AppDbContext context, IBranchRepository branchRipository, IUnitOfWork unitOfWork, 
             IUserManagerRepository userManagerRepository, IStakeholderRepository stakeholderRepo, 
-            TaskCodeGenerator taskCodeGenerator, ITaskVisibilityRepository taskVisibilityRepository, ITaskHistoryRepository taskHistoryRepository)
+            TaskCodeGenerator taskCodeGenerator, ITaskVisibilityRepository taskVisibilityRepository, ITaskHistoryRepository taskHistoryRepository , IMapper mapper)
         {
             _context = context;
             _BranchRipository = branchRipository;
@@ -40,6 +41,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             _taskCodeGenerator = taskCodeGenerator;
             _taskVisibilityRepository = taskVisibilityRepository;
             _taskHistoryRepository = taskHistoryRepository;
+            _mapper = mapper;
         }
 
         #region Core CRUD Operations
@@ -4772,5 +4774,25 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return new List<ContactViewModel>();
             }
         }
+        public async Task<List<TaskCommentViewModel>> GetTaskCommentsAsync(int taskId)
+        {
+            try
+            {
+                var comments = await _context.TaskComment_Tbl
+                    .Where(c => c.TaskId == taskId && c.ParentCommentId == null) // فقط کامنت‌های اصلی
+                    .Include(c => c.Creator)
+                    .Include(c => c.Attachments)
+                    .OrderBy(c => c.CreateDate)
+                    .ToListAsync();
+
+                return _mapper.Map<List<TaskCommentViewModel>>(comments);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in GetTaskCommentsAsync: {ex.Message}");
+                return new List<TaskCommentViewModel>();
+            }
+        }
+
     }
 }

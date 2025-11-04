@@ -863,7 +863,7 @@ $(document).on('hidden.bs.modal', '.modal', function () {
     $(this).remove();
 });
 
-// Handle AJAX form submission inside modals
+// ⭐⭐⭐ اصلاح modal-ajax-save برای trigger کردن refresh
 $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
     event.preventDefault();
 
@@ -878,7 +878,6 @@ $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
     const $form = $modal.find('form');
     const formData = new FormData($form[0]);
 
-    // Add checkbox values to form data
     $('input[type="checkbox"]').each(function () {
         const $checkbox = $(this);
         formData.append($checkbox.attr('id'), $checkbox.prop('checked'));
@@ -896,16 +895,13 @@ $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
             if (response.status === "redirect") {
                 $(location).prop('href', response.redirectUrl);
             } else if (response.status === "update-view") {
-                // بستن مودال
                 $modal.find('[data-bs-dismiss="modal"]').click();
 
-                // بروزرسانی view ها
                 if (response.viewList && response.viewList.length > 0) {
                     response.viewList.forEach(function (item) {
                         if (item.elementId && item.view && item.view.result) {
                             const $target = $('#' + item.elementId);
                             if ($target.length > 0) {
-                                // بررسی حالت append
                                 if (item.appendMode === true) {
                                     console.log('Appending content to:', item.elementId);
                                     $target.append(item.view.result);
@@ -914,23 +910,24 @@ $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
                                     $target.html(item.view.result);
                                 }
 
-                                // بروزرسانی URLs و Select2
                                 ModalUtils.processUrlsInContainer($target);
                                 DynamicSelect2Manager.reinitializeSelect2InDiv($target);
                             }
                         }
                     });
 
-                    // اطلاع‌رسانی موفقیت برای event listeners
+                    // ⭐⭐⭐ بروزرسانی کل صفحه تسک
+                    if (typeof TaskDetailsRefreshManager !== 'undefined' && TaskDetailsRefreshManager.isEnabled) {
+                        TaskDetailsRefreshManager.triggerRefresh();
+                    }
+
                     $button.trigger('ajaxSuccess', [response]);
                 }
 
             } else if (response.status === "validation-error" || response.status === "error") {
-                // خطاها
                 $button.prop('disabled', false);
             }
 
-            // نمایش پیام‌ها
             if (response.message) {
                 SendResposeMessage(response.message);
             }
@@ -942,6 +939,8 @@ $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
         }
     });
 });
+
+
 // Submit a form inside a modal
 $(document).on('click', '[data-save="modal"]', function (event) {
     const $button = $(this);
