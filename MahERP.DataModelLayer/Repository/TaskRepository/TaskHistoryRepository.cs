@@ -543,6 +543,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             var history = new TaskHistory
             {
                 TaskId = taskId,
+                Title="ثبت نظر در تسک",
                 UserId = userId,
                 ActionType = 24,
                 ActionDate = DateTime.Now,
@@ -560,6 +561,8 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             var history = new TaskHistory
             {
                 TaskId = taskId,
+                Title = "حذف نظر در تسک",
+
                 UserId = userId,
                 ActionType = 25,
                 ActionDate = DateTime.Now,

@@ -1,4 +1,24 @@
 ﻿
+// ⭐⭐⭐ دریافت توکن با روش بهتر
+const getAntiForgeryToken = function () {
+    // روش 1: از input مخفی
+    let token = $('input[name="__RequestVerificationToken"]').val();
+
+    // روش 2: از فرم
+    if (!token) {
+        token = $('form').find('input[name="__RequestVerificationToken"]').val();
+    }
+
+    // روش 3: از meta tag
+    if (!token) {
+        token = $('meta[name="__RequestVerificationToken"]').attr('content');
+    }
+
+    console.log('🔑 AntiForgery Token:', token ? 'Found' : '❌ NOT FOUND');
+    return token;
+};
+
+
 // ========================================
 // ⭐⭐⭐ Task Details Auto-Refresh Manager
 // ========================================
@@ -461,54 +481,99 @@ const DynamicOperationsManager = {
         });
     }
 };
-
 // ========================================
-// ⭐⭐⭐ Chat Manager
+// ⭐⭐⭐ Chat Manager - نسخه اصلاح شده
 // ========================================
 const TaskChatManager = {
     taskId: null,
     config: null,
     selectedFiles: [],
+    isInitialized: false, // ⭐⭐⭐ فلگ جلوگیری از Initialize مکرر
+    refreshInterval: null, // ⭐⭐⭐ ذخیره interval برای clear کردن
 
     init: function (config) {
+        // ⭐⭐⭐ جلوگیری از Initialize چندباره
+        if (this.isInitialized) {
+            console.log('ℹ️ Chat Manager already initialized');
+            return;
+        }
+
         this.config = config || window.TaskDetailConfig;
+
+        if (!this.config) {
+            console.error('❌ TaskDetailConfig not found for ChatManager!');
+            return;
+        }
+
         this.taskId = this.config.taskId;
         this.scrollToBottom();
         this.autoRefresh();
+        this.isInitialized = true; // ⭐⭐⭐ علامت‌گذاری به عنوان Initialize شده
 
-        console.log('✅ Chat Manager initialized');
+        console.log('✅ Chat Manager initialized for task:', this.taskId);
     },
 
     scrollToBottom: function () {
         const container = $('#chat-messages-container');
         if (container.length) {
-            container.scrollTop(container[0].scrollHeight);
+            setTimeout(() => {
+                container.scrollTop(container[0].scrollHeight);
+            }, 100);
         }
     },
 
     autoRefresh: function () {
         const self = this;
-        setInterval(() => {
+
+        // ⭐⭐⭐ پاک کردن interval قبلی
+        if (self.refreshInterval) {
+            clearInterval(self.refreshInterval);
+            console.log('🔄 Cleared previous refresh interval');
+        }
+
+        // ⭐⭐⭐ ایجاد interval جدید
+        self.refreshInterval = setInterval(() => {
             self.loadNewMessages();
-        }, 30000);
+        }, 30000); // هر 30 ثانیه
+
+        console.log('✅ Chat auto-refresh enabled');
     },
 
     loadNewMessages: function () {
         const self = this;
+
+        // ⭐⭐⭐ جلوگیری از load اگر در تب Chat نیستیم
+        if (!$('#tab-chat').hasClass('active')) {
+            console.log('ℹ️ Chat tab not active, skipping refresh');
+            return;
+        }
+
+        console.log('🔄 Loading new messages...');
+
         $.ajax({
             url: self.config.urls.getTaskComments,
             type: 'GET',
             data: { taskId: self.taskId },
             success: function (response) {
                 if (response.success && response.html) {
-                    $('#chat-messages-container').html(response.html);
-                    self.scrollToBottom();
+                    // ⭐⭐⭐ بررسی تغییرات قبل از replace
+                    const currentHtml = $('#chat-messages-container').html();
+                    if (currentHtml !== response.html) {
+                        $('#chat-messages-container').html(response.html);
+                        self.scrollToBottom();
+                        self.updateCommentCount();
+                        console.log('✅ Messages updated');
+                    } else {
+                        console.log('ℹ️ No new messages');
+                    }
                 }
+            },
+            error: function (xhr) {
+                console.error('❌ Error loading messages:', xhr);
             }
         });
     },
-    Detail.js
-sendMessage: function (messageText, isImportant) {
+    sendMessage: function (messageText, isImportant) {
         const self = this;
         const formData = new FormData();
         formData.append('TaskId', self.taskId);
@@ -516,9 +581,16 @@ sendMessage: function (messageText, isImportant) {
         formData.append('IsImportant', isImportant);
         formData.append('__RequestVerificationToken', $('[name="__RequestVerificationToken"]').val());
 
-        self.selectedFiles.forEach((file, index) => {
-            formData.append(`Attachments[${index}]`, file);
+        // ⭐⭐⭐ اصلاح: حذف index از نام
+        self.selectedFiles.forEach((file) => {
+            formData.append('Attachments', file); // ✅ بدون index
         });
+
+        // ⭐⭐⭐ Debug: چاپ محتویات FormData
+        console.log('📤 Sending FormData:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}:`, value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value);
+        }
 
         $.ajax({
             url: self.config.urls.addTaskComment,
@@ -527,6 +599,8 @@ sendMessage: function (messageText, isImportant) {
             processData: false,
             contentType: false,
             success: function (response) {
+                console.log('✅ Response:', response);
+
                 if (response.success) {
                     if (typeof NotificationHelper !== 'undefined') {
                         NotificationHelper.success('پیام ارسال شد');
@@ -535,25 +609,28 @@ sendMessage: function (messageText, isImportant) {
                     $('#chat-important-check').prop('checked', false);
                     self.selectedFiles = [];
                     $('#chat-selected-files').hide().empty();
-                    self.loadNewMessages();
 
-                    // ⭐⭐⭐ بروزرسانی Badge
-                    self.updateCommentCount();
+                    // بارگذاری فوری پیام جدید
+                    setTimeout(() => {
+                        self.loadNewMessages();
+                    }, 500);
                 } else {
+                    console.error('❌ Server error:', response.message);
                     if (typeof NotificationHelper !== 'undefined') {
                         NotificationHelper.error(response.message || 'خطا در ارسال پیام');
                     }
                 }
             },
-            error: function () {
+            error: function (xhr, status, error) {
+                console.error('❌ AJAX Error:', { xhr, status, error });
+                console.error('Response Text:', xhr.responseText);
+
                 if (typeof NotificationHelper !== 'undefined') {
                     NotificationHelper.error('خطا در ارسال پیام');
                 }
             }
         });
     },
-
-    // ⭐⭐⭐ متد جدید: بروزرسانی تعداد کامنت‌ها
     updateCommentCount: function () {
         const currentCount = $('.chat-message').length;
         const $badge = $('#chat-badge-count');
@@ -565,6 +642,16 @@ sendMessage: function (messageText, isImportant) {
         }
 
         console.log(`✅ Comment badge updated: ${currentCount}`);
+    },
+
+    // ⭐⭐⭐ متد جدید: پاکسازی منابع
+    destroy: function () {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+        this.isInitialized = false;
+        console.log('🧹 Chat Manager destroyed');
     }
 };
 
@@ -612,6 +699,7 @@ function handleChatFileSelect(input) {
 }
 function deleteComment(commentId) {
     const config = window.TaskDetailConfig;
+    const token = getAntiForgeryToken();
 
     if (typeof showDeleteConfirmation === 'function') {
         showDeleteConfirmation('این پیام').then(confirmed => {
@@ -621,7 +709,7 @@ function deleteComment(commentId) {
                     type: 'POST',
                     data: {
                         id: commentId,
-                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                        __RequestVerificationToken: token
                     },
                     success: function (response) {
                         if (response.success) {
@@ -662,6 +750,11 @@ function deleteComment(commentId) {
                 }
             });
         }
+    }
+}
+function handleChatKeyPress(event) {
+    if (event.ctrlKey && event.keyCode === 13) {
+        sendChatMessage(event);
     }
 }
 function editComment(commentId) {
@@ -807,7 +900,6 @@ $(document).ready(function () {
     initializeTaskDetails();
 });
 
-// ⭐⭐⭐ تابع جداگانه برای Initialize
 function initializeTaskDetails() {
     const config = window.TaskDetailConfig;
 
@@ -834,14 +926,14 @@ function initializeTaskDetails() {
         DynamicOperationsManager.updateStats();
     }
 
-    // Chat tab click handler
-    $(document).on('click', '#chat-tab', function () {
-        setTimeout(() => {
-            if (window.TaskDetailConfig) {
-                TaskChatManager.init(config);
-            }
-        }, 300);
+    // ⭐⭐⭐ اصلاح: Initialize فقط یک بار با استفاده از .one()
+    $('#chat-tab').one('shown.bs.tab', function () {
+        console.log('🗨️ Chat tab shown - initializing Chat Manager');
+        if (window.TaskDetailConfig && !TaskChatManager.isInitialized) {
+            TaskChatManager.init(config);
+        }
     });
+
 
     // Reminders tab click handler
     $('#reminders-tab').on('click', function () {
@@ -857,5 +949,3 @@ function initializeTaskDetails() {
 
     console.log('✅ TaskDetail.js initialized successfully');
 }
-
-console.log('✅ TaskDetail.js loaded successfully');

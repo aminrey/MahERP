@@ -8,12 +8,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 {
     public class TaskComment
     {
-        public TaskComment()
-        {
-            MentionedUsers = new HashSet<TaskCommentMention>();
-            Notifications = new HashSet<TaskNotification>();
-            Attachments = new HashSet<TaskCommentAttachment>();
-        }
+   
 
         [Key]
         public int Id { get; set; }
@@ -50,7 +45,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 
         public string CreatorUserId { get; set; }
         [ForeignKey("CreatorUserId")]
-        public virtual AppUsers Creator { get; set; }
+        public virtual AppUsers? Creator { get; set; }
 
         /// <summary>
         /// کامنت والد (برای پاسخ به کامنت‌ها)
@@ -72,11 +67,11 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// <summary>
         /// کاربران منشن شده در کامنت
         /// </summary>
-        public virtual ICollection<TaskCommentMention> MentionedUsers { get; set; }
+        public virtual ICollection<TaskCommentMention>? MentionedUsers { get; set; }
 
         // Navigation properties
-        public virtual ICollection<TaskNotification> Notifications { get; set; }
-        public virtual ICollection<TaskCommentAttachment> Attachments { get; set; }
+        public virtual ICollection<TaskNotification>? Notifications { get; set; }
+        public virtual ICollection<TaskCommentAttachment>? Attachments { get; set; }
     }
 
     /// <summary>

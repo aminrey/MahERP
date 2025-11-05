@@ -6,90 +6,104 @@
     {
         var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         var isMyMessage = comment.CreatorUserId == currentUserId;
-        var alignment = isMyMessage ? "flex-row-reverse" : "flex-row";
-        var bgColor = isMyMessage ? "bg-primary-light" : "bg-body-light";
+        var messageClass = isMyMessage ? "chat-message-right" : "chat-message-left";
 
-        <div class="d-flex @alignment mb-3 chat-message" data-comment-id="@comment.Id">
-            <!-- Avatar -->
-            <div class="flex-shrink-0">
-                <img src="@(comment.CreatorProfileImage ?? "/images/default-avatar.png")"
-                     class="rounded-circle"
-                     style="width: 40px; height: 40px; object-fit: cover;"
-                     alt="@comment.CreatorName">
-            </div>
+        <div class="chat-message @messageClass mb-3" data-comment-id="@comment.Id">
+            <div class="d-flex @(isMyMessage ? "flex-row-reverse" : "")">
+           
+                <!-- Message Content -->
+                <div class="flex-grow-1 @(isMyMessage ? "me-3" : "ms-3")" style="max-width: 75%;">
+                    <!-- Message Bubble -->
+                    <div class="message-bubble @(isMyMessage ? "bg-primary text-white" : "bg-white") shadow-sm">
+                        <!-- Header -->
+                        <div class="message-header pb-2 mb-2 border-bottom @(isMyMessage ? "border-white-25" : "")">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="@(isMyMessage ? "text-white" : "text-dark")">
+                                    @(isMyMessage ? "شما" : comment.CreatorName)
+                                </strong>
+                                <small class="@(isMyMessage ? "text-white-75" : "text-muted")">
+                                    @ConvertDateTime.ConvertMiladiToShamsi(comment.CreateDate, "dddd dd MMMM yyyy ساعت HH:mm ")
+                                </small>
+                            </div>
+                        </div>
 
-            <!-- Message Bubble -->
-            <div class="flex-grow-1 @(isMyMessage ? "me-3" : "ms-3")" style="max-width: 70%;">
-                <div class="p-3 rounded-3 @bgColor">
-                    <!-- Header -->
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <strong class="@(isMyMessage ? "text-primary" : "")">
-                            @(isMyMessage ? "شما" : comment.CreatorName)
-                        </strong>
-                        <small class="text-muted">
-                            @ConvertDateTime.ConvertMiladiToShamsi(comment.CreateDate, "HH:mm")
-                        </small>
+                        <!-- Message Text -->
+                        <div class="message-text">
+                            @Html.Raw(comment.CommentText.Replace("\n", "<br/>"))
+                        </div>
+
+                        <!-- Attachments -->
+                        @if (comment.Attachments?.Any() == true)
+                        {
+                            <div class="message-attachments mt-3 pt-3 border-top @(isMyMessage ? "border-white-25" : "")">
+                                @foreach (var attachment in comment.Attachments)
+                                {
+                                    <a href="@attachment.FilePath"
+                                       class="btn btn-sm @(isMyMessage ? "btn-light" : "btn-outline-primary") mb-1 me-1"
+                                       target="_blank"
+                                       title="دانلود @attachment.FileName">
+                                        <i class="fa fa-paperclip me-1"></i>
+                                        @attachment.FileName
+                                        @if (attachment.FileSize != 0)
+                                        {
+                                            <small class="ms-1">(@attachment.FileSize)</small>
+                                        }
+                                    </a>
+                                }
+                            </div>
+                        }
+
+                        <!-- Badges -->
+                        @if (comment.IsImportant || comment.IsEdited)
+                        {
+                            <div class="message-badges mt-2">
+                                @if (comment.IsImportant)
+                                {
+                                    <span class="badge bg-danger badge-sm me-1">
+                                        <i class="fa fa-exclamation-circle"></i> مهم
+                                    </span>
+                                }
+                                
+                            </div>
+                        }
                     </div>
 
-                    <!-- Message Text -->
-                    <p class="mb-1">@Html.Raw(comment.CommentText.Replace("\n", "<br/>"))</p>
-
-                    <!-- Attachments -->
-                    @if (comment.Attachments?.Any() == true)
+                    <!-- Actions -->
+                    @if (isMyMessage)
                     {
-                        <div class="mt-2">
-                            @foreach (var attachment in comment.Attachments)
-                            {
-                                <a href="@attachment.FilePath"
-                                   class="btn btn-sm btn-outline-secondary mb-1"
-                                   target="_blank">
-                                    <i class="fa fa-paperclip me-1"></i>
-                                    @attachment.FileName
-                                </a>
-                            }
+                        <div class="message-actions mt-1 @(isMyMessage ? "text-end" : "")">
+                          
+                            <button type="button"
+                                    class="btn btn-sm btn-link text-danger p-0"
+                                    onclick="deleteComment(@comment.Id)"
+                                    title="حذف">
+                                <i class="fa fa-trash"></i>
+                            </button>
                         </div>
                     }
-
-                    <!-- Badges -->
-                    <div class="mt-1">
-                        @if (comment.IsImportant)
-                        {
-                            <span class="badge bg-danger badge-sm me-1">
-                                <i class="fa fa-exclamation-circle"></i> مهم
-                            </span>
-                        }
-                        @if (comment.IsEdited)
-                        {
-                            <small class="text-muted fst-italic">(ویرایش شده)</small>
-                        }
-                    </div>
+                </div>
+                <!-- Avatar -->
+                <div class="flex-shrink-0">
+                    <img src="@(comment.CreatorProfileImage ?? "/images/default-avatar.png")"
+                         class="rounded-circle shadow-sm"
+                         style="width: 48px; height: 48px; object-fit: cover;"
+                         alt="@comment.CreatorName">
                 </div>
 
-                <!-- Actions -->
-                @if (isMyMessage)
-                {
-                    <div class="mt-1 @(isMyMessage ? "text-end" : "")">
-                        <button type="button"
-                                class="btn btn-sm btn-link text-muted"
-                                onclick="editComment(@comment.Id)">
-                            <i class="fa fa-edit"></i> ویرایش
-                        </button>
-                        <button type="button"
-                                class="btn btn-sm btn-link text-danger"
-                                onclick="deleteComment(@comment.Id)">
-                            <i class="fa fa-trash"></i> حذف
-                        </button>
-                    </div>
-                }
+
+
             </div>
         </div>
     }
 }
 else
 {
-    <div class="text-center py-5 text-muted">
-        <i class="fa fa-comments fa-4x opacity-25 mb-3"></i>
-        <p class="mb-0">هنوز پیامی ارسال نشده است</p>
-        <small>اولین نفری باشید که پیام می‌فرستد!</small>
+    <!-- Empty State -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fa fa-comments fa-4x text-muted opacity-25"></i>
+        </div>
+        <h4 class="text-muted">هنوز پیامی ارسال نشده است</h4>
+        <p class="text-muted">اولین نفری باشید که پیام می‌فرستد!</p>
     </div>
 }

@@ -779,11 +779,59 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
+
+            // در انتهای متد AutoMapping() این mapping را اضافه کنید:
+
+            // ==================== TASK COMMENT MAPPINGS ====================
+
+            // TaskComment -> TaskCommentViewModel
+            CreateMap<TaskComment, TaskCommentViewModel>()
+                .ForMember(dest => dest.CreatorName,
+                    opt => opt.MapFrom(src => src.Creator != null
+                        ? $"{src.Creator.FirstName} {src.Creator.LastName}"
+                        : "نامشخص"))
+                .ForMember(dest => dest.CreatorProfileImage,
+                    opt => opt.MapFrom(src => src.Creator != null
+                        ? (src.Creator.ProfileImagePath ?? "/images/default-avatar.png")
+                        : "/images/default-avatar.png"))
+               
+                .ForMember(dest => dest.Attachments,
+                    opt => opt.MapFrom(src => src.Attachments));
+
+            // TaskCommentViewModel -> TaskComment
+            CreateMap<TaskCommentViewModel, TaskComment>()
+                .ForMember(dest => dest.Task, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.ParentComment, opt => opt.Ignore())
+                .ForMember(dest => dest.MentionedUsers, opt => opt.Ignore())
+                .ForMember(dest => dest.Notifications, opt => opt.Ignore())
+                .ForMember(dest => dest.Attachments, opt => opt.Ignore())
+                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.EditDate, opt => opt.Ignore())
+                .ForMember(dest => dest.IsEdited, opt => opt.Ignore());
+
+            // TaskCommentAttachment -> TaskCommentAttachmentViewModel
+            CreateMap<TaskCommentAttachment, TaskCommentAttachmentViewModel>();
+
+            // TaskCommentAttachmentViewModel -> TaskCommentAttachment
+            CreateMap<TaskCommentAttachmentViewModel, TaskCommentAttachment>()
+                .ForMember(dest => dest.Comment, opt => opt.Ignore())
+                .ForMember(dest => dest.Uploader, opt => opt.Ignore())
+                .ForMember(dest => dest.UploadDate, opt => opt.Ignore())
+                .ForMember(dest => dest.UploaderUserId, opt => opt.Ignore());
+
+
+
             CreateMap<TaskWorkLog, TaskWorkLogViewModel>()
     .ForMember(dest => dest.UserName,
         opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"))
     .ForMember(dest => dest.UserProfileImage,
         opt => opt.MapFrom(src => src.User.ProfileImagePath ?? "/images/default-avatar.png"));
+
+
+
+
         }
 
         // Helper methods for mapping

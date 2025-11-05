@@ -523,7 +523,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             try
             {
                 var task = _taskRepository.GetTaskById(id, includeOperations: true,
-                    includeAssignments: true, includeAttachments: true, includeComments: true,includeStakeHolders:true);
+                    includeAssignments: true, includeAttachments: true, includeComments: true, includeStakeHolders: true);
 
                 if (task == null)
                 {
@@ -537,22 +537,23 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
                 viewModel.AssignmentsTaskUser = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
 
+                // ⭐⭐⭐ اضافه کردن Comments به ViewModel
+                viewModel.Comments = _mapper.Map<List<TaskCommentViewModel>>(task.TaskComments);
+
                 // علامت‌گذاری نوتیفیکیشن‌ها به عنوان خوانده شده
-                // Get current userId
                 var currentUserId = _userManager.GetUserId(User);
 
-                // Check if user is admin (can use PermissionExtensions or your own logic)
-                var isAdmin = User.IsInRole("Admin"); // Or use your IsAdmin() extension
+                // Check if user is admin
+                var isAdmin = User.IsInRole("Admin");
 
                 // Check if user is manager of the task's team
                 bool isManager = false;
                 if (task.TeamId.HasValue)
                 {
-                    // Use TaskVisibilityRepository to check
                     isManager = await _TaskVisibilityRepository.IsUserTeamManagerAsync(currentUserId, task.TeamId.Value);
                 }
 
-                // Check if user is supervisor (based on your business logic, e.g. position power)
+                // Check if user is supervisor
                 bool isSupervisor = false;
                 if (task.TeamId.HasValue)
                 {
@@ -562,9 +563,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 // Pass these to the ViewBag or ViewModel
                 ViewBag.IsAdmin = isAdmin;
                 ViewBag.IsManager = isManager;
-                ViewBag.IsSupervisor = isSupervisor; await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
+                ViewBag.IsSupervisor = isSupervisor;
 
-                // ⭐⭐⭐ بررسی اینکه آیا تسک در "روز من" کاربر فعلی است
+                await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
+
+                // بررسی اینکه آیا تسک در "روز من" کاربر فعلی است
                 var isInMyDay = await _taskRepository.IsTaskInMyDayAsync(id, currentUserId);
                 ViewBag.IsInMyDay = isInMyDay;
 
@@ -581,6 +584,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
+
         /// <summary>
         /// نمایش مودال تکمیل تسک
         /// </summary>
@@ -3310,7 +3314,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return Json(new { success = false, message = "خطا در بارگذاری پیام‌ها" });
             }
         }
-
+       
         /// <summary>
         /// حذف کامنت
         /// </summary>
@@ -3323,7 +3327,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 var currentUserId = _userManager.GetUserId(User);
 
                 // دریافت کامنت
-                var comment =  _uow.TaskCommentUW.GetById(id);
+                var comment = _uow.TaskCommentUW.GetById(id);
                 if (comment == null)
                 {
                     return Json(new { success = false, message = "پیام یافت نشد" });
@@ -3345,7 +3349,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 }
 
                 // حذف فایل‌های پیوست
-                var attachments =  _uow.TaskCommentAttachmentUW
+                var attachments = _uow.TaskCommentAttachmentUW
                     .Get(a => a.CommentId == id).ToList();
 
                 foreach (var attachment in attachments)
@@ -3388,66 +3392,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return Json(new { success = false, message = "خطا در حذف پیام" });
             }
         }
-
-        /// <summary>
-        /// ویرایش کامنت
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditTaskComment(int id, string commentText)
-        {
-            try
-            {
-                var currentUserId = _userManager.GetUserId(User);
-
-                // دریافت کامنت
-                var comment =  _uow.TaskCommentUW.GetById(id);
-                if (comment == null)
-                {
-                    return Json(new { success = false, message = "پیام یافت نشد" });
-                }
-
-                // بررسی سازنده
-                if (comment.CreatorUserId != currentUserId)
-                {
-                    return Json(new { success = false, message = "شما فقط می‌توانید پیام‌های خود را ویرایش کنید" });
-                }
-
-                // ⭐ بررسی تکمیل تسک
-                var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, comment.TaskId);
-                var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
-
-                if (isTaskCompletedForCurrentUser)
-                {
-                    return Json(new { success = false, message = "این تسک تکمیل شده و امکان ویرایش پیام وجود ندارد" });
-                }
-
-                // بروزرسانی
-                comment.CommentText = commentText.Trim();
-                comment.IsEdited = true;
-                comment.EditDate = DateTime.Now;
-
-                _uow.TaskCommentUW.Update(comment);
-                _uow.Save();
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Update,
-                    "Tasks",
-                    "EditTaskComment",
-                    $"ویرایش کامنت در تسک {comment.TaskId}",
-                    recordId: comment.TaskId.ToString(),
-                    entityType: "Tasks"
-                );
-
-                return Json(new { success = true, message = "پیام با موفقیت ویرایش شد" });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "EditTaskComment", "خطا در ویرایش کامنت", ex);
-                return Json(new { success = false, message = "خطا در ویرایش پیام" });
-            }
-        }
-
         #endregion
     }
 }

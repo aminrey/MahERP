@@ -30,6 +30,7 @@
         statusColor = "danger"; statusText = "تاخیر دارد"; statusIcon = "fa-exclamation-triangle";
     }
 }
+@Html.AntiForgeryToken()
 
 <!-- Hero Section - بنر بهبود یافته -->
 <div class="hero-section position-relative overflow-hidden">
@@ -1301,177 +1302,220 @@ else if (isCompletedByMe)
 </div>
 
 
+        <!-- Tab: گفتگوها - نسخه جدید با طراحی مدرن -->
         <div class="tab-pane fade" id="tab-chat" role="tabpanel">
-            <div class="block block-rounded block-fx-shadow">
+            <div class="block block-rounded block-fx-shadow" style="margin-bottom: 0;">
+                <!-- Chat Header -->
                 <div class="block-header bg-primary text-white">
                     <h3 class="block-title text-white mb-0">
                         <i class="fa fa-comments me-2"></i>گفتگوها و پیام‌ها
+                        <span class="badge bg-white text-primary ms-2" id="chat-badge-count">
+                            @(Model.Comments?.Count ?? 0)
+                        </span>
                     </h3>
+                    <div class="block-options">
+                        @if (!isCompletedByMe)
+                        {
+                            <button type="button" class="btn btn-sm btn-light" onclick="$('#chat-message-input').focus()">
+                                <i class="fa fa-plus me-1"></i>پیام جدید
+                            </button>
+                        }
+                    </div>
                 </div>
-                <div class="block-content block-content-full">
-                    <!-- Chat Container -->
-                    <div class="chat-container" style="height: 600px; display: flex; flex-direction: column;">
-                        <!-- Messages Area -->
-                        <div class="chat-messages flex-grow-1 overflow-auto mb-3"
-                             id="chat-messages-container"
-                             style="max-height: 500px;">
 
-                            @if (Model.Comments?.Any() == true)
-                            {
-                                @foreach (var comment in Model.Comments.OrderBy(c => c.CreateDate))
+                <!-- Chat Container -->
+                <div class="block-content block-content-full p-0" style="height: 600px;">
+                    <div class="row g-0 h-100">
+                        <!-- Messages Area - Full Width -->
+                        <div class="col-12 d-flex flex-column h-100">
+                            <!-- Messages List -->
+                            <div class="flex-grow-1 overflow-auto p-4 bg-body-light"
+                                 id="chat-messages-container"
+                                 style="min-height: 0;">
+
+                                @if (Model.Comments?.Any() == true)
                                 {
-                                    var isMyMessage = comment.CreatorUserId == currentUserId;
-                                    var alignment = isMyMessage ? "flex-row-reverse" : "flex-row";
-                                    var bgColor = isMyMessage ? "bg-primary-light" : "bg-body-light";
+                                    @foreach (var comment in Model.Comments.OrderBy(c => c.CreateDate))
+                                    {
+                                        var isMyMessage = comment.CreatorUserId == currentUserId;
+                                        var messageClass = isMyMessage ? "chat-message-right" : "chat-message-left";
 
-                                    <div class="d-flex @alignment mb-3 chat-message" data-comment-id="@comment.Id">
-                                        <!-- Avatar -->
-                                        <div class="flex-shrink-0">
-                                            <img src="@(comment.CreatorProfileImage ?? "/images/default-avatar.png")"
-                                                 class="rounded-circle"
-                                                 style="width: 40px; height: 40px; object-fit: cover;"
-                                                 alt="@comment.CreatorName">
-                                        </div>
+                                        <div class="chat-message @messageClass mb-3" data-comment-id="@comment.Id">
+                                            <div class="d-flex @(isMyMessage ? "flex-row-reverse" : "")">
+                                             
 
-                                        <!-- Message Bubble -->
-                                        <div class="flex-grow-1 @(isMyMessage ? "me-3" : "ms-3")" style="max-width: 70%;">
-                                            <div class="p-3 rounded-3 @bgColor">
-                                                <!-- Header -->
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <strong class="@(isMyMessage ? "text-primary" : "")">
-                                                        @(isMyMessage ? "شما" : comment.CreatorName)
-                                                    </strong>
-                                                    <small class="text-muted">
-                                                        @ConvertDateTime.ConvertMiladiToShamsi(comment.CreateDate, "HH:mm")
-                                                    </small>
-                                                </div>
+                                                <!-- Message Content -->
+                                                <div class="flex-grow-1 @(isMyMessage ? "me-3" : "ms-3")" style="max-width: 75%;">
+                                                    <!-- Message Bubble -->
+                                                    <div class="message-bubble @(isMyMessage ? "bg-primary text-white" : "bg-white") shadow-sm">
+                                                        <!-- Header -->
+                                                        <div class="message-header pb-2 mb-2 border-bottom @(isMyMessage ? "border-white-25" : "")">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <strong class="@(isMyMessage ? "text-white" : "text-dark")">
+                                                                    @(isMyMessage ? "شما" : comment.CreatorName)
+                                                                </strong>
+                                                                <small class="@(isMyMessage ? "text-white-75" : "text-muted")">
+                                                                    @ConvertDateTime.ConvertMiladiToShamsi(comment.CreateDate, "dddd dd MMMM yyyy ساعت HH:mm ")
+                                                                </small>
+                                                            </div>
+                                                        </div>
 
-                                                <!-- Message Text -->
-                                                <p class="mb-1">@Html.Raw(comment.CommentText.Replace("\n", "<br/>"))</p>
+                                                        <!-- Message Text -->
+                                                        <div class="message-text">
+                                                            @Html.Raw(comment.CommentText.Replace("\n", "<br/>"))
+                                                        </div>
 
-                                                <!-- Attachments -->
-                                                @if (comment.Attachments?.Any() == true)
-                                                {
-                                                    <div class="mt-2">
-                                                        @foreach (var attachment in comment.Attachments)
+                                                        <!-- Attachments -->
+                                                        @if (comment.Attachments?.Any() == true)
                                                         {
-                                                            <a href="@attachment.FilePath"
-                                                               class="btn btn-sm btn-outline-secondary mb-1"
-                                                               target="_blank">
-                                                                <i class="fa fa-paperclip me-1"></i>
-                                                                @attachment.FileName
-                                                            </a>
+                                                            <div class="message-attachments mt-3 pt-3 border-top @(isMyMessage ? "border-white-25" : "")">
+                                                                @foreach (var attachment in comment.Attachments)
+                                                                {
+                                                                    <a href="@attachment.FilePath"
+                                                                       class="btn btn-sm @(isMyMessage ? "btn-light" : "btn-outline-primary") mb-1 me-1"
+                                                                       target="_blank">
+                                                                        <i class="fa fa-paperclip me-1"></i>
+                                                                        @attachment.FileName
+                                                                    </a>
+                                                                }
+                                                            </div>
+                                                        }
+
+                                                        <!-- Badges -->
+                                                        @if (comment.IsImportant || comment.IsEdited)
+                                                        {
+                                                            <div class="message-badges mt-2">
+                                                                @if (comment.IsImportant)
+                                                                {
+                                                                    <span class="badge bg-danger badge-sm me-1">
+                                                                        <i class="fa fa-exclamation-circle"></i> مهم
+                                                                    </span>
+                                                                }
+                                                                @if (comment.IsEdited)
+                                                                {
+                                                                    <small class="@(isMyMessage ? "text-white-75" : "text-muted") fst-italic">
+                                                                        (ویرایش شده)
+                                                                    </small>
+                                                                }
+                                                            </div>
                                                         }
                                                     </div>
-                                                }
 
-                                                <!-- Badges -->
-                                                <div class="mt-1">
-                                                    @if (comment.IsImportant)
+                                                    <!-- Actions -->
+                                                    @if (isMyMessage && !isCompletedByMe)
                                                     {
-                                                        <span class="badge bg-danger badge-sm me-1">
-                                                            <i class="fa fa-exclamation-circle"></i> مهم
-                                                        </span>
-                                                    }
-                                                    @if (comment.IsEdited)
-                                                    {
-                                                        <small class="text-muted fst-italic">
-                                                            (ویرایش شده)
-                                                        </small>
+                                                        <div class="message-actions mt-1 @(isMyMessage ? "text-end" : "")">
+                                                         
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-link text-danger p-0"
+                                                                    onclick="deleteComment(@comment.Id)"
+                                                                    title="حذف">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        </div>
                                                     }
                                                 </div>
+
+                                                <!-- Avatar -->
+                                                <div class="flex-shrink-0">
+                                                    <img src="@(comment.CreatorProfileImage ?? "/images/default-avatar.png")"
+                                                         class="rounded-circle shadow-sm"
+                                                         style="width: 48px; height: 48px; object-fit: cover;"
+                                                         alt="@comment.CreatorName">
+                                                </div>
+
                                             </div>
-
-                                            <!-- Actions -->
-                                            @if (isMyMessage && !isCompletedByMe)
-                                            {
-                                                <div class="mt-1 @(isMyMessage ? "text-end" : "")">
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-link text-muted"
-                                                            onclick="editComment(@comment.Id)">
-                                                        <i class="fa fa-edit"></i> ویرایش
-                                                    </button>
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-link text-danger"
-                                                            onclick="deleteComment(@comment.Id)">
-                                                        <i class="fa fa-trash"></i> حذف
-                                                    </button>
-                                                </div>
-                                            }
                                         </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <!-- Empty State -->
+                                    <div class="text-center py-5">
+                                        <div class="mb-4">
+                                            <i class="fa fa-comments fa-4x text-muted opacity-25"></i>
+                                        </div>
+                                        <h4 class="text-muted">هنوز پیامی ارسال نشده است</h4>
+                                        <p class="text-muted">اولین نفری باشید که پیام می‌فرستد!</p>
                                     </div>
                                 }
+                            </div>
+
+                            <!-- Input Area -->
+                            @if (!isCompletedByMe)
+                            {
+                                <div class="border-top bg-white p-3">
+                                    <form id="chat-form" onsubmit="return sendChatMessage(event);">
+                                        <!-- File Selection Display -->
+                                        <div id="chat-selected-files" class="mb-2" style="display: none;"></div>
+
+                                        <!-- Input Group -->
+                                        <div class="input-group input-group-lg">
+                                            <!-- File Upload Button -->
+                                            <button class="btn btn-outline-secondary"
+                                                    type="button"
+                                                    onclick="$('#chat-file-input').click()"
+                                                    title="پیوست فایل">
+                                                <i class="fa fa-paperclip"></i>
+                                            </button>
+                                            <input type="file"
+                                                   id="chat-file-input"
+                                                   multiple
+                                                   style="display: none;"
+                                                   onchange="handleChatFileSelect(this)">
+
+                                            <!-- Message Input -->
+                                            <textarea class="form-control"
+                                                  id="chat-message-input"
+                                                  placeholder="پیام خود را بنویسید... (Ctrl+Enter برای ارسال)"
+                                                  rows="1"
+                                                  style="resize: none; max-height: 120px;"
+                                                  onkeydown="handleChatKeyPress(event)"></textarea>
+
+                                            <!-- Send Button -->
+                                            <button class="btn btn-primary px-4" type="submit">
+                                                <i class="fa fa-paper-plane me-1"></i>
+                                                <span class="d-none d-sm-inline">ارسال</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Options -->
+                                        <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <!-- Important Checkbox -->
+                                            <div class="form-check">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       id="chat-important-check">
+                                                <label class="form-check-label" for="chat-important-check">
+                                                    <i class="fa fa-exclamation-circle text-danger me-1"></i>
+                                                    پیام مهم
+                                                </label>
+                                            </div>
+
+                                            <!-- Help Text -->
+                                            <small class="text-muted">
+                                                <i class="fa fa-info-circle me-1"></i>
+                                                Ctrl+Enter برای ارسال سریع
+                                            </small>
+                                        </div>
+                                    </form>
+                                </div>
                             }
                             else
                             {
-                                <div class="text-center py-5 text-muted">
-                                    <i class="fa fa-comments fa-4x opacity-25 mb-3"></i>
-                                    <p class="mb-0">هنوز پیامی ارسال نشده است</p>
-                                    <small>اولین نفری باشید که پیام می‌فرستد!</small>
+                                <!-- Locked State -->
+                                <div class="border-top bg-body-light p-3">
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="fa fa-lock me-2"></i>
+                                        تسک تکمیل شده - ارسال پیام امکان‌پذیر نیست
+                                    </div>
                                 </div>
                             }
                         </div>
-
-                        <!-- Input Area -->
-                        @if (!isCompletedByMe)
-                        {
-                            <div class="chat-input border-top pt-3">
-                                <form id="chat-form" onsubmit="return sendChatMessage(event);">
-                                    <div class="input-group">
-                                        <!-- File Upload -->
-                                        <button class="btn btn-outline-secondary"
-                                                type="button"
-                                                onclick="$('#chat-file-input').click()">
-                                            <i class="fa fa-paperclip"></i>
-                                        </button>
-                                        <input type="file"
-                                               id="chat-file-input"
-                                               multiple
-                                               style="display: none;"
-                                               onchange="handleChatFileSelect(this)">
-
-                                        <!-- Message Input -->
-                                        <textarea class="form-control"
-                                              id="chat-message-input"
-                                              placeholder="پیام خود را بنویسید..."
-                                              rows="1"
-                                              style="resize: none;"
-                                              onkeydown="handleChatKeyPress(event)"></textarea>
-
-                                        <!-- Send Button -->
-                                        <button class="btn btn-primary" type="submit">
-                                            <i class="fa fa-paper-plane"></i>
-                                        </button>
-                                    </div>
-
-                                    <!-- Selected Files Display -->
-                                    <div id="chat-selected-files" class="mt-2" style="display: none;"></div>
-
-                                    <!-- Important Checkbox -->
-                                    <div class="form-check mt-2">
-                                        <input class="form-check-input"
-                                               type="checkbox"
-                                               id="chat-important-check">
-                                        <label class="form-check-label" for="chat-important-check">
-                                            <i class="fa fa-exclamation-circle text-danger me-1"></i>
-                                            پیام مهم
-                                        </label>
-                                    </div>
-                                </form>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-warning mb-0">
-                                <i class="fa fa-lock me-2"></i>
-                                تسک تکمیل شده - ارسال پیام امکان‌پذیر نیست
-                            </div>
-                        }
                     </div>
                 </div>
             </div>
         </div>
-
        <!-- تب یادآوری‌ها -->
 <div class="tab-pane fade" id="tab-reminders" role="tabpanel">
     <div class="block block-rounded block-fx-shadow">
@@ -1567,3 +1611,100 @@ else if (isCompletedByMe)
 <script src="~/assets/js/taskdetail.js"></script>
 }
 
+
+<!-- ⭐⭐⭐ اضافه کردن CSS سفارشی -->
+@section Styles {
+    <style>
+        /* Chat Message Styles */
+        .message-bubble {
+            padding: 1rem;
+            border-radius: 1rem;
+            position: relative;
+            animation: messageSlideIn 0.3s ease-out;
+        }
+
+        .chat-message-right .message-bubble {
+            border-top-right-radius: 0.25rem;
+        }
+
+        .chat-message-left .message-bubble {
+            border-top-left-radius: 0.25rem;
+        }
+
+        .message-bubble::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+
+        .chat-message-right .message-bubble::before {
+            right: -8px;
+            border-width: 0 0 12px 12px;
+            border-color: transparent transparent transparent var(--bs-primary);
+        }
+
+        .chat-message-left .message-bubble::before {
+            left: -8px;
+            border-width: 0 12px 12px 0;
+            border-color: transparent var(--bs-white) transparent transparent;
+        }
+
+        .message-text {
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+
+        .message-actions {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .chat-message:hover .message-actions {
+            opacity: 1;
+        }
+
+        /* Smooth Scroll */
+        #chat-messages-container {
+            scroll-behavior: smooth;
+        }
+
+            #chat-messages-container::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            #chat-messages-container::-webkit-scrollbar-thumb {
+                background: rgba(0,0,0,.2);
+                border-radius: 4px;
+            }
+
+        /* Animation */
+        @@keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Auto-resize textarea */
+        #chat-message-input {
+            transition: height 0.2s;
+        }
+
+        /* Border utilities */
+        .border-white-25 {
+            border-color: rgba(255,255,255,0.25) !important;
+        }
+
+        .text-white-75 {
+            color: rgba(255,255,255,0.75) !important;
+        }
+    </style>
+}

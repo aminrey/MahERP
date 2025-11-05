@@ -89,30 +89,41 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             return query.OrderByDescending(t => t.CreateDate).ToList();
         }
 
-        public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false, bool includeComments = false, bool includeStakeHolders = false)
+        
+public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false, bool includeComments = false, bool includeStakeHolders = false)
         {
             var query = _context.Tasks_Tbl.AsQueryable();
 
             if (includeOperations)
-                query = query.Include(t => t.TaskOperations.Where(t=> !t.IsDeleted)).ThenInclude(t=> t.WorkLogs);
+                query = query.Include(t => t.TaskOperations.Where(t => !t.IsDeleted))
+                    .ThenInclude(t => t.WorkLogs);
 
             if (includeAssignments)
                 query = query.Include(t => t.TaskAssignments)
-                    .ThenInclude(a => a.AssignedUser).Include(t => t.TaskAssignments)
+                    .ThenInclude(a => a.AssignedUser)
+                    .Include(t => t.TaskAssignments)
                     .ThenInclude(a => a.AssignerUser);
 
             if (includeAttachments)
                 query = query.Include(t => t.TaskAttachments);
 
             if (includeComments)
+            {
+                // ⭐⭐⭐ اصلاح: اضافه کردن ThenInclude برای Attachments
                 query = query.Include(t => t.TaskComments)
-                    .ThenInclude(c => c.Creator);
+                    .ThenInclude(c => c.Creator)
+                    .Include(t => t.TaskComments) // ⭐ دوباره Include برای ThenInclude بعدی
+                    .ThenInclude(c => c.Attachments) // ⭐⭐⭐ فایل‌های پیوست
+                    .ThenInclude(a => a.Uploader); // ⭐ اطلاعات آپلودکننده
+            }
+
             if (includeStakeHolders)
             {
-                query = query.Include(t => t.Contact).ThenInclude(c=> c.Phones);
-                query = query.Include(t => t.Organization).ThenInclude(o=> o.Departments);
+                query = query.Include(t => t.Contact)
+                    .ThenInclude(c => c.Phones);
+                query = query.Include(t => t.Organization)
+                    .ThenInclude(o => o.Departments);
             }
-               
 
             return query.FirstOrDefault(t => t.Id == id);
         }
