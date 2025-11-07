@@ -1,4 +1,4 @@
-﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModel
+﻿@model CompleteTaskViewModel
 
 @{
     Layout = null;
@@ -14,8 +14,8 @@
 <div class="modal-dialog" role="document">
     <div class="modal-content">
         <div class="block block-rounded block-themed block-transparent mb-0 modal-contents">
-            <div class="block-header @(ViewBag.IsReopening ? "bg-warning-dark" : "bg-success-dark")">
-                <h3 class="block-title">@(ViewBag.IsReopening ? "بازگشایی تسک" : "تکمیل تسک")</h3>
+            <div class="block-header bg-success-dark">
+                <h3 class="block-title">تکمیل تسک</h3>
                 <div class="block-options">
                     <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
                         <i class="fa fa-fw fa-times"></i>
@@ -24,12 +24,11 @@
             </div>
 
             <form id="complete-task-form" asp-action="CompleteTaskPost" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="Id" />
-                <input type="hidden" name="isReopening" value="@ViewBag.IsReopening.ToString().ToLower()" />
+                <input type="hidden" asp-for="TaskId" />
+                <input type="hidden" asp-for="FromList" />
 
                 <div class="block block-themed block-rounded mt-1">
-                    <div class="block-header @(ViewBag.IsReopening ? "bg-warning-light" : "bg-success-light")">
+                    <div class="block-header bg-success-light">
                         <h3 class="block-title">تأیید عملیات</h3>
                     </div>
                     <div class="block-content">
@@ -40,7 +39,7 @@
                             <div class="col-12 mb-4">
                                 <div class="alert alert-info">
                                     <i class="fa fa-info-circle me-1"></i>
-                                    <strong>تسک:</strong> @Model.Title
+                                    <strong>تسک:</strong> @Model.TaskTitle
                                     @if (!string.IsNullOrEmpty(Model.TaskCode))
                                     {
                                         <span class="badge bg-primary ms-2">@Model.TaskCode</span>
@@ -48,97 +47,43 @@
                                 </div>
                             </div>
 
-                            @if (ViewBag.IsReopening)
-                            {
-                                <!-- پیام بازگشایی تسک -->
-                                <div class="col-12 mb-4">
-                                    <div class="alert alert-warning">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <i class="fa fa-exclamation-triangle fa-2x text-warning"></i>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <h5 class="alert-heading mb-2">بازگشایی تسک</h5>
-                                                <p class="mb-2">آیا از بازگشایی تسک <strong>@Model.Title</strong> اطمینان دارید؟</p>
-                                                <hr class="my-2">
-                                                <div class="small">
-                                                    <strong>توجه:</strong>
-                                                    <ul class="mb-0 mt-1">
-                                                        <li>وضعیت تسک به حالت "در حال انجام" تغییر می‌کند</li>
-                                                        <li>تمام تاییدیه‌های سرپرست و مدیر حذف می‌شوند</li>
-                                                        <li>تاریخ تکمیل تسک حذف می‌شود</li>
-                                                    </ul>
-                                                </div>
+                            <!-- پیام تکمیل تسک -->
+                            <div class="col-12 mb-4">
+                                <div class="alert alert-success">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-check-circle fa-2x text-success"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h5 class="alert-heading mb-2">تکمیل تسک</h5>
+                                            <p class="mb-2">آیا از تکمیل تسک <strong>@Model.TaskTitle</strong> اطمینان دارید؟</p>
+                                            <hr class="my-2">
+                                            <div class="small">
+                                                <strong>با تکمیل تسک:</strong>
+                                                <ul class="mb-0 mt-1">
+                                                    <li>وضعیت تسک به "تکمیل شده" تغییر می‌کند</li>
+                                                    <li>تمام یادآوری‌های فعال غیرفعال می‌شوند</li>
+                                                    <li>تاریخ تکمیل ثبت می‌شود</li>
+                                                </ul>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            }
-                            else
-                            {
-                                <!-- پیام تکمیل تسک -->
-                                <div class="col-12 mb-4">
-                                    <div class="alert alert-success">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <i class="fa fa-check-circle fa-2x text-success"></i>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <h5 class="alert-heading mb-2">تکمیل تسک</h5>
-                                                <p class="mb-2">آیا از تکمیل تسک <strong>@Model.Title</strong> اطمینان دارید؟</p>
-                                                <hr class="my-2">
-                                                <div class="small">
-                                                    <strong>با تکمیل تسک:</strong>
-                                                    <ul class="mb-0 mt-1">
-                                                        <li>وضعیت تسک به "تکمیل شده" تغییر می‌کند</li>
-                                                        <li>تمام عملیات‌های باقی‌مانده نیز تکمیل شده در نظر گرفته می‌شوند</li>
-                                                        <li>تاریخ تکمیل ثبت می‌شود</li>
-                                                        @if (User.IsInRole("Supervisor") || User.IsInRole("Admin") || User.IsInRole("Manager"))
-                                                        {
-                                                            <li>با توجه به نقش شما، تایید مربوطه نیز ثبت خواهد شد</li>
-                                                        }
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            </div>
 
-                                @if (Model.Operations?.Any() == true)
-                                {
-                                    <!-- نمایش وضعیت عملیات‌ها -->
-                                    <div class="col-12 mb-3">
-                                        <h6 class="mb-2">
-                                            <i class="fa fa-tasks text-muted me-1"></i>
-                                            وضعیت عملیات‌ها
-                                        </h6>
-                                        <div class="progress mb-2" style="height: 20px;">
-                                            <div class="progress-bar bg-success" role="progressbar"
-                                                 style="width: @Model.ProgressPercentage%"
-                                                 aria-valuenow="@Model.ProgressPercentage"
-                                                 aria-valuemin="0"
-                                                 aria-valuemax="100">
-                                                @Model.ProgressPercentage% تکمیل شده
-                                            </div>
-                                        </div>
-
-                                        @{
-                                            var completedCount = Model.Operations.Count(o => o.IsCompleted);
-                                            var totalCount = Model.Operations.Count();
-                                        }
-
-                                        <small class="text-muted">
-                                            @completedCount از @totalCount عملیات تکمیل شده است
-                                            @if (completedCount < totalCount)
-                                            {
-                                                <span class="text-warning">
-                                                    (@(totalCount - completedCount) عملیات باقی‌مانده نیز تکمیل شده در نظر گرفته می‌شود)
-                                                </span>
-                                            }
-                                        </small>
-                                    </div>
-                                }
-                            }
+                       
+                            <!-- فیلد یادداشت -->
+                            <div class="col-12 mb-3">
+                                <label class="form-label" for="Notes">
+                                    <i class="fa fa-sticky-note text-muted me-1"></i>
+                                    یادداشت تکمیل (اختیاری)
+                                </label>
+                                <textarea class="form-control"
+                                          asp-for="CompletionReport"
+                                          rows="4"
+                                          placeholder="یادداشت خود را در مورد تکمیل این تسک بنویسید..."></textarea>
+                                <span asp-validation-for="CompletionReport" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -149,8 +94,8 @@
             <button class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal" type="button">
                 <i class="fa fa-times me-1"></i>انصراف
             </button>
-            <button class="btn btn-sm @(ViewBag.IsReopening ? "btn-warning" : "btn-success")" data-save="modal-ajax-save" type="button">
-                <i class="fa @(ViewBag.IsReopening ? "fa-redo" : "fa-check") me-1"></i>@(ViewBag.IsReopening ? "بازگشایی" : "تکمیل")
+            <button class="btn btn-sm btn-success" data-save="modal-ajax-save" type="button">
+                <i class="fa fa-check me-1"></i>تکمیل تسک
             </button>
         </div>
     </div>
@@ -158,36 +103,16 @@
 
 <script>
     $(document).ready(function() {
+        // ⭐ راه‌اندازی تاریخ شمسی
+        $('.persian-datepicker').persianDatepicker({
+            initialValue: true,
+            format: 'YYYY/MM/DD',
+            autoClose: true
+        });
+
         // تنظیم فوکوس روی دکمه اصلی
         $('.modal').on('shown.bs.modal', function () {
-            $('@(ViewBag.IsReopening ? ".btn-warning" : ".btn-success")').focus();
-        });
-
-        // Event handler برای پردازش موفقیت‌آمیز AJAX
-        $('[data-save="modal-ajax-save"]').on('ajaxFormSuccess', function(event, response) {
-            if (response && response.success) {
-                // نمایش پیام موفقیت
-                if (response.message && response.message.length > 0) {
-                    toastr.success(response.message[0].text);
-                }
-
-                // بستن modal
-                $('.modal').modal('hide');
-
-                // refresh کردن صفحه بعد از بسته شدن modal
-                $('.modal').on('hidden.bs.modal', function () {^
-                    location.reload();
-                });
-            }
-        });
-
-        // Event handler برای خطاهای AJAX
-        $('[data-save="modal-ajax-save"]').on('ajaxFormError', function(event, response) {
-            if (response && response.message) {
-                toastr.error(response.message);
-            } else {
-                toastr.error('خطا در انجام عملیات');
-            }
+            $('.btn-success').focus();
         });
     });
 </script>

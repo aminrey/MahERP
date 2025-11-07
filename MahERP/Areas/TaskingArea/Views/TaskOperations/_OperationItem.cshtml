@@ -14,21 +14,14 @@
      data-order="@Model.OperationOrder"
      id="operation-card-@Model.Id">
 
-    <!-- Spinner -->
-    <div class="operation-spinner" style="display: none; position: absolute; top: 10px; right: 10px;">
-        <div class="spinner-border spinner-border-sm text-primary" role="status">
-            <span class="visually-hidden">در حال ذخیره...</span>
-        </div>
-    </div>
-
     <div class="d-flex align-items-start">
-        <!-- Checkbox -->
+        <!-- ⭐ Checkbox -->
         <div class="flex-shrink-0 me-3">
             <div class="form-check">
                 <input class="form-check-input operation-checkbox"
                        type="checkbox"
+                       data-operation-id="@Model.Id"
                        @(isCompleted ? "checked" : "")
-                       onchange="dynamicToggleComplete(this, @Model.Id)"
                        style="width: 1.5rem; height: 1.5rem; cursor: pointer;">
             </div>
         </div>
@@ -83,39 +76,43 @@
             }
         </div>
 
+        <!-- ⭐ دکمه‌های اکشن -->
         <div class="flex-shrink-0 ms-2">
             <div class="btn-group btn-group-sm">
                 @if (!Model.IsCompleted)
                 {
+                    <!-- ⭐ دکمه Star -->
                     <button type="button"
-                            class="btn @(isStarred ? "btn-warning" : "btn-outline-warning") btn-sm"
-                            onclick="dynamicToggleStar(@Model.Id)"
+                            class="btn @(isStarred ? "btn-warning" : "btn-outline-warning") btn-sm btn-toggle-star"
+                            data-operation-id="@Model.Id"
                             title="ستاره">
                         <i class="fa fa-star"></i>
                     </button>
-                
 
-                <button type="button"
-                        class="btn @(hasWorkLogs ? "btn-info" : "btn-outline-info") btn-sm"
-                        data-toggle="modal-ajax"
-                        href="@Url.Action("AddWorkLogModal", "TaskOperations", new { operationId = Model.Id, area = "AdminArea" })"
-                        title="ثبت کار">
-                    <i class="fa fa-clipboard-check"></i>
-                </button>
+                    <!-- ⭐ دکمه Add WorkLog -->
+                    <button type="button"
+                            class="btn @(hasWorkLogs ? "btn-info" : "btn-outline-info") btn-sm btn-add-worklog"
+                            data-operation-id="@Model.Id"
+                            title="ثبت کار">
+                        <i class="fa fa-clipboard-check"></i>
+                    </button>
                 }
+
                 @if (hasWorkLogs)
                 {
+                    <!-- ⭐ دکمه View WorkLogs -->
                     <button type="button"
-                            class="btn btn-outline-primary btn-sm mb-1"
-                            data-toggle="modal-ajax"
-                            href="@Url.Action("ViewWorkLogsModal", "TaskOperations", new { operationId = Model.Id, area = "AdminArea" })"
+                            class="btn btn-outline-primary btn-sm mb-1 btn-view-worklogs"
+                            data-operation-id="@Model.Id"
                             title="مشاهده لیست کارها">
                         <i class="fa fa-list"></i>
                     </button>
                 }
+
+                <!-- ⭐ دکمه Delete -->
                 <button type="button"
-                        class="btn btn-outline-danger btn-sm"
-                        onclick="dynamicDeleteOperation(@Model.Id)"
+                        class="btn btn-outline-danger btn-sm btn-delete-operation"
+                        data-operation-id="@Model.Id"
                         title="حذف">
                     <i class="fa fa-trash"></i>
                 </button>

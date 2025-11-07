@@ -1,0 +1,72 @@
+﻿@model TaskViewModel
+
+<!-- Quick Stats -->
+<div class="hero-stats">
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fa fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">پیشرفت</div>
+                    <div class="stat-value">@Model.ProgressPercentage<span class="stat-unit">%</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fa fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">اعضا</div>
+                    <div class="stat-value">@(Model.AssignmentsTaskUser?.Count ?? 0)<span class="stat-unit">نفر</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fa fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">عملیات</div>
+                    <div class="stat-value">
+                        @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)/@(Model.Operations?.Count ?? 0)
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (Model.DueDate.HasValue)
+        {
+            var remainingDays = (Model.DueDate.Value - DateTime.Now).Days;
+            <div class="col-6 col-md-3">
+                <div class="stat-card @(remainingDays < 0 ? "stat-danger" : remainingDays <= 3 ? "stat-warning" : "")">
+                    <div class="stat-icon">
+                        <i class="fa fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">مهلت</div>
+                        <div class="stat-value">
+                            @if (remainingDays < 0)
+                            {
+                                <span>@Math.Abs(remainingDays)</span>
+                                <span class="stat-unit">روز تاخیر</span>
+                            }
+                            else if (remainingDays == 0)
+                            {
+                                <span>امروز</span>
+                            }
+                            else
+                            {
+                                <span>@remainingDays</span>
+                                <span class="stat-unit">روز</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

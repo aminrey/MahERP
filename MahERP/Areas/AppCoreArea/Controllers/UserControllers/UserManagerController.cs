@@ -18,7 +18,7 @@ using System.Security.Claims;
 
 namespace MahERP.Areas.AppCoreArea.Controllers.UserControllers
 {
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     //[PermissionRequired("CORE.USER")]
     public class UserManagerController : BaseController

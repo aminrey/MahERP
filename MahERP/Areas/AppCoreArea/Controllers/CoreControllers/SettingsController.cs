@@ -16,6 +16,8 @@ using System.Threading.Tasks;
 
 namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
 {
+    [Area("AppCoreArea")]
+
     [Authorize(Roles = "Admin")]
     public class SettingsController : BaseController
     {

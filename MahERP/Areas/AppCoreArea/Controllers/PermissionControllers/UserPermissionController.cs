@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace MahERP.Areas.AppCoreArea.Controllers.PermissionControllers
 {
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     [PermissionRequired("CORE.USER.PERMISSION")]
     public class UserPermissionController : BaseController

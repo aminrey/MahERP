@@ -36,6 +36,7 @@
   <ItemGroup>
     <Folder Include="AcControl\" />
     <Folder Include="AminPropt\" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
   <ItemGroup>

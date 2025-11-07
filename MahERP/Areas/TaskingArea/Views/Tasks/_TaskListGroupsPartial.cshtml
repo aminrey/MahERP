@@ -1,0 +1,90 @@
+﻿@model TaskListViewModel
+
+@if (!Model.TaskGroups.Any())
+{
+    <div class="block block-rounded">
+        <div class="block-content text-center py-5">
+            <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+            <p class="text-muted">هیچ تسکی یافت نشد</p>
+        </div>
+    </div>
+}
+else
+{
+    @foreach (var group in Model.TaskGroups)
+    {
+        <div class="block block-rounded block-bordered mb-4" style="border: 2px solid #e4e7ed;">
+            <!-- ⭐ هدر گروه با رنگ‌بندی -->
+            <div class="block-header"
+                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                border-bottom: 3px solid rgba(0,0,0,0.1);
+                                padding: 1rem 1.5rem;">
+                <h3 class="block-title text-white fw-bold mb-0">
+                    <i class="fa @group.GroupIcon me-2"></i>
+                    @group.GroupTitle
+                    <span class="badge bg-white text-primary ms-2 fw-bold">@group.TotalTasks</span>
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option text-white"
+                            data-toggle="block-option"
+                            data-action="content_toggle"
+                            style="opacity: 0.9;">
+                        <i class="si si-arrow-up"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="block-content p-4">
+                @if (group.PendingTasks.Any())
+                {
+                    <!-- ⭐⭐⭐ تسک‌های در حال انجام -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-3 pb-2 border-bottom"
+                             style="border-bottom: 3px solid #4285f4 !important;">
+                            <div class="flex-grow-1">
+                                <h4 class="mb-0 fw-bold text-primary">
+                                    <i class="fa fa-spinner fa-pulse me-2"></i>
+                                    در حال انجام
+                                </h4>
+                            </div>
+                            <span class="badge rounded-pill bg-primary fs-6 px-3 py-2">
+                                @group.PendingCount
+                            </span>
+                        </div>
+                        <div class="row g-3">
+                            @foreach (var task in group.PendingTasks)
+                            {
+                                @await Html.PartialAsync("_TaskCardPartial", task)
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (group.CompletedTasks.Any())
+                {
+                    <!-- ⭐⭐⭐ تسک‌های تکمیل شده -->
+                    <div>
+                        <div class="d-flex align-items-center mb-3 pb-2 border-bottom"
+                             style="border-bottom: 3px solid #34a853 !important;">
+                            <div class="flex-grow-1">
+                                <h4 class="mb-0 fw-bold text-success">
+                                    <i class="fa fa-check-circle me-2"></i>
+                                    تکمیل شده
+                                </h4>
+                            </div>
+                            <span class="badge rounded-pill bg-success fs-6 px-3 py-2">
+                                @group.CompletedCount
+                            </span>
+                        </div>
+                        <div class="row g-3">
+                            @foreach (var task in group.CompletedTasks)
+                            {
+                                @await Html.PartialAsync("_TaskCardPartial", task)
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}

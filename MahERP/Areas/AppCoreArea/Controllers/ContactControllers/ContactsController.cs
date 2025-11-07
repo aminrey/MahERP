@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
 {
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     [PermissionRequired("CONTACT.VIEW")]
     public class ContactsController : BaseController

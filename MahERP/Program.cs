@@ -11,7 +11,6 @@ using MahERP.DataModelLayer.Repository.OrganizationGroupRepository;
 using MahERP.DataModelLayer.Repository.OrganizationRepository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
-using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.Hubs;
@@ -53,7 +52,6 @@ builder.Services.AddScoped<IMainDashboardRepository, MainDashboardRepository>();
 builder.Services.AddScoped<ITaskVisibilityRepository, TaskVisibilityRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
-builder.Services.AddScoped<ITaskFilterRepository, TaskFilterRepository>();
 builder.Services.AddScoped<ITaskOperationsRepository, TaskOperationsRepository>(); // ⭐ جدید
 builder.Services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
 builder.Services.AddScoped<IMyDayTaskRepository, MyDayTaskRepository>();
@@ -61,7 +59,8 @@ builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IOrganizationGroupRepository, OrganizationGroupRepository>();
 builder.Services.AddScoped<IBaseRepository, BaseRepository>();
-
+builder.Services.AddScoped<ITaskGroupingRepository, TaskGroupingRepository>();
+builder.Services.AddScoped<ITaskFilteringRepository, TaskFilteringRepository>();
 builder.Services.AddScoped<IModuleAccessService, ModuleAccessService>();
 
 // ⭐ یا اگر می‌خواهید به صورت Singleton در Dependency Injection باشد:

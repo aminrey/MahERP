@@ -738,7 +738,7 @@ namespace MahERP.DataModelLayer
             modelBuilder.Entity<TaskCommentAttachment>()
                 .HasOne(tca => tca.Comment)
                 .WithMany()
-                .HasForeignKey(tca => tca.CommentId)
+                .HasForeignKey(tca => tca.TaskCommentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<TaskCommentAttachment>()
@@ -952,6 +952,18 @@ namespace MahERP.DataModelLayer
                 .HasIndex(rp => rp.PatternName)
                 .IsUnique()
                 .HasDatabaseName("IX_RolePattern_PatternName");
+            // TaskCommentAttachment relationships
+            modelBuilder.Entity<TaskCommentAttachment>()
+                .HasOne(tca => tca.Comment)
+                .WithMany(c => c.Attachments)
+                .HasForeignKey(tca => tca.TaskCommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TaskCommentAttachment>()
+                .HasOne(tca => tca.Uploader)
+                .WithMany()
+                .HasForeignKey(tca => tca.UploaderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
 

@@ -2,13 +2,16 @@
 @{
     ViewData["Title"] = "جزئیات تسک";
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var isAssignedToCurrentUser = Model.AssignmentsTaskUser?.Any(a => a.AssignedUserId == currentUserId) ?? false;
-    var isCreator = Model.CreatorUserId == currentUserId;
+
+    ViewBag.Task = Model;
+
+    var isAssignedToCurrentUser = Model.IsAssignedToCurrentUser;
+    var isCreator = Model.IsCreator;
+    var isManager = Model.IsManager;
+    var isSupervisor = Model.IsSupervisor;
+    var isCompletedByMe = Model.IsCompletedByMe;
+    var isFocused = Model.IsFocused ?? false;
     var isAdmin = ViewBag.IsAdmin ?? false;
-    var isManager = ViewBag.IsManager ?? false;
-    var isSupervisor = ViewBag.IsSupervisor ?? false;
-    var isCompletedByMe = Model.AssignmentsTaskUser?.Any(a=> a.CompletionDate.HasValue && a.AssignedUserId == currentUserId) ?? false;
-    var isFocused = Model.AssignmentsTaskUser?.Any(a=> a.IsFocused && a.AssignedUserId == currentUserId) ?? false;
 
     // تعیین رنگ و وضعیت
     string statusColor = "primary";
@@ -132,77 +135,11 @@
 
                                 </div>
                             </div>
+<!--  Stats  -->
+<div id="hero-stats-container">
+    @await Html.PartialAsync("_TaskHeroStats", Model)
+</div>
 
-                            <!-- Quick Stats -->
-                            <div class="hero-stats">
-                                <div class="row g-3">
-                                    <div class="col-6 col-md-3">
-                                        <div class="stat-card">
-                                            <div class="stat-icon">
-                                                <i class="fa fa-chart-line"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <div class="stat-label">پیشرفت</div>
-                                                <div class="stat-value">@Model.ProgressPercentage<span class="stat-unit">%</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <div class="stat-card">
-                                            <div class="stat-icon">
-                                                <i class="fa fa-users"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <div class="stat-label">اعضا</div>
-                                                <div class="stat-value">@(Model.AssignmentsTaskUser?.Count ?? 0)<span class="stat-unit">نفر</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <div class="stat-card">
-                                            <div class="stat-icon">
-                                                <i class="fa fa-tasks"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <div class="stat-label">عملیات</div>
-                                                <div class="stat-value">
-                                                    @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)/@(Model.Operations?.Count ?? 0)
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @if (Model.DueDate.HasValue)
-                                    {
-                                        var remainingDays = (Model.DueDate.Value - DateTime.Now).Days;
-                                        <div class="col-6 col-md-3">
-                                            <div class="stat-card @(remainingDays < 0 ? "stat-danger" : remainingDays <= 3 ? "stat-warning" : "")">
-                                                <div class="stat-icon">
-                                                    <i class="fa fa-clock"></i>
-                                                </div>
-                                                <div class="stat-content">
-                                                    <div class="stat-label">مهلت</div>
-                                                    <div class="stat-value">
-                                                        @if (remainingDays < 0)
-                                                        {
-                                                            <span>@Math.Abs(remainingDays)</span>
-                                                            <span class="stat-unit">روز تاخیر</span>
-                                                        }
-                                                        else if (remainingDays == 0)
-                                                        {
-                                                            <span>امروز</span>
-                                                        }
-                                                        else
-                                                        {
-                                                            <span>@remainingDays</span>
-                                                            <span class="stat-unit">روز</span>
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -213,12 +150,12 @@
                     <nav class="mb-3" aria-label="breadcrumb">
                         <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
                             <li class="breadcrumb-item">
-                                <a asp-area="AdminArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
+                                <a asp-area="TaskingArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
                                     <i class="fa fa-home me-1"></i>داشبورد
                                 </a>
                             </li>
                             <li class="breadcrumb-item">
-                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
+                                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
                                     تسک‌ها
                                 </a>
                             </li>
@@ -378,12 +315,17 @@
         </li>
 
         <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-operations" 
+            <button class="nav-link" id="operations-tab" data-bs-toggle="tab" data-bs-target="#tab-operations"
                     type="button" role="tab">
                 <i class="fa fa-cogs me-1"></i>
                 <span class="d-none d-sm-inline">عملیات</span>
-                @if (Model.Operations?.Any() == true) {
-                    <span class="badge bg-primary rounded-pill ms-1">@Model.Operations.Count</span>
+                @if (Model.Operations?.Any() == true)
+                {
+                    <span class="badge bg-primary rounded-pill ms-1" id="operations-badge-count">@Model.Operations.Count</span>
+                }
+                else
+                {
+                    <span class="badge bg-primary rounded-pill ms-1" id="operations-badge-count" style="display: none;">0</span>
                 }
             </button>
         </li>
@@ -721,207 +663,9 @@
                 </div>
                 
                 <!-- Sidebar -->
-                <div class="col-lg-4">
-                    <!-- آمار سریع -->
-                    <div class="block block-rounded block-fx-shadow">
-                        <div class="block-header block-header-default">
-                            <h3 class="block-title">
-                                <i class="fa fa-chart-bar text-success me-2"></i>آمار
-                            </h3>
-                        </div>
-                        <div class="block-content">
-                            <div class="row g-2 text-center">
-                                <div class="col-6">
-                                    <div class="p-3 bg-success-light rounded-3">
-                                        <div class="fs-2 fw-bold text-success">
-                                            @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)
-                                        </div>
-                                        <div class="fs-xs text-muted">عملیات تکمیل</div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="p-3 bg-warning-light rounded-3">
-                                        <div class="fs-2 fw-bold text-warning">
-                                            @(Model.Operations?.Count(o => !o.IsCompleted) ?? 0)
-                                        </div>
-                                        <div class="fs-xs text-muted">در انتظار</div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="p-3 bg-info-light rounded-3">
-                                        <div class="fs-2 fw-bold text-info">
-                                            @(Model.AssignmentsTaskUser?.Count ?? 0)
-                                        </div>
-                                        <div class="fs-xs text-muted">اعضای تیم</div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="p-3 bg-primary-light rounded-3">
-                                        <div class="fs-2 fw-bold text-primary">
-                                            @Model.ProgressPercentage%
-                                        </div>
-                                        <div class="fs-xs text-muted">پیشرفت</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- وضعیت تایید -->
-                    @if (Model.CompletionDate.HasValue || isSupervisor || isManager) {
-                        <div class="block block-rounded block-fx-shadow">
-                            <div class="block-header block-header-default">
-                                <h3 class="block-title">
-                                    <i class="fa fa-check-double text-success me-2"></i>وضعیت تایید
-                                </h3>
-                            </div>
-                            <div class="block-content">
-                                <div class="list-group list-group-flush">
-                                    <!-- تکمیل -->
-                                    <div class="list-group-item d-flex align-items-center px-0">
-                                        <div class="flex-shrink-0 me-3">
-                                            @if (Model.CompletionDate.HasValue) {
-                                                <span class="fa-stack fa-1x">
-                                                    <i class="fa fa-circle fa-stack-2x text-success"></i>
-                                                    <i class="fa fa-check fa-stack-1x text-white"></i>
-                                                </span>
-                                            } else {
-                                                <span class="fa-stack fa-1x">
-                                                    <i class="fa fa-circle fa-stack-2x text-muted"></i>
-                                                    <i class="fa fa-clock fa-stack-1x text-white"></i>
-                                                </span>
-                                            }
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-semibold">تکمیل تسک</div>
-                                            @if (Model.CompletionDate.HasValue) {
-                                                <div class="fs-xs text-muted">
-                                                    @ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate.Value, "yyyy/MM/dd HH:mm")
-                                                </div>
-                                            } else {
-                                                <div class="fs-xs text-muted">در انتظار</div>
-                                            }
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- تایید سرپرست -->
-                                    <div class="list-group-item d-flex align-items-center px-0">
-                                        <div class="flex-shrink-0 me-3">
-                                            @if (Model.SupervisorApprovedDate.HasValue) {
-                                                <span class="fa-stack fa-1x">
-                                                    <i class="fa fa-circle fa-stack-2x text-info"></i>
-                                                    <i class="fa fa-check fa-stack-1x text-white"></i>
-                                                </span>
-                                            } else {
-                                                <span class="fa-stack fa-1x">
-                                                    <i class="fa fa-circle fa-stack-2x text-muted"></i>
-                                                    <i class="fa fa-clock fa-stack-1x text-white"></i>
-                                                </span>
-                                            }
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-semibold">تایید سرپرست</div>
-                                            @if (Model.SupervisorApprovedDate.HasValue) {
-                                                <div class="fs-xs text-muted">
-                                                    @ConvertDateTime.ConvertMiladiToShamsi(Model.SupervisorApprovedDate.Value, "yyyy/MM/dd")
-                                                </div>
-                                            } else if (Model.CompletionDate.HasValue && isSupervisor) {
-                                                <button type="button" class="btn btn-xs btn-info mt-1" 
-                                                        onclick="approveBySupervisor(@Model.Id)">
-                                                    <i class="fa fa-check me-1"></i>تایید
-                                                </button>
-                                            } else {
-                                                <div class="fs-xs text-muted">در انتظار</div>
-                                            }
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- تایید مدیر -->
-                                    <div class="list-group-item d-flex align-items-center px-0 border-0">
-                                        <div class="flex-shrink-0 me-3">
-                                            @if (Model.ManagerApprovedDate.HasValue) {
-                                                <span class="fa-stack fa-1x">
-                                                    <i class="fa fa-circle fa-stack-2x text-success"></i>
-                                                    <i class="fa fa-award fa-stack-1x text-white"></i>
-                                                </span>
-                                            } else {
-                                                <span class="fa-stack fa-1x">
-                                                    <i class="fa fa-circle fa-stack-2x text-muted"></i>
-                                                    <i class="fa fa-clock fa-stack-1x text-white"></i>
-                                                </span>
-                                            }
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-semibold">تایید مدیر</div>
-                                            @if (Model.ManagerApprovedDate.HasValue) {
-                                                <div class="fs-xs text-muted">
-                                                    @ConvertDateTime.ConvertMiladiToShamsi(Model.ManagerApprovedDate.Value, "yyyy/MM/dd")
-                                                </div>
-                                            } else if (Model.SupervisorApprovedDate.HasValue && isManager) {
-                                                <button type="button" class="btn btn-xs btn-success mt-1" 
-                                                        onclick="approveByManager(@Model.Id)">
-                                                    <i class="fa fa-check me-1"></i>تایید
-                                                </button>
-                                            } else {
-                                                <div class="fs-xs text-muted">در انتظار</div>
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    
-                    <!-- Progress Bar -->
-                    <div class="block block-rounded block-fx-shadow">
-                        <div class="block-header block-header-default">
-                            <h3 class="block-title">
-                                <i class="fa fa-chart-line text-primary me-2"></i>پیشرفت کار
-                            </h3>
-                        </div>
-                        <div class="block-content">
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="fw-semibold">درصد تکمیل</span>
-                                    <span class="fw-bold text-primary">@Model.ProgressPercentage%</span>
-                                </div>
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated @(Model.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
-                                         role="progressbar" 
-                                         style="width: @Model.ProgressPercentage%" 
-                                         aria-valuenow="@Model.ProgressPercentage" 
-                                         aria-valuemin="0" 
-                                         aria-valuemax="100">
-                                        @Model.ProgressPercentage%
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            @if (Model.DueDate.HasValue) {
-                                var remainingDays = (Model.DueDate.Value - DateTime.Now).Days;
-                                <div class="alert @(remainingDays < 0 ? "alert-danger" : remainingDays <= 3 ? "alert-warning" : "alert-info") mb-0">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fa @(remainingDays < 0 ? "fa-exclamation-triangle" : "fa-clock") fa-2x me-3"></i>
-                                        <div>
-                                            <div class="fw-bold">مهلت انجام</div>
-                                            <div class="fs-sm">
-                                                @ConvertDateTime.ConvertMiladiToShamsi(Model.DueDate.Value, "yyyy/MM/dd")
-                                                @if (!Model.CompletionDate.HasValue) {
-                                                    @if (remainingDays < 0) {
-                                                        <span class="badge bg-danger ms-1">@Math.Abs(remainingDays) روز تاخیر</span>
-                                                    } else if (remainingDays == 0) {
-                                                        <span class="badge bg-warning ms-1">امروز</span>
-                                                    } else if (remainingDays <= 3) {
-                                                        <span class="badge bg-warning ms-1">@remainingDays روز مانده</span>
-                                                    }
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
+                <div  id="sidebar-stats-container" class="col-lg-4">
+                    @await Html.PartialAsync("_TaskSidebarStats", Model)
+
                 </div>
             </div>
         </div>
@@ -1031,236 +775,46 @@
     </div>
 </div>
 
-        <!-- Tab 3: عملیات‌ها - نسخه نهایی با گروه‌بندی -->
+        <!-- Tab 3: عملیات‌ها -->
         <div class="tab-pane fade" id="tab-operations" role="tabpanel">
             <div class="block block-rounded block-fx-shadow">
-                <!-- ⭐ هدینگ بنفش با متن سفید -->
-               <div class="block-header bg-primary text-white">
-    <h3 class="block-title text-white mb-0">
-        <i class="fa fa-cogs me-2"></i>مدیریت عملیات تسک
-    </h3>
-    <div class="block-options">
-        @if ((isAssignedToCurrentUser || isCreator || isManager) && !Model.CompletionDate.HasValue)
-        {
-            <button type="button" class="btn btn-sm btn-light"
-                    onclick="$('#newOperationTitleInput').focus()">
-                <i class="fa fa-plus me-1"></i>افزودن سریع
-            </button>
-        }
-        else if (Model.CompletionDate.HasValue)
-        {
-            <span class="badge bg-light text-dark">
-                <i class="fa fa-lock me-1"></i>قفل شده
-            </span>
-        }
-    </div>
-</div>
+                <div class="block-header bg-primary text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-cogs me-2"></i>مدیریت عملیات تسک
+                    </h3>
+                    <div class="block-options">
+                        @if ((isAssignedToCurrentUser || isCreator || isManager) && !Model.CompletionDate.HasValue)
+                        {
+                            <button type="button" class="btn btn-sm btn-light"
+                                    onclick="$('#newOperationTitleInput').focus()">
+                                <i class="fa fa-plus me-1"></i>افزودن سریع
+                            </button>
+                        }
+                        else if (Model.CompletionDate.HasValue)
+                        {
+                            <span class="badge bg-light text-dark">
+                                <i class="fa fa-lock me-1"></i>قفل شده
+                            </span>
+                        }
+                    </div>
+                </div>
 
                 <div class="block-content">
-                    @if (Model.Operations == null || !Model.Operations.Any())
-                    {
-                        <!-- پیام خالی -->
-                        <div class="py-5 text-center text-muted">
-                            <i class="fa fa-tasks fa-4x opacity-25 mb-3"></i>
-                            <h5>هیچ عملیاتی تعریف نشده است</h5>
-                            @if (isAssignedToCurrentUser || isCreator || isManager)
-                            {
-                                <p class="mb-3">برای شروع، اولین عملیات را اضافه کنید</p>
-                                <div class="card border-primary mx-auto" style="max-width: 600px;">
-                                    <div class="card-body">
-                                        <div class="input-group">
-                                            <input class="form-control"
-                                                   id="newOperationTitleInput"
-                                                   placeholder="عنوان عملیات جدید..."
-                                                   type="text"
-                                                   autocomplete="off" />
-                                            <button class="btn btn-primary" type="button" id="addNewOperationBtn">
-                                                <i class="fa fa-plus me-1"></i>افزودن
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <!-- فرم افزودن عملیات جدید -->
-                      
-                            @if (!Model.CompletionDate.HasValue && (isAssignedToCurrentUser || isCreator || isManager))
-{
-                            <div class="card border-primary mb-4">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0 text-white">
-                                        <i class="fa fa-plus-circle me-1"></i>افزودن عملیات جدید
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="input-group input-group-lg">
-                                        <textarea class="form-control border-2"
-                                               id="newOperationTitleInput"
-                                               placeholder="عنوان عملیات جدید را وارد کنید و Enter بزنید..."
-                                               type="text"
-                                               rows="2"
-                                               autocomplete="off"
-                                               ></textarea>
-                                        <button class="btn btn-primary px-4" type="button" id="addNewOperationBtn">
-                                            <i class="fa fa-plus me-1"></i>افزودن
-                                        </button>
-                                    </div>
-                                    <small class="form-text text-muted mt-2">
-                                        <i class="fa fa-keyboard me-1"></i>برای افزودن سریع، Enter را فشار دهید
-                                    </small>
-                                </div>
-                            </div>
-                            }
-else if (isCompletedByMe)
-{
-    <div class="alert alert-info mb-4">
-        <i class="fa fa-info-circle me-2"></i>
-        <strong>توجه:</strong> این تسک تکمیل شده و امکان افزودن عملیات جدید وجود ندارد.
-    </div>
-}
-                        
 
-                        <!-- آمار عملیات -->
-                        <div class="row g-2 mb-4">
-                            <div class="col-6 col-md-3">
-                                <div class="p-3 bg-primary-light rounded-3 text-center">
-                                    <div class="fs-2 fw-bold text-primary" id="totalOpsCount">
-                                        @Model.Operations.Count()
-                                    </div>
-                                    <div class="fs-xs text-muted">کل عملیات</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="p-3 bg-success-light rounded-3 text-center">
-                                    <div class="fs-2 fw-bold text-success" id="completedOpsCount">
-                                        @Model.Operations.Count(o => o.IsCompleted)
-                                    </div>
-                                    <div class="fs-xs text-muted">تکمیل شده</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="p-3 bg-warning-light rounded-3 text-center">
-                                    <div class="fs-2 fw-bold text-warning" id="starredOpsCount">
-                                        @Model.Operations.Count(o => o.IsStarred)
-                                    </div>
-                                    <div class="fs-xs text-muted">ستاره‌دار</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="p-3 bg-info-light rounded-3 text-center">
-                                    <div class="fs-2 fw-bold text-info" id="withWorkLogCount">
-                                        @Model.Operations.Count(o => o.WorkLogs?.Any() == true)
-                                    </div>
-                                    <div class="fs-xs text-muted">با گزارش کار</div>
-                                </div>
-                            </div>
-                        </div>
+                    <div id="pending-operations-container">
 
-                        <!-- ⭐ لیست عملیات - با Placeholder برای ترتیب ثابت -->
-                        <div id="operationsList">
-                            @{
-                                var starredOps = Model.Operations.Where(o => o.IsStarred && !o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
-                                var pendingOps = Model.Operations.Where(o => !o.IsStarred && !o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
-                                var completedOps = Model.Operations.Where(o => o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
-                            }
-
-                            <!-- ⭐ Placeholder برای گروه ستاره‌دار -->
-                            <div id="starred-group-placeholder" data-order="1">
-                                @if (starredOps.Any())
-                                {
-                                    <div class="mb-4 operations-group" data-group="starred" id="starred-group">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="flex-shrink-0">
-                                                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
-                                                     style="width: 40px; height: 40px;">
-                                                    <i class="fa fa-star"></i>
+                        <partial name="/Areas/TaskingArea/Views/TaskOperations/_OperationListPartialView.cshtml" model="Model.Operations" />
                                                 </div>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <h6 class="mb-0 text-warning">
-                                                    <strong>عملیات ستاره‌دار</strong>
-                                                    <span class="badge bg-warning text-dark ms-2">@starredOps.Count</span>
-                                                </h6>
-                                                <small class="text-muted">عملیات‌های با اولویت بالا</small>
-                                            </div>
-                                        </div>
-                                        <div class="starred-operations" id="starred-operations-container">
-                                            @foreach (var operation in starredOps)
-                                            {
-                                                @await Html.PartialAsync("~/Areas/AdminArea/Views/TaskOperations/_OperationItem.cshtml", operation)
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                            </div>
 
-                            <!-- ⭐ Placeholder برای گروه در انتظار -->
-                            <div id="pending-group-placeholder" data-order="2">
-                                @if (pendingOps.Any())
-                                {
-                                    <div class="mb-4 operations-group" data-group="pending" id="pending-group">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="flex-shrink-0">
-                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                                                     style="width: 40px; height: 40px;">
-                                                    <i class="fa fa-clock"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <h6 class="mb-0 text-primary">
-                                                    <strong>در انتظار انجام</strong>
-                                                    <span class="badge bg-primary ms-2">@pendingOps.Count</span>
-                                                </h6>
-                                                <small class="text-muted">عملیات‌های در حال انجام</small>
-                                            </div>
-                                        </div>
-                                        <div class="pending-operations" id="pending-operations-container">
-                                            @foreach (var operation in pendingOps)
-                                            {
-                                                @await Html.PartialAsync("~/Areas/AdminArea/Views/TaskOperations/_OperationItem.cshtml", operation)
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                            </div>
 
-                            <!-- ⭐ Placeholder برای گروه تکمیل شده -->
-                            <div id="completed-group-placeholder" data-order="3">
-                                @if (completedOps.Any())
-                                {
-                                    <div class="mb-4 operations-group" data-group="completed" id="completed-group">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="flex-shrink-0">
-                                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center"
-                                                     style="width: 40px; height: 40px;">
-                                                    <i class="fa fa-check-circle"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <h6 class="mb-0 text-success">
-                                                    <strong>تکمیل شده</strong>
-                                                    <span class="badge bg-success ms-2">@completedOps.Count</span>
-                                                </h6>
-                                                <small class="text-muted">عملیات‌های به اتمام رسیده</small>
-                                            </div>
-                                        </div>
-                                        <div class="completed-operations" id="completed-operations-container">
-                                            @foreach (var operation in completedOps)
-                                            {
-                                                @await Html.PartialAsync("~/Areas/AdminArea/Views/TaskOperations/_OperationItem.cshtml", operation)
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
+                
+                
+                
                 </div>
             </div>
         </div>
+
+
         <!-- Tab 3: اعضای تسک -->
 <div class="tab-pane fade" id="tab-team" role="tabpanel">
     <div class="block block-rounded block-fx-shadow">
@@ -1371,11 +925,58 @@ else if (isCompletedByMe)
                                                             <div class="message-attachments mt-3 pt-3 border-top @(isMyMessage ? "border-white-25" : "")">
                                                                 @foreach (var attachment in comment.Attachments)
                                                                 {
-                                                                    <a href="@attachment.FilePath"
-                                                                       class="btn btn-sm @(isMyMessage ? "btn-light" : "btn-outline-primary") mb-1 me-1"
-                                                                       target="_blank">
-                                                                        <i class="fa fa-paperclip me-1"></i>
+                                                                    var extension = System.IO.Path.GetExtension(attachment.FileName)?.ToLower();
+                                                                    var iconClass = "fa-file";
+                                                                    var badgeClass = "secondary";
+
+                                                                    // تعیین آیکون بر اساس نوع فایل
+                                                                    if (new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" }.Contains(extension))
+                                                                    {
+                                                                        iconClass = "fa-file-image";
+                                                                        badgeClass = "success";
+                                                                    }
+                                                                    else if (extension == ".pdf")
+                                                                    {
+                                                                        iconClass = "fa-file-pdf";
+                                                                        badgeClass = "danger";
+                                                                    }
+                                                                    else if (new[] { ".doc", ".docx" }.Contains(extension))
+                                                                    {
+                                                                        iconClass = "fa-file-word";
+                                                                        badgeClass = "primary";
+                                                                    }
+                                                                    else if (new[] { ".xls", ".xlsx", ".csv" }.Contains(extension))
+                                                                    {
+                                                                        iconClass = "fa-file-excel";
+                                                                        badgeClass = "success";
+                                                                    }
+                                                                    else if (new[] { ".ppt", ".pptx" }.Contains(extension))
+                                                                    {
+                                                                        iconClass = "fa-file-powerpoint";
+                                                                        badgeClass = "warning";
+                                                                    }
+                                                                    else if (extension == ".txt")
+                                                                    {
+                                                                        iconClass = "fa-file-alt";
+                                                                        badgeClass = "info";
+                                                                    }
+                                                                    else if (new[] { ".zip", ".rar", ".7z" }.Contains(extension))
+                                                                    {
+                                                                        iconClass = "fa-file-archive";
+                                                                        badgeClass = "dark";
+                                                                    }
+
+                                                                    <a href="@Url.Action("DownloadAttachment", "Tasks", new { id = attachment.Id })"
+                                                                       class="btn btn-sm @(isMyMessage ? "btn-light" : $"btn-outline-{badgeClass}") mb-1 me-1"
+                                                                       download
+                                                                       title="دانلود @attachment.FileName">
+                                                                        <i class="fa @iconClass me-1"></i>
                                                                         @attachment.FileName
+                                                                        @if (attachment.FileSize != 0)
+                                                                        {
+                                                                            <small class="ms-1">(@((attachment.FileSize / 1024.0).ToString("F2")) KB)</small>
+                                                                        }
+                                                                        <i class="fa fa-download ms-1"></i>
                                                                     </a>
                                                                 }
                                                             </div>
@@ -1595,14 +1196,16 @@ else if (isCompletedByMe)
                  getTaskProgress: '@Url.Action("GetTaskProgress", "Tasks")',
                  getTaskSidebarStats: '@Url.Action("GetTaskSidebarStats", "Tasks")',
                  getTaskReminders: '@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })',
-                 getTaskHistory: '@Url.Action("GetTaskHistory", "Tasks", new { area = "AdminArea" })',
+                 getTaskHistory: '@Url.Action("GetTaskHistory", "Tasks", new { area = "TaskingArea" })',
                  approveTaskByManager: '@Url.Action("ApproveTaskByManager", "Tasks")',
-                 getOperationsGroup: '@Url.Action("GetOperationsGroup", "TaskOperations", new { area = "AdminArea" })',
-                 toggleOperationComplete: '@Url.Action("ToggleOperationComplete", "TaskOperations", new { area = "AdminArea" })',
-                 toggleOperationStar: '@Url.Action("ToggleOperationStar", "TaskOperations", new { area = "AdminArea" })',
-                 deleteOperation: '@Url.Action("DeleteOperation", "TaskOperations", new { area = "AdminArea" })',
-                 addOperation: '@Url.Action("AddOperation", "TaskOperations", new { area = "AdminArea" })',
-                 getAllOperations: '@Url.Action("GetAllOperations", "TaskOperations", new { area = "AdminArea" })'
+                 getOperationsGroup: '@Url.Action("GetOperationsGroup", "TaskOperations", new { area = "TaskingArea" })',
+                 toggleOperationComplete: '@Url.Action("ToggleOperationComplete", "TaskOperations", new { area = "TaskingArea" })',
+                 toggleOperationStar: '@Url.Action("ToggleOperationStar", "TaskOperations", new { area = "TaskingArea" })',
+                 deleteOperation: '@Url.Action("DeleteOperation", "TaskOperations", new { area = "TaskingArea" })',
+                 addOperation: '@Url.Action("AddOperation", "TaskOperations", new { area = "TaskingArea" })',
+                 getAllOperations: '@Url.Action("GetAllOperations", "TaskOperations", new { area = "TaskingArea" })',
+                refreshAllTaskStats: '@Url.Action("RefreshAllTaskStats", "Tasks", new { area = "TaskingArea" })'
+
              }
          };
 
@@ -1705,6 +1308,57 @@ else if (isCompletedByMe)
 
         .text-white-75 {
             color: rgba(255,255,255,0.75) !important;
+        }
+        /* File Attachment Styles */
+        .message-attachments .btn {
+            transition: all 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+            .message-attachments .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+
+            .message-attachments .btn .fa-download {
+                opacity: 0.7;
+                transition: opacity 0.2s;
+            }
+
+            .message-attachments .btn:hover .fa-download {
+                opacity: 1;
+            }
+
+        /* File Icons */
+        .fa-file-image {
+            color: #28a745;
+        }
+
+        .fa-file-pdf {
+            color: #dc3545;
+        }
+
+        .fa-file-word {
+            color: #2b579a;
+        }
+
+        .fa-file-excel {
+            color: #217346;
+        }
+
+        .fa-file-powerpoint {
+            color: #d24726;
+        }
+
+        .fa-file-alt {
+            color: #17a2b8;
+        }
+
+        .fa-file-archive {
+            color: #6c757d;
         }
     </style>
 }

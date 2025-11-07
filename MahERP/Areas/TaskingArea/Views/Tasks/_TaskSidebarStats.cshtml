@@ -1,0 +1,73 @@
+﻿@model TaskViewModel
+
+<!-- آمار سریع -->
+<div class="block block-rounded block-fx-shadow">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-chart-bar text-success me-2"></i>آمار
+        </h3>
+    </div>
+    <div class="block-content">
+        <div class="row g-2 text-center">
+            <div class="col-6">
+                <div class="p-3 bg-success-light rounded-3">
+                    <div class="fs-2 fw-bold text-success" id="sidebar-completed-ops">
+                        @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)
+                    </div>
+                    <div class="fs-xs text-muted">عملیات تکمیل</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-3 bg-warning-light rounded-3">
+                    <div class="fs-2 fw-bold text-warning" id="sidebar-pending-ops">
+                        @(Model.Operations?.Count(o => !o.IsCompleted) ?? 0)
+                    </div>
+                    <div class="fs-xs text-muted">در انتظار</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-3 bg-info-light rounded-3">
+                    <div class="fs-2 fw-bold text-info" id="sidebar-team-members">
+                        @(Model.AssignmentsTaskUser?.Count ?? 0)
+                    </div>
+                    <div class="fs-xs text-muted">اعضای تیم</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-3 bg-primary-light rounded-3">
+                    <div class="fs-2 fw-bold text-primary" id="sidebar-progress">
+                        @Model.ProgressPercentage%
+                    </div>
+                    <div class="fs-xs text-muted">پیشرفت</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Bar -->
+<div class="block block-rounded block-fx-shadow">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-chart-line text-primary me-2"></i>پیشرفت کار
+        </h3>
+    </div>
+    <div class="block-content">
+        <div class="mb-3">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="fw-semibold">درصد تکمیل</span>
+                <span class="fw-bold text-primary">@Model.ProgressPercentage%</span>
+            </div>
+            <div class="progress" style="height: 20px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated @(Model.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                     role="progressbar" 
+                     style="width: @Model.ProgressPercentage%" 
+                     aria-valuenow="@Model.ProgressPercentage" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                    @Model.ProgressPercentage%
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

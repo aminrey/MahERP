@@ -25,7 +25,7 @@ using System.Linq;
 
 namespace MahERP.Areas.AppCoreArea.Controllers
 {
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     [PermissionRequired("CORE.TEAM")]
 

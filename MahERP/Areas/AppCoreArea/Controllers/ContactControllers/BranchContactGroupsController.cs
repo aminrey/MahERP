@@ -24,7 +24,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
     /// <summary>
     /// کنترلر مدیریت گروه‌های افراد در سطح شعبه
     /// </summary>
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     public class BranchContactGroupsController : BaseController
     {

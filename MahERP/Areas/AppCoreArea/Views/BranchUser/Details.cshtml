@@ -1,19 +1,18 @@
-@model BranchUserViewModel
+﻿@model BranchUserViewModel
 @{
-    ViewData["Title"] = "?????? ????? ????";
+    ViewData["Title"] = "جزئیات کاربر شعبه";
 }
 
 <!-- Hero -->
 <div class="bg-image" style="background-image: url('/assets/media/photos/photo12.jpg');">
     <div class="bg-primary-dark-op">
         <div class="content content-full text-center py-6">
-            <h1 class="h2 text-white mb-2">?????? ????? ????</h1>
+            <h1 class="h2 text-white mb-2">جزئیات کاربر شعبه</h1>
             <h2 class="h4 fw-normal text-white-75 mb-0">@Model.UserFullName</h2>
         </div>
     </div>
 </div>
 <!-- END Hero -->
-
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <!-- Quick Actions -->
@@ -25,7 +24,7 @@
                         <i class="fa fa-pencil-alt text-primary"></i>
                     </div>
                     <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
-                        ??????
+                        ویرایش
                     </p>
                 </div>
             </a>
@@ -37,7 +36,7 @@
                         <i class="fa fa-trash-alt text-danger"></i>
                     </div>
                     <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
-                        ???
+                        حذف
                     </p>
                 </div>
             </a>
@@ -49,23 +48,22 @@
                         <i class="fa fa-list text-info"></i>
                     </div>
                     <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
-                        ???? ???????
+                        لیست کاربران
                     </p>
                 </div>
             </a>
         </div>
     </div>
     <!-- END Quick Actions -->
-
     <!-- User Information -->
     <div class="block block-rounded">
         <div class="block-header block-header-default">
             <h3 class="block-title">
-                <i class="fa fa-user text-muted me-1"></i> ??????? ?????
+                <i class="fa fa-user text-muted me-1"></i> اطلاعات کاربر
             </h3>
             <div class="block-options">
                 <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-sm btn-alt-primary">
-                    <i class="fa fa-pencil-alt me-1"></i> ??????
+                    <i class="fa fa-pencil-alt me-1"></i> ویرایش
                 </a>
             </div>
         </div>
@@ -73,13 +71,13 @@
             <div class="row">
                 <div class="col-sm-6">
                     <div class="mb-4">
-                        <label class="form-label">??? ?????</label>
+                        <label class="form-label">نام کاربر</label>
                         <div class="form-control-plaintext fw-semibold">@Model.UserFullName</div>
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="mb-4">
-                        <label class="form-label">????</label>
+                        <label class="form-label">شعبه</label>
                         <div class="form-control-plaintext">
                             <a href="@Url.Action("Details", "Branch", new { id = Model.BranchId })">@Model.BranchName</a>
                         </div>
@@ -89,21 +87,21 @@
             <div class="row">
                 <div class="col-sm-6">
                     <div class="mb-4">
-                        <label class="form-label">???</label>
+                        <label class="form-label">نقش</label>
                         <div class="form-control-plaintext">
                             @switch (Model.Role)
                             {
                                 case 0:
-                                    <span class="badge bg-info fs-6">???????</span>
+                                    <span class="badge bg-info fs-6">مشاهده‌گر</span>
                                     break;
                                 case 1:
-                                    <span class="badge bg-warning fs-6">????</span>
+                                    <span class="badge bg-warning fs-6">کارمند</span>
                                     break;
                                 case 2:
-                                    <span class="badge bg-success fs-6">????</span>
+                                    <span class="badge bg-success fs-6">مدیر</span>
                                     break;
                                 default:
-                                    <span class="badge bg-secondary fs-6">??????</span>
+                                    <span class="badge bg-secondary fs-6">نامشخص</span>
                                     break;
                             }
                         </div>
@@ -111,15 +109,15 @@
                 </div>
                 <div class="col-sm-6">
                     <div class="mb-4">
-                        <label class="form-label">?????</label>
+                        <label class="form-label">وضعیت</label>
                         <div class="form-control-plaintext">
                             @if (Model.IsActive)
                             {
-                                <span class="badge bg-success fs-6">????</span>
+                                <span class="badge bg-success fs-6">فعال</span>
                             }
                             else
                             {
-                                <span class="badge bg-danger fs-6">???????</span>
+                                <span class="badge bg-danger fs-6">غیرفعال</span>
                             }
                         </div>
                     </div>
@@ -128,7 +126,7 @@
             <div class="row">
                 <div class="col-sm-6">
                     <div class="mb-4">
-                        <label class="form-label">????? ??????</label>
+                        <label class="form-label">تاریخ تخصیص</label>
                         <div class="form-control-plaintext">
                             @ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd HH:mm")
                         </div>
@@ -136,15 +134,15 @@
                 </div>
                 <div class="col-sm-6">
                     <div class="mb-4">
-                        <label class="form-label">?????? ?????</label>
+                        <label class="form-label">تخصیص توسط</label>
                         <div class="form-control-plaintext">
                             @if (!string.IsNullOrEmpty(Model.AssignedByUserId))
                             {
-                                <span>????? ?????</span>
+                                <span>کاربر سیستم</span>
                             }
                             else
                             {
-                                <span class="text-muted">??????</span>
+                                <span class="text-muted">نامشخص</span>
                             }
                         </div>
                     </div>
@@ -153,12 +151,11 @@
         </div>
     </div>
     <!-- END User Information -->
-
     <!-- Role Description -->
     <div class="block block-rounded">
         <div class="block-header block-header-default">
             <h3 class="block-title">
-                <i class="fa fa-info-circle text-muted me-1"></i> ??????? ???
+                <i class="fa fa-info-circle text-muted me-1"></i> توضیحات نقش
             </h3>
         </div>
         <div class="block-content">
@@ -166,32 +163,32 @@
             {
                 case 0:
                     <div class="alert alert-info">
-                        <h5 class="alert-heading">???????</h5>
+                        <h5 class="alert-heading">مشاهده‌گر</h5>
                         <p class="mb-0">
-                            ????? ?? ??? ??????? ?????? ????? ?? ?????? ???? ???? ???? ? ???????? ?????? ?? ?????? ? ?????? ???.
+                            کاربر با نقش مشاهده‌گر تنها قادر به مشاهده اطلاعات شعبه و گزارش‌های مربوطه می‌باشد و امکان ایجاد یا ویرایش ندارد.
                         </p>
                     </div>
                     break;
                 case 1:
                     <div class="alert alert-warning">
-                        <h5 class="alert-heading">????</h5>
+                        <h5 class="alert-heading">کارمند</h5>
                         <p class="mb-0">
-                            ????? ?? ??? ???? ?????? ?? ????? ?? ?????? ???? ???? ? ???????? ???????? ?? ?????? ???.
+                            کاربر با نقش کارمند قادر به ثبت و ویرایش اطلاعات شعبه و گزارش‌های مربوطه می‌باشد اما دسترسی مدیریتی ندارد.
                         </p>
                     </div>
                     break;
                 case 2:
                     <div class="alert alert-success">
-                        <h5 class="alert-heading">????</h5>
+                        <h5 class="alert-heading">مدیر</h5>
                         <p class="mb-0">
-                            ????? ?? ??? ???? ?????? ???? ?? ?????? ???? ???? ? ???????? ??????? ?? ?????? ???.
+                            کاربر با نقش مدیر دارای تمام دسترسی‌ها به اطلاعات شعبه و گزارش‌های مربوطه و مدیریت کاربران می‌باشد.
                         </p>
                     </div>
                     break;
                 default:
                     <div class="alert alert-secondary">
-                        <h5 class="alert-heading">??? ??????</h5>
-                        <p class="mb-0">??? ??? ????? ?? ????? ????? ???? ???.</p>
+                        <h5 class="alert-heading">نقش نامشخص</h5>
+                        <p class="mb-0">نقش این کاربر به درستی تعیین نشده است.</p>
                     </div>
                     break;
             }

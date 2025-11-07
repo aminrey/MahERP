@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
@@ -683,5 +684,18 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 /// دریافت کامنت‌های یک تسک
 /// </summary>
 Task<List<TaskCommentViewModel>> GetTaskCommentsAsync(int taskId);
+        Task<TaskCommentAttachment?> GetCommentAttachmentByIdAsync(int attachmentId);
+
+
+     Task<TaskListViewModel> GetTaskListAsync(
+     string userId,
+     TaskViewType viewType,
+     TaskGroupingType grouping,
+     TaskFilterViewModel filters = null);
+        /// <summary>
+        /// دریافت ViewModel کارت تسک برای نمایش در لیست
+        /// </summary>
+        Task<TaskCardViewModel> GetTaskCardViewModelAsync(int taskId, string userId);
+
     }
 }

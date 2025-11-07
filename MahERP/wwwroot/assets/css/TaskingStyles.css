@@ -847,3 +847,78 @@
     opacity: 0.5;
     cursor: not-allowed !important;
 }
+/* استایل برای تب‌های گروه‌بندی */
+.group-filter-btn {
+    border: 2px solid #e4e7ed;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+    .group-filter-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .group-filter-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border-color: #667eea !important;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+        .group-filter-btn.active i {
+            color: white !important;
+        }
+/* افکت hover برای کارت */
+.task-card-block:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+    border-color: #4285f4 !important;
+}
+
+/* افکت hover برای عنوان */
+.block-content h4 a:hover {
+    color: #4285f4 !important;
+}
+
+/* انیمیشن حذف کارت */
+@keyframes slideOutAndFade {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: translateX(30px) scale(0.95);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(50px) scale(0.8);
+        height: 0;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* انیمیشن اضافه شدن کارت */
+@keyframes slideInAndGrow {
+    0% {
+        opacity: 0;
+        transform: translateX(-30px) scale(0.8);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.task-removing {
+    animation: slideOutAndFade 0.5s ease-out forwards;
+}
+
+.task-adding {
+    animation: slideInAndGrow 0.5s ease-out;
+}

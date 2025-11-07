@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
 {
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     public class ContactGroupsController : BaseController
     {

@@ -1,442 +1,130 @@
-﻿@model TaskIndexViewModel
+﻿@model MahERP.DataModelLayer.ViewModels.TaskListViewModel
 
 @{
-    ViewData["Title"] = "مدیریت تسک‌ها";
-    var filterCounts = ViewBag.FilterCounts as TaskFilterCountsViewModel;
+    ViewData["Title"] = "لیست تسک‌ها";
 }
 
-<!-- Hero Section - بنر مدرن -->
-<div class="hero-section position-relative overflow-hidden">
-    <!-- Background Image با Overlay -->
-    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100">
-        <img src="~/assets/media/photos/photo21.jpg" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
-
-        <!-- Gradient Overlay -->
-        <div class="bg-black-75 position-absolute top-0 start-0 w-100 h-100"></div>
-
-        <!-- Animated Pattern -->
-        <div class="hero-pattern position-absolute top-0 start-0 w-100 h-100">
-            <svg class="w-100 h-100 opacity-10" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <pattern id="hero-pattern-tasks" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                        <circle cx="30" cy="30" r="2" fill="currentColor" class="text-white" />
-                        <circle cx="0" cy="0" r="2" fill="currentColor" class="text-white" />
-                        <circle cx="60" cy="0" r="2" fill="currentColor" class="text-white" />
-                        <circle cx="0" cy="60" r="2" fill="currentColor" class="text-white" />
-                        <circle cx="60" cy="60" r="2" fill="currentColor" class="text-white" />
-                    </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#hero-pattern-tasks)" />
-            </svg>
-        </div>
-
-        <!-- Floating Shapes -->
-        <div class="hero-shapes">
-            <div class="shape shape-1"></div>
-            <div class="shape shape-2"></div>
-            <div class="shape shape-3"></div>
-        </div>
-    </div>
-
-    <div class="content content-full position-relative" style="z-index: 10;">
-        <div class="py-4">
-            <!-- Header Section -->
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <div class="d-flex align-items-start gap-3">
-                        <!-- Status Icon -->
-                        <div class="flex-shrink-0">
-                            <div class="hero-status-icon status-primary">
-                                <div class="icon-wrapper">
-                                    <i class="fa fa-tasks fa-2x"></i>
-                                </div>
-                                <div class="status-label">مدیریت</div>
-                            </div>
-                        </div>
-
-                        <!-- Title & Subtitle -->
-                        <div class="flex-grow-1">
-                            <div class="hero-title-wrapper">
-                                <h1 class="hero-title text-white mb-2">
-                                    <i class="fa fa-clipboard-list me-2"></i>مدیریت تسک‌ها
-                                </h1>
-                                <div class="hero-subtitle d-flex flex-wrap align-items-center gap-2">
-                                    <span class="badge badge-modern bg-white text-dark px-3 py-2 rounded-pill">
-                                        <i class="fa fa-list me-1"></i>
-                                        <span class="fw-bold">@Model.FilterResult.TotalCount</span>
-                                        <span class="ms-1">تسک</span>
-                                    </span>
-                                    <span class="text-white opacity-75 d-none d-md-inline">•</span>
-                                    <span class="text-white-75">نمایش و مدیریت تسک‌های سازمان</span>
-                                </div>
-                            </div>
-
-                            <!-- Quick Stats در بنر -->
-                            <div class="hero-stats mt-3">
-                                <div class="row g-2">
-                                    <div class="col-6 col-md-auto">
-                                        <div class="stat-card stat-card-sm">
-                                            <div class="stat-icon">
-                                                <i class="fa fa-chart-line"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <div class="stat-label">پیشرفت کلی</div>
-                                                <div class="stat-value">
-                                                    @if (Model.FilterResult.TotalCount > 0)
-                                                    {
-                                                        var completionRate = (int)((double)Model.Statistics.CompletedTasks / Model.FilterResult.TotalCount * 100);
-                                                        <span>@completionRate<span class="stat-unit">%</span></span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span>0<span class="stat-unit">%</span></span>
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-auto">
-                                        <div class="stat-card stat-card-sm">
-                                            <div class="stat-icon">
-                                                <i class="fa fa-check-circle"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <div class="stat-label">تکمیل شده</div>
-                                                <div class="stat-value">@Model.Statistics.CompletedTasks</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-auto">
-                                        <div class="stat-card stat-card-sm stat-warning">
-                                            <div class="stat-icon">
-                                                <i class="fa fa-clock"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <div class="stat-label">در حال انجام</div>
-                                                <div class="stat-value">@Model.Statistics.InProgressTasks</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-auto">
-                                        <div class="stat-card stat-card-sm stat-danger">
-                                            <div class="stat-icon">
-                                                <i class="fa fa-exclamation-triangle"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <div class="stat-label">عقب افتاده</div>
-                                                <div class="stat-value">@Model.Statistics.OverdueTasks</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                    <!-- Breadcrumb -->
-                    <nav class="mb-3" aria-label="breadcrumb">
-                        <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
-                            <li class="breadcrumb-item">
-                                <a asp-area="AdminArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
-                                    <i class="fa fa-home me-1"></i>داشبورد
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item">
-                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
-                                    تسک‌ها
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item active text-white">لیست تسک‌ها</li>
-                        </ol>
-                    </nav>
-                    <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
-                        <a asp-action="CreateNewTask" class="btn btn-hero btn-success btn-lg">
-                            <i class="fa fa-plus me-2"></i>
-                            <span>تسک جدید</span>
-                        </a>
-                        <a asp-action="TaskCalendar" class="btn btn-hero btn-light btn-lg">
-                            <i class="fa fa-calendar me-2"></i>
-                            <span class="d-none d-md-inline">تقویم</span>
-                        </a>
-                        <button type="button" 
-                                class="btn btn-hero btn-light btn-lg"
-                                data-bs-toggle="modal" 
-                                data-bs-target="#advancedFiltersModal">
-                            <i class="fa fa-filter me-2"></i>
-                            <span class="d-none d-md-inline">فیلترها</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Filter Buttons -->
 <div class="content">
+    <!-- ⭐ Header با آمار -->
     <div class="block block-rounded">
-        <div class="block-content p-0">
-            <div class="btn-group w-100 quick-filters" role="group">
-                <!-- همه تسک‌ها -->
-                <a href="@Url.Action("Index", new { filterType = QuickFilterType.AllVisible })" 
-                   class="btn btn-filter @(Model.CurrentFilter == QuickFilterType.AllVisible ? "active" : "")"
-                   data-filter="@((int)QuickFilterType.AllVisible)">
-                    <div class="filter-content">
-                        <i class="fa fa-list text-primary"></i>
-                        <span class="filter-title">همه تسک‌ها</span>
-                        <span class="badge bg-primary">@Model.FilterCounts.AllVisibleCount</span>
-                    </div>
-                </a>
-
-                <!-- تسک‌های من -->
-                <a href="@Url.Action("Index", new { filterType = QuickFilterType.MyAssigned })" 
-                   class="btn btn-filter @(Model.CurrentFilter == QuickFilterType.MyAssigned ? "active" : "")"
-                   data-filter="@((int)QuickFilterType.MyAssigned)">
-                    <div class="filter-content">
-                        <i class="fa fa-inbox text-success"></i>
-                        <span class="filter-title">تسک‌های من</span>
-                        <span class="badge bg-success">@Model.FilterCounts.MyAssignedCount</span>
-                    </div>
-                </a>
-
-                <!-- واگذار شده به دیگران -->
-                <a href="@Url.Action("Index", new { filterType = QuickFilterType.AssignedByMe })" 
-                   class="btn btn-filter @(Model.CurrentFilter == QuickFilterType.AssignedByMe ? "active" : "")"
-                   data-filter="@((int)QuickFilterType.AssignedByMe)">
-                    <div class="filter-content">
-                        <i class="fa fa-share text-info"></i>
-                        <span class="filter-title">واگذار شده</span>
-                        <span class="badge bg-info">@Model.FilterCounts.AssignedByMeCount</span>
-                    </div>
-                </a>
-
-                <!-- تسک‌های تیم -->
-                <a href="@Url.Action("Index", new { filterType = QuickFilterType.MyTeams })" 
-                   class="btn btn-filter @(Model.CurrentFilter == QuickFilterType.MyTeams ? "active" : "")"
-                   data-filter="@((int)QuickFilterType.MyTeams)">
-                    <div class="filter-content">
-                        <i class="fa fa-users text-warning"></i>
-                        <span class="filter-title">تسک‌های تیم</span>
-                        <span class="badge bg-warning">@Model.FilterCounts.MyTeamsCount</span>
-                    </div>
-                </a>
-
-                <!-- تسک‌های نظارتی -->
-                <a href="@Url.Action("Index", new { filterType = QuickFilterType.Supervised })" 
-                   class="btn btn-filter @(Model.CurrentFilter == QuickFilterType.Supervised ? "active" : "")"
-                   data-filter="@((int)QuickFilterType.Supervised)">
-                    <div class="filter-content">
-                        <i class="fa fa-eye text-danger"></i>
-                        <span class="filter-title">نظارتی</span>
-                        <span class="badge bg-danger">@Model.FilterCounts.SupervisedCount</span>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Tasks Content -->
-<div class="content">
-    <div class="block block-rounded">
-        <div class="block-header block-header-default" id="tasks-header">
+        <div class="block-header block-header-default">
             <h3 class="block-title">
                 <i class="fa fa-tasks me-1"></i>
-                <span id="filter-name">@Model.FilterResult.FilterName</span>
-                <small class="text-muted ms-2">(<span id="total-count">@Model.FilterResult.TotalCount</span> تسک)</small>
+                مدیریت تسک‌ها
             </h3>
             <div class="block-options">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="expandAllGroups()">
-                    <i class="fa fa-expand me-1"></i> باز کردن همه
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="collapseAllGroups()">
-                    <i class="fa fa-compress me-1"></i> بستن همه
-                </button>
+                <a asp-action="CreateNewTask" class="btn btn-sm btn-alt-primary">
+                    <i class="fa fa-plus me-1"></i>تسک جدید
+                </a>
             </div>
         </div>
         
-        <div class="block-content" id="tasks-container">
-            @if (Model.FilterResult.TotalCount > 0)
-            {
-                @await Html.PartialAsync("_TasksGroupedPartial", Model)
-            }
-            else
-            {
-                <div class="text-center py-5">
-                    <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">تسکی یافت نشد</h5>
-                    <p class="text-muted">در این بخش هیچ تسکی وجود ندارد</p>
+        <!-- ⭐⭐⭐ آمار سریع -->
+        <div class="block-content">
+            <div class="row g-sm">
+                <div class="col-6 col-md-3">
+                    <div class="p-3 bg-body-light rounded text-center">
+                        <div class="fs-3 fw-semibold text-primary">@Model.Stats.TotalPending</div>
+                        <div class="text-muted">در حال انجام</div>
+                    </div>
                 </div>
-            }
+                <div class="col-6 col-md-3">
+                    <div class="p-3 bg-body-light rounded text-center">
+                        <div class="fs-3 fw-semibold text-success">@Model.Stats.TotalCompleted</div>
+                        <div class="text-muted">تکمیل شده</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 bg-body-light rounded text-center">
+                        <div class="fs-3 fw-semibold text-danger">@Model.Stats.TotalOverdue</div>
+                        <div class="text-muted">عقب افتاده</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 bg-body-light rounded text-center">
+                        <div class="fs-3 fw-semibold text-warning">@Model.Stats.TotalUrgent</div>
+                        <div class="text-muted">فوری</div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <!-- ⭐⭐⭐ تب‌های اصلی -->
+    <div class="block block-rounded">
+        <ul class="nav nav-tabs nav-tabs-block" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link @(Model.CurrentViewType == TaskViewType.MyTasks ? "active" : "")" 
+                        onclick="changeViewType(@((int)TaskViewType.MyTasks))">
+                    <i class="fa fa-user me-1"></i>تسک‌های من
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(Model.CurrentViewType == TaskViewType.AssignedByMe ? "active" : "")" 
+                        onclick="changeViewType(@((int)TaskViewType.AssignedByMe))">
+                    <i class="fa fa-share-square me-1"></i>واگذار شده
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(Model.CurrentViewType == TaskViewType.Supervised ? "active" : "")" 
+                        onclick="changeViewType(@((int)TaskViewType.Supervised))">
+                    <i class="fa fa-eye me-1"></i>نظارتی
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- ⭐⭐⭐ دکمه‌های گروه‌بندی -->
+    <!-- ⭐⭐⭐ دکمه‌های گروه‌بندی -->
+    <div class="block block-rounded">
+        <div class="block-content">
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Team ? "btn-primary" : "btn-alt-secondary")"
+                        data-grouping="@((int)TaskGroupingType.Team)"
+                        onclick="changeGrouping(@((int)TaskGroupingType.Team))">
+                    <i class="fa fa-users me-1"></i>تیم
+                </button>
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Creator ? "btn-primary" : "btn-alt-secondary")"
+                        data-grouping="@((int)TaskGroupingType.Creator)"
+                        onclick="changeGrouping(@((int)TaskGroupingType.Creator))">
+                    <i class="fa fa-user-tie me-1"></i>سازنده
+                </button>
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.CreateDate ? "btn-primary" : "btn-alt-secondary")"
+                        data-grouping="@((int)TaskGroupingType.CreateDate)"
+                        onclick="changeGrouping(@((int)TaskGroupingType.CreateDate))">
+                    <i class="fa fa-calendar-plus me-1"></i>زمان ساخت
+                </button>
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.DueDate ? "btn-primary" : "btn-alt-secondary")"
+                        data-grouping="@((int)TaskGroupingType.DueDate)"
+                        onclick="changeGrouping(@((int)TaskGroupingType.DueDate))">
+                    <i class="fa fa-calendar-check me-1"></i>زمان پایان
+                </button>
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Priority ? "btn-primary" : "btn-alt-secondary")"
+                        data-grouping="@((int)TaskGroupingType.Priority)"
+                        onclick="changeGrouping(@((int)TaskGroupingType.Priority))">
+                    <i class="fa fa-flag me-1"></i>اولویت
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⭐⭐⭐ لیست گروه‌ها -->
+    <div id="task-groups-container">
+        @await Html.PartialAsync("_TaskListGroupsPartial", Model)
     </div>
 </div>
 
 @section Scripts {
+    <script src="~/assets/js/TaskList.js"></script>
     <script>
-        $(document).ready(function() {
-            initializeTaskFilters();
-        });
-
-        function initializeTaskFilters() {
-            // Initialize tooltips
-            $('[data-bs-toggle="tooltip"]').tooltip();
-
-            // AJAX filter change
-            $('.btn-filter').on('click', function(e) {
-                e.preventDefault();
-                var filterType = $(this).data('filter');
-                loadFilteredTasks(filterType);
-            });
-        }
-
-        function loadFilteredTasks(filterType) {
-            $('#tasks-container').html('<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>');
-
-            $.ajax({
-                url: '@Url.Action("GetFilteredTasks")',
-                type: 'GET',
-                data: { filterType: filterType },
-                success: function(response) {
-                    // ⭐⭐⭐ بررسی نوع response
-                    if (typeof response === 'object' && response.html && response.filterName && response.totalCount !== undefined) {
-                        // اگر JSON برگشت
-                        $('#tasks-container').html(response.html);
-                        $('#filter-name').text(response.filterName);
-                        $('#total-count').text(response.totalCount);
-
-                        // بروزرسانی badge های فیلترها
-                        if (response.filterCounts) {
-                            $('[data-count-type="all"]').text(response.filterCounts.allVisibleCount);
-                            $('[data-count-type="myAssigned"]').text(response.filterCounts.myAssignedCount);
-                            $('[data-count-type="assignedByMe"]').text(response.filterCounts.assignedByMeCount);
-                            $('[data-count-type="myTeams"]').text(response.filterCounts.myTeamsCount);
-                            $('[data-count-type="supervised"]').text(response.filterCounts.supervisedCount);
-                        }
-                    } else {
-                        // اگر HTML ساده برگشت
-                        $('#tasks-container').html(response);
-                    }
-
-                    // Update active button
-                    $('.btn-filter').removeClass('active');
-                    $(`.btn-filter[data-filter="${filterType}"]`).addClass('active');
-                },
-                error: function() {
-                    $('#tasks-container').html('<div class="alert alert-danger">خطا در بارگذاری تسک‌ها</div>');
-                }
-            });
-        }
-
-        function expandAllGroups() {
-            $('.collapse').collapse('show');
-            $('.team-toggle, .person-toggle').removeClass('collapsed');
-        }
-
-        function collapseAllGroups() {
-            $('.collapse').collapse('hide');
-            $('.team-toggle, .person-toggle').addClass('collapsed');
-        }
-
-        function toggleTeam(teamId) {
-            $(`#team-${teamId}`).collapse('toggle');
-        }
-
-        function togglePerson(teamId, personId) {
-            $(`#person-${teamId}-${personId}`).collapse('toggle');
-        }
+        window.TaskListConfig = {
+            currentViewType: @((int)Model.CurrentViewType),
+            currentGrouping: @((int)Model.CurrentGrouping),
+            urls: {
+                changeGrouping: '@Url.Action("ChangeGrouping", "Tasks")',
+                toggleComplete: '@Url.Action("ToggleTaskComplete", "Tasks")',
+                deleteTask: '@Url.Action("Delete", "Tasks")'
+            }
+        };
     </script>
-}
-@section Styles {
-    <style>
-        /* Quick Filter Buttons */
-        .quick-filters {
-            display: flex;
-            overflow-x: auto;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .btn-filter {
-            flex: 1;
-            min-width: 150px;
-            padding: 1rem 0.5rem;
-            border: none;
-            border-bottom: 3px solid transparent;
-            background: white;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: #333;
-        }
-
-        .btn-filter:hover {
-            background: #f8f9fa;
-            border-bottom-color: #dee2e6;
-        }
-
-        .btn-filter.active {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-
-        .btn-filter.active[data-filter="0"] {
-            border-bottom-color: #0d6efd;
-        }
-
-        .btn-filter.active[data-filter="1"] {
-            border-bottom-color: #198754;
-        }
-
-        .btn-filter.active[data-filter="2"] {
-            border-bottom-color: #0dcaf0;
-        }
-
-        .btn-filter.active[data-filter="3"] {
-            border-bottom-color: #ffc107;
-        }
-
-        .btn-filter.active[data-filter="4"] {
-            border-bottom-color: #dc3545;
-        }
-
-        .filter-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .filter-content i {
-            font-size: 1.5rem;
-        }
-
-        .filter-title {
-            font-size: 0.9rem;
-        }
-
-        .filter-content .badge {
-            font-size: 0.9rem;
-            padding: 0.35rem 0.65rem;
-        }
-
-        /* Responsive */
-        @@media (max-width: 768px) {
-            .btn-filter {
-                min-width: 120px;
-                padding: 0.75rem 0.25rem;
-            }
-
-            .filter-content i {
-                font-size: 1.25rem;
-            }
-
-            .filter-title {
-                font-size: 0.8rem;
-            }
-        }
-
-    </style>
 }

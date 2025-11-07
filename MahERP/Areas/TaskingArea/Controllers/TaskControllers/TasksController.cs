@@ -9,9 +9,9 @@ using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
-using MahERP.DataModelLayer.Repository.TaskRepository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
+using MahERP.DataModelLayer.ViewModels;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
@@ -24,6 +24,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 using TaskWorkLogViewModel = MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.TaskWorkLogViewModel;
 
@@ -44,7 +45,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         private readonly TaskNotificationService _taskNotificationService;
         private readonly TaskCodeGenerator _taskCodeGenerator;
         protected readonly IUserManagerRepository _userRepository;
-        private readonly ITaskFilterRepository _taskFilterRepository; // اضافه کردن dependency
         private readonly ITaskHistoryRepository _taskHistoryRepository;
         private readonly ITaskVisibilityRepository _TaskVisibilityRepository;
 
@@ -64,7 +64,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             TaskCodeGenerator taskCodeGenerator,
             IUserManagerRepository userRepository, IBaseRepository BaseRepository,
             ITaskVisibilityRepository taskVisibilityRepository,
-            ITaskFilterRepository taskFilterRepository,ITaskHistoryRepository taskHistoryRepository, ModuleTrackingBackgroundService moduleTracking)
+            ITaskHistoryRepository taskHistoryRepository, ModuleTrackingBackgroundService moduleTracking)
 
 
  : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
@@ -78,7 +78,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _taskNotificationService = taskNotificationService;
             _taskCodeGenerator = taskCodeGenerator;
             _userRepository = userRepository;
-            _taskFilterRepository = taskFilterRepository;
             _taskHistoryRepository = taskHistoryRepository;
             _TaskVisibilityRepository = taskVisibilityRepository;
 
@@ -107,36 +106,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
-        /// <summary>
-        /// تسک‌هایی که کاربر به دیگران واگذار کرده
-        /// </summary>
-        //[Permission("Tasks", "AssignedByMe", 0)]
-        public async Task<IActionResult> AssignedByMe(TaskFilterViewModel filters = null)
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-
-                if (filters == null)
-                    filters = new TaskFilterViewModel { ViewType = TaskViewType.AssignedByMe };
-
-                // ⭐ تغییر به TaskFilterRepository
-                var model = await _taskFilterRepository.GetAssignedByMeTasksAsync(userId);
-
-                ViewBag.Title = "تسک‌های واگذار شده توسط من";
-                ViewBag.IsAssignedByMe = true;
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "AssignedByMe", "مشاهده تسک‌های واگذار شده");
-
-                return View("Index", model);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "AssignedByMe", "خطا در دریافت تسک‌های واگذار شده", ex);
-                return RedirectToAction("ErrorView", "Home");
-            }
-        }
+        
         /// <summary>
         /// تسک‌هایی که کاربر ناظر آن‌هاست
         /// </summary>
@@ -285,194 +255,76 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
         }
 
-        public async Task<IActionResult> Index(TaskFilterViewModel filters = null)
+        /// <summary>
+        /// صفحه اصلی لیست تسک‌ها - نسخه جدید
+        /// </summary>
+        public async Task<IActionResult> Index(
+            TaskViewType viewType = TaskViewType.MyTasks,
+            TaskGroupingType grouping = TaskGroupingType.Team)
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
 
-                if (filters == null)
-                {
-                    filters = new TaskFilterViewModel();
-                }
-                if (filters.StatusFilters == null || !filters.StatusFilters.Any())
-                    filters.StatusFilters = new List<byte> { 0, 1 };
-                // ⭐⭐⭐ بررسی TaskViewType از query string
-                if (!string.IsNullOrEmpty(Request.Query["viewType"]))
-                {
-                    // تبدیل string به enum
-                    if (Enum.TryParse<TaskViewType>(Request.Query["viewType"], out var viewType))
-                    {
-                        filters.ViewType = viewType;
-                    }
-                    else
-                    {
-                        // اگر مقدار نامعتبر بود، از DataAccessLevel استفاده کن
-                        var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
-                        filters.ViewType = dataAccessLevel switch
-                        {
-                            0 => TaskViewType.MyTasks,
-                            1 => TaskViewType.AllTasks,
-                            2 => TaskViewType.AllTasks,
-                            _ => TaskViewType.MyTasks
-                        };
-                    }
-                }
-                else
-                {
-                    // اگر TaskViewType ارسال نشده، از DataAccessLevel استفاده کن
-                    var dataAccessLevel = this.GetUserDataAccessLevel("Tasks", "Index");
-                    filters.ViewType = dataAccessLevel switch
-                    {
-                        0 => TaskViewType.MyTasks,
-                        1 => TaskViewType.AllTasks,
-                        2 => TaskViewType.AllTasks,
-                        _ => TaskViewType.MyTasks
-                    };
-                }
+                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping);
 
-                ViewBag.currentUserId = GetUserId();
-                var model = await _taskFilterRepository.GetTasksForIndexAsync(userId, filters);
-
-                // بررسی اینکه آیا FilterCounts null است
-                if (model.FilterCounts == null)
-                {
-                    Console.WriteLine("⚠️ FilterCounts is NULL! Re-calculating...");
-                    model.FilterCounts = await _taskFilterRepository.GetAllFilterCountsAsync(userId);
-                }
+                ViewBag.CurrentViewType = viewType;
+                ViewBag.CurrentGrouping = grouping;
+                ViewBag.UserId = userId;
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "Index",
-                    $"مشاهده لیست تسک‌ها - نوع: {filters.ViewType}");
-
-                ViewBag.FilterCounts = model.FilterCounts;
+                    $"مشاهده لیست تسک‌ها - نمایش: {viewType}, گروه‌بندی: {grouping}");
 
                 return View(model);
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("Tasks", "Index", "خطا در دریافت لیست تسک‌ها", ex);
-                Console.WriteLine($"❌ Exception in TasksController.Index: {ex.Message}\n{ex.StackTrace}");
                 return RedirectToAction("ErrorView", "Home");
             }
         }
-        // در قسمت AJAX Actions، بعد از GetCalendarEvents
-
 
         /// <summary>
-        /// دریافت تسک‌های فیلتر شده برای Quick Filters - اصلاح شده
+        /// تغییر گروه‌بندی - AJAX
         /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> GetFilteredTasks(int filterType)
+        [HttpPost]
+        public async Task<IActionResult> ChangeGrouping(TaskViewType viewType, TaskGroupingType grouping)
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
 
-                // ⭐⭐⭐ ساخت TaskFilterViewModel بر اساس filterType
-                var filters = new TaskFilterViewModel
-                {
-                    ViewType = (QuickFilterType)filterType switch
-                    {
-                        QuickFilterType.AllVisible => TaskViewType.AllTasks,
-                        QuickFilterType.MyAssigned => TaskViewType.MyTasks,
-                        QuickFilterType.AssignedByMe => TaskViewType.AssignedByMe,
-                        QuickFilterType.MyTeams => TaskViewType.MyTeamsHierarchy,
-                        QuickFilterType.Supervised => TaskViewType.SupervisedTasks,
-                        _ => TaskViewType.AllTasks
-                    },
-                    StatusFilters = new List<byte> { 0, 1 } // فقط در حال انجام
-                };
+                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping);
 
-                // ⭐⭐⭐ استفاده از GetTasksForIndexAsync - مشابه Index
-                var model = await _taskFilterRepository.GetTasksForIndexAsync(userId, filters);
+                var html = await this.RenderViewToStringAsync("_TaskListGroupsPartial", model);
 
-                // ⭐⭐⭐ بررسی FilterCounts
-                if (model.FilterCounts == null)
-                {
-                    Console.WriteLine("⚠️ FilterCounts is NULL in GetFilteredTasks! Re-calculating...");
-                    model.FilterCounts = await _taskFilterRepository.GetAllFilterCountsAsync(userId);
-                }
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "GetFilteredTasks",
-                    $"دریافت تسک‌های فیلتر شده - نوع: {(QuickFilterType)filterType}");
-
-                // ⭐⭐⭐ رندر Partial View با مدل کامل
-                var partialHtml = await this.RenderViewToStringAsync("_TasksGroupedPartial", model);
-
-                // ⭐⭐⭐ برگرداندن JSON با HTML و اطلاعات اضافی
                 return Json(new
                 {
-                    success = true,
-                    html = partialHtml,
-                    filterName = filters.ViewType.ToString(),
-                    totalCount = model.Tasks?.Count ?? 0,
-                    filterCounts = new
+                    status = "update-view",
+                    viewList = new[]
                     {
-                        allVisibleCount = model.FilterCounts.AllVisibleCount,
-                        myAssignedCount = model.FilterCounts.MyAssignedCount,
-                        assignedByMeCount = model.FilterCounts.AssignedByMeCount,
-                        myTeamsCount = model.FilterCounts.MyTeamsCount,
-                        supervisedCount = model.FilterCounts.SupervisedCount
+                new
+                {
+                    elementId = "task-groups-container",
+                    view = new { result = html }
+                }
+            },
+                    stats = new
+                    {
+                        pending = model.Stats.TotalPending,
+                        completed = model.Stats.TotalCompleted,
+                        overdue = model.Stats.TotalOverdue
                     }
                 });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "GetFilteredTasks",
-                    "خطا در دریافت تسک‌های فیلتر شده", ex);
-
-                // ⭐⭐⭐ در صورت خطا، یک مدل خالی برگردان
-                var emptyModel = new TaskIndexViewModel
-                {
-                    UserLoginid = _userManager.GetUserId(User),
-                    Filters = new TaskFilterViewModel(),
-                    Tasks = new List<TaskViewModel>(),
-                    PendingTasks = new List<TaskViewModel>(),
-                    CompletedTasks = new List<TaskViewModel>(),
-                    FilterCounts = new TaskFilterCountsViewModel()
-                };
-
-                var errorHtml = await this.RenderViewToStringAsync("_TasksGroupedPartial", emptyModel);
-
-                return Json(new
-                {
-                    success = false,
-                    html = errorHtml,
-                    message = "خطا در دریافت تسک‌ها"
-                });
+                return Json(new { status = "error", message = "خطا در تغییر گروه‌بندی" });
             }
         }
-        /// <summary>
-        /// دریافت تعداد فیلترها برای Quick Filters (AJAX)
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> GetFilterCounts()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                var counts = await _taskFilterRepository.GetAllFilterCountsAsync(userId);
 
-                return Json(new
-                {
-                    success = true,
-                    allVisibleCount = counts.AllVisibleCount,
-                    myAssignedCount = counts.MyAssignedCount,
-                    assignedByMeCount = counts.AssignedByMeCount,
-                    myTeamsCount = counts.MyTeamsCount,
-                    supervisedCount = counts.SupervisedCount
-                });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "GetFilterCounts",
-                    "خطا در دریافت تعداد فیلترها", ex);
 
-                return Json(new { success = false, message = "خطا در دریافت تعداد فیلترها" });
-            }
-        }
         /// <summary>
         /// GET: ایجاد تسک جدید
         /// </summary>
@@ -534,11 +386,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 }
 
                 var viewModel = _mapper.Map<TaskViewModel>(task);
-                viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations);
-                viewModel.AssignmentsTaskUser = _mapper.Map<List<TaskAssignmentViewModel>>(task.TaskAssignments);
 
-                // ⭐⭐⭐ اضافه کردن Comments به ViewModel
-                viewModel.Comments = _mapper.Map<List<TaskCommentViewModel>>(task.TaskComments);
 
                 // علامت‌گذاری نوتیفیکیشن‌ها به عنوان خوانده شده
                 var currentUserId = _userManager.GetUserId(User);
@@ -564,6 +412,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 ViewBag.IsAdmin = isAdmin;
                 ViewBag.IsManager = isManager;
                 ViewBag.IsSupervisor = isSupervisor;
+                viewModel.SetUserContext(currentUserId, isAdmin, isManager, isSupervisor);
 
                 await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
 
@@ -584,44 +433,28 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
-
-        /// <summary>
-        /// نمایش مودال تکمیل تسک
-        /// </summary>
         [HttpGet]
-        public async Task<IActionResult> CompleteTask(int id)
+        public async Task<IActionResult> CompleteTask(int id, bool fromList = false)
         {
             try
             {
-                var userId = _userManager.GetUserId(User);
+                var task = await _taskRepository.GetTaskByIdAsync(id);
+                if (task == null)
+                    return NotFound();
 
-                // دریافت اطلاعات تسک و آماده‌سازی مودال
+                var userId = _userManager.GetUserId(User);
+             
                 var model = await _taskRepository.PrepareCompleteTaskModalAsync(id, userId);
 
-                if (model == null)
-                {
-                    return Json(new
-                    {
-                        status = "error",
-                        message = new[] { new { status = "error", text = "تسک یافت نشد یا شما به آن دسترسی ندارید" } }
-                    });
-                }
+                model.FromList = fromList;
 
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "CompleteTask",
-                    $"نمایش مودال تکمیل تسک {model.TaskCode}",
-                    recordId: id.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
 
-                return PartialView("_CompleteTaskModal", model);
+        return PartialView("_CompleteTask", model);
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "CompleteTask", "خطا در نمایش مودال تکمیل", ex);
-                return Json(new
-                {
-                    status = "error",
-                    message = new[] { new { status = "error", text = "خطا در بارگذاری مودال" } }
-                });
+                await _activityLogger.LogErrorAsync("Tasks", "CompleteTask", "خطا در نمایش فرم تکمیل", ex);
+                return BadRequest();
             }
         }
 
@@ -683,12 +516,27 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     $"تکمیل تسک {model.TaskCode} - {model.TaskTitle} و غیرفعال کردن یادآوری‌ها",
                     recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
 
-                // ✅ بازگرداندن response با redirect
+                // ⭐⭐⭐ اگر از لیست اومده، فقط موفقیت برگردون
+                if (model.FromList)
+                {
+                    // دریافت کارت جدید تکمیل شده
+                    var updatedTask = await _taskRepository.GetTaskCardViewModelAsync(model.TaskId, userId);
+
+                    return Json(new
+                    {
+                        status = "success-from-list",
+                        message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد" } },
+                        taskId = model.TaskId,
+                        taskCard = await this.RenderViewToStringAsync("_TaskCardPartial", updatedTask)
+                    });
+                }
+
+                // ✅ بازگرداندن response با redirect (برای صفحه جزئیات)
                 return Json(new
                 {
                     status = "redirect",
                     message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد و یادآوری‌ها غیرفعال شدند" } },
-                    redirectUrl = Url.Action("Details", "Tasks", new { id = model.TaskId, area = "AdminArea" })
+                    redirectUrl = Url.Action("Details", "Tasks", new { id = model.TaskId, area = "TaskingArea" })
                 });
             }
             catch (Exception ex)
@@ -3224,7 +3072,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                             // ایجاد رکورد پیوست
                             var attachment = new TaskCommentAttachment
                             {
-                                CommentId = comment.Id,
+                                TaskCommentId = comment.Id,
                                 FileName = file.FileName,
                                 FilePath = $"/uploads/task-comments/{model.TaskId}/{uniqueFileName}",
                                 FileExtension = Path.GetExtension(file.FileName),
@@ -3350,7 +3198,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 // حذف فایل‌های پیوست
                 var attachments = _uow.TaskCommentAttachmentUW
-                    .Get(a => a.CommentId == id).ToList();
+                    .Get(a => a.TaskCommentId == id).ToList();
 
                 foreach (var attachment in attachments)
                 {
@@ -3392,6 +3240,237 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return Json(new { success = false, message = "خطا در حذف پیام" });
             }
         }
+
+        /// <summary>
+        /// دانلود فایل پیوست شده به کامنت تسک
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> DownloadAttachment(int id)
+        {
+            try
+            {
+                // ⭐ استفاده از Repository به جای دسترسی مستقیم به DbContext
+                var attachment = await _taskRepository.GetCommentAttachmentByIdAsync(id);
+
+                if (attachment == null)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "Tasks",
+                        "DownloadAttachment",
+                        $"تلاش برای دانلود فایل غیرموجود با ID: {id}");
+
+                    return NotFound(new { success = false, message = "فایل یافت نشد" });
+                }
+
+                // بررسی دسترسی کاربر به تسک
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                // ⭐ استفاده از متد Repository برای بررسی دسترسی
+                var hasAccess = await _taskRepository.CanUserViewTaskAsync(currentUserId, attachment.Comment.TaskId);
+                var isCreator = attachment.Comment.Task.CreatorUserId == currentUserId;
+                var isAdmin = User.IsInRole("Admin");
+
+                if (!hasAccess && !isCreator && !isAdmin)
+                {
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.View,
+                        "Tasks",
+                        "DownloadAttachment",
+                        $"تلاش ناموفق برای دانلود فایل {attachment.FileName} - عدم دسترسی",
+                        recordId: attachment.Comment.TaskId.ToString());
+
+                    return Forbid();
+                }
+
+                // بررسی وجود فایل فیزیکی
+                var filePath = Path.Combine(_webHostEnvironment.WebRootPath, attachment.FilePath.TrimStart('/'));
+
+                if (!System.IO.File.Exists(filePath))
+                {
+                    await _activityLogger.LogErrorAsync(
+                        "Tasks",
+                        "DownloadAttachment",
+                        $"فایل در مسیر {filePath} یافت نشد",
+                        null,
+                        recordId: id.ToString());
+
+                    return NotFound(new { success = false, message = "فایل در سرور یافت نشد" });
+                }
+
+                // خواندن فایل
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                var contentType = GetContentType(attachment.FileName);
+
+                // ⭐ ثبت لاگ دانلود موفق
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Tasks",
+                    "DownloadAttachment",
+                    $"دانلود فایل {attachment.FileName} از تسک {attachment.Comment.Task.TaskCode}",
+                    recordId: attachment.Comment.TaskId.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: attachment.Comment.Task.Title);
+
+                // تنظیم هدرهای دانلود
+                Response.Headers.Add("Content-Disposition",
+                    $"attachment; filename=\"{Uri.EscapeDataString(attachment.FileName)}\"");
+
+                return File(fileBytes, contentType, attachment.FileName);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Tasks",
+                    "DownloadAttachment",
+                    $"خطا در دانلود فایل با ID: {id}",
+                    ex,
+                    recordId: id.ToString());
+
+                return StatusCode(500, new { success = false, message = "خطا در دانلود فایل" });
+            }
+        }
+
+        /// <summary>
+        /// تعیین Content-Type بر اساس پسوند فایل
+        /// </summary>
+        private string GetContentType(string fileName)
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            return extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls" => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".ppt" => "application/vnd.ms-powerpoint",
+                ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                ".txt" => "text/plain",
+                ".csv" => "text/csv",
+                ".zip" => "application/zip",
+                ".rar" => "application/x-rar-compressed",
+                ".7z" => "application/x-7z-compressed",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".bmp" => "image/bmp",
+                ".webp" => "image/webp",
+                _ => "application/octet-stream"
+            };
+        }
         #endregion
+
+        /// <summary>
+        /// دریافت آمار بروز شده Hero Section
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetTaskHeroStatsPartial(int taskId)
+        {
+            try
+            {
+                var task = _taskRepository.GetTaskById(
+                    taskId,
+                    includeOperations: true,
+                    includeAssignments: true);
+
+                if (task == null)
+                    return Json(new { success = false, message = "تسک یافت نشد" });
+
+                var viewModel = _mapper.Map<TaskViewModel>(task);
+
+                // رندر Partial View
+                var html = await this.RenderViewToStringAsync("_TaskHeroStats", viewModel);
+
+                return Json(new { success = true, html = html });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetTaskHeroStatsPartial", "خطا در دریافت آمار", ex);
+                return Json(new { success = false, message = "خطا در دریافت آمار" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت آمار بروز شده Sidebar
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetTaskSidebarStatsPartial(int taskId)
+        {
+            try
+            {
+                var task = _taskRepository.GetTaskById(
+                    taskId,
+                    includeOperations: true,
+                    includeAssignments: true);
+
+                if (task == null)
+                    return Json(new { success = false, message = "تسک یافت نشد" });
+
+                var viewModel = _mapper.Map<TaskViewModel>(task);
+
+                // رندر Partial View
+                var html = await this.RenderViewToStringAsync("_TaskSidebarStats", viewModel);
+
+                return Json(new { success = true, html = html });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetTaskSidebarStatsPartial", "خطا در دریافت آمار Sidebar", ex);
+                return Json(new { success = false, message = "خطا در دریافت آمار" });
+            }
+        }
+
+        /// <summary>
+        /// ⭐ بروزرسانی تمام آمارها با یک درخواست
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> RefreshAllTaskStats(int taskId)
+        {
+            try
+            {
+                var task = _taskRepository.GetTaskById(
+                    taskId,
+                    includeOperations: true,
+                    includeAssignments: true);
+
+                if (task == null)
+                    return Json(new { success = false, message = "تسک یافت نشد" });
+
+                var viewModel = _mapper.Map<TaskViewModel>(task);
+
+                // رندر تمام Partial View ها
+                var heroHtml = await this.RenderViewToStringAsync("_TaskHeroStats", viewModel);
+                var sidebarHtml = await this.RenderViewToStringAsync("_TaskSidebarStats", viewModel);
+
+                return Json(new
+                {
+                    success = true,
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "hero-stats-container",
+                    view = new { result = heroHtml }
+                },
+                new
+                {
+                    elementId = "sidebar-stats-container",
+                    view = new { result = sidebarHtml }
+                }
+            },
+                    // ⭐ اطلاعات اضافی برای Badge
+                    totalOperations = viewModel.Operations?.Count ?? 0,
+                    completedOperations = viewModel.Operations?.Count(o => o.IsCompleted) ?? 0
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "RefreshAllTaskStats", "خطا در بروزرسانی آمار", ex);
+                return Json(new { success = false, message = "خطا در بروزرسانی آمار" });
+            }
+        }
     }
 }

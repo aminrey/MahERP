@@ -36,5 +36,6 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// آیا تسک قبلاً تکمیل شده است؟
         /// </summary>
         public bool IsAlreadyCompleted { get; set; }
+        public bool FromList { get; set; }
     }
 }

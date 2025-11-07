@@ -1,7 +1,11 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.ExtendedProperties;
+using DocumentFormat.OpenXml.Office2021.DocumentTasks;
+using MahERP.Areas.AppCoreArea.Controllers.BaseControllers;
 using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Extensions; 
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
@@ -28,6 +32,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         private readonly ActivityLoggerService _activityLogger;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _context;
+        private readonly ITaskVisibilityRepository _taskVisibilityRepository;
 
         public TaskOperationsController(
             ITaskOperationsRepository operationsRepository,
@@ -35,6 +40,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             UserManager<AppUsers> userManager,
             ActivityLoggerService activityLogger,
             IUnitOfWork context,
+            ITaskVisibilityRepository TaskVisibilityRepository,
             IMapper mapper)
         {
             _operationsRepository = operationsRepository;
@@ -43,15 +49,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _activityLogger = activityLogger;
             _mapper = mapper;
             _context = context;
+            _taskVisibilityRepository = TaskVisibilityRepository;
         }
 
         #region Toggle Actions (AJAX)
-
         /// <summary>
         /// تغییر وضعیت ستاره عملیات (AJAX)
         /// </summary>
         [HttpPost]
-
         public async Task<IActionResult> ToggleOperationStar(int id)
         {
             try
@@ -61,19 +66,73 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 if (result.Success)
                 {
+                    // ⭐ دریافت taskId از عملیات
+                    var operation = await _operationsRepository.GetOperationByIdAsync(id);
+                    var taskId = operation.TaskId;
+
+                    // ⭐ دریافت تسک بروز شده
+                    var task = _taskRepository.GetTaskById(taskId, includeOperations: true, includeAssignments: true);
+                    var isAdmin = User.IsInRole("Admin");
+                    bool isManager = false;
+                    bool isSupervisor = false;
+
+                    if (task.TeamId.HasValue)
+                    {
+                        isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                        isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
+                    }
+
+                    var viewModel = _mapper.Map<TaskViewModel>(task);
+                    viewModel.SetUserContext(userId, isAdmin, isManager, isSupervisor);
+
+                    var viewbags = new
+                    {
+                        Task = viewModel,
+                        IsSupervisor = isSupervisor,
+                        IsManager = isManager,
+                        IsAdmin = isAdmin
+                    };
+
+                    // ⭐ رندر آمارها و لیست عملیات بروز شده
+                    var heroHtml = await this.RenderViewToStringAsync("../Tasks/_TaskHeroStats", viewModel);
+                    var sidebarHtml = await this.RenderViewToStringAsync("../Tasks/_TaskSidebarStats", viewModel);
+                    var operationHtml = await this.RenderViewToStringAsync("_OperationListPartialView",
+                        _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations), viewbags);
+
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Update,
                         "TaskOperations",
                         "ToggleOperationStar",
                         $"تغییر وضعیت ستاره عملیات {id}",
                         recordId: id.ToString());
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = result.Message,
+                        status = "update-view",
+                        viewList = new object[]
+                        {
+                            new
+                            {
+                                elementId = "hero-stats-container",
+                                view = new { result = heroHtml }
+                            },
+                            new
+                            {
+                                elementId = "sidebar-stats-container",
+                                view = new { result = sidebarHtml }
+                            },
+                            new
+                            {
+                                elementId = "pending-operations-container",
+                                view = new { result = operationHtml }
+                            }
+                        }
+                    });
                 }
 
-                return Json(new
-                {
-                    success = result.Success,
-                    message = result.Message
-                });
+                return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
             {
@@ -105,34 +164,78 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 if (result.Success)
                 {
+                    // ⭐ دریافت taskId از عملیات
+                    var operation = await _operationsRepository.GetOperationByIdAsync(id);
+                    var taskId = operation.TaskId;
+
+                    // ⭐ دریافت تسک بروز شده
+                    var updatedTask = _taskRepository.GetTaskById(taskId, includeOperations: true, includeAssignments: true);
+                    var isAdmin = User.IsInRole("Admin");
+                    bool isManager = false;
+                    bool isSupervisor = false;
+
+                    if (updatedTask.TeamId.HasValue)
+                    {
+                        isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, updatedTask.TeamId.Value);
+                        isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, updatedTask);
+                    }
+
+                    var viewModel = _mapper.Map<TaskViewModel>(updatedTask);
+                    viewModel.SetUserContext(userId, isAdmin, isManager, isSupervisor);
+
+                    var viewbags = new
+                    {
+                        Task = viewModel,
+                        IsSupervisor = isSupervisor,
+                        IsManager = isManager,
+                        IsAdmin = isAdmin
+                    };
+
+                    // ⭐ رندر آمارها
+                    var heroHtml = await this.RenderViewToStringAsync("../Tasks/_TaskHeroStats", viewModel);
+                    var sidebarHtml = await this.RenderViewToStringAsync("../Tasks/_TaskSidebarStats", viewModel);
+                    var operationHtml = await this.RenderViewToStringAsync("_OperationListPartialView",
+                        _mapper.Map<List<TaskOperationViewModel>>(updatedTask.TaskOperations), viewbags);
+
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Update,
                         "TaskOperations",
                         "ToggleOperationComplete",
                         $"تغییر وضعیت تکمیل عملیات {id}",
                         recordId: id.ToString());
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = result.Message,
+                        status = "update-view",
+                        viewList = new object[]
+                        {
+                            new
+                            {
+                                elementId = "hero-stats-container",
+                                view = new { result = heroHtml }
+                            },
+                            new
+                            {
+                                elementId = "sidebar-stats-container",
+                                view = new { result = sidebarHtml }
+                            },
+                            new
+                            {
+                                elementId = "pending-operations-container",
+                                view = new { result = operationHtml }
+                            }
+                        }
+                    });
                 }
 
-                return Json(new
-                {
-                    success = result.Success,
-                    message = result.Message
-                });
+                return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync(
-                    "TaskOperations",
-                    "ToggleOperationComplete",
-                    "خطا در تغییر وضعیت تکمیل",
-                    ex,
-                    recordId: id.ToString());
-
-                return Json(new
-                {
-                    success = false,
-                    message = "خطا در تغییر وضعیت تکمیل"
-                });
+                await _activityLogger.LogErrorAsync("TaskOperations", "ToggleOperationComplete", "خطا", ex, recordId: id.ToString());
+                return Json(new { success = false, message = "خطا در تغییر وضعیت تکمیل" });
             }
         }
 
@@ -406,23 +509,57 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         recordId: result.WorkLogId?.ToString(),
                         entityType: "TaskOperationWorkLog");
 
+                    // ⭐ دریافت operation و taskId
+                    var operation = await _operationsRepository.GetOperationByIdAsync(model.TaskOperationId);
+                    var taskId = operation.TaskId;
+
+                    // ⭐ دریافت تسک بروز شده
+                    var task = _taskRepository.GetTaskById(taskId, includeOperations: true, includeAssignments: true);
+                    var isAdmin = User.IsInRole("Admin");
+                    bool isManager = false;
+                    bool isSupervisor = false;
+
+                    if (task.TeamId.HasValue)
+                    {
+                        isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                        isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
+                    }
+
+                    var viewModel = _mapper.Map<TaskViewModel>(task);
+                    viewModel.SetUserContext(userId, isAdmin, isManager, isSupervisor);
+
+                    var viewbags = new
+                    {
+                        Task = viewModel,
+                        IsSupervisor = isSupervisor,
+                        IsManager = isManager,
+                        IsAdmin = isAdmin
+                    };
+
                     // ⭐ دریافت لیست آپدیت شده WorkLog ها
                     var updatedWorkLogs = await _operationsRepository.GetOperationWorkLogsAsync(model.TaskOperationId, take: 5);
 
-                    // ⭐ رندر Partial View برای لیست جدید
+                    // ⭐ رندر Partial Views
                     var workLogsHtml = await this.RenderViewToStringAsync("_WorkLogsList", updatedWorkLogs);
+                    var operationHtml = await this.RenderViewToStringAsync("_OperationListPartialView", 
+                        _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations), viewbags);
 
                     return Json(new
                     {
                         status = "update-view",
                         message = new[] { new { status = "success", text = "گزارش کار با موفقیت ثبت شد" } },
-                        viewList = new[]
+                        viewList = new object[]
                         {
                             new
                             {
                                 elementId = "workLogsListContainer",
                                 view = new { result = workLogsHtml },
                                 appendMode = false
+                            },
+                            new
+                            {
+                                elementId = "pending-operations-container",
+                                view = new { result = operationHtml }
                             }
                         },
                         workLogId = result.WorkLogId,
@@ -590,10 +727,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         #endregion
 
         #region Add & Delete Operation Actions
-
-        /// <summary>
-        /// افزودن عملیات جدید به تسک (AJAX)
-        /// </summary>
         [HttpPost]
         public async Task<IActionResult> AddOperation(int taskId, string title)
         {
@@ -601,42 +734,26 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             {
                 if (string.IsNullOrWhiteSpace(title))
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "عنوان عملیات الزامی است"
-                    });
+                    return Json(new { success = false, message = "عنوان عملیات الزامی است" });
                 }
 
                 var userId = _userManager.GetUserId(User);
 
-                // بررسی دسترسی کاربر به تسک
                 if (!_taskRepository.IsUserRelatedToTask(userId, taskId))
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "شما مجاز به انجام این عملیات نیستید"
-                    });
+                    return Json(new { success = false, message = "شما مجاز به انجام این عملیات نیستید" });
                 }
 
-                // دریافت تسک
-                var task =  _taskRepository.GetTaskById(taskId,true);
+                var task = _taskRepository.GetTaskById(taskId, true);
                 if (task == null)
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "تسک یافت نشد"
-                    });
+                    return Json(new { success = false, message = "تسک یافت نشد" });
                 }
 
-                // تعیین ترتیب جدید
                 var maxOrder = task.TaskOperations?.Any() == true
                     ? task.TaskOperations.Max(o => o.OperationOrder)
                     : 0;
 
-                // ایجاد عملیات جدید
                 var newOperation = new TaskOperation
                 {
                     TaskId = taskId,
@@ -648,7 +765,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     IsDeleted = false
                 };
 
-                // ذخیره در دیتابیس
                 _operationsRepository.AddTaskOperation(newOperation);
                 await _operationsRepository.SaveChangesAsync();
 
@@ -660,29 +776,85 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     recordId: newOperation.Id.ToString(),
                     entityType: "TaskOperation");
 
+                // ⭐ دریافت تسک بروز شده
+                var updatedTask = _taskRepository.GetTaskById(
+                    taskId,
+                    includeOperations: true,
+                    includeAssignments: true);
+                var isAdmin = User.IsInRole("Admin");
+                bool isManager = false;
+                if (task.TeamId.HasValue)
+                {
+                    isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                }
+
+                // Check if user is supervisor
+                bool isSupervisor = false;
+                if (task.TeamId.HasValue)
+                {
+                    isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
+                }
+
+                // Pass these to the ViewBag or ViewModel
+                ViewBag.IsAdmin = isAdmin;
+                ViewBag.IsManager = isManager;
+                ViewBag.IsSupervisor = isSupervisor;
+                var viewModel = _mapper.Map<TaskViewModel>(updatedTask);
+
+                viewModel.SetUserContext(userId, isAdmin, isManager, isSupervisor);
+
+                var viewbags = new
+                {
+                    Task = viewModel,
+                    IsSupervisor = isSupervisor,
+                    IsManager = isManager,
+                    IsAdmin = isAdmin
+
+                };
+                // ⭐⭐⭐ رندر تمام Partial View ها
+                var heroHtml = await this.RenderViewToStringAsync("../Tasks/_TaskHeroStats", viewModel);
+                var sidebarHtml = await this.RenderViewToStringAsync("../Tasks/_TaskSidebarStats", viewModel);
+
+                // ⭐ رندر عملیات جدید
+                var operationHtml = await this.RenderViewToStringAsync("_OperationListPartialView", _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations) , viewbags);
+
                 return Json(new
                 {
                     success = true,
                     message = "عملیات با موفقیت اضافه شد",
-                    operationId = newOperation.Id
+                    operationId = newOperation.Id,
+                    status = "update-view",
+                    viewList = new object[]
+                    {
+                // ⭐ آمار Hero
+                new
+                {
+                    elementId = "hero-stats-container",
+                    view = new { result = heroHtml }
+                },
+                // ⭐ آمار Sidebar
+                new
+                {
+                    elementId = "sidebar-stats-container",
+                    view = new { result = sidebarHtml }
+                },
+             
+                // ⭐ عملیات جدید
+                new
+                {
+                    elementId = "pending-operations-container",
+                    view = new { result = operationHtml },
+                }
+                    },
+                    totalOperations = viewModel.Operations?.Count ?? 0
                 });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync(
-                    "TaskOperations",
-                    "AddOperation",
-                    "خطا در افزودن عملیات",
-                    ex);
-
-                return Json(new
-                {
-                    success = false,
-                    message = "خطا در افزودن عملیات"
-                });
+                await _activityLogger.LogErrorAsync("TaskOperations", "AddOperation", "خطا در افزودن عملیات", ex);
+                return Json(new { success = false, message = "خطا در افزودن عملیات: " + ex.Message });
             }
         }
-
         /// <summary>
         /// حذف عملیات (AJAX)
         /// </summary>
@@ -713,13 +885,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
+                var taskId = operation.TaskId;
+
                 // Soft Delete
                 operation.IsDeleted = true;
                 operation.DeleteDate = DateTime.Now;
 
                 _context.TaskOperationUW.Update(operation);
                 _context.Save();
-               
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.Delete,
@@ -728,10 +901,58 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     $"حذف عملیات: {operation.Title}",
                     recordId: id.ToString());
 
+                // ⭐ دریافت تسک بروز شده
+                var task = _taskRepository.GetTaskById(taskId, includeOperations: true, includeAssignments: true);
+                var isAdmin = User.IsInRole("Admin");
+                bool isManager = false;
+                bool isSupervisor = false;
+
+                if (task.TeamId.HasValue)
+                {
+                    isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                    isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
+                }
+
+                var viewModel = _mapper.Map<TaskViewModel>(task);
+                viewModel.SetUserContext(userId, isAdmin, isManager, isSupervisor);
+
+                var viewbags = new
+                {
+                    Task = viewModel,
+                    IsSupervisor = isSupervisor,
+                    IsManager = isManager,
+                    IsAdmin = isAdmin
+                };
+
+                // ⭐⭐⭐ رندر تمام Partial View ها
+                var heroHtml = await this.RenderViewToStringAsync("../Tasks/_TaskHeroStats", viewModel);
+                var sidebarHtml = await this.RenderViewToStringAsync("../Tasks/_TaskSidebarStats", viewModel);
+                var operationHtml = await this.RenderViewToStringAsync("_OperationListPartialView",
+                    _mapper.Map<List<TaskOperationViewModel>>(viewModel.Operations), viewbags);
+
                 return Json(new
                 {
                     success = true,
-                    message = "عملیات با موفقیت حذف شد"
+                    message = "عملیات با موفقیت حذف شد",
+                    status = "update-view",
+                    viewList = new object[]
+                    {
+                        new
+                        {
+                            elementId = "hero-stats-container",
+                            view = new { result = heroHtml }
+                        },
+                        new
+                        {
+                            elementId = "sidebar-stats-container",
+                            view = new { result = sidebarHtml }
+                        },
+                        new
+                        {
+                            elementId = "pending-operations-container",
+                            view = new { result = operationHtml }
+                        }
+                    }
                 });
             }
             catch (Exception ex)
@@ -750,7 +971,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 });
             }
         }
-
         #endregion
 
 

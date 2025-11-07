@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 
 namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
 {
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     [PermissionRequired("ORG")]
     public class OrganizationsController : BaseController

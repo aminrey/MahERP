@@ -1,0 +1,171 @@
+﻿@model List<TaskOperationViewModel>
+@{
+    TaskViewModel task = ViewBag.Task ;
+    DateTime? CompletionDate = task?.CompletionDate;
+
+}
+<div id="operationsList">
+	                    @if (Model == null || !Model.Any())
+                    {
+                        <!-- پیام خالی -->
+                        <div class="py-5 text-center text-muted">
+                            <i class="fa fa-tasks fa-4x opacity-25 mb-3"></i>
+                            <h5>هیچ عملیاتی تعریف نشده است</h5>
+            @if (task.IsAssignedToCurrentUser || task.IsCreator || task.IsManager)
+                            {
+                                <p class="mb-3">برای شروع، اولین عملیات را اضافه کنید</p>
+                                <div class="card border-primary mx-auto" style="max-width: 600px;">
+                                    <div class="card-body">
+                                        <div class="input-group">
+                                            <input class="form-control"
+                                                   id="newOperationTitleInput"
+                                                   placeholder="عنوان عملیات جدید..."
+                                                   type="text"
+                                                   autocomplete="off" />
+                                            <button class="btn btn-primary" type="button" id="addNewOperationBtn">
+                                                <i class="fa fa-plus me-1"></i>افزودن
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- فرم افزودن عملیات جدید -->
+        @if (!CompletionDate.HasValue && (task.IsAssignedToCurrentUser || task.IsCreator || task.IsManager))
+                        {
+                            <div class="card border-primary mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0 text-white">
+                                        <i class="fa fa-plus-circle me-1"></i>افزودن عملیات جدید
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="input-group input-group-lg">
+                                        <textarea class="form-control border-2"
+                                          id="newOperationTitleInput"
+                                          placeholder="عنوان عملیات جدید را وارد کنید و Enter بزنید..."
+                                          rows="2"
+                                          autocomplete="off"></textarea>
+                                        <button class="btn btn-primary px-4" type="button" id="addNewOperationBtn">
+                                            <i class="fa fa-plus me-1"></i>افزودن
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted mt-2">
+                                        <i class="fa fa-keyboard me-1"></i>برای افزودن سریع، Enter را فشار دهید
+                                    </small>
+                                </div>
+                            </div>
+                        }
+        else if (task.IsCompletedByMe)
+                        {
+                            <div class="alert alert-info mb-4">
+                                <i class="fa fa-info-circle me-2"></i>
+                                <strong>توجه:</strong> این تسک تکمیل شده و امکان افزودن عملیات جدید وجود ندارد.
+                            </div>
+                        }
+
+               
+
+                        <!-- لیست عملیات -->
+                        <div id="operationsList">
+                            @{
+                                var starredOps = Model.Where(o => o.IsStarred && !o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
+                var pendingOps = Model.Where(o => !o.IsStarred && !o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
+                var completedOps = Model.Where(o => o.IsCompleted).OrderBy(o => o.OperationOrder).ToList();
+                            }
+
+                            <!-- Placeholders برای گروه‌ها -->
+                            <div id="starred-group-placeholder" data-order="1">
+                                @if (starredOps.Any())
+                                {
+                                    <div class="mb-4 operations-group" data-group="starred" id="starred-group">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fa fa-star"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-0 text-warning">
+                                                    <strong>عملیات ستاره‌دار</strong>
+                                                    <span class="badge bg-warning text-dark ms-2">@starredOps.Count</span>
+                                                </h6>
+                                                <small class="text-muted">عملیات‌های با اولویت بالا</small>
+                                            </div>
+                                        </div>
+                                        <div class="starred-operations" id="starred-operations-container">
+                                            @foreach (var operation in starredOps)
+                                            {
+                                                @await Html.PartialAsync("~/Areas/TaskingArea/Views/TaskOperations/_OperationItem.cshtml", operation)
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div id="pending-group-placeholder" data-order="2">
+                                @if (pendingOps.Any())
+                                {
+                                    <div class="mb-4 operations-group" data-group="pending" id="pending-group">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fa fa-clock"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-0 text-primary">
+                                                    <strong>در انتظار انجام</strong>
+                                                    <span class="badge bg-primary ms-2">@pendingOps.Count</span>
+                                                </h6>
+                                                <small class="text-muted">عملیات‌های در حال انجام</small>
+                                            </div>
+                                        </div>
+                                        <div class="pending-operations" id="pending-operations-container">
+                                            @foreach (var operation in pendingOps)
+                                            {
+                                                @await Html.PartialAsync("~/Areas/TaskingArea/Views/TaskOperations/_OperationItem.cshtml", operation)
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div id="completed-group-placeholder" data-order="3">
+                                @if (completedOps.Any())
+                                {
+                                    <div class="mb-4 operations-group" data-group="completed" id="completed-group">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fa fa-check-circle"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-0 text-success">
+                                                    <strong>تکمیل شده</strong>
+                                                    <span class="badge bg-success ms-2">@completedOps.Count</span>
+                                                </h6>
+                                                <small class="text-muted">عملیات‌های به اتمام رسیده</small>
+                                            </div>
+                                        </div>
+                                        <div class="completed-operations" id="completed-operations-container">
+                                            @foreach (var operation in completedOps)
+                                            {
+                                                @await Html.PartialAsync("~/Areas/TaskingArea/Views/TaskOperations/_OperationItem.cshtml", operation)
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+         
+
+                                            </div>

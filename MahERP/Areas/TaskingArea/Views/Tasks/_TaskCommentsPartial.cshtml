@@ -38,20 +38,64 @@
                             <div class="message-attachments mt-3 pt-3 border-top @(isMyMessage ? "border-white-25" : "")">
                                 @foreach (var attachment in comment.Attachments)
                                 {
-                                    <a href="@attachment.FilePath"
-                                       class="btn btn-sm @(isMyMessage ? "btn-light" : "btn-outline-primary") mb-1 me-1"
-                                       target="_blank"
+                                    var extension = System.IO.Path.GetExtension(attachment.FileName)?.ToLower();
+                                    var iconClass = "fa-file";
+                                    var badgeClass = "secondary";
+
+                                    // تعیین آیکون بر اساس نوع فایل
+                                    if (new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" }.Contains(extension))
+                                    {
+                                        iconClass = "fa-file-image";
+                                        badgeClass = "success";
+                                    }
+                                    else if (extension == ".pdf")
+                                    {
+                                        iconClass = "fa-file-pdf";
+                                        badgeClass = "danger";
+                                    }
+                                    else if (new[] { ".doc", ".docx" }.Contains(extension))
+                                    {
+                                        iconClass = "fa-file-word";
+                                        badgeClass = "primary";
+                                    }
+                                    else if (new[] { ".xls", ".xlsx", ".csv" }.Contains(extension))
+                                    {
+                                        iconClass = "fa-file-excel";
+                                        badgeClass = "success";
+                                    }
+                                    else if (new[] { ".ppt", ".pptx" }.Contains(extension))
+                                    {
+                                        iconClass = "fa-file-powerpoint";
+                                        badgeClass = "warning";
+                                    }
+                                    else if (extension == ".txt")
+                                    {
+                                        iconClass = "fa-file-alt";
+                                        badgeClass = "info";
+                                    }
+                                    else if (new[] { ".zip", ".rar", ".7z" }.Contains(extension))
+                                    {
+                                        iconClass = "fa-file-archive";
+                                        badgeClass = "dark";
+                                    }
+
+                                    <a href="@Url.Action("DownloadAttachment", "Tasks", new { id = attachment.Id })"
+                                       class="btn btn-sm @(isMyMessage ? "btn-light" : $"btn-outline-{badgeClass}") mb-1 me-1"
+                                       download
                                        title="دانلود @attachment.FileName">
-                                        <i class="fa fa-paperclip me-1"></i>
+                                        <i class="fa @iconClass me-1"></i>
                                         @attachment.FileName
                                         @if (attachment.FileSize != 0)
                                         {
-                                            <small class="ms-1">(@attachment.FileSize)</small>
+                                            <small class="ms-1">(@((attachment.FileSize / 1024.0).ToString("F2")) KB)</small>
                                         }
+                                        <i class="fa fa-download ms-1"></i>
                                     </a>
                                 }
                             </div>
                         }
+
+
 
                         <!-- Badges -->
                         @if (comment.IsImportant || comment.IsEdited)

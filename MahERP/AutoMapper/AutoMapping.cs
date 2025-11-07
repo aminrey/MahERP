@@ -125,40 +125,38 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.TaskList, opt => opt.Ignore());
 
             // Tasks mapping
+            // Mapping Task به TaskViewModel
             CreateMap<Tasks, TaskViewModel>()
-                  .ForMember(dest => dest.SelectedContactId, opt => opt.MapFrom(src => src.ContactId))
-    .ForMember(dest => dest.SelectedOrganizationId, opt => opt.MapFrom(src => src.OrganizationId))
-    .ForMember(dest => dest.ContactFullName, opt => opt.MapFrom(src =>
-        src.Contact != null ? $"{src.Contact.FirstName} {src.Contact.LastName}" : null))
-    .ForMember(dest => dest.OrganizationName, opt => opt.MapFrom(src =>
-        src.Organization != null ? src.Organization.DisplayName : null))
-                .ForMember(dest => dest.CategoryTitle, opt => opt.MapFrom(src => src.TaskCategory != null ? src.TaskCategory.Title : null))
-                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
-  .ForMember(dest => dest.StakeholderName,
-        opt => opt.Ignore()) // ⭐ این فیلد در Repository محاسبه می‌شود
-                             .ForMember(dest => dest.ContractTitle, opt => opt.MapFrom(src => src.Contract != null ? src.Contract.Title : null))
-                .ForMember(dest => dest.Operations, opt => opt.Ignore())
-                .ForMember(dest => dest.AssignmentsTaskUser, opt => opt.Ignore())
-                .ForMember(dest => dest.Attachments, opt => opt.Ignore());
-
+                .ForMember(dest => dest.Operations, opt => opt.MapFrom(src =>
+                    src.TaskOperations != null ? src.TaskOperations.Where(o => !o.IsDeleted).ToList() : new List<TaskOperation>()))
+                .ForMember(dest => dest.AssignmentsTaskUser, opt => opt.MapFrom(src => src.TaskAssignments))
+                .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => CalculateProgress(src)))
+                .ForMember(dest => dest.WorkLogs, opt => opt.MapFrom(src => src.TaskWorkLogs))
+                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.TaskComments));
             CreateMap<TaskViewModel, Tasks>()
-                    .ForMember(dest => dest.ContactId, opt => opt.MapFrom(src => src.SelectedContactId))
-   .ForMember(dest => dest.OrganizationId,
-        opt => opt.MapFrom(src => src.SelectedOrganizationId))
+                     .ForMember(dest => dest.ContactId, opt => opt.MapFrom(src => src.SelectedContactId))
+    .ForMember(dest => dest.OrganizationId,
+         opt => opt.MapFrom(src => src.SelectedOrganizationId))
 
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskAssignments, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskComments, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskAttachments, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskNotifications, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskOperations, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskViewers, opt => opt.Ignore());
-
-            // Task operations mapping
+                 .ForMember(dest => dest.Id, opt => opt.Ignore())
+                 .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
+                 .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                 .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
+                 .ForMember(dest => dest.TaskAssignments, opt => opt.Ignore())
+                 .ForMember(dest => dest.TaskComments, opt => opt.Ignore())
+                 .ForMember(dest => dest.TaskAttachments, opt => opt.Ignore())
+                 .ForMember(dest => dest.TaskNotifications, opt => opt.Ignore())
+                 .ForMember(dest => dest.TaskOperations, opt => opt.Ignore())
+                 .ForMember(dest => dest.TaskViewers, opt => opt.Ignore());
+            // Mapping TaskOperation به TaskOperationViewModel
             CreateMap<TaskOperation, TaskOperationViewModel>()
+                .ForMember(dest => dest.WorkLogs, opt => opt.MapFrom(src => src.WorkLogs))
+                .ForMember(dest => dest.IsCompleted, opt => opt.MapFrom(src => src.IsCompleted))
+                .ForMember(dest => dest.IsStarred, opt => opt.MapFrom(src => src.IsStarred));
+
+
+        // Task operations mapping
+        CreateMap<TaskOperation, TaskOperationViewModel>()
                 .ForMember(dest => dest.CompletedByUserName, opt => opt.MapFrom(src => src.CompletedByUser != null ? $"{src.CompletedByUser.FirstName} {src.CompletedByUser.LastName}" : null));
 
             CreateMap<TaskOperationViewModel, TaskOperation>()
@@ -914,6 +912,19 @@ namespace MahERP.AutoMapper
                 2 => "مدیر تیم",
                 _ => "نامشخص"
             };
+        }
+
+        // Helper method for calculating progress
+        private static int CalculateProgress(Tasks task)
+        {
+            if (task.TaskOperations == null || !task.TaskOperations.Any())
+                return 0;
+
+            var activeOps = task.TaskOperations.Where(o => !o.IsDeleted).ToList();
+            if (!activeOps.Any()) return 0;
+
+            var completedOps = activeOps.Count(o => o.IsCompleted);
+            return (int)Math.Round((double)completedOps / activeOps.Count * 100);
         }
     }
 }

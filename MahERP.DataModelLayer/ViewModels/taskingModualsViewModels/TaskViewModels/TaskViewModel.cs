@@ -13,147 +13,147 @@ using System.Linq;
 
 namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
 {
-public class TaskViewModel
-{
-    public int Id { get; set; }
+    public class TaskViewModel
+    {
+        public int Id { get; set; }
 
-    public string? TaskCode { get; set; }
+        public string? TaskCode { get; set; }
 
-    [Required(ErrorMessage = "عنوان تسک الزامی است و نمی‌تواند خالی باشد")]
-    [Display(Name = "عنوان تسک")]
-    [MaxLength(200, ErrorMessage = "عنوان تسک حداکثر 200 کاراکتر باشد")]
-    public string Title { get; set; }
+        [Required(ErrorMessage = "عنوان تسک الزامی است و نمی‌تواند خالی باشد")]
+        [Display(Name = "عنوان تسک")]
+        [MaxLength(200, ErrorMessage = "عنوان تسک حداکثر 200 کاراکتر باشد")]
+        public string Title { get; set; }
 
-    [Display(Name = "توضیحات")]
-    public string? Description { get; set; }
+        [Display(Name = "توضیحات")]
+        public string? Description { get; set; }
 
-    [Display(Name = "نوع تسک")]
-    public byte TaskType { get; set; }
+        [Display(Name = "نوع تسک")]
+        public byte TaskType { get; set; }
 
-    [Display(Name = "طرف حساب")]
-    public int? StakeholderId { get; set; }
+        [Display(Name = "طرف حساب")]
+        public int? StakeholderId { get; set; }
 
-    [Display(Name = "قرارداد")]
-    public int? ContractId { get; set; }
+        [Display(Name = "قرارداد")]
+        public int? ContractId { get; set; }
 
-    [Display(Name = "شعبه")]
-    public int? BranchId { get; set; }
+        [Display(Name = "شعبه")]
+        public int? BranchId { get; set; }
 
-    [Display(Name = "تسک بالادست")]
-    public int? ParentTaskId { get; set; }
+        [Display(Name = "تسک بالادست")]
+        public int? ParentTaskId { get; set; }
 
-    [Display(Name = "شروع تاریخ مهلت انجام")]
-    public DateTime? StartDate { get; set; }
+        [Display(Name = "شروع تاریخ مهلت انجام")]
+        public DateTime? StartDate { get; set; }
 
-    [Display(Name = "شروع تاریخ مهلت انجام")]
-    public string? StartDatePersian { get; set; }
-    [Display(Name = "تاریخ مهلت انجام")]
-    public DateTime? DueDate { get; set; }
+        [Display(Name = "شروع تاریخ مهلت انجام")]
+        public string? StartDatePersian { get; set; }
+        [Display(Name = "تاریخ مهلت انجام")]
+        public DateTime? DueDate { get; set; }
 
-    [Display(Name = "تاریخ مهلت انجام")]
-    public string? DueDatePersian { get; set; }
+        [Display(Name = "تاریخ مهلت انجام")]
+        public string? DueDatePersian { get; set; }
 
-    /// <summary>
-    /// تاریخ شروع پیشنهادی توسط سازنده تسک
-    /// </summary>
-    [Display(Name = "تاریخ شروع پیشنهادی")]
-    public DateTime? SuggestedStartDate { get; set; }
-    /// <summary>
-    /// آیا تسک عقب افتاده است؟
-    /// </summary>
-    public bool IsOverdue => !CompletionDate.HasValue && DueDate.HasValue && DateTime.Now > DueDate.Value;
+        /// <summary>
+        /// تاریخ شروع پیشنهادی توسط سازنده تسک
+        /// </summary>
+        [Display(Name = "تاریخ شروع پیشنهادی")]
+        public DateTime? SuggestedStartDate { get; set; }
+        /// <summary>
+        /// آیا تسک عقب افتاده است؟
+        /// </summary>
+        public bool IsOverdue => !CompletionDate.HasValue && DueDate.HasValue && DateTime.Now > DueDate.Value;
 
-    /// <summary>
-    /// تاریخ تایید سرپرست
-    /// </summary>
-    [Display(Name = "تاریخ تایید سرپرست")]
-    public DateTime? SupervisorApproved => SupervisorApprovedDate;
-    /// <summary>
-    /// تاریخ شروع پیشنهادی به صورت شمسی
-    /// </summary>
-    [Display(Name = "تاریخ شروع پیشنهادی")]
-    public string? SuggestedStartDatePersian { get; set; }
+        /// <summary>
+        /// تاریخ تایید سرپرست
+        /// </summary>
+        [Display(Name = "تاریخ تایید سرپرست")]
+        public DateTime? SupervisorApproved => SupervisorApprovedDate;
+        /// <summary>
+        /// تاریخ شروع پیشنهادی به صورت شمسی
+        /// </summary>
+        [Display(Name = "تاریخ شروع پیشنهادی")]
+        public string? SuggestedStartDatePersian { get; set; }
 
-    /// <summary>
-    /// مدت زمان تخمینی انجام (به ساعت)
-    /// </summary>
-    [Display(Name = "مدت زمان تخمینی (ساعت)")]
-    public decimal? EstimatedHours { get; set; }
+        /// <summary>
+        /// مدت زمان تخمینی انجام (به ساعت)
+        /// </summary>
+        [Display(Name = "مدت زمان تخمینی (ساعت)")]
+        public decimal? EstimatedHours { get; set; }
 
-    /// <summary>
-    /// آیا مهلت سخت است؟
-    /// </summary>
-    [Display(Name = "مهلت سخت")]
-    public bool IsHardDeadline { get; set; }
+        /// <summary>
+        /// آیا مهلت سخت است؟
+        /// </summary>
+        [Display(Name = "مهلت سخت")]
+        public bool IsHardDeadline { get; set; }
 
-    /// <summary>
-    /// یادداشت زمان‌بندی
-    /// </summary>
-    [Display(Name = "یادداشت زمان‌بندی")]
-    [MaxLength(500, ErrorMessage = "یادداشت زمان‌بندی حداکثر 500 کاراکتر باشد")]
-    public string? TimeNote { get; set; }
+        /// <summary>
+        /// یادداشت زمان‌بندی
+        /// </summary>
+        [Display(Name = "یادداشت زمان‌بندی")]
+        [MaxLength(500, ErrorMessage = "یادداشت زمان‌بندی حداکثر 500 کاراکتر باشد")]
+        public string? TimeNote { get; set; }
 
-    [Display(Name = "تاریخ تکمیل")]
-    public DateTime? CompletionDate { get; set; }
+        [Display(Name = "تاریخ تکمیل")]
+        public DateTime? CompletionDate { get; set; }
 
-    [Display(Name = "تاریخ تایید سرپرست")]
-    public DateTime? SupervisorApprovedDate { get; set; }
+        [Display(Name = "تاریخ تایید سرپرست")]
+        public DateTime? SupervisorApprovedDate { get; set; }
 
-    [Display(Name = "تاریخ تایید مدیر")]
-    public DateTime? ManagerApprovedDate { get; set; }
+        [Display(Name = "تاریخ تایید مدیر")]
+        public DateTime? ManagerApprovedDate { get; set; }
 
-    [Display(Name = "تاریخ ایجاد")]
-    public DateTime CreateDate { get; set; }
+        [Display(Name = "تاریخ ایجاد")]
+        public DateTime CreateDate { get; set; }
 
-    [Display(Name = "ایجاد کننده")]
-    public string? CreatorUserId { get; set; }
+        [Display(Name = "ایجاد کننده")]
+        public string? CreatorUserId { get; set; }
 
-    [Display(Name = "وضعیت فعال")]
-    public bool IsActive { get; set; } = true;
+        [Display(Name = "وضعیت فعال")]
+        public bool IsActive { get; set; } = true;
 
-    [Display(Name = "حذف شده")]
-    public bool IsDeleted { get; set; } = false;
+        [Display(Name = "حذف شده")]
+        public bool IsDeleted { get; set; } = false;
 
-    // Navigation properties for display
-    [Display(Name = "عنوان دسته‌بندی")]
-    public string? CategoryTitle { get; set; }
+        // Navigation properties for display
+        [Display(Name = "عنوان دسته‌بندی")]
+        public string? CategoryTitle { get; set; }
 
-    [Display(Name = "ای دی  دسته‌بندی")]
-    public int? CategoryId { get; set; } = null;
+        [Display(Name = "ای دی  دسته‌بندی")]
+        public int? CategoryId { get; set; } = null;
 
-    [Display(Name = "نام ایجاد کننده")]
-    public string? CreatorName { get; set; }
+        [Display(Name = "نام ایجاد کننده")]
+        public string? CreatorName { get; set; }
 
-    [Display(Name = "نام طرف حساب")]
-    public string? StakeholderName { get; set; }
+        [Display(Name = "نام طرف حساب")]
+        public string? StakeholderName { get; set; }
 
-    [Display(Name = "عنوان قرارداد")]
-    public string? ContractTitle { get; set; }
+        [Display(Name = "عنوان قرارداد")]
+        public string? ContractTitle { get; set; }
 
-    // Attachments
-    [Display(Name = "فایل‌های پیوست")]
-    public List<IFormFile>? Attachments { get; set; }
+        // Attachments
+        [Display(Name = "فایل‌های پیوست")]
+        public List<IFormFile>? Attachments { get; set; }
 
-    // Operations
-    public List<TaskOperationViewModel>? Operations { get; set; }
+        // Operations
+        public List<TaskOperationViewModel>? Operations { get; set; }
 
-    /// <summary>
-    /// عملیات‌های تسک به صورت JSON (برای ذخیره در فرم)
-    /// </summary>
-    [Display(Name = "عملیات‌های تسک")]
-    public string? TaskOperationsJson { get; set; }
+        /// <summary>
+        /// عملیات‌های تسک به صورت JSON (برای ذخیره در فرم)
+        /// </summary>
+        [Display(Name = "عملیات‌های تسک")]
+        public string? TaskOperationsJson { get; set; }
 
-    /// <summary>
-    /// یادآوری‌های تسک به صورت JSON (برای ذخیره در فرم)
-    /// </summary>
-    [Display(Name = "یادآوری‌های تسک")]
-    public string? TaskRemindersJson { get; set; }
+        /// <summary>
+        /// یادآوری‌های تسک به صورت JSON (برای ذخیره در فرم)
+        /// </summary>
+        [Display(Name = "یادآوری‌های تسک")]
+        public string? TaskRemindersJson { get; set; }
 
-    /// <summary>
-    /// فعال‌سازی یادآوری پیش‌فرض (3 روز قبل از مهلت)
-    /// </summary>
-    [Display(Name = "یادآوری پیش‌فرض")]
-    public bool EnableDefaultReminder { get; set; } = true;
+        /// <summary>
+        /// فعال‌سازی یادآوری پیش‌فرض (3 روز قبل از مهلت)
+        /// </summary>
+        [Display(Name = "یادآوری پیش‌فرض")]
+        public bool EnableDefaultReminder { get; set; } = true;
         /// <summary>
         /// آیا این تسک در "روز من" کاربر فعلی قرار دارد؟
         /// </summary>
@@ -167,11 +167,12 @@ public class TaskViewModel
         [Display(Name = "نوع تکمیل تسک")]
         public byte CompletionMode { get; set; } = 0;
 
-            /// <summary>
-    /// لیست کامنت‌های تسک
-    /// </summary>
-    public List<TaskCommentViewModel> Comments { get; set; } = new();
+        /// <summary>
+        /// لیست کامنت‌های تسک
+        /// </summary>
+        public List<TaskCommentViewModel> Comments { get; set; } = new();
 
+        public bool? FromList { get; set; } = true;
 
 
         // Progress calculation
@@ -184,186 +185,187 @@ public class TaskViewModel
 
         [Display(Name = "درصد پیشرفت")]
 
-    public int ProgressPercentage
-    {
-        get
+        public int ProgressPercentage
         {
-            if (Operations == null || !Operations.Any()) return 0;
+            get
+            {
+                if (Operations == null || !Operations.Any()) return 0;
 
-            int totalOperations = Operations.Count;
-            int completedOperations = Operations.Count(o => o.IsCompleted);
+                int totalOperations = Operations.Count;
+                int completedOperations = Operations.Count(o => o.IsCompleted);
 
-            if (totalOperations == 0) return 0;
-            return completedOperations * 100 / totalOperations;
+                if (totalOperations == 0) return 0;
+                return completedOperations * 100 / totalOperations;
+            }
         }
-    }
 
-    // Status display
-    [Display(Name = "وضعیت")]
-    public string StatusText
-    {
-        get
+
+        // Status display
+        [Display(Name = "وضعیت")]
+        public string StatusText
         {
-            if (IsDeleted) return "حذف شده";
-            if (!IsActive) return "غیرفعال";
-            if (CompletionDate.HasValue && ManagerApprovedDate.HasValue) return "تکمیل و تایید شده";
-            if (CompletionDate.HasValue && SupervisorApprovedDate.HasValue) return "تکمیل و تایید سرپرست";
-            if (CompletionDate.HasValue) return "تکمیل شده";
-            if (DueDate.HasValue && DateTime.Now > DueDate.Value) return "تاخیر";
-            return "در حال انجام";
+            get
+            {
+                if (IsDeleted) return "حذف شده";
+                if (!IsActive) return "غیرفعال";
+                if (CompletionDate.HasValue && ManagerApprovedDate.HasValue) return "تکمیل و تایید شده";
+                if (CompletionDate.HasValue && SupervisorApprovedDate.HasValue) return "تکمیل و تایید سرپرست";
+                if (CompletionDate.HasValue) return "تکمیل شده";
+                if (DueDate.HasValue && DateTime.Now > DueDate.Value) return "تاخیر";
+                return "در حال انجام";
+            }
         }
-    }
 
-    /// <summary>
-    /// هر جا initial هست یک لیست  جهت انتخاب هستد
-    /// intial یعنی همه لیست و لود میکنه و برای نمایش تمام کاربر ها هست . 
-    /// </summary>
-    public List<BranchViewModel>? branchListInitial { get; set; } = new List<BranchViewModel>();
-    public List<UserViewModelFull>? UsersInitial { get; set; } = new List<UserViewModelFull>();
-    public List<StakeholderViewModel>? StakeholdersInitial { get; set; } = new List<StakeholderViewModel>();
-    public List<TaskCategory>? TaskCategoryInitial { get; set; } = new List<TaskCategory>();
+        /// <summary>
+        /// هر جا initial هست یک لیست  جهت انتخاب هستد
+        /// intial یعنی همه لیست و لود میکنه و برای نمایش تمام کاربر ها هست . 
+        /// </summary>
+        public List<BranchViewModel>? branchListInitial { get; set; } = new List<BranchViewModel>();
+        public List<UserViewModelFull>? UsersInitial { get; set; } = new List<UserViewModelFull>();
+        public List<StakeholderViewModel>? StakeholdersInitial { get; set; } = new List<StakeholderViewModel>();
+        public List<TaskCategory>? TaskCategoryInitial { get; set; } = new List<TaskCategory>();
 
-    /// <summary>
-    /// لیست تیم‌های موجود برای انتخاب
-    /// </summary>
-    [Display(Name = "تیم‌های موجود")]
-    public List<TeamViewModel>? TeamsInitial { get; set; } = new List<TeamViewModel>();
+        /// <summary>
+        /// لیست تیم‌های موجود برای انتخاب
+        /// </summary>
+        [Display(Name = "تیم‌های موجود")]
+        public List<TeamViewModel>? TeamsInitial { get; set; } = new List<TeamViewModel>();
 
-    // AssignmentsTask
-    /// <summary>
-    /// لیستی که کاربر انهارو انتخاب کرده 
-    /// </summary>
-    public List<TaskAssignmentViewModel>? AssignmentsTaskUser { get; set; }
+        // AssignmentsTask
+        /// <summary>
+        /// لیستی که کاربر انهارو انتخاب کرده 
+        /// </summary>
+        public List<TaskAssignmentViewModel>? AssignmentsTaskUser { get; set; }
 
-    // AssignmentsCopyCarbon
-    /// <summary>
-    /// لیستی که کاربر انهارو انتخاب کرده 
-    /// </summary>
-    public List<TaskAssignmentViewModel>? AssignmentsCopyCarbonUsers { get; set; }
+        // AssignmentsCopyCarbon
+        /// <summary>
+        /// لیستی که کاربر انهارو انتخاب کرده 
+        /// </summary>
+        public List<TaskAssignmentViewModel>? AssignmentsCopyCarbonUsers { get; set; }
 
-    /// <summary>
-    /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
-    /// </summary>
-    public List<string>? AssignmentsSelectedTaskUserArraysString { get; set; }
+        /// <summary>
+        /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
+        /// </summary>
+        public List<string>? AssignmentsSelectedTaskUserArraysString { get; set; }
 
-    /// <summary>
-    /// لیست تیم‌های انتخاب شده برای اختصاص تسک
-    /// </summary>
-    [Display(Name = "تیم‌های انتخاب شده")]
-    public List<int>? AssignmentsSelectedTeamIds { get; set; }
+        /// <summary>
+        /// لیست تیم‌های انتخاب شده برای اختصاص تسک
+        /// </summary>
+        [Display(Name = "تیم‌های انتخاب شده")]
+        public List<int>? AssignmentsSelectedTeamIds { get; set; }
 
-    /// <summary>
-    /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
-    /// </summary>
-    public List<string>? AssignmentsSelectedCopyCarbonUsersArraysString { get; set; }
+        /// <summary>
+        /// لیست ارایه string برای ذخیره انتخاب ارایه مخصوص select2
+        /// </summary>
+        public List<string>? AssignmentsSelectedCopyCarbonUsersArraysString { get; set; }
 
-    [Display(Name = "شعبه")]
-    public int BranchIdSelected { get; set; }
+        [Display(Name = "شعبه")]
+        public int BranchIdSelected { get; set; }
 
-    [Display(Name = "دسته‌بندی")]
-    public int? TaskCategoryIdSelected { get; set; }
+        [Display(Name = "دسته‌بندی")]
+        public int? TaskCategoryIdSelected { get; set; }
 
-    /// <summary>
-    /// نشان‌دهنده اینکه آیا کاربر می‌خواهد کد را دستی وارد کند
-    /// </summary>
-    [Display(Name = "ورود دستی کد")]
-    public bool IsManualTaskCode { get; set; } = false;
+        /// <summary>
+        /// نشان‌دهنده اینکه آیا کاربر می‌خواهد کد را دستی وارد کند
+        /// </summary>
+        [Display(Name = "ورود دستی کد")]
+        public bool IsManualTaskCode { get; set; } = false;
 
-    /// <summary>
-    /// کد تسک دستی وارد شده توسط کاربر
-    /// </summary>
-    [Display(Name = "کد تسک دستی")]
-    public string? ManualTaskCode { get; set; }
+        /// <summary>
+        /// کد تسک دستی وارد شده توسط کاربر
+        /// </summary>
+        [Display(Name = "کد تسک دستی")]
+        public string? ManualTaskCode { get; set; }
 
-    /// <summary>
-    /// تنظیمات کد تسک برای نمایش در view
-    /// </summary>
-    public TaskCodeSettings? TaskCodeSettings { get; set; }
+        /// <summary>
+        /// تنظیمات کد تسک برای نمایش در view
+        /// </summary>
+        public TaskCodeSettings? TaskCodeSettings { get; set; }
 
-    /// <summary>
-    /// وضعیت زمان‌بندی تسک
-    /// </summary>
-    [Display(Name = "وضعیت زمان‌بندی")]
-    public string TimeStatus
-    {
-        get
+        /// <summary>
+        /// وضعیت زمان‌بندی تسک
+        /// </summary>
+        [Display(Name = "وضعیت زمان‌بندی")]
+        public string TimeStatus
         {
-            if (!DueDate.HasValue) return "بدون مهلت";
-            if (DateTime.Now > DueDate.Value) return "منقضی";
-            if (DateTime.Now.AddDays(3) >= DueDate.Value) return "نزدیک به پایان";
-            return "در زمان";
+            get
+            {
+                if (!DueDate.HasValue) return "بدون مهلت";
+                if (DateTime.Now > DueDate.Value) return "منقضی";
+                if (DateTime.Now.AddDays(3) >= DueDate.Value) return "نزدیک به پایان";
+                return "در زمان";
+            }
         }
-    }
 
-    /// <summary>
-    /// کلاس CSS برای نمایش وضعیت زمان‌بندی
-    /// </summary>
-    public string TimeStatusClass => TimeStatus switch
-    {
-        "منقضی" => "text-danger",
-        "نزدیک به پایان" => "text-warning",
-        "در زمان" => "text-success",
-        _ => "text-muted"
-    };
+        /// <summary>
+        /// کلاس CSS برای نمایش وضعیت زمان‌بندی
+        /// </summary>
+        public string TimeStatusClass => TimeStatus switch
+        {
+            "منقضی" => "text-danger",
+            "نزدیک به پایان" => "text-warning",
+            "در زمان" => "text-success",
+            _ => "text-muted"
+        };
 
-    /// <summary>
-    /// اولویت تسک (0=عادی، 1=مهم، 2=فوری)
-    /// </summary>
-    [Display(Name = "اولویت")]
-    public byte Priority { get; set; }
+        /// <summary>
+        /// اولویت تسک (0=عادی، 1=مهم، 2=فوری)
+        /// </summary>
+        [Display(Name = "اولویت")]
+        public byte Priority { get; set; }
 
-    /// <summary>
-    /// آیا تسک مهم است؟
-    /// </summary>
-    [Display(Name = "مهم")]
-    public bool Important { get; set; }
+        /// <summary>
+        /// آیا تسک مهم است؟
+        /// </summary>
+        [Display(Name = "مهم")]
+        public bool Important { get; set; }
 
-    /// <summary>
-    /// وضعیت تسک
-    /// </summary>
-    [Display(Name = "وضعیت")]
-    public byte Status { get; set; }
+        /// <summary>
+        /// وضعیت تسک
+        /// </summary>
+        [Display(Name = "وضعیت")]
+        public byte Status { get; set; }
 
-    /// <summary>
-    /// سطح دسترسی تسک
-    /// </summary>
-    [Display(Name = "سطح دسترسی")]
-    public byte VisibilityLevel { get; set; } = 0;
+        /// <summary>
+        /// سطح دسترسی تسک
+        /// </summary>
+        [Display(Name = "سطح دسترسی")]
+        public byte VisibilityLevel { get; set; } = 0;
 
-    /// <summary>
-    /// تاریخ آخرین بروزرسانی
-    /// </summary>
-    [Display(Name = "آخرین بروزرسانی")]
-    public DateTime? LastUpdateDate { get; set; }
+        /// <summary>
+        /// تاریخ آخرین بروزرسانی
+        /// </summary>
+        [Display(Name = "آخرین بروزرسانی")]
+        public DateTime? LastUpdateDate { get; set; }
 
-    /// <summary>
-    /// نوع ورودی تسک (0=رزرو، 1=کاربر عادی، 2=خودکار، 3=مشتری)
-    /// </summary>
-    [Display(Name = "نوع ورودی")]
-    public byte TaskTypeInput { get; set; }
+        /// <summary>
+        /// نوع ورودی تسک (0=رزرو، 1=کاربر عادی، 2=خودکار، 3=مشتری)
+        /// </summary>
+        [Display(Name = "نوع ورودی")]
+        public byte TaskTypeInput { get; set; }
 
-    /// <summary>
-    /// نحوه ایجاد (0=دستی، 1=خودکار)
-    /// </summary>
-    [Display(Name = "نحوه ایجاد")]
-    public byte CreationMode { get; set; }
+        /// <summary>
+        /// نحوه ایجاد (0=دستی، 1=خودکار)
+        /// </summary>
+        [Display(Name = "نحوه ایجاد")]
+        public byte CreationMode { get; set; }
 
-    /// <summary>
-    /// آیا تسک خصوصی است؟
-    /// </summary>
-    [Display(Name = "تسک خصوصی")]
-    public bool IsPrivate { get; set; }
+        /// <summary>
+        /// آیا تسک خصوصی است؟
+        /// </summary>
+        [Display(Name = "تسک خصوصی")]
+        public bool IsPrivate { get; set; }
 
-    /// <summary>
-    /// لیست تیم‌های انتصاب (برای هر کاربر منتصب، تیم مرتبطش)
-    /// Key: UserId, Value: TeamId
-    /// </summary>
-    public Dictionary<string, int> UserTeamAssignments { get; set; } = new Dictionary<string, int>();
+        /// <summary>
+        /// لیست تیم‌های انتصاب (برای هر کاربر منتصب، تیم مرتبطش)
+        /// Key: UserId, Value: TeamId
+        /// </summary>
+        public Dictionary<string, int> UserTeamAssignments { get; set; } = new Dictionary<string, int>();
 
-    /// <summary>
-    /// JSON برای ارسال تخصیص تیم‌ها
-    /// </summary>
-    public string UserTeamAssignmentsJson { get; set; }
+        /// <summary>
+        /// JSON برای ارسال تخصیص تیم‌ها
+        /// </summary>
+        public string? UserTeamAssignmentsJson { get; set; }
 
         /// <summary>
         /// آیا این تسک فوکوس کاربر جاری است؟
@@ -395,12 +397,12 @@ public class TaskViewModel
         /// <summary>
         /// نام فرد (برای نمایش)
         /// </summary>
-        public string ContactFullName { get; set; }
+        public string? ContactFullName { get; set; }
 
         /// <summary>
         /// نام سازمان (برای نمایش)
         /// </summary>
-        public string OrganizationName { get; set; }
+        public string? OrganizationName { get; set; }
 
         /// <summary>
         /// لیست اولیه Contact‌ها برای dropdown (بر اساس شعبه)
@@ -416,64 +418,149 @@ public class TaskViewModel
         /// لیست سازمان‌هایی که Contact انتخاب شده در آن‌ها عضو است
         /// </summary>
         public List<OrganizationViewModel> ContactOrganizations { get; set; } = new();
+
+        /// <summary>
+        /// ⭐⭐⭐ آیا کاربر فعلی به این تسک اختصاص داده شده است؟
+        /// </summary>
+        [Display(Name = "اختصاص یافته به من")]
+        public bool IsAssignedToCurrentUser { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ آیا کاربر فعلی سازنده تسک است؟
+        /// </summary>
+        [Display(Name = "من سازنده هستم")]
+        public bool IsCreator { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ آیا کاربر فعلی مدیر است؟
+        /// </summary>
+        [Display(Name = "من مدیر هستم")]
+        public bool IsManager { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ آیا کاربر فعلی سرپرست است؟
+        /// </summary>
+        [Display(Name = "من سرپرست هستم")]
+        public bool IsSupervisor { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ آیا کاربر فعلی تسک را تکمیل کرده است؟
+        /// </summary>
+        [Display(Name = "من تکمیل کرده‌ام")]
+        public bool IsCompletedByMe { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ شناسه کاربر فعلی
+        /// </summary>
+        public string? CurrentUserId { get; set; }
+        public TaskUserContext? CurrentUserContext { get; set; }
+
+
+
+    }
+    /// <summary>
+    /// ⭐⭐⭐ اطلاعات Context کاربر در رابطه با یک تسک
+    /// </summary>
+    public class TaskUserContext
+    {
+        /// <summary>
+        /// شناسه کاربر فعلی
+        /// </summary>
+        public string CurrentUserId { get; set; }
+
+        /// <summary>
+        /// آیا کاربر فعلی به این تسک اختصاص داده شده است؟
+        /// </summary>
+        public bool IsAssignedToCurrentUser { get; set; }
+
+        /// <summary>
+        /// آیا کاربر فعلی سازنده تسک است؟
+        /// </summary>
+        public bool IsCreator { get; set; }
+
+        /// <summary>
+        /// آیا کاربر فعلی مدیر است؟
+        /// </summary>
+        public bool IsManager { get; set; }
+
+        /// <summary>
+        /// آیا کاربر فعلی سرپرست است؟
+        /// </summary>
+        public bool IsSupervisor { get; set; }
+
+        /// <summary>
+        /// آیا کاربر فعلی تسک را تکمیل کرده است؟
+        /// </summary>
+        public bool IsCompletedByMe { get; set; }
+
+        /// <summary>
+        /// آیا این تسک فوکوس کاربر فعلی است؟
+        /// </summary>
+        public bool IsFocused { get; set; }
+
+        /// <summary>
+        /// آیا این تسک در "روز من" کاربر فعلی قرار دارد؟
+        /// </summary>
+        public bool IsInMyDay { get; set; }
+    }
+    /// <summary>
+    /// DTO برای عملیات‌های تسک در JSON
+    /// </summary>
+    /// 
+
+
+    public class TaskOperationDto
+    {
+        public string Title { get; set; }
+        public int OperationOrder { get; set; }
+        public bool IsRequired { get; set; } = true;
+        public decimal? EstimatedHours { get; set; }
+        public string? Description { get; set; }
     }
 
+    /// <summary>
+    /// DTO برای یادآوری‌های تسک در JSON
+    /// </summary>
+    public class TaskReminderDto
+    {
+        public string Title { get; set; }
+        public string? Description { get; set; }
+        public byte ReminderType { get; set; }
+        public int? IntervalDays { get; set; }
+        public int? DaysBeforeDeadline { get; set; }
+        public TimeSpan NotificationTime { get; set; } = new TimeSpan(9, 0, 0);
+        public bool IsSystemDefault { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+    }
 
-/// <summary>
-/// DTO برای عملیات‌های تسک در JSON
-/// </summary>
-public class TaskOperationDto
-{
-    public string Title { get; set; }
-    public int OperationOrder { get; set; }
-    public bool IsRequired { get; set; } = true;
-    public decimal? EstimatedHours { get; set; }
-    public string? Description { get; set; }
-}
+    public class TaskAssignmentViewModel
+    {
+        public int Id { get; set; }
 
-/// <summary>
-/// DTO برای یادآوری‌های تسک در JSON
-/// </summary>
-public class TaskReminderDto
-{
-    public string Title { get; set; }
-    public string? Description { get; set; }
-    public byte ReminderType { get; set; }
-    public int? IntervalDays { get; set; }
-    public int? DaysBeforeDeadline { get; set; }
-    public TimeSpan NotificationTime { get; set; } = new TimeSpan(9, 0, 0);
-    public bool IsSystemDefault { get; set; }
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-}
+        public int TaskId { get; set; }
 
-public class TaskAssignmentViewModel
-{
-    public int Id { get; set; }
+        [Required(ErrorMessage = "کاربر اختصاص داده شده الزامی است")]
+        [Display(Name = "کاربر")]
+        public string AssignedUserId { get; set; }
 
-    public int TaskId { get; set; }
+        [Display(Name = "نام کاربر")]
+        public string? AssignedUserName { get; set; }
 
-    [Required(ErrorMessage = "کاربر اختصاص داده شده الزامی است")]
-    [Display(Name = "کاربر")]
-    public string AssignedUserId { get; set; }
+        [Display(Name = "تخصیص دهنده")]
+        public string? AssignerUserId { get; set; }
 
-    [Display(Name = "نام کاربر")]
-    public string? AssignedUserName { get; set; }
+        [Display(Name = "نام تخصیص دهنده")]
+        public string? AssignerUserName { get; set; }
 
-    [Display(Name = "تخصیص دهنده")]
-    public string? AssignerUserId { get; set; }
+        [Display(Name = "توضیحات")]
+        public string? Description { get; set; }
 
-    [Display(Name = "نام تخصیص دهنده")]
-    public string? AssignerUserName { get; set; }
+        [Display(Name = "تاریخ تکمیل")]
+        public DateTime? CompletionDate { get; set; }
 
-    [Display(Name = "توضیحات")]
-    public string? Description { get; set; }
-
-    [Display(Name = "تاریخ تکمیل")]
-    public DateTime? CompletionDate { get; set; }
-
-    [Display(Name = "تاریخ تخصیص")]
-    public DateTime AssignDate { get; set; }
+        [Display(Name = "تاریخ تخصیص")]
+        public DateTime AssignDate { get; set; }
         public string? AssignedUserProfileImage { get; set; }
 
         /// <summary>

@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
 {
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     public class BranchOrganizationGroupsController : BaseController
     {

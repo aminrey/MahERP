@@ -1,22 +1,6 @@
 ﻿
 // ⭐⭐⭐ دریافت توکن با روش بهتر
-const getAntiForgeryToken = function () {
-    // روش 1: از input مخفی
-    let token = $('input[name="__RequestVerificationToken"]').val();
 
-    // روش 2: از فرم
-    if (!token) {
-        token = $('form').find('input[name="__RequestVerificationToken"]').val();
-    }
-
-    // روش 3: از meta tag
-    if (!token) {
-        token = $('meta[name="__RequestVerificationToken"]').attr('content');
-    }
-
-    console.log('🔑 AntiForgery Token:', token ? 'Found' : '❌ NOT FOUND');
-    return token;
-};
 
 
 // ========================================
@@ -163,324 +147,101 @@ const TaskDetailsRefreshManager = {
     }
 };
 
-// ========================================
-// ⭐⭐⭐ Dynamic Operations Manager
-// ========================================
-const DynamicOperationsManager = {
-    taskId: null,
-    config: null,
 
-    init: function (config) {
-        this.config = config || window.TaskDetailConfig;
-        this.taskId = this.config.taskId;
-        console.log('✅ Dynamic Operations Manager initialized');
-    },
 
-    refreshGroup: function (groupType) {
-        if (!groupType || typeof groupType !== 'string' || groupType.trim() === '') {
-            console.error('❌ Invalid GroupType:', groupType);
-            if (typeof NotificationHelper !== 'undefined') {
-                NotificationHelper.error('خطا: نوع گروه نامعتبر است');
-            }
-            return;
+// ⭐ تابع نمایش مودال View WorkLogs
+async function showViewWorkLogsModal(operationId) {
+    if (!operationId) return;
+
+    console.log('📋 Opening View WorkLogs modal for operation:', operationId);
+
+    try {
+        const response = await fetch(`/TaskingArea/TaskOperations/ViewWorkLogsModal?operationId=${operationId}`);
+        const html = await response.text();
+
+        // فرض می‌کنیم تابع showModal وجود داره
+        if (typeof showModal === 'function') {
+            showModal('مشاهده گزارش کارها', html);
+        } else {
+            // Fallback: استفاده از Bootstrap Modal
+            const modalHtml = `
+                <div class="modal fade" id="workLogsModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            ${html}
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('body').append(modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('workLogsModal'));
+            modal.show();
+            $('#workLogsModal').on('hidden.bs.modal', function () {
+                $(this).remove();
+            });
         }
-
-        const normalizedGroupType = groupType.trim().toLowerCase();
-
-        if (!['starred', 'pending', 'completed'].includes(normalizedGroupType)) {
-            console.error('❌ Unknown GroupType:', normalizedGroupType);
-            if (typeof NotificationHelper !== 'undefined') {
-                NotificationHelper.error(`نوع گروه نامعتبر: ${normalizedGroupType}`);
-            }
-            return;
+    } catch (error) {
+        console.error('❌ Error loading modal:', error);
+        if (typeof NotificationHelper !== 'undefined') {
+            NotificationHelper.error('خطا در بارگذاری مودال');
         }
-
-        console.log(`🔄 Refreshing group: "${normalizedGroupType}"`);
-
-        const self = this;
-        $.ajax({
-            url: self.config.urls.getOperationsGroup,
-            type: 'GET',
-            data: {
-                taskId: self.taskId,
-                groupType: normalizedGroupType
-            },
-            success: function (result) {
-                console.log(`📦 Response for "${normalizedGroupType}":`, result);
-
-                if (!result || typeof result !== 'object') {
-                    console.error('❌ Invalid response format:', result);
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.error('خطا در دریافت پاسخ سرور');
-                    }
-                    return;
-                }
-
-                if (result.success) {
-                    const groupId = `${normalizedGroupType}-group`;
-                    $(`#${groupId}`).remove();
-                    $(`.operations-group[data-group="${normalizedGroupType}"]`).remove();
-
-                    console.log(`🗑️ Removed old group: #${groupId}`);
-
-                    const placeholderId = `${normalizedGroupType}-group-placeholder`;
-
-                    if (result.html && typeof result.html === 'string' && result.html.trim() !== '') {
-                        $(`#${placeholderId}`).html(result.html);
-                        console.log(`✅ Added group "${normalizedGroupType}" to placeholder with ${result.count} operations`);
-                    } else {
-                        $(`#${placeholderId}`).empty();
-                        console.log(`ℹ️ Group "${normalizedGroupType}" is empty - placeholder cleared`);
-                    }
-
-                    self.updateStats();
-                } else {
-                    console.error(`❌ Server error:`, result.message);
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.error(result.message || 'خطا در سرور');
-                    }
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error(`❌ AJAX error for "${normalizedGroupType}":`, xhr);
-                if (typeof NotificationHelper !== 'undefined') {
-                    NotificationHelper.error('خطا در ارتباط با سرور');
-                }
-            }
-        });
-    },
-
-    updateStats: function () {
-        const total = $('.operation-item-card').length;
-        const completed = $('.operation-item-card[data-completed="true"]').length;
-        const starred = $('.operation-item-card[data-starred="true"]').length;
-        const withWorkLog = $('.operation-item-card .btn-info:not(.btn-outline-info)').length;
-
-        $('#totalOpsCount').text(total);
-        $('#completedOpsCount').text(completed);
-        $('#starredOpsCount').text(starred);
-        $('#withWorkLogCount').text(withWorkLog);
-
-        console.log(`📊 Stats - Total: ${total}, Completed: ${completed}, Starred: ${starred}`);
-    },
-
-    toggleComplete: function (operationId) {
-        const $card = $(`#operation-card-${operationId}`);
-        if (!$card.length) {
-            console.error(`❌ Card not found: operation-card-${operationId}`);
-            return;
-        }
-
-        const $spinner = $card.find('.operation-spinner');
-        const wasCompleted = $card.attr('data-completed') === 'true';
-        const isStarred = $card.attr('data-starred') === 'true';
-
-        console.log(`🔄 Toggle operation ${operationId}:`, {
-            wasCompleted,
-            isStarred,
-            willMoveTo: wasCompleted ? 'pending' : 'completed'
-        });
-
-        $card.css('opacity', '0.6');
-        $spinner.show();
-
-        const self = this;
-        $.ajax({
-            url: self.config.urls.toggleOperationComplete,
-            type: 'POST',
-            data: {
-                id: operationId,
-                __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-            },
-            success: function (result) {
-                if (result.success) {
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.success(result.message || 'وضعیت تغییر کرد');
-                    }
-
-                    $card.fadeOut(200, function () {
-                        $(this).remove();
-                        console.log(`✅ Card ${operationId} removed`);
-
-                        if (wasCompleted) {
-                            setTimeout(() => self.refreshGroup('completed'), 100);
-                            setTimeout(() => self.refreshGroup(isStarred ? 'starred' : 'pending'), 300);
-                        } else {
-                            setTimeout(() => self.refreshGroup(isStarred ? 'starred' : 'pending'), 100);
-                            setTimeout(() => self.refreshGroup('completed'), 300);
-                        }
-                    });
-                } else {
-                    console.error('❌ Toggle failed:', result.message);
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.error(result.message);
-                    }
-                    $card.css('opacity', '1');
-                    $spinner.hide();
-                }
-            },
-            error: function (xhr) {
-                console.error('❌ Toggle error:', xhr);
-                if (typeof NotificationHelper !== 'undefined') {
-                    NotificationHelper.error('خطا در ذخیره');
-                }
-                $card.css('opacity', '1');
-                $spinner.hide();
-            }
-        });
-    },
-
-    toggleStar: function (operationId) {
-        const $card = $(`#operation-card-${operationId}`);
-        if (!$card.length) return;
-
-        const $spinner = $card.find('.operation-spinner');
-        console.log(`⭐ Toggling star for operation ${operationId}`);
-
-        $card.css('opacity', '0.6');
-        $spinner.show();
-
-        const self = this;
-        $.ajax({
-            url: self.config.urls.toggleOperationStar,
-            type: 'POST',
-            data: {
-                id: operationId,
-                __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-            },
-            success: function (result) {
-                if (result.success) {
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.success(result.message || 'ستاره تغییر کرد');
-                    }
-
-                    $card.fadeOut(200, function () {
-                        $(this).remove();
-
-                        setTimeout(() => {
-                            self.refreshGroup('starred');
-                        }, 100);
-
-                        setTimeout(() => {
-                            self.refreshGroup('pending');
-                        }, 300);
-                    });
-                } else {
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.error(result.message);
-                    }
-                    $card.css('opacity', '1');
-                    $spinner.hide();
-                }
-            },
-            error: function () {
-                if (typeof NotificationHelper !== 'undefined') {
-                    NotificationHelper.error('خطا در ذخیره');
-                }
-                $card.css('opacity', '1');
-                $spinner.hide();
-            }
-        });
-    },
-
-    deleteOperation: function (operationId) {
-        if (!confirm('آیا از حذف این عملیات اطمینان دارید؟')) return;
-
-        const $card = $(`#operation-card-${operationId}`);
-        const self = this;
-
-        $.ajax({
-            url: self.config.urls.deleteOperation,
-            type: 'POST',
-            data: {
-                id: operationId,
-                __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-            },
-            success: function (result) {
-                if (result.success) {
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.success('عملیات حذف شد');
-                    }
-
-                    $card.fadeOut(300, function () {
-                        $(this).remove();
-                        self.updateStats();
-                    });
-                } else {
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.error(result.message);
-                    }
-                }
-            },
-            error: function () {
-                if (typeof NotificationHelper !== 'undefined') {
-                    NotificationHelper.error('خطا در حذف');
-                }
-            }
-        });
-    },
-
-    addOperation: function () {
-        const title = $('#newOperationTitleInput').val().trim();
-
-        if (!title) {
-            if (typeof NotificationHelper !== 'undefined') {
-                NotificationHelper.warning('لطفاً عنوان عملیات را وارد کنید');
-            }
-            $('#newOperationTitleInput').focus();
-            return;
-        }
-
-        const self = this;
-        $.ajax({
-            url: self.config.urls.addOperation,
-            type: 'POST',
-            data: {
-                taskId: self.taskId,
-                title: title,
-                __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-            },
-            success: function (result) {
-                if (result.success) {
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.success('عملیات اضافه شد');
-                    }
-                    $('#newOperationTitleInput').val('');
-
-                    setTimeout(() => {
-                        $.ajax({
-                            url: self.config.urls.getAllOperations,
-                            type: 'GET',
-                            data: { taskId: self.taskId },
-                            success: function (html) {
-                                if (html && html.trim() !== '') {
-                                    $('#operationsList').html(html);
-                                    $('#emptyOperationsList').hide();
-                                    self.updateStats();
-                                    console.log('✅ Operations list refreshed');
-                                } else {
-                                    console.warn('⚠️ Empty HTML received');
-                                }
-                            },
-                            error: function () {
-                                self.refreshGroup('pending');
-                            }
-                        });
-                    }, 200);
-                } else {
-                    if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.error(result.message);
-                    }
-                }
-            },
-            error: function () {
-                if (typeof NotificationHelper !== 'undefined') {
-                    NotificationHelper.error('خطا در افزودن عملیات');
-                }
-            }
-        });
     }
-};
+}
+/**
+ * ثبت WorkLog جدید
+ */
+async function submitWorkLog(formElement) {
+    if (!formElement) return;
+
+    const formData = new FormData(formElement);
+    formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+    try {
+        const response = await fetch('/TaskingArea/TaskOperations/AddWorkLog', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'update-view' && result.viewList) {
+            await updateMultipleViews(result.viewList);
+
+            // ⭐ بستن مودال
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalContainer'));
+            modal?.hide();
+
+            showToastReal('گزارش کار ثبت شد', 'success');
+        } else if (result.status === 'validation-error') {
+            showValidationErrors(result.message);
+        } else {
+            showToastReal(result.message?.[0]?.text || 'خطا در ثبت', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error submitting worklog:', error);
+        showToastReal('خطا در ارتباط با سرور', 'error');
+    }
+}
+
+// ==========================================
+// 🔹 Helper Functions
+// ==========================================
+
+
+
+
+/**
+ * نمایش خطاهای Validation
+ */
+function showValidationErrors(errors) {
+    if (!Array.isArray(errors)) return;
+
+    errors.forEach(err => {
+        showToast(err.text, err.status || 'error');
+    });
+}
+
+
 // ========================================
 // ⭐⭐⭐ Chat Manager - نسخه اصلاح شده
 // ========================================
@@ -576,21 +337,27 @@ const TaskChatManager = {
     sendMessage: function (messageText, isImportant) {
         const self = this;
         const formData = new FormData();
+
         formData.append('TaskId', self.taskId);
-        formData.append('CommentText', messageText);
+        formData.append('CommentText', messageText || '');
         formData.append('IsImportant', isImportant);
         formData.append('__RequestVerificationToken', $('[name="__RequestVerificationToken"]').val());
 
-        // ⭐⭐⭐ اصلاح: حذف index از نام
-        self.selectedFiles.forEach((file) => {
-            formData.append('Attachments', file); // ✅ بدون index
-        });
-
-        // ⭐⭐⭐ Debug: چاپ محتویات FormData
-        console.log('📤 Sending FormData:');
-        for (let [key, value] of formData.entries()) {
-            console.log(`  ${key}:`, value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value);
+        // ⭐⭐⭐ افزودن فایل‌ها
+        if (self.selectedFiles && self.selectedFiles.length > 0) {
+            console.log(`📤 Adding ${self.selectedFiles.length} files to FormData`);
+            self.selectedFiles.forEach((file, index) => {
+                formData.append('Attachments', file);
+                console.log(`  ✅ File ${index}: ${file.name} (${file.size} bytes)`);
+            });
+        } else {
+            console.log('ℹ️ No files to upload');
         }
+
+        // نمایش لودینگ
+        const $sendBtn = $('#chat-form button[type="submit"]');
+        const originalHtml = $sendBtn.html();
+        $sendBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ارسال...');
 
         $.ajax({
             url: self.config.urls.addTaskComment,
@@ -603,14 +370,17 @@ const TaskChatManager = {
 
                 if (response.success) {
                     if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.success('پیام ارسال شد');
+                        NotificationHelper.success('پیام با موفقیت ارسال شد');
                     }
+
+                    // پاک کردن فرم
                     $('#chat-message-input').val('');
                     $('#chat-important-check').prop('checked', false);
+                    $('#chat-file-input').val('');
                     self.selectedFiles = [];
                     $('#chat-selected-files').hide().empty();
 
-                    // بارگذاری فوری پیام جدید
+                    // بارگذاری پیام‌های جدید
                     setTimeout(() => {
                         self.loadNewMessages();
                     }, 500);
@@ -626,8 +396,11 @@ const TaskChatManager = {
                 console.error('Response Text:', xhr.responseText);
 
                 if (typeof NotificationHelper !== 'undefined') {
-                    NotificationHelper.error('خطا در ارسال پیام');
+                    NotificationHelper.error('خطا در ارسال پیام به سرور');
                 }
+            },
+            complete: function () {
+                $sendBtn.prop('disabled', false).html(originalHtml);
             }
         });
     },
@@ -659,43 +432,172 @@ const TaskChatManager = {
 // ⭐⭐⭐ Global Functions
 // ========================================
 
+
 function sendChatMessage(event) {
     event.preventDefault();
 
     const message = $('#chat-message-input').val().trim();
-    if (!message) {
+    const isImportant = $('#chat-important-check').is(':checked');
+
+    // بررسی: حداقل پیام یا فایل
+    if (!message && TaskChatManager.selectedFiles.length === 0) {
         if (typeof NotificationHelper !== 'undefined') {
-            NotificationHelper.warning('لطفاً پیام خود را بنویسید');
+            NotificationHelper.warning('لطفاً متن پیام یا فایل را انتخاب کنید');
         }
         return false;
     }
 
-    const isImportant = $('#chat-important-check').is(':checked');
+    // ⭐⭐⭐ Debug: نمایش فایل‌های انتخاب شده
+    console.log(`📎 Files to send: ${TaskChatManager.selectedFiles.length}`);
+    TaskChatManager.selectedFiles.forEach((file, i) => {
+        console.log(`  File ${i}: ${file.name} (${file.size} bytes)`);
+    });
+
     TaskChatManager.sendMessage(message, isImportant);
 
     return false;
 }
-
 function handleChatKeyPress(event) {
     if (event.ctrlKey && event.keyCode === 13) {
         sendChatMessage(event);
     }
 }
-
+// ⭐ تابع مدیریت انتخاب فایل در چت - نسخه کامل شده
 function handleChatFileSelect(input) {
-    TaskChatManager.selectedFiles = Array.from(input.files);
+    const container = $('#chat-selected-files');
+    const allowedExtensions = [
+        // تصاویر
+        'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+        // اسناد
+        'txt', 'pdf', 'doc', 'docx', 'rtf',
+        // صفحات گسترده
+        'xls', 'xlsx', 'csv',
+        // ارائه‌ها
+        'ppt', 'pptx',
+        // فشرده‌سازی
+        'zip', 'rar', '7z',
+        // سایر
+        'odt', 'ods', 'odp'
+    ];
 
-    if (TaskChatManager.selectedFiles.length > 0) {
-        let filesHtml = '<div class="alert alert-info">';
-        filesHtml += '<i class="fa fa-paperclip me-1"></i> فایل‌های انتخاب شده:';
-        filesHtml += '<ul class="mb-0 mt-1">';
-        TaskChatManager.selectedFiles.forEach(file => {
-            filesHtml += `<li>${file.name} (${(file.size / 1024).toFixed(2)} KB)</li>`;
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+
+    container.empty();
+
+    // ⭐⭐⭐ پاک کردن لیست فایل‌های قبلی
+    TaskChatManager.selectedFiles = [];
+
+    if (input.files && input.files.length > 0) {
+        let hasValidFiles = false;
+
+        Array.from(input.files).forEach((file, index) => {
+            const extension = file.name.split('.').pop().toLowerCase();
+
+            // بررسی پسوند فایل
+            if (!allowedExtensions.includes(extension)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'فرمت نامعتبر',
+                    text: `فایل "${file.name}" فرمت مجاز نیست.`,
+                    confirmButtonText: 'باشه'
+                });
+                return;
+            }
+
+            // بررسی حجم فایل
+            if (file.size > maxFileSize) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'حجم زیاد',
+                    text: `فایل "${file.name}" بیش از 10MB حجم دارد.`,
+                    confirmButtonText: 'باشه'
+                });
+                return;
+            }
+
+            hasValidFiles = true;
+
+            // ⭐⭐⭐ افزودن فایل معتبر به لیست
+            TaskChatManager.selectedFiles.push(file);
+
+            // آیکون بر اساس نوع فایل
+            let iconClass = 'fa-file';
+            let badgeClass = 'bg-secondary';
+
+            if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) {
+                iconClass = 'fa-file-image';
+                badgeClass = 'bg-success';
+            } else if (['pdf'].includes(extension)) {
+                iconClass = 'fa-file-pdf';
+                badgeClass = 'bg-danger';
+            } else if (['doc', 'docx'].includes(extension)) {
+                iconClass = 'fa-file-word';
+                badgeClass = 'bg-primary';
+            } else if (['xls', 'xlsx', 'csv'].includes(extension)) {
+                iconClass = 'fa-file-excel';
+                badgeClass = 'bg-success';
+            } else if (['ppt', 'pptx'].includes(extension)) {
+                iconClass = 'fa-file-powerpoint';
+                badgeClass = 'bg-warning';
+            } else if (['txt'].includes(extension)) {
+                iconClass = 'fa-file-alt';
+                badgeClass = 'bg-info';
+            } else if (['zip', 'rar', '7z'].includes(extension)) {
+                iconClass = 'fa-file-archive';
+                badgeClass = 'bg-dark';
+            }
+
+            const fileSize = (file.size / 1024).toFixed(2);
+            const badge = $(`
+                <span class="badge ${badgeClass} me-1 mb-1" data-file-index="${TaskChatManager.selectedFiles.length - 1}">
+                    <i class="fa ${iconClass} me-1"></i>
+                    ${file.name}
+                    <span class="ms-1">(${fileSize} KB)</span>
+                    <button type="button" class="btn-close btn-close-white ms-2" 
+                            onclick="removeChatFile(${TaskChatManager.selectedFiles.length - 1})" 
+                            style="font-size: 0.6rem; vertical-align: middle;"></button>
+                </span>
+            `);
+
+            container.append(badge);
         });
-        filesHtml += '</ul></div>';
 
-        $('#chat-selected-files').html(filesHtml).show();
+        if (hasValidFiles) {
+            container.show();
+            console.log(`✅ ${TaskChatManager.selectedFiles.length} فایل انتخاب شد`);
+        } else {
+            container.hide();
+            input.value = '';
+            TaskChatManager.selectedFiles = [];
+        }
+    } else {
+        container.hide();
     }
+}
+
+// ⭐ تابع حذف فایل از لیست
+function removeChatFile(fileIndex) {
+    console.log(`🗑️ Removing file at index: ${fileIndex}`);
+
+    // حذف از آرایه
+    TaskChatManager.selectedFiles.splice(fileIndex, 1);
+
+    // حذف badge مربوطه
+    $(`#chat-selected-files .badge[data-file-index="${fileIndex}"]`).remove();
+
+    // بروزرسانی index‌های باقی‌مانده
+    $('#chat-selected-files .badge').each(function (newIndex) {
+        $(this).attr('data-file-index', newIndex);
+        $(this).find('.btn-close').attr('onclick', `removeChatFile(${newIndex})`);
+    });
+
+    // پاک کردن input اگر هیچ فایلی نماند
+    if (TaskChatManager.selectedFiles.length === 0) {
+        $('#chat-file-input').val('');
+        $('#chat-selected-files').hide();
+    }
+
+    console.log(`✅ Files remaining: ${TaskChatManager.selectedFiles.length}`);
 }
 function deleteComment(commentId) {
     const config = window.TaskDetailConfig;
@@ -806,17 +708,7 @@ function loadTaskHistory() {
 function disableTaskEditing() {
     console.log('🔒 Task is locked - disabling edit features');
 
-    $('.operation-checkbox').prop('disabled', true).css('cursor', 'not-allowed');
-    $('[onclick^="dynamicToggleStar"]').prop('disabled', true).addClass('disabled');
-    $('[onclick^="dynamicDeleteOperation"]').hide();
-    $('#newOperationTitleInput, #addNewOperationBtn').prop('disabled', true);
 
-    $('.operation-item-card').each(function () {
-        $(this).css('opacity', '0.7');
-        if (!$(this).find('.lock-badge').length) {
-            $(this).prepend('<span class="badge bg-secondary lock-badge position-absolute top-0 end-0 m-2"><i class="fa fa-lock"></i></span>');
-        }
-    });
 
     $('.progress-bar').removeClass('bg-primary').addClass('bg-success');
     $('.progress-bar').css('width', '100%').attr('aria-valuenow', 100).text('100%');
@@ -850,29 +742,6 @@ function disableReminders() {
     }, 500);
 }
 
-// Global functions for operations
-function dynamicToggleComplete(checkbox, operationId) {
-    if (window.TaskDetailConfig && window.TaskDetailConfig.isTaskCompleted) {
-        if (typeof NotificationHelper !== 'undefined') {
-            NotificationHelper.warning('این تسک تکمیل شده و قابل ویرایش نیست');
-        }
-        if (checkbox) {
-            checkbox.checked = !checkbox.checked;
-        }
-        return false;
-    }
-
-    DynamicOperationsManager.toggleComplete(operationId);
-}
-
-function dynamicToggleStar(operationId) {
-    DynamicOperationsManager.toggleStar(operationId);
-}
-
-function dynamicDeleteOperation(operationId) {
-    DynamicOperationsManager.deleteOperation(operationId);
-}
-
 // ========================================
 // ⭐⭐⭐ Document Ready
 // ========================================
@@ -899,7 +768,6 @@ $(document).ready(function () {
 
     initializeTaskDetails();
 });
-
 function initializeTaskDetails() {
     const config = window.TaskDetailConfig;
 
@@ -909,11 +777,23 @@ function initializeTaskDetails() {
     TaskDetailsRefreshManager.init(config.taskId, config);
     DynamicOperationsManager.init(config);
 
+    // ⭐⭐⭐ فراخوانی Event Handlers
+    initializeOperationHandlers();
+
     // Operations input handlers
     $('#newOperationTitleInput').on('keypress', function (e) {
-        if (e.which === 13) {
+        // ⭐⭐⭐ برای textarea: Ctrl + Enter
+        if (e.ctrlKey && e.which === 13) {
             e.preventDefault();
             DynamicOperationsManager.addOperation();
+            return false;
+        }
+
+        // ⭐⭐⭐ برای input معمولی: فقط Enter
+        if (!e.ctrlKey && e.which === 13 && $(this).is('input')) {
+            e.preventDefault();
+            DynamicOperationsManager.addOperation();
+            return false;
         }
     });
 
@@ -934,7 +814,6 @@ function initializeTaskDetails() {
         }
     });
 
-
     // Reminders tab click handler
     $('#reminders-tab').on('click', function () {
         if (window.TaskDetailConfig) {
@@ -949,3 +828,590 @@ function initializeTaskDetails() {
 
     console.log('✅ TaskDetail.js initialized successfully');
 }
+
+// ========================================
+// ⭐⭐⭐ Task Operations Management
+// ========================================
+
+/**
+ * تغییر وضعیت ستاره عملیات
+ */
+function toggleOperationStar(operationId) {
+    if (!operationId) {
+        console.error('❌ Operation ID is required');
+        return;
+    }
+
+    // ⭐⭐⭐ پیدا کردن دکمه و جلوگیری از کلیک مجدد
+    const $button = $(`.btn-toggle-star[data-operation-id="${operationId}"]`);
+
+    if ($button.prop('disabled')) {
+        console.log('⚠️ Button already processing...');
+        return; // جلوگیری از کلیک مجدد
+    }
+
+    // ⭐⭐⭐ ذخیره آیکون اصلی و نمایش اسپینر
+    const $icon = $button.find('i');
+    const originalIconClass = $icon.attr('class');
+
+    $button.prop('disabled', true).addClass('disabled');
+    $icon.attr('class', 'fa fa-spinner fa-spin');
+
+    const token = getAntiForgeryToken();
+
+    $.ajax({
+        url: '/TaskingArea/TaskOperations/ToggleOperationStar',
+        type: 'POST',
+        data: {
+            id: operationId,
+            __RequestVerificationToken: token
+        },
+        success: function (response) {
+            if (response.success) {
+                // بروزرسانی UI از طریق سیستم update-view
+                if (response.status === 'update-view' && response.viewList) {
+                    updateMultipleViews(response.viewList);
+                }
+
+                // ⭐⭐⭐ بروزرسانی کل صفحه تسک
+                if (typeof TaskDetailsRefreshManager !== 'undefined' && TaskDetailsRefreshManager.isEnabled) {
+                    setTimeout(() => {
+                        TaskDetailsRefreshManager.refreshAll();
+                    }, 500);
+                }
+
+                // نمایش پیام موفقیت
+                if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.success(response.message);
+                } else {
+                    showToastReal(response.message, 'success');
+                }
+
+                console.log('✅ Operation star toggled successfully');
+            } else {
+                // ⭐⭐⭐ در صورت خطا، بازگرداندن دکمه به حالت اولیه
+                $button.prop('disabled', false).removeClass('disabled');
+                $icon.attr('class', originalIconClass);
+
+                if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.error(response.message || 'خطا در تغییر وضعیت ستاره');
+                } else {
+                    showToastReal(response.message || 'خطا در تغییر وضعیت ستاره', 'error');
+                }
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('❌ Error toggling star:', { xhr, status, error });
+
+            // ⭐⭐⭐ بازگرداندن دکمه به حالت اولیه در صورت خطا
+            $button.prop('disabled', false).removeClass('disabled');
+            $icon.attr('class', originalIconClass);
+
+            if (typeof NotificationHelper !== 'undefined') {
+                NotificationHelper.error('خطا در ارتباط با سرور');
+            } else {
+                showToastReal('خطا در ارتباط با سرور', 'error');
+            }
+        }
+    });
+}
+
+/**
+ * تغییر وضعیت تکمیل عملیات (Checkbox)
+ */
+function toggleOperationComplete(operationId) {
+    if (!operationId) {
+        console.error('❌ Operation ID is required');
+        return;
+    }
+
+    // ⭐⭐⭐ پیدا کردن چک‌باکس و جلوگیری از کلیک مجدد
+    const $checkbox = $(`.operation-checkbox[data-operation-id="${operationId}"]`);
+
+    if ($checkbox.prop('disabled')) {
+        console.log('⚠️ Checkbox already processing...');
+        return; // جلوگیری از کلیک مجدد
+    }
+
+    // ⭐⭐⭐ Disable کردن چک‌باکس و نمایش اسپینر
+    $checkbox.prop('disabled', true);
+
+    // ⭐⭐⭐ اضافه کردن اسپینر کنار چک‌باکس
+    const $operationItem = $checkbox.closest('.operation-item-card');
+    let $spinner = $operationItem.find('.operation-processing-spinner');
+
+    if ($spinner.length === 0) {
+        $spinner = $('<i class="fa fa-spinner fa-spin ms-2 operation-processing-spinner text-primary"></i>');
+        $checkbox.after($spinner);
+    } else {
+        $spinner.show();
+    }
+
+    const token = getAntiForgeryToken();
+
+    $.ajax({
+        url: '/TaskingArea/TaskOperations/ToggleOperationComplete',
+        type: 'POST',
+        data: {
+            id: operationId,
+            __RequestVerificationToken: token
+        },
+        success: function (response) {
+            if (response.success) {
+                // بروزرسانی آمارها و Partial Views
+                if (response.status === 'update-view' && response.viewList) {
+                    updateMultipleViews(response.viewList);
+                }
+
+                // ⭐⭐⭐ بروزرسانی کل صفحه تسک
+                if (typeof TaskDetailsRefreshManager !== 'undefined' && TaskDetailsRefreshManager.isEnabled) {
+                    setTimeout(() => {
+                        TaskDetailsRefreshManager.refreshAll();
+                    }, 500);
+                }
+
+                // نمایش پیام
+                if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.success(response.message);
+                } else {
+                    showToastReal(response.message, 'success');
+                }
+
+                // بروزرسانی Badge در تب Operations
+                if (typeof DynamicOperationsManager !== 'undefined') {
+                    DynamicOperationsManager.updateStats();
+                }
+
+                console.log('✅ Operation completion toggled successfully');
+            } else {
+                // ⭐⭐⭐ در صورت خطا، بازگرداندن چک‌باکس
+                $checkbox.prop('disabled', false);
+                $spinner.hide();
+
+                if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.error(response.message || 'خطا در تغییر وضعیت تکمیل');
+                } else {
+                    showToastReal(response.message || 'خطا در تغییر وضعیت تکمیل', 'error');
+                }
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('❌ Error toggling completion:', { xhr, status, error });
+
+            // ⭐⭐⭐ بازگرداندن چک‌باکس به حالت اولیه
+            $checkbox.prop('disabled', false);
+            $spinner.hide();
+
+            if (typeof NotificationHelper !== 'undefined') {
+                NotificationHelper.error('خطا در ارتباط با سرور');
+            } else {
+                showToastReal('خطا در ارتباط با سرور', 'error');
+            }
+        }
+    });
+}
+
+/**
+ * حذف عملیات (با تأیید)
+ */
+function deleteOperation(operationId) {
+    if (!operationId) {
+        console.error('❌ Operation ID is required');
+        return;
+    }
+
+    // تأیید حذف
+    Swal.fire({
+        title: 'حذف عملیات',
+        text: 'آیا از حذف این عملیات اطمینان دارید؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'بله، حذف شود',
+        cancelButtonText: 'انصراف',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            performDeleteOperation(operationId);
+        }
+    });
+}
+/**
+ * انجام عملیات حذف (پس از تأیید)
+ */
+function performDeleteOperation(operationId) {
+    // ⭐⭐⭐ پیدا کردن دکمه حذف و جلوگیری از کلیک مجدد
+    const $deleteButton = $(`.btn-delete-operation[data-operation-id="${operationId}"]`);
+
+    if ($deleteButton.prop('disabled')) {
+        console.log('⚠️ Delete already in progress...');
+        return;
+    }
+
+    // ⭐⭐⭐ Disable کردن دکمه و نمایش اسپینر
+    const $icon = $deleteButton.find('i');
+    const originalIconClass = $icon.attr('class');
+
+    $deleteButton.prop('disabled', true).addClass('disabled');
+    $icon.attr('class', 'fa fa-spinner fa-spin');
+
+    const token = getAntiForgeryToken();
+
+    $.ajax({
+        url: '/TaskingArea/TaskOperations/DeleteOperation',
+        type: 'POST',
+        data: {
+            id: operationId,
+            __RequestVerificationToken: token
+        },
+        success: function (response) {
+            if (response.success) {
+                // ⭐⭐⭐ بروزرسانی UI از طریق viewList
+                if (response.status === 'update-view' && response.viewList) {
+                    updateMultipleViews(response.viewList);
+                }
+
+                // ⭐⭐⭐ بروزرسانی Badge و آمار عملیات
+                if (typeof DynamicOperationsManager !== 'undefined') {
+                    DynamicOperationsManager.updateStats();
+                }
+
+                // ⭐⭐⭐ بروزرسانی کل صفحه تسک (Hero Stats, Progress Bar, Sidebar)
+                if (typeof TaskDetailsRefreshManager !== 'undefined' && TaskDetailsRefreshManager.isEnabled) {
+                    setTimeout(() => {
+                        TaskDetailsRefreshManager.refreshAll();
+                    }, 500);
+                }
+
+                // نمایش پیام موفقیت
+                Swal.fire({
+                    icon: 'success',
+                    title: 'حذف شد',
+                    text: response.message || 'عملیات با موفقیت حذف شد',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+                console.log('✅ Operation deleted successfully');
+            } else {
+                // ⭐⭐⭐ در صورت خطا، بازگرداندن دکمه
+                $deleteButton.prop('disabled', false).removeClass('disabled');
+                $icon.attr('class', originalIconClass);
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: response.message || 'خطا در حذف عملیات'
+                });
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('❌ Error deleting operation:', { xhr, status, error });
+
+            // ⭐⭐⭐ بازگرداندن دکمه در صورت خطا
+            $deleteButton.prop('disabled', false).removeClass('disabled');
+            $icon.attr('class', originalIconClass);
+
+            Swal.fire({
+                icon: 'error',
+                title: 'خطا',
+                text: 'خطا در ارتباط با سرور'
+            });
+        }
+    });
+}
+// ========================================
+// ⭐⭐⭐ Event Handlers - باید در Document Ready فراخوانی شود
+// ========================================
+/**
+ * راه‌اندازی Event Handlers برای دکمه‌های عملیات
+ */
+function initializeOperationHandlers() {
+    console.log('🔧 Initializing operation handlers...');
+
+    // ⭐⭐⭐ تغییر از $(document).on به استفاده مستقیم از document root
+    // Handler برای دکمه ستاره
+    $(document).off('click', '.btn-toggle-star').on('click', '.btn-toggle-star', function (e) {
+        e.preventDefault();
+        console.log('⭐ Star button clicked');
+        const operationId = $(this).data('operation-id');
+        console.log('Operation ID:', operationId);
+        if (operationId) {
+            toggleOperationStar(operationId);
+        } else {
+            console.error('❌ No operation ID found');
+        }
+    });
+
+    // Handler برای Checkbox تکمیل
+    $(document).off('change', '.operation-checkbox').on('change', '.operation-checkbox', function () {
+        console.log('☑️ Checkbox clicked');
+        const operationId = $(this).data('operation-id');
+        console.log('Operation ID:', operationId);
+        if (operationId) {
+            toggleOperationComplete(operationId);
+        } else {
+            console.error('❌ No operation ID found');
+        }
+    });
+
+    // Handler برای دکمه حذف
+    $(document).off('click', '.btn-delete-operation').on('click', '.btn-delete-operation', function (e) {
+        e.preventDefault();
+        console.log('🗑️ Delete button clicked');
+        const operationId = $(this).data('operation-id');
+        console.log('Operation ID:', operationId);
+        if (operationId) {
+            deleteOperation(operationId);
+        } else {
+            console.error('❌ No operation ID found');
+        }
+    });
+
+    // Handler برای دکمه افزودن WorkLog
+    $(document).off('click', '.btn-add-worklog').on('click', '.btn-add-worklog', function (e) {
+        e.preventDefault();
+        console.log('📝 Add WorkLog button clicked');
+        const operationId = $(this).data('operation-id');
+        console.log('Operation ID:', operationId);
+        if (operationId) {
+            openAddWorkLogModal(operationId);
+        } else {
+            console.error('❌ No operation ID found');
+        }
+    });
+
+    // Handler برای دکمه مشاهده WorkLogs
+    $(document).off('click', '.btn-view-worklogs').on('click', '.btn-view-worklogs', function (e) {
+        e.preventDefault();
+        console.log('👁️ View WorkLogs button clicked');
+        const operationId = $(this).data('operation-id');
+        console.log('Operation ID:', operationId);
+        if (operationId) {
+            showViewWorkLogsModal(operationId);
+        } else {
+            console.error('❌ No operation ID found');
+        }
+    });
+
+    console.log('✅ Operation handlers initialized');
+}
+
+/**
+ * باز کردن مودال افزودن WorkLog
+ */
+async function openAddWorkLogModal(operationId) {
+    if (!operationId) return;
+
+    console.log('📝 Opening Add WorkLog modal for operation:', operationId);
+
+    try {
+        const response = await fetch(`/TaskingArea/TaskOperations/AddWorkLogModal?operationId=${operationId}`);
+        const html = await response.text();
+
+        // استفاده از showModal اگر موجود است
+        if (typeof showModal === 'function') {
+            showModal('ثبت گزارش کار', html);
+        } else {
+            // Fallback: استفاده از Bootstrap Modal
+            const modalHtml = `
+                <div class="modal fade" id="workLogModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            ${html}
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('body').append(modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('workLogModal'));
+            modal.show();
+            $('#workLogModal').on('hidden.bs.modal', function () {
+                $(this).remove();
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error loading modal:', error);
+        if (typeof NotificationHelper !== 'undefined') {
+            NotificationHelper.error('خطا در بارگذاری مودال');
+        }
+    }
+}
+// ========================================
+// ⭐⭐⭐ Dynamic Operations Manager
+// ========================================
+const DynamicOperationsManager = {
+    config: null,
+    taskId: null,
+
+    init: function (config) {
+        this.config = config || window.TaskDetailConfig;
+
+        if (!this.config) {
+            console.error('❌ TaskDetailConfig not found for DynamicOperationsManager!');
+            return;
+        }
+
+        this.taskId = this.config.taskId;
+        console.log('✅ Dynamic Operations Manager initialized for task:', this.taskId);
+    },
+    /**
+ * افزودن عملیات جدید
+ */
+    addOperation: function () {
+        const $input = $('#newOperationTitleInput');
+        const title = $input.val().trim();
+
+        if (!title) {
+            if (typeof NotificationHelper !== 'undefined') {
+                NotificationHelper.warning('لطفاً عنوان عملیات را وارد کنید');
+            } else {
+                showToastReal('لطفاً عنوان عملیات را وارد کنید', 'warning');
+            }
+            $input.focus();
+            return;
+        }
+
+        // ⭐⭐⭐ جلوگیری از ارسال چندباره
+        const $addButton = $('#addNewOperationBtn');
+
+        if ($addButton.prop('disabled')) {
+            console.log('⚠️ Add operation already in progress...');
+            return;
+        }
+
+        // ⭐⭐⭐ Disable کردن input و button + نمایش اسپینر
+        $input.prop('disabled', true);
+        $addButton.prop('disabled', true);
+
+        const originalButtonHtml = $addButton.html();
+        $addButton.html('<i class="fa fa-spinner fa-spin me-1"></i>در حال افزودن...');
+
+        const token = getAntiForgeryToken();
+
+        $.ajax({
+            url: '/TaskingArea/TaskOperations/AddOperation',
+            type: 'POST',
+            data: {
+                taskId: this.taskId,
+                title: title,
+                __RequestVerificationToken: token
+            },
+            success: function (response) {
+                if (response.success) {
+                    // ⭐⭐⭐ پاک کردن input/textarea
+                    $input.val('');
+
+                    // بروزرسانی UI
+                    if (response.status === 'update-view' && response.viewList) {
+                        updateMultipleViews(response.viewList);
+                    }
+
+                    // ⭐⭐⭐ بروزرسانی کل صفحه تسک
+                    if (typeof TaskDetailsRefreshManager !== 'undefined' && TaskDetailsRefreshManager.isEnabled) {
+                        setTimeout(() => {
+                            TaskDetailsRefreshManager.refreshAll();
+                        }, 500);
+                    }
+
+                    // نمایش پیام
+                    if (typeof NotificationHelper !== 'undefined') {
+                        NotificationHelper.success(response.message || 'عملیات با موفقیت اضافه شد');
+                    } else {
+                        showToastReal(response.message || 'عملیات با موفقیت اضافه شد', 'success');
+                    }
+
+                    // بروزرسانی آمار
+                    DynamicOperationsManager.updateStats();
+
+                    console.log('✅ Operation added successfully');
+                } else {
+                    if (typeof NotificationHelper !== 'undefined') {
+                        NotificationHelper.error(response.message || 'خطا در افزودن عملیات');
+                    } else {
+                        showToastReal(response.message || 'خطا در افزودن عملیات', 'error');
+                    }
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('❌ Error adding operation:', { xhr, status, error });
+
+                if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.error('خطا در ارتباط با سرور');
+                } else {
+                    showToastReal('خطا در ارتباط با سرور', 'error');
+                }
+            },
+            complete: function () {
+                // ⭐⭐⭐ بازگرداندن button و input به حالت عادی
+                $input.prop('disabled', false).focus();
+                $addButton.prop('disabled', false).html(originalButtonHtml);
+            }
+        });
+    },
+    /**
+     * بروزرسانی آمار عملیات
+     */
+    updateStats: function () {
+        if (!this.config || !this.taskId) {
+            console.warn('⚠️ DynamicOperationsManager not properly initialized');
+            return;
+        }
+
+        // شمارش عملیات‌ها از DOM
+        const totalOps = $('.operation-item-card').length;
+        const completedOps = $('.operation-item-card[data-completed="true"]').length;
+        const pendingOps = totalOps - completedOps;
+        const starredOps = $('.operation-item-card[data-starred="true"]').length;
+        const $operationsBadge = $('#operations-badge-count');
+        if (totalOps > 0) {
+            $operationsBadge.text(totalOps).show();
+        } else {
+            $operationsBadge.text('0').hide();
+        }
+
+
+        // بروزرسانی آمار در صفحه
+        $('#totalOpsCount').text(totalOps);
+        $('#completedOpsCount').text(completedOps);
+        $('#pendingOpsCount').text(pendingOps);
+        $('#starredOpsCount').text(starredOps);
+
+        console.log(`✅ Stats updated: Total=${totalOps}, Completed=${completedOps}, Pending=${pendingOps}, Starred=${starredOps}`);
+    },
+
+    /**
+     * بارگذاری مجدد لیست عملیات
+     */
+    refreshOperationsList: function () {
+        if (!this.config || !this.taskId) {
+            console.warn('⚠️ DynamicOperationsManager not properly initialized');
+            return;
+        }
+
+        const token = getAntiForgeryToken();
+
+        $.ajax({
+            url: '/TaskingArea/TaskOperations/GetAllOperations',
+            type: 'GET',
+            data: {
+                taskId: this.taskId,
+                __RequestVerificationToken: token
+            },
+            success: function (html) {
+                $('#pending-operations-container').html(html);
+                DynamicOperationsManager.updateStats();
+                console.log('✅ Operations list refreshed');
+            },
+            error: function (xhr, status, error) {
+                console.error('❌ Error refreshing operations:', { xhr, status, error });
+            }
+        });
+    }
+};
+
+/**
+* بروزرسانی چندین view به صورت همزمان
+* @param {Array} viewList - آرایه‌ای از اشیاء {elementId, view}
+*/

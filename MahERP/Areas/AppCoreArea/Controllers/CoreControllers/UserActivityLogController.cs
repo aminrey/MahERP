@@ -12,7 +12,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
     /// کنترلر مدیریت لاگ فعالیت‌های کاربران
     /// این کنترلر شامل تمام عملیات مربوط به نمایش، جستجو و مدیریت لاگ‌های سیستم است
     /// </summary>
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     [PermissionRequired("CORE.ACTIVITYLOG")]
 

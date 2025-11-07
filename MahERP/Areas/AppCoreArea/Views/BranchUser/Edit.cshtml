@@ -1,29 +1,28 @@
-@model BranchUserViewModel
+﻿@model BranchUserViewModel
 @{
-    ViewData["Title"] = "?????? ????? ????";
+    ViewData["Title"] = "ویرایش کاربر شعبه";
 }
 
 <!-- Hero -->
 <div class="bg-image" style="background-image: url('/assets/media/photos/photo12.jpg');">
     <div class="bg-primary-dark-op">
         <div class="content content-full text-center py-6">
-            <h1 class="h2 text-white mb-2">?????? ????? ????</h1>
+            <h1 class="h2 text-white mb-2">ویرایش کاربر شعبه</h1>
             <h2 class="h4 fw-normal text-white-75 mb-0">@Model.UserFullName</h2>
         </div>
     </div>
 </div>
 <!-- END Hero -->
-
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <div class="block block-rounded">
         <div class="block-header block-header-default">
             <h3 class="block-title">
-                <i class="fa fa-edit text-muted me-1"></i> ?????? ???????
+                <i class="fa fa-edit text-muted me-1"></i> ویرایش اطلاعات
             </h3>
             <div class="block-options">
                 <a href="@Url.Action("Index", new { branchId = Model.BranchId })" class="btn btn-sm btn-alt-secondary">
-                    <i class="fa fa-arrow-left me-1"></i> ??????
+                    <i class="fa fa-arrow-left me-1"></i> بازگشت
                 </a>
             </div>
         </div>
@@ -39,14 +38,14 @@
 
                 <div class="col-md-6">
                     <div class="mb-4">
-                        <label class="form-label">??? ?????</label>
+                        <label class="form-label">نام کاربر</label>
                         <div class="form-control-plaintext">@Model.UserFullName</div>
                     </div>
                 </div>
 
                 <div class="col-md-6">
                     <div class="mb-4">
-                        <label class="form-label">????</label>
+                        <label class="form-label">شعبه</label>
                         <div class="form-control-plaintext">@Model.BranchName</div>
                     </div>
                 </div>
@@ -56,41 +55,41 @@
                         @Html.LabelFor(m => m.Role, new { @class = "form-label" })
                         @Html.DropDownListFor(m => m.Role, new SelectList(new List<SelectListItem>
                         {
-                            new SelectListItem { Text = "???????", Value = "0" },
-                            new SelectListItem { Text = "????", Value = "1" },
-                            new SelectListItem { Text = "????", Value = "2" }
-                        }, "Value", "Text"), new { @class = "form-select", required = "required" })
-                        @Html.ValidationMessageFor(m => m.Role, "", new { @class = "text-danger" })
-                    </div>
+                            new SelectListItem { Text = "مشاهده‌گر", Value = "0" },
+                                        new SelectListItem { Text = "کارمند", Value = "1" },
+                                        new SelectListItem { Text = "مدیر", Value = "2" }
+                                        }, "Value", "Text"), new { @class = "form-select", required = "required" })
+                    @Html.ValidationMessageFor(m => m.Role, "", new { @class = "text-danger" })
                 </div>
+            </div>
 
-                <div class="col-md-6">
-                    <div class="mb-4">
-                        <label class="form-label">????? ??????</label>
-                        <div class="form-control-plaintext">@ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</div>
-                    </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <label class="form-label">تاریخ تخصیص</label>
+                    <div class="form-control-plaintext">@ConvertDateTime.ConvertMiladiToShamsi(Model.AssignDate, "yyyy/MM/dd")</div>
                 </div>
+            </div>
 
-                <div class="col-md-6">
-                    <div class="mb-4">
-                        <div class="form-check form-switch">
-                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
-                            @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
-                        </div>
+            <div class="col-md-6">
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                        @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
                     </div>
                 </div>
+            </div>
 
-                <div class="col-12">
-                    <div class="mb-4">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-check me-1"></i> ????? ???????
-                        </button>
-                        <a href="@Url.Action("Index", new { branchId = Model.BranchId })" class="btn btn-secondary">
-                            <i class="fa fa-times me-1"></i> ??????
-                        </a>
-                    </div>
+            <div class="col-12">
+                <div class="mb-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-check me-1"></i> ذخیره تغییرات
+                    </button>
+                    <a href="@Url.Action("Index", new { branchId = Model.BranchId })" class="btn btn-secondary">
+                        <i class="fa fa-times me-1"></i> انصراف
+                    </a>
                 </div>
-            }
+            </div>
+                        }
         </div>
     </div>
 </div>

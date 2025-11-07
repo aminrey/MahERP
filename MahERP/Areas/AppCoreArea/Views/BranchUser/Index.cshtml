@@ -1,19 +1,18 @@
-@model List<BranchUser>
+﻿@model List<BranchUser>
 @{
-    ViewData["Title"] = $"?????? ??????? ???? - {ViewBag.BranchName}";
+    ViewData["Title"] = $"مدیریت کاربران شعبه - {ViewBag.BranchName}";
 }
 
 <!-- Hero -->
 <div class="bg-image" style="background-image: url('/assets/media/photos/photo12.jpg');">
     <div class="bg-primary-dark-op">
         <div class="content content-full text-center py-6">
-            <h1 class="h2 text-white mb-2">?????? ??????? ????</h1>
+            <h1 class="h2 text-white mb-2">مدیریت کاربران شعبه</h1>
             <h2 class="h4 fw-normal text-white-75 mb-0">@ViewBag.BranchName</h2>
         </div>
     </div>
 </div>
 <!-- END Hero -->
-
 <!-- Page Content -->
 <div class="content content-full content-boxed">
     <!-- Quick Actions -->
@@ -25,7 +24,7 @@
                         <i class="fa fa-user-plus text-success"></i>
                     </div>
                     <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
-                        ?????? ?????
+                        افزودن کاربر
                     </p>
                 </div>
             </a>
@@ -37,19 +36,18 @@
                         <i class="fa fa-building text-primary"></i>
                     </div>
                     <p class="fw-semibold fs-sm text-muted text-uppercase mb-0">
-                        ?????? ????
+                        جزئیات شعبه
                     </p>
                 </div>
             </a>
         </div>
     </div>
     <!-- END Quick Actions -->
-
     <!-- Search and Filter -->
     <div class="block block-rounded">
         <div class="block-header block-header-default">
             <h3 class="block-title">
-                <i class="fa fa-search text-muted me-1"></i> ????? ? ?????
+                <i class="fa fa-search text-muted me-1"></i> جستجو و فیلتر
             </h3>
         </div>
         <div class="block-content">
@@ -58,21 +56,21 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="mb-3">
-                            <label class="form-label">?????</label>
-                            <input type="text" class="form-control" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="???? ????? ?? ??? ??????">
+                            <label class="form-label">جستجو</label>
+                            <input type="text" class="form-control" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="نام، ایمیل یا نام کاربری">
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="mb-3">
-                            <label class="form-label">???</label>
+                            <label class="form-label">نقش</label>
                             @{
                                 var roleItems = new List<SelectListItem>
-                                {
-                                    new SelectListItem { Text = "???", Value = "" },
-                                    new SelectListItem { Text = "???????", Value = "0" },
-                                    new SelectListItem { Text = "????", Value = "1" },
-                                    new SelectListItem { Text = "????", Value = "2" }
-                                };
+                                                        {
+                                                        new SelectListItem { Text = "همه", Value = "" },
+                                                        new SelectListItem { Text = "مشاهده‌گر", Value = "0" },
+                                                        new SelectListItem { Text = "کارمند", Value = "1" },
+                                                        new SelectListItem { Text = "مدیر", Value = "2" }
+                                                        };
                                 var selectedRoleValue = ViewBag.SelectedRole?.ToString() ?? "";
                             }
                             @Html.DropDownList("role", new SelectList(roleItems, "Value", "Text", selectedRoleValue), new { @class = "form-select" })
@@ -80,14 +78,14 @@
                     </div>
                     <div class="col-md-2">
                         <div class="mb-3">
-                            <label class="form-label">?????</label>
+                            <label class="form-label">وضعیت</label>
                             @{
                                 var statusItems = new List<SelectListItem>
-                                {
-                                    new SelectListItem { Text = "???", Value = "" },
-                                    new SelectListItem { Text = "????", Value = "true" },
-                                    new SelectListItem { Text = "???????", Value = "false" }
-                                };
+                                                        {
+                                                        new SelectListItem { Text = "همه", Value = "" },
+                                                        new SelectListItem { Text = "فعال", Value = "true" },
+                                                        new SelectListItem { Text = "غیرفعال", Value = "false" }
+                                                        };
                                 var selectedStatusValue = ViewBag.SelectedStatus?.ToString() ?? "";
                             }
                             @Html.DropDownList("isActive", new SelectList(statusItems, "Value", "Text", selectedStatusValue), new { @class = "form-select" })
@@ -98,7 +96,7 @@
                             <label class="form-label">&nbsp;</label>
                             <div>
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fa fa-search me-1"></i> ?????
+                                    <i class="fa fa-search me-1"></i> جستجو
                                 </button>
                             </div>
                         </div>
@@ -112,11 +110,11 @@
     <div class="block block-rounded">
         <div class="block-header block-header-default">
             <h3 class="block-title">
-                <i class="fa fa-users text-muted me-1"></i> ???? ??????? (@Model.Count ???)
+                <i class="fa fa-users text-muted me-1"></i> لیست کاربران (@Model.Count نفر)
             </h3>
             <div class="block-options">
                 <a href="@Url.Action("Create", new { branchId = ViewBag.BranchId })" class="btn btn-sm btn-alt-primary">
-                    <i class="fa fa-plus me-1"></i> ?????? ?????
+                    <i class="fa fa-plus me-1"></i> افزودن کاربر
                 </a>
             </div>
         </div>
@@ -127,14 +125,14 @@
                     <table class="table table-striped table-vcenter">
                         <thead>
                             <tr>
-                                <th class="text-center">????</th>
-                                <th class="text-center">??? ?????</th>
-                                <th class="text-center">?????</th>
-                                <th class="text-center">???</th>
-                                <th class="text-center">????? ??????</th>
-                                <th class="text-center">?????? ?????</th>
-                                <th class="text-center">?????</th>
-                                <th class="text-center" style="width: 150px;">??????</th>
+                                <th class="text-center">ردیف</th>
+                                <th class="text-center">نام کاربر</th>
+                                <th class="text-center">ایمیل</th>
+                                <th class="text-center">نقش</th>
+                                <th class="text-center">تاریخ تخصیص</th>
+                                <th class="text-center">تخصیص توسط</th>
+                                <th class="text-center">وضعیت</th>
+                                <th class="text-center" style="width: 150px;">عملیات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -155,13 +153,13 @@
                                         @switch (user.Role)
                                         {
                                             case 0:
-                                                <span class="badge bg-info">???????</span>
+                                                <span class="badge bg-info">مشاهده‌گر</span>
                                                 break;
                                             case 1:
-                                                <span class="badge bg-warning">????</span>
+                                                <span class="badge bg-warning">کارمند</span>
                                                 break;
                                             case 2:
-                                                <span class="badge bg-success">????</span>
+                                                <span class="badge bg-success">مدیر</span>
                                                 break;
                                         }
                                     </td>
@@ -179,29 +177,29 @@
                                     <td class="text-center">
                                         @if (user.IsActive)
                                         {
-                                            <span class="badge bg-success">????</span>
+                                            <span class="badge bg-success">فعال</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-danger">???????</span>
+                                            <span class="badge bg-danger">غیرفعال</span>
                                         }
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group">
-                                            <a href="@Url.Action("Details", new { id = user.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="??????">
+                                            <a href="@Url.Action("Details", new { id = user.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="جزئیات">
                                                 <i class="fa fa-fw fa-eye"></i>
                                             </a>
-                                            <a href="@Url.Action("Edit", new { id = user.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="??????">
+                                            <a href="@Url.Action("Edit", new { id = user.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="ویرایش">
                                                 <i class="fa fa-fw fa-pencil-alt"></i>
                                             </a>
                                             <form method="post" action="@Url.Action("ToggleStatus")" class="d-inline">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@user.Id" />
-                                                <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-alt-warning" : "btn-alt-success")" data-bs-toggle="tooltip" title="@(user.IsActive ? "??????? ????" : "???? ????")">
+                                                <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-alt-warning" : "btn-alt-success")" data-bs-toggle="tooltip" title="@(user.IsActive ? "غیرفعال کردن" : "فعال کردن")">
                                                     <i class="fa fa-fw @(user.IsActive ? "fa-ban" : "fa-check")"></i>
                                                 </button>
                                             </form>
-                                            <a href="@Url.Action("Delete", new { id = user.Id })" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="???">
+                                            <a href="@Url.Action("Delete", new { id = user.Id })" class="btn btn-sm btn-alt-danger" data-bs-toggle="tooltip" title="حذف">
                                                 <i class="fa fa-fw fa-trash-alt"></i>
                                             </a>
                                         </div>
@@ -217,9 +215,9 @@
             {
                 <div class="text-center py-4">
                     <i class="fa fa-users fa-3x text-muted mb-3"></i>
-                    <p class="mb-3">??? ?????? ???? ??? ???? ??? ???? ???.</p>
+                    <p class="mb-3">هیچ کاربری برای این شعبه یافت نشد.</p>
                     <a href="@Url.Action("Create", new { branchId = ViewBag.BranchId })" class="btn btn-primary">
-                        <i class="fa fa-plus me-1"></i> ?????? ?????
+                        <i class="fa fa-plus me-1"></i> افزودن کاربر
                     </a>
                 </div>
             }

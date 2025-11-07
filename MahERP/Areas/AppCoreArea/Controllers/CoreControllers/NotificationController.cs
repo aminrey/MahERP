@@ -19,7 +19,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
     /// کنترلر مدیریت نوتیفیکیشن‌های کاربران
     /// برای نمایش و مدیریت نوتیفیکیشن‌های دریافتی کاربر
     /// </summary>
-    [Area("AdminArea")]
+    [Area("AppCoreArea")]
     [Authorize]
     [PermissionRequired("CORE.NOTIFICATION")]
 
