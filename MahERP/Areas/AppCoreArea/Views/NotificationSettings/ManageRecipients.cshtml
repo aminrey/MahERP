@@ -1,0 +1,392 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Notifications.ManageRecipientsViewModel
+@{
+    ViewData["Title"] = "مدیریت دریافت‌کنندگان";
+}
+@Html.AntiForgeryToken() 
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-users text-success me-2"></i>مدیریت دریافت‌کنندگان
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" asp-controller="NotificationSettings">تنظیمات اعلان</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">دریافت‌کنندگان</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <!-- اطلاعات نوع اعلان -->
+    <div class="block block-rounded">
+        <div class="block-content">
+            <div class="alert alert-info d-flex align-items-center mb-0">
+                <div class="flex-shrink-0">
+                    <i class="fa fa-bell fa-2x"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <h5 class="mb-1">@Model.TypeName</h5>
+                    <p class="mb-0 text-muted">@Model.Description</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- ستون تنظیمات -->
+        <div class="col-lg-4">
+            <!-- حالت ارسال -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-cog text-primary me-2"></i>حالت ارسال اعلان
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input send-mode-radio" 
+                                   type="radio" 
+                                   name="sendMode" 
+                                   id="sendModeAll" 
+                                   value="0"
+                                   @(Model.SendMode == 0 ? "checked" : "")>
+                            <label class="form-check-label" for="sendModeAll">
+                                <strong>همه کاربران</strong>
+                                <div class="fs-sm text-muted">تمام کاربران فعال این اعلان را دریافت می‌کنند</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input send-mode-radio" 
+                                   type="radio" 
+                                   name="sendMode" 
+                                   id="sendModeSpecific" 
+                                   value="1"
+                                   @(Model.SendMode == 1 ? "checked" : "")>
+                            <label class="form-check-label" for="sendModeSpecific">
+                                <strong>فقط کاربران مشخص</strong>
+                                <div class="fs-sm text-muted">فقط کاربران لیست زیر اعلان می‌گیرند</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input send-mode-radio" 
+                                   type="radio" 
+                                   name="sendMode" 
+                                   id="sendModeExcept" 
+                                   value="2"
+                                   @(Model.SendMode == 2 ? "checked" : "")>
+                            <label class="form-check-label" for="sendModeExcept">
+                                <strong>همه به جز...</strong>
+                                <div class="fs-sm text-muted">همه کاربران به جز لیست زیر اعلان می‌گیرند</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning" id="sendModeAlert" style="display: none;">
+                        <i class="fa fa-exclamation-triangle me-1"></i>
+                        <small id="sendModeAlertText"></small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- دکمه‌ها -->
+            <div class="block block-rounded">
+                <div class="block-content">
+                    <button type="button" 
+                            class="btn btn-success w-100 mb-2" 
+                            id="addRecipientBtn"
+                            @(Model.SendMode == 0 ? "disabled" : "")>
+                        <i class="fa fa-user-plus me-1"></i>افزودن کاربر
+                    </button>
+                    <a asp-action="EditType" 
+                       asp-route-id="@Model.NotificationTypeId" 
+                       class="btn btn-alt-secondary w-100 mb-2">
+                        <i class="fa fa-edit me-1"></i>ویرایش نوع اعلان
+                    </a>
+                    <a asp-action="Index" class="btn btn-alt-secondary w-100">
+                        <i class="fa fa-arrow-right me-1"></i>بازگشت
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ستون لیست کاربران -->
+        <div class="col-lg-8">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-list me-2"></i>
+                        <span id="recipientListTitle">
+                            @if (Model.SendMode == 0)
+                            {
+                                <text>لیست فعلی (غیرفعال)</text>
+                            }
+                            else if (Model.SendMode == 1)
+                            {
+                                <text>کاربران مجاز</text>
+                            }
+                            else
+                            {
+                                <text>کاربران مسدود شده</text>
+                            }
+                        </span>
+                    </h3>
+                    <div class="block-options">
+                        <span class="badge bg-primary">@Model.CurrentRecipients.Count کاربر</span>
+                    </div>
+                </div>
+                <div class="block-content">
+                    @if (!Model.CurrentRecipients.Any())
+                    {
+                        <div class="text-center py-5" id="emptyState">
+                            <i class="fa fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">لیست خالی است</h5>
+                            <p class="text-muted">
+                                @if (Model.SendMode == 0)
+                                {
+                                    <text>در حالت "همه کاربران"، نیازی به تعریف لیست نیست</text>
+                                }
+                                else
+                                {
+                                    <text>هنوز کاربری اضافه نشده است</text>
+                                }
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover table-vcenter">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%;">کاربر</th>
+                                        <th style="width: 30%;">دلیل</th>
+                                        <th style="width: 20%;">تاریخ افزودن</th>
+                                        <th style="width: 10%;" class="text-center">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recipientsTableBody">
+                                    @foreach (var user in Model.CurrentRecipients.OrderByDescending(r => r.AddedDate))
+                                    {
+                                        <tr data-recipient-id="@user.RecipientId">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img class="img-avatar img-avatar32 me-2" 
+                                                         src="@(!string.IsNullOrEmpty(user.ProfileImagePath) ? user.ProfileImagePath : "/assets/media/avatars/avatar0.jpg")" 
+                                                         alt="Avatar">
+                                                    <div>
+                                                        <strong>@user.FullName</strong>
+                                                        <div class="fs-xs text-muted">@user.Email</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @(string.IsNullOrEmpty(user.Reason) ? "دلیل مشخص نشده" : user.Reason)
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @user.AddedDate.ToString("yyyy/MM/dd HH:mm")
+                                                    <div class="fs-xs">توسط: @user.AddedByName</div>
+                                                </small>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-alt-danger remove-recipient"
+                                                        data-recipient-id="@user.RecipientId"
+                                                        data-user-name="@user.FullName">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notification-settings.css" />
+}
+
+@section Scripts {
+    <script>
+        const notificationTypeId = @Model.NotificationTypeId;
+        let currentSendMode = @Model.SendMode;
+
+        $(document).ready(function () {
+            updateUIBasedOnSendMode(currentSendMode);
+
+            // تغییر SendMode
+            $('.send-mode-radio').on('change', function () {
+                const newMode = parseInt($(this).val());
+                updateSendMode(newMode);
+            });
+
+            // افزودن کاربر
+            $('#addRecipientBtn').on('click', function () {
+                openAddRecipientModal();
+            });
+
+            // حذف کاربر
+            $(document).on('click', '.remove-recipient', async function () {
+                const recipientId = $(this).data('recipient-id');
+                const userName = $(this).data('user-name');
+
+                const confirmed = await showConfirmationSwal({
+                    title: 'حذف کاربر',
+                    text: `آیا از حذف "${userName}" اطمینان دارید؟`,
+                    icon: 'question',
+                    confirmButtonText: 'بله، حذف شود'
+                });
+
+                if (confirmed) {
+                    removeRecipient(recipientId);
+                }
+            });
+        });
+
+        // بروزرسانی UI بر اساس SendMode
+        function updateUIBasedOnSendMode(mode) {
+            const alertTexts = {
+                0: 'در این حالت، تمام کاربران فعال سیستم این اعلان را دریافت می‌کنند.',
+                1: 'فقط کاربران موجود در لیست زیر این اعلان را دریافت خواهند کرد.',
+                2: 'همه کاربران به جز افراد موجود در لیست زیر، این اعلان را دریافت می‌کنند.'
+            };
+
+            const titles = {
+                0: 'لیست فعلی (غیرفعال)',
+                1: 'کاربران مجاز',
+                2: 'کاربران مسدود شده'
+            };
+
+            $('#sendModeAlertText').text(alertTexts[mode]);
+            $('#sendModeAlert').fadeIn();
+            $('#recipientListTitle').text(titles[mode]);
+
+            // فعال/غیرفعال دکمه افزودن
+            $('#addRecipientBtn').prop('disabled', mode === 0);
+
+            currentSendMode = mode;
+        }
+
+        // تغییر SendMode
+        function updateSendMode(newMode) {
+            $.ajax({
+                url: '@Url.Action("UpdateSendMode", "NotificationSettings", new { area = "AppCoreArea" })',
+                type: 'POST',
+                data: {
+                    typeId: notificationTypeId,
+                    sendMode: newMode,
+                    __RequestVerificationToken: getAntiForgeryToken()
+                },
+                success: function (response) {
+                    if (response.status === 'success') {
+                        SendResposeMessage(response.message);
+                        updateUIBasedOnSendMode(newMode);
+                    } else {
+                        SendResposeMessage(response.message);
+                        // بازگشت به حالت قبلی
+                        $(`.send-mode-radio[value="${currentSendMode}"]`).prop('checked', true);
+                    }
+                },
+                error: function () {
+                    NotificationHelper.error('خطا در تغییر حالت ارسال');
+                    $(`.send-mode-radio[value="${currentSendMode}"]`).prop('checked', true);
+                }
+            });
+        }
+
+        // باز کردن Modal افزودن کاربر
+        function openAddRecipientModal() {
+            const modalUrl = '@Url.Action("AddRecipientModal", "NotificationSettings", new { area = "AppCoreArea", id = Model.NotificationTypeId })';
+
+            createAndShowModal({
+                url: modalUrl,
+                onShown: function (modalInstance, $modal) {
+                    loadAvailableUsers($modal);
+                },
+                onSubmitSuccess: function (response) {
+                    if (response.status === 'success') {
+                        setTimeout(() => location.reload(), 500);
+                    }
+                }
+            });
+        }
+
+        // بارگذاری کاربران موجود
+        function loadAvailableUsers($modal) {
+            const currentRecipientIds = @Html.Raw(Json.Serialize(Model.CurrentRecipients.Select(r => r.UserId)));
+            const $select = $modal.find('#recipientUserId');
+
+            $select.empty().append('<option value="">انتخاب کنید...</option>');
+
+            @foreach (var user in Model.AllUsers)
+            {
+                if (!Model.CurrentRecipients.Any(r => r.UserId == user.UserId))
+                {
+                    <text>
+                    $select.append(`<option value="@user.UserId">@user.FullName (@user.Email)</option>`);
+                    </text>
+                }
+            }
+        }
+
+        // حذف کاربر
+        function removeRecipient(recipientId) {
+            $.ajax({
+                url: '@Url.Action("RemoveRecipient", "NotificationSettings", new { area = "AppCoreArea" })',
+                type: 'POST',
+                data: {
+                    recipientId: recipientId,
+                    __RequestVerificationToken: getAntiForgeryToken()
+                },
+                success: function (response) {
+                    if (response.status === 'success') {
+                        SendResposeMessage(response.message);
+                        $(`tr[data-recipient-id="${recipientId}"]`).fadeOut(300, function () {
+                            $(this).remove();
+                            updateRecipientCount();
+                        });
+                    } else {
+                        SendResposeMessage(response.message);
+                    }
+                }
+            });
+        }
+
+        // بروزرسانی تعداد
+        function updateRecipientCount() {
+            const count = $('#recipientsTableBody tr').length;
+            $('.block-options .badge').text(`${count} کاربر`);
+
+            if (count === 0) {
+                location.reload();
+            }
+        }
+    </script>
+}

@@ -1,0 +1,319 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Notifications.NotificationSettingsViewModel
+@{
+    ViewData["Title"] = "تنظیمات اعلان‌رسانی";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-bell text-primary me-2"></i>تنظیمات سیستم اعلان‌رسانی
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">تنظیمات اعلان‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <!-- آمار سریع -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="block block-rounded bg-primary text-white">
+                <div class="block-content block-content-full">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h3 class="text-white mb-0">@Model.Modules.Count</h3>
+                            <div class="fs-sm">ماژول فعال</div>
+                        </div>
+                        <div><i class="fa fa-cube fa-3x opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="block block-rounded bg-success text-white">
+                <div class="block-content block-content-full">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h3 class="text-white mb-0">@Model.Modules.Sum(m => m.Types.Count)</h3>
+                            <div class="fs-sm">نوع اعلان</div>
+                        </div>
+                        <div><i class="fa fa-bell fa-3x opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="block block-rounded bg-info text-white">
+                <div class="block-content block-content-full">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h3 class="text-white mb-0">@Model.Modules.Sum(m => m.Types.Count(t => t.IsActive))</h3>
+                            <div class="fs-sm">اعلان فعال</div>
+                        </div>
+                        <div><i class="fa fa-check-circle fa-3x opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="block block-rounded bg-warning text-white">
+                <div class="block-content block-content-full">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h3 class="text-white mb-0">3</h3>
+                            <div class="fs-sm">کانال ارتباطی</div>
+                        </div>
+                        <div><i class="fa fa-broadcast-tower fa-3x opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- دکمه‌های سریع -->
+    <div class="row mb-4">
+        @if (Html.CanAccessAny("NOTIFICATION.SETTINGS", "NOTIFICATION.SETTINGS.MANAGE"))
+        {
+            <div class="col-md-3">
+                <a asp-action="TestNotification" class="btn btn-alt-primary w-100 py-3">
+                    <i class="fa fa-paper-plane fa-2x d-block mb-2"></i>
+                    <strong>تست ارسال اعلان</strong>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a asp-action="Blacklist" class="btn btn-alt-danger w-100 py-3">
+                    <i class="fa fa-ban fa-2x d-block mb-2"></i>
+                    <strong>لیست سیاه</strong>
+                </a>
+            </div>
+        }
+
+        @if (Html.CanAccessAny("NOTIFICATION.TEMPLATES", "NOTIFICATION.TEMPLATES.VIEW"))
+        {
+            <div class="col-md-3">
+                <a asp-area="AppCoreArea" asp-controller="NotificationTemplates" asp-action="Index" class="btn btn-alt-info w-100 py-3">
+                    <i class="fa fa-file-alt fa-2x d-block mb-2"></i>
+                    <strong>الگوهای پیام</strong>
+                </a>
+            </div>
+        }
+
+        @if (Html.CanAccessAny("NOTIFICATION.TEMPLATES", "NOTIFICATION.TEMPLATES.CREATE"))
+        {
+            <div class="col-md-3">
+                <a asp-area="AppCoreArea" asp-controller="NotificationTemplates" asp-action="Create" class="btn btn-alt-success w-100 py-3">
+                    <i class="fa fa-plus-circle fa-2x d-block mb-2"></i>
+                    <strong>الگوی جدید</strong>
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- تنظیمات کلی -->
+    @if (Html.CanAccessAny("NOTIFICATION.SETTINGS", "NOTIFICATION.SETTINGS.EDIT"))
+    {
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-cog text-muted me-2"></i>تنظیمات کلی سیستم
+                </h3>
+                <div class="block-options">
+                    <button class="btn btn-sm btn-alt-primary" id="saveGlobalSettings">
+                        <i class="fa fa-save me-1"></i>ذخیره تنظیمات
+                    </button>
+                </div>
+            </div>
+            <div class="block-content">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4 class="fs-5 mb-3">
+                            <i class="fa fa-broadcast-tower text-primary me-2"></i>کانال‌های ارتباطی
+                        </h4>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="emailEnabled" 
+                                   @(Model.IsEmailEnabled ? "checked" : "")>
+                            <label class="form-check-label" for="emailEnabled">
+                                <i class="fa fa-envelope text-info me-2"></i>ارسال ایمیل
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="smsEnabled" 
+                                   @(Model.IsSmsEnabled ? "checked" : "")>
+                            <label class="form-check-label" for="smsEnabled">
+                                <i class="fa fa-sms text-success me-2"></i>ارسال پیامک
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="telegramEnabled" 
+                                   @(Model.IsTelegramEnabled ? "checked" : "")>
+                            <label class="form-check-label" for="telegramEnabled">
+                                <i class="fab fa-telegram text-primary me-2"></i>ارسال تلگرام
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4 class="fs-5 mb-3">
+                            <i class="fa fa-shield-alt text-warning me-2"></i>محدودیت‌های ارسال
+                        </h4>
+                        <div class="mb-3">
+                            <label class="form-label">حداکثر ایمیل در روز (هر کاربر)</label>
+                            <input type="number" class="form-control" id="maxEmailPerDay" 
+                                   value="@Model.MaxEmailPerUserPerDay" min="1" max="1000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">حداکثر پیامک در روز (هر کاربر)</label>
+                            <input type="number" class="form-control" id="maxSmsPerDay" 
+                                   value="@Model.MaxSmsPerUserPerDay" min="1" max="100">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">حداکثر تلگرام در روز (هر کاربر)</label>
+                            <input type="number" class="form-control" id="maxTelegramPerDay" 
+                                   value="@Model.MaxTelegramPerUserPerDay" min="1" max="1000">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- لیست ماژول‌ها و انواع اعلان -->
+    @if (Html.CanAccessAny("NOTIFICATION.SETTINGS", "NOTIFICATION.SETTINGS.VIEW"))
+    {
+        @foreach (var module in Model.Modules.OrderBy(m => m.Id))
+        {
+            <div class="block block-rounded" data-module-id="@module.Id">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <span class="badge" style="background-color: @module.ColorCode; color: white;">
+                            @module.ModuleNameFa
+                        </span>
+                    </h3>
+                    <div class="block-options">
+                        <span class="badge bg-primary">
+                            @module.Types.Count اعلان
+                        </span>
+                        <span class="badge bg-success ms-2">
+                            @module.Types.Count(t => t.IsActive) فعال
+                        </span>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-vcenter">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%;">نوع اعلان</th>
+                                    <th style="width: 15%;" class="text-center">وضعیت</th>
+                                    <th style="width: 30%;" class="text-center">کانال‌ها</th>
+                                    <th style="width: 15%;" class="text-center">عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var type in module.Types.OrderBy(t => t.Priority))
+                                {
+                                    <tr data-type-id="@type.Id">
+                                        <td>
+                                            <div>
+                                                <strong>@type.TypeNameFa</strong>
+                                                @if (type.AllowUserCustomization)
+                                                {
+                                                    <span class="badge bg-info ms-2" title="قابل تنظیم توسط کاربر">
+                                                        <i class="fa fa-user-cog"></i>
+                                                    </span>
+                                                }
+                                            </div>
+                                            <small class="text-muted">@type.Description</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input toggle-notification-type" 
+                                                       type="checkbox" 
+                                                       data-type-id="@type.Id"
+                                                       @(type.IsActive ? "checked" : "")>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                @if (type.SupportsEmail)
+                                                {
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-info toggle-channel"
+                                                            data-type-id="@type.Id" 
+                                                            data-channel="email"
+                                                            title="ایمیل">
+                                                        <i class="fa fa-envelope"></i>
+                                                    </button>
+                                                }
+                                                @if (type.SupportsSms)
+                                                {
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-success toggle-channel"
+                                                            data-type-id="@type.Id" 
+                                                            data-channel="sms"
+                                                            title="پیامک">
+                                                        <i class="fa fa-sms"></i>
+                                                    </button>
+                                                }
+                                                @if (type.SupportsTelegram)
+                                                {
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-primary toggle-channel"
+                                                            data-type-id="@type.Id" 
+                                                            data-channel="telegram"
+                                                            title="تلگرام">
+                                                        <i class="fab fa-telegram"></i>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (Html.CanAccessAny("NOTIFICATION.SETTINGS", "NOTIFICATION.SETTINGS.TYPE.EDIT"))
+                                            {
+                                                <a asp-action="EditType"
+                                                   asp-route-id="@type.Id"
+                                                   class="btn btn-sm btn-alt-primary me-1"
+                                                   title="ویرایش تنظیمات">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                            }
+                                            
+                                            @if (Html.CanAccessAny("NOTIFICATION.SETTINGS", "NOTIFICATION.SETTINGS.MANAGE"))
+                                            {
+                                                <a asp-action="ManageRecipients"
+                                                   asp-route-id="@type.Id"
+                                                   class="btn btn-sm btn-alt-success"
+                                                   title="مدیریت دریافت‌کنندگان">
+                                                    <i class="fa fa-users"></i>
+                                                </a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+<!-- END Page Content -->
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notification-settings.css" />
+}
+
+@section Scripts {
+    <script src="~/js/notification-settings.js"></script>
+}

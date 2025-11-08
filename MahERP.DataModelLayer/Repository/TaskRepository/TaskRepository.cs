@@ -5081,5 +5081,45 @@ public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAss
                 _ => "bg-primary"
             };
         }
+        /// <summary>
+        /// دریافت لیست UserId های اختصاص داده شده به تسک
+        /// </summary>
+        public async Task<List<string>> GetTaskAssignedUserIdsAsync(int taskId)
+        {
+            return await _context.TaskAssignment_Tbl
+                .Where(a => a.TaskId == taskId)
+                .Select(a => a.AssignedUserId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// دریافت همه کاربران مرتبط با تسک (اعضا + سازنده + ناظرین)
+        /// </summary>
+        public async Task<List<string>> GetTaskRelatedUserIdsAsync(int taskId)
+        {
+            var task = await _context.Tasks_Tbl
+                .Include(t => t.TaskAssignments)
+                .FirstOrDefaultAsync(t => t.Id == taskId);
+
+            if (task == null) return new List<string>();
+
+            var userIds = new List<string>();
+
+            // اعضا
+            userIds.AddRange(task.TaskAssignments
+                .Select(a => a.AssignedUserId));
+
+            // سازنده
+            if (!string.IsNullOrEmpty(task.CreatorUserId))
+            {
+                userIds.Add(task.CreatorUserId);
+            }
+
+            // ناظرین (اگر دارید)
+            // userIds.AddRange(...);
+
+            return userIds.Distinct().ToList();
+        }
     }
 }

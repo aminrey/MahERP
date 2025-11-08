@@ -696,6 +696,14 @@ Task<List<TaskCommentViewModel>> GetTaskCommentsAsync(int taskId);
         /// دریافت ViewModel کارت تسک برای نمایش در لیست
         /// </summary>
         Task<TaskCardViewModel> GetTaskCardViewModelAsync(int taskId, string userId);
+        /// <summary>
+        /// دریافت لیست UserId های اختصاص داده شده به تسک
+        /// </summary>
+        Task<List<string>> GetTaskAssignedUserIdsAsync(int taskId);
 
+        /// <summary>
+        /// دریافت همه کاربران مرتبط با تسک (اعضا + سازنده)
+        /// </summary>
+        Task<List<string>> GetTaskRelatedUserIdsAsync(int taskId);
     }
 }

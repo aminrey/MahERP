@@ -1,0 +1,297 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Notifications.NotificationTemplateFormViewModel
+@{
+    ViewData["Title"] = "ایجاد الگوی جدید";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-plus-circle text-success me-2"></i>ایجاد الگوی پیام جدید
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" asp-controller="NotificationTemplates">الگوها</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">ایجاد</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+<!-- Page Content -->
+<div class="content">
+    <form id="templateForm" asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <!-- فرم اصلی -->
+            <div class="col-lg-8">
+                <!-- اطلاعات پایه -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle text-primary me-2"></i>اطلاعات پایه
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <!-- ⭐⭐⭐ نوع اعلان -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" asp-for="NotificationEventType">
+                                    نوع اعلان <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" asp-for="NotificationEventType" id="notificationTypeSelect">
+                                    <option value="">انتخاب کنید...</option>
+                                    @foreach (var item in Model.AvailableNotificationTypes)
+                                    {
+                                        <option value="@item.Id">@item.DisplayName</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="NotificationEventType" class="text-danger"></span>
+                            </div>
+
+                            <!-- ⭐⭐⭐ کانال ارسال -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" asp-for="Channel">
+                                    کانال ارسال <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" asp-for="Channel" id="channelTypeSelect">
+                                    <option value="">انتخاب کنید...</option>
+                                    <option value="0">سیستمی (درون برنامه)</option>
+                                    <option value="1">ایمیل</option>
+                                    <option value="2">پیامک</option>
+                                    <option value="3">تلگرام</option>
+                                </select>
+                                <span asp-validation-for="Channel" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" asp-for="TemplateCode">
+                                    کد الگو <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" asp-for="TemplateCode"
+                                       placeholder="مثال: TASK_ASSIGNED_EMAIL">
+                                <span asp-validation-for="TemplateCode" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" asp-for="TemplateName">
+                                    نام الگو <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" asp-for="TemplateName"
+                                       placeholder="مثال: اعلان تخصیص تسک (ایمیل)">
+                                <span asp-validation-for="TemplateName" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label" asp-for="Description">توضیحات</label>
+                                <textarea class="form-control" asp-for="Description" rows="2"
+                                          placeholder="توضیحات کوتاه درباره کاربرد این الگو..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                            </div>
+
+                            <!-- موضوع (فقط برای ایمیل) -->
+                            <div class="col-12 mb-3" id="subjectField" style="display: none;">
+                                <label class="form-label" asp-for="Subject">
+                                    موضوع (Subject) <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" asp-for="Subject"
+                                       placeholder="می‌توانید از متغیرها استفاده کنید: {{UserName}}">
+                                <span asp-validation-for="Subject" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- محتوای الگو -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-file-code text-info me-2"></i>محتوای الگو
+                        </h3>
+                        <div class="block-options">
+                            <button type="button" class="btn btn-sm btn-alt-secondary" id="insertVariableBtn">
+                                <i class="fa fa-plus-circle me-1"></i>درج متغیر
+                            </button>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <!-- محتوای متنی (برای همه) -->
+                        <div class="mb-3">
+                            <label class="form-label" asp-for="Body">
+                                محتوای متنی <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" asp-for="Body" rows="6"
+                                      id="bodyTextarea"
+                                      placeholder="محتوای متنی الگو... می‌توانید از متغیرها استفاده کنید: {{VariableName}}"></textarea>
+                            <span asp-validation-for="Body" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-info-circle me-1"></i>
+                                برای درج متغیر از فرمت {{نام_متغیر}} استفاده کنید
+                            </small>
+                        </div>
+
+                        <!-- محتوای HTML (فقط برای ایمیل) -->
+                        <div class="mb-3" id="htmlEditorField" style="display: none;">
+                            <label class="form-label" asp-for="BodyHtml">
+                                محتوای HTML (اختیاری)
+                            </label>
+                            <textarea asp-for="BodyHtml" id="htmlBodyEditor"></textarea>
+                            <span asp-validation-for="BodyHtml" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-info-circle me-1"></i>
+                                برای ایمیل HTML از ویرایشگر بالا استفاده کنید
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ⭐⭐⭐ دریافت‌کنندگان -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-users text-success me-2"></i>دریافت‌کنندگان
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="mb-3">
+                            <label class="form-label">حالت دریافت‌کنندگان</label>
+                            <select class="form-select" asp-for="RecipientMode" id="recipientModeSelect">
+                                <option value="0">همه کاربران</option>
+                                <option value="1">فقط کاربران مشخص</option>
+                                <option value="2">همه به جز کاربران مشخص</option>
+                            </select>
+                        </div>
+
+                        <div id="recipientUsersField" style="display: none;">
+                            <label class="form-label">انتخاب کاربران</label>
+                            <select class="form-select" multiple asp-for="SelectedUserIds" size="8">
+                                @foreach (var user in Model.AvailableUsers)
+                                {
+                                    <option value="@user.Id">@user.FullName (@user.Email)</option>
+                                }
+                            </select>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-info-circle me-1"></i>
+                                برای انتخاب چند کاربر، Ctrl را فشرده نگه دارید
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar - متغیرها -->
+            <div class="col-lg-4">
+                <!-- وضعیت -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">وضعیت</h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="IsActive" id="isActiveSwitch" checked>
+                            <label class="form-check-label" for="isActiveSwitch">
+                                الگو فعال است
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- متغیرهای سیستمی -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-code text-success me-2"></i>متغیرهای قابل استفاده
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="alert alert-info">
+                            <i class="fa fa-lightbulb me-1"></i>
+                            برای استفاده از متغیر، روی آن کلیک کنید
+                        </div>
+
+                        <div class="list-group list-group-flush" id="variablesList">
+                            @foreach (var variable in Model.SystemVariables.OrderBy(v => v.DisplayName))
+                            {
+                                <button type="button"
+                                        class="list-group-item list-group-item-action variable-item"
+                                        data-variable-name="@variable.VariableName"
+                                        title="@variable.Description">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{@variable.VariableName}}</strong>
+                                            <div class="fs-xs text-muted">@variable.DisplayName</div>
+                                        </div>
+                                        <i class="fa fa-copy text-primary"></i>
+                                    </div>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- دکمه‌های عملیات -->
+                <div class="block block-rounded">
+                    <div class="block-content">
+                        <button type="submit" class="btn btn-primary w-100 mb-2" id="saveTemplateBtn">
+                            <i class="fa fa-save me-1"></i>ذخیره الگو
+                        </button>
+                        <a asp-action="Index" class="btn btn-alt-secondary w-100">
+                            <i class="fa fa-times me-1"></i>انصراف
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- END Page Content -->
+@section Styles {
+    <link rel="stylesheet" href="~/css/notification-templates.css" />
+}
+
+@section Scripts {
+    <script src="~/assets/js/tinymceConfig.js"></script>
+    <script src="~/js/notification-templates.js"></script>
+    <script>
+        $(document).ready(function() {
+            initializeTemplateForm();
+
+            // ⭐ نمایش فیلدهای شرطی
+            $('#channelTypeSelect').on('change', function() {
+                const channelType = parseInt($(this).val());
+
+                // Subject و HTML Editor فقط برای ایمیل
+                if (channelType === 1) {
+                    $('#subjectField').slideDown();
+                    $('#htmlEditorField').slideDown();
+                } else {
+                    $('#subjectField').slideUp();
+                    $('#htmlEditorField').slideUp();
+                }
+            });
+
+            // ⭐ نمایش لیست کاربران بر اساس RecipientMode
+            $('#recipientModeSelect').on('change', function() {
+                const mode = parseInt($(this).val());
+
+                if (mode === 1 || mode === 2) {
+                    $('#recipientUsersField').slideDown();
+                } else {
+                    $('#recipientUsersField').slideUp();
+                }
+            });
+
+            // Trigger initial state
+            $('#channelTypeSelect').trigger('change');
+            $('#recipientModeSelect').trigger('change');
+        });
+    </script>
+}

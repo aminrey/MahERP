@@ -7,6 +7,7 @@ using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.ContactGroupRepository;
 using MahERP.DataModelLayer.Repository.ContactRepository;
 using MahERP.DataModelLayer.Repository.MyDayTaskRepository;
+using MahERP.DataModelLayer.Repository.Notifications;
 using MahERP.DataModelLayer.Repository.OrganizationGroupRepository;
 using MahERP.DataModelLayer.Repository.OrganizationRepository;
 using MahERP.DataModelLayer.Repository.Tasking;
@@ -45,7 +46,6 @@ builder.Services.AddScoped<ICRMRepository, CRMRepository>();
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>(); // اضافه شده
 builder.Services.AddScoped<IUserManagerRepository,UserManagerRepository>(); 
 builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>(); // اضافه شده
-builder.Services.AddScoped<ICoreNotificationRepository, CoreNotificationRepository>(); // سیستم نوتیفیشن کلی
 builder.Services.AddScoped<TaskCodeGenerator>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IMainDashboardRepository, MainDashboardRepository>();
@@ -62,7 +62,9 @@ builder.Services.AddScoped<IBaseRepository, BaseRepository>();
 builder.Services.AddScoped<ITaskGroupingRepository, TaskGroupingRepository>();
 builder.Services.AddScoped<ITaskFilteringRepository, TaskFilteringRepository>();
 builder.Services.AddScoped<IModuleAccessService, ModuleAccessService>();
-
+// ⭐⭐⭐ Notification System Repositories & Services
+builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepository>();
+builder.Services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
 // ⭐ یا اگر می‌خواهید به صورت Singleton در Dependency Injection باشد:
 builder.Services.AddSingleton<ModuleTrackingBackgroundService>();
 builder.Services.AddHostedService(provider => provider.GetRequiredService<ModuleTrackingBackgroundService>());
@@ -101,24 +103,15 @@ builder.Services.AddLogging();
 // 3️⃣ اگر از EmailSettings استفاده می‌کنید:
 
 // ⭐ Services - Scoped
-builder.Services.AddScoped<TaskNotificationService>();
 builder.Services.AddScoped<TaskCodeGenerator>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddHostedService<NotificationBackgroundService>();
 
-// ⭐ Background Service - Singleton + Hosted
-builder.Services.AddSingleton<NotificationBackgroundService>();
-builder.Services.AddHostedService(provider =>
-    provider.GetRequiredService<NotificationBackgroundService>());
 
-// اضافه کردن سرویس background برای نوتیفیکیشن‌ها
-
-// اضافه کردن Scoped Service برای TransactionManager
 builder.Services.AddScoped<TransactionManager>();
 builder.Services.AddSignalR();
+
 // Activity Logger Service
 builder.Services.AddScoped<ActivityLoggerService>(); // اضافه شده
-builder.Services.AddScoped<TaskNotificationService>(); // سرویس نوتیفیکیشن تسک‌ها
 builder.Services.AddHttpContextAccessor(); // اضافه شده
 
 
@@ -176,6 +169,9 @@ builder.Services.AddScoped<IContactGroupRepository, ContactGroupRepository>();
 builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 
+// ⭐ سرویس مدیریت اعلان‌ها
+builder.Services.AddScoped<NotificationManagementService>();
+builder.Services.AddHostedService<NotificationProcessingBackgroundService>();
 
 var app = builder.Build();
 

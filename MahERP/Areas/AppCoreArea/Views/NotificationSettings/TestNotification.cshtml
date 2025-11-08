@@ -1,0 +1,280 @@
+﻿@model List<MahERP.DataModelLayer.Entities.Notifications.NotificationTypeConfig>
+@{
+    ViewData["Title"] = "تست ارسال اعلان";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-paper-plane text-info me-2"></i>تست ارسال اعلان
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" asp-controller="NotificationSettings">تنظیمات اعلان</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">تست ارسال</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <!-- راهنما -->
+    <div class="block block-rounded">
+        <div class="block-content">
+            <div class="alert alert-info d-flex align-items-center mb-0">
+                <div class="flex-shrink-0">
+                    <i class="fa fa-info-circle fa-2x"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <p class="mb-2">
+                        <strong>راهنما:</strong> از این بخش می‌توانید عملکرد کانال‌های مختلف ارسال اعلان را تست کنید.
+                    </p>
+                    <ul class="mb-0">
+                        <li>اعلان تستی به <strong>خودتان</strong> ارسال می‌شود</li>
+                        <li>می‌توانید هر کانال را به صورت جداگانه تست کنید</li>
+                        <li>پیام تستی شامل متن دلخواه شما خواهد بود</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- فرم تست -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-cog me-2"></i>تنظیمات تست
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <form id="testNotificationForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-4">
+                            <label class="form-label">نوع اعلان <span class="text-danger">*</span></label>
+                            <select class="form-select" name="typeId" id="notificationTypeId" required>
+                                <option value="">انتخاب کنید...</option>
+                                @foreach (var type in Model.Where(t => t.IsActive))
+                                {
+                                    <option value="@type.Id" 
+                                            data-email="@type.SupportsEmail.ToString().ToLower()" 
+                                            data-sms="@type.SupportsSms.ToString().ToLower()" 
+                                            data-telegram="@type.SupportsTelegram.ToString().ToLower()">
+                                        @type.TypeNameFa
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">کانال ارسال <span class="text-danger">*</span></label>
+                            <div class="row g-2" id="channelOptions">
+                                <div class="col-6 col-md-3">
+                                    <div class="form-check form-check-inline form-block">
+                                        <input class="form-check-input" type="radio" name="channel" id="channelSystem" value="0" required>
+                                        <label class="form-check-label" for="channelSystem">
+                                            <i class="fa fa-desktop text-primary d-block mb-1" style="font-size: 1.5rem;"></i>
+                                            <strong>سیستم</strong>
+                                            <small class="d-block text-muted">اعلان درون برنامه</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="form-check form-check-inline form-block">
+                                        <input class="form-check-input" type="radio" name="channel" id="channelEmail" value="1" disabled>
+                                        <label class="form-check-label" for="channelEmail">
+                                            <i class="fa fa-envelope text-info d-block mb-1" style="font-size: 1.5rem;"></i>
+                                            <strong>ایمیل</strong>
+                                            <small class="d-block text-muted">ارسال ایمیل</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="form-check form-check-inline form-block">
+                                        <input class="form-check-input" type="radio" name="channel" id="channelSms" value="2" disabled>
+                                        <label class="form-check-label" for="channelSms">
+                                            <i class="fa fa-sms text-success d-block mb-1" style="font-size: 1.5rem;"></i>
+                                            <strong>پیامک</strong>
+                                            <small class="d-block text-muted">ارسال SMS</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="form-check form-check-inline form-block">
+                                        <input class="form-check-input" type="radio" name="channel" id="channelTelegram" value="3" disabled>
+                                        <label class="form-check-label" for="channelTelegram">
+                                            <i class="fab fa-telegram text-primary d-block mb-1" style="font-size: 1.5rem;"></i>
+                                            <strong>تلگرام</strong>
+                                            <small class="d-block text-muted">ارسال تلگرام</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">
+                                کانال‌های فعال بر اساس نوع اعلان انتخاب شده نمایش داده می‌شوند
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">پیام تستی <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="testMessage" rows="4" 
+                                      placeholder="متن پیام تستی خود را اینجا بنویسید..." required></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="sendTestBtn">
+                                <i class="fa fa-paper-plane me-1"></i>ارسال تست
+                            </button>
+                            <a asp-action="Index" class="btn btn-alt-secondary">
+                                <i class="fa fa-arrow-right me-1"></i>بازگشت
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- راهنمای سمت راست -->
+        <div class="col-lg-4">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-lightbulb text-warning me-2"></i>نکات مهم
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle me-1"></i>
+                        <strong>توجه:</strong> این یک تست واقعی است!
+                    </div>
+                    
+                    <h6 class="fw-bold mb-2">سیستم (درون برنامه):</h6>
+                    <ul class="fs-sm text-muted">
+                        <li>فوراً در بخش نوتیفیکیشن‌ها نمایش داده می‌شود</li>
+                        <li>هزینه‌ای ندارد</li>
+                    </ul>
+
+                    <h6 class="fw-bold mb-2 mt-3">ایمیل:</h6>
+                    <ul class="fs-sm text-muted">
+                        <li>به ایمیل ثبت شده در پروفایل شما ارسال می‌شود</li>
+                        <li>ممکن است 1-2 دقیقه طول بکشد</li>
+                        <li>پوشه Spam را هم چک کنید</li>
+                    </ul>
+
+                    <h6 class="fw-bold mb-2 mt-3">پیامک:</h6>
+                    <ul class="fs-sm text-muted">
+                        <li>به شماره موبایل ثبت شده ارسال می‌شود</li>
+                        <li><strong>هزینه دارد</strong> (از اعتبار پنل کسر می‌شود)</li>
+                        <li>معمولاً کمتر از 10 ثانیه</li>
+                    </ul>
+
+                    <h6 class="fw-bold mb-2 mt-3">تلگرام:</h6>
+                    <ul class="fs-sm text-muted">
+                        <li>به اکانت تلگرام متصل شما ارسال می‌شود</li>
+                        <li>باید ربات را /start کرده باشید</li>
+                        <li>فوری ارسال می‌شود</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notification-settings.css" />
+    <style>
+        .form-check-inline.form-block {
+            display: block;
+            width: 100%;
+        }
+
+        .form-check-inline.form-block .form-check-label {
+            display: block;
+            text-align: center;
+            padding: 1rem;
+            border: 2px solid #dee2e6;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .form-check-inline.form-block .form-check-input:checked ~ .form-check-label {
+            border-color: var(--bs-primary);
+            background-color: rgba(var(--bs-primary-rgb), 0.1);
+        }
+
+        .form-check-inline.form-block .form-check-input:disabled ~ .form-check-label {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .form-check-inline.form-block .form-check-input {
+            position: absolute;
+            opacity: 0;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تغییر نوع اعلان
+            $('#notificationTypeId').on('change', function () {
+                const $selected = $(this).find('option:selected');
+                const supportsEmail = $selected.data('email') === true;
+                const supportsSms = $selected.data('sms') === true;
+                const supportsTelegram = $selected.data('telegram') === true;
+                
+                $('#channelEmail').prop('disabled', !supportsEmail);
+                $('#channelSms').prop('disabled', !supportsSms);
+                $('#channelTelegram').prop('disabled', !supportsTelegram);
+                
+                // Uncheck disabled options
+                if (!supportsEmail) $('#channelEmail').prop('checked', false);
+                if (!supportsSms) $('#channelSms').prop('checked', false);
+                if (!supportsTelegram) $('#channelTelegram').prop('checked', false);
+            });
+            
+            // Submit form
+            $('#testNotificationForm').on('submit', function (e) {
+                e.preventDefault();
+                
+                const $btn = $('#sendTestBtn');
+                $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ارسال...');
+                
+                $.ajax({
+                    url: '@Url.Action("SendTestNotification", "NotificationSettings", new { area = "AppCoreArea" })',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            SendResposeMessage(response.message);
+                            $('#testNotificationForm')[0].reset();
+                        } else {
+                            SendResposeMessage(response.message);
+                        }
+                    },
+                    error: function () {
+                        NotificationHelper.error('خطا در ارسال تست');
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false).html('<i class="fa fa-paper-plane me-1"></i>ارسال تست');
+                    }
+                });
+            });
+        });
+    </script>
+}

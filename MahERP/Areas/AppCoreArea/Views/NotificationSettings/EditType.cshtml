@@ -1,0 +1,361 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Notifications.NotificationTypeEditViewModel
+@{
+    ViewData["Title"] = "ویرایش نوع اعلان";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-edit text-warning me-2"></i>ویرایش نوع اعلان
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" asp-controller="NotificationSettings">تنظیمات اعلان</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">ویرایش</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <form id="editTypeForm" asp-action="EditType" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        <div class="row">
+            <!-- ستون اصلی -->
+            <div class="col-lg-8">
+                <!-- اطلاعات پایه -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle text-primary me-2"></i>اطلاعات پایه
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" asp-for="TypeNameFa">
+                                    نام فارسی <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" asp-for="TypeNameFa" 
+                                       placeholder="مثال: تخصیص تسک جدید">
+                                <span asp-validation-for="TypeNameFa" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">کد سیستمی</label>
+                                <input type="text" class="form-control" value="@Model.TypeCode" 
+                                       readonly disabled>
+                                <small class="form-text text-muted">غیرقابل ویرایش</small>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label" asp-for="Description">توضیحات</label>
+                                <textarea class="form-control" asp-for="Description" rows="2" 
+                                          placeholder="توضیحات کوتاه درباره این نوع اعلان..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ماژول مربوطه</label>
+                                <input type="text" class="form-control" value="@Model.ModuleName" 
+                                       readonly disabled>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">اولویت پیش‌فرض</label>
+                                <select class="form-select" asp-for="DefaultPriority">
+                                    <option value="0">پایین</option>
+                                    <option value="1">متوسط</option>
+                                    <option value="2">بالا</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- کانال‌های ارسال -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-broadcast-tower text-info me-2"></i>کانال‌های ارسال
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <!-- سیستمی (همیشه فعال) -->
+                        <div class="alert alert-primary d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="fa fa-desktop fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <strong>سیستمی (درون برنامه)</strong>
+                                <div class="fs-sm">این کانال همیشه فعال است و قابل غیرفعال کردن نیست</div>
+                            </div>
+                        </div>
+
+                        <!-- ایمیل -->
+                        <div class="border rounded p-3 mb-3" id="emailChannelBlock">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" asp-for="SupportsEmail" 
+                                       id="emailChannelSwitch">
+                                <label class="form-check-label fw-semibold" for="emailChannelSwitch">
+                                    <i class="fa fa-envelope text-info me-2"></i>ایمیل
+                                </label>
+                            </div>
+                            <div id="emailTemplateSection" style="display: none;">
+                                <label class="form-label">الگوی پیش‌فرض:</label>
+                                <select class="form-select" asp-for="EmailTemplateId">
+                                    <option value="">-- بدون الگو --</option>
+                                    @foreach (var template in Model.AvailableEmailTemplates)
+                                    {
+                                        <option value="@template.Id">@template.Name (@template.Code)</option>
+                                    }
+                                </select>
+                                @if (!Model.AvailableEmailTemplates.Any())
+                                {
+                                    <small class="form-text text-warning">
+                                        <i class="fa fa-exclamation-triangle me-1"></i>
+                                        هیچ الگوی ایمیلی یافت نشد. 
+                                        <a asp-controller="NotificationTemplates" asp-action="Create" 
+                                           asp-route-templateType="1" class="alert-link">ایجاد الگو</a>
+                                    </small>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- پیامک -->
+                        <div class="border rounded p-3 mb-3" id="smsChannelBlock">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" asp-for="SupportsSms" 
+                                       id="smsChannelSwitch">
+                                <label class="form-check-label fw-semibold" for="smsChannelSwitch">
+                                    <i class="fa fa-sms text-success me-2"></i>پیامک
+                                </label>
+                            </div>
+                            <div id="smsTemplateSection" style="display: none;">
+                                <label class="form-label">الگوی پیش‌فرض:</label>
+                                <select class="form-select" asp-for="SmsTemplateId">
+                                    <option value="">-- بدون الگو --</option>
+                                    @foreach (var template in Model.AvailableSmsTemplates)
+                                    {
+                                        <option value="@template.Id">@template.Name (@template.Code)</option>
+                                    }
+                                </select>
+                                @if (!Model.AvailableSmsTemplates.Any())
+                                {
+                                    <small class="form-text text-warning">
+                                        <i class="fa fa-exclamation-triangle me-1"></i>
+                                        هیچ الگوی پیامکی یافت نشد. 
+                                        <a asp-controller="NotificationTemplates" asp-action="Create" 
+                                           asp-route-templateType="2" class="alert-link">ایجاد الگو</a>
+                                    </small>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- تلگرام -->
+                        <div class="border rounded p-3" id="telegramChannelBlock">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" asp-for="SupportsTelegram" 
+                                       id="telegramChannelSwitch">
+                                <label class="form-check-label fw-semibold" for="telegramChannelSwitch">
+                                    <i class="fab fa-telegram text-primary me-2"></i>تلگرام
+                                </label>
+                            </div>
+                            <div id="telegramTemplateSection" style="display: none;">
+                                <label class="form-label">الگوی پیش‌فرض:</label>
+                                <select class="form-select" asp-for="TelegramTemplateId">
+                                    <option value="">-- بدون الگو --</option>
+                                    @foreach (var template in Model.AvailableTelegramTemplates)
+                                    {
+                                        <option value="@template.Id">@template.Name (@template.Code)</option>
+                                    }
+                                </select>
+                                @if (!Model.AvailableTelegramTemplates.Any())
+                                {
+                                    <small class="form-text text-warning">
+                                        <i class="fa fa-exclamation-triangle me-1"></i>
+                                        هیچ الگوی تلگرامی یافت نشد. 
+                                        <a asp-controller="NotificationTemplates" asp-action="Create" 
+                                           asp-route-templateType="3" class="alert-link">ایجاد الگو</a>
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- وضعیت -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">وضعیت</h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="IsActive" 
+                                   id="isActiveSwitch">
+                            <label class="form-check-label" for="isActiveSwitch">
+                                اعلان فعال است
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="AllowUserCustomization" 
+                                   id="allowCustomSwitch">
+                            <label class="form-check-label" for="allowCustomSwitch">
+                                قابل تنظیم توسط کاربر
+                            </label>
+                            <small class="form-text text-muted">
+                                اگر فعال باشد، کاربران می‌توانند این اعلان را شخصی‌سازی کنند
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- دریافت‌کنندگان -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-users text-success me-2"></i>دریافت‌کنندگان
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="alert alert-info mb-3">
+                            <i class="fa fa-info-circle me-1"></i>
+                            پیش‌فرض: همه کاربران این اعلان را دریافت می‌کنند
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">لیست سیاه:</span>
+                            <span class="badge bg-danger">@Model.BlacklistCount کاربر</span>
+                        </div>
+
+                        <a asp-action="Blacklist" 
+                           class="btn btn-sm btn-alt-secondary w-100">
+                            <i class="fa fa-ban me-1"></i>مدیریت لیست سیاه
+                        </a>
+                    </div>
+                </div>
+
+                <!-- دکمه‌های عملیات -->
+                <div class="block block-rounded">
+                    <div class="block-content">
+                        <button type="submit" class="btn btn-primary w-100 mb-2" id="saveBtn">
+                            <i class="fa fa-save me-1"></i>ذخیره تغییرات
+                        </button>
+                        <a asp-action="Index" class="btn btn-alt-secondary w-100 mb-2">
+                            <i class="fa fa-arrow-right me-1"></i>بازگشت
+                        </a>
+                        <a asp-action="TestNotification" 
+                           class="btn btn-alt-info w-100">
+                            <i class="fa fa-paper-plane me-1"></i>تست ارسال
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- END Page Content -->
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notification-settings.css" />
+    <style>
+        .border {
+            transition: all 0.3s ease;
+        }
+
+        .border:has(input[type="checkbox"]:checked) {
+            border-color: var(--bs-primary) !important;
+            background-color: rgba(var(--bs-primary-rgb), 0.05);
+        }
+
+        #emailChannelBlock:has(#emailChannelSwitch:checked) {
+            border-color: #17a2b8 !important;
+            background-color: rgba(23, 162, 184, 0.05);
+        }
+
+        #smsChannelBlock:has(#smsChannelSwitch:checked) {
+            border-color: #28a745 !important;
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+
+        #telegramChannelBlock:has(#telegramChannelSwitch:checked) {
+            border-color: #0088cc !important;
+            background-color: rgba(0, 136, 204, 0.05);
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="~/js/notification-settings.js"></script>
+    <script>
+        $(document).ready(function () {
+            // نمایش/مخفی کردن بخش انتخاب الگو
+            function toggleTemplateSection(channelType) {
+                const isChecked = $(`#${channelType}ChannelSwitch`).is(':checked');
+                $(`#${channelType}TemplateSection`).slideToggle(isChecked);
+            }
+
+            // مقداردهی اولیه
+            ['email', 'sms', 'telegram'].forEach(channel => {
+                if ($(`#${channel}ChannelSwitch`).is(':checked')) {
+                    $(`#${channel}TemplateSection`).show();
+                }
+            });
+
+            // رویداد تغییر
+            $('#emailChannelSwitch').on('change', () => toggleTemplateSection('email'));
+            $('#smsChannelSwitch').on('change', () => toggleTemplateSection('sms'));
+            $('#telegramChannelSwitch').on('change', () => toggleTemplateSection('telegram'));
+
+            // Submit فرم
+            $('#editTypeForm').on('submit', function (e) {
+                e.preventDefault();
+
+                const $btn = $('#saveBtn');
+                $btn.prop('disabled', true)
+                    .html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ذخیره...');
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        if (response.status === 'redirect') {
+                            SendResposeMessage(response.message);
+                            setTimeout(() => {
+                                window.location.href = response.redirectUrl;
+                            }, 500);
+                        } else if (response.status === 'validation-error') {
+                            SendResposeMessage(response.message);
+                        } else {
+                            SendResposeMessage(response.message);
+                        }
+                    },
+                    error: function () {
+                        NotificationHelper.error('خطا در ذخیره تنظیمات');
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false)
+                            .html('<i class="fa fa-save me-1"></i>ذخیره تغییرات');
+                    }
+                });
+            });
+        });
+    </script>
+}

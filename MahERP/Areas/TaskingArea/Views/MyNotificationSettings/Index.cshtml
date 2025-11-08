@@ -1,0 +1,249 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Notifications.UserNotificationSettingsViewModel
+@{
+    ViewData["Title"] = "تنظیمات اعلان‌های من";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-user-cog text-primary me-2"></i>تنظیمات اعلان‌های من
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskDashboard">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">تنظیمات اعلان‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <form id="userPreferencesForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="UserId" value="@Model.UserId" />
+
+        <!-- راهنما -->
+        <div class="block block-rounded">
+            <div class="block-content">
+                <div class="alert alert-info d-flex align-items-center mb-0">
+                    <div class="flex-shrink-0">
+                        <i class="fa fa-info-circle fa-2x"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="mb-2">
+                            <strong>راهنما:</strong> در این بخش می‌توانید تنظیم کنید که چه اعلان‌هایی را دریافت کنید و از چه کانال‌هایی.
+                        </p>
+                        <ul class="mb-0">
+                            <li><strong>فوری:</strong> اعلان بلافاصله ارسال می‌شود</li>
+                            <li><strong>تجمیعی:</strong> اعلان‌ها در ساعت مشخص به صورت یکجا ارسال می‌شوند</li>
+                            <li><strong>ساعات سکوت:</strong> در این بازه زمانی اعلان دریافت نمی‌کنید</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!Model.Preferences.Any())
+        {
+            <div class="block block-rounded">
+                <div class="block-content text-center py-5">
+                    <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">تنظیماتی یافت نشد</h4>
+                    <p class="text-muted">در حال حاضر تنظیمات شخصی‌سازی شده‌ای برای اعلان‌ها وجود ندارد.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var moduleGroup in Model.Preferences.GroupBy(p => p.ModuleNameFa))
+            {
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-cube text-primary me-2"></i>@moduleGroup.Key
+                        </h3>
+                        <div class="block-options">
+                            <span class="badge bg-primary">
+                                @moduleGroup.Count() اعلان
+                            </span>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        @foreach (var pref in moduleGroup)
+                        {
+                            var index = Model.Preferences.IndexOf(pref);
+                            <div class="notification-preference-item border-bottom pb-4 mb-4" data-pref-index="@index">
+                                <input type="hidden" name="Preferences[@index].Id" value="@pref.Id" />
+                                <input type="hidden" name="Preferences[@index].TypeId" value="@pref.TypeId" />
+                                <input type="hidden" name="Preferences[@index].TypeNameFa" value="@pref.TypeNameFa" />
+                                <input type="hidden" name="Preferences[@index].ModuleNameFa" value="@pref.ModuleNameFa" />
+
+                                <div class="row">
+                                    <!-- عنوان و فعال/غیرفعال -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <h5 class="mb-0">@pref.TypeNameFa</h5>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="Preferences[@index].IsEnabled"
+                                                       id="IsEnabled_@index"
+                                                       @(pref.IsEnabled ? "checked" : "")>
+                                                <label class="form-check-label" for="IsEnabled_@index">
+                                                    فعال
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- کانال‌ها -->
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">کانال‌های دریافت:</label>
+                                            <div class="d-flex gap-3 flex-wrap">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" 
+                                                           type="checkbox"
+                                                           name="Preferences[@index].ReceiveBySystem"
+                                                           id="ReceiveBySystem_@index"
+                                                           @(pref.ReceiveBySystem ? "checked" : "")>
+                                                    <label class="form-check-label" for="ReceiveBySystem_@index">
+                                                        <i class="fa fa-desktop text-primary"></i> سیستم
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" 
+                                                           type="checkbox"
+                                                           name="Preferences[@index].ReceiveByEmail"
+                                                           id="ReceiveByEmail_@index"
+                                                           @(pref.ReceiveByEmail ? "checked" : "")>
+                                                    <label class="form-check-label" for="ReceiveByEmail_@index">
+                                                        <i class="fa fa-envelope text-info"></i> ایمیل
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" 
+                                                           type="checkbox"
+                                                           name="Preferences[@index].ReceiveBySms"
+                                                           id="ReceiveBySms_@index"
+                                                           @(pref.ReceiveBySms ? "checked" : "")>
+                                                    <label class="form-check-label" for="ReceiveBySms_@index">
+                                                        <i class="fa fa-sms text-success"></i> پیامک
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" 
+                                                           type="checkbox"
+                                                           name="Preferences[@index].ReceiveByTelegram"
+                                                           id="ReceiveByTelegram_@index"
+                                                           @(pref.ReceiveByTelegram ? "checked" : "")>
+                                                    <label class="form-check-label" for="ReceiveByTelegram_@index">
+                                                        <i class="fab fa-telegram text-primary"></i> تلگرام
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- تنظیمات پیشرفته -->
+                                    <div class="col-md-6 mb-3">
+                                        <!-- نوع ارسال -->
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">نوع ارسال:</label>
+                                            <div class="d-flex gap-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" 
+                                                           type="radio"
+                                                           name="Preferences[@index].DeliveryMode"
+                                                           value="0"
+                                                           id="DeliveryMode_Immediate_@index"
+                                                           @(pref.DeliveryMode == 0 ? "checked" : "")>
+                                                    <label class="form-check-label" for="DeliveryMode_Immediate_@index">
+                                                        <i class="fa fa-bolt text-warning"></i> فوری
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" 
+                                                           type="radio"
+                                                           name="Preferences[@index].DeliveryMode"
+                                                           value="1"
+                                                           id="DeliveryMode_Digest_@index"
+                                                           @(pref.DeliveryMode == 1 ? "checked" : "")>
+                                                    <label class="form-check-label" for="DeliveryMode_Digest_@index">
+                                                        <i class="fa fa-clock text-info"></i> تجمیعی
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- زمان ارسال تجمیعی -->
+                                        <div class="mb-3 delivery-time-container" style="display: @(pref.DeliveryMode == 1 ? "block" : "none");">
+                                            <label class="form-label">زمان ارسال تجمیعی:</label>
+                                            <input type="time" 
+                                                   class="form-control form-control-sm"
+                                                   name="Preferences[@index].PreferredDeliveryTime"
+                                                   value="@pref.PreferredDeliveryTime">
+                                        </div>
+
+                                        <!-- ساعات سکوت -->
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">ساعات سکوت:</label>
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <label class="form-label fs-sm">از:</label>
+                                                    <input type="time" 
+                                                           class="form-control form-control-sm"
+                                                           name="Preferences[@index].QuietHoursStart"
+                                                           value="@pref.QuietHoursStart">
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label fs-sm">تا:</label>
+                                                    <input type="time" 
+                                                           class="form-control form-control-sm"
+                                                           name="Preferences[@index].QuietHoursEnd"
+                                                           value="@pref.QuietHoursEnd">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- دکمه‌های عملیات -->
+            <div class="block block-rounded">
+                <div class="block-content">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-primary w-100" id="savePreferencesBtn">
+                                <i class="fa fa-save me-2"></i>ذخیره تنظیمات
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-alt-secondary w-100" id="resetToDefaultBtn">
+                                <i class="fa fa-undo me-2"></i>بازنشانی به پیش‌فرض
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </form>
+</div>
+<!-- END Page Content -->
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notification-settings.css" />
+}
+
+@section Scripts {
+    <script src="~/js/my-notification-settings.js"></script>
+}

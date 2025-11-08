@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MahERP.DataModelLayer.Migrations
 {
     /// <inheritdoc />
-    public partial class start : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -53,7 +53,7 @@ namespace MahERP.DataModelLayer.Migrations
                     OrganizationalLevel = table.Column<byte>(type: "tinyint", nullable: false),
                     ParentUser = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ChatidUserTelegram = table.Column<long>(type: "bigint", nullable: true),
-                    TelegramRobatId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TelegramChatId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsAdmin = table.Column<bool>(type: "bit", nullable: false),
                     IsRemoveUser = table.Column<bool>(type: "bit", nullable: false),
@@ -84,8 +84,7 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_AspNetUsers_AspNetUsers_DirectManagerUserId",
                         column: x => x.DirectManagerUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -96,12 +95,12 @@ namespace MahERP.DataModelLayer.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Phone = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     ManagerName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    IsMainBranch = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    IsMainBranch = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     ParentId = table.Column<int>(type: "int", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -123,6 +122,25 @@ namespace MahERP.DataModelLayer.Migrations
                         principalTable: "Branch_Tbl",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationModuleConfig_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ModuleCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ModuleNameFa = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ModuleNameEn = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ColorCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationModuleConfig_Tbl", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -174,8 +192,7 @@ namespace MahERP.DataModelLayer.Migrations
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ParentCategoryId = table.Column<int>(type: "int", nullable: true),
                     DisplayOrder = table.Column<byte>(type: "tinyint", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    TaskCategoryId = table.Column<int>(type: "int", nullable: true)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -183,12 +200,6 @@ namespace MahERP.DataModelLayer.Migrations
                     table.ForeignKey(
                         name: "FK_TaskCategory_Tbl_TaskCategory_Tbl_ParentCategoryId",
                         column: x => x.ParentCategoryId,
-                        principalTable: "TaskCategory_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_TaskCategory_Tbl_TaskCategory_Tbl_TaskCategoryId",
-                        column: x => x.TaskCategoryId,
                         principalTable: "TaskCategory_Tbl",
                         principalColumn: "Id");
                 });
@@ -318,7 +329,7 @@ namespace MahERP.DataModelLayer.Migrations
                     Gender = table.Column<byte>(type: "tinyint", nullable: true),
                     ProfileImagePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -332,12 +343,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Contact_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -352,8 +364,8 @@ namespace MahERP.DataModelLayer.Migrations
                     ColorHex = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
                     IconClass = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    IsSystemGroup = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsSystemGroup = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -367,12 +379,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ContactGroup_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -480,6 +493,84 @@ namespace MahERP.DataModelLayer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "NotificationScheduledMessage_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BodyHtml = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MessageType = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)0),
+                    Priority = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)0),
+                    SendBySystem = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    SendByEmail = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    SendBySms = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    SendByTelegram = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    RecipientUserIds = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TargetBranchIds = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TargetRoles = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ScheduledDateTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)0),
+                    RecipientCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    SentCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    FailedCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    SentDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationScheduledMessage_Tbl", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationScheduledMessage_Tbl_AspNetUsers_CreatorUserId",
+                        column: x => x.CreatorUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationTemplate_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TemplateType = table.Column<byte>(type: "tinyint", nullable: false),
+                    TemplateCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    TemplateName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Subject = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BodyHtml = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsSystemTemplate = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    Version = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
+                    UsageCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    LastUsedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    LastModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastModifierUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationTemplate_Tbl", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationTemplate_Tbl_AspNetUsers_CreatorUserId",
+                        column: x => x.CreatorUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_NotificationTemplate_Tbl_AspNetUsers_LastModifierUserId",
+                        column: x => x.LastModifierUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Organization_Tbl",
                 columns: table => new
                 {
@@ -500,7 +591,7 @@ namespace MahERP.DataModelLayer.Migrations
                     PostalCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     OrganizationType = table.Column<byte>(type: "tinyint", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -514,12 +605,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Organization_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -534,8 +626,8 @@ namespace MahERP.DataModelLayer.Migrations
                     ColorHex = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
                     IconClass = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    IsSystemGroup = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsSystemGroup = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -549,12 +641,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrganizationGroup_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -625,7 +718,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -687,14 +780,12 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_RolePattern_Tbl_AspNetUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_RolePattern_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -835,7 +926,7 @@ namespace MahERP.DataModelLayer.Migrations
                     ColorHex = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
                     IconClass = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -849,18 +940,19 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_BranchContactGroup_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_BranchContactGroup_Tbl_Branch_Tbl_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branch_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -906,7 +998,7 @@ namespace MahERP.DataModelLayer.Migrations
                     ColorHex = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
                     IconClass = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -920,18 +1012,19 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_BranchOrganizationGroup_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_BranchOrganizationGroup_Tbl_Branch_Tbl_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branch_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1010,17 +1103,19 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.RecipientUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_CoreNotification_Tbl_AspNetUsers_SenderUserId",
                         column: x => x.SenderUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_CoreNotification_Tbl_Branch_Tbl_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branch_Tbl",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1097,8 +1192,7 @@ namespace MahERP.DataModelLayer.Migrations
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastUpdaterUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    TeamId = table.Column<int>(type: "int", nullable: true)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -1133,11 +1227,6 @@ namespace MahERP.DataModelLayer.Migrations
                         principalTable: "Team_Tbl",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Team_Tbl_Team_Tbl_TeamId",
-                        column: x => x.TeamId,
-                        principalTable: "Team_Tbl",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -1148,22 +1237,22 @@ namespace MahERP.DataModelLayer.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ActivityType = table.Column<byte>(type: "tinyint", nullable: false),
-                    ModuleName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ActionName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModuleName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ActionName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     RecordId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EntityType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RecordTitle = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     OldValues = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     NewValues = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RequestParameters = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ResultStatus = table.Column<byte>(type: "tinyint", nullable: false),
                     ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ActivityDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IpAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RequestUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    HttpMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IpAddress = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    UserAgent = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    RequestUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    HttpMethod = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     ProcessingTimeMs = table.Column<long>(type: "bigint", nullable: true),
                     ResponseSize = table.Column<long>(type: "bigint", nullable: true),
                     SessionId = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -1186,12 +1275,48 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserActivityLog_Tbl_Branch_Tbl_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branch_Tbl",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationTypeConfig_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ModuleConfigId = table.Column<int>(type: "int", nullable: false),
+                    TypeCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    TypeNameFa = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CoreNotificationTypeGeneral = table.Column<byte>(type: "tinyint", nullable: false),
+                    CoreNotificationTypeSpecific = table.Column<byte>(type: "tinyint", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    DefaultPriority = table.Column<byte>(type: "tinyint", nullable: false),
+                    SupportsEmail = table.Column<bool>(type: "bit", nullable: false),
+                    SupportsSms = table.Column<bool>(type: "bit", nullable: false),
+                    SupportsTelegram = table.Column<bool>(type: "bit", nullable: false),
+                    DefaultSystemNotificationTemplateId = table.Column<int>(type: "int", nullable: true),
+                    DefaultEmailTemplateId = table.Column<int>(type: "int", nullable: true),
+                    DefaultSmsTemplateId = table.Column<int>(type: "int", nullable: true),
+                    DefaultTelegramTemplateId = table.Column<int>(type: "int", nullable: true),
+                    AllowUserCustomization = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationTypeConfig_Tbl", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationTypeConfig_Tbl_NotificationModuleConfig_Tbl_ModuleConfigId",
+                        column: x => x.ModuleConfigId,
+                        principalTable: "NotificationModuleConfig_Tbl",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1218,14 +1343,12 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TaskTemplate_Tbl_AspNetUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskTemplate_Tbl_TaskCategory_Tbl_CategoryId",
                         column: x => x.CategoryId,
                         principalTable: "TaskCategory_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -1262,7 +1385,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.ContactId,
                         principalTable: "Contact_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1275,10 +1398,10 @@ namespace MahERP.DataModelLayer.Migrations
                     PhoneType = table.Column<byte>(type: "tinyint", nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
                     Extension = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
+                    IsDefault = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     IsVerified = table.Column<bool>(type: "bit", nullable: false),
                     VerifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false)
@@ -1291,13 +1414,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ContactPhone_Tbl_Contact_Tbl_ContactId",
                         column: x => x.ContactId,
                         principalTable: "Contact_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1309,7 +1432,7 @@ namespace MahERP.DataModelLayer.Migrations
                     GroupId = table.Column<int>(type: "int", nullable: false),
                     ContactId = table.Column<int>(type: "int", nullable: false),
                     AddedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     AddedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
@@ -1321,19 +1444,77 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.AddedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ContactGroupMember_Tbl_ContactGroup_Tbl_GroupId",
                         column: x => x.GroupId,
                         principalTable: "ContactGroup_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ContactGroupMember_Tbl_Contact_Tbl_ContactId",
                         column: x => x.ContactId,
                         principalTable: "Contact_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationTemplateHistory_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TemplateId = table.Column<int>(type: "int", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    Subject = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BodyHtml = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ChangeDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    ChangedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ChangeNote = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationTemplateHistory_Tbl", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationTemplateHistory_Tbl_AspNetUsers_ChangedByUserId",
+                        column: x => x.ChangedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_NotificationTemplateHistory_Tbl_NotificationTemplate_Tbl_TemplateId",
+                        column: x => x.TemplateId,
+                        principalTable: "NotificationTemplate_Tbl",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationTemplateVariable_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TemplateId = table.Column<int>(type: "int", nullable: false),
+                    VariableName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    DisplayName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    DefaultValue = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    DataType = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)0),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationTemplateVariable_Tbl", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationTemplateVariable_Tbl_NotificationTemplate_Tbl_TemplateId",
+                        column: x => x.TemplateId,
+                        principalTable: "NotificationTemplate_Tbl",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1371,7 +1552,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.OrganizationId,
                         principalTable: "Organization_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1475,12 +1656,12 @@ namespace MahERP.DataModelLayer.Migrations
                     RelationType = table.Column<byte>(type: "tinyint", nullable: false),
                     JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IsPrimary = table.Column<bool>(type: "bit", nullable: false),
+                    IsPrimary = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     IsDecisionMaker = table.Column<bool>(type: "bit", nullable: false),
                     ImportanceLevel = table.Column<byte>(type: "tinyint", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
@@ -1493,19 +1674,19 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrganizationContact_Tbl_Contact_Tbl_ContactId",
                         column: x => x.ContactId,
                         principalTable: "Contact_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrganizationContact_Tbl_Organization_Tbl_OrganizationId",
                         column: x => x.OrganizationId,
                         principalTable: "Organization_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1522,7 +1703,7 @@ namespace MahERP.DataModelLayer.Migrations
                     Level = table.Column<int>(type: "int", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
                     ManagerContactId = table.Column<int>(type: "int", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1536,28 +1717,31 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrganizationDepartment_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrganizationDepartment_Tbl_Contact_Tbl_ManagerContactId",
                         column: x => x.ManagerContactId,
                         principalTable: "Contact_Tbl",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrganizationDepartment_Tbl_OrganizationDepartment_Tbl_ParentDepartmentId",
                         column: x => x.ParentDepartmentId,
                         principalTable: "OrganizationDepartment_Tbl",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrganizationDepartment_Tbl_Organization_Tbl_OrganizationId",
                         column: x => x.OrganizationId,
                         principalTable: "Organization_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1569,7 +1753,7 @@ namespace MahERP.DataModelLayer.Migrations
                     GroupId = table.Column<int>(type: "int", nullable: false),
                     OrganizationId = table.Column<int>(type: "int", nullable: false),
                     AddedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     AddedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
@@ -1581,19 +1765,19 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.AddedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrganizationGroupMember_Tbl_OrganizationGroup_Tbl_GroupId",
                         column: x => x.GroupId,
                         principalTable: "OrganizationGroup_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_OrganizationGroupMember_Tbl_Organization_Tbl_OrganizationId",
                         column: x => x.OrganizationId,
                         principalTable: "Organization_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1634,7 +1818,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.PermissionId,
                         principalTable: "Permission_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1812,13 +1996,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.AssignedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_UserRolePattern_Tbl_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_UserRolePattern_Tbl_RolePattern_Tbl_RolePatternId",
                         column: x => x.RolePatternId,
@@ -1997,8 +2181,7 @@ namespace MahERP.DataModelLayer.Migrations
                     StakeholderId = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     AssignDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    AssignedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    TaskCategoryId1 = table.Column<int>(type: "int", nullable: true)
+                    AssignedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2008,30 +2191,25 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.AssignedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_BranchTaskCategoryStakeholder_Tbl_Branch_Tbl_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branch_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_BranchTaskCategoryStakeholder_Tbl_Stakeholder_Tbl_StakeholderId",
                         column: x => x.StakeholderId,
                         principalTable: "Stakeholder_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_BranchTaskCategoryStakeholder_Tbl_TaskCategory_Tbl_TaskCategoryId",
                         column: x => x.TaskCategoryId,
                         principalTable: "TaskCategory_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_BranchTaskCategoryStakeholder_Tbl_TaskCategory_Tbl_TaskCategoryId1",
-                        column: x => x.TaskCategoryId1,
-                        principalTable: "TaskCategory_Tbl",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2064,19 +2242,18 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Contract_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Contract_Tbl_Stakeholder_Tbl_StakeholderId",
                         column: x => x.StakeholderId,
                         principalTable: "Stakeholder_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2091,8 +2268,7 @@ namespace MahERP.DataModelLayer.Migrations
                     AssignDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AssignedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    StakeholderId1 = table.Column<int>(type: "int", nullable: true)
+                    CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2106,25 +2282,19 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_StakeholderBranch_Tbl_AspNetUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_StakeholderBranch_Tbl_Branch_Tbl_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branch_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_StakeholderBranch_Tbl_Stakeholder_Tbl_StakeholderId",
                         column: x => x.StakeholderId,
                         principalTable: "Stakeholder_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_StakeholderBranch_Tbl_Stakeholder_Tbl_StakeholderId1",
-                        column: x => x.StakeholderId1,
-                        principalTable: "Stakeholder_Tbl",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2197,14 +2367,13 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_StakeholderCRM_Tbl_AspNetUsers_SalesRepUserId",
                         column: x => x.SalesRepUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_StakeholderCRM_Tbl_Stakeholder_Tbl_StakeholderId",
                         column: x => x.StakeholderId,
                         principalTable: "Stakeholder_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2262,7 +2431,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.TeamId,
                         principalTable: "Team_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2309,8 +2478,8 @@ namespace MahERP.DataModelLayer.Migrations
                     CanViewPeerTasks = table.Column<bool>(type: "bit", nullable: false),
                     MaxMembers = table.Column<int>(type: "int", nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsDefault = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -2324,18 +2493,93 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_TeamPosition_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_TeamPosition_Tbl_Team_Tbl_TeamId",
                         column: x => x.TeamId,
                         principalTable: "Team_Tbl",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationBlacklist_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    NotificationTypeConfigId = table.Column<int>(type: "int", nullable: true),
+                    Reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    CreatedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationBlacklist_Tbl", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationBlacklist_Tbl_AspNetUsers_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_NotificationBlacklist_Tbl_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_NotificationBlacklist_Tbl_NotificationTypeConfig_Tbl_NotificationTypeConfigId",
+                        column: x => x.NotificationTypeConfigId,
+                        principalTable: "NotificationTypeConfig_Tbl",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserNotificationPreference_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    NotificationTypeConfigId = table.Column<int>(type: "int", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    ReceiveBySystem = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    ReceiveByEmail = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    ReceiveBySms = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    ReceiveByTelegram = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    DeliveryMode = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)0),
+                    PreferredDeliveryTime = table.Column<TimeSpan>(type: "time", nullable: true),
+                    QuietHoursStart = table.Column<TimeSpan>(type: "time", nullable: true),
+                    QuietHoursEnd = table.Column<TimeSpan>(type: "time", nullable: true),
+                    OnlyUrgentNotifications = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    LastModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserNotificationPreference_Tbl", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserNotificationPreference_Tbl_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserNotificationPreference_Tbl_NotificationTypeConfig_Tbl_NotificationTypeConfigId",
+                        column: x => x.NotificationTypeConfigId,
+                        principalTable: "NotificationTypeConfig_Tbl",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2362,8 +2606,7 @@ namespace MahERP.DataModelLayer.Migrations
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifyDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ModifierUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    TaskTemplateId1 = table.Column<int>(type: "int", nullable: true)
+                    ModifierUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -2372,25 +2615,18 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TaskSchedule_Tbl_AspNetUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskSchedule_Tbl_AspNetUsers_ModifierUserId",
                         column: x => x.ModifierUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskSchedule_Tbl_TaskTemplate_Tbl_TaskTemplateId",
                         column: x => x.TaskTemplateId,
                         principalTable: "TaskTemplate_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_TaskSchedule_Tbl_TaskTemplate_Tbl_TaskTemplateId1",
-                        column: x => x.TaskTemplateId1,
-                        principalTable: "TaskTemplate_Tbl",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2402,17 +2638,11 @@ namespace MahERP.DataModelLayer.Migrations
                     TemplateId = table.Column<int>(type: "int", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    OperationOrder = table.Column<int>(type: "int", nullable: false),
-                    TaskTemplateId = table.Column<int>(type: "int", nullable: true)
+                    OperationOrder = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TaskTemplateOperation_Tbl", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TaskTemplateOperation_Tbl_TaskTemplate_Tbl_TaskTemplateId",
-                        column: x => x.TaskTemplateId,
-                        principalTable: "TaskTemplate_Tbl",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskTemplateOperation_Tbl_TaskTemplate_Tbl_TemplateId",
                         column: x => x.TemplateId,
@@ -2430,7 +2660,7 @@ namespace MahERP.DataModelLayer.Migrations
                     BranchGroupId = table.Column<int>(type: "int", nullable: false),
                     BranchContactId = table.Column<int>(type: "int", nullable: false),
                     AddedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     AddedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
@@ -2442,19 +2672,19 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.AddedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_BranchContactGroupMember_Tbl_BranchContactGroup_Tbl_BranchGroupId",
                         column: x => x.BranchGroupId,
                         principalTable: "BranchContactGroup_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_BranchContactGroupMember_Tbl_BranchContact_Tbl_BranchContactId",
                         column: x => x.BranchContactId,
                         principalTable: "BranchContact_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2466,7 +2696,7 @@ namespace MahERP.DataModelLayer.Migrations
                     BranchGroupId = table.Column<int>(type: "int", nullable: false),
                     BranchOrganizationId = table.Column<int>(type: "int", nullable: false),
                     AddedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     AddedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
@@ -2478,19 +2708,19 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.AddedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_BranchOrganizationGroupMember_Tbl_BranchOrganizationGroup_Tbl_BranchGroupId",
                         column: x => x.BranchGroupId,
                         principalTable: "BranchOrganizationGroup_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_BranchOrganizationGroupMember_Tbl_BranchOrganization_Tbl_BranchOrganizationId",
                         column: x => x.BranchOrganizationId,
                         principalTable: "BranchOrganization_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2500,17 +2730,17 @@ namespace MahERP.DataModelLayer.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     DepartmentId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     PowerLevel = table.Column<int>(type: "int", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
                     MinSalary = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     MaxSalary = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
+                    IsDefault = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     CanHireSubordinates = table.Column<bool>(type: "bit", nullable: false),
                     RequiresApproval = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
@@ -2522,13 +2752,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_DepartmentPosition_Tbl_OrganizationDepartment_Tbl_DepartmentId",
                         column: x => x.DepartmentId,
                         principalTable: "OrganizationDepartment_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2593,13 +2823,42 @@ namespace MahERP.DataModelLayer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "NotificationDeliveryStats_Tbl",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CoreNotificationDeliveryId = table.Column<int>(type: "int", nullable: false),
+                    QueuedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ProcessedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeliveredAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ProcessingDurationSeconds = table.Column<int>(type: "int", nullable: true),
+                    DeliveryDurationSeconds = table.Column<int>(type: "int", nullable: true),
+                    ServerResponse = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ErrorDetails = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RetryAttempts = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationDeliveryStats_Tbl", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationDeliveryStats_Tbl_CoreNotificationDelivery_Tbl_CoreNotificationDeliveryId",
+                        column: x => x.CoreNotificationDeliveryId,
+                        principalTable: "CoreNotificationDelivery_Tbl",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ActivityBase_Tbl",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     ActivityType = table.Column<byte>(type: "tinyint", nullable: false),
                     Priority = table.Column<byte>(type: "tinyint", nullable: false),
                     Status = table.Column<byte>(type: "tinyint", nullable: false),
@@ -2609,13 +2868,13 @@ namespace MahERP.DataModelLayer.Migrations
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ProgressPercentage = table.Column<int>(type: "int", nullable: false),
+                    ProgressPercentage = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastUpdaterUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -2691,37 +2950,33 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CRMInteraction_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CRMInteraction_Tbl_Branch_Tbl_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branch_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CRMInteraction_Tbl_Contract_Tbl_ContractId",
                         column: x => x.ContractId,
                         principalTable: "Contract_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CRMInteraction_Tbl_StakeholderContact_Tbl_StakeholderContactId",
                         column: x => x.StakeholderContactId,
                         principalTable: "StakeholderContact_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CRMInteraction_Tbl_Stakeholder_Tbl_StakeholderId",
                         column: x => x.StakeholderId,
                         principalTable: "Stakeholder_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -2792,7 +3047,7 @@ namespace MahERP.DataModelLayer.Migrations
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AddedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -2815,7 +3070,8 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TeamMember_Tbl_TeamPosition_Tbl_PositionId",
                         column: x => x.PositionId,
                         principalTable: "TeamPosition_Tbl",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_TeamMember_Tbl_Team_Tbl_TeamId",
                         column: x => x.TeamId,
@@ -2867,10 +3123,7 @@ namespace MahERP.DataModelLayer.Migrations
                     IsArchived = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CompletionMode = table.Column<byte>(type: "tinyint", nullable: false),
-                    LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BranchId1 = table.Column<int>(type: "int", nullable: true),
-                    ContractId1 = table.Column<int>(type: "int", nullable: true),
-                    TaskCategoryId1 = table.Column<int>(type: "int", nullable: true)
+                    LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -2879,17 +3132,10 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_Tasks_Tbl_AspNetUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Tasks_Tbl_Branch_Tbl_BranchId",
                         column: x => x.BranchId,
-                        principalTable: "Branch_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Tasks_Tbl_Branch_Tbl_BranchId1",
-                        column: x => x.BranchId1,
                         principalTable: "Branch_Tbl",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -2900,12 +3146,6 @@ namespace MahERP.DataModelLayer.Migrations
                     table.ForeignKey(
                         name: "FK_Tasks_Tbl_Contract_Tbl_ContractId",
                         column: x => x.ContractId,
-                        principalTable: "Contract_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Tasks_Tbl_Contract_Tbl_ContractId1",
-                        column: x => x.ContractId1,
                         principalTable: "Contract_Tbl",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -2922,31 +3162,22 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_Tasks_Tbl_TaskCategory_Tbl_TaskCategoryId",
                         column: x => x.TaskCategoryId,
                         principalTable: "TaskCategory_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Tasks_Tbl_TaskCategory_Tbl_TaskCategoryId1",
-                        column: x => x.TaskCategoryId1,
-                        principalTable: "TaskCategory_Tbl",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Tasks_Tbl_TaskSchedule_Tbl_ScheduleId",
                         column: x => x.ScheduleId,
                         principalTable: "TaskSchedule_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Tasks_Tbl_Tasks_Tbl_ParentTaskId",
                         column: x => x.ParentTaskId,
                         principalTable: "Tasks_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Tasks_Tbl_Team_Tbl_TeamId",
                         column: x => x.TeamId,
                         principalTable: "Team_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -2962,8 +3193,7 @@ namespace MahERP.DataModelLayer.Migrations
                     PredefinedCopyDescriptionId = table.Column<int>(type: "int", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TaskScheduleId = table.Column<int>(type: "int", nullable: true)
+                    CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2973,30 +3203,24 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TaskScheduleAssignment_Tbl_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_TaskScheduleAssignment_Tbl_PredefinedCopyDescription_Tbl_PredefinedCopyDescriptionId",
                         column: x => x.PredefinedCopyDescriptionId,
                         principalTable: "PredefinedCopyDescription_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskScheduleAssignment_Tbl_TaskSchedule_Tbl_ScheduleId",
                         column: x => x.ScheduleId,
                         principalTable: "TaskSchedule_Tbl",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_TaskScheduleAssignment_Tbl_TaskSchedule_Tbl_TaskScheduleId",
-                        column: x => x.TaskScheduleId,
-                        principalTable: "TaskSchedule_Tbl",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -3019,13 +3243,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.AddedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TaskScheduleViewer_Tbl_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_TaskScheduleViewer_Tbl_TaskSchedule_Tbl_ScheduleId",
                         column: x => x.ScheduleId,
@@ -3047,8 +3271,8 @@ namespace MahERP.DataModelLayer.Migrations
                     LeaveDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EmploymentType = table.Column<byte>(type: "tinyint", nullable: false),
                     IsSupervisor = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
@@ -3060,24 +3284,25 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_DepartmentMember_Tbl_Contact_Tbl_ContactId",
                         column: x => x.ContactId,
                         principalTable: "Contact_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_DepartmentMember_Tbl_DepartmentPosition_Tbl_PositionId",
                         column: x => x.PositionId,
                         principalTable: "DepartmentPosition_Tbl",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_DepartmentMember_Tbl_OrganizationDepartment_Tbl_DepartmentId",
                         column: x => x.DepartmentId,
                         principalTable: "OrganizationDepartment_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -3089,7 +3314,7 @@ namespace MahERP.DataModelLayer.Migrations
                     ActivityId = table.Column<int>(type: "int", nullable: false),
                     FileName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     FileType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     FileSize = table.Column<long>(type: "bigint", nullable: false),
                     UploadDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -3103,7 +3328,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.ActivityId,
                         principalTable: "ActivityBase_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ActivityAttachment_Tbl_AspNetUsers_UploaderUserId",
                         column: x => x.UploaderUserId,
@@ -3119,11 +3344,10 @@ namespace MahERP.DataModelLayer.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ActivityId = table.Column<int>(type: "int", nullable: false),
-                    CommentText = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CommentText = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ParentCommentId = table.Column<int>(type: "int", nullable: true),
-                    ActivityCommentId = table.Column<int>(type: "int", nullable: true)
+                    ParentCommentId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -3133,12 +3357,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.ActivityId,
                         principalTable: "ActivityBase_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ActivityComment_Tbl_ActivityComment_Tbl_ActivityCommentId",
-                        column: x => x.ActivityCommentId,
-                        principalTable: "ActivityComment_Tbl",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ActivityComment_Tbl_ActivityComment_Tbl_ParentCommentId",
                         column: x => x.ParentCommentId,
@@ -3161,9 +3380,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ActivityId = table.Column<int>(type: "int", nullable: false),
                     ChangeType = table.Column<byte>(type: "tinyint", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    OldValue = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    NewValue = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    OldValue = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    NewValue = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -3175,7 +3394,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.ActivityId,
                         principalTable: "ActivityBase_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ActivityHistory_Tbl_AspNetUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
@@ -3193,10 +3412,10 @@ namespace MahERP.DataModelLayer.Migrations
                     ActivityId = table.Column<int>(type: "int", nullable: false),
                     CRMId = table.Column<int>(type: "int", nullable: false),
                     RelationType = table.Column<byte>(type: "tinyint", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -3244,13 +3463,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.UploaderUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CRMAttachment_Tbl_CRMInteraction_Tbl_CRMInteractionId",
                         column: x => x.CRMInteractionId,
                         principalTable: "CRMInteraction_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateTable(
@@ -3263,8 +3482,7 @@ namespace MahERP.DataModelLayer.Migrations
                     CommentText = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ParentCommentId = table.Column<int>(type: "int", nullable: true),
-                    CRMCommentId = table.Column<int>(type: "int", nullable: true)
+                    ParentCommentId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -3274,24 +3492,18 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_CRMComment_Tbl_CRMComment_Tbl_CRMCommentId",
-                        column: x => x.CRMCommentId,
-                        principalTable: "CRMComment_Tbl",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CRMComment_Tbl_CRMComment_Tbl_ParentCommentId",
                         column: x => x.ParentCommentId,
                         principalTable: "CRMComment_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CRMComment_Tbl_CRMInteraction_Tbl_CRMInteractionId",
                         column: x => x.CRMInteractionId,
                         principalTable: "CRMInteraction_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateTable(
@@ -3317,19 +3529,18 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CRMParticipant_Tbl_CRMInteraction_Tbl_CRMInteractionId",
                         column: x => x.CRMInteractionId,
                         principalTable: "CRMInteraction_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_CRMParticipant_Tbl_StakeholderContact_Tbl_StakeholderContactId",
                         column: x => x.StakeholderContactId,
                         principalTable: "StakeholderContact_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -3353,19 +3564,19 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CRMTeam_Tbl_CRMInteraction_Tbl_CRMInteractionId",
                         column: x => x.CRMInteractionId,
                         principalTable: "CRMInteraction_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_CRMTeam_Tbl_Team_Tbl_TeamId",
                         column: x => x.TeamId,
                         principalTable: "Team_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -3410,10 +3621,10 @@ namespace MahERP.DataModelLayer.Migrations
                     ActivityId = table.Column<int>(type: "int", nullable: false),
                     TaskId = table.Column<int>(type: "int", nullable: false),
                     RelationType = table.Column<byte>(type: "tinyint", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     CreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -3470,8 +3681,7 @@ namespace MahERP.DataModelLayer.Migrations
                     ReportDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AssignedInTeamId = table.Column<int>(type: "int", nullable: true),
                     IsFocused = table.Column<bool>(type: "bit", nullable: false),
-                    FocusedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PredefinedCopyDescriptionId1 = table.Column<int>(type: "int", nullable: true)
+                    FocusedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -3480,23 +3690,15 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TaskAssignment_Tbl_AspNetUsers_AssignedUserId",
                         column: x => x.AssignedUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskAssignment_Tbl_AspNetUsers_AssignerUserId",
                         column: x => x.AssignerUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskAssignment_Tbl_PredefinedCopyDescription_Tbl_PredefinedCopyDescriptionId",
                         column: x => x.PredefinedCopyDescriptionId,
-                        principalTable: "PredefinedCopyDescription_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_TaskAssignment_Tbl_PredefinedCopyDescription_Tbl_PredefinedCopyDescriptionId1",
-                        column: x => x.PredefinedCopyDescriptionId1,
                         principalTable: "PredefinedCopyDescription_Tbl",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -3504,7 +3706,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.TaskId,
                         principalTable: "Tasks_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TaskAssignment_Tbl_Team_Tbl_AssignedInTeamId",
                         column: x => x.AssignedInTeamId,
@@ -3532,8 +3734,7 @@ namespace MahERP.DataModelLayer.Migrations
                     FileUUID = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UploadDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UploaderUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TasksId = table.Column<int>(type: "int", nullable: true)
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -3543,18 +3744,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.UploaderUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TaskAttachment_Tbl_Tasks_Tbl_TaskId",
                         column: x => x.TaskId,
                         principalTable: "Tasks_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_TaskAttachment_Tbl_Tasks_Tbl_TasksId",
-                        column: x => x.TasksId,
-                        principalTable: "Tasks_Tbl",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -3582,19 +3778,18 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TaskComment_Tbl_TaskComment_Tbl_ParentCommentId",
                         column: x => x.ParentCommentId,
                         principalTable: "TaskComment_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskComment_Tbl_Tasks_Tbl_TaskId",
                         column: x => x.TaskId,
                         principalTable: "Tasks_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -3620,14 +3815,13 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TaskCRMDetails_Tbl_StakeholderContact_Tbl_StakeholderContactId",
                         column: x => x.StakeholderContactId,
                         principalTable: "StakeholderContact_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskCRMDetails_Tbl_Tasks_Tbl_TaskId",
                         column: x => x.TaskId,
                         principalTable: "Tasks_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -3696,20 +3890,18 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TaskOperation_Tbl_AspNetUsers_CompletedByUserId",
                         column: x => x.CompletedByUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskOperation_Tbl_AspNetUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskOperation_Tbl_Tasks_Tbl_TaskId",
                         column: x => x.TaskId,
                         principalTable: "Tasks_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -3799,8 +3991,7 @@ namespace MahERP.DataModelLayer.Migrations
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     LastUpdateDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    LastUpdaterUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    TasksId = table.Column<int>(type: "int", nullable: true)
+                    LastUpdaterUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -3810,7 +4001,7 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.AddedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TaskViewer_Tbl_AspNetUsers_LastUpdaterUserId",
                         column: x => x.LastUpdaterUserId,
@@ -3821,18 +4012,13 @@ namespace MahERP.DataModelLayer.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_TaskViewer_Tbl_Tasks_Tbl_TaskId",
                         column: x => x.TaskId,
                         principalTable: "Tasks_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_TaskViewer_Tbl_Tasks_Tbl_TasksId",
-                        column: x => x.TasksId,
-                        principalTable: "Tasks_Tbl",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TaskViewer_Tbl_Team_Tbl_TeamId",
                         column: x => x.TeamId,
@@ -3969,14 +4155,13 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TaskCommentAttachment_Tbl_AspNetUsers_UploaderUserId",
                         column: x => x.UploaderUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskCommentAttachment_Tbl_TaskComment_Tbl_TaskCommentId",
                         column: x => x.TaskCommentId,
                         principalTable: "TaskComment_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -3989,8 +4174,7 @@ namespace MahERP.DataModelLayer.Migrations
                     MentionedUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     MentionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsRead = table.Column<bool>(type: "bit", nullable: false),
-                    ReadDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TaskCommentId = table.Column<int>(type: "int", nullable: true)
+                    ReadDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -3999,19 +4183,13 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TaskCommentMention_Tbl_AspNetUsers_MentionedUserId",
                         column: x => x.MentionedUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskCommentMention_Tbl_TaskComment_Tbl_CommentId",
                         column: x => x.CommentId,
                         principalTable: "TaskComment_Tbl",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_TaskCommentMention_Tbl_TaskComment_Tbl_TaskCommentId",
-                        column: x => x.TaskCommentId,
-                        principalTable: "TaskComment_Tbl",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -4032,9 +4210,7 @@ namespace MahERP.DataModelLayer.Migrations
                     ReadDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DeliveryType = table.Column<byte>(type: "tinyint", nullable: false),
                     IsDelivered = table.Column<bool>(type: "bit", nullable: false),
-                    DeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TaskCommentId = table.Column<int>(type: "int", nullable: true),
-                    TasksId = table.Column<int>(type: "int", nullable: true)
+                    DeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -4043,34 +4219,20 @@ namespace MahERP.DataModelLayer.Migrations
                         name: "FK_TaskNotification_Tbl_AspNetUsers_RecipientUserId",
                         column: x => x.RecipientUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskNotification_Tbl_TaskComment_Tbl_CommentId",
                         column: x => x.CommentId,
-                        principalTable: "TaskComment_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_TaskNotification_Tbl_TaskComment_Tbl_TaskCommentId",
-                        column: x => x.TaskCommentId,
                         principalTable: "TaskComment_Tbl",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskNotification_Tbl_TaskOperation_Tbl_OperationId",
                         column: x => x.OperationId,
                         principalTable: "TaskOperation_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TaskNotification_Tbl_Tasks_Tbl_TaskId",
                         column: x => x.TaskId,
-                        principalTable: "Tasks_Tbl",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_TaskNotification_Tbl_Tasks_Tbl_TasksId",
-                        column: x => x.TasksId,
                         principalTable: "Tasks_Tbl",
                         principalColumn: "Id");
                 });
@@ -4175,6 +4337,11 @@ namespace MahERP.DataModelLayer.Migrations
                 values: new object[] { 1, null, null, new DateTime(2025, 10, 5, 0, 0, 0, 0, DateTimeKind.Unspecified), "شعبه برند رسنا", null, true, true, null, null, "شعبه رسنا", null, null, null, null });
 
             migrationBuilder.InsertData(
+                table: "NotificationModuleConfig_Tbl",
+                columns: new[] { "Id", "ColorCode", "Description", "DisplayOrder", "IsActive", "ModuleCode", "ModuleNameEn", "ModuleNameFa" },
+                values: new object[] { 1, "#2196F3", "سیستم مدیریت تسک‌ها و پروژه‌ها", 1, true, "TASKING", "Tasking Module", "ماژول تسکینگ" });
+
+            migrationBuilder.InsertData(
                 table: "PredefinedCopyDescription_Tbl",
                 columns: new[] { "Id", "Description", "IsActive", "Title" },
                 values: new object[,]
@@ -4202,18 +4369,30 @@ namespace MahERP.DataModelLayer.Migrations
 
             migrationBuilder.InsertData(
                 table: "TaskCategory_Tbl",
-                columns: new[] { "Id", "Description", "DisplayOrder", "IsActive", "ParentCategoryId", "TaskCategoryId", "Title" },
+                columns: new[] { "Id", "Description", "DisplayOrder", "IsActive", "ParentCategoryId", "Title" },
                 values: new object[,]
                 {
-                    { 1, "دسته‌بندی عمومی برای تسک‌ها", (byte)1, true, null, null, "عمومی" },
-                    { 2, "تسک‌های مربوط به امور اداری", (byte)2, true, null, null, "اداری" },
-                    { 3, "تسک‌های مربوط به فروش", (byte)4, true, null, null, "فروش" },
-                    { 4, "تسک‌های مربوط به خدمات مشتریان غیر حضوری", (byte)5, true, null, null, "خدمات حضوری" },
-                    { 5, "تسک‌های مربوط به خدمات مشتریان حضوری", (byte)5, true, null, null, "خدمات  غیر حضوری" },
-                    { 6, "تسک‌های بازاریابی و تبلیغات", (byte)6, true, null, null, "بازاریابی" },
-                    { 7, "تسک‌های مربوط به امور مالی", (byte)7, true, null, null, "مالی" },
-                    { 8, "تسک‌های مربوط به HR", (byte)8, true, null, null, "منابع انسانی" },
-                    { 9, "تسک‌های فوری و اضطراری", (byte)10, true, null, null, "فوری" }
+                    { 1, "دسته‌بندی عمومی برای تسک‌ها", (byte)1, true, null, "عمومی" },
+                    { 2, "تسک‌های مربوط به امور اداری", (byte)2, true, null, "اداری" },
+                    { 3, "تسک‌های مربوط به فروش", (byte)4, true, null, "فروش" },
+                    { 4, "تسک‌های مربوط به خدمات مشتریان غیر حضوری", (byte)5, true, null, "خدمات حضوری" },
+                    { 5, "تسک‌های مربوط به خدمات مشتریان حضوری", (byte)5, true, null, "خدمات  غیر حضوری" },
+                    { 6, "تسک‌های بازاریابی و تبلیغات", (byte)6, true, null, "بازاریابی" },
+                    { 7, "تسک‌های مربوط به امور مالی", (byte)7, true, null, "مالی" },
+                    { 8, "تسک‌های مربوط به HR", (byte)8, true, null, "منابع انسانی" },
+                    { 9, "تسک‌های فوری و اضطراری", (byte)10, true, null, "فوری" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "NotificationTypeConfig_Tbl",
+                columns: new[] { "Id", "AllowUserCustomization", "CoreNotificationTypeGeneral", "CoreNotificationTypeSpecific", "DefaultEmailTemplateId", "DefaultPriority", "DefaultSmsTemplateId", "DefaultSystemNotificationTemplateId", "DefaultTelegramTemplateId", "Description", "DisplayOrder", "IsActive", "ModuleConfigId", "SupportsEmail", "SupportsSms", "SupportsTelegram", "TypeCode", "TypeNameFa" },
+                values: new object[,]
+                {
+                    { 1, true, (byte)0, (byte)0, null, (byte)0, null, null, null, "ارسال لیست تسک‌های انجام نشده هر روز", 1, true, 1, true, false, true, "TASK_DAILY_DIGEST", "اعلان روزانه تسک‌های انجام نشده" },
+                    { 2, true, (byte)9, (byte)1, null, (byte)1, null, null, null, "اعلان هنگام تخصیص تسک جدید به کاربر", 2, true, 1, true, true, true, "TASK_ASSIGNED", "تخصیص تسک جدید" },
+                    { 3, true, (byte)8, (byte)2, null, (byte)1, null, null, null, "اعلان تکمیل تسک به سازنده", 3, true, 1, true, false, true, "TASK_COMPLETED", "تکمیل تسک واگذار شده" },
+                    { 4, true, (byte)6, (byte)3, null, (byte)2, null, null, null, "یادآوری تسک‌های نزدیک به سررسید", 4, true, 1, true, true, true, "TASK_REMINDER", "یادآوری سررسید تسک" },
+                    { 5, true, (byte)10, (byte)4, null, (byte)0, null, null, null, "اعلان ثبت کامنت، WorkLog یا تغییرات", 5, true, 1, true, false, true, "TASK_UPDATED", "تغییرات در تسک" }
                 });
 
             migrationBuilder.InsertData(
@@ -4241,7 +4420,7 @@ namespace MahERP.DataModelLayer.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActivityAttachment_Tbl_ActivityId",
+                name: "IX_ActivityAttachment_ActivityId",
                 table: "ActivityAttachment_Tbl",
                 column: "ActivityId");
 
@@ -4251,9 +4430,14 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "UploaderUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActivityBase_Tbl_BranchId",
+                name: "IX_ActivityBase_Branch_Type",
                 table: "ActivityBase_Tbl",
-                column: "BranchId");
+                columns: new[] { "BranchId", "ActivityType" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityBase_Status",
+                table: "ActivityBase_Tbl",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityBase_Tbl_ContractId",
@@ -4276,12 +4460,7 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "StakeholderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActivityComment_Tbl_ActivityCommentId",
-                table: "ActivityComment_Tbl",
-                column: "ActivityCommentId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ActivityComment_Tbl_ActivityId",
+                name: "IX_ActivityComment_ActivityId",
                 table: "ActivityComment_Tbl",
                 column: "ActivityId");
 
@@ -4296,9 +4475,10 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "ParentCommentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActivityCRM_Tbl_ActivityId",
+                name: "IX_ActivityCRM_Activity_CRM",
                 table: "ActivityCRM_Tbl",
-                column: "ActivityId");
+                columns: new[] { "ActivityId", "CRMId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityCRM_Tbl_CreatorUserId",
@@ -4311,9 +4491,9 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "CRMId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActivityHistory_Tbl_ActivityId",
+                name: "IX_ActivityHistory_Activity_Date",
                 table: "ActivityHistory_Tbl",
-                column: "ActivityId");
+                columns: new[] { "ActivityId", "CreateDate" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityHistory_Tbl_CreatorUserId",
@@ -4321,9 +4501,10 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "CreatorUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActivityTask_Tbl_ActivityId",
+                name: "IX_ActivityTask_Activity_Task",
                 table: "ActivityTask_Tbl",
-                column: "ActivityId");
+                columns: new[] { "ActivityId", "TaskId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityTask_Tbl_CreatorUserId",
@@ -4380,14 +4561,19 @@ namespace MahERP.DataModelLayer.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Branch_Name",
+                table: "Branch_Tbl",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Branch_ParentId",
+                table: "Branch_Tbl",
+                column: "ParentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Branch_Tbl_BranchId",
                 table: "Branch_Tbl",
                 column: "BranchId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Branch_Tbl_ParentId",
-                table: "Branch_Tbl",
-                column: "ParentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BranchContact_Branch_Contact",
@@ -4410,6 +4596,11 @@ namespace MahERP.DataModelLayer.Migrations
                 table: "BranchContactGroup_Tbl",
                 columns: new[] { "BranchId", "Code" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BranchContactGroup_DisplayOrder",
+                table: "BranchContactGroup_Tbl",
+                column: "DisplayOrder");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BranchContactGroup_Tbl_CreatorUserId",
@@ -4464,9 +4655,15 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BranchOrganizationGroup_Tbl_BranchId",
+                name: "IX_BranchOrganizationGroup_Branch_Code",
                 table: "BranchOrganizationGroup_Tbl",
-                column: "BranchId");
+                columns: new[] { "BranchId", "Code" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BranchOrganizationGroup_DisplayOrder",
+                table: "BranchOrganizationGroup_Tbl",
+                column: "DisplayOrder");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BranchOrganizationGroup_Tbl_CreatorUserId",
@@ -4515,19 +4712,15 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "TaskCategoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BranchTaskCategoryStakeholder_Tbl_TaskCategoryId1",
-                table: "BranchTaskCategoryStakeholder_Tbl",
-                column: "TaskCategoryId1");
+                name: "IX_BranchUser_Branch_User",
+                table: "BranchUser_Tbl",
+                columns: new[] { "BranchId", "UserId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_BranchUser_Tbl_AssignedByUserId",
                 table: "BranchUser_Tbl",
                 column: "AssignedByUserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BranchUser_Tbl_BranchId",
-                table: "BranchUser_Tbl",
-                column: "BranchId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BranchUser_Tbl_BranchId1",
@@ -4540,11 +4733,21 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Contact_FullName",
+                table: "Contact_Tbl",
+                columns: new[] { "FirstName", "LastName" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Contact_NationalCode",
                 table: "Contact_Tbl",
                 column: "NationalCode",
                 unique: true,
                 filter: "[NationalCode] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Contact_PrimaryEmail",
+                table: "Contact_Tbl",
+                column: "PrimaryEmail");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contact_Tbl_CreatorUserId",
@@ -4561,6 +4764,11 @@ namespace MahERP.DataModelLayer.Migrations
                 table: "ContactGroup_Tbl",
                 column: "Code",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContactGroup_DisplayOrder",
+                table: "ContactGroup_Tbl",
+                column: "DisplayOrder");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ContactGroup_Tbl_CreatorUserId",
@@ -4589,10 +4797,26 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "ContactId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ContactPhone_Contact_Default",
+                table: "ContactPhone_Tbl",
+                columns: new[] { "ContactId", "IsDefault" },
+                filter: "[IsDefault] = 1 AND [IsActive] = 1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ContactPhone_Contact_Number",
                 table: "ContactPhone_Tbl",
                 columns: new[] { "ContactId", "PhoneNumber" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContactPhone_Contact_Type",
+                table: "ContactPhone_Tbl",
+                columns: new[] { "ContactId", "PhoneType" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContactPhone_PhoneNumber",
+                table: "ContactPhone_Tbl",
+                column: "PhoneNumber");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ContactPhone_Tbl_CreatorUserId",
@@ -4615,14 +4839,19 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "StakeholderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CoreNotification_Recipient_Read",
+                table: "CoreNotification_Tbl",
+                columns: new[] { "RecipientUserId", "IsRead" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoreNotification_System_Date",
+                table: "CoreNotification_Tbl",
+                columns: new[] { "SystemId", "CreateDate" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CoreNotification_Tbl_BranchId",
                 table: "CoreNotification_Tbl",
                 column: "BranchId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CoreNotification_Tbl_RecipientUserId",
-                table: "CoreNotification_Tbl",
-                column: "RecipientUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CoreNotification_Tbl_SenderUserId",
@@ -4630,19 +4859,25 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "SenderUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CoreNotificationDelivery_Tbl_CoreNotificationId",
+                name: "IX_CoreNotificationDelivery_Method",
                 table: "CoreNotificationDelivery_Tbl",
-                column: "CoreNotificationId");
+                column: "DeliveryMethod");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CoreNotificationDetail_Tbl_CoreNotificationId",
+                name: "IX_CoreNotificationDelivery_Notification_Status",
+                table: "CoreNotificationDelivery_Tbl",
+                columns: new[] { "CoreNotificationId", "DeliveryStatus" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoreNotificationDetail_NotificationId",
                 table: "CoreNotificationDetail_Tbl",
                 column: "CoreNotificationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CoreNotificationSetting_Tbl_UserId",
+                name: "IX_CoreNotificationSetting_User_System_Type",
                 table: "CoreNotificationSetting_Tbl",
-                column: "UserId");
+                columns: new[] { "UserId", "SystemId", "NotificationTypeGeneral" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CRMAttachment_Tbl_CRMInteractionId",
@@ -4658,11 +4893,6 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "IX_CRMComment_Tbl_CreatorUserId",
                 table: "CRMComment_Tbl",
                 column: "CreatorUserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CRMComment_Tbl_CRMCommentId",
-                table: "CRMComment_Tbl",
-                column: "CRMCommentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CRMComment_Tbl_CRMInteractionId",
@@ -4741,6 +4971,16 @@ namespace MahERP.DataModelLayer.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_DepartmentMember_Dept_Active",
+                table: "DepartmentMember_Tbl",
+                columns: new[] { "DepartmentId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DepartmentMember_PositionId",
+                table: "DepartmentMember_Tbl",
+                column: "PositionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DepartmentMember_Tbl_ContactId",
                 table: "DepartmentMember_Tbl",
                 column: "ContactId");
@@ -4751,19 +4991,26 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "CreatorUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DepartmentMember_Tbl_PositionId",
-                table: "DepartmentMember_Tbl",
-                column: "PositionId");
+                name: "IX_DepartmentPosition_Dept_Default",
+                table: "DepartmentPosition_Tbl",
+                columns: new[] { "DepartmentId", "IsDefault" },
+                filter: "[IsDefault] = 1 AND [IsActive] = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DepartmentPosition_Dept_PowerLevel",
+                table: "DepartmentPosition_Tbl",
+                columns: new[] { "DepartmentId", "PowerLevel" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DepartmentPosition_Dept_Title",
+                table: "DepartmentPosition_Tbl",
+                columns: new[] { "DepartmentId", "Title" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_DepartmentPosition_Tbl_CreatorUserId",
                 table: "DepartmentPosition_Tbl",
                 column: "CreatorUserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_DepartmentPosition_Tbl_DepartmentId",
-                table: "DepartmentPosition_Tbl",
-                column: "DepartmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmailLog_Tbl_ContactId",
@@ -4821,11 +5068,106 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "TemplateId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_NotificationBlacklist_Tbl_CreatedByUserId",
+                table: "NotificationBlacklist_Tbl",
+                column: "CreatedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationBlacklist_Tbl_NotificationTypeConfigId",
+                table: "NotificationBlacklist_Tbl",
+                column: "NotificationTypeConfigId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationBlacklist_User_Active",
+                table: "NotificationBlacklist_Tbl",
+                columns: new[] { "UserId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeliveryStats_DeliveryId",
+                table: "NotificationDeliveryStats_Tbl",
+                column: "CoreNotificationDeliveryId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationModuleConfig_IsActive",
+                table: "NotificationModuleConfig_Tbl",
+                column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationModuleConfig_ModuleCode",
+                table: "NotificationModuleConfig_Tbl",
+                column: "ModuleCode",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationScheduledMessage_Tbl_CreatorUserId",
+                table: "NotificationScheduledMessage_Tbl",
+                column: "CreatorUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScheduledMessage_ScheduledDateTime",
+                table: "NotificationScheduledMessage_Tbl",
+                column: "ScheduledDateTime");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScheduledMessage_Status",
+                table: "NotificationScheduledMessage_Tbl",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationTemplate_Tbl_CreatorUserId",
+                table: "NotificationTemplate_Tbl",
+                column: "CreatorUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationTemplate_Tbl_LastModifierUserId",
+                table: "NotificationTemplate_Tbl",
+                column: "LastModifierUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationTemplate_Type_Code",
+                table: "NotificationTemplate_Tbl",
+                columns: new[] { "TemplateType", "TemplateCode" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationTemplateHistory_Tbl_ChangedByUserId",
+                table: "NotificationTemplateHistory_Tbl",
+                column: "ChangedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TemplateHistory_Template_Version",
+                table: "NotificationTemplateHistory_Tbl",
+                columns: new[] { "TemplateId", "Version" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TemplateVariable_Template_Variable",
+                table: "NotificationTemplateVariable_Tbl",
+                columns: new[] { "TemplateId", "VariableName" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationTypeConfig_IsActive",
+                table: "NotificationTypeConfig_Tbl",
+                column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationTypeConfig_Module_TypeCode",
+                table: "NotificationTypeConfig_Tbl",
+                columns: new[] { "ModuleConfigId", "TypeCode" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Organization_EconomicCode",
                 table: "Organization_Tbl",
                 column: "EconomicCode",
                 unique: true,
                 filter: "[EconomicCode] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Organization_Name",
+                table: "Organization_Tbl",
+                column: "Name");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Organization_RegistrationNumber",
@@ -4845,10 +5187,25 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "LastUpdaterUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Organization_Type",
+                table: "Organization_Tbl",
+                column: "OrganizationType");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrganizationContact_Org_Contact_Type",
                 table: "OrganizationContact_Tbl",
                 columns: new[] { "OrganizationId", "ContactId", "RelationType" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrganizationContact_Org_Primary",
+                table: "OrganizationContact_Tbl",
+                columns: new[] { "OrganizationId", "IsPrimary" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrganizationContact_RelationType",
+                table: "OrganizationContact_Tbl",
+                column: "RelationType");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrganizationContact_Tbl_ContactId",
@@ -4859,6 +5216,23 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "IX_OrganizationContact_Tbl_CreatorUserId",
                 table: "OrganizationContact_Tbl",
                 column: "CreatorUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrganizationDepartment_Org_Code",
+                table: "OrganizationDepartment_Tbl",
+                columns: new[] { "OrganizationId", "Code" },
+                unique: true,
+                filter: "[Code] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrganizationDepartment_Org_Level",
+                table: "OrganizationDepartment_Tbl",
+                columns: new[] { "OrganizationId", "Level" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrganizationDepartment_ParentId",
+                table: "OrganizationDepartment_Tbl",
+                column: "ParentDepartmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrganizationDepartment_Tbl_CreatorUserId",
@@ -4876,20 +5250,15 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "ManagerContactId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrganizationDepartment_Tbl_OrganizationId",
-                table: "OrganizationDepartment_Tbl",
-                column: "OrganizationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OrganizationDepartment_Tbl_ParentDepartmentId",
-                table: "OrganizationDepartment_Tbl",
-                column: "ParentDepartmentId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_OrganizationGroup_Code",
                 table: "OrganizationGroup_Tbl",
                 column: "Code",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrganizationGroup_DisplayOrder",
+                table: "OrganizationGroup_Tbl",
+                column: "DisplayOrder");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrganizationGroup_Tbl_CreatorUserId",
@@ -4961,12 +5330,6 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "IX_Role_Tbl_LastUpdaterId",
                 table: "Role_Tbl",
                 column: "LastUpdaterId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RolePattern_PatternName",
-                table: "RolePattern_Tbl",
-                column: "PatternName",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_RolePattern_Tbl_CreatorUserId",
@@ -5140,11 +5503,6 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "StakeholderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StakeholderBranch_Tbl_StakeholderId1",
-                table: "StakeholderBranch_Tbl",
-                column: "StakeholderId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_StakeholderContact_Tbl_CreatorUserId",
                 table: "StakeholderContact_Tbl",
                 column: "CreatorUserId");
@@ -5245,11 +5603,6 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "PredefinedCopyDescriptionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskAssignment_Tbl_PredefinedCopyDescriptionId1",
-                table: "TaskAssignment_Tbl",
-                column: "PredefinedCopyDescriptionId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TaskAssignment_Tbl_TaskId",
                 table: "TaskAssignment_Tbl",
                 column: "TaskId");
@@ -5260,11 +5613,6 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "TaskId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskAttachment_Tbl_TasksId",
-                table: "TaskAttachment_Tbl",
-                column: "TasksId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TaskAttachment_Tbl_UploaderUserId",
                 table: "TaskAttachment_Tbl",
                 column: "UploaderUserId");
@@ -5273,11 +5621,6 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "IX_TaskCategory_Tbl_ParentCategoryId",
                 table: "TaskCategory_Tbl",
                 column: "ParentCategoryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TaskCategory_Tbl_TaskCategoryId",
-                table: "TaskCategory_Tbl",
-                column: "TaskCategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TaskComment_Tbl_CreatorUserId",
@@ -5315,11 +5658,6 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "MentionedUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskCommentMention_Tbl_TaskCommentId",
-                table: "TaskCommentMention_Tbl",
-                column: "TaskCommentId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TaskCRMDetails_Tbl_StakeholderContactId",
                 table: "TaskCRMDetails_Tbl",
                 column: "StakeholderContactId");
@@ -5340,10 +5678,9 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskMyDay_Assignment_Date",
+                name: "IX_TaskMyDay_Tbl_TaskAssignmentId",
                 table: "TaskMyDay_Tbl",
-                columns: new[] { "TaskAssignmentId", "PlannedDate" },
-                unique: true);
+                column: "TaskAssignmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TaskNotification_Tbl_CommentId",
@@ -5361,19 +5698,9 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "RecipientUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskNotification_Tbl_TaskCommentId",
-                table: "TaskNotification_Tbl",
-                column: "TaskCommentId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TaskNotification_Tbl_TaskId",
                 table: "TaskNotification_Tbl",
                 column: "TaskId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TaskNotification_Tbl_TasksId",
-                table: "TaskNotification_Tbl",
-                column: "TasksId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TaskOperation_Tbl_CompletedByUserId",
@@ -5436,11 +5763,6 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "BranchId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tasks_Tbl_BranchId1",
-                table: "Tasks_Tbl",
-                column: "BranchId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Tasks_Tbl_ContactId",
                 table: "Tasks_Tbl",
                 column: "ContactId");
@@ -5449,11 +5771,6 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "IX_Tasks_Tbl_ContractId",
                 table: "Tasks_Tbl",
                 column: "ContractId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Tasks_Tbl_ContractId1",
-                table: "Tasks_Tbl",
-                column: "ContractId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tasks_Tbl_CreatorUserId",
@@ -5486,11 +5803,6 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "TaskCategoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tasks_Tbl_TaskCategoryId1",
-                table: "Tasks_Tbl",
-                column: "TaskCategoryId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Tasks_Tbl_TeamId",
                 table: "Tasks_Tbl",
                 column: "TeamId");
@@ -5511,11 +5823,6 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "TaskTemplateId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskSchedule_Tbl_TaskTemplateId1",
-                table: "TaskSchedule_Tbl",
-                column: "TaskTemplateId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TaskScheduleAssignment_Tbl_CreatorUserId",
                 table: "TaskScheduleAssignment_Tbl",
                 column: "CreatorUserId");
@@ -5529,11 +5836,6 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "IX_TaskScheduleAssignment_Tbl_ScheduleId",
                 table: "TaskScheduleAssignment_Tbl",
                 column: "ScheduleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TaskScheduleAssignment_Tbl_TaskScheduleId",
-                table: "TaskScheduleAssignment_Tbl",
-                column: "TaskScheduleId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TaskScheduleAssignment_Tbl_UserId",
@@ -5576,11 +5878,6 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "CreatorUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskTemplateOperation_Tbl_TaskTemplateId",
-                table: "TaskTemplateOperation_Tbl",
-                column: "TaskTemplateId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TaskTemplateOperation_Tbl_TemplateId",
                 table: "TaskTemplateOperation_Tbl",
                 column: "TemplateId");
@@ -5599,11 +5896,6 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "IX_TaskViewer_Tbl_TaskId",
                 table: "TaskViewer_Tbl",
                 column: "TaskId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TaskViewer_Tbl_TasksId",
-                table: "TaskViewer_Tbl",
-                column: "TasksId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TaskViewer_Tbl_TeamId",
@@ -5656,9 +5948,14 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Team_Tbl_BranchId",
+                name: "IX_Team_BranchId",
                 table: "Team_Tbl",
                 column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Team_ManagerUserId",
+                table: "Team_Tbl",
+                column: "ManagerUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Team_Tbl_CreatorUserId",
@@ -5671,19 +5968,9 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "LastUpdaterUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Team_Tbl_ManagerUserId",
-                table: "Team_Tbl",
-                column: "ManagerUserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Team_Tbl_ParentTeamId",
                 table: "Team_Tbl",
                 column: "ParentTeamId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Team_Tbl_TeamId",
-                table: "Team_Tbl",
-                column: "TeamId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TeamMember_Tbl_AddedByUserId",
@@ -5696,14 +5983,15 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "PositionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TeamMember_Tbl_TeamId",
-                table: "TeamMember_Tbl",
-                column: "TeamId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TeamMember_Tbl_UserId",
                 table: "TeamMember_Tbl",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeamMember_Team_User",
+                table: "TeamMember_Tbl",
+                columns: new[] { "TeamId", "UserId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_TeamModulePermission_Tbl_GrantedByUserId",
@@ -5716,6 +6004,11 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "TeamId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TeamPosition_PowerLevel",
+                table: "TeamPosition_Tbl",
+                column: "PowerLevel");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TeamPosition_Tbl_CreatorUserId",
                 table: "TeamPosition_Tbl",
                 column: "CreatorUserId");
@@ -5726,9 +6019,25 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "LastUpdaterUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TeamPosition_Tbl_TeamId",
+                name: "IX_TeamPosition_Team_Title",
                 table: "TeamPosition_Tbl",
-                column: "TeamId");
+                columns: new[] { "TeamId", "Title" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserActivityLog_ActivityType",
+                table: "UserActivityLog_Tbl",
+                column: "ActivityType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserActivityLog_Module_Date",
+                table: "UserActivityLog_Tbl",
+                columns: new[] { "ModuleName", "ActivityDateTime" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserActivityLog_ResultStatus",
+                table: "UserActivityLog_Tbl",
+                column: "ResultStatus");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserActivityLog_Tbl_BranchId",
@@ -5736,9 +6045,9 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "BranchId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserActivityLog_Tbl_UserId",
+                name: "IX_UserActivityLog_User_Date",
                 table: "UserActivityLog_Tbl",
-                column: "UserId");
+                columns: new[] { "UserId", "ActivityDateTime" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserModulePermission_Tbl_GrantedByUserId",
@@ -5754,6 +6063,17 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "IX_UserModulePreference_Tbl_UserId",
                 table: "UserModulePreference_Tbl",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserNotificationPreference_Tbl_NotificationTypeConfigId",
+                table: "UserNotificationPreference_Tbl",
+                column: "NotificationTypeConfigId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserNotificationPreference_User_Type",
+                table: "UserNotificationPreference_Tbl",
+                columns: new[] { "UserId", "NotificationTypeConfigId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserPermission_Tbl_AssignedByUserId",
@@ -5806,10 +6126,9 @@ namespace MahERP.DataModelLayer.Migrations
                 column: "RolePatternId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRolePattern_User_Pattern",
+                name: "IX_UserRolePattern_Tbl_UserId",
                 table: "UserRolePattern_Tbl",
-                columns: new[] { "UserId", "RolePatternId" },
-                unique: true);
+                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -5867,9 +6186,6 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "ContactPhone_Tbl");
 
             migrationBuilder.DropTable(
-                name: "CoreNotificationDelivery_Tbl");
-
-            migrationBuilder.DropTable(
                 name: "CoreNotificationDetail_Tbl");
 
             migrationBuilder.DropTable(
@@ -5898,6 +6214,21 @@ namespace MahERP.DataModelLayer.Migrations
 
             migrationBuilder.DropTable(
                 name: "EmailTemplateRecipient_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "NotificationBlacklist_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "NotificationDeliveryStats_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "NotificationScheduledMessage_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "NotificationTemplateHistory_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "NotificationTemplateVariable_Tbl");
 
             migrationBuilder.DropTable(
                 name: "OrganizationContact_Tbl");
@@ -5999,6 +6330,9 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "UserModulePreference_Tbl");
 
             migrationBuilder.DropTable(
+                name: "UserNotificationPreference_Tbl");
+
+            migrationBuilder.DropTable(
                 name: "UserPermission_Tbl");
 
             migrationBuilder.DropTable(
@@ -6029,9 +6363,6 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "ContactGroup_Tbl");
 
             migrationBuilder.DropTable(
-                name: "CoreNotification_Tbl");
-
-            migrationBuilder.DropTable(
                 name: "CRMInteraction_Tbl");
 
             migrationBuilder.DropTable(
@@ -6039,6 +6370,12 @@ namespace MahERP.DataModelLayer.Migrations
 
             migrationBuilder.DropTable(
                 name: "EmailTemplate_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "CoreNotificationDelivery_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "NotificationTemplate_Tbl");
 
             migrationBuilder.DropTable(
                 name: "OrganizationGroup_Tbl");
@@ -6065,6 +6402,9 @@ namespace MahERP.DataModelLayer.Migrations
                 name: "TeamPosition_Tbl");
 
             migrationBuilder.DropTable(
+                name: "NotificationTypeConfig_Tbl");
+
+            migrationBuilder.DropTable(
                 name: "Permission_Tbl");
 
             migrationBuilder.DropTable(
@@ -6075,6 +6415,9 @@ namespace MahERP.DataModelLayer.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrganizationDepartment_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "CoreNotification_Tbl");
 
             migrationBuilder.DropTable(
                 name: "SmsProvider_Tbl");
@@ -6090,6 +6433,9 @@ namespace MahERP.DataModelLayer.Migrations
 
             migrationBuilder.DropTable(
                 name: "Tasks_Tbl");
+
+            migrationBuilder.DropTable(
+                name: "NotificationModuleConfig_Tbl");
 
             migrationBuilder.DropTable(
                 name: "StakeholderContact_Tbl");

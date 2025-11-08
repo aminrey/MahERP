@@ -42,8 +42,7 @@ namespace MahERP.DataModelLayer.Entities.AcControl
         public byte OrganizationalLevel { get; set; }
         
         public string? ParentUser { get; set; }
-        public long? ChatidUserTelegram { get; set; }
-        public string? TelegramRobatId { get; set; }
+        public long? TelegramChatId { get; set; }
         
         /// <summary>
         /// در صورت حذف مشتری این مقدار به 0 تغییر پیدا میکند 

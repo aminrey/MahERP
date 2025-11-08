@@ -59,6 +59,23 @@ namespace MahERP.DataModelLayer.Entities
         /// </summary>
         public int MaxAttachmentSizeMB { get; set; } = 25;
 
+        // ============== TELEGRAM SETTINGS ==============
+        /// <summary>
+        /// توکن ربات تلگرام برای ارسال اعلان‌ها
+        /// </summary>
+        [MaxLength(100)]
+        public string? TelegramBotToken { get; set; }
+
+        /// <summary>
+        /// آیا ارسال اعلان تلگرام فعال است؟
+        /// </summary>
+        public bool IsTelegramEnabled { get; set; } = false;
+
+        /// <summary>
+        /// شناسه گروه تلگرام برای لاگ‌های سیستم (اختیاری)
+        /// </summary>
+        public long? TelegramSystemLogGroupId { get; set; }
+
         // ============== MODULE ACTIVATION SETTINGS ==============
         /// <summary>
         /// فعال‌سازی ماژول Task Management
@@ -70,7 +87,7 @@ namespace MahERP.DataModelLayer.Entities
         /// </summary>
         public bool IsCrmModuleEnabled { get; set; } = true;
 
-     
+        // ============== AUDIT FIELDS ==============
         /// <summary>
         /// تاریخ آخرین بروزرسانی تنظیمات
         /// </summary>

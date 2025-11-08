@@ -415,19 +415,123 @@
                         <span class="nav-text">دسترسی ماژول‌ها</span>
                     </a>
                 </li>
-                <!-- ============== 🔔 NOTIFICATIONS ============== -->
-              @if (Html.CanAccessAnyIn("CORE.NOTIFICATION"))
+                <!-- ============== 🔔 NOTIFICATION SETTINGS ============== -->
+              @if (Html.CanAccessAnyIn("NOTIFICATION.SETTINGS", "NOTIFICATION.TEMPLATES"))
     {
-<li class="nav-main-heading">نظارت و نوتیفیکیشن</li>
+<li class="nav-main-heading">سیستم اعلان‌رسانی</li>
     
-                 <li class="nav-main-item">
-          <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Notification", "Index") ? "active" : "")" asp-area="AppCoreArea" asp-controller="Notification" asp-action="Index">
-   <i class="nav-main-link-icon fa fa-bell text-warning"></i>
-      <span class="nav-main-link-name">نوتیفیکیشن‌ها</span>
-      <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" id="sidebarNotificationCount" style="display: none;">0</span>
-             </a>
-   </li>
-    }
+    <li class="nav-main-item @(IsNotificationSettingsMenuActive(currentController) ? "open" : "")">
+        <a aria-expanded="@(IsNotificationSettingsMenuActive(currentController) ? "true" : "false")" 
+           aria-haspopup="true" 
+           class="nav-main-link nav-main-link-submenu" 
+           data-toggle="submenu" 
+           href="#">
+            <i class="nav-main-link-icon fa fa-bell text-primary"></i>
+            <span class="nav-main-link-name">اعلان‌رسانی</span>
+        </a>
+        <ul class="nav-main-submenu">
+            <!-- ============== تنظیمات کلی ============== -->
+            @if (Html.CanAccessAny("NOTIFICATION.SETTINGS", "NOTIFICATION.SETTINGS.VIEW"))
+            {
+                <li class="nav-main-item nav-submenu-separator">
+                    <div class="nav-submenu-title">
+                        <small class="text-muted fw-semibold">تنظیمات سیستم</small>
+                    </div>
+                </li>
+                
+                <li class="nav-main-item">
+                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "NotificationSettings", "Index") ? "active" : "")" 
+                       asp-area="AppCoreArea" 
+                       asp-controller="NotificationSettings" 
+                       asp-action="Index">
+                        <i class="nav-main-link-icon fa fa-sliders-h"></i>
+                        <span class="nav-main-link-name">تنظیمات کلی</span>
+                    </a>
+                </li>
+            }
+            
+            <!-- ============== الگوهای پیام ============== -->
+            @if (Html.CanAccessAny("NOTIFICATION.TEMPLATES", "NOTIFICATION.TEMPLATES.VIEW"))
+            {
+                <li class="nav-main-item nav-submenu-separator mt-2">
+                    <div class="nav-submenu-title">
+                        <small class="text-muted fw-semibold">الگوهای پیام</small>
+                    </div>
+                </li>
+                
+                <li class="nav-main-item">
+                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "NotificationTemplates", "Index") ? "active" : "")" 
+                       asp-area="AppCoreArea" 
+                       asp-controller="NotificationTemplates" 
+                       asp-action="Index">
+                        <i class="nav-main-link-icon fa fa-list"></i>
+                        <span class="nav-main-link-name">لیست الگوها</span>
+                    </a>
+                </li>
+                
+                @if (Html.CanAccessAny("NOTIFICATION.TEMPLATES", "NOTIFICATION.TEMPLATES.CREATE"))
+                {
+                    <li class="nav-main-item">
+                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "NotificationTemplates", "Create") ? "active" : "")" 
+                           asp-area="AppCoreArea" 
+                           asp-controller="NotificationTemplates" 
+                           asp-action="Create">
+                            <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                            <span class="nav-main-link-name fw-semibold">الگوی جدید</span>
+                        </a>
+                    </li>
+                }
+            }
+            
+            <!-- ============== ابزارها و مدیریت ============== -->
+            @if (Html.CanAccessAny("NOTIFICATION.SETTINGS", "NOTIFICATION.SETTINGS.MANAGE"))
+            {
+                <li class="nav-main-item nav-submenu-separator mt-2">
+                    <div class="nav-submenu-title">
+                        <small class="text-muted fw-semibold">ابزارها</small>
+                    </div>
+                </li>
+                
+                <li class="nav-main-item">
+                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "NotificationSettings", "TestNotification") ? "active" : "")" 
+                       asp-area="AppCoreArea" 
+                       asp-controller="NotificationSettings" 
+                       asp-action="TestNotification">
+                        <i class="nav-main-link-icon fa fa-paper-plane text-info"></i>
+                        <span class="nav-main-link-name">تست ارسال</span>
+                    </a>
+                </li>
+                
+                <li class="nav-main-item">
+                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "NotificationSettings", "Blacklist") ? "active" : "")" 
+                       asp-area="AppCoreArea" 
+                       asp-controller="NotificationSettings" 
+                       asp-action="Blacklist">
+                        <i class="nav-main-link-icon fa fa-ban text-danger"></i>
+                        <span class="nav-main-link-name">لیست سیاه</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </li>
+}
+
+<!-- ============== 🔔 NOTIFICATIONS (نوتیفیکیشن‌های کاربر) ============== -->
+@if (Html.CanAccessAnyIn("CORE.NOTIFICATION"))
+{
+    <li class="nav-main-item">
+        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Notification", "Index") ? "active" : "")" 
+           asp-area="AppCoreArea" 
+           asp-controller="Notification" 
+           asp-action="Index">
+            <i class="nav-main-link-icon fa fa-bell text-warning"></i>
+            <span class="nav-main-link-name">نوتیفیکیشن‌های من</span>
+            <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" 
+                  id="sidebarNotificationCount" 
+                  style="display: none;">0</span>
+        </a>
+    </li>
+}
 
     <!-- ============== 📊 ACTIVITY LOGS ============== -->
   @if (Html.CanAccessAnyIn("CORE.ACTIVITYLOG"))
@@ -492,6 +596,8 @@
     public bool IsOrganizationMenuActive(string currentController) => currentController == "Organizations" || currentController == "OrganizationGroups" || currentController == "BranchOrganizationGroups";
     public bool IsContractMenuActive(string currentController) => currentController == "Contract";
     public bool IsActivityLogMenuActive(string currentController) => currentController == "UserActivityLog";
+    public bool IsNotificationSettingsMenuActive(string currentController) 
+        => currentController == "NotificationSettings" || currentController == "NotificationTemplates";
 }
 
 <style>
@@ -585,4 +691,4 @@
     height: 1px;
         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     }
-</style>    
+</style>

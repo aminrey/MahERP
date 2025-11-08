@@ -472,6 +472,7 @@ function createAndShowModalWithoutRemove(url) {
         handleAjaxError(jqXHR);
     });
 }
+
 /**
  * ⭐⭐⭐ Create and show a modal - Compatible با ساختار Partial View موجود
  * @param {string|Object} urlOrOptions - URL or config object
@@ -686,6 +687,7 @@ function createAndShowModal(urlOrOptions, options = {}) {
         });
     });
 }
+
 /**
  * ⭐ Setup form submission handler for modal
  */

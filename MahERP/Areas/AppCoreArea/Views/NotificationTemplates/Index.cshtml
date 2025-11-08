@@ -1,0 +1,199 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Notifications.NotificationTemplateListViewModel
+@{
+    ViewData["Title"] = "مدیریت الگوهای پیام";
+    var selectedNotificationType = ViewBag.SelectedNotificationType as int?;
+    var selectedChannelType = ViewBag.SelectedChannelType as byte?;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-file-alt text-primary me-2"></i>مدیریت الگوهای پیام
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" asp-controller="NotificationSettings">تنظیمات اعلان</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">الگوها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <!-- دکمه‌ها و فیلتر -->
+    <div class="block block-rounded">
+        <div class="block-content">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i>ایجاد الگوی جدید
+                    </a>
+                    <a asp-action="Index" asp-controller="NotificationSettings" class="btn btn-alt-secondary">
+                        <i class="fa fa-arrow-right me-1"></i>بازگشت
+                    </a>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="btn-group">
+                        <a asp-action="Index" 
+                           class="btn btn-sm @(selectedChannelType == null ? "btn-primary" : "btn-alt-secondary")">
+                            همه (@Model.Templates.Count)
+                        </a>
+                        <a asp-action="Index" asp-route-channelType="0"
+                           class="btn btn-sm @(selectedChannelType == 0 ? "btn-primary" : "btn-alt-secondary")">
+                            سیستمی (@Model.Templates.Count(t => t.Channel == 0))
+                        </a>
+                        <a asp-action="Index" asp-route-channelType="1"
+                           class="btn btn-sm @(selectedChannelType == 1 ? "btn-primary" : "btn-alt-secondary")">
+                            ایمیل (@Model.Templates.Count(t => t.Channel == 1))
+                        </a>
+                        <a asp-action="Index" asp-route-channelType="2"
+                           class="btn btn-sm @(selectedChannelType == 2 ? "btn-primary" : "btn-alt-secondary")">
+                            پیامک (@Model.Templates.Count(t => t.Channel == 2))
+                        </a>
+                        <a asp-action="Index" asp-route-channelType="3"
+                           class="btn btn-sm @(selectedChannelType == 3 ? "btn-primary" : "btn-alt-secondary")">
+                            تلگرام (@Model.Templates.Count(t => t.Channel == 3))
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لیست الگوها -->
+    @if (!Model.Templates.Any())
+    {
+        <div class="block block-rounded">
+            <div class="block-content text-center py-5">
+                <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">الگویی یافت نشد</h4>
+                <p class="text-muted">هیچ الگویی برای نمایش وجود ندارد.</p>
+                <a asp-action="Create" class="btn btn-primary mt-3">
+                    <i class="fa fa-plus me-1"></i>ایجاد اولین الگو
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var template in Model.Templates)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="block block-rounded template-card h-100" data-template-id="@template.Id">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                @template.TemplateName
+                                @if (template.IsSystemTemplate)
+                                {
+                                    <span class="badge bg-warning ms-2" title="الگوی سیستمی">
+                                        <i class="fa fa-lock"></i>
+                                    </span>
+                                }
+                            </h3>
+                            <div class="block-options">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input toggle-template-status" 
+                                           type="checkbox" 
+                                           data-template-id="@template.Id"
+                                           @(template.IsActive ? "checked" : "")>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="block-content">
+                            <div class="mb-3">
+                                <span class="badge bg-@(template.Channel switch { 0 => "secondary", 1 => "info", 2 => "success", 3 => "primary", _ => "secondary" })">
+                                    @template.ChannelTypeName
+                                </span>
+                                <span class="badge bg-secondary ms-1">
+                                    نسخه @template.Version
+                                </span>
+                            </div>
+
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="fa fa-layer-group me-1"></i>
+                                    <strong>نوع اعلان:</strong> @template.NotificationTypeName
+                                </small>
+                            </div>
+
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="fa fa-users me-1"></i>
+                                    <strong>دریافت‌کنندگان:</strong> 
+                                    @(template.RecipientMode switch 
+                                    { 
+                                        0 => "همه کاربران", 
+                                        1 => $"{template.RecipientCount} کاربر مشخص", 
+                                        2 => $"همه به جز {template.RecipientCount} کاربر",
+                                        _ => "نامشخص" 
+                                    })
+                                </small>
+                            </div>
+
+                            <p class="fs-sm text-muted mb-3">
+                                @(string.IsNullOrEmpty(template.Description) ? "بدون توضیحات" : template.Description)
+                            </p>
+
+                            <div class="fs-xs text-muted mb-3">
+                                <div><strong>کد:</strong> @template.TemplateCode</div>
+                                <div><strong>سازنده:</strong> @template.CreatorName</div>
+                                <div><strong>تعداد استفاده:</strong> @template.UsageCount</div>
+                                @if (template.LastUsedDate.HasValue)
+                                {
+                                    <div><strong>آخرین استفاده:</strong> @template.LastUsedDate.Value.ToString("yyyy/MM/dd")</div>
+                                }
+                            </div>
+
+                            <div class="d-flex gap-1">
+                                <a asp-action="Preview" asp-route-id="@template.Id" 
+                                   target="_blank"
+                                   class="btn btn-sm btn-alt-info flex-fill">
+                                    <i class="fa fa-eye"></i> پیش‌نمایش
+                                </a>
+                                
+                                @if (!template.IsSystemTemplate)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@template.Id" 
+                                       class="btn btn-sm btn-alt-primary">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-alt-danger delete-template"
+                                            data-template-id="@template.Id"
+                                            data-template-name="@template.TemplateName">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                }
+
+                                <a asp-action="History" asp-route-id="@template.Id" 
+                                   class="btn btn-sm btn-alt-secondary">
+                                    <i class="fa fa-history"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+<!-- END Page Content -->
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notification-templates.css" />
+}
+
+@section Scripts {
+    <script src="~/js/notification-templates.js"></script>
+}

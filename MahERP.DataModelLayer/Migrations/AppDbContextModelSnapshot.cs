@@ -119,9 +119,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<DateTime>("BirthDay")
                         .HasColumnType("datetime2");
 
-                    b.Property<long?>("ChatidUserTelegram")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("City")
                         .HasColumnType("nvarchar(max)");
 
@@ -225,8 +222,8 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TelegramRobatId")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<long?>("TelegramChatId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("TellPhone")
                         .HasColumnType("nvarchar(max)");
@@ -262,8 +259,8 @@ namespace MahERP.DataModelLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int?>("BranchId")
                         .HasColumnType("int");
@@ -280,10 +277,14 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsMainBranch")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -301,8 +302,8 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<string>("TelegramBotToken")
                         .HasColumnType("nvarchar(max)");
@@ -314,9 +315,13 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.HasIndex("ParentId");
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_Branch_Name");
 
-                    b.ToTable("Branch_Tbl");
+                    b.HasIndex("ParentId")
+                        .HasDatabaseName("IX_Branch_ParentId");
+
+                    b.ToTable("Branch_Tbl", (string)null);
 
                     b.HasData(
                         new
@@ -371,7 +376,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "BranchId", "ContactId" }, "IX_BranchContact_Branch_Contact")
                         .IsUnique();
 
-                    b.ToTable("BranchContact_Tbl");
+                    b.ToTable("BranchContact_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchModulePermission", b =>
@@ -408,7 +413,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("GrantedByUserId");
 
-                    b.ToTable("BranchModulePermission_Tbl");
+                    b.ToTable("BranchModulePermission_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchOrganization", b =>
@@ -455,7 +460,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "BranchId", "OrganizationId" }, "IX_BranchOrganization_Branch_Organization")
                         .IsUnique();
 
-                    b.ToTable("BranchOrganization_Tbl");
+                    b.ToTable("BranchOrganization_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategoryStakeholder", b =>
@@ -486,9 +491,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int>("TaskCategoryId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaskCategoryId1")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedByUserId");
@@ -499,9 +501,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskCategoryId");
 
-                    b.HasIndex("TaskCategoryId1");
-
-                    b.ToTable("BranchTaskCategoryStakeholder_Tbl");
+                    b.ToTable("BranchTaskCategoryStakeholder_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchUser", b =>
@@ -539,13 +539,15 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("AssignedByUserId");
 
-                    b.HasIndex("BranchId");
-
                     b.HasIndex("BranchId1");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("BranchUser_Tbl");
+                    b.HasIndex("BranchId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BranchUser_Branch_User");
+
+                    b.ToTable("BranchUser_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Contract", b =>
@@ -611,7 +613,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("Contract_Tbl");
+                    b.ToTable("Contract_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Permission", b =>
@@ -687,7 +689,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Permission_Tbl");
+                    b.ToTable("Permission_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.PermissionChangeLog", b =>
@@ -743,7 +745,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PermissionChangeLog_Tbl");
+                    b.ToTable("PermissionChangeLog_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.PermissionLog", b =>
@@ -793,7 +795,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PermissionLog_Tbl");
+                    b.ToTable("PermissionLog_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Role", b =>
@@ -859,7 +861,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterId");
 
-                    b.ToTable("Role_Tbl");
+                    b.ToTable("Role_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.RolePattern", b =>
@@ -906,11 +908,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.HasIndex("PatternName")
-                        .IsUnique()
-                        .HasDatabaseName("IX_RolePattern_PatternName");
-
-                    b.ToTable("RolePattern_Tbl");
+                    b.ToTable("RolePattern_Tbl", (string)null);
 
                     b.HasData(
                         new
@@ -1001,7 +999,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("RolePatternId");
 
-                    b.ToTable("RolePatternDetails_Tbl");
+                    b.ToTable("RolePatternDetails_Tbl", (string)null);
 
                     b.HasData(
                         new
@@ -1279,7 +1277,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RolePermission_Tbl");
+                    b.ToTable("RolePermission_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", b =>
@@ -1401,7 +1399,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.ToTable("Stakeholder_Tbl");
+                    b.ToTable("Stakeholder_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderBranch", b =>
@@ -1435,9 +1433,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int>("StakeholderId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("StakeholderId1")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedByUserId");
@@ -1448,9 +1443,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.HasIndex("StakeholderId1");
-
-                    b.ToTable("StakeholderBranch_Tbl");
+                    b.ToTable("StakeholderBranch_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderContact", b =>
@@ -1534,7 +1527,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("StakeholderContact_Tbl");
+                    b.ToTable("StakeholderContact_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderOrganization", b =>
@@ -1596,7 +1589,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("StakeholderOrganization_Tbl");
+                    b.ToTable("StakeholderOrganization_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderOrganizationMember", b =>
@@ -1650,7 +1643,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("PositionId");
 
-                    b.ToTable("StakeholderOrganizationMember_Tbl");
+                    b.ToTable("StakeholderOrganizationMember_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderOrganizationPosition", b =>
@@ -1699,7 +1692,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.ToTable("StakeholderOrganizationPosition_Tbl");
+                    b.ToTable("StakeholderOrganizationPosition_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.TeamModulePermission", b =>
@@ -1736,7 +1729,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("TeamModulePermission_Tbl");
+                    b.ToTable("TeamModulePermission_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserModulePermission", b =>
@@ -1774,7 +1767,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserModulePermission_Tbl");
+                    b.ToTable("UserModulePermission_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserModulePreference", b =>
@@ -1802,7 +1795,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserModulePreference_Tbl");
+                    b.ToTable("UserModulePreference_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserPermission", b =>
@@ -1860,7 +1853,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserPermission_Tbl");
+                    b.ToTable("UserPermission_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserRole", b =>
@@ -1911,7 +1904,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserRole_Tbl");
+                    b.ToTable("UserRole_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserRolePattern", b =>
@@ -1954,11 +1947,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("RolePatternId");
 
-                    b.HasIndex("UserId", "RolePatternId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_UserRolePattern_User_Pattern");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("UserRolePattern_Tbl");
+                    b.ToTable("UserRolePattern_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.BranchContactGroup", b =>
@@ -2001,7 +1992,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -2019,12 +2012,19 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("CreatorUserId");
 
+                    b.HasIndex("DisplayOrder")
+                        .HasDatabaseName("IX_BranchContactGroup_DisplayOrder");
+
                     b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("BranchId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BranchContactGroup_Branch_Code");
 
                     b.HasIndex(new[] { "BranchId", "Code" }, "IX_BranchContactGroup_Branch_Code")
                         .IsUnique();
 
-                    b.ToTable("BranchContactGroup_Tbl");
+                    b.ToTable("BranchContactGroup_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.BranchContactGroupMember", b =>
@@ -2050,7 +2050,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
@@ -2062,10 +2064,14 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("BranchContactId");
 
+                    b.HasIndex("BranchGroupId", "BranchContactId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BranchContactGroupMember_Group_Contact");
+
                     b.HasIndex(new[] { "BranchGroupId", "BranchContactId" }, "IX_BranchContactGroupMember_Group_Contact")
                         .IsUnique();
 
-                    b.ToTable("BranchContactGroupMember_Tbl");
+                    b.ToTable("BranchContactGroupMember_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.BranchOrganizationGroup", b =>
@@ -2108,7 +2114,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -2124,13 +2132,18 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BranchId");
-
                     b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("DisplayOrder")
+                        .HasDatabaseName("IX_BranchOrganizationGroup_DisplayOrder");
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.ToTable("BranchOrganizationGroup_Tbl");
+                    b.HasIndex("BranchId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BranchOrganizationGroup_Branch_Code");
+
+                    b.ToTable("BranchOrganizationGroup_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.Contact", b =>
@@ -2160,7 +2173,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("tinyint");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -2216,11 +2231,22 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
+                    b.HasIndex("NationalCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Contact_NationalCode")
+                        .HasFilter("[NationalCode] IS NOT NULL");
+
+                    b.HasIndex("PrimaryEmail")
+                        .HasDatabaseName("IX_Contact_PrimaryEmail");
+
+                    b.HasIndex("FirstName", "LastName")
+                        .HasDatabaseName("IX_Contact_FullName");
+
                     b.HasIndex(new[] { "NationalCode" }, "IX_Contact_NationalCode")
                         .IsUnique()
                         .HasFilter("[NationalCode] IS NOT NULL");
 
-                    b.ToTable("Contact_Tbl");
+                    b.ToTable("Contact_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.ContactGroup", b =>
@@ -2260,10 +2286,14 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsSystemGroup")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -2279,14 +2309,21 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ContactGroup_Code");
+
                     b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("DisplayOrder")
+                        .HasDatabaseName("IX_ContactGroup_DisplayOrder");
 
                     b.HasIndex("LastUpdaterUserId");
 
                     b.HasIndex(new[] { "Code" }, "IX_ContactGroup_Code")
                         .IsUnique();
 
-                    b.ToTable("ContactGroup_Tbl");
+                    b.ToTable("ContactGroup_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.ContactGroupMember", b =>
@@ -2312,7 +2349,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
@@ -2324,10 +2363,14 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ContactId");
 
+                    b.HasIndex("GroupId", "ContactId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ContactGroupMember_Group_Contact");
+
                     b.HasIndex(new[] { "GroupId", "ContactId" }, "IX_ContactGroupMember_Group_Contact")
                         .IsUnique();
 
-                    b.ToTable("ContactGroupMember_Tbl");
+                    b.ToTable("ContactGroupMember_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.ContactPhone", b =>
@@ -2356,10 +2399,14 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(10)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("bit");
@@ -2379,10 +2426,20 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("CreatorUserId");
 
+                    b.HasIndex("PhoneNumber")
+                        .HasDatabaseName("IX_ContactPhone_PhoneNumber");
+
+                    b.HasIndex("ContactId", "IsDefault")
+                        .HasDatabaseName("IX_ContactPhone_Contact_Default")
+                        .HasFilter("[IsDefault] = 1 AND [IsActive] = 1");
+
+                    b.HasIndex("ContactId", "PhoneType")
+                        .HasDatabaseName("IX_ContactPhone_Contact_Type");
+
                     b.HasIndex(new[] { "ContactId", "PhoneNumber" }, "IX_ContactPhone_Contact_Number")
                         .IsUnique();
 
-                    b.ToTable("ContactPhone_Tbl");
+                    b.ToTable("ContactPhone_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.DepartmentMember", b =>
@@ -2411,7 +2468,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("tinyint");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsSupervisor")
                         .HasColumnType("bit");
@@ -2423,8 +2482,8 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int?>("PositionId")
                         .HasColumnType("int");
@@ -2435,12 +2494,20 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("CreatorUserId");
 
-                    b.HasIndex("PositionId");
+                    b.HasIndex("PositionId")
+                        .HasDatabaseName("IX_DepartmentMember_PositionId");
+
+                    b.HasIndex("DepartmentId", "ContactId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DepartmentMember_Department_Contact");
+
+                    b.HasIndex("DepartmentId", "IsActive")
+                        .HasDatabaseName("IX_DepartmentMember_Dept_Active");
 
                     b.HasIndex(new[] { "DepartmentId", "ContactId" }, "IX_DepartmentMember_Department_Contact")
                         .IsUnique();
 
-                    b.ToTable("DepartmentMember_Tbl");
+                    b.ToTable("DepartmentMember_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.DepartmentPosition", b =>
@@ -2470,17 +2537,21 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<decimal?>("MaxSalary")
                         .HasColumnType("decimal(18,2)");
@@ -2496,16 +2567,25 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CreatorUserId");
 
-                    b.HasIndex("DepartmentId");
+                    b.HasIndex("DepartmentId", "IsDefault")
+                        .HasDatabaseName("IX_DepartmentPosition_Dept_Default")
+                        .HasFilter("[IsDefault] = 1 AND [IsActive] = 1");
 
-                    b.ToTable("DepartmentPosition_Tbl");
+                    b.HasIndex("DepartmentId", "PowerLevel")
+                        .HasDatabaseName("IX_DepartmentPosition_Dept_PowerLevel");
+
+                    b.HasIndex("DepartmentId", "Title")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DepartmentPosition_Dept_Title");
+
+                    b.ToTable("DepartmentPosition_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.Organization", b =>
@@ -2545,7 +2625,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -2597,7 +2679,23 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("CreatorUserId");
 
+                    b.HasIndex("EconomicCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Organization_EconomicCode")
+                        .HasFilter("[EconomicCode] IS NOT NULL");
+
                     b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_Organization_Name");
+
+                    b.HasIndex("OrganizationType")
+                        .HasDatabaseName("IX_Organization_Type");
+
+                    b.HasIndex("RegistrationNumber")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Organization_RegistrationNumber")
+                        .HasFilter("[RegistrationNumber] IS NOT NULL");
 
                     b.HasIndex(new[] { "EconomicCode" }, "IX_Organization_EconomicCode")
                         .IsUnique()
@@ -2607,7 +2705,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasFilter("[RegistrationNumber] IS NOT NULL");
 
-                    b.ToTable("Organization_Tbl");
+                    b.ToTable("Organization_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.OrganizationContact", b =>
@@ -2640,13 +2738,17 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("tinyint");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsDecisionMaker")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsPrimary")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("JobTitle")
                         .HasMaxLength(100)
@@ -2671,10 +2773,20 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("CreatorUserId");
 
+                    b.HasIndex("RelationType")
+                        .HasDatabaseName("IX_OrganizationContact_RelationType");
+
+                    b.HasIndex("OrganizationId", "IsPrimary")
+                        .HasDatabaseName("IX_OrganizationContact_Org_Primary");
+
+                    b.HasIndex("OrganizationId", "ContactId", "RelationType")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrganizationContact_Org_Contact_Type");
+
                     b.HasIndex(new[] { "OrganizationId", "ContactId", "RelationType" }, "IX_OrganizationContact_Org_Contact_Type")
                         .IsUnique();
 
-                    b.ToTable("OrganizationContact_Tbl");
+                    b.ToTable("OrganizationContact_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.OrganizationDepartment", b =>
@@ -2705,7 +2817,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -2739,11 +2853,18 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ManagerContactId");
 
-                    b.HasIndex("OrganizationId");
+                    b.HasIndex("ParentDepartmentId")
+                        .HasDatabaseName("IX_OrganizationDepartment_ParentId");
 
-                    b.HasIndex("ParentDepartmentId");
+                    b.HasIndex("OrganizationId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrganizationDepartment_Org_Code")
+                        .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("OrganizationDepartment_Tbl");
+                    b.HasIndex("OrganizationId", "Level")
+                        .HasDatabaseName("IX_OrganizationDepartment_Org_Level");
+
+                    b.ToTable("OrganizationDepartment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.OrganizationGroupMember", b =>
@@ -2766,7 +2887,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
@@ -2781,10 +2904,14 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("OrganizationId");
 
+                    b.HasIndex("GroupId", "OrganizationId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrganizationGroupMember_Group_Organization");
+
                     b.HasIndex(new[] { "GroupId", "OrganizationId" }, "IX_OrganizationGroupMember_Group_Organization")
                         .IsUnique();
 
-                    b.ToTable("OrganizationGroupMember_Tbl");
+                    b.ToTable("OrganizationGroupMember_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityAttachment", b =>
@@ -2810,7 +2937,8 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("FilePath")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
@@ -2829,11 +2957,12 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActivityId");
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_ActivityAttachment_ActivityId");
 
                     b.HasIndex("UploaderUserId");
 
-                    b.ToTable("ActivityAttachment_Tbl");
+                    b.ToTable("ActivityAttachment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityBase", b =>
@@ -2861,7 +2990,8 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
@@ -2870,10 +3000,14 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -2885,7 +3019,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("tinyint");
 
                     b.Property<int>("ProgressPercentage")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<int?>("StakeholderId")
                         .HasColumnType("int");
@@ -2903,8 +3039,6 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BranchId");
-
                     b.HasIndex("ContractId");
 
                     b.HasIndex("CreatorUserId");
@@ -2913,7 +3047,13 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("ActivityBase_Tbl");
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_ActivityBase_Status");
+
+                    b.HasIndex("BranchId", "ActivityType")
+                        .HasDatabaseName("IX_ActivityBase_Branch_Type");
+
+                    b.ToTable("ActivityBase_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityCRM", b =>
@@ -2939,23 +3079,28 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<byte>("RelationType")
                         .HasColumnType("tinyint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActivityId");
-
                     b.HasIndex("CRMId");
 
                     b.HasIndex("CreatorUserId");
 
-                    b.ToTable("ActivityCRM_Tbl");
+                    b.HasIndex("ActivityId", "CRMId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ActivityCRM_Activity_CRM");
+
+                    b.ToTable("ActivityCRM_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityComment", b =>
@@ -2966,15 +3111,13 @@ namespace MahERP.DataModelLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("ActivityCommentId")
-                        .HasColumnType("int");
-
                     b.Property<int>("ActivityId")
                         .HasColumnType("int");
 
                     b.Property<string>("CommentText")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("datetime2");
@@ -2988,15 +3131,14 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActivityCommentId");
-
-                    b.HasIndex("ActivityId");
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_ActivityComment_ActivityId");
 
                     b.HasIndex("CreatorUserId");
 
                     b.HasIndex("ParentCommentId");
 
-                    b.ToTable("ActivityComment_Tbl");
+                    b.ToTable("ActivityComment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityHistory", b =>
@@ -3022,21 +3164,25 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("NewValue")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("OldValue")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActivityId");
-
                     b.HasIndex("CreatorUserId");
 
-                    b.ToTable("ActivityHistory_Tbl");
+                    b.HasIndex("ActivityId", "CreateDate")
+                        .HasDatabaseName("IX_ActivityHistory_Activity_Date");
+
+                    b.ToTable("ActivityHistory_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityTask", b =>
@@ -3059,10 +3205,13 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<byte>("RelationType")
                         .HasColumnType("tinyint");
@@ -3072,13 +3221,15 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActivityId");
-
                     b.HasIndex("CreatorUserId");
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("ActivityTask_Tbl");
+                    b.HasIndex("ActivityId", "TaskId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ActivityTask_Activity_Task");
+
+                    b.ToTable("ActivityTask_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.CoreNotification", b =>
@@ -3163,11 +3314,15 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.HasIndex("RecipientUserId");
-
                     b.HasIndex("SenderUserId");
 
-                    b.ToTable("CoreNotification_Tbl");
+                    b.HasIndex("RecipientUserId", "IsRead")
+                        .HasDatabaseName("IX_CoreNotification_Recipient_Read");
+
+                    b.HasIndex("SystemId", "CreateDate")
+                        .HasDatabaseName("IX_CoreNotification_System_Date");
+
+                    b.ToTable("CoreNotification_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.CoreNotificationDelivery", b =>
@@ -3222,9 +3377,13 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CoreNotificationId");
+                    b.HasIndex("DeliveryMethod")
+                        .HasDatabaseName("IX_CoreNotificationDelivery_Method");
 
-                    b.ToTable("CoreNotificationDelivery_Tbl");
+                    b.HasIndex("CoreNotificationId", "DeliveryStatus")
+                        .HasDatabaseName("IX_CoreNotificationDelivery_Notification_Status");
+
+                    b.ToTable("CoreNotificationDelivery_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.CoreNotificationDetail", b =>
@@ -3268,9 +3427,10 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CoreNotificationId");
+                    b.HasIndex("CoreNotificationId")
+                        .HasDatabaseName("IX_CoreNotificationDetail_NotificationId");
 
-                    b.ToTable("CoreNotificationDetail_Tbl");
+                    b.ToTable("CoreNotificationDetail_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.CoreNotificationSetting", b =>
@@ -3324,9 +3484,11 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "SystemId", "NotificationTypeGeneral")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CoreNotificationSetting_User_System_Type");
 
-                    b.ToTable("CoreNotificationSetting_Tbl");
+                    b.ToTable("CoreNotificationSetting_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.Team", b =>
@@ -3358,7 +3520,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -3373,9 +3537,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int?>("ParentTeamId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TeamId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -3383,19 +3544,19 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BranchId");
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("IX_Team_BranchId");
 
                     b.HasIndex("CreatorUserId");
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.HasIndex("ManagerUserId");
+                    b.HasIndex("ManagerUserId")
+                        .HasDatabaseName("IX_Team_ManagerUserId");
 
                     b.HasIndex("ParentTeamId");
 
-                    b.HasIndex("TeamId");
-
-                    b.ToTable("Team_Tbl");
+                    b.ToTable("Team_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.TeamMember", b =>
@@ -3417,7 +3578,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -3448,11 +3611,13 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("PositionId");
 
-                    b.HasIndex("TeamId");
-
                     b.HasIndex("UserId");
 
-                    b.ToTable("TeamMember_Tbl");
+                    b.HasIndex("TeamId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TeamMember_Team_User");
+
+                    b.ToTable("TeamMember_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.TeamPosition", b =>
@@ -3484,10 +3649,14 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -3515,9 +3684,14 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.HasIndex("TeamId");
+                    b.HasIndex("PowerLevel")
+                        .HasDatabaseName("IX_TeamPosition_PowerLevel");
 
-                    b.ToTable("TeamPosition_Tbl");
+                    b.HasIndex("TeamId", "Title")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TeamPosition_Team_Title");
+
+                    b.ToTable("TeamPosition_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.UserActivityLog", b =>
@@ -3530,7 +3704,8 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("ActionName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("ActivityDateTime")
                         .HasColumnType("datetime2");
@@ -3549,7 +3724,8 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("DeviceInfo")
                         .HasColumnType("nvarchar(max)");
@@ -3565,14 +3741,16 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("HttpMethod")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<byte>("ImportanceLevel")
                         .HasColumnType("tinyint");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
@@ -3585,7 +3763,8 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("ModuleName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("NewValues")
                         .HasColumnType("nvarchar(max)");
@@ -3607,7 +3786,8 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("RequestUrl")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<long?>("ResponseSize")
                         .HasColumnType("bigint");
@@ -3623,7 +3803,8 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<string>("UserAgent")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -3631,11 +3812,21 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_UserActivityLog_ActivityType");
+
                     b.HasIndex("BranchId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("ResultStatus")
+                        .HasDatabaseName("IX_UserActivityLog_ResultStatus");
 
-                    b.ToTable("UserActivityLog_Tbl");
+                    b.HasIndex("ModuleName", "ActivityDateTime")
+                        .HasDatabaseName("IX_UserActivityLog_Module_Date");
+
+                    b.HasIndex("UserId", "ActivityDateTime")
+                        .HasDatabaseName("IX_UserActivityLog_User_Date");
+
+                    b.ToTable("UserActivityLog_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMAttachment", b =>
@@ -3684,7 +3875,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UploaderUserId");
 
-                    b.ToTable("CRMAttachment_Tbl");
+                    b.ToTable("CRMAttachment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMComment", b =>
@@ -3694,9 +3885,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("CRMCommentId")
-                        .HasColumnType("int");
 
                     b.Property<int>("CRMInteractionId")
                         .HasColumnType("int");
@@ -3717,15 +3905,13 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CRMCommentId");
-
                     b.HasIndex("CRMInteractionId");
 
                     b.HasIndex("CreatorUserId");
 
                     b.HasIndex("ParentCommentId");
 
-                    b.ToTable("CRMComment_Tbl");
+                    b.ToTable("CRMComment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMInteraction", b =>
@@ -3830,7 +4016,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("CRMInteraction_Tbl");
+                    b.ToTable("CRMInteraction_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMParticipant", b =>
@@ -3881,7 +4067,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("CRMParticipant_Tbl");
+                    b.ToTable("CRMParticipant_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMTeam", b =>
@@ -3920,7 +4106,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("CRMTeam_Tbl");
+                    b.ToTable("CRMTeam_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.StakeholderCRM", b =>
@@ -3981,7 +4167,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("StakeholderCRM_Tbl");
+                    b.ToTable("StakeholderCRM_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.TaskCRMDetails", b =>
@@ -4025,7 +4211,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskCRMDetails_Tbl");
+                    b.ToTable("TaskCRMDetails_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailLog", b =>
@@ -4109,7 +4295,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("EmailLog_Tbl");
+                    b.ToTable("EmailLog_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailQueue", b =>
@@ -4189,7 +4375,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("RequestedByUserId");
 
-                    b.ToTable("EmailQueue_Tbl");
+                    b.ToTable("EmailQueue_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailTemplate", b =>
@@ -4259,7 +4445,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.ToTable("EmailTemplate_Tbl");
+                    b.ToTable("EmailTemplate_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailTemplateRecipient", b =>
@@ -4300,7 +4486,790 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TemplateId");
 
-                    b.ToTable("EmailTemplateRecipient_Tbl");
+                    b.ToTable("EmailTemplateRecipient_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationBlacklist", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int?>("NotificationTypeConfigId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("NotificationTypeConfigId");
+
+                    b.HasIndex("UserId", "IsActive")
+                        .HasDatabaseName("IX_NotificationBlacklist_User_Active");
+
+                    b.ToTable("NotificationBlacklist_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationDeliveryStats", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CoreNotificationDeliveryId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeliveryDurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ErrorDetails")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ProcessingDurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("QueuedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RetryAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("ServerResponse")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoreNotificationDeliveryId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DeliveryStats_DeliveryId");
+
+                    b.ToTable("NotificationDeliveryStats_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationModuleConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ColorCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("ModuleCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ModuleNameEn")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ModuleNameFa")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("IX_NotificationModuleConfig_IsActive");
+
+                    b.HasIndex("ModuleCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_NotificationModuleConfig_ModuleCode");
+
+                    b.ToTable("NotificationModuleConfig_Tbl", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ColorCode = "#2196F3",
+                            Description = "سیستم مدیریت تسک‌ها و پروژه‌ها",
+                            DisplayOrder = 1,
+                            IsActive = true,
+                            ModuleCode = "TASKING",
+                            ModuleNameEn = "Tasking Module",
+                            ModuleNameFa = "ماژول تسکینگ"
+                        });
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationRecipient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("NotificationTypeConfigId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("NotificationTypeConfigId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_NotificationRecipient_TypeUser");
+
+                    b.ToTable("NotificationRecipient_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationScheduledMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BodyHtml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("FailedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<byte>("MessageType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
+                    b.Property<byte>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
+                    b.Property<int>("RecipientCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("RecipientUserIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ScheduledDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("SendByEmail")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("SendBySms")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("SendBySystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("SendByTelegram")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("SentCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("SentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
+                    b.Property<string>("TargetBranchIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TargetRoles")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("ScheduledDateTime")
+                        .HasDatabaseName("IX_ScheduledMessage_ScheduledDateTime");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_ScheduledMessage_Status");
+
+                    b.ToTable("NotificationScheduledMessage_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyHtml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte>("Channel")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystemTemplate")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("LastModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastUsedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MessageTemplate")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte>("NotificationEventType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte>("RecipientMode")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TemplateCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("LastModifiedByUserId");
+
+                    b.ToTable("NotificationTemplate_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyHtml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ChangeDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("ChangeNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ChangedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("MessageTemplate")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subject")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("TemplateId", "Version")
+                        .HasDatabaseName("IX_TemplateHistory_Template_Version");
+
+                    b.ToTable("NotificationTemplateHistory_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateRecipient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("NotificationTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("RecipientType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("NotificationTemplateId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("NotificationTemplateRecipient_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateVariable", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte>("DataType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("DefaultValue")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VariableName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId");
+
+                    b.ToTable("NotificationTemplateVariable_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTypeConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AllowUserCustomization")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<byte>("CoreNotificationTypeGeneral")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte>("CoreNotificationTypeSpecific")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int?>("DefaultEmailTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("DefaultPriority")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int?>("DefaultSmsTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DefaultSystemNotificationTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DefaultTelegramTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("ModuleConfigId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("SendMode")
+                        .HasColumnType("tinyint");
+
+                    b.Property<bool>("SupportsEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SupportsSms")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SupportsTelegram")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("TypeCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TypeNameFa")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("IX_NotificationTypeConfig_IsActive");
+
+                    b.HasIndex("ModuleConfigId", "TypeCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_NotificationTypeConfig_Module_TypeCode");
+
+                    b.ToTable("NotificationTypeConfig_Tbl", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)0,
+                            CoreNotificationTypeSpecific = (byte)0,
+                            DefaultPriority = (byte)0,
+                            Description = "ارسال لیست تسک‌های انجام نشده هر روز",
+                            DisplayOrder = 1,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = false,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_DAILY_DIGEST",
+                            TypeNameFa = "اعلان روزانه تسک‌های انجام نشده"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)9,
+                            CoreNotificationTypeSpecific = (byte)1,
+                            DefaultPriority = (byte)1,
+                            Description = "اعلان هنگام تخصیص تسک جدید به کاربر",
+                            DisplayOrder = 2,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = true,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_ASSIGNED",
+                            TypeNameFa = "تخصیص تسک جدید"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)8,
+                            CoreNotificationTypeSpecific = (byte)2,
+                            DefaultPriority = (byte)1,
+                            Description = "اعلان تکمیل تسک به سازنده",
+                            DisplayOrder = 3,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = false,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_COMPLETED",
+                            TypeNameFa = "تکمیل تسک واگذار شده"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)6,
+                            CoreNotificationTypeSpecific = (byte)3,
+                            DefaultPriority = (byte)2,
+                            Description = "یادآوری تسک‌های نزدیک به سررسید",
+                            DisplayOrder = 4,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = true,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_REMINDER",
+                            TypeNameFa = "یادآوری سررسید تسک"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)10,
+                            CoreNotificationTypeSpecific = (byte)4,
+                            DefaultPriority = (byte)0,
+                            Description = "اعلان ثبت کامنت، WorkLog یا تغییرات",
+                            DisplayOrder = 5,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = false,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_UPDATED",
+                            TypeNameFa = "تغییرات در تسک"
+                        });
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.UserNotificationPreference", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<byte>("DeliveryMode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("NotificationTypeConfigId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("OnlyUrgentNotifications")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<TimeSpan?>("PreferredDeliveryTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan?>("QuietHoursEnd")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan?>("QuietHoursStart")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("ReceiveByEmail")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("ReceiveBySms")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("ReceiveBySystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("ReceiveByTelegram")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationTypeConfigId");
+
+                    b.HasIndex("UserId", "NotificationTypeConfigId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserNotificationPreference_User_Type");
+
+                    b.ToTable("UserNotificationPreference_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organizations.BranchOrganizationGroupMember", b =>
@@ -4326,7 +5295,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
@@ -4338,10 +5309,14 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("BranchOrganizationId");
 
+                    b.HasIndex("BranchGroupId", "BranchOrganizationId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BranchOrganizationGroupMember_Group_Organization");
+
                     b.HasIndex(new[] { "BranchGroupId", "BranchOrganizationId" }, "IX_BranchOrganizationGroupMember_Group_Organization")
                         .IsUnique();
 
-                    b.ToTable("BranchOrganizationGroupMember_Tbl");
+                    b.ToTable("BranchOrganizationGroupMember_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organizations.OrganizationGroup", b =>
@@ -4381,10 +5356,14 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsSystemGroup")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastUpdateDate")
                         .HasColumnType("datetime2");
@@ -4400,14 +5379,21 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrganizationGroup_Code");
+
                     b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("DisplayOrder")
+                        .HasDatabaseName("IX_OrganizationGroup_DisplayOrder");
 
                     b.HasIndex("LastUpdaterUserId");
 
                     b.HasIndex(new[] { "Code" }, "IX_OrganizationGroup_Code")
                         .IsUnique();
 
-                    b.ToTable("OrganizationGroup_Tbl");
+                    b.ToTable("OrganizationGroup_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Settings", b =>
@@ -4422,6 +5408,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsTaskingModuleEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTelegramEnabled")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastModified")
@@ -4460,9 +5449,16 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("TelegramBotToken")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<long?>("TelegramSystemLogGroupId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("id");
 
-                    b.ToTable("Settings_Tbl");
+                    b.ToTable("Settings_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsLog", b =>
@@ -4546,7 +5542,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SmsLog_Tbl");
+                    b.ToTable("SmsLog_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsProvider", b =>
@@ -4632,7 +5628,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "ProviderCode" }, "IX_SmsProvider_Code")
                         .IsUnique();
 
-                    b.ToTable("SmsProvider_Tbl");
+                    b.ToTable("SmsProvider_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsQueue", b =>
@@ -4719,7 +5715,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SmsQueue_Tbl");
+                    b.ToTable("SmsQueue_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsTemplate", b =>
@@ -4774,7 +5770,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.ToTable("SmsTemplate_Tbl");
+                    b.ToTable("SmsTemplate_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsTemplateRecipient", b =>
@@ -4815,7 +5811,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TemplateId");
 
-                    b.ToTable("SmsTemplateRecipient_Tbl");
+                    b.ToTable("SmsTemplateRecipient_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.PredefinedCopyDescription", b =>
@@ -4839,7 +5835,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PredefinedCopyDescription_Tbl");
+                    b.ToTable("PredefinedCopyDescription_Tbl", (string)null);
 
                     b.HasData(
                         new
@@ -4972,9 +5968,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int?>("PredefinedCopyDescriptionId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PredefinedCopyDescriptionId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("ReadDate")
                         .HasColumnType("datetime2");
 
@@ -5005,11 +5998,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("PredefinedCopyDescriptionId");
 
-                    b.HasIndex("PredefinedCopyDescriptionId1");
-
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskAssignment_Tbl");
+                    b.ToTable("TaskAssignment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskAttachment", b =>
@@ -5050,9 +6041,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TasksId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("UploadDate")
                         .HasColumnType("datetime2");
 
@@ -5064,11 +6052,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.HasIndex("TasksId");
-
                     b.HasIndex("UploaderUserId");
 
-                    b.ToTable("TaskAttachment_Tbl");
+                    b.ToTable("TaskAttachment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", b =>
@@ -5092,9 +6078,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int?>("ParentCategoryId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaskCategoryId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -5103,9 +6086,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ParentCategoryId");
 
-                    b.HasIndex("TaskCategoryId");
-
-                    b.ToTable("TaskCategory_Tbl");
+                    b.ToTable("TaskCategory_Tbl", (string)null);
 
                     b.HasData(
                         new
@@ -5230,7 +6211,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskComment_Tbl");
+                    b.ToTable("TaskComment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCommentAttachment", b =>
@@ -5272,7 +6253,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UploaderUserId");
 
-                    b.ToTable("TaskCommentAttachment_Tbl");
+                    b.ToTable("TaskCommentAttachment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCommentMention", b =>
@@ -5298,18 +6279,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<DateTime?>("ReadDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("TaskCommentId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CommentId");
 
                     b.HasIndex("MentionedUserId");
 
-                    b.HasIndex("TaskCommentId");
-
-                    b.ToTable("TaskCommentMention_Tbl");
+                    b.ToTable("TaskCommentMention_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskHistory", b =>
@@ -5369,7 +6345,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskHistory_Tbl");
+                    b.ToTable("TaskHistory_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskMyDay", b =>
@@ -5414,11 +6390,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TaskAssignmentId", "PlannedDate")
-                        .IsUnique()
-                        .HasDatabaseName("IX_TaskMyDay_Assignment_Date");
+                    b.HasIndex("TaskAssignmentId");
 
-                    b.ToTable("TaskMyDay_Tbl");
+                    b.ToTable("TaskMyDay_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskNotification", b =>
@@ -5462,13 +6436,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<string>("RecipientUserId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int?>("TaskCommentId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("TaskId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TasksId")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
@@ -5482,13 +6450,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("RecipientUserId");
 
-                    b.HasIndex("TaskCommentId");
-
                     b.HasIndex("TaskId");
 
-                    b.HasIndex("TasksId");
-
-                    b.ToTable("TaskNotification_Tbl");
+                    b.ToTable("TaskNotification_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskOperation", b =>
@@ -5555,7 +6519,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskOperation_Tbl");
+                    b.ToTable("TaskOperation_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskOperationWorkLog", b =>
@@ -5602,7 +6566,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskOperationWorkLog_Tbl");
+                    b.ToTable("TaskOperationWorkLog_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskReminderEvent", b =>
@@ -5674,7 +6638,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskReminderEvent_Tbl");
+                    b.ToTable("TaskReminderEvent_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskReminderSchedule", b =>
@@ -5736,7 +6700,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskReminderSchedule_Tbl");
+                    b.ToTable("TaskReminderSchedule_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskSchedule", b =>
@@ -5795,9 +6759,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int>("TaskTemplateId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaskTemplateId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
@@ -5815,9 +6776,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskTemplateId");
 
-                    b.HasIndex("TaskTemplateId1");
-
-                    b.ToTable("TaskSchedule_Tbl");
+                    b.ToTable("TaskSchedule_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleAssignment", b =>
@@ -5851,9 +6810,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int>("ScheduleId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaskScheduleId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -5866,11 +6822,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ScheduleId");
 
-                    b.HasIndex("TaskScheduleId");
-
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskScheduleAssignment_Tbl");
+                    b.ToTable("TaskScheduleAssignment_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleExecution", b =>
@@ -5910,7 +6864,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ScheduleId");
 
-                    b.ToTable("TaskScheduleExecution");
+                    b.ToTable("TaskScheduleExecution", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleViewer", b =>
@@ -5946,7 +6900,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskScheduleViewer_Tbl");
+                    b.ToTable("TaskScheduleViewer_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplate", b =>
@@ -5993,7 +6947,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("CreatorUserId");
 
-                    b.ToTable("TaskTemplate_Tbl");
+                    b.ToTable("TaskTemplate_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplateOperation", b =>
@@ -6010,9 +6964,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int>("OperationOrder")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaskTemplateId")
-                        .HasColumnType("int");
-
                     b.Property<int>("TemplateId")
                         .HasColumnType("int");
 
@@ -6021,11 +6972,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TaskTemplateId");
-
                     b.HasIndex("TemplateId");
 
-                    b.ToTable("TaskTemplateOperation_Tbl");
+                    b.ToTable("TaskTemplateOperation_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskViewPermission", b =>
@@ -6092,7 +7041,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("TaskViewPermission_Tbl");
+                    b.ToTable("TaskViewPermission_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskViewer", b =>
@@ -6141,9 +7090,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TasksId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("TeamId")
                         .HasColumnType("int");
 
@@ -6162,13 +7108,11 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.HasIndex("TasksId");
-
                     b.HasIndex("TeamId");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskViewer_Tbl");
+                    b.ToTable("TaskViewer_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskWorkLog", b =>
@@ -6215,7 +7159,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskWorkLog_Tbl");
+                    b.ToTable("TaskWorkLog_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", b =>
@@ -6229,9 +7173,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int?>("BranchId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("BranchId1")
-                        .HasColumnType("int");
-
                     b.Property<byte>("CompletionMode")
                         .HasColumnType("tinyint");
 
@@ -6239,9 +7180,6 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("int");
 
                     b.Property<int?>("ContractId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ContractId1")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreateDate")
@@ -6328,9 +7266,6 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int?>("TaskCategoryId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaskCategoryId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("TaskCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -6355,13 +7290,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.HasIndex("BranchId1");
-
                     b.HasIndex("ContactId");
 
                     b.HasIndex("ContractId");
-
-                    b.HasIndex("ContractId1");
 
                     b.HasIndex("CreatorUserId");
 
@@ -6375,11 +7306,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskCategoryId");
 
-                    b.HasIndex("TaskCategoryId1");
-
                     b.HasIndex("TeamId");
 
-                    b.ToTable("Tasks_Tbl");
+                    b.ToTable("Tasks_Tbl", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -6492,8 +7421,7 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "DirectManager")
                         .WithMany("ManagedUsers")
-                        .HasForeignKey("DirectManagerUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("DirectManagerUserId");
 
                     b.Navigation("DirectManager");
                 });
@@ -6590,30 +7518,26 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedByUser")
                         .WithMany()
                         .HasForeignKey("AssignedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
                         .WithMany()
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
                         .WithMany()
                         .HasForeignKey("StakeholderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", "TaskCategory")
-                        .WithMany()
-                        .HasForeignKey("TaskCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", null)
                         .WithMany("BranchTaskCategoryStakeholders")
-                        .HasForeignKey("TaskCategoryId1");
+                        .HasForeignKey("TaskCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("AssignedByUser");
 
@@ -6660,18 +7584,17 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("LastUpdaterUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
                         .WithMany("Contracts")
                         .HasForeignKey("StakeholderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Creator");
@@ -6734,7 +7657,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -6759,13 +7682,11 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
-                        .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CreatorUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("LastUpdaterUserId");
 
                     b.Navigation("Creator");
 
@@ -6839,23 +7760,18 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
                         .WithMany()
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
-                        .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CreatorUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
-                        .WithMany()
-                        .HasForeignKey("StakeholderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", null)
                         .WithMany("StakeholderBranches")
-                        .HasForeignKey("StakeholderId1");
+                        .HasForeignKey("StakeholderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("AssignedBy");
 
@@ -7093,7 +8009,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedByUser")
                         .WithMany()
                         .HasForeignKey("AssignedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.RolePattern", "RolePattern")
@@ -7105,7 +8021,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AssignedByUser");
@@ -7120,18 +8036,19 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
                         .WithMany()
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Branch");
 
@@ -7145,13 +8062,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AddedByUser")
                         .WithMany()
                         .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.BranchContact", "BranchContact")
                         .WithMany()
                         .HasForeignKey("BranchContactId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.BranchContactGroup", "BranchGroup")
@@ -7172,18 +8089,19 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
                         .WithMany()
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Branch");
 
@@ -7197,12 +8115,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Creator");
 
@@ -7214,12 +8133,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Creator");
 
@@ -7231,13 +8151,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AddedByUser")
                         .WithMany()
                         .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Contact", "Contact")
                         .WithMany()
                         .HasForeignKey("ContactId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.ContactGroup", "Group")
@@ -7264,7 +8184,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Contact");
@@ -7277,24 +8197,25 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Contact", "Contact")
                         .WithMany("DepartmentMemberships")
                         .HasForeignKey("ContactId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.OrganizationDepartment", "Department")
                         .WithMany("Members")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.DepartmentPosition", "Position")
                         .WithMany("Members")
-                        .HasForeignKey("PositionId");
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Contact");
 
@@ -7310,7 +8231,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.OrganizationDepartment", "Department")
@@ -7329,12 +8250,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Creator");
 
@@ -7346,19 +8268,19 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Contact", "Contact")
                         .WithMany("OrganizationRelations")
                         .HasForeignKey("ContactId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
                         .WithMany("Contacts")
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Contact");
@@ -7373,26 +8295,29 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Contact", "ManagerContact")
                         .WithMany("ManagedDepartments")
-                        .HasForeignKey("ManagerContactId");
+                        .HasForeignKey("ManagerContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
                         .WithMany("Departments")
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.OrganizationDepartment", "ParentDepartment")
                         .WithMany("ChildDepartments")
-                        .HasForeignKey("ParentDepartmentId");
+                        .HasForeignKey("ParentDepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Creator");
 
@@ -7410,7 +8335,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AddedByUser")
                         .WithMany()
                         .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Organizations.OrganizationGroup", "Group")
@@ -7422,7 +8347,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("AddedByUser");
@@ -7437,7 +8362,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.ActivityBase", "Activity")
                         .WithMany("ActivityAttachments")
                         .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Uploader")
@@ -7520,14 +8445,10 @@ namespace MahERP.DataModelLayer.Migrations
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityComment", b =>
                 {
-                    b.HasOne("MahERP.DataModelLayer.Entities.Core.ActivityComment", null)
-                        .WithMany("Replies")
-                        .HasForeignKey("ActivityCommentId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.ActivityBase", "Activity")
                         .WithMany("ActivityComments")
                         .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
@@ -7537,7 +8458,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.ActivityComment", "ParentComment")
-                        .WithMany()
+                        .WithMany("Replies")
                         .HasForeignKey("ParentCommentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -7553,7 +8474,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.ActivityBase", "Activity")
                         .WithMany("ActivityHistories")
                         .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
@@ -7598,17 +8519,19 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
                         .WithMany()
-                        .HasForeignKey("BranchId");
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Recipient")
                         .WithMany()
                         .HasForeignKey("RecipientUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Sender")
                         .WithMany()
-                        .HasForeignKey("SenderUserId");
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Branch");
 
@@ -7676,13 +8599,9 @@ namespace MahERP.DataModelLayer.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.Team", "ParentTeam")
-                        .WithMany()
+                        .WithMany("ChildTeams")
                         .HasForeignKey("ParentTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.Core.Team", null)
-                        .WithMany("ChildTeams")
-                        .HasForeignKey("TeamId");
 
                     b.Navigation("Branch");
 
@@ -7705,7 +8624,8 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.TeamPosition", "Position")
                         .WithMany("TeamMembers")
-                        .HasForeignKey("PositionId");
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.Team", "Team")
                         .WithMany("TeamMembers")
@@ -7733,12 +8653,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.Team", "Team")
                         .WithMany("TeamPositions")
@@ -7757,12 +8678,13 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
                         .WithMany()
-                        .HasForeignKey("BranchId");
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Branch");
@@ -7775,13 +8697,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.Crm.CRMInteraction", "CRMInteraction")
                         .WithMany("CRMAttachments")
                         .HasForeignKey("CRMInteractionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Uploader")
                         .WithMany()
                         .HasForeignKey("UploaderUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CRMInteraction");
@@ -7791,26 +8713,21 @@ namespace MahERP.DataModelLayer.Migrations
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMComment", b =>
                 {
-                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CRMComment", null)
-                        .WithMany("Replies")
-                        .HasForeignKey("CRMCommentId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.Crm.CRMInteraction", "CRMInteraction")
                         .WithMany("CRMComments")
                         .HasForeignKey("CRMInteractionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Crm.CRMComment", "ParentComment")
-                        .WithMany()
-                        .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId");
 
                     b.Navigation("CRMInteraction");
 
@@ -7824,34 +8741,30 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
                         .WithMany()
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Contract", "Contract")
                         .WithMany()
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ContractId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("LastUpdaterUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.StakeholderContact", "StakeholderContact")
                         .WithMany()
-                        .HasForeignKey("StakeholderContactId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("StakeholderContactId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
                         .WithMany()
-                        .HasForeignKey("StakeholderId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("StakeholderId");
 
                     b.Navigation("Branch");
 
@@ -7871,18 +8784,17 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.Crm.CRMInteraction", "CRMInteraction")
                         .WithMany("CRMParticipants")
                         .HasForeignKey("CRMInteractionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.StakeholderContact", "StakeholderContact")
                         .WithMany()
-                        .HasForeignKey("StakeholderContactId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("StakeholderContactId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CRMInteraction");
@@ -7897,19 +8809,19 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.Crm.CRMInteraction", "CRMInteraction")
                         .WithMany("CRMTeams")
                         .HasForeignKey("CRMInteractionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CRMInteraction");
@@ -7923,13 +8835,12 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "SalesRep")
                         .WithMany()
-                        .HasForeignKey("SalesRepUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("SalesRepUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", "Stakeholder")
                         .WithMany()
                         .HasForeignKey("StakeholderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("SalesRep");
@@ -7941,13 +8852,12 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.StakeholderContact", "StakeholderContact")
                         .WithMany()
-                        .HasForeignKey("StakeholderContactId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("StakeholderContactId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
                         .WithMany()
                         .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("StakeholderContact");
@@ -8045,12 +8955,193 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("Template");
                 });
 
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationBlacklist", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Notifications.NotificationTypeConfig", "NotificationTypeConfig")
+                        .WithMany()
+                        .HasForeignKey("NotificationTypeConfigId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("NotificationTypeConfig");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationDeliveryStats", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.Core.CoreNotificationDelivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("CoreNotificationDeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationRecipient", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Notifications.NotificationTypeConfig", "NotificationTypeConfig")
+                        .WithMany("Recipients")
+                        .HasForeignKey("NotificationTypeConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("NotificationTypeConfig");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationScheduledMessage", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Creator");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId");
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("LastModifiedByUserId");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("LastModifiedBy");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateHistory", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "ChangedBy")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate", "Template")
+                        .WithMany("History")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedBy");
+
+                    b.Navigation("Template");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateRecipient", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Contact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId");
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId");
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate", "NotificationTemplate")
+                        .WithMany("Recipients")
+                        .HasForeignKey("NotificationTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("NotificationTemplate");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateVariable", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate", "Template")
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Template");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTypeConfig", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.Notifications.NotificationModuleConfig", "ModuleConfig")
+                        .WithMany("NotificationTypes")
+                        .HasForeignKey("ModuleConfigId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ModuleConfig");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.UserNotificationPreference", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.Notifications.NotificationTypeConfig", "NotificationTypeConfig")
+                        .WithMany()
+                        .HasForeignKey("NotificationTypeConfigId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NotificationTypeConfig");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organizations.BranchOrganizationGroupMember", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AddedByUser")
                         .WithMany()
                         .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.BranchOrganizationGroup", "BranchGroup")
@@ -8062,7 +9153,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.BranchOrganization", "BranchOrganization")
                         .WithMany()
                         .HasForeignKey("BranchOrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("AddedByUser");
@@ -8077,12 +9168,13 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
                         .WithMany()
-                        .HasForeignKey("LastUpdaterUserId");
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Creator");
 
@@ -8250,27 +9342,20 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedUser")
                         .WithMany()
-                        .HasForeignKey("AssignedUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("AssignedUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignerUser")
                         .WithMany()
-                        .HasForeignKey("AssignerUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("AssignerUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.PredefinedCopyDescription", "PredefinedCopyDescription")
-                        .WithMany()
-                        .HasForeignKey("PredefinedCopyDescriptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.PredefinedCopyDescription", null)
                         .WithMany("TaskAssignments")
-                        .HasForeignKey("PredefinedCopyDescriptionId1");
+                        .HasForeignKey("PredefinedCopyDescriptionId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
                         .WithMany("TaskAssignments")
                         .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AssignedInTeam");
@@ -8289,19 +9374,15 @@ namespace MahERP.DataModelLayer.Migrations
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskAttachment", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", null)
                         .WithMany("TaskAttachments")
-                        .HasForeignKey("TasksId");
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Uploader")
                         .WithMany()
                         .HasForeignKey("UploaderUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Task");
@@ -8312,13 +9393,8 @@ namespace MahERP.DataModelLayer.Migrations
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", "ParentCategory")
-                        .WithMany()
-                        .HasForeignKey("ParentCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", null)
                         .WithMany("ChildCategories")
-                        .HasForeignKey("TaskCategoryId");
+                        .HasForeignKey("ParentCategoryId");
 
                     b.Navigation("ParentCategory");
                 });
@@ -8328,18 +9404,17 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskComment", "ParentComment")
                         .WithMany()
-                        .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ParentCommentId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
                         .WithMany("TaskComments")
                         .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Creator");
@@ -8354,13 +9429,12 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskComment", "Comment")
                         .WithMany("Attachments")
                         .HasForeignKey("TaskCommentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Uploader")
                         .WithMany()
-                        .HasForeignKey("UploaderUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("UploaderUserId");
 
                     b.Navigation("Comment");
 
@@ -8370,19 +9444,14 @@ namespace MahERP.DataModelLayer.Migrations
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCommentMention", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskComment", "Comment")
-                        .WithMany()
+                        .WithMany("MentionedUsers")
                         .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "MentionedUser")
                         .WithMany()
-                        .HasForeignKey("MentionedUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskComment", null)
-                        .WithMany("MentionedUsers")
-                        .HasForeignKey("TaskCommentId");
+                        .HasForeignKey("MentionedUserId");
 
                     b.Navigation("Comment");
 
@@ -8422,32 +9491,20 @@ namespace MahERP.DataModelLayer.Migrations
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskNotification", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskComment", "Comment")
-                        .WithMany()
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithMany("Notifications")
+                        .HasForeignKey("CommentId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskOperation", "Operation")
                         .WithMany()
-                        .HasForeignKey("OperationId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("OperationId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Recipient")
                         .WithMany()
-                        .HasForeignKey("RecipientUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskComment", null)
-                        .WithMany("Notifications")
-                        .HasForeignKey("TaskCommentId");
+                        .HasForeignKey("RecipientUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", null)
                         .WithMany("TaskNotifications")
-                        .HasForeignKey("TasksId");
+                        .HasForeignKey("TaskId");
 
                     b.Navigation("Comment");
 
@@ -8462,18 +9519,16 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "CompletedByUser")
                         .WithMany()
-                        .HasForeignKey("CompletedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CompletedByUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
-                        .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CreatorUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
                         .WithMany("TaskOperations")
                         .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CompletedByUser");
@@ -8554,23 +9609,17 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
-                        .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CreatorUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Modifier")
                         .WithMany()
-                        .HasForeignKey("ModifierUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ModifierUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplate", "TaskTemplate")
-                        .WithMany()
-                        .HasForeignKey("TaskTemplateId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplate", null)
                         .WithMany("TaskSchedule")
-                        .HasForeignKey("TaskTemplateId1");
+                        .HasForeignKey("TaskTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Creator");
 
@@ -8584,28 +9633,23 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.PredefinedCopyDescription", "PredefinedCopyDescription")
                         .WithMany()
-                        .HasForeignKey("PredefinedCopyDescriptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("PredefinedCopyDescriptionId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskSchedule", "Schedule")
-                        .WithMany()
+                        .WithMany("Assignments")
                         .HasForeignKey("ScheduleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskSchedule", null)
-                        .WithMany("Assignments")
-                        .HasForeignKey("TaskScheduleId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Creator");
@@ -8639,7 +9683,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AddedByUser")
                         .WithMany()
                         .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskSchedule", "Schedule")
@@ -8651,7 +9695,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AddedByUser");
@@ -8665,13 +9709,11 @@ namespace MahERP.DataModelLayer.Migrations
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", "Category")
                         .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CategoryId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
-                        .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CreatorUserId");
 
                     b.Navigation("Category");
 
@@ -8680,12 +9722,8 @@ namespace MahERP.DataModelLayer.Migrations
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplateOperation", b =>
                 {
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplate", null)
-                        .WithMany("Operations")
-                        .HasForeignKey("TaskTemplateId");
-
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplate", "Template")
-                        .WithMany()
+                        .WithMany("Operations")
                         .HasForeignKey("TemplateId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -8743,7 +9781,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AddedByUser")
                         .WithMany()
                         .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
@@ -8751,14 +9789,10 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasForeignKey("LastUpdaterUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", null)
                         .WithMany("TaskViewers")
-                        .HasForeignKey("TasksId");
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.Team", "Team")
                         .WithMany()
@@ -8767,7 +9801,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AddedByUser");
@@ -8803,31 +9837,20 @@ namespace MahERP.DataModelLayer.Migrations
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
-                        .WithMany()
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", null)
                         .WithMany("TaskList")
-                        .HasForeignKey("BranchId1");
+                        .HasForeignKey("BranchId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Contact", "Contact")
                         .WithMany()
                         .HasForeignKey("ContactId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Contract", "Contract")
-                        .WithMany()
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Contract", null)
                         .WithMany("TaskList")
-                        .HasForeignKey("ContractId1");
+                        .HasForeignKey("ContractId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
-                        .HasForeignKey("CreatorUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("CreatorUserId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
                         .WithMany()
@@ -8835,31 +9858,23 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "ParentTask")
                         .WithMany()
-                        .HasForeignKey("ParentTaskId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ParentTaskId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskSchedule", "TaskSchedule")
                         .WithMany()
-                        .HasForeignKey("ScheduleId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ScheduleId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", null)
                         .WithMany("TaskList")
                         .HasForeignKey("StakeholderId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", "TaskCategory")
-                        .WithMany()
-                        .HasForeignKey("TaskCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", null)
                         .WithMany("TaskList")
-                        .HasForeignKey("TaskCategoryId1");
+                        .HasForeignKey("TaskCategoryId");
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Core.Team", "Team")
                         .WithMany()
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("TeamId");
 
                     b.Navigation("Branch");
 
@@ -9118,6 +10133,23 @@ namespace MahERP.DataModelLayer.Migrations
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailTemplate", b =>
+                {
+                    b.Navigation("Recipients");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationModuleConfig", b =>
+                {
+                    b.Navigation("NotificationTypes");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate", b =>
+                {
+                    b.Navigation("History");
+
+                    b.Navigation("Recipients");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTypeConfig", b =>
                 {
                     b.Navigation("Recipients");
                 });

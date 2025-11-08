@@ -1,370 +1,359 @@
 ﻿@using MahERP.Extensions
 @{
-    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
-    var taskViewType = Context.Request.Query["TaskViewType"].ToString();
+	var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+	var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+	var taskViewType = Context.Request.Query["TaskViewType"].ToString();
 
-    var isAdmin = Html.IsAdmin();
+	var isAdmin = Html.IsAdmin();
 }
 
 <!-- Sidebar -->
 <nav aria-label="Main Navigation" id="sidebar">
-    <!-- Side Header -->
-    <div class="bg-header-dark">
-    <div class="content-header bg-white-5">
-<!-- Logo -->
-            <a asp-area="TaskingArea" asp-controller="Dashboard" asp-action="Index" class="fw-semibold text-white tracking-wide">
-    <span class="smini-visible">
-         M<span class="opacity-75">E</span>
-</span>
-      <span class="smini-hidden">
-        Mah<span class="opacity-75">ERP</span>
-                </span>
-  </a>
-            <!-- END Logo -->
-          <!-- Options -->
-            <div>
-                <button class="btn btn-sm btn-alt-secondary" data-class="fa-toggle-off fa-toggle-on" data-target="#sidebar-style-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('sidebar_style_toggle');Dashmix.layout('header_style_toggle');" type="button" title="تغییر حالت نوار کناری">
-                    <i class="fa fa-toggle-off" id="sidebar-style-toggler"></i>
-     </button>
-    <button class="btn btn-sm btn-alt-secondary" data-class="far fa" data-target="#dark-mode-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('dark_mode_toggle');" type="button" title="حالت تاریک">
-                <i class="far fa-moon" id="dark-mode-toggler"></i>
-        </button>
-          <button class="btn btn-sm btn-alt-secondary d-lg-none" data-action="sidebar_close" data-toggle="layout" type="button" title="بستن نوار کناری">
-  <i class="fa fa-times-circle"></i>
-      </button>
-            </div>
-    <!-- END Options -->
-   </div>
-    </div>
-    <!-- END Side Header -->
-    
-    <!-- Sidebar Scrolling -->
-    <div class="js-sidebar-scroll">
-        <!-- Side Navigation -->
-        <div class="content-side">
-            <ul class="nav-main">
+	<!-- Side Header -->
+	<div class="bg-header-dark">
+		<div class="content-header bg-white-5">
+			<!-- Logo -->
+			<a asp-area="TaskingArea" asp-controller="Dashboard" asp-action="Index" class="fw-semibold text-white tracking-wide">
+				<span class="smini-visible">
+					M<span class="opacity-75">E</span>
+				</span>
+				<span class="smini-hidden">
+					Mah<span class="opacity-75">ERP</span>
+				</span>
+			</a>
+			<!-- END Logo -->
+			<!-- Options -->
+			<div>
+				<button class="btn btn-sm btn-alt-secondary" data-class="fa-toggle-off fa-toggle-on" data-target="#sidebar-style-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('sidebar_style_toggle');Dashmix.layout('header_style_toggle');" type="button" title="تغییر حالت نوار کناری">
+					<i class="fa fa-toggle-off" id="sidebar-style-toggler"></i>
+				</button>
+				<button class="btn btn-sm btn-alt-secondary" data-class="far fa" data-target="#dark-mode-toggler" data-toggle="class-toggle" onclick="Dashmix.layout('dark_mode_toggle');" type="button" title="حالت تاریک">
+					<i class="far fa-moon" id="dark-mode-toggler"></i>
+				</button>
+				<button class="btn btn-sm btn-alt-secondary d-lg-none" data-action="sidebar_close" data-toggle="layout" type="button" title="بستن نوار کناری">
+					<i class="fa fa-times-circle"></i>
+				</button>
+			</div>
+			<!-- END Options -->
+		</div>
+	</div>
+	<!-- END Side Header -->
+	<!-- Sidebar Scrolling -->
+	<div class="js-sidebar-scroll">
+		<!-- Side Navigation -->
+		<div class="content-side">
+			<ul class="nav-main">
 
-     <!-- ============== 📊 DASHBOARD SECTION ============== -->
-         <li class="nav-main-heading">داشبورد</li>
-       <li class="nav-main-item @(IsMenuItemActive(currentController, currentAction, "Dashboard", "Index") ? "active" : "")">
-               <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Dashboard", "Index") ? "active" : "")" asp-area="TaskingArea" asp-controller="Dashboard" asp-action="Index">
-          <i class="nav-main-link-icon fa fa-tachometer-alt text-primary"></i>
-      <span class="nav-main-link-name fw-semibold">داشبورد تسکینگ</span>
-               </a>
-      </li>
+				<!-- ============== 📊 DASHBOARD SECTION ============== -->
+				<li class="nav-main-heading">داشبورد</li>
+				<li class="nav-main-item @(IsMenuItemActive(currentController, currentAction, "Dashboard", "Index") ? "active" : "")">
+					<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Dashboard", "Index") ? "active" : "")" asp-area="TaskingArea" asp-controller="Dashboard" asp-action="Index">
+						<i class="nav-main-link-icon fa fa-tachometer-alt text-primary"></i>
+						<span class="nav-main-link-name fw-semibold">داشبورد تسکینگ</span>
+					</a>
+				</li>
 
-   <!-- ============== 📋 TASK MANAGEMENT SECTION ============== -->
-     @if (Html.CanAccessAnyIn("TASK"))
-       {
-     <li class="nav-main-heading">مدیریت تسک‌ها</li>
-   
-            
-   <!-- ⚡ عملیات سریع -->
-     <li class="nav-main-item nav-submenu-separator">
-      <div class="nav-submenu-title">
-      <small class="text-muted fw-semibold">عملیات سریع</small>
-          </div>
-          </li>
+				<!-- ============== 📋 TASK MANAGEMENT SECTION ============== -->
+				@if (Html.CanAccessAnyIn("TASK"))
+				{
+					<li class="nav-main-heading">مدیریت تسک‌ها</li>
 
-             @if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.CREATE"))
-       {
-    <li class="nav-main-item">
-         <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Tasks", "CreateNewTask") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="CreateNewTask">
- <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-             <span class="nav-main-link-name fw-semibold">ایجاد تسک جدید</span>
-             </a>
-                </li>
-}
 
-          @if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.VIEW"))
-            {
-           <li class="nav-main-item">
-       <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "AllTasks") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" asp-route-ViewType="AllTasks">
-     <i class="nav-main-link-icon fa fa-list text-info"></i>
-    <span class="nav-main-link-name">همه تسک‌ها</span>
-    </a>
-  </li>
-      }
+				
 
-                    <!-- 🎯 صفحات مهم -->
-     <li class="nav-main-item nav-submenu-separator mt-2">
-  <div class="nav-submenu-title">
-    <small class="text-muted fw-semibold">صفحات اصلی</small>
-     </div>
-   </li>
 
-                 <!-- تسک‌های من -->
-     <li class="nav-main-item">
-             <a class="nav-main-link @(IsTaskMenuItemActive(currentController, currentAction, taskViewType, "Tasks", "Index", "MyTasks") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" asp-route-ViewType="MyTasks">
-       <i class="nav-main-link-icon fa fa-clipboard-check text-warning"></i>
-      <span class="nav-main-link-name">تسک‌های من</span>
-     <span class="nav-main-link-badge badge bg-danger rounded-pill ms-1" id="myTasksCount" style="display: none;">0</span>
-        </a>
-       </li>
+					@if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.VIEW"))
+					{
+						@if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.VIEW"))
+						{
+							<li class="nav-main-item">
+								<a class="nav-main-link @(currentController == "Tasks" && currentAction == "Index" ? "active" : "")"
+								   asp-area="TaskingArea"
+								   asp-controller="Tasks"
+								   asp-action="Index"
+								   asp-route-viewType="0"
+								   asp-route-grouping="0">
+									<i class="nav-main-link-icon fa fa-list text-info"></i>
+									<span class="nav-main-link-name">لیست تسک ها</span>
+								</a>
+							</li>
+						}
+					}
+						<!-- 🎯 صفحات مهم -->
+						<li class="nav-main-item nav-submenu-separator mt-2">
+							<div class="nav-submenu-title">
+								<small class="text-muted fw-semibold">صفحات اصلی</small>
+							</div>
+						</li>
 
-        <!-- یادآوری‌های من -->
-<li class="nav-main-item">
-      <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskReminders">
-       <i class="nav-main-link-icon fa fa-bell text-orange"></i>
-  <span class="nav-main-link-name">یادآوری‌های من</span>
-        <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="remindersCount" style="display: none;">0</span>
- </a>
-    </li>
+						
+					
+					<!-- یادآوری‌های من -->
+					<li class="nav-main-item">
+						<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskReminders">
+							<i class="nav-main-link-icon fa fa-bell text-orange"></i>
+							<span class="nav-main-link-name">یادآوری‌های من</span>
+							<span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="remindersCount" style="display: none;">0</span>
+						</a>
+					</li>
 
-             <!-- تسک‌های امروز من -->
-            <li class="nav-main-item">
-        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "MyDayTask", "Index") ? "active" : "")" asp-area="TaskingArea" asp-controller="MyDayTask" asp-action="Index">
-    <i class="nav-main-link-icon fa fa-calendar-day text-success"></i>
-          <span class="nav-main-link-name">تسک‌های روز من</span>
-     <span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="myDayCount" style="display: none;">0</span>
-              </a>
-     </li>
+					<!-- تسک‌های امروز من -->
+					<li class="nav-main-item">
+						<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "MyDayTask", "Index") ? "active" : "")" asp-area="TaskingArea" asp-controller="MyDayTask" asp-action="Index">
+							<i class="nav-main-link-icon fa fa-calendar-day text-success"></i>
+							<span class="nav-main-link-name">تسک‌های روز من</span>
+							<span class="nav-main-link-badge badge bg-success rounded-pill ms-1" id="myDayCount" style="display: none;">0</span>
+						</a>
+					</li>
 
-     <!-- 📅 تقویم -->
-               @if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.CALENDAR"))
-          {
-        <li class="nav-main-item nav-submenu-separator mt-2">
-         <div class="nav-submenu-title">
-    <small class="text-muted fw-semibold">تقویم</small>
- </div>
-              </li>
+					<!-- 📅 تقویم -->
+					@if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.CALENDAR"))
+					{
+						<li class="nav-main-item nav-submenu-separator mt-2">
+							<div class="nav-submenu-title">
+								<small class="text-muted fw-semibold">تقویم</small>
+							</div>
+						</li>
 
-              <li class="nav-main-item">
-              <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskCalendar") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskCalendar">
-           <i class="nav-main-link-icon fa fa-calendar text-success"></i>
-        <span class="nav-main-link-name">تقویم تسک‌ها</span>
-    </a>
-              </li>
-           }
+						<li class="nav-main-item">
+							<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskCalendar") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskCalendar">
+								<i class="nav-main-link-icon fa fa-calendar text-success"></i>
+								<span class="nav-main-link-name">تقویم تسک‌ها</span>
+							</a>
+						</li>
+					}
 
-               <!-- 📊 آمار و گزارشات -->
-@if (Html.CanAccessAny("TASK", "TASK.DASHBOARD"))
-     {
-   <li class="nav-main-item nav-submenu-separator mt-2">
-       <div class="nav-submenu-title">
-     <small class="text-muted fw-semibold">آمار و گزارشات</small>
-   </div>
-     </li>
+					<!-- 📊 آمار و گزارشات -->
+					@if (Html.CanAccessAny("TASK", "TASK.DASHBOARD"))
+					{
+						<li class="nav-main-item nav-submenu-separator mt-2">
+							<div class="nav-submenu-title">
+								<small class="text-muted fw-semibold">آمار و گزارشات</small>
+							</div>
+						</li>
 
-     <li class="nav-main-item">
-   <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskDashboard") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskDashboard">
-          <i class="nav-main-link-icon fa fa-chart-bar text-primary"></i>
-       <span class="nav-main-link-name">داشبورد تسک‌ها</span>
-</a>
-</li>
-     }
-       
-     }
+				
+					}
 
-         <!-- ============== 🏷️ TASK CATEGORIES ============== -->
-                @if (Html.CanAccessAnyIn("CORE.TASKCATEGORY"))
-     {
-              <li class="nav-main-heading">دسته‌بندی تسک‌ها</li>
-      
-        <li class="nav-main-item @(IsTaskCategoryMenuActive(currentController) ? "open" : "")">
-       <a aria-expanded="@(IsTaskCategoryMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-        <i class="nav-main-link-icon fa fa-tags text-secondary"></i>
-               <span class="nav-main-link-name">دسته‌بندی‌ها</span>
-     </a>
-   <ul class="nav-main-submenu">
-     @if (Html.CanAccessAny("CORE.TASKCATEGORY", "CORE.TASKCATEGORY.GLOBAL"))
-      {
-       <li class="nav-main-item">
-       <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "TaskCategory", "Index") ? "active" : "")" asp-area="TaskingArea" asp-controller="TaskCategory" asp-action="Index">
-       <i class="nav-main-link-icon fa fa-list"></i>
-        <span class="nav-main-link-name">دسته‌بندی‌های عمومی</span>
-       </a>
-      </li>
-               }
-         
-      @if (Html.CanAccessAny("CORE.TASKCATEGORY", "CORE.TASKCATEGORY.BRANCH"))
-  {
-        <li class="nav-main-item">
-          <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "BranchTaskCategory", "Index") ? "active" : "")" asp-area="TaskingArea" asp-controller="BranchTaskCategory" asp-action="Index">
-  <i class="nav-main-link-icon fa fa-building"></i>
-                <span class="nav-main-link-name">دسته‌بندی‌های شعب</span>
-        </a>
-                 </li>
-    }
-  </ul>
-  </li>
-           }
+				}
 
-         <!-- ============== 🚪 LOGOUT ============== -->
-     <li class="nav-main-heading">خروج</li>
- <li class="nav-main-item">
-     <a class="nav-main-link logout-link" href="/Account/LogOut">
-    <i class="nav-main-link-icon fa fa-sign-out-alt text-danger"></i>
-            <span class="nav-main-link-name">خروج از سیستم</span>
-         </a>
-             </li>
+				<!-- ============== 🏷️ TASK CATEGORIES ============== -->
+				@if (Html.CanAccessAnyIn("CORE.TASKCATEGORY"))
+				{
+					<li class="nav-main-heading">دسته‌بندی تسک‌ها</li>
 
-            </ul>
-  </div>
-        <!-- END Side Navigation -->
-    </div>
-    <!-- END Sidebar Scrolling -->
+					<li class="nav-main-item @(IsTaskCategoryMenuActive(currentController) ? "open" : "")">
+						<a aria-expanded="@(IsTaskCategoryMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+							<i class="nav-main-link-icon fa fa-tags text-secondary"></i>
+							<span class="nav-main-link-name">دسته‌بندی‌ها</span>
+						</a>
+						<ul class="nav-main-submenu">
+							@if (Html.CanAccessAny("CORE.TASKCATEGORY", "CORE.TASKCATEGORY.GLOBAL"))
+							{
+								<li class="nav-main-item">
+									<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "TaskCategory", "Index") ? "active" : "")" asp-area="TaskingArea" asp-controller="TaskCategory" asp-action="Index">
+										<i class="nav-main-link-icon fa fa-list"></i>
+										<span class="nav-main-link-name">دسته‌بندی‌های عمومی</span>
+									</a>
+								</li>
+							}
+
+							@if (Html.CanAccessAny("CORE.TASKCATEGORY", "CORE.TASKCATEGORY.BRANCH"))
+							{
+								<li class="nav-main-item">
+									<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "BranchTaskCategory", "Index") ? "active" : "")" asp-area="TaskingArea" asp-controller="BranchTaskCategory" asp-action="Index">
+										<i class="nav-main-link-icon fa fa-building"></i>
+										<span class="nav-main-link-name">دسته‌بندی‌های شعب</span>
+									</a>
+								</li>
+							}
+						</ul>
+					</li>
+				}
+
+				<!-- ============== 🚪 LOGOUT ============== -->
+				<li class="nav-main-heading">خروج</li>
+				<li class="nav-main-item">
+					<a class="nav-main-link logout-link" href="/Account/LogOut">
+						<i class="nav-main-link-icon fa fa-sign-out-alt text-danger"></i>
+						<span class="nav-main-link-name">خروج از سیستم</span>
+					</a>
+				</li>
+
+			</ul>
+		</div>
+		<!-- END Side Navigation -->
+	</div>
+	<!-- END Sidebar Scrolling -->
 </nav>
 <!-- END Sidebar -->
-
 @functions {
-    public bool IsMenuItemActive(string currentController, string currentAction, string targetController, string targetAction)
-    {
-        return currentController == targetController && currentAction == targetAction;
-    }
+	public bool IsMenuItemActive(string currentController, string currentAction, string targetController, string targetAction)
+	{
+		return currentController == targetController && currentAction == targetAction;
+	}
 
-    public bool IsTaskMenuItemActive(string currentController, string currentAction, string taskViewType, string targetController, string targetAction, string targetViewType)
-    {
-        return currentController == targetController &&
+	public bool IsTaskMenuItemActive(string currentController, string currentAction, string taskViewType, string targetController, string targetAction, string targetViewType)
+	{
+		return currentController == targetController &&
   currentAction == targetAction &&
-       taskViewType == targetViewType;
-    }
+	   taskViewType == targetViewType;
+	}
 
-    public bool IsTaskMenuActive(string currentController) => currentController == "Tasks" || currentController == "MyDayTask" || currentController == "TaskOperations";
- public bool IsTaskCategoryMenuActive(string currentController) => currentController == "TaskCategory" || currentController == "BranchTaskCategory";
+	public bool IsTaskMenuActive(string currentController) => currentController == "Tasks" || currentController == "MyDayTask" || currentController == "TaskOperations";
+	public bool IsTaskCategoryMenuActive(string currentController) => currentController == "TaskCategory" || currentController == "BranchTaskCategory";
 }
 
 <!-- JavaScript for Sidebar Functionality -->
 <script>
-    $(document).ready(function() {
-        updateTaskCounts();
-        updateMyDayCount();
-        setInterval(function() {
-            updateTaskCounts();
-     updateMyDayCount();
-        }, 120000);
-    });
+	  $(document).ready(function() {
+		  updateTaskCounts();
+		  updateMyDayCount();
+		  setInterval(function() {
+			  updateTaskCounts();
+	   updateMyDayCount();
+		  }, 120000);
+	  });
 
-  function updateTaskCounts() {
-        $.get('@Url.Action("GetDashboardSummary", "Dashboard", new { area = "TaskingArea" })')
-        .done(function(response) {
-              if (response.success) {
-         updateBadgeCount('#myTasksCount', response.tasksStats.myTasksCount);
-     updateBadgeCount('#remindersCount', response.tasksStats.remindersCount);
-     updateBadgeCount('#taskBadgeCount', response.tasksStats.myTasksCount + response.tasksStats.remindersCount);
-        }
-            });
-    }
+	function updateTaskCounts() {
+		  $.get('@Url.Action("GetDashboardSummary", "Dashboard", new { area = "TaskingArea" })')
+		  .done(function(response) {
+				if (response.success) {
+		   updateBadgeCount('#myTasksCount', response.tasksStats.myTasksCount);
+	   updateBadgeCount('#remindersCount', response.tasksStats.remindersCount);
+	   updateBadgeCount('#taskBadgeCount', response.tasksStats.myTasksCount + response.tasksStats.remindersCount);
+		  }
+			  });
+	  }
 
-    function updateMyDayCount() {
-        $.get('@Url.Action("GetMyDayTasksCount", "MyDayTask", new { area = "TaskingArea" })').done(function(data) {
-   if (data.success) {
-       updateBadgeCount('#myDayCount', data.count);
-     }
-        });
-    }
+	  function updateMyDayCount() {
+		  $.get('@Url.Action("GetMyDayTasksCount", "MyDayTask", new { area = "TaskingArea" })').done(function(data) {
+	 if (data.success) {
+		 updateBadgeCount('#myDayCount', data.count);
+	   }
+		  });
+	  }
 
-    function updateBadgeCount(selector, count) {
-        const badge = $(selector);
-  if (count > 0) {
-            badge.text(count).show();
-        } else {
-   badge.hide();
-        }
-    }
+	  function updateBadgeCount(selector, count) {
+		  const badge = $(selector);
+	if (count > 0) {
+			  badge.text(count).show();
+		  } else {
+	 badge.hide();
+		  }
+	  }
 
-    $('.nav-main-link').on('click', function(e) {
-    if ($(this).hasClass('nav-main-link-submenu')) return;
-        const icon = $(this).find('.nav-main-link-icon');
-    const originalIcon = icon.attr('class');
-        icon.attr('class', 'nav-main-link-icon fa fa-spinner fa-spin');
-        setTimeout(() => {
-     icon.attr('class', originalIcon);
-        }, 1000);
-  });
+	  $('.nav-main-link').on('click', function(e) {
+	  if ($(this).hasClass('nav-main-link-submenu')) return;
+		  const icon = $(this).find('.nav-main-link-icon');
+	  const originalIcon = icon.attr('class');
+		  icon.attr('class', 'nav-main-link-icon fa fa-spinner fa-spin');
+		  setTimeout(() => {
+	   icon.attr('class', originalIcon);
+		  }, 1000);
+	});
 </script>
 
 <style>
-    .nav-submenu-separator {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding-top: 0.5rem;
-        margin-top: 0.5rem;
-    }
+	.nav-submenu-separator {
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		padding-top: 0.5rem;
+		margin-top: 0.5rem;
+	}
 
-    .nav-submenu-separator:first-child {
-        border-top: none;
-padding-top: 0;
-        margin-top: 0;
-    }
+		.nav-submenu-separator:first-child {
+			border-top: none;
+			padding-top: 0;
+			margin-top: 0;
+		}
 
-    .nav-submenu-title {
-   padding: 0.25rem 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    }
+	.nav-submenu-title {
+		padding: 0.25rem 1rem;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
 
-    .nav-main-link-badge {
-     animation: badgePulse 2s infinite;
-        font-size: 0.625rem;
-      min-width: 1.25rem;
-        height: 1.25rem;
-     line-height: 1;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
+	.nav-main-link-badge {
+		animation: badgePulse 2s infinite;
+		font-size: 0.625rem;
+		min-width: 1.25rem;
+		height: 1.25rem;
+		line-height: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
 
-    @@keyframes badgePulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
+	@@keyframes badgePulse {
+		0% {
+			transform: scale(1);
+		}
 
-    .text-orange { color: #fd7e14 !important; }
+		50% {
+			transform: scale(1.1);
+		}
 
-    .nav-main-link {
-   transition: all 0.3s ease;
-        border-radius: 0.375rem;
-    margin: 0.125rem 0.5rem;
-    }
+		100% {
+			transform: scale(1);
+		}
+	}
 
-    .nav-main-link:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-        transform: translateX(-2px);
-    }
+	.text-orange {
+		color: #fd7e14 !important;
+	}
 
-    .nav-main-link-create {
-   background: linear-gradient(135deg, rgba(25, 135, 84, 0.1), rgba(25, 135, 84, 0.2));
-     border-left: 3px solid #198754;
-    }
+	.nav-main-link {
+		transition: all 0.3s ease;
+		border-radius: 0.375rem;
+		margin: 0.125rem 0.5rem;
+	}
 
-    .nav-main-link-create:hover {
-    background: linear-gradient(135deg, rgba(25, 135, 84, 0.2), rgba(25, 135, 84, 0.3));
-    }
+		.nav-main-link:hover {
+			background-color: rgba(255, 255, 255, 0.1);
+			transform: translateX(-2px);
+		}
 
-    .logout-link {
-  background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.2));
- border-left: 3px solid #dc3545;
-    }
+	.nav-main-link-create {
+		background: linear-gradient(135deg, rgba(25, 135, 84, 0.1), rgba(25, 135, 84, 0.2));
+		border-left: 3px solid #198754;
+	}
 
-    .logout-link:hover {
-        background: linear-gradient(135deg, rgba(220, 53, 69, 0.2), rgba(220, 53, 69, 0.3));
-    }
+		.nav-main-link-create:hover {
+			background: linear-gradient(135deg, rgba(25, 135, 84, 0.2), rgba(25, 135, 84, 0.3));
+		}
 
-    .nav-main-heading {
-        position: relative;
-        font-weight: 600;
-     font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: rgba(255, 255, 255, 0.8);
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-     padding: 0 1rem;
-    }
+	.logout-link {
+		background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.2));
+		border-left: 3px solid #dc3545;
+	}
 
-    .nav-main-heading:first-child {
-        margin-top: 0.5rem;
-    }
+		.logout-link:hover {
+			background: linear-gradient(135deg, rgba(220, 53, 69, 0.2), rgba(220, 53, 69, 0.3));
+		}
 
-    .nav-main-heading::after {
-     content: '';
-        position: absolute;
-        bottom: -0.25rem;
-   left: 1rem;
-        right: 1rem;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    }
+	.nav-main-heading {
+		position: relative;
+		font-weight: 600;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: rgba(255, 255, 255, 0.8);
+		margin-top: 1.5rem;
+		margin-bottom: 0.75rem;
+		padding: 0 1rem;
+	}
+
+		.nav-main-heading:first-child {
+			margin-top: 0.5rem;
+		}
+
+		.nav-main-heading::after {
+			content: '';
+			position: absolute;
+			bottom: -0.25rem;
+			left: 1rem;
+			right: 1rem;
+			height: 1px;
+			background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+		}
 </style>

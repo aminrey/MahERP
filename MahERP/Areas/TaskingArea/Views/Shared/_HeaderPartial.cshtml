@@ -17,9 +17,7 @@
                 <i class="fa fa-fw fa-bars"></i>
             </button>
             <!-- END Toggle Sidebar -->
-            <!-- Open Search Section -->
-          
-            <!-- END Open Search Section -->
+            
             <!-- ============== 🎨 MODULE SELECTOR ============== -->
             @{
                 var isTaskingEnabled = ViewBag.IsTaskingModuleEnabled ?? true;
@@ -38,19 +36,16 @@
                             @if (currentArea == "TaskingArea")
                             {
                                 <i class="fa fa-tasks me-1"></i>
-
                                 <text>تسکینگ</text>
                             }
                             else if (currentArea == "CrmArea")
                             {
                                 <i class="fa fa-chart-line me-1"></i>
-
                                 <text>CRM</text>
                             }
                             else
                             {
                                 <i class="fa fa-home me-1"></i>
-
                                 <text>هسته مرکزی</text>
                             }
                         </span>
@@ -166,13 +161,32 @@
                 </div>
             }
 
+           
 
-
-            <!-- ============== END MODULE SELECTOR ============== -->
         </div>
         <!-- END Left Section -->
+        
         <!-- Right Section -->
         <div class="space-x-1">
+
+            <!-- ============== ⚡ QUICK ADD TASK BUTTON ============== -->
+            @if (currentArea == "TaskingArea" && Html.CanAccessAny("TASK", "TASK.OPERATIONS.CREATE"))
+            {
+                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="CreateNewTask"
+                   class="btn btn-success btn-quick-add d-none d-md-inline-block"
+                   title="ایجاد تسک جدید">
+                    <i class="fa fa-plus-circle me-1"></i>
+                    <span class="d-none d-lg-inline-block">تسک جدید</span>
+                </a>
+
+                <!-- Mobile Version -->
+                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="CreateNewTask"
+                   class="btn btn-success btn-quick-add-mobile d-md-none"
+                   title="ایجاد تسک جدید">
+                    <i class="fa fa-plus"></i>
+                </a>
+            }
+            <!-- ============== END QUICK ADD TASK BUTTON ============== -->
             <!-- ⭐ User Dropdown - Enhanced -->
             <div class="dropdown d-inline-block">
                 <button aria-expanded="false" aria-haspopup="true"
@@ -262,6 +276,21 @@
                             </div>
                         </a>
 
+                        <!-- ⭐⭐⭐ NEW: تنظیمات اعلان‌های من -->
+                        <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "MyNotificationSettings", "Index") ? "active" : "")"
+                           asp-area="TaskingArea" 
+                           asp-controller="MyNotificationSettings" 
+                           asp-action="Index">
+                            <i class="fa fa-fw fa-bell-slash me-2 text-warning"></i>
+                            <div>
+                                <div class="fw-semibold">
+                                    تنظیمات اعلان‌ها
+                                    <span class="badge bg-primary ms-1" style="font-size: 0.625rem;">جدید</span>
+                                </div>
+                                <div class="fs-xs text-muted">مدیریت اعلان‌های شخصی</div>
+                            </div>
+                        </a>
+
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "UserManager", "Settings") ? "active" : "")"
                            onclick="showComingSoonNotification(event, 'تنظیمات کاربری')" href="#">
                             <i class="fa fa-fw fa-cog me-2 text-info"></i>
@@ -272,8 +301,6 @@
                         </a>
 
                         <div class="dropdown-divider"></div>
-
-                      
 
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")"
                            asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
@@ -378,6 +405,7 @@
     </audio>
 </header>
 <!-- END Header -->
+
 @functions {
     /// <summary>
     /// بررسی active بودن منوی کاربر
@@ -482,187 +510,72 @@
 
 <!-- ⭐ Enhanced Styles for Active States -->
 <style>
-    /* ============== USER DROPDOWN ENHANCEMENTS ============== */
-    .img-avatar-thumb {
-        object-fit: cover;
-        transition: all 0.3s ease;
-    }
 
-        .img-avatar-thumb:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-    /* ============== ACTIVE BUTTON STATES ============== */
-    .btn-alt-secondary.active,
-    .btn-alt-secondary.menu-active {
-        background-color: rgba(13, 110, 253, 0.2);
-        border-color: #0d6efd;
-        color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-
-    .btn-alt-secondary.dropdown-active {
-        background-color: rgba(13, 110, 253, 0.15);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
-    }
-
-    /* ============== DROPDOWN ITEM ENHANCEMENTS ============== */
-    .dropdown-item {
-        transition: all 0.2s ease;
-        border-radius: 0.375rem;
-        margin: 0.125rem 0.25rem;
-        position: relative;
-    }
-
-        .dropdown-item:hover {
-            background-color: rgba(0,123,255,0.1);
-            transform: translateX(-2px);
-        }
-
-        .dropdown-item.active,
-        .dropdown-item.current-page {
-            background: linear-gradient(135deg, rgba(13, 110, 253, 0.15), rgba(13, 110, 253, 0.25));
-            border-left: 3px solid #0d6efd;
-            font-weight: 600;
-        }
-
-            .dropdown-item.active::before,
-            .dropdown-item.current-page::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 4px;
-                height: 60%;
-                background: linear-gradient(135deg, #0d6efd, #6610f2);
-                border-radius: 0 2px 2px 0;
-            }
-
-        .dropdown-item.clicked {
-            transform: scale(0.98);
-            background-color: rgba(13, 110, 253, 0.2);
-        }
-
-    /* ============== STATS NUMBERS ANIMATION ============== */
-    #userStatsMyTasks, #userStatsReminders, #userStatsNotifications {
-        transition: all 0.3s ease;
-    }
-
-        #userStatsMyTasks:hover, #userStatsReminders:hover, #userStatsNotifications:hover {
-            transform: scale(1.1);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-    /* ============== USER PROFILE SECTION ============== */
-    .bg-primary-dark {
-        background: linear-gradient(135deg, #0d6efd, #6610f2);
-        position: relative;
-        overflow: hidden;
-    }
-
-        .bg-primary-dark::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: rotate(45deg);
-            animation: shimmer 3s infinite;
-        }
-
-    @@keyframes shimmer {
-        0%
-
-    {
-        transform: translateX(-100%) translateY(-100%) rotate(45deg);
-    }
-
-    100% {
-        transform: translateX(100%) translateY(100%) rotate(45deg);
-    }
-
-    }
-
-    /* ============== NOTIFICATION BADGE ENHANCEMENTS ============== */
-    #headerNotificationBadge {
-        animation: badgePulse 2s infinite;
-        box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+    /* ⭐ Badge "جدید" با انیمیشن */
+    .dropdown-item .badge {
+        animation: badgePulse 2s ease-in-out infinite;
     }
 
     @@keyframes badgePulse {
-        0%
-
-    {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.1);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-
-    }
-
-    /* ============== MOBILE RESPONSIVE ============== */
-    @@media (max-width: 576px) {
-        .dropdown-menu-lg
-
-    {
-        width: 100vw !important;
-        max-width: none !important;
-        left: 0 !important;
-        right: 0 !important;
-        margin: 0 !important;
-        border-radius: 0 !important;
-    }
-
-    .dropdown-item {
-        padding: 1rem 0.75rem;
-    }
-
-        .dropdown-item.active::before,
-        .dropdown-item.current-page::before {
-            width: 6px;
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
         }
 
-    }
-
-    /* ============== HOVER EFFECTS ============== */
-    .content-header .btn {
-        transition: all 0.3s ease;
-    }
-
-        .content-header .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        50% {
+            opacity: 0.8;
+            transform: scale(1.05);
         }
-
-    /* ============== DROPDOWN ANIMATIONS ============== */
-    .dropdown-menu {
-        animation: dropdownFadeIn 0.3s ease;
-        transform-origin: top;
     }
 
-    @@keyframes dropdownFadeIn {
-        0%
-
-    {
-        opacity: 0;
-        transform: scaleY(0.8) translateY(-10px);
+    /* ⭐ هایلایت آیتم جدید */
+    .dropdown-item:has(.badge) {
+        background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.05), transparent);
     }
 
-    100% {
-        opacity: 1;
-        transform: scaleY(1) translateY(0);
-    }
-
-    }
+        .dropdown-item:has(.badge):hover {
+            background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.1), transparent);
+        }
 </style>
+
+<!-- ⭐ JavaScript for Quick Add Button -->
+<script>
+    $(document).ready(function() {
+        // Add loading state when clicking quick add button
+        $('.btn-quick-add, .btn-quick-add-mobile').on('click', function() {
+            $(this).addClass('loading');
+            $(this).find('i').removeClass('fa-plus-circle fa-plus').addClass('fa-spinner fa-spin');
+        });
+
+        // Add keyboard shortcut (Ctrl+N or Cmd+N)
+        $(document).on('keydown', function(e) {
+            // Check if Ctrl+N (or Cmd+N on Mac) is pressed
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                
+                // Check if quick add button exists
+                const $quickAddBtn = $('.btn-quick-add, .btn-quick-add-mobile').first();
+                if ($quickAddBtn.length > 0) {
+                    // Add visual feedback
+                    $quickAddBtn.addClass('loading');
+                    
+                    // Navigate to create task page
+                    window.location.href = $quickAddBtn.attr('href');
+                }
+            }
+        });
+
+        // Add tooltip for keyboard shortcut
+        $('.btn-quick-add, .btn-quick-add-mobile').attr('data-bs-toggle', 'tooltip')
+            .attr('data-bs-placement', 'bottom')
+            .attr('data-bs-title', 'ایجاد تسک جدید (Ctrl+N)');
+
+        // Initialize tooltips
+        if (typeof bootstrap !== 'undefined') {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+    });
+</script>

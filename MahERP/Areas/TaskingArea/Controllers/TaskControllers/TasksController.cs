@@ -5,6 +5,7 @@ using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;
@@ -42,7 +43,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly TaskNotificationService _taskNotificationService;
         private readonly TaskCodeGenerator _taskCodeGenerator;
         protected readonly IUserManagerRepository _userRepository;
         private readonly ITaskHistoryRepository _taskHistoryRepository;
@@ -60,7 +60,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IMemoryCache memoryCache,
             IWebHostEnvironment webHostEnvironment,
             ActivityLoggerService activityLogger,
-            TaskNotificationService taskNotificationService,
             TaskCodeGenerator taskCodeGenerator,
             IUserManagerRepository userRepository, IBaseRepository BaseRepository,
             ITaskVisibilityRepository taskVisibilityRepository,
@@ -75,7 +74,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _userManager = userManager;
             _mapper = mapper;
             _webHostEnvironment = webHostEnvironment;
-            _taskNotificationService = taskNotificationService;
             _taskCodeGenerator = taskCodeGenerator;
             _userRepository = userRepository;
             _taskHistoryRepository = taskHistoryRepository;
@@ -414,7 +412,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 ViewBag.IsSupervisor = isSupervisor;
                 viewModel.SetUserContext(currentUserId, isAdmin, isManager, isSupervisor);
 
-                await _taskNotificationService.MarkTaskNotificationsAsReadAsync(id, currentUserId);
 
                 // بررسی اینکه آیا تسک در "روز من" کاربر فعلی است
                 var isInMyDay = await _taskRepository.IsTaskInMyDayAsync(id, currentUserId);
@@ -471,16 +468,12 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         .Select(e => new { status = "error", text = e.ErrorMessage })
                         .ToArray();
 
-                    return Json(new
-                    {
-                        status = "validation-error",
-                        message = errors
-                    });
+                    return Json(new { status = "validation-error", message = errors });
                 }
 
                 var userId = _userManager.GetUserId(User);
 
-                // ✅ ثبت تکمیل تسک از طریق Repository
+                // ثبت تکمیل تسک
                 var result = await _taskRepository.CompleteTaskAsync(model, userId);
 
                 if (!result.IsSuccess)
@@ -492,7 +485,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
-                // ⭐ ثبت در تاریخچه
+                // ثبت در تاریخچه
                 await _taskHistoryRepository.LogTaskCompletedAsync(
                     model.TaskId,
                     userId,
@@ -500,7 +493,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     model.TaskCode
                 );
 
-                // ⭐⭐⭐ ثبت غیرفعال شدن یادآوری‌ها در تاریخچه
                 await _taskHistoryRepository.LogRemindersDeactivatedOnCompletionAsync(
                     model.TaskId,
                     userId,
@@ -508,18 +500,26 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     model.TaskCode
                 );
 
-                // ⭐ ارسال نوتیفیکیشن
-                await _taskNotificationService.NotifyTaskCompletedAsync(model.TaskId, userId);
+                // ⭐⭐⭐ ارسال به صف - فوری و بدون Blocking
+                NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                    model.TaskId,
+                    userId,
+                    NotificationEventType.TaskCompleted,
+                    priority: 2 // اولویت بالاتر
+                );
 
                 await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Update, "Tasks", "CompleteTask",
-                    $"تکمیل تسک {model.TaskCode} - {model.TaskTitle} و غیرفعال کردن یادآوری‌ها",
-                    recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: model.TaskTitle);
+                    ActivityTypeEnum.Update,
+                    "Tasks",
+                    "CompleteTask",
+                    $"تکمیل تسک {model.TaskCode} - {model.TaskTitle}",
+                    recordId: model.TaskId.ToString(),
+                    entityType: "Tasks",
+                    recordTitle: model.TaskTitle
+                );
 
-                // ⭐⭐⭐ اگر از لیست اومده، فقط موفقیت برگردون
                 if (model.FromList)
                 {
-                    // دریافت کارت جدید تکمیل شده
                     var updatedTask = await _taskRepository.GetTaskCardViewModelAsync(model.TaskId, userId);
 
                     return Json(new
@@ -531,11 +531,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
-                // ✅ بازگرداندن response با redirect (برای صفحه جزئیات)
                 return Json(new
                 {
                     status = "redirect",
-                    message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد و یادآوری‌ها غیرفعال شدند" } },
+                    message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد" } },
                     redirectUrl = Url.Action("Details", "Tasks", new { id = model.TaskId, area = "TaskingArea" })
                 });
             }
@@ -900,23 +899,22 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        //[Permission("Tasks", "CreateNewTask", 1)]
         public async Task<IActionResult> CreateNewTask(TaskViewModel model)
         {
             try
             {
                 var currentUserId = _userManager.GetUserId(User);
-                
-                // ⭐ 1. اعتبارسنجی از طریق Repository
+
+                // ⭐ اعتبارسنجی
                 var (isValid, errors) = await _taskRepository.ValidateTaskModelAsync(model, currentUserId);
-                
+
                 if (!isValid)
                 {
                     foreach (var error in errors)
                     {
                         ModelState.AddModelError(error.Key, error.Value);
                     }
-                    
+
                     model = await _taskRepository.PrepareCreateTaskModelAsync(currentUserId);
                     return View(model);
                 }
@@ -926,44 +924,59 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 try
                 {
-                    // ⭐ 2. ایجاد تسک از طریق Repository
+                    // ایجاد تسک
                     var task = await _taskRepository.CreateTaskEntityAsync(model, currentUserId, _mapper);
-                    
-                    // ⭐ 3. ذخیره فایل‌های پیوست از طریق Repository
+
+                    // ذخیره پیوست‌ها
                     if (model.Attachments != null && model.Attachments.Count > 0)
                     {
                         await _taskRepository.SaveTaskAttachmentsAsync(
-                            task.Id, 
-                            model.Attachments, 
-                            currentUserId, 
+                            task.Id,
+                            model.Attachments,
+                            currentUserId,
                             _webHostEnvironment.WebRootPath);
                     }
 
-                    // ⭐ 4. ذخیره عملیات‌ها و یادآوری‌ها از طریق Repository
+                    // ذخیره عملیات و یادآوری‌ها
                     await _taskRepository.SaveTaskOperationsAndRemindersAsync(task.Id, model);
 
-                    // ⭐ 5. مدیریت انتصاب‌ها (Bulk Insert) از طریق Repository
+                    // مدیریت انتصاب‌ها
                     await _taskRepository.HandleTaskAssignmentsBulkAsync(task, model, currentUserId);
 
                     // ⭐ تأیید تراکنش
                     await _uow.CommitTransactionAsync();
 
-                    // 6. ارسال نوتیفیکیشن (خارج از تراکنش)
-                     EnqueueTaskNotification(task.Id, currentUserId, model);
+                    // ⭐⭐⭐ ارسال به صف - فوری و بدون Blocking
+                    NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                        task.Id,
+                        currentUserId,
+                        NotificationEventType.TaskAssigned,
+                        priority: 1
+                    );
+
                     // ⭐ ثبت در تاریخچه
-                    await _taskHistoryRepository.LogTaskCreatedAsync(task.Id, currentUserId, task.Title, task.TaskCode);
+                    await _taskHistoryRepository.LogTaskCreatedAsync(
+                        task.Id,
+                        currentUserId,
+                        task.Title,
+                        task.TaskCode
+                    );
 
                     await _activityLogger.LogActivityAsync(
-                        ActivityTypeEnum.Create, "Tasks", "CreateNewTask",
+                        ActivityTypeEnum.Create,
+                        "Tasks",
+                        "CreateNewTask",
                         $"ایجاد تسک جدید: {task.Title} با کد: {task.TaskCode}",
-                        recordId: task.Id.ToString(), entityType: "Tasks", recordTitle: task.Title);
+                        recordId: task.Id.ToString(),
+                        entityType: "Tasks",
+                        recordTitle: task.Title
+                    );
 
                     TempData["SuccessMessage"] = "تسک با موفقیت ایجاد شد";
                     return RedirectToAction(nameof(Index));
                 }
                 catch
                 {
-                    // ⭐ Rollback خودکار
                     await _uow.RollbackTransactionAsync();
                     throw;
                 }
@@ -972,12 +985,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             {
                 await _activityLogger.LogErrorAsync("Tasks", "CreateNewTask", "خطا در ایجاد تسک", ex);
                 ModelState.AddModelError("", $"خطا در ثبت تسک: {ex.Message}");
-                
+
                 model = await _taskRepository.PrepareCreateTaskModelAsync(_userManager.GetUserId(User));
                 return View(model);
             }
         }
-
         /// <summary>
         /// بررسی یکتایی کد تسک
         /// </summary>
@@ -1490,35 +1502,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
         #endregion
 
-        /// <summary>
-        /// اضافه کردن نوتیفیکشن به صف - باقی می‌ماند
-        /// </summary>
-        private void EnqueueTaskNotification(int taskId, string currentUserId, TaskViewModel model)
-        {
-            try
-            {
-                var notificationService = HttpContext.RequestServices
-                    .GetService<NotificationBackgroundService>();
-
-                if (notificationService != null)
-                {
-                    var assignedUserIds = model.AssignmentsSelectedTaskUserArraysString ?? new List<string>();
-                    var assignedTeamIds = model.AssignmentsSelectedTeamIds ?? new List<int>();
-
-                    var teamUserIds = Task.Run(async () =>
-                        await _taskRepository.GetUsersFromTeamsAsync(assignedTeamIds)).Result;
-
-                    var allAssignedUserIds = assignedUserIds.Union(teamUserIds).Distinct().ToList();
-
-                    notificationService.EnqueueTaskCreation(taskId, currentUserId, allAssignedUserIds);
-                }
-            }
-            catch (Exception ex)
-            {
-                _activityLogger.LogErrorAsync("Tasks", "EnqueueTaskNotification",
-                    $"خطا در اضافه کردن نوتیفیکیشن به صف", ex);
-            }
-        }
+        
 
         /// <summary>
         /// دریافت تیم‌های یک کاربر در شعبه مشخص (AJAX)
@@ -2706,6 +2690,13 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
             if (result.Success)
             {
+                // ⭐⭐⭐ ارسال اعلان به صف - فوری و بدون Blocking
+                NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                    model.TaskId,
+                    currentUserId,
+                    NotificationEventType.TaskWorkLog, 
+                    priority: 1
+                );
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.Create,
                     "Tasks",
@@ -2988,6 +2979,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// <summary>
         /// افزودن کامنت/پیام جدید به تسک
         /// </summary>
+       
         [HttpPost]
         public async Task<IActionResult> AddTaskComment(TaskCommentViewModel model, List<IFormFile> Attachments)
         {
@@ -3020,7 +3012,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
-                // ⭐ بررسی اینکه آیا تسک تکمیل شده؟
+                // بررسی اینکه آیا تسک تکمیل شده؟
                 var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
                 var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, model.TaskId);
                 var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
@@ -3097,8 +3089,13 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     model.CommentText.Substring(0, Math.Min(50, model.CommentText.Length))
                 );
 
-                // ⭐ ارسال نوتیفیکیشن به اعضای تسک
-                await _taskNotificationService.NotifyNewCommentAsync(model.TaskId, currentUserId, comment.Id);
+                // ⭐⭐⭐ ارسال اعلان به صف - فوری و بدون Blocking
+                NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                    model.TaskId,
+                    currentUserId,
+                    NotificationEventType.TaskCommentAdded,
+                    priority: 1
+                );
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.Create,

@@ -1,0 +1,324 @@
+﻿@model List<MahERP.DataModelLayer.Entities.Notifications.NotificationBlacklist>
+@{
+    ViewData["Title"] = "مدیریت لیست سیاه اعلان‌ها";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-ban text-danger me-2"></i>مدیریت لیست سیاه
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" asp-controller="NotificationSettings">تنظیمات اعلان</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">لیست سیاه</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <!-- راهنما -->
+    <div class="block block-rounded">
+        <div class="block-content">
+            <div class="alert alert-warning d-flex align-items-center mb-0">
+                <div class="flex-shrink-0">
+                    <i class="fa fa-exclamation-triangle fa-2x"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <p class="mb-0">
+                        <strong>توجه:</strong> کاربران در این لیست دیگر اعلان دریافت نخواهند کرد. 
+                        می‌توانید محدودیت را برای نوع خاصی از اعلان یا کلی تعیین کنید.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- دکمه افزودن -->
+    <div class="block block-rounded">
+        <div class="block-content">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addToBlacklistModal">
+                <i class="fa fa-plus-circle me-1"></i>افزودن به لیست سیاه
+            </button>
+            <a asp-action="Index" class="btn btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i>بازگشت
+            </a>
+        </div>
+    </div>
+
+    <!-- جدول لیست سیاه -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list me-2"></i>لیست کاربران مسدود شده
+            </h3>
+            <div class="block-options">
+                <span class="badge bg-danger">@Model.Count کاربر</span>
+            </div>
+        </div>
+        <div class="block-content">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="fa fa-check-circle fa-3x text-success mb-3"></i>
+                    <h4 class="text-muted">لیست سیاه خالی است</h4>
+                    <p class="text-muted">هیچ کاربری در لیست سیاه قرار ندارد.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-vcenter">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">کاربر</th>
+                                <th style="width: 20%;">نوع اعلان</th>
+                                <th style="width: 30%;">دلیل</th>
+                                <th style="width: 15%;">تاریخ افزودن</th>
+                                <th style="width: 10%;" class="text-center">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.OrderByDescending(b => b.CreatedDate))
+                            {
+                                <tr data-blacklist-id="@item.Id">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img class="img-avatar img-avatar32 me-2" 
+                                                 src="@(!string.IsNullOrEmpty(item.User?.ProfileImagePath) ? item.User.ProfileImagePath : "/assets/media/avatars/avatar0.jpg")" 
+                                                 alt="Avatar">
+                                            <div>
+                                                <strong>@item.User?.FirstName @item.User?.LastName</strong>
+                                                <div class="fs-xs text-muted">@item.User?.Email</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (item.NotificationTypeConfig != null)
+                                        {
+                                            <span class="badge bg-info">@item.NotificationTypeConfig.TypeNameFa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-dark">همه اعلان‌ها</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @(string.IsNullOrEmpty(item.Reason) ? "دلیل مشخص نشده" : item.Reason)
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @item.CreatedDate.ToString("yyyy/MM/dd HH:mm")
+                                            @if (item.CreatedBy != null)
+                                            {
+                                                <div class="fs-xs">توسط: @item.CreatedBy.FirstName @item.CreatedBy.LastName</div>
+                                            }
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-alt-danger remove-blacklist"
+                                                data-blacklist-id="@item.Id"
+                                                data-user-name="@item.User?.FirstName @item.User?.LastName">
+                                            <i class="fa fa-trash"></i> حذف
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+
+<!-- Modal افزودن به لیست سیاه -->
+<div class="modal fade" id="addToBlacklistModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa fa-ban text-danger me-2"></i>افزودن به لیست سیاه
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addBlacklistForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">کاربر <span class="text-danger">*</span></label>
+                        <select class="form-select" name="userId" id="blacklistUserId" required>
+                            <option value="">در حال بارگذاری...</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="fa fa-search me-1"></i>جستجو برای یافتن کاربر
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">نوع اعلان (اختیاری)</label>
+                        <select class="form-select" name="typeId" id="blacklistTypeId">
+                            <option value="">در حال بارگذاری...</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            اگر انتخاب نشود، کاربر برای همه اعلان‌ها مسدود می‌شود
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">دلیل</label>
+                        <textarea class="form-control" name="reason" rows="3" 
+                                  placeholder="دلیل افزودن به لیست سیاه..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-danger" id="saveBlacklistBtn">
+                        <i class="fa fa-ban me-1"></i>افزودن به لیست سیاه
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notification-settings.css" />
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // ⭐⭐⭐ بارگذاری لیست کاربران
+            function loadUsers() {
+                $.get('@Url.Action("GetUsersForBlacklist", "NotificationSettings", new { area = "AppCoreArea" })')
+                    .done(function(response) {
+                        if (response.success) {
+                            const $select = $('#blacklistUserId');
+                            $select.empty().append('<option value="">انتخاب کنید...</option>');
+                            
+                            response.data.forEach(user => {
+                                $select.append(`
+                                    <option value="${user.id}">
+                                        ${user.name} ${user.email ? '(' + user.email + ')' : ''}
+                                    </option>
+                                `);
+                            });
+                        } else {
+                            NotificationHelper.error('خطا در بارگذاری لیست کاربران');
+                        }
+                    })
+                    .fail(function() {
+                        NotificationHelper.error('خطا در ارتباط با سرور');
+                    });
+            }
+
+            // ⭐⭐⭐ بارگذاری انواع اعلان
+            function loadNotificationTypes() {
+                $.get('@Url.Action("GetNotificationTypesForBlacklist", "NotificationSettings", new { area = "AppCoreArea" })')
+                    .done(function(response) {
+                        if (response.success) {
+                            const $select = $('#blacklistTypeId');
+                            $select.empty().append('<option value="">همه اعلان‌ها</option>');
+                            
+                            response.data.forEach(type => {
+                                $select.append(`
+                                    <option value="${type.id}">${type.displayName}</option>
+                                `);
+                            });
+                        } else {
+                            NotificationHelper.error('خطا در بارگذاری انواع اعلان');
+                        }
+                    })
+                    .fail(function() {
+                        NotificationHelper.error('خطا در ارتباط با سرور');
+                    });
+            }
+
+            // ⭐ بارگذاری هنگام باز شدن Modal
+            $('#addToBlacklistModal').on('show.bs.modal', function () {
+                loadUsers();
+                loadNotificationTypes();
+            });
+            
+            // Submit form
+            $('#addBlacklistForm').on('submit', function (e) {
+                e.preventDefault();
+                
+                const $btn = $('#saveBlacklistBtn');
+                $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ذخیره...');
+                
+                $.ajax({
+                    url: '@Url.Action("AddToBlacklist", "NotificationSettings", new { area = "AppCoreArea" })',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            SendResposeMessage(response.message);
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            SendResposeMessage(response.message);
+                            $btn.prop('disabled', false).html('<i class="fa fa-ban me-1"></i>افزودن به لیست سیاه');
+                        }
+                    },
+                    error: function () {
+                        NotificationHelper.error('خطا در افزودن');
+                        $btn.prop('disabled', false).html('<i class="fa fa-ban me-1"></i>افزودن به لیست سیاه');
+                    }
+                });
+            });
+            
+            // حذف از لیست
+            $('.remove-blacklist').on('click', async function () {
+                const blacklistId = $(this).data('blacklist-id');
+                const userName = $(this).data('user-name');
+                
+                const confirmed = await showConfirmationSwal({
+                    title: 'حذف از لیست سیاه',
+                    text: `آیا از حذف "${userName}" از لیست سیاه اطمینان دارید؟`,
+                    icon: 'question',
+                    confirmButtonText: 'بله، حذف شود'
+                });
+                
+                if (confirmed) {
+                    $.ajax({
+                        url: '@Url.Action("RemoveFromBlacklist", "NotificationSettings", new { area = "AppCoreArea" })',
+                        type: 'POST',
+                        data: {
+                            blacklistId: blacklistId,
+                            __RequestVerificationToken: getAntiForgeryToken()
+                        },
+                        success: function (response) {
+                            if (response.status === 'success') {
+                                SendResposeMessage(response.message);
+                                $(`tr[data-blacklist-id="${blacklistId}"]`).fadeOut(300, function () {
+                                    $(this).remove();
+                                    if ($('tbody tr').length === 0) {
+                                        location.reload();
+                                    }
+                                });
+                            } else {
+                                SendResposeMessage(response.message);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

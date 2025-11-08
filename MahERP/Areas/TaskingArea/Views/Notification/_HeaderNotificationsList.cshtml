@@ -1,0 +1,37 @@
+﻿@model MahERP.DataModelLayer.ViewModels.Core.NotificationViewModels.CoreNotificationListViewModel
+
+@if (Model != null && Model.Notifications.Any())
+{
+    @foreach (var notification in Model.Notifications)
+    {
+        <a href="@Url.Action("Click", "Notification", new { id = notification.Id, area = "TaskingArea" })"
+           class="dropdown-item notification-item d-flex align-items-start py-3 border-bottom">
+            <div class="notification-icon me-3">
+                <i class="fa fa-fw @notification.Icon fa-2x text-primary"></i>
+            </div>
+            <div class="flex-grow-1 notification-content">
+                <div class="fw-semibold mb-1">
+                    @notification.Title
+                    @if (!notification.IsRead)
+                    {
+                        <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">جدید</span>
+                    }
+                </div>
+                <div class="fs-sm text-muted mb-1">
+                    @notification.Message
+                </div>
+                <div class="fs-xs text-muted">
+                    <i class="fa fa-clock me-1"></i>
+                    @notification.RelativeTime
+                </div>
+            </div>
+        </a>
+    }
+}
+else
+{
+    <div class="text-center p-4">
+        <i class="fa fa-bell-slash fa-2x text-muted mb-2"></i>
+        <div class="text-muted">اعلان جدیدی وجود ندارد</div>
+    </div>
+}

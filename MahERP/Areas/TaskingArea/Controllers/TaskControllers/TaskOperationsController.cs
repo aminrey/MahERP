@@ -5,11 +5,13 @@ using MahERP.Areas.AppCoreArea.Controllers.BaseControllers;
 using MahERP.Attributes;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.Extensions; 
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.Extentions;
 using Microsoft.AspNetCore.Authorization;
@@ -167,7 +169,16 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     // ⭐ دریافت taskId از عملیات
                     var operation = await _operationsRepository.GetOperationByIdAsync(id);
                     var taskId = operation.TaskId;
-
+                    if (operation.IsCompleted)
+                    {
+                        // ⭐⭐⭐ ارسال اعلان به صف - فوری و بدون Blocking
+                        NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                            operation.TaskId,
+                            userId,
+                            NotificationEventType.TaskOperationCompleted,
+                            priority: 1
+                        );
+                    }
                     // ⭐ دریافت تسک بروز شده
                     var updatedTask = _taskRepository.GetTaskById(taskId, includeOperations: true, includeAssignments: true);
                     var isAdmin = User.IsInRole("Admin");
