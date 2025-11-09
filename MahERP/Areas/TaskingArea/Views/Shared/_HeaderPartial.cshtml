@@ -342,11 +342,10 @@
                             <button class="btn btn-sm btn-outline-light me-1" onclick="markAllHeaderNotificationsAsRead()" title="همه را خوانده شده علامت‌گذاری کن">
                                 <i class="fa fa-check-double fa-xs"></i>
                             </button>
-                            <div class="p-2 border-top">
-                                <a class="btn btn-alt-primary w-100 text-center" href="@Url.Action("Index", "Notification", new { area = "TaskingArea" })">
-                                    <i class="fa fa-fw fa-eye opacity-50 me-1"></i> مشاهده همه
-                                </a>
-                            </div>
+                            <a class="btn btn-sm btn-outline-light me-1" target="_blank" href="@Url.Action("Index", "Notification", new { area = "TaskingArea" })" title="مشاهده همه ">
+                                <i class="fa fa-eye fa-xs"></i>
+                            </a>
+                           
                         </div>
                     </div>
 

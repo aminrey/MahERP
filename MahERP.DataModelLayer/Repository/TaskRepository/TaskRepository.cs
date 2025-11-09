@@ -103,8 +103,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             return query.OrderByDescending(t => t.CreateDate).ToList();
         }
 
-        
-public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false, bool includeComments = false, bool includeStakeHolders = false,bool includeTaskWorkLog = false)
+        public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false, bool includeComments = false, bool includeStakeHolders = false, bool includeTaskWorkLog = false)
         {
             var query = _context.Tasks_Tbl.AsQueryable();
 
@@ -118,22 +117,24 @@ public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAss
                     .ThenInclude(t => t.WorkLogs);
 
             if (includeAssignments)
+            {
+                // ⭐⭐⭐ بارگذاری تمام TaskAssignments با اطلاعات تکمیل
                 query = query.Include(t => t.TaskAssignments)
                     .ThenInclude(a => a.AssignedUser)
                     .Include(t => t.TaskAssignments)
                     .ThenInclude(a => a.AssignerUser);
+            }
 
             if (includeAttachments)
                 query = query.Include(t => t.TaskAttachments);
 
             if (includeComments)
             {
-                // ⭐⭐⭐ اصلاح: اضافه کردن ThenInclude برای Attachments
                 query = query.Include(t => t.TaskComments)
                     .ThenInclude(c => c.Creator)
-                    .Include(t => t.TaskComments) // ⭐ دوباره Include برای ThenInclude بعدی
-                    .ThenInclude(c => c.Attachments) // ⭐⭐⭐ فایل‌های پیوست
-                    .ThenInclude(a => a.Uploader); // ⭐ اطلاعات آپلودکننده
+                    .Include(t => t.TaskComments)
+                    .ThenInclude(c => c.Attachments)
+                    .ThenInclude(a => a.Uploader);
             }
 
             if (includeStakeHolders)
@@ -146,7 +147,6 @@ public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAss
 
             return query.FirstOrDefault(t => t.Id == id);
         }
-
         public List<Tasks> GetTasksByUser(string userId, bool includeAssigned = true, bool includeCreated = false, bool includeDeleted = false)
         {
             var query = _context.Tasks_Tbl.AsQueryable();

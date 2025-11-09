@@ -139,6 +139,8 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.AssignmentsTaskUser, opt => opt.MapFrom(src => src.TaskAssignments))
                 .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => CalculateProgress(src)))
                 .ForMember(dest => dest.WorkLogs, opt => opt.MapFrom(src => src.TaskWorkLogs))
+                .ForMember(dest => dest.TaskCode, opt => opt.MapFrom(src => src.TaskCode))
+    .ForMember(dest => dest.IsIndependentCompletion, opt => opt.MapFrom(src => src.IsIndependentCompletion)) 
                 .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => $"{src.Creator.FirstName} {src.Creator.LastName}" ))
                 .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.TaskComments));
             CreateMap<TaskViewModel, Tasks>()

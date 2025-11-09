@@ -364,17 +364,21 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
         }
 
-
         /// <summary>
         /// جزئیات تسک
         /// </summary>
-        //[Permission("Tasks", "Details", 0)]
         public async Task<IActionResult> Details(int id)
         {
             try
             {
-                var task = _taskRepository.GetTaskById(id, includeOperations: true,
-                    includeAssignments: true, includeAttachments: true, includeComments: true, includeStakeHolders: true,true);
+                // ⭐⭐⭐ بارگذاری تسک با تمام assignments
+                var task = _taskRepository.GetTaskById(id,
+                    includeOperations: true,
+                    includeAssignments: true,
+                    includeAttachments: true,
+                    includeComments: true,
+                    includeStakeHolders: true,
+                    includeTaskWorkLog: true);
 
                 if (task == null)
                 {
@@ -386,35 +390,30 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 var viewModel = _mapper.Map<TaskViewModel>(task);
 
+                // ⭐⭐⭐ اضافه کردن IsIndependentCompletion به ViewModel
+                viewModel.IsIndependentCompletion = task.IsIndependentCompletion;
 
-                // علامت‌گذاری نوتیفیکیشن‌ها به عنوان خوانده شده
                 var currentUserId = _userManager.GetUserId(User);
 
-                // Check if user is admin
                 var isAdmin = User.IsInRole("Admin");
 
-                // Check if user is manager of the task's team
                 bool isManager = false;
                 if (task.TeamId.HasValue)
                 {
                     isManager = await _TaskVisibilityRepository.IsUserTeamManagerAsync(currentUserId, task.TeamId.Value);
                 }
 
-                // Check if user is supervisor
                 bool isSupervisor = false;
                 if (task.TeamId.HasValue)
                 {
                     isSupervisor = await _TaskVisibilityRepository.CanViewBasedOnPositionAsync(currentUserId, task);
                 }
 
-                // Pass these to the ViewBag or ViewModel
                 ViewBag.IsAdmin = isAdmin;
                 ViewBag.IsManager = isManager;
                 ViewBag.IsSupervisor = isSupervisor;
                 viewModel.SetUserContext(currentUserId, isAdmin, isManager, isSupervisor);
 
-
-                // بررسی اینکه آیا تسک در "روز من" کاربر فعلی است
                 var isInMyDay = await _taskRepository.IsTaskInMyDayAsync(id, currentUserId);
                 ViewBag.IsInMyDay = isInMyDay;
 
