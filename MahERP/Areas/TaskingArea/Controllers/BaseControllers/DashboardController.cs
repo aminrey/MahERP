@@ -46,10 +46,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             INotificationService notify,
             ActivityLoggerService activityLogger,
             IMainDashboardRepository mainDashboardRepository,
-                    IUserManagerRepository userRepository,IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+                    IUserManagerRepository userRepository,IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
 
 
- : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
+ : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _Context = Context;
             _UserManager = UserManager;

@@ -36,12 +36,12 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
-            IModuleAccessService moduleAccessService,
             ITeamRepository teamRepository,
-            IBranchRepository branchRepository, ModuleTrackingBackgroundService moduleTracking)
+            IBranchRepository branchRepository, ModuleTrackingBackgroundService moduleTracking,
+            IModuleAccessService moduleAccessService)
 
 
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking)
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking, moduleAccessService)
         {
             _moduleAccessService = moduleAccessService;
             _teamRepository = teamRepository;

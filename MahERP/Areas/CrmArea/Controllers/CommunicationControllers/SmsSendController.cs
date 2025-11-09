@@ -42,10 +42,10 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository, IBaseRepository BaseRepository,
-            ILogger<SmsSendController> logger, ModuleTrackingBackgroundService moduleTracking)
+            ILogger<SmsSendController> logger, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
 
 
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _smsService = smsService;
             _providerRepo = providerRepo;

@@ -46,10 +46,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
             ActivityLoggerService activityLogger,
             IMainDashboardRepository mainDashboardRepository,
             IBaseRepository BaseRepository,
-                    IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking)
+                    IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
 
 
- : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger , userRepository, BaseRepository, moduleTracking)
+ : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger , userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _Context = Context;
             _UserManager = UserManager;

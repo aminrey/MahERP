@@ -34,8 +34,9 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
             ModuleTrackingBackgroundService moduleTracking,
-            INotificationTemplateRepository templateRepo)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking)
+            INotificationTemplateRepository templateRepo,
+            IModuleAccessService moduleAccessService)
+            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking, moduleAccessService)
         {
             _templateRepo = templateRepo;
         }

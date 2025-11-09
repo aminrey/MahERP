@@ -30,8 +30,9 @@ namespace MahERP.Areas.TaskingArea.Controllers
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
             ModuleTrackingBackgroundService moduleTracking,
-            INotificationSettingsRepository notificationRepo)
-            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking)
+            INotificationSettingsRepository notificationRepo,
+            IModuleAccessService moduleAccessService)
+            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking, moduleAccessService)
         {
             _notificationRepo = notificationRepo;
         }

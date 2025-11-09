@@ -50,10 +50,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
 
 
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _organizationRepository = organizationRepository;
             _contactRepository = contactRepository;

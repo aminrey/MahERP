@@ -25,6 +25,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
         protected readonly IUserManagerRepository _userRepository;
         protected readonly IBaseRepository _baseRepository;
         protected readonly ModuleTrackingBackgroundService _moduleTracking;
+        protected readonly IModuleAccessService _moduleAccessService;
 
         public BaseController(
             IUnitOfWork uow,
@@ -34,8 +35,8 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
-                    ModuleTrackingBackgroundService moduleTracking)
-
+            ModuleTrackingBackgroundService moduleTracking,
+            IModuleAccessService moduleAccessService)
         {
             _uow = uow;
             _userManager = userManager;
@@ -45,7 +46,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
             _userRepository = userRepository;
             _baseRepository = baseRepository;
             _moduleTracking = moduleTracking;
-
+            _moduleAccessService = moduleAccessService;
         }
 
 
@@ -55,8 +56,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
             {
                 SetUserInfoInViewBag();
                 SetModuleSettingsInViewBag();
-                TrackCurrentModule(context); 
-
+                TrackCurrentModule(context);
             }
             base.OnActionExecuting(context);
         }
@@ -96,6 +96,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
                 System.Diagnostics.Debug.WriteLine($"⚠️ TrackCurrentModule failed: {ex.Message}");
             }
         }
+
         public string GetUserId()
         {
             string userId = null;
@@ -167,17 +168,21 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
         }
 
         /// <summary>
-        /// تنظیم وضعیت فعال بودن ماژول‌ها در ViewBag
+        /// تنظیم وضعیت فعال بودن ماژول‌ها و دسترسی کاربر در ViewBag
         /// </summary>
         private void SetModuleSettingsInViewBag()
         {
             try
             {
+                var userId = GetUserId();
                 var settings = _baseRepository.GetSystemSettings();
+
                 if (settings != null)
                 {
+                    // ⭐ تنظیمات سیستمی - آیا ماژول‌ها به طور کلی فعال هستند
                     ViewBag.IsTaskingModuleEnabled = settings.IsTaskingModuleEnabled;
                     ViewBag.IsCrmModuleEnabled = settings.IsCrmModuleEnabled;
+                    ViewBag.IsCommunicationModuleEnabled = true; // فعلاً پیش‌فرض
                 }
                 else
                 {
@@ -186,14 +191,74 @@ namespace MahERP.Areas.AppCoreArea.Controllers.BaseControllers
                     ViewBag.IsCrmModuleEnabled = true;
                     ViewBag.IsCommunicationModuleEnabled = true;
                 }
+
+                // ⭐⭐⭐ بررسی دسترسی کاربر به ماژول‌ها
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    SetUserModuleAccessInViewBag(userId).Wait();
+                }
+                else
+                {
+                    // اگر کاربر لاگین نیست، دسترسی به هیچ ماژولی ندارد
+                    ViewBag.HasCoreAccess = false;
+                    ViewBag.HasTaskingAccess = false;
+                    ViewBag.HasCrmAccess = false;
+                }
             }
             catch (Exception ex)
             {
-                // در صورت خطا، همه ماژول‌ها فعال
+                // در صورت خطا، همه ماژول‌ها فعال و دسترسی کاربر true (برای جلوگیری از قطع سرویس)
                 ViewBag.IsTaskingModuleEnabled = true;
                 ViewBag.IsCrmModuleEnabled = true;
                 ViewBag.IsCommunicationModuleEnabled = true;
+                ViewBag.HasCoreAccess = true;
+                ViewBag.HasTaskingAccess = true;
+                ViewBag.HasCrmAccess = true;
                 // Log error if needed
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ بررسی دسترسی کاربر به هر ماژول و تنظیم در ViewBag
+        /// </summary>
+        private async Task SetUserModuleAccessInViewBag(string userId)
+        {
+            try
+            {
+                // بررسی کش
+                var cacheKey = $"user_module_access_{userId}";
+                if (!_memoryCache.TryGetValue(cacheKey, out Dictionary<string, bool> cachedAccess))
+                {
+                    cachedAccess = new Dictionary<string, bool>();
+
+                    // ⭐ بررسی دسترسی به ماژول Core
+                    var coreAccess = await _moduleAccessService.CheckUserModuleAccessAsync(userId, ModuleType.Core);
+                    cachedAccess["Core"] = coreAccess.HasAccess;
+
+                    // ⭐ بررسی دسترسی به ماژول Tasking
+                    var taskingAccess = await _moduleAccessService.CheckUserModuleAccessAsync(userId, ModuleType.Tasking);
+                    cachedAccess["Tasking"] = taskingAccess.HasAccess;
+
+                    // ⭐ بررسی دسترسی به ماژول CRM
+                    var crmAccess = await _moduleAccessService.CheckUserModuleAccessAsync(userId, ModuleType.CRM);
+                    cachedAccess["CRM"] = crmAccess.HasAccess;
+
+                    // ذخیره در کش برای 30 دقیقه
+                    _memoryCache.Set(cacheKey, cachedAccess, TimeSpan.FromMinutes(30));
+                }
+
+                // تنظیم ViewBag
+                ViewBag.HasCoreAccess = cachedAccess["Core"];
+                ViewBag.HasTaskingAccess = cachedAccess["Tasking"];
+                ViewBag.HasCrmAccess = cachedAccess["CRM"];
+            }
+            catch (Exception ex)
+            {
+                // در صورت خطا، دسترسی true (برای جلوگیری از قطع سرویس)
+                ViewBag.HasCoreAccess = true;
+                ViewBag.HasTaskingAccess = true;
+                ViewBag.HasCrmAccess = true;
+                System.Diagnostics.Debug.WriteLine($"⚠️ SetUserModuleAccessInViewBag failed: {ex.Message}");
             }
         }
     }

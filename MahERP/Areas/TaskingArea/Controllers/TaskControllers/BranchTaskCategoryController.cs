@@ -41,10 +41,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger, IBaseRepository BaseRepository,
 
-            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking)
+            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking,
+            IModuleAccessService moduleAccessService)
 
 
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _uow = uow;
             _branchRepository = branchRepository;

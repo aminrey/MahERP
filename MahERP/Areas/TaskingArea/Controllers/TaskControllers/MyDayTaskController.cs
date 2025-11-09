@@ -32,10 +32,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
-            UserManager<AppUsers> userManager, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+            UserManager<AppUsers> userManager, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking,
+            IModuleAccessService moduleAccessService)
 
 
- : base(Context, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
+ : base(Context, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _myDayTaskRepository = myDayTaskRepository;
             _userManager = userManager;

@@ -28,10 +28,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
-            IBaseRepository baseRepository, ModuleTrackingBackgroundService moduleTracking)
+            IBaseRepository baseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
 
 
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking)
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking, moduleAccessService)
         {
         }
 

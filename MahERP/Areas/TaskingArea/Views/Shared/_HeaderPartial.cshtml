@@ -4,6 +4,9 @@
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     var currentArea = ViewContext.RouteData.Values["area"]?.ToString();
+    bool HasCoreAccess = ViewBag.HasCoreAccess;
+    bool HasCrmAccess = ViewBag.HasCrmAccess;
+    bool HasTaskingAccess = ViewBag.HasTaskingAccess;
 }
 
 <!-- Header -->
@@ -62,7 +65,7 @@
                         <!-- Modules List -->
                         <div class="p-2">
                             <!-- Core Module (Always Available for Admin) -->
-                            @if (isAdmin)
+                            @if (isAdmin || HasCoreAccess)
                             {
                                 <a class="dropdown-item module-item d-flex align-items-center @(currentArea == "AppCoreArea" ? "active current-module" : "")"
                                    asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">
@@ -81,7 +84,7 @@
                             }
 
                             <!-- Tasking Module -->
-                            @if (isTaskingEnabled)
+                            @if ( isTaskingEnabled && HasTaskingAccess)
                             {
                                 <a class="dropdown-item module-item d-flex align-items-center @(currentArea == "TaskingArea" ? "active current-module" : "")"
                                    asp-area="TaskingArea" asp-controller="Dashboard" asp-action="Index">
@@ -98,7 +101,7 @@
                                     }
                                 </a>
                             }
-                            else if (isAdmin)
+                            else if (!isTaskingEnabled && isAdmin)
                             {
                                 <div class="dropdown-item module-item disabled d-flex align-items-center opacity-50">
                                     <div class="module-icon me-3">
@@ -114,7 +117,7 @@
                             }
 
                             <!-- CRM Module -->
-                            @if (isCrmEnabled)
+                            @if (isCrmEnabled && HasCrmAccess)
                             {
                                 <a class="dropdown-item module-item d-flex align-items-center @(currentArea == "CrmArea" ? "active current-module" : "")"
                                    asp-area="CrmArea" asp-controller="Dashboard" asp-action="Index">
@@ -131,7 +134,7 @@
                                     }
                                 </a>
                             }
-                            else if (isAdmin)
+                            else if (!isCrmEnabled && isAdmin)
                             {
                                 <div class="dropdown-item module-item disabled d-flex align-items-center opacity-50">
                                     <div class="module-icon me-3">
@@ -339,9 +342,11 @@
                             <button class="btn btn-sm btn-outline-light me-1" onclick="markAllHeaderNotificationsAsRead()" title="همه را خوانده شده علامت‌گذاری کن">
                                 <i class="fa fa-check-double fa-xs"></i>
                             </button>
-                            <a href="@Url.Action("Index", "Notification", new { area = "AdminArea" })" class="btn btn-sm btn-outline-light" title="مشاهده همه">
-                                <i class="fa fa-external-link-alt fa-xs"></i>
-                            </a>
+                            <div class="p-2 border-top">
+                                <a class="btn btn-alt-primary w-100 text-center" href="@Url.Action("Index", "Notification", new { area = "TaskingArea" })">
+                                    <i class="fa fa-fw fa-eye opacity-50 me-1"></i> مشاهده همه
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -400,7 +405,6 @@
     <!-- END Header Loader -->
     <!-- ⭐ Audio notification element -->
     <audio id="notificationSound" preload="auto">
-        <source src="/assets/sounds/notification.mp3" type="audio/mpeg">
         <source src="/assets/sounds/notification.wav" type="audio/wav">
     </audio>
 </header>

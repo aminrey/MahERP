@@ -63,10 +63,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             TaskCodeGenerator taskCodeGenerator,
             IUserManagerRepository userRepository, IBaseRepository BaseRepository,
             ITaskVisibilityRepository taskVisibilityRepository,
-            ITaskHistoryRepository taskHistoryRepository, ModuleTrackingBackgroundService moduleTracking)
+            ITaskHistoryRepository taskHistoryRepository, ModuleTrackingBackgroundService moduleTracking,
+            IModuleAccessService moduleAccessService)
 
 
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _taskRepository = taskRepository;
             _stakeholderRepository = stakeholderRepository;

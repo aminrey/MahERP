@@ -36,10 +36,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers.UserControllers
             IUserManagerRepository userrepository, // تصحیح نوع پارامتر
             PersianDateHelper persianDateHelper, 
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger, IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking)
+            ActivityLoggerService activityLogger, IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
 
 
- : base(context, userManager, persianDateHelper, memoryCache, activityLogger, userrepository, BaseRepository, moduleTracking)
+ : base(context, userManager, persianDateHelper, memoryCache, activityLogger, userrepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _Context = context;
             _UserManager = userManager;

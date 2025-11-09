@@ -48,10 +48,11 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             IBranchRepository branchRepository,
             IUserManagerRepository userRepository,
             IMapper mapper, IBaseRepository BaseRepository,
-            ITaskVisibilityRepository taskVisibilityRepository, ModuleTrackingBackgroundService moduleTracking)
+            ITaskVisibilityRepository taskVisibilityRepository, ModuleTrackingBackgroundService moduleTracking,
+            IModuleAccessService moduleAccessService)
 
 
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking)
+ : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _teamRepository = teamRepository;
             _branchRepository = branchRepository;
