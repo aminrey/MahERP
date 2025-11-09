@@ -113,5 +113,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// دریافت تسک‌های زیرتیم‌ها به صورت Dictionary ساده
         /// </summary>
         Task<Dictionary<int, List<int>>> GetSubTeamTasksGroupedAsync(string userId, int? branchId = null);
+      Task<List<string>> GetTaskSupervisorsAsync(int taskId, bool includeCreator = false);
+
     }
 }

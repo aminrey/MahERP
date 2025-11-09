@@ -33,7 +33,6 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// توضیحات کار انجام شده - اجباری
         /// </summary>
         [Required(ErrorMessage = "لطفاً توضیحات کار انجام شده را وارد کنید")]
-        [StringLength(2000, MinimumLength = 5, ErrorMessage = "توضیحات باید بین 5 تا 2000 کاراکتر باشد")]
         [Display(Name = "توضیحات کار انجام شده")]
         public string WorkDescription { get; set; } = string.Empty;
 

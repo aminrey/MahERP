@@ -508,7 +508,25 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                 }).ToList()
             };
         }
+        // در کلاس NotificationTemplateRepository
 
+        // ⭐ متد جدید برای دریافت لیست انواع اعلان
+        private async Task<List<NotificationTypeSelectItem>> GetAvailableNotificationTypesAsync()
+        {
+            return await _context.NotificationTypeConfig_Tbl
+                .Where(t => t.IsActive)
+                .OrderBy(t => t.ModuleConfigId)
+                .ThenBy(t => t.TypeNameFa)
+                .Select(t => new NotificationTypeSelectItem
+                {
+                    Id = t.Id,
+                    Name = t.TypeNameFa,
+                    ModuleName = t.ModuleConfig.ModuleNameFa 
+                })
+                .ToListAsync();
+        }
+
+        // ⭐ اصلاح متد GetTemplateFormViewModelAsync
         public async Task<NotificationTemplateFormViewModel> GetTemplateFormViewModelAsync(int? templateId = null)
         {
             if (templateId.HasValue)
@@ -518,28 +536,28 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                 if (template == null)
                     return null;
 
-                // دریافت دریافت‌کنندگان (فقط کاربران)
                 var selectedUserIds = template.Recipients
-                    .Where(r => r.IsActive && r.RecipientType == 2) // فقط Users
+                    .Where(r => r.IsActive && r.RecipientType == 2)
                     .Select(r => r.UserId)
                     .ToList();
 
                 return new NotificationTemplateFormViewModel
                 {
                     Id = template.Id,
-                    NotificationEventType = template.NotificationEventType, // ✅ اصلاح
-                    Channel = template.Channel, // ✅ اصلاح
+                    NotificationEventType = template.NotificationEventType,
+                    Channel = template.Channel,
                     TemplateCode = template.TemplateCode,
                     TemplateName = template.TemplateName,
                     Description = template.Description,
                     Subject = template.Subject,
-                    MessageTemplate = template.MessageTemplate, // ✅ اصلاح
+                    MessageTemplate = template.MessageTemplate,
                     BodyHtml = template.BodyHtml,
                     RecipientMode = template.RecipientMode,
                     SelectedUserIds = selectedUserIds,
                     IsActive = template.IsActive,
                     SystemVariables = await GetSystemVariablesAsync(),
-                    AvailableUsers = await GetUsersForSelectAsync()
+                    AvailableUsers = await GetUsersForSelectAsync(),
+                    AvailableNotificationTypes = await GetAvailableNotificationTypesAsync() // ✅ اضافه شد
                 };
             }
 
@@ -547,9 +565,10 @@ namespace MahERP.DataModelLayer.Repository.Notifications
             return new NotificationTemplateFormViewModel
             {
                 IsActive = true,
-                RecipientMode = 0, // همه کاربران
+                RecipientMode = 0,
                 SystemVariables = await GetSystemVariablesAsync(),
-                AvailableUsers = await GetUsersForSelectAsync()
+                AvailableUsers = await GetUsersForSelectAsync(),
+                AvailableNotificationTypes = await GetAvailableNotificationTypesAsync() // ✅ اضافه شد
             };
         }
 

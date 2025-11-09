@@ -41,7 +41,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 // ⭐ بررسی تسک خصوصی
                 if (task.IsPrivate || task.VisibilityLevel == 1)
                 {
-                    // فقط سازنده و افراد منتصب شده می‌توانند ببینند
+                    // فقط سازنده و افراد منتصبه می‌توانند ببینند
                     if (task.CreatorUserId == userId) return true;
                     
                     var isAssigned = await _context.TaskAssignment_Tbl
@@ -1331,5 +1331,375 @@ public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId
         }
 
         #endregion
+        #region Supervisor Management Methods - اضافه شده به انتهای کلاس
+
+/// <summary>
+/// ⭐⭐⭐ دریافت ناظران یک تسک خاص
+/// </summary>
+/// <param name="taskId">شناسه تسک</param>
+/// <param name="includeCreator">آیا سازنده تسک نیز جزو ناظران باشد؟</param>
+/// <returns>لیست userId های ناظران</returns>
+public async Task<List<string>> GetTaskSupervisorsAsync(int taskId, bool includeCreator = false)
+{
+    var supervisorIds = new HashSet<string>();
+
+    try
+    {
+        // دریافت اطلاعات تسک
+        var task = await _context.Tasks_Tbl
+            .Where(t => t.Id == taskId)
+            .Select(t => new { t.CreatorUserId, t.BranchId })
+            .FirstOrDefaultAsync();
+
+        if (task == null) return new List<string>();
+
+        // اضافه کردن سازنده (اختیاری)
+        if (includeCreator && !string.IsNullOrEmpty(task.CreatorUserId))
+        {
+            supervisorIds.Add(task.CreatorUserId);
+        }
+
+        // دریافت تمام assignments
+        var assignments = await _context.TaskAssignment_Tbl
+            .Where(ta => ta.TaskId == taskId)
+            .Select(ta => new
+            {
+                ta.AssignedUserId,
+                ta.AssignedInTeamId
+            })
+            .ToListAsync();
+
+        // برای هر assignment، ناظران آن فرد را پیدا کن
+        foreach (var assignment in assignments)
+        {
+            if (assignment.AssignedInTeamId.HasValue && task.BranchId.HasValue)
+            {
+                var userSupervisors = await GetUserSupervisorsInTeamAsync(
+                    assignment.AssignedUserId,
+                    assignment.AssignedInTeamId.Value,
+                    task.BranchId.Value
+                );
+
+                foreach (var supervisorId in userSupervisors)
+                {
+                    supervisorIds.Add(supervisorId);
+                }
+            }
+        }
+
+        // اضافه کردن ناظران با مجوز خاص
+        var specialSupervisors = await GetSpecialPermissionSupervisorsForTaskAsync(taskId);
+        foreach (var supervisorId in specialSupervisors)
+        {
+            supervisorIds.Add(supervisorId);
+        }
+
+        return supervisorIds.ToList();
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error in GetTaskSupervisorsAsync: {ex.Message}");
+        return new List<string>();
+    }
+}
+
+/// <summary>
+/// ⭐⭐⭐ دریافت ناظران یک کاربر در تیم خاص
+/// </summary>
+/// <param name="userId">شناسه کاربر</param>
+/// <param name="teamId">شناسه تیم</param>
+/// <param name="branchId">شناسه شعبه</param>
+/// <returns>لیست userId های ناظران</returns>
+public async Task<List<string>> GetUserSupervisorsInTeamAsync(string userId, int teamId, int branchId)
+{
+    var supervisorIds = new List<string>();
+
+    try
+    {
+        // 1. دریافت عضویت کاربر در تیم
+        var userMembership = await _context.TeamMember_Tbl
+            .Include(tm => tm.Position)
+            .FirstOrDefaultAsync(tm =>
+                tm.UserId == userId &&
+                tm.TeamId == teamId &&
+                tm.Team.BranchId == branchId &&
+                tm.IsActive
+            );
+
+        if (userMembership == null) return supervisorIds;
+
+        // 2. مدیر تیم
+        var teamManagerId = await _context.Team_Tbl
+            .Where(t => t.Id == teamId && t.BranchId == branchId)
+            .Select(t => t.ManagerUserId)
+            .FirstOrDefaultAsync();
+
+        if (!string.IsNullOrEmpty(teamManagerId) && teamManagerId != userId)
+        {
+            supervisorIds.Add(teamManagerId);
+        }
+
+        // 3. اعضای با نقش ناظر (MembershipType = 1)
+        var teamSupervisorIds = await _context.TeamMember_Tbl
+            .Where(tm => tm.TeamId == teamId &&
+                        tm.UserId != userId &&
+                        tm.IsActive &&
+                        tm.MembershipType == 1) // ناظر
+            .Select(tm => tm.UserId)
+            .ToListAsync();
+
+        supervisorIds.AddRange(teamSupervisorIds);
+
+        // 4. اعضای با سمت بالاتر (PowerLevel پایین‌تر) که قدرت نظارت دارند
+        if (userMembership.Position != null)
+        {
+            var seniorMembersWithSupervisionPower = await _context.TeamMember_Tbl
+                .Include(tm => tm.Position)
+                .Where(tm => tm.TeamId == teamId &&
+                            tm.UserId != userId &&
+                            tm.IsActive &&
+                            tm.Position != null &&
+                            tm.Position.PowerLevel < userMembership.Position.PowerLevel && // سمت بالاتر
+                            tm.Position.CanViewSubordinateTasks) // قدرت نظارت
+                .Select(tm => tm.UserId)
+                .ToListAsync();
+
+            supervisorIds.AddRange(seniorMembersWithSupervisionPower);
+        }
+
+        return supervisorIds.Distinct().ToList();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error in GetUserSupervisorsInTeamAsync: {ex.Message}");
+        return supervisorIds;
+    }
+}
+
+/// <summary>
+/// ⭐⭐⭐ دریافت ناظران یک کاربر در تمام تیم‌های او
+/// </summary>
+/// <param name="userId">شناسه کاربر</param>
+/// <param name="branchId">شناسه شعبه (اختیاری)</param>
+/// <returns>لیست userId های ناظران</returns>
+public async Task<List<string>> GetUserAllSupervisorsAsync(string userId, int? branchId = null)
+{
+    var supervisorIds = new HashSet<string>();
+
+    try
+    {
+        // دریافت تمام عضویت‌های کاربر
+        var userMemberships = await _context.TeamMember_Tbl
+            .Include(tm => tm.Team)
+            .Where(tm => tm.UserId == userId && tm.IsActive)
+            .Where(tm => !branchId.HasValue || tm.Team.BranchId == branchId)
+            .ToListAsync();
+
+        foreach (var membership in userMemberships)
+        {
+            var teamSupervisors = await GetUserSupervisorsInTeamAsync(
+                userId,
+                membership.TeamId,
+                membership.Team.BranchId
+            );
+
+            foreach (var supervisorId in teamSupervisors)
+            {
+                supervisorIds.Add(supervisorId);
+            }
+        }
+
+        return supervisorIds.ToList();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error in GetUserAllSupervisorsAsync: {ex.Message}");
+        return new List<string>();
+    }
+}
+
+/// <summary>
+/// ⭐⭐⭐ دریافت ناظران با مجوز خاص برای یک تسک
+/// </summary>
+/// <param name="taskId">شناسه تسک</param>
+/// <returns>لیست userId های ناظران با مجوز خاص</returns>
+private async Task<List<string>> GetSpecialPermissionSupervisorsForTaskAsync(int taskId)
+{
+    var supervisorIds = new HashSet<string>();
+    var currentTime = DateTime.Now;
+
+    try
+    {
+        var task = await _context.Tasks_Tbl
+            .Where(t => t.Id == taskId)
+            .Select(t => new { t.CreatorUserId, t.BranchId })
+            .FirstOrDefaultAsync();
+
+        if (task == null) return new List<string>();
+
+        // دریافت کاربران منتصب شده به تسک
+        var assignedUserIds = await _context.TaskAssignment_Tbl
+            .Where(ta => ta.TaskId == taskId)
+            .Select(ta => ta.AssignedUserId)
+            .ToListAsync();
+
+        // مجوزهای مشاهده تسک‌های کاربر خاص
+        var userBasedSupervisors = await _context.TaskViewPermission_Tbl
+            .Where(tvp => tvp.IsActive &&
+                         tvp.PermissionType == 0 && // مشاهده تسک‌های کاربر خاص
+                         (tvp.StartDate == null || tvp.StartDate <= currentTime) &&
+                         (tvp.EndDate == null || tvp.EndDate > currentTime))
+            .Where(tvp =>
+                // ناظران سازنده تسک
+                tvp.TargetUserId == task.CreatorUserId ||
+                // ناظران کاربران منتصب شده
+                assignedUserIds.Contains(tvp.TargetUserId))
+            .Select(tvp => tvp.GranteeUserId)
+            .Distinct()
+            .ToListAsync();
+
+        foreach (var supervisorId in userBasedSupervisors)
+        {
+            supervisorIds.Add(supervisorId);
+        }
+
+        // مجوزهای مستقیم TaskViewer
+        var directViewers = await _context.TaskViewer_Tbl
+            .Where(tv => tv.TaskId == taskId &&
+                        tv.IsActive &&
+                        (tv.StartDate == null || tv.StartDate <= currentTime) &&
+                        (tv.EndDate == null || tv.EndDate > currentTime))
+            .Select(tv => tv.UserId)
+            .ToListAsync();
+
+        foreach (var viewerId in directViewers)
+        {
+            supervisorIds.Add(viewerId);
+        }
+
+        return supervisorIds.ToList();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error in GetSpecialPermissionSupervisorsForTaskAsync: {ex.Message}");
+        return new List<string>();
+    }
+}
+
+/// <summary>
+/// ⭐⭐⭐ دریافت ناظران تسک با جزئیات کامل
+/// </summary>
+/// <param name="taskId">شناسه تسک</param>
+/// <returns>لیست اطلاعات کامل ناظران</returns>
+public async Task<List<SupervisorInfoViewModel>> GetTaskSupervisorsWithDetailsAsync(int taskId)
+{
+    var supervisors = new List<SupervisorInfoViewModel>();
+
+    try
+    {
+        var supervisorIds = await GetTaskSupervisorsAsync(taskId, includeCreator: false);
+
+        foreach (var supervisorId in supervisorIds)
+        {
+            var user = await _context.Users
+                .Where(u => u.Id == supervisorId)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.FirstName,
+                    u.LastName,
+                    u.Email,
+                    u.PhoneNumber,
+                    u.ProfileImagePath
+                })
+                .FirstOrDefaultAsync();
+
+            if (user != null)
+            {
+                // تشخیص نوع نظارت
+                var supervisionType = await GetSupervisionTypeAsync(supervisorId, taskId);
+
+                supervisors.Add(new SupervisorInfoViewModel
+                {
+                    UserId = user.Id,
+                    FullName = $"{user.FirstName} {user.LastName}",
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber,
+                    ProfileImagePath = user.ProfileImagePath,
+                    SupervisionType = supervisionType
+                });
+            }
+        }
+
+        return supervisors;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error in GetTaskSupervisorsWithDetailsAsync: {ex.Message}");
+        return supervisors;
+    }
+}
+
+/// <summary>
+/// ⭐⭐⭐ تشخیص نوع نظارت
+/// </summary>
+private async Task<string> GetSupervisionTypeAsync(string supervisorId, int taskId)
+{
+    var types = new List<string>();
+
+    // بررسی مدیر تیم
+    var isTeamManager = await _context.TaskAssignment_Tbl
+        .Where(ta => ta.TaskId == taskId)
+        .Join(_context.Team_Tbl,
+            ta => ta.AssignedInTeamId,
+            t => t.Id,
+            (ta, t) => new { t.ManagerUserId })
+        .AnyAsync(x => x.ManagerUserId == supervisorId);
+
+    if (isTeamManager) types.Add("مدیر تیم");
+
+    // بررسی ناظر رسمی
+    var isFormalSupervisor = await _context.TaskAssignment_Tbl
+        .Where(ta => ta.TaskId == taskId)
+        .Join(_context.TeamMember_Tbl.Where(tm => tm.UserId == supervisorId && tm.MembershipType == 1),
+            ta => ta.AssignedInTeamId,
+            tm => tm.TeamId,
+            (ta, tm) => tm)
+        .AnyAsync();
+
+    if (isFormalSupervisor) types.Add("ناظر تیم");
+
+    // بررسی سمت بالاتر
+    var isPositionBased = await _context.TaskAssignment_Tbl
+        .Where(ta => ta.TaskId == taskId)
+        .Join(_context.TeamMember_Tbl.Include(tm => tm.Position),
+            ta => ta.AssignedInTeamId,
+            tm => tm.TeamId,
+            (ta, tm) => tm)
+        .Join(_context.TeamMember_Tbl.Include(tm => tm.Position).Where(tm => tm.UserId == supervisorId),
+            userMembership => userMembership.TeamId,
+            supervisorMembership => supervisorMembership.TeamId,
+            (userMembership, supervisorMembership) => new
+            {
+                UserPowerLevel = userMembership.Position != null ? userMembership.Position.PowerLevel : 999,
+                SupervisorPowerLevel = supervisorMembership.Position != null ? supervisorMembership.Position.PowerLevel : 999,
+                CanView = supervisorMembership.Position != null && supervisorMembership.Position.CanViewSubordinateTasks
+            })
+        .AnyAsync(x => x.SupervisorPowerLevel < x.UserPowerLevel && x.CanView);
+
+    if (isPositionBased) types.Add("سمت بالاتر");
+
+    // بررسی مجوز خاص
+    var hasSpecialPermission = await _context.TaskViewPermission_Tbl
+        .AnyAsync(tvp => tvp.GranteeUserId == supervisorId &&
+                        tvp.IsActive &&
+                        (tvp.PermissionType == 0 || tvp.PermissionType == 1 || tvp.PermissionType == 2));
+
+    if (hasSpecialPermission) types.Add("مجوز خاص");
+
+    return types.Any() ? string.Join(", ", types) : "نامشخص";
+}
+
+#endregion
+}
 }

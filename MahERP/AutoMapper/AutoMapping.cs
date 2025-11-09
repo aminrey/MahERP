@@ -11,6 +11,8 @@ using MahERP.DataModelLayer.ViewModels;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels; // ⭐ NEW
 using MahERP.DataModelLayer.ViewModels.CRMViewModels;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using MahERP.DataModelLayer.ViewModels.PermissionViewModels;
+using MahERP.DataModelLayer.ViewModels.RoleViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
@@ -28,7 +30,12 @@ namespace MahERP.AutoMapper
             CreateMap<AppUsers, EditUserViewModel>().ReverseMap();
 
 
+            CreateMap<Role, RoleViewModel>().ReverseMap();
 
+            // Permission Mappings
+            CreateMap<Permission, PermissionTreeViewModel>()
+                .ForMember(dest => dest.IsSelected, opt => opt.Ignore())
+                .ForMember(dest => dest.Children, opt => opt.Ignore());
             // BranchContact -> BranchContactViewModel
             CreateMap<BranchContact, BranchContactViewModel>()
                 .ForMember(dest => dest.BranchName,
@@ -132,6 +139,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.AssignmentsTaskUser, opt => opt.MapFrom(src => src.TaskAssignments))
                 .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => CalculateProgress(src)))
                 .ForMember(dest => dest.WorkLogs, opt => opt.MapFrom(src => src.TaskWorkLogs))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => $"{src.Creator.FirstName} {src.Creator.LastName}" ))
                 .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.TaskComments));
             CreateMap<TaskViewModel, Tasks>()
                      .ForMember(dest => dest.ContactId, opt => opt.MapFrom(src => src.SelectedContactId))

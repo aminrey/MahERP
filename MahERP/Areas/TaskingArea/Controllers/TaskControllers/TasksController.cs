@@ -374,7 +374,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             try
             {
                 var task = _taskRepository.GetTaskById(id, includeOperations: true,
-                    includeAssignments: true, includeAttachments: true, includeComments: true, includeStakeHolders: true);
+                    includeAssignments: true, includeAttachments: true, includeComments: true, includeStakeHolders: true,true);
 
                 if (task == null)
                 {

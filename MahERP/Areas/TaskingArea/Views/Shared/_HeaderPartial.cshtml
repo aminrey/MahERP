@@ -271,7 +271,7 @@
                     <!-- ⭐ Menu Items -->
                     <div class="p-2">
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "UserManager", "Profile") ? "active" : "")"
-                           asp-area="AdminArea" asp-controller="UserManager" asp-action="Profile">
+                           asp-area="TaskingArea" asp-controller="UserManager" asp-action="Profile">
                             <i class="fa fa-fw fa-user me-2 text-primary"></i>
                             <div>
                                 <div class="fw-semibold">پروفایل من</div>
@@ -306,7 +306,7 @@
                         <div class="dropdown-divider"></div>
 
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")"
-                           asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
+                           asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskReminders">
                             <i class="fa fa-fw fa-bell me-2 text-success"></i>
                             <div>
                                 <div class="fw-semibold">یادآوری‌ها</div>

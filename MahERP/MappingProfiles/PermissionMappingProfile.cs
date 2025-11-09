@@ -10,12 +10,7 @@ namespace MahERP.MappingProfiles
         public PermissionMappingProfile()
         {
             // Role Mappings
-            CreateMap<Role, RoleViewModel>().ReverseMap();
-            
-            // Permission Mappings
-            CreateMap<Permission, PermissionTreeViewModel>()
-                .ForMember(dest => dest.IsSelected, opt => opt.Ignore())
-                .ForMember(dest => dest.Children, opt => opt.Ignore());
+          
         }
     }
 }

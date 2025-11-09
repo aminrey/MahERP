@@ -1,0 +1,95 @@
+﻿@model UserViewModelFull
+@{
+    Layout = null;
+}
+
+<!-- مودال حذف کامل کاربر با استاندارد پروژه -->
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content modal-contents">
+        <div class="block block-rounded block-themed block-transparent mb-0">
+
+            <!-- هدر مودال با رنگ قرمز برای خطر -->
+            <div class="block-header bg-danger">
+                <h3 class="block-title" style="color:white;">حذف کامل کاربر</h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- فرم ارسال داده‌ها -->
+            <form asp-controller="UserManager" asp-action="CompletelyDeleteUserPost" method="post" id="completeDeleteForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+
+                <!-- محتوای مودال -->
+                <div class="block-content">
+                    <div class="row push">
+                        <div class="col-12">
+                            <p class="fs-sm text-muted mb-3">
+                                آیا از حذف کامل کاربر با نام <span style="font-weight:bold;">@Model.FullNamesString</span> مطمئن هستید؟
+                            </p>
+                            
+                            <!-- هشدار مهم درباره حذف کامل -->
+                            <div class="alert alert-danger">
+                                <h6 class="alert-heading"><i class="fa fa-exclamation-triangle me-2"></i>هشدار جدی:</h6>
+                                <p class="mb-2">با حذف کامل این کاربر:</p>
+                                <ul class="mb-3 small">
+                                    <li>کاربر از همه جا حذف می‌شود (شعبه‌ها، تیم‌ها، و ...)</li>
+                                    <li>یوزرنیم او برای استفاده مجدد آزاد می‌شود</li>
+                                    <li>در تسک‌هایش فقط نام و یوزرنیم او ثبت می‌ماند</li>
+                                    <li><strong>این عمل غیرقابل بازگشت است!</strong></li>
+                                </ul>
+                                
+                                <!-- فیلد تأیید حذف -->
+                                <div class="mb-0">
+                                    <label class="form-label fw-bold">برای تأیید حذف کامل، عبارت "<span class="text-dark">DELETE</span>" را تایپ کنید:</label>
+                                    <input type="text" id="delete-confirmation" class="form-control" placeholder="DELETE" autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- دکمه‌های عملیات -->
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                    <button class="btn btn-hero btn-danger" id="confirm-delete-btn" data-save="modal" type="button" disabled>
+                        <i class="fa fa-trash me-1"></i>حذف کامل
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- اسکریپت کنترل تأیید حذف -->
+<script>
+    // فعال/غیرفعال کردن دکمه حذف کامل بر اساس تایپ DELETE
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteConfirmation = document.getElementById('delete-confirmation');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        
+        // بررسی تغییرات در فیلد تأیید
+        deleteConfirmation.addEventListener('input', function() {
+            const confirmText = this.value.trim();
+            if (confirmText === 'DELETE') {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.classList.remove('btn-secondary');
+                confirmDeleteBtn.classList.add('btn-danger');
+            } else {
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.classList.remove('btn-danger');
+                confirmDeleteBtn.classList.add('btn-secondary');
+            }
+        });
+        
+        // فوکوس روی فیلد تأیید
+        deleteConfirmation.focus();
+    });
+</script>
+
+<!-- پایان مودال حذف کامل کاربر -->

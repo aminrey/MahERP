@@ -104,9 +104,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         }
 
         
-public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false, bool includeComments = false, bool includeStakeHolders = false)
+public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAssignments = false, bool includeAttachments = false, bool includeComments = false, bool includeStakeHolders = false,bool includeTaskWorkLog = false)
         {
             var query = _context.Tasks_Tbl.AsQueryable();
+
+            if (includeTaskWorkLog)
+            {
+                query = query.Include(w => w.TaskWorkLogs);
+            }
 
             if (includeOperations)
                 query = query.Include(t => t.TaskOperations.Where(t => !t.IsDeleted))
@@ -5092,34 +5097,46 @@ public Tasks GetTaskById(int id, bool includeOperations = false, bool includeAss
                 .Distinct()
                 .ToListAsync();
         }
-
         /// <summary>
-        /// دریافت همه کاربران مرتبط با تسک (اعضا + سازنده + ناظرین)
+        /// دریافت همه کاربران مرتبط با تسک (سازنده + اعضا + ناظران)
         /// </summary>
         public async Task<List<string>> GetTaskRelatedUserIdsAsync(int taskId)
         {
+            var userIds = new HashSet<string>(); // استفاده از HashSet برای جلوگیری از تکرار
+
+            // ⭐ 1. دریافت اطلاعات تسک
             var task = await _context.Tasks_Tbl
-                .Include(t => t.TaskAssignments)
-                .FirstOrDefaultAsync(t => t.Id == taskId);
+                .Where(t => t.Id == taskId)
+                .Select(t => new { t.CreatorUserId, t.BranchId })
+                .FirstOrDefaultAsync();
 
             if (task == null) return new List<string>();
 
-            var userIds = new List<string>();
-
-            // اعضا
-            userIds.AddRange(task.TaskAssignments
-                .Select(a => a.AssignedUserId));
-
-            // سازنده
+            // ⭐ 2. سازنده تسک
             if (!string.IsNullOrEmpty(task.CreatorUserId))
             {
                 userIds.Add(task.CreatorUserId);
             }
 
-            // ناظرین (اگر دارید)
-            // userIds.AddRange(...);
+            // ⭐ 3. اعضای تسک (TaskAssignments)
+            var assignedUserIds = await _context.TaskAssignment_Tbl
+                .Where(ta => ta.TaskId == taskId)
+                .Select(ta => ta.AssignedUserId)
+                .ToListAsync();
 
-            return userIds.Distinct().ToList();
+            foreach (var userId in assignedUserIds)
+            {
+                userIds.Add(userId);
+            }
+
+            // ⭐⭐⭐ 4. ناظران تسک - استفاده از TaskVisibilityRepository
+            var supervisors = await _taskVisibilityRepository.GetTaskSupervisorsAsync(taskId, includeCreator: false);
+            foreach (var supervisorId in supervisors)
+            {
+                userIds.Add(supervisorId);
+            }
+
+            return userIds.ToList();
         }
     }
 }
