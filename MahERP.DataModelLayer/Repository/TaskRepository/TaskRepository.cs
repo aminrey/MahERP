@@ -4038,7 +4038,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         }
 
         #endregion
-
         /// <summary>
         /// آماده‌سازی مودال تکمیل تسک
         /// </summary>
@@ -4048,123 +4047,236 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 var task = await _context.Tasks_Tbl
                     .Include(t => t.TaskOperations)
-                    .Include(t=> t.TaskAssignments)
+                    .Include(t => t.TaskAssignments)
                     .FirstOrDefaultAsync(t => t.Id == taskId && t.IsActive);
 
                 if (task == null)
                     return null;
 
-                // بررسی دسترسی کاربر
+                // بررسی دسترسی
                 var hasAccess = await CanUserViewTaskAsync(userId, taskId);
                 if (!hasAccess)
                     return null;
 
-                // بررسی اینکه آیا کاربر به تسک اختصاص داده شده
-                var isAssigned = await _context.TaskAssignment_Tbl
-                    .AnyAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
+                // بررسی Assignment
+                var assignment = task.TaskAssignments
+                    .FirstOrDefault(a => a.AssignedUserId == userId);
 
-                if (!isAssigned)
+                if (assignment == null)
                     return null;
 
-                // شمارش عملیات تکمیل نشده
+                // شمارش عملیات و اعضا
                 var pendingOperationsCount = task.TaskOperations
-                    ?.Count(o => !o.IsCompleted ) ?? 0;
+                    ?.Count(o => !o.IsCompleted && !o.IsDeleted) ?? 0;
+
+                var totalMembers = task.TaskAssignments.Count;
+                var completedMembers = task.TaskAssignments.Count(a => a.CompletionDate.HasValue);
 
                 var model = new CompleteTaskViewModel
                 {
                     TaskId = taskId,
                     TaskTitle = task.Title,
                     TaskCode = task.TaskCode,
-                    AdditionalNote = null,
                     AllOperationsCompleted = pendingOperationsCount == 0,
                     PendingOperationsCount = pendingOperationsCount,
-                    IsAlreadyCompleted = task.TaskAssignments.Any(t=> t.AssignedUserId == userId && t.CompletionDate.HasValue)
+                    IsAlreadyCompleted = assignment.CompletionDate.HasValue,
+
+                    // ⭐⭐⭐ اطلاعات جدید
+                    IsIndependentCompletion = task.IsIndependentCompletion,
+                    TotalMembers = totalMembers,
+                    CompletedMembers = completedMembers
                 };
 
                 return model;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error in PrepareCompleteTaskModalAsync: {ex.Message}");
+                Console.WriteLine($"❌ Error: {ex.Message}");
                 return null;
             }
         }
         /// <summary>
-        /// ثبت تکمیل تسک - با قفل خودکار، پیشرفت 100% و غیرفعال کردن یادآوری‌ها
+        /// ثبت تکمیل تسک - با پشتیبانی از دو نوع تکمیل (مستقل و مشترک)
         /// </summary>
-        public async Task<(bool IsSuccess, string ErrorMessage)> CompleteTaskAsync(CompleteTaskViewModel model, string userId)
+        /// <param name="model">اطلاعات تکمیل</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>(موفقیت، پیام خطا، آیا کل تسک تکمیل شد)</returns>
+        public async Task<(bool IsSuccess, string ErrorMessage, bool IsFullyCompleted)> CompleteTaskAsync(
+            CompleteTaskViewModel model,
+            string userId)
         {
             try
             {
+                // ⭐ بارگذاری تسک با اطلاعات کامل
                 var task = await _context.Tasks_Tbl
                     .Include(t => t.TaskAssignments)
-                    .Include(t => t.TaskOperations) // ⭐ برای محاسبه پیشرفت
+                    .Include(t => t.TaskOperations)
                     .FirstOrDefaultAsync(t => t.Id == model.TaskId && t.IsActive);
 
                 if (task == null)
-                    return (false, "تسک یافت نشد");
+                    return (false, "تسک یافت نشد", false);
 
-                // بررسی اینکه آیا کاربر به تسک اختصاص داده شده
+                // ⭐ بررسی وجود Assignment برای کاربر
                 var assignment = task.TaskAssignments
                     .FirstOrDefault(a => a.AssignedUserId == userId);
 
                 if (assignment == null)
-                    return (false, "شما به این تسک اختصاص داده نشده‌اید");
+                    return (false, "شما به این تسک اختصاص داده نشده‌اید", false);
 
-                // ⭐ بررسی اینکه آیا قبلاً تکمیل شده
+                // ⭐ بررسی تکمیل قبلی
                 if (assignment.CompletionDate.HasValue)
                 {
-                    // فقط بروزرسانی گزارش در TaskAssignment
+                    // ⭐ فقط بروزرسانی گزارش
                     assignment.UserReport = model.CompletionReport;
                     assignment.ReportDate = DateTime.Now;
-                    task.LastUpdateDate = DateTime.Now;
-                    task.Status = 2;
 
                     _context.TaskAssignment_Tbl.Update(assignment);
+                    await _context.SaveChangesAsync();
+
+                    return (true, "گزارش تکمیل بروزرسانی شد", true);
+                }
+
+                // ========================================
+                // ⭐⭐⭐ منطق اصلی تکمیل
+                // ========================================
+
+                var completionDate = DateTime.Now;
+
+                // ⭐ 1. بروزرسانی Assignment کاربر فعلی
+                assignment.CompletionDate = completionDate;
+                assignment.UserReport = model.CompletionReport;
+                assignment.ReportDate = completionDate;
+                assignment.Status = 2; // تکمیل شده
+                _context.TaskAssignment_Tbl.Update(assignment);
+
+                // ⭐ 2. بررسی نوع تکمیل تسک
+                bool isFullyCompleted = false;
+
+                if (task.IsIndependentCompletion)
+                {
+                    // ========================================
+                    // ⭐⭐⭐ حالت مستقل (Independent)
+                    // ========================================
+
+                    Console.WriteLine($"✅ تکمیل مستقل: فقط برای کاربر {userId}");
+
+                    // ⭐ تکمیل عملیات فقط برای این کاربر (در صورت نیاز)
+                    // در حالت مستقل، عملیات مشترک بین همه است
+                    // پس تکمیل عملیات را به صلاحدید کاربر می‌گذاریم
+
+                    // بررسی آیا همه کاربران تکمیل کردند
+                    var totalAssignments = task.TaskAssignments.Count;
+                    var completedAssignments = task.TaskAssignments.Count(a => a.CompletionDate.HasValue);
+
+                    if (completedAssignments == totalAssignments)
+                    {
+                        // ⭐ همه افراد تکمیل کردند - تکمیل نهایی تسک
+                        task.Status = 2; // تکمیل شده
+                        task.LastUpdateDate = completionDate;
+                        isFullyCompleted = true;
+
+                        // ⭐ تکمیل عملیات باقیمانده (اگر وجود دارد)
+                        await CompleteRemainingOperationsAsync(task, userId, completionDate);
+
+                        // ⭐ غیرفعال کردن یادآوری‌ها
+                        await DeactivateTaskRemindersAsync(task.Id);
+
+                        Console.WriteLine($"✅ همه افراد تکمیل کردند - تسک کامل شد");
+                    }
+                    else
+                    {
+                        // ⭐ هنوز برخی افراد تکمیل نکرده‌اند
+                        task.LastUpdateDate = completionDate;
+                        isFullyCompleted = false;
+
+                        Console.WriteLine($"⏳ {completedAssignments}/{totalAssignments} نفر تکمیل کردند");
+                    }
                 }
                 else
                 {
-                    // ⭐⭐⭐ تکمیل جدید - بروزرسانی Tasks
-                    assignment.CompletionDate = DateTime.Now;
-                    assignment.Status = 2; // تکمیل شده - منتظر تایید
-                    task.LastUpdateDate = DateTime.Now;
+                    // ========================================
+                    // ⭐⭐⭐ حالت مشترک (Shared)
+                    // ========================================
 
-                    // ⭐⭐⭐ تکمیل خودکار همه عملیات باقیمانده
-                    if (task.TaskOperations != null && task.TaskOperations.Any())
+                    Console.WriteLine($"✅ تکمیل مشترک: یک نفر تکمیل کرد، همه تکمیل می‌شوند");
+
+                    // ⭐ تکمیل برای همه Assignments
+                    foreach (var otherAssignment in task.TaskAssignments)
                     {
-                        foreach (var operation in task.TaskOperations.Where(o => !o.IsCompleted && !o.IsDeleted))
+                        if (otherAssignment.Id != assignment.Id && !otherAssignment.CompletionDate.HasValue)
                         {
-                            operation.IsCompleted = true;
-                            operation.CompletionDate = DateTime.Now;
-                            operation.CompletedByUserId = userId;
-                            operation.CompletionNote = "تکمیل خودکار هنگام اتمام تسک";
-
-                            _context.TaskOperation_Tbl.Update(operation);
+                            otherAssignment.CompletionDate = completionDate;
+                            otherAssignment.Status = 2;
+                            otherAssignment.UserReport = $"تکمیل شده توسط {assignment.AssignedUser?.FirstName ?? "همکار"}";
+                            _context.TaskAssignment_Tbl.Update(otherAssignment);
                         }
                     }
 
-                    // ⭐⭐⭐⭐⭐ غیرفعال کردن یادآوری‌های تسک
-                    await DeactivateTaskRemindersAsync(model.TaskId);
+                    // ⭐ تکمیل کل تسک
+                    task.Status = 2;
+                    task.LastUpdateDate = completionDate;
+                    isFullyCompleted = true;
 
-                    // ⭐ بروزرسانی TaskAssignment
-                    assignment.Status = 2; // تکمیل شده
-                    assignment.CompletionDate = DateTime.Now;
-                    assignment.UserReport = model.CompletionReport;
-                    assignment.ReportDate = DateTime.Now;
+                    // ⭐ تکمیل همه عملیات باقیمانده
+                    await CompleteRemainingOperationsAsync(task, userId, completionDate);
 
-                    _context.TaskAssignment_Tbl.Update(assignment);
+                    // ⭐ غیرفعال کردن یادآوری‌ها
+                    await DeactivateTaskRemindersAsync(task.Id);
                 }
 
+                // ⭐ ذخیره تغییرات
                 _context.Tasks_Tbl.Update(task);
                 await _context.SaveChangesAsync();
 
-                return (true, null);
+                // ⭐ ثبت در تاریخچه
+                await _taskHistoryRepository.LogTaskCompletedAsync(
+                    task.Id,
+                    userId,
+                    task.Title,
+                    task.TaskCode,
+                    isFullyCompleted);
+
+                // ⭐ پیام مناسب
+                string message = task.IsIndependentCompletion
+                    ? (isFullyCompleted
+                        ? "✅ تسک با موفقیت تکمیل شد - همه افراد تکمیل کردند"
+                        : "✅ تسک برای شما تکمیل شد - منتظر تکمیل سایر افراد")
+                    : "✅ تسک با موفقیت تکمیل و برای همه قفل شد";
+
+                return (true, message, isFullyCompleted);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error in CompleteTaskAsync: {ex.Message}\n{ex.StackTrace}");
-                return (false, $"خطا در ثبت تکمیل: {ex.Message}");
+                return (false, $"خطا در ثبت تکمیل: {ex.Message}", false);
             }
+        }
+
+        /// <summary>
+        /// تکمیل خودکار عملیات باقیمانده
+        /// </summary>
+        private async Task CompleteRemainingOperationsAsync(Tasks task, string userId, DateTime completionDate)
+        {
+            if (task.TaskOperations == null || !task.TaskOperations.Any())
+                return;
+
+            var remainingOperations = task.TaskOperations
+                .Where(o => !o.IsCompleted && !o.IsDeleted)
+                .ToList();
+
+            if (!remainingOperations.Any())
+                return;
+
+            foreach (var operation in remainingOperations)
+            {
+                operation.IsCompleted = true;
+                operation.CompletionDate = completionDate;
+                operation.CompletedByUserId = userId;
+                operation.CompletionNote = "تکمیل خودکار هنگام اتمام تسک";
+                _context.TaskOperation_Tbl.Update(operation);
+            }
+
+            Console.WriteLine($"✅ {remainingOperations.Count} عملیات باقیمانده تکمیل شد");
         }
 
         /// <summary>

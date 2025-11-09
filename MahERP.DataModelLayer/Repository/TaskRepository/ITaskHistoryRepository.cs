@@ -51,10 +51,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         Task LogTaskCreatedAsync(int taskId, string userId, string taskTitle, string taskCode);
 
-        /// <summary>
-        /// ثبت تکمیل تسک - ⭐ اصلاح شده: اضافه کردن taskCode
-        /// </summary>
-        Task LogTaskCompletedAsync(int taskId, string userId, string taskTitle, string taskCode);
+  
 
         /// <summary>
         /// ثبت ویرایش تسک
@@ -184,5 +181,33 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
     
     Task LogCommentAddedAsync(int taskId, string userId, int commentId, string commentPreview);
         Task LogCommentDeletedAsync(int taskId, string userId, int commentId);
+
+        /// <summary>
+        /// ثبت تکمیل تسک - با پشتیبانی از تکمیل مستقل/مشترک
+        /// </summary>
+        Task LogTaskCompletedAsync(
+            int taskId,
+            string userId,
+            string taskTitle,
+            string taskCode,
+            bool isFullyCompleted = false);
+
+        /// <summary>
+        /// ثبت شروع کار روی تسک (مخصوص تکمیل مستقل)
+        /// </summary>
+        Task LogTaskStartedByMemberAsync(
+            int taskId,
+            string userId,
+            string taskTitle,
+            string taskCode);
+
+        /// <summary>
+        /// ثبت بروزرسانی گزارش تکمیل
+        /// </summary>
+        Task LogCompletionReportUpdatedAsync(
+            int taskId,
+            string userId,
+            string taskTitle,
+            string taskCode);
     }
     }

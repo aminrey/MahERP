@@ -164,38 +164,50 @@
                     </nav>
 
     <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
-        @if (isCompletedByMe)
-        {
-            <!-- ⭐ نمایش Badge قفل شده -->
-            <div class="alert alert-success d-flex align-items-center mb-0">
-                <i class="fa fa-lock fa-2x me-3"></i>
-                <div>
-                    <div class="fw-bold">تسک قفل شده</div>
-                    <small>این تسک تکمیل شده و قابل ویرایش نیست</small>
-                </div>
-            </div>
-        }
-        else
-        {
-            @if (isCreator || isManager)
-            {
-                <a href="#"
-                   onclick="showComingSoonNotification(event, 'ویرایش تسک')"
-                   class="btn btn-hero btn-warning btn-lg">
-                    <i class="fa fa-pencil-alt me-2"></i>
-                    <span>ویرایش</span>
-                </a>
-            }
+                        @if (isCompletedByMe && !Model.IsIndependentCompletion)
+                        {
+                            <!-- ⭐ حالت مشترک: کل تسک قفل -->
+                            <div class="alert alert-success d-flex align-items-center mb-0">
+                                <i class="fa fa-lock fa-2x me-3"></i>
+                                <div>
+                                    <div class="fw-bold">تسک قفل شده</div>
+                                    <small>این تسک تکمیل شده و برای همه قفل است</small>
+                                </div>
+                            </div>
+                        }
+                        else if (isCompletedByMe && Model.IsIndependentCompletion)
+                        {
+                            <!-- ⭐⭐⭐ حالت مستقل: فقط برای من تکمیل شده -->
+                            <div class="alert alert-info d-flex align-items-center mb-0">
+                                <i class="fa fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <div class="fw-bold">شما این تسک را تکمیل کرده‌اید</div>
+                                    <small>سایر اعضا هنوز در حال انجام هستند</small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- ⭐ دکمه‌های عملیات -->
+                            @if (isCreator || isManager)
+                            {
+                                <a href="#"
+                                   onclick="showComingSoonNotification(event, 'ویرایش تسک')"
+                                   class="btn btn-hero btn-warning btn-lg">
+                                    <i class="fa fa-pencil-alt me-2"></i>
+                                    <span>ویرایش</span>
+                                </a>
+                            }
 
-            @if (isAssignedToCurrentUser)
-            {
-                <a href="@Url.Action("CompleteTask", new { id = Model.Id })"
-                   data-toggle="modal-ajax"
-                   class="btn btn-hero btn-success btn-lg">
-                    <i class="fa fa-check me-2"></i>
-                    <span>تکمیل تسک</span>
-                </a>
-            }
+                            @if (isAssignedToCurrentUser)
+                            {
+                                <a href="@Url.Action("CompleteTask", new { id = Model.Id })"
+                                   data-toggle="modal-ajax"
+                                   class="btn btn-hero btn-success btn-lg">
+                                    <i class="fa fa-check me-2"></i>
+                                    <span>تکمیل تسک</span>
+                                </a>
+                            }
         }
 
         <div class="dropdown">

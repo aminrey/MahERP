@@ -176,6 +176,7 @@ namespace MahERP.AutoMapper
 
             // Task assignments mapping
             CreateMap<TaskAssignment, TaskAssignmentViewModel>()
+                .ForMember(dest => dest.CompletionNote, opt => opt.MapFrom(src => src.UserReport ))
                 .ForMember(dest => dest.AssignedUserName, opt => opt.MapFrom(src => src.AssignedUser != null ? $"{src.AssignedUser.FirstName} {src.AssignedUser.LastName}" : null))
                 .ForMember(dest => dest.AssignerUserName, opt => opt.MapFrom(src => src.AssignerUser != null ? $"{src.AssignerUser.FirstName} {src.AssignerUser.LastName}" : null));
 
