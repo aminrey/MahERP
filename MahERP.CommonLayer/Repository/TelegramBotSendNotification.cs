@@ -66,7 +66,7 @@ namespace MahERP.CommonLayer.Repository
                 // ⭐ دکمه‌های پیش‌فرض اگر context نداشتیم
                 buttons.Add(new List<InlineKeyboardButton>
                 {
-                    InlineKeyboardButton.WithUrl("📋 لیست تسک‌ها", "https://resnaco.ir/AdminArea/Tasks/IndexTaskS")
+                    InlineKeyboardButton.WithUrl("📋 لیست تسک‌ها", "https://resnaco.ir/TaskingArea/Tasks/Index")
                 });
                 return new InlineKeyboardMarkup(buttons);
             }
