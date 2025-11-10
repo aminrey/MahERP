@@ -3093,7 +3093,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 NotificationProcessingBackgroundService.EnqueueTaskNotification(
                     model.TaskId,
                     currentUserId,
-                    NotificationEventType.TaskCommentAdded,
+                    NotificationEventType.TaskUpdated,
                     priority: 1
                 );
 

@@ -76,22 +76,35 @@
                                     <option value="">انتخاب کنید...</option>
                                     @foreach (var item in Model.AvailableNotificationTypes)
                                     {
-                                                if (Model.NotificationEventType == item.Id)
-                                                {
-                                                       <option selected value="@item.Id">
-                                            @item.DisplayName
-                                        </option>
-                                                }
-                                                else
-                                                {
-                                            <option  value="@item.Id">
+                                        var isSelected = Model.NotificationEventType == item.Id;
+                                        
+                                        if (isSelected)
+                                        {
+                                            <option selected value="@item.Id" data-schedulable="@item.IsSchedulable.ToString().ToLower()">
                                                 @item.DisplayName
-                                            </option>
+                                                @if (item.IsSchedulable)
+                                                {
+                                                    <text> ⏰</text>
                                                 }
-
+                                            </option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@item.Id" data-schedulable="@item.IsSchedulable.ToString().ToLower()">
+                                                @item.DisplayName
+                                                @if (item.IsSchedulable)
+                                                {
+                                                    <text> ⏰</text>
+                                                }
+                                            </option>
+                                        }
                                     }
                                 </select>
                                 <span asp-validation-for="NotificationEventType" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    اعلان‌های با نماد ⏰ قابل زمان‌بندی هستند
+                                </small>
                             </div>
 
                             <!-- ⭐⭐⭐ کانال ارسال -->
@@ -237,6 +250,115 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ⭐⭐⭐ تنظیمات زمان‌بندی -->
+                <div class="block block-rounded" id="schedulingBlock" style="display: none;">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-clock text-warning me-2"></i>تنظیمات زمان‌بندی (اختیاری)
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <!-- فعال/غیرفعال زمان‌بندی -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="IsScheduled" id="isScheduledSwitch">
+                                <label class="form-check-label" for="isScheduledSwitch">
+                                    <strong>فعال‌سازی زمان‌بندی خودکار</strong>
+                                    <div class="fs-xs text-muted">برای اعلان‌های دوره‌ای مثل گزارش روزانه</div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="scheduleSettingsFields" style="display: none;">
+                            <!-- نوع زمان‌بندی -->
+                            <div class="mb-3">
+                                <label class="form-label">نوع زمان‌بندی <span class="text-danger">*</span></label>
+                                <select class="form-select" asp-for="ScheduleType" id="scheduleTypeSelect">
+                                    <option value="0">دستی (بدون زمان‌بندی)</option>
+                                    <option value="1">روزانه</option>
+                                    <option value="2">هفتگی</option>
+                                    <option value="3">ماهانه</option>
+                                </select>
+                            </div>
+
+                            <!-- ساعت اجرا -->
+                            <div class="mb-3">
+                                <label class="form-label">ساعت اجرا <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" asp-for="ScheduledTime" placeholder="مثال: 08:00">
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    ساعت اجرای روزانه (24 ساعته)
+                                </small>
+                            </div>
+
+                            <!-- روزهای هفته (فقط برای هفتگی) -->
+                            <div class="mb-3" id="daysOfWeekField" style="display: none;">
+                                <label class="form-label">روزهای اجرا</label>
+                                @{
+                                    var selectedDays = Model.ScheduledDaysOfWeek?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                                }
+                                <div class="btn-group-vertical w-100" role="group">
+                                    <input type="checkbox" class="btn-check" id="day0" name="ScheduledDays" value="0" @(selectedDays.Contains("0") ? "checked" : "")>
+                                    <label class="btn btn-outline-primary text-start" for="day0">یکشنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" id="day1" name="ScheduledDays" value="1" @(selectedDays.Contains("1") ? "checked" : "")>
+                                    <label class="btn btn-outline-primary text-start" for="day1">دوشنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" id="day2" name="ScheduledDays" value="2" @(selectedDays.Contains("2") ? "checked" : "")>
+                                    <label class="btn btn-outline-primary text-start" for="day2">سه‌شنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" id="day3" name="ScheduledDays" value="3" @(selectedDays.Contains("3") ? "checked" : "")>
+                                    <label class="btn btn-outline-primary text-start" for="day3">چهارشنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" id="day4" name="ScheduledDays" value="4" @(selectedDays.Contains("4") ? "checked" : "")>
+                                    <label class="btn btn-outline-primary text-start" for="day4">پنج‌شنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" id="day5" name="ScheduledDays" value="5" @(selectedDays.Contains("5") ? "checked" : "")>
+                                    <label class="btn btn-outline-primary text-start" for="day5">جمعه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" id="day6" name="ScheduledDays" value="6" @(selectedDays.Contains("6") ? "checked" : "")>
+                                    <label class="btn btn-outline-primary text-start" for="day6">شنبه</label>
+                                </div>
+                                <input type="hidden" asp-for="ScheduledDaysOfWeek" id="scheduledDaysOfWeekHidden">
+                            </div>
+
+                            <!-- روز ماه (فقط برای ماهانه) -->
+                            <div class="mb-3" id="dayOfMonthField" style="display: none;">
+                                <label class="form-label">روز ماه</label>
+                                <input type="number" class="form-control" asp-for="ScheduledDayOfMonth" 
+                                       min="1" max="31" placeholder="مثال: 1 یا 15">
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    روز ماه برای اجرا (1 تا 31)
+                                </small>
+                            </div>
+
+                            @if (Model.LastExecutionDate.HasValue)
+                            {
+                                <div class="alert alert-success">
+                                    <i class="fa fa-check-circle me-1"></i>
+                                    <strong>آخرین اجرا:</strong> @Model.LastExecutionDate.Value.ToString("yyyy/MM/dd HH:mm")
+                                </div>
+                            }
+
+                            @if (Model.NextExecutionDate.HasValue)
+                            {
+                                <div class="alert alert-info">
+                                    <i class="fa fa-calendar me-1"></i>
+                                    <strong>اجرای بعدی:</strong> @Model.NextExecutionDate.Value.ToString("yyyy/MM/dd HH:mm")
+                                </div>
+                            }
+
+                            <!-- پیش‌نمایش -->
+                            <div class="alert alert-warning">
+                                <i class="fa fa-calendar me-1"></i>
+                                <strong>پیش‌نمایش:</strong>
+                                <div id="schedulePreview">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Sidebar - متغیرها -->
@@ -348,13 +470,108 @@
                 }
             }
 
+            // ⭐⭐⭐ نمایش بخش زمان‌بندی فقط برای اعلان‌های زمان‌بندی شده
+            function updateSchedulingVisibility() {
+                const selectedOption = $('#notificationTypeSelect').find('option:selected');
+                const isSchedulable = selectedOption.data('schedulable') === true;
+
+                if (isSchedulable) {
+                    // نمایش بخش زمان‌بندی
+                    $('#schedulingBlock').slideDown();
+                } else {
+                    // مخفی کردن بخش زمان‌بندی
+                    $('#schedulingBlock').slideUp();
+                    $('#isScheduledSwitch').prop('checked', false);
+                    $('#scheduleSettingsFields').hide();
+                }
+            }
+
             // Event handlers
             $('#ChannelSelect').on('change', updateConditionalFields);
             $('#recipientModeSelect').on('change', updateRecipientFields);
+            $('#notificationTypeSelect').on('change', updateSchedulingVisibility);
 
             // Trigger initial state
             updateConditionalFields();
             updateRecipientFields();
+            updateSchedulingVisibility(); // ⭐ چک اولیه
+
+            // ⭐⭐⭐ مدیریت زمان‌بندی
+            $('#isScheduledSwitch').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#scheduleSettingsFields').slideDown();
+                } else {
+                    $('#scheduleSettingsFields').slideUp();
+                }
+            });
+
+            $('#scheduleTypeSelect').on('change', function() {
+                const scheduleType = parseInt($(this).val());
+                
+                $('#daysOfWeekField').hide();
+                $('#dayOfMonthField').hide();
+
+                if (scheduleType === 2) { // هفتگی
+                    $('#daysOfWeekField').slideDown();
+                } else if (scheduleType === 3) { // ماهانه
+                    $('#dayOfMonthField').slideDown();
+                }
+
+                updateSchedulePreview();
+            });
+
+            // ⭐ بروزرسانی پیش‌نمایش
+            function updateSchedulePreview() {
+                const scheduleType = parseInt($('#scheduleTypeSelect').val());
+                const time = $('#ScheduledTime').val() || '08:00';
+                
+                let preview = '';
+                
+                switch(scheduleType) {
+                    case 1: // روزانه
+                        preview = `هر روز ساعت ${time}`;
+                        break;
+                    case 2: // هفتگی
+                        const selectedDays = [];
+                        $('input[name="ScheduledDays"]:checked').each(function() {
+                            const dayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+                            selectedDays.push(dayNames[parseInt($(this).val())]);
+                        });
+                        preview = selectedDays.length > 0 
+                            ? `هر ${selectedDays.join('، ')} ساعت ${time}`
+                            : 'لطفاً روزهای هفته را انتخاب کنید';
+                        break;
+                    case 3: // ماهانه
+                        const dayOfMonth = $('#ScheduledDayOfMonth').val();
+                        preview = dayOfMonth 
+                            ? `هر ماه روز ${dayOfMonth} ساعت ${time}`
+                            : 'لطفاً روز ماه را وارد کنید';
+                        break;
+                    default:
+                        preview = 'دستی (بدون زمان‌بندی)';
+                }
+                
+                $('#schedulePreview').text(preview);
+            }
+
+            // ⭐ به‌روزرسانی مقدار hidden field برای روزهای هفته
+            $('input[name="ScheduledDays"]').on('change', function() {
+                const selectedDays = [];
+                $('input[name="ScheduledDays"]:checked').each(function() {
+                    selectedDays.push($(this).val());
+                });
+                $('#scheduledDaysOfWeekHidden').val(selectedDays.join(','));
+                updateSchedulePreview();
+            });
+
+            $('#ScheduledTime, #ScheduledDayOfMonth').on('change', updateSchedulePreview);
+
+            // Trigger initial state for schedule
+            if ($('#isScheduledSwitch').is(':checked')) {
+                $('#scheduleSettingsFields').show();
+            }
+            $('#scheduleTypeSelect').trigger('change');
+            updateSchedulePreview();
         });
     </script>
 }

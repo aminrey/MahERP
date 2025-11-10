@@ -1,0 +1,436 @@
+﻿@model MahERP.DataModelLayer.Entities.Settings
+@{
+    ViewData["Title"] = "تنظیمات سیستم اعلان‌رسانی";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-cogs text-primary me-2"></i>تنظیمات سیستم اعلان‌رسانی
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">تنظیمات سیستم</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <form id="systemSettingsForm" asp-action="UpdateSystemSettings" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <!-- ============== TELEGRAM SETTINGS ============== -->
+            <div class="col-lg-6">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fab fa-telegram text-primary me-2"></i>تنظیمات تلگرام
+                        </h3>
+                        <div class="block-options">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       asp-for="IsTelegramEnabled" id="telegramEnabled">
+                                <label class="form-check-label fw-semibold" for="telegramEnabled">
+                                    فعال
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="block-content" id="telegramSection">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fa fa-key me-1"></i>توکن ربات تلگرام
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" 
+                                       asp-for="TelegramBotToken"
+                                       placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+                                <button type="button" class="btn btn-alt-primary" 
+                                        id="toggleTelegramToken">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-info-circle me-1"></i>
+                                توکن را از 
+                                <a href="https://t.me/BotFather" target="_blank" class="alert-link">
+                                    @("@")BotFather
+                                </a> 
+                                دریافت کنید
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fa fa-users me-1"></i>Chat ID گروه لاگ‌های سیستم
+                                <small class="text-muted">(اختیاری)</small>
+                            </label>
+                            <input type="number" class="form-control" 
+                                   asp-for="TelegramSystemLogGroupId"
+                                   placeholder="مثال: -1001234567890">
+                            <small class="form-text text-muted">
+                                برای ارسال خودکار لاگ‌های مهم سیستم به گروه تلگرام
+                            </small>
+                        </div>
+
+                        <!-- دکمه تست کانکشن -->
+                        <div class="border-top pt-3">
+                            <h5 class="fs-6 mb-3">
+                                <i class="fa fa-vial text-info me-2"></i>تست کانکشن
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Chat ID برای تست</label>
+                                <input type="number" class="form-control" 
+                                       id="testTelegramChatId"
+                                       placeholder="Chat ID خودتان (اختیاری)">
+                                <small class="form-text text-muted">
+                                    اگر خالی بگذارید، فقط اعتبار توکن بررسی می‌شود
+                                </small>
+                            </div>
+
+                            <button type="button" class="btn btn-alt-primary w-100" 
+                                    id="testTelegramBtn">
+                                <i class="fa fa-paper-plane me-1"></i>تست ارسال پیام
+                            </button>
+
+                            <div id="telegramTestResult" class="mt-3" style="display: none;"></div>
+                        </div>
+
+                        <!-- راهنما -->
+                        <div class="alert alert-info mt-3">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-lightbulb me-1"></i>چگونه Chat ID خود را پیدا کنم؟
+                            </h6>
+                            <ol class="mb-0 pe-4">
+                                <li>به ربات 
+                                    <a href="https://t.me/userinfobot" target="_blank" class="alert-link">
+                                        @("@")userinfobot
+                                    </a> 
+                                    پیام دهید
+                                </li>
+                                <li>عدد "Id" را کپی کنید</li>
+                                <li>در فیلد بالا وارد کنید</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============== SMTP SETTINGS ============== -->
+            <div class="col-lg-6">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-envelope text-info me-2"></i>تنظیمات SMTP (ایمیل)
+                        </h3>
+                        <div class="block-options">
+                            <button type="button" class="btn btn-sm btn-alt-secondary" 
+                                    data-bs-toggle="collapse" data-bs-target="#smtpSection">
+                                <i class="fa fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="block-content collapse show" id="smtpSection">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">SMTP Host <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" asp-for="SmtpHost"
+                                       placeholder="smtp.gmail.com">
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Port</label>
+                                <input type="number" class="form-control" asp-for="SmtpPort"
+                                       value="587">
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           asp-for="SmtpEnableSsl" id="smtpEnableSsl">
+                                    <label class="form-check-label" for="smtpEnableSsl">
+                                        <i class="fa fa-lock me-1"></i>فعال‌سازی SSL/TLS
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">نام کاربری</label>
+                                <input type="text" class="form-control" asp-for="SmtpUsername"
+                                       placeholder="user@example.com">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">رمز عبور</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" 
+                                           asp-for="SmtpPassword" id="smtpPassword"
+                                           placeholder="رمز عبور فعلی را تغییر دهید">
+                                    <button type="button" class="btn btn-alt-secondary" 
+                                            id="toggleSmtpPassword">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    فقط برای تغییر، رمز جدید وارد کنید
+                                </small>
+                            </div>
+
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">ایمیل فرستنده</label>
+                                <input type="email" class="form-control" asp-for="SmtpFromEmail"
+                                       placeholder="noreply@example.com">
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">نام فرستنده</label>
+                                <input type="text" class="form-control" asp-for="SmtpFromName"
+                                       placeholder="MahERP">
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">حداکثر حجم پیوست (MB)</label>
+                                <input type="number" class="form-control" asp-for="MaxAttachmentSizeMB"
+                                       value="25" min="1" max="100">
+                            </div>
+                        </div>
+
+                        <!-- تست SMTP -->
+                        <div class="border-top pt-3">
+                            <h5 class="fs-6 mb-3">
+                                <i class="fa fa-vial text-info me-2"></i>تست ارسال ایمیل
+                            </h5>
+
+                            <div class="mb-3">
+                                <label class="form-label">ایمیل مقصد برای تست</label>
+                                <input type="email" class="form-control" id="testEmailAddress"
+                                       placeholder="test@example.com">
+                            </div>
+
+                            <button type="button" class="btn btn-alt-primary w-100" id="testSmtpBtn">
+                                <i class="fa fa-paper-plane me-1"></i>ارسال ایمیل تستی
+                            </button>
+
+                            <div id="smtpTestResult" class="mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============== دکمه‌های عملیات ============== -->
+        <div class="block block-rounded">
+            <div class="block-content">
+                <div class="row">
+                    <div class="col-md-6 offset-md-3">
+                        <button type="submit" class="btn btn-primary w-100 mb-2" id="saveBtn">
+                            <i class="fa fa-save me-1"></i>ذخیره تنظیمات
+                        </button>
+                        <a asp-action="Index" asp-controller="Dashboard" 
+                           class="btn btn-alt-secondary w-100">
+                            <i class="fa fa-arrow-right me-1"></i>بازگشت به داشبورد
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- END Page Content -->
+
+@section Styles {
+    <style>
+        .font-monospace {
+            font-family: 'Courier New', monospace;
+        }
+
+        .block-content {
+            transition: all 0.3s ease;
+        }
+
+        #telegramSection:has(#telegramEnabled:not(:checked)) {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .test-result-success {
+            padding: 1rem;
+            background-color: rgba(25, 135, 84, 0.1);
+            border-left: 4px solid #198754;
+            border-radius: 0.375rem;
+        }
+
+        .test-result-error {
+            padding: 1rem;
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid #dc3545;
+            border-radius: 0.375rem;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // ============== Toggle Password Visibility ==============
+            $('#toggleTelegramToken').click(function () {
+                const input = $('input[name="TelegramBotToken"]');
+                const icon = $(this).find('i');
+                
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            $('#toggleSmtpPassword').click(function () {
+                const input = $('#smtpPassword');
+                const icon = $(this).find('i');
+                
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // ============== تست کانکشن تلگرام ==============
+            $('#testTelegramBtn').click(function () {
+                const $btn = $(this);
+                const botToken = $('input[name="TelegramBotToken"]').val();
+                const chatId = $('#testTelegramChatId').val();
+                const $result = $('#telegramTestResult');
+
+                if (!botToken) {
+                    $result.html('<div class="test-result-error"><i class="fa fa-exclamation-triangle me-2"></i>لطفاً ابتدا توکن ربات را وارد کنید</div>').fadeIn();
+                    return;
+                }
+
+                $btn.prop('disabled', true)
+                    .html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ارسال...');
+
+                $.ajax({
+                    url: '/AppCoreArea/Settings/TestTelegramConnection',
+                    type: 'POST',
+                    data: {
+                        botToken: botToken,
+                        testChatId: chatId || null
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            let html = '<div class="test-result-success">' +
+                                      '<h6><i class="fa fa-check-circle me-2"></i>موفق!</h6>' +
+                                      '<p class="mb-0">' + response.message.replace(/\n/g, '<br>') + '</p>';
+                            
+                            if (response.botInfo) {
+                                html += '<hr><small class="text-muted">' +
+                                       'Bot ID: ' + response.botInfo.id + '<br>' +
+                                       'Username: @@' + response.botInfo.username + '</small>';
+                            }
+                            
+                            html += '</div>';
+                            $result.html(html).fadeIn();
+                        } else {
+                            $result.html('<div class="test-result-error"><i class="fa fa-times-circle me-2"></i>' + 
+                                       response.message + '</div>').fadeIn();
+                        }
+                    },
+                    error: function () {
+                        $result.html('<div class="test-result-error"><i class="fa fa-times-circle me-2"></i>خطا در اتصال به سرور</div>').fadeIn();
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false)
+                            .html('<i class="fa fa-paper-plane me-1"></i>تست ارسال پیام');
+                    }
+                });
+            });
+
+            // ============== تست کانکشن SMTP ==============
+            $('#testSmtpBtn').click(function () {
+                const $btn = $(this);
+                const testEmail = $('#testEmailAddress').val();
+                const $result = $('#smtpTestResult');
+
+                if (!testEmail) {
+                    $result.html('<div class="test-result-error"><i class="fa fa-exclamation-triangle me-2"></i>لطفاً ایمیل مقصد را وارد کنید</div>').fadeIn();
+                    return;
+                }
+
+                $btn.prop('disabled', true)
+                    .html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ارسال...');
+
+                $.ajax({
+                    url: '/AppCoreArea/Settings/TestSmtpConnection',
+                    type: 'POST',
+                    data: {
+                        smtpHost: $('input[name="SmtpHost"]').val(),
+                        smtpPort: $('input[name="SmtpPort"]').val(),
+                        smtpEnableSsl: $('input[name="SmtpEnableSsl"]').is(':checked'),
+                        smtpUsername: $('input[name="SmtpUsername"]').val(),
+                        smtpPassword: $('input[name="SmtpPassword"]').val(),
+                        smtpFromEmail: $('input[name="SmtpFromEmail"]').val(),
+                        testEmail: testEmail
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $result.html('<div class="test-result-success"><i class="fa fa-check-circle me-2"></i>' + 
+                                       response.message + '</div>').fadeIn();
+                        } else {
+                            $result.html('<div class="test-result-error"><i class="fa fa-times-circle me-2"></i>' + 
+                                       response.message + '</div>').fadeIn();
+                        }
+                    },
+                    error: function () {
+                        $result.html('<div class="test-result-error"><i class="fa fa-times-circle me-2"></i>خطا در اتصال به سرور</div>').fadeIn();
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false)
+                            .html('<i class="fa fa-paper-plane me-1"></i>ارسال ایمیل تستی');
+                    }
+                });
+            });
+
+            // ============== Submit فرم ==============
+            $('#systemSettingsForm').submit(function (e) {
+                e.preventDefault();
+
+                const $btn = $('#saveBtn');
+                $btn.prop('disabled', true)
+                    .html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ذخیره...');
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        SendResposeMessage(response.message);
+                    },
+                    error: function () {
+                        SendResposeMessage([{ status: 'error', text: 'خطا در ذخیره تنظیمات' }]);
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false)
+                            .html('<i class="fa fa-save me-1"></i>ذخیره تنظیمات');
+                    }
+                });
+            });
+        });
+    </script>
+}

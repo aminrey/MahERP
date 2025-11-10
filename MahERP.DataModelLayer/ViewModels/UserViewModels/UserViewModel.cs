@@ -56,6 +56,10 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         public string? Province { get; set; }
         public string? PositionName { get; set; }
 
+        [Display(Name = "چت آی دی تلگرام")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "چت آی دی باید عدد باشد")]
+        public long? TelegramChatId { get; set; }
+
     }
 
     public class EditUserViewModel : AddUserViewModel

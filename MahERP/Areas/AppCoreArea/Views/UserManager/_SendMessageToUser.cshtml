@@ -1,0 +1,186 @@
+﻿@model SendMessageToUserViewModel
+@{
+    bool hasTelegram = Model.TelegramChatId.HasValue;
+    bool hasEmail = !string.IsNullOrEmpty(Model.Email);
+    bool hasPhone = !string.IsNullOrEmpty(Model.PhoneNumber);
+}
+
+<!-- Modal Dialog -->
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <!-- Modal Header -->
+        <div class="block block-rounded block-themed block-transparent mb-0">
+            <div class="block-header bg-primary-dark">
+                <h3 class="block-title">
+                    <i class="fa fa-paper-plane me-2"></i>
+                    ارسال پیام به @Model.UserFullName
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="block-content block-content-full">
+                <form asp-action="SendMessageToUserPost" asp-controller="UserManager" method="post" id="sendMessageForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="UserId" />
+                    <input type="hidden" asp-for="UserFullName" />
+                    <input type="hidden" asp-for="UserName" />
+                    <input type="hidden" asp-for="Email" />
+                    <input type="hidden" asp-for="PhoneNumber" />
+                    <input type="hidden" asp-for="TelegramChatId" />
+                    <input type="hidden" value="@ViewBag.page" name="page"/>
+                    
+                    <!-- User Info -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <i class="fa fa-user me-2"></i>
+                                    <strong>نام کاربر:</strong> @Model.UserFullName
+                                </p>
+                                <p class="mb-1">
+                                    <i class="fa fa-at me-2"></i>
+                                    <strong>نام کاربری:</strong> @Model.UserName
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                @if (hasEmail)
+                                {
+                                    <p class="mb-1">
+                                        <i class="fa fa-envelope me-2"></i>
+                                        <strong>ایمیل:</strong> @Model.Email
+                                    </p>
+                                }
+                                @if (hasPhone)
+                                {
+                                    <p class="mb-1">
+                                        <i class="fa fa-phone me-2"></i>
+                                        <strong>تلفن:</strong> @Model.PhoneNumber
+                                    </p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Send Methods -->
+                    <div class="mb-3">
+                        <label class="form-label">روش ارسال <span class="text-danger">*</span></label>
+                        <div class="space-y-2">
+                            @if (hasTelegram)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" asp-for="SendViaTelegram" id="sendViaTelegram" checked />
+                                    <label class="form-check-label" for="sendViaTelegram">
+                                        <i class="fab fa-telegram text-info me-1"></i>
+                                        <strong>ارسال از طریق تلگرام</strong>
+                                        <span class="text-muted fs-sm">(Chat ID: @Model.TelegramChatId)</span>
+                                    </label>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning alert-dismissible fade show mb-2" role="alert">
+                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                    <strong>توجه:</strong> چت آی دی تلگرام برای این کاربر ثبت نشده است
+                                </div>
+                            }
+
+                            @if (hasEmail)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" asp-for="SendViaEmail" id="sendViaEmail" />
+                                    <label class="form-check-label" for="sendViaEmail">
+                                        <i class="fa fa-envelope text-primary me-1"></i>
+                                        <strong>ارسال از طریق ایمیل</strong>
+                                        <span class="text-muted fs-sm">(@Model.Email)</span>
+                                    </label>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning alert-dismissible fade show mb-2" role="alert">
+                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                    <strong>توجه:</strong> ایمیل برای این کاربر ثبت نشده است
+                                </div>
+                            }
+
+                            @if (hasPhone)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" asp-for="SendViaSms" id="sendViaSms" disabled />
+                                    <label class="form-check-label" for="sendViaSms">
+                                        <i class="fa fa-sms text-success me-1"></i>
+                                        <strong>ارسال از طریق پیامک</strong>
+                                        <span class="badge bg-warning text-dark">به زودی</span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="SendViaTelegram" class="text-danger"></span>
+                        <span asp-validation-for="SendViaEmail" class="text-danger"></span>
+                    </div>
+
+                    <!-- Subject -->
+                    <div class="mb-3">
+                        <label class="form-label" for="subject">
+                            عنوان پیام <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Subject" class="form-control" id="subject" placeholder="عنوان پیام خود را وارد کنید" />
+                        <span asp-validation-for="Subject" class="text-danger"></span>
+                    </div>
+
+                    <!-- Message -->
+                    <div class="mb-3">
+                        <label class="form-label" for="message">
+                            متن پیام <span class="text-danger">*</span>
+                        </label>
+                        <textarea asp-for="Message" class="form-control" id="message" rows="6" placeholder="متن پیام خود را وارد کنید"></textarea>
+                        <span asp-validation-for="Message" class="text-danger"></span>
+                        <div class="form-text">
+                            <i class="fa fa-info-circle me-1"></i>
+                            حداکثر 2000 کاراکتر
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="block-content block-content-full text-end bg-body-light">
+                <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" data-save="modal-ajax-save">
+                    <i class="fa fa-paper-plane me-1"></i>
+                    ارسال پیام
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            // حداقل یکی از روش‌های ارسال باید انتخاب شود
+            $('#sendMessageForm').on('submit', function(e) {
+                const sendViaTelegram = $('#sendViaTelegram').is(':checked');
+                const sendViaEmail = $('#sendViaEmail').is(':checked');
+                const sendViaSms = $('#sendViaSms').is(':checked');
+                
+                if (!sendViaTelegram && !sendViaEmail && !sendViaSms) {
+                    e.preventDefault();
+                    alert('لطفاً حداقل یک روش ارسال را انتخاب کنید');
+                    return false;
+                }
+            });
+        });
+    </script>
+}

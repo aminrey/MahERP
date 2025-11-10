@@ -256,12 +256,19 @@ namespace MahERP.DataModelLayer.Services
         {
             try
             {
-                // 🔍 دریافت قالب‌های فعال برای این کاربر و این رویداد
                 var templates = await _context.NotificationTemplate_Tbl
-                    .Include(t => t.Recipients.Where(r => r.RecipientType == 2 && r.UserId == recipientUserId))
                     .Where(t => t.IsActive &&
                                t.NotificationEventType == (byte)eventType &&
-                               t.Recipients.Any(r => r.RecipientType == 2 && r.UserId == recipientUserId))
+                               (
+                                   // ⭐ RecipientMode = 0: همه کاربران (بدون چک Recipients)
+                                   t.RecipientMode == 0 ||
+
+                                   // ⭐ RecipientMode = 1: فقط کاربران خاص
+                                   (t.RecipientMode == 1 && t.Recipients.Any(r => r.RecipientType == 2 && r.UserId == recipientUserId)) ||
+
+                                   // ⭐ RecipientMode = 2: همه به جز...
+                                   (t.RecipientMode == 2 && !t.Recipients.Any(r => r.RecipientType == 2 && r.UserId == recipientUserId))
+                               ))
                     .ToListAsync();
 
                 if (!templates.Any())
@@ -270,22 +277,24 @@ namespace MahERP.DataModelLayer.Services
                     return;
                 }
 
+                _logger.LogInformation($"✅ یافت شد: {templates.Count} قالب برای {eventType} و کاربر {recipientUserId}");
+
+                // ⭐⭐⭐ دریافت اطلاعات کامل برای جایگزینی متغیرها
+                var templateData = await BuildTemplateDataAsync(eventType, recipientUserId, title, message, actionUrl, systemNotificationId);
+
                 // 🔄 ارسال از طریق هر کانال
                 foreach (var template in templates)
                 {
-                    var finalMessage = ReplaceTemplatePlaceholders(
-                        template.MessageTemplate,
-                        title,
-                        message,
-                        actionUrl
-                    );
+                    // ⭐⭐⭐ جایگزینی کامل متغیرها
+                    var finalMessage = ReplaceAllPlaceholders(template.MessageTemplate, templateData);
 
                     switch ((NotificationChannel)template.Channel)
                     {
                         case NotificationChannel.Email:
+                            var finalSubject = ReplaceAllPlaceholders(template.Subject ?? title, templateData);
                             await SendEmailNotificationAsync(
                                 recipientUserId,
-                                template.Subject,
+                                finalSubject,
                                 finalMessage,
                                 systemNotificationId
                             );
@@ -685,39 +694,47 @@ namespace MahERP.DataModelLayer.Services
         #region 🛠️ متدهای کمکی - Helper Methods
 
         /// <summary>
-        /// جایگزینی متغیرهای قالب
+        /// دریافت توکن تلگرام از تنظیمات
         /// </summary>
-        private string ReplaceTemplatePlaceholders(string template, string title, string message, string actionUrl)
+        private string GetTelegramBotToken()
         {
-            return template
-                .Replace("{Title}", title)
-                .Replace("{Message}", message)
-                .Replace("{ActionUrl}", actionUrl)
-                .Replace("{Date}", DateTime.Now.ToString("yyyy/MM/dd"))
-                .Replace("{Time}", DateTime.Now.ToString("HH:mm"));
+            try
+            {
+                // ⭐ استفاده مستقیم از توکن ثابت (در صورتی که جدول تنظیمات نداریم)
+                // TODO: بهتر است از appsettings.json یا دیتابیس دریافت شود
+                
+                return "7931841421:AAFna2M4CkkktixVeIxWWE1XRruum9j-kY0"; // ⭐ توکن پیش‌فرض
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ خطا در دریافت توکن تلگرام");
+                return "YOUR_DEFAULT_BOT_TOKEN";
+            }
         }
 
         /// <summary>
-        /// تبدیل EventType به NotificationTypeGeneral
+        /// نگاشت نوع رویداد به نوع عمومی NotificationTypeGeneral
         /// </summary>
         private byte MapEventTypeToGeneralType(NotificationEventType eventType)
         {
             return eventType switch
             {
-                NotificationEventType.TaskAssigned => 9, // اختصاص
-                NotificationEventType.TaskCompleted => 8, // تکمیل
-                NotificationEventType.TaskDeadlineReminder => 6, // یادآوری
-                NotificationEventType.TaskCommentAdded => 1, // ایجاد
-                NotificationEventType.TaskUpdated => 2, // ویرایش
-                NotificationEventType.TaskDeleted => 3, // حذف
-                NotificationEventType.TaskStatusChanged => 10, // تغییر وضعیت
-                NotificationEventType.TaskReassigned => 9, // اختصاص مجدد
-                _ => 0 // عمومی
+                NotificationEventType.TaskAssigned => 9,        // اختصاص/انتساب
+                NotificationEventType.TaskReassigned => 9,      // اختصاص مجدد
+                NotificationEventType.TaskCompleted => 8,       // تکمیل فرآیند
+                NotificationEventType.TaskUpdated => 2,         // ویرایش رکورد
+                NotificationEventType.TaskDeleted => 3,         // حذف رکورد
+                NotificationEventType.TaskCommentAdded => 0,    // اطلاع‌رسانی عمومی
+                NotificationEventType.TaskStatusChanged => 10,  // تغییر وضعیت
+                NotificationEventType.TaskDeadlineReminder => 6,// یادآوری
+                NotificationEventType.CommentMentioned => 0,    // اطلاع‌رسانی عمومی
+                NotificationEventType.DailyTaskDigest => 0,     // اطلاع‌رسانی عمومی
+                _ => 0 // پیش‌فرض
             };
         }
 
         /// <summary>
-        /// تبدیل Entity به ViewModel
+        /// تبدیل CoreNotification به ViewModel
         /// </summary>
         private CoreNotificationViewModel MapToViewModel(CoreNotification notification)
         {
@@ -726,85 +743,359 @@ namespace MahERP.DataModelLayer.Services
                 Id = notification.Id,
                 SystemId = notification.SystemId,
                 SystemName = notification.SystemName,
-                RecipientUserId = notification.RecipientUserId,
-                RecipientUserName = notification.Recipient?.UserName,
-                SenderUserId = notification.SenderUserId,
-                SenderUserName = notification.Sender?.UserName,
-                NotificationTypeGeneral = notification.NotificationTypeGeneral,
-                NotificationTypeName = GetNotificationTypeName(notification.NotificationTypeGeneral),
                 Title = notification.Title,
                 Message = notification.Message,
-                CreateDate = notification.CreateDate,
-                CreateDatePersian = ConvertDateTime.ConvertMiladiToShamsi(notification.CreateDate, "yyyy/MM/dd"),
-                CreateTime = notification.CreateDate.ToString("HH:mm"),
-                IsRead = notification.IsRead,
-                ReadDate = notification.ReadDate,
-                Priority = notification.Priority,
-                PriorityName = GetPriorityName(notification.Priority),
+                NotificationTypeGeneral = notification.NotificationTypeGeneral,
                 ActionUrl = notification.ActionUrl,
                 RelatedRecordId = notification.RelatedRecordId,
                 RelatedRecordType = notification.RelatedRecordType,
-                IsActive = notification.IsActive,
-                RelativeTime = GetRelativeTime(notification.CreateDate),
-                Icon = GetNotificationIcon(notification.NotificationTypeGeneral)
+                RelatedRecordTitle = notification.RelatedRecordTitle,
+                Priority = notification.Priority,
+                IsRead = notification.IsRead,
+                IsClicked = notification.IsClicked,
+                CreateDate = notification.CreateDate,
+                ReadDate = notification.ReadDate,
+                ClickDate = notification.ClickDate
+                // SenderName و TimeAgo حذف شدند (در ViewModel وجود ندارند)
             };
         }
 
-        private string GetNotificationTypeName(byte type) => type switch
+        /// <summary>
+        /// محاسبه زمان گذشته به صورت متنی
+        /// </summary>
+        private string CalculateTimeAgo(DateTime dateTime)
         {
-            0 => "عمومی", 1 => "ایجاد", 2 => "ویرایش", 3 => "حذف",
-            4 => "تایید/رد", 5 => "هشدار", 6 => "یادآوری", 7 => "خطا",
-            8 => "تکمیل", 9 => "اختصاص", 10 => "تغییر وضعیت",
-            _ => "نامشخص"
-        };
+            var timeSpan = DateTime.Now - dateTime;
 
-        private string GetPriorityName(byte priority) => priority switch
-        {
-            0 => "عادی", 1 => "مهم", 2 => "فوری", 3 => "بحرانی", _ => "نامشخص"
-        };
-
-        private string GetNotificationIcon(byte type) => type switch
-        {
-            0 => "fa-info-circle", 1 => "fa-plus-circle", 2 => "fa-edit",
-            3 => "fa-trash", 4 => "fa-check-circle", 5 => "fa-exclamation-triangle",
-            6 => "fa-clock", 7 => "fa-times-circle", 8 => "fa-flag-checkered",
-            9 => "fa-user-plus", 10 => "fa-exchange-alt", _ => "fa-bell"
-        };
-
-        private string GetRelativeTime(DateTime createDate)
-        {
-            var timeSpan = DateTime.Now - createDate;
-
-            if (timeSpan.TotalMinutes < 1) return "الان";
-            if (timeSpan.TotalMinutes < 60) return $"{(int)timeSpan.TotalMinutes} دقیقه پیش";
-            if (timeSpan.TotalHours < 24) return $"{(int)timeSpan.TotalHours} ساعت پیش";
-            if (timeSpan.TotalDays < 7) return $"{(int)timeSpan.TotalDays} روز پیش";
-
-            return ConvertDateTime.ConvertMiladiToShamsi(createDate, "yyyy/MM/dd");
+            if (timeSpan.TotalMinutes < 1)
+                return "اکنون";
+            if (timeSpan.TotalMinutes < 60)
+                return $"{(int)timeSpan.TotalMinutes} دقیقه پیش";
+            if (timeSpan.TotalHours < 24)
+                return $"{(int)timeSpan.TotalHours} ساعت پیش";
+            if (timeSpan.TotalDays < 30)
+                return $"{(int)timeSpan.TotalDays} روز پیش";
+            if (timeSpan.TotalDays < 365)
+                return $"{(int)(timeSpan.TotalDays / 30)} ماه پیش";
+            
+            return $"{(int)(timeSpan.TotalDays / 365)} سال پیش";
         }
 
-        private string GetTelegramBotToken()
+        /// <summary>
+        /// ⭐⭐⭐ ساخت دیکشنری کامل داده‌ها برای جایگزینی در قالب
+        /// </summary>
+        private async Task<Dictionary<string, string>> BuildTemplateDataAsync(
+            NotificationEventType eventType,
+            string recipientUserId,
+            string title,
+            string message,
+            string actionUrl,
+            int systemNotificationId)
         {
+            var data = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                // ⭐ متغیرهای پایه
+                { "Title", title },
+                { "Message", message },
+                { "ActionUrl", actionUrl },
+                { "Date", DateTime.Now.ToString("yyyy/MM/dd") },
+                { "Time", DateTime.Now.ToString("HH:mm") }
+            };
+
             try
             {
-                // دریافت تنظیمات از دیتابیس
-                var settings = _context.Settings_Tbl.FirstOrDefault();
+                // ⭐⭐⭐ دریافت اطلاعات کاربر دریافت‌کننده
+                var recipient = await _context.Users
+                    .Where(u => u.Id == recipientUserId)
+                    .Select(u => new
+                    {
+                        u.FirstName,
+                        u.LastName,
+                        u.UserName,
+                        u.Email,
+                        u.PhoneNumber
+                    })
+                    .FirstOrDefaultAsync();
 
-                // بررسی فعال بودن تلگرام
-                if (settings != null && settings.IsTelegramEnabled && !string.IsNullOrEmpty(settings.TelegramBotToken))
+                if (recipient != null)
                 {
-                    return settings.TelegramBotToken;
+                    data["RecipientFirstName"] = recipient.FirstName ?? "";
+                    data["RecipientLastName"] = recipient.LastName ?? "";
+                    data["RecipientFullName"] = $"{recipient.FirstName} {recipient.LastName}".Trim();
+                    data["RecipientUserName"] = recipient.UserName ?? "";
+                    data["RecipientEmail"] = recipient.Email ?? "";
+                    data["RecipientPhone"] = recipient.PhoneNumber ?? "";
                 }
 
-                // در صورت عدم وجود تنظیمات، از appsettings استفاده شود
-                _logger.LogWarning("⚠️ توکن تلگرام در تنظیمات یافت نشد یا تلگرام غیرفعال است");
-                return "YOUR_DEFAULT_BOT_TOKEN"; // یا می‌توانید از IConfiguration استفاده کنید
+                // ⭐⭐⭐ NEW: دریافت لیست تسک‌های انجام نشده کاربر
+                var pendingTasksList = await BuildPendingTasksListAsync(recipientUserId);
+                data["PendingTasks"] = pendingTasksList;
+
+                // ⭐⭐⭐ دریافت اطلاعات تسک (اگر مرتبط با تسک باشد)
+                if (IsTaskRelatedEvent(eventType))
+                {
+                    // استخراج TaskId از RelatedRecordId در CoreNotification
+                    var coreNotification = await _context.CoreNotification_Tbl
+                        .Where(n => n.Id == systemNotificationId)
+                        .Select(n => new { n.RelatedRecordId, n.SenderUserId })
+                        .FirstOrDefaultAsync();
+
+                    if (coreNotification != null && !string.IsNullOrEmpty(coreNotification.RelatedRecordId))
+                    {
+                        if (int.TryParse(coreNotification.RelatedRecordId, out int taskId))
+                        {
+                            // ⭐ دریافت اطلاعات تسک
+                            var task = await _context.Tasks_Tbl
+                                .Where(t => t.Id == taskId)
+                                .Select(t => new
+                                {
+                                    t.Title,
+                                    t.TaskCode,
+                                    t.Description,
+                                    t.StartDate,
+                                    t.DueDate,
+                                    t.Priority,
+                                    t.CreatorUserId,
+                                    CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : "",
+                                    // ⭐ حذف Stakeholder (دیگر وجود ندارد)
+                                    // استفاده از Contact یا Organization
+                                    StakeholderName = t.Contact != null 
+                                        ? $"{t.Contact.FirstName} {t.Contact.LastName}" 
+                                        : (t.Organization != null ? t.Organization.DisplayName : ""),
+                                    BranchName = t.Branch != null ? t.Branch.Name : ""
+                                })
+                                .FirstOrDefaultAsync();
+
+                            if (task != null)
+                            {
+                                data["TaskTitle"] = task.Title ?? "";
+                                data["TaskCode"] = task.TaskCode ?? "";
+                                data["TaskDescription"] = task.Description ?? "";
+                                data["TaskStartDate"] = task.StartDate.HasValue 
+                                    ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.StartDate.Value, "yyyy/MM/dd") 
+                                    : "";
+                                data["TaskDueDate"] = task.DueDate.HasValue 
+                                    ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") 
+                                    : "";
+                                data["TaskPriority"] = task.Priority switch
+                                {
+                                    0 => "عادی",
+                                    1 => "متوسط",
+                                    2 => "بالا",
+                                    3 => "فوری",
+                                    _ => "نامشخص"
+                                };
+                                data["TaskCategory"] = task.CategoryTitle;
+                                data["TaskStakeholder"] = task.StakeholderName;
+                                data["TaskBranch"] = task.BranchName;
+
+                                // ⭐ دریافت اطلاعات سازنده تسک
+                                if (!string.IsNullOrEmpty(task.CreatorUserId))
+                                {
+                                    var creator = await _context.Users
+                                        .Where(u => u.Id == task.CreatorUserId)
+                                        .Select(u => new { u.FirstName, u.LastName })
+                                        .FirstOrDefaultAsync();
+
+                                    if (creator != null)
+                                    {
+                                        data["TaskCreatorName"] = $"{creator.FirstName} {creator.LastName}".Trim();
+                                    }
+                                }
+
+                                // ⭐ دریافت اطلاعات ارسال‌کننده اعلان
+                                if (!string.IsNullOrEmpty(coreNotification.SenderUserId))
+                                {
+                                    var sender = await _context.Users
+                                        .Where(u => u.Id == coreNotification.SenderUserId)
+                                        .Select(u => new { u.FirstName, u.LastName })
+                                        .FirstOrDefaultAsync();
+
+                                    if (sender != null)
+                                    {
+                                        data["SenderName"] = $"{sender.FirstName} {sender.LastName}".Trim();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ خطا در دریافت توکن تلگرام");
-                return "YOUR_DEFAULT_BOT_TOKEN";
+                _logger.LogWarning(ex, "⚠️ خطا در ساخت داده‌های قالب");
             }
+
+            return data;
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ ساخت لیست فرمت‌شده تسک‌های انجام نشده کاربر
+        /// </summary>
+        private async Task<string> BuildPendingTasksListAsync(string userId)
+        {
+            try
+            {
+                // ⭐ دریافت تسک‌های انجام نشده کاربر
+                var pendingTasks = await _context.TaskAssignment_Tbl
+                    .Where(a => a.AssignedUserId == userId && 
+                               !a.CompletionDate.HasValue &&
+                               !a.Task.IsDeleted)
+                    .Include(a => a.Task)
+                        .ThenInclude(t => t.TaskOperations)
+                    .Include(a => a.Task.Creator)
+                    .OrderBy(a => a.Task.DueDate)
+                    .ThenByDescending(a => a.Task.Priority)
+                    .Take(10) // ⭐ محدود به 10 تسک اول
+                    .Select(a => new
+                    {
+                        TaskId = a.Task.Id,
+                        Title = a.Task.Title,
+                        Description = a.Task.Description,
+                        StartDate = a.Task.StartDate,
+                        DueDate = a.Task.DueDate,
+                        Priority = a.Task.Priority,
+                        CreatorName = a.Task.Creator != null 
+                            ? $"{a.Task.Creator.FirstName} {a.Task.Creator.LastName}" 
+                            : "نامشخص",
+                        TotalOperations = a.Task.TaskOperations.Count(o => !o.IsDeleted),
+                        CompletedOperations = a.Task.TaskOperations.Count(o => !o.IsDeleted && o.IsCompleted)
+                    })
+                    .ToListAsync();
+
+                if (!pendingTasks.Any())
+                {
+                    return "✅ همه تسک‌های شما تکمیل شده است!";
+                }
+
+                // ⭐ ساخت متن فرمت شده
+                var result = new System.Text.StringBuilder();
+                result.AppendLine("📌 تسک‌های در حال انجام شما:");
+                result.AppendLine();
+
+                int counter = 1;
+                foreach (var task in pendingTasks)
+                {
+                    // ⭐ محاسبه درصد پیشرفت
+                    int progressPercentage = task.TotalOperations > 0 
+                        ? (task.CompletedOperations * 100) / task.TotalOperations 
+                        : 0;
+
+                    // ⭐ تعیین ایموجی اولویت
+                    string priorityEmoji = task.Priority switch
+                    {
+                        3 => "🔴", // فوری
+                        2 => "🟠", // بالا
+                        1 => "🟡", // متوسط
+                        _ => "🟢"  // عادی
+                    };
+
+                    string priorityText = task.Priority switch
+                    {
+                        3 => "فوری",
+                        2 => "بالا",
+                        1 => "متوسط",
+                        _ => "عادی"
+                    };
+
+                    // ⭐ توضیح کوتاه (حداکثر 60 کاراکتر)
+                    string shortDescription = string.IsNullOrEmpty(task.Description) 
+                        ? "بدون توضیحات" 
+                        : (task.Description.Length > 60 
+                            ? task.Description.Substring(0, 60) + "..." 
+                            : task.Description);
+
+                    // ⭐ تاریخ‌ها
+                    string startDatePersian = task.StartDate.HasValue 
+                        ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.StartDate.Value, "yyyy/MM/dd") 
+                        : "---";
+                    
+                    string dueDatePersian = task.DueDate.HasValue 
+                        ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") 
+                        : "---";
+
+                    // ⭐ ساخت متن هر تسک
+                    result.AppendLine($"{counter}️⃣ {task.Title}");
+                    result.AppendLine($"   📝 {shortDescription}");
+                    result.AppendLine($"   📅 شروع: {startDatePersian} | 🔚 پایان: {dueDatePersian}");
+                    result.AppendLine($"   👤 سازنده: {task.CreatorName} | {priorityEmoji} اولویت: {priorityText}");
+                    result.AppendLine($"   📊 پیشرفت: {progressPercentage}% ({task.CompletedOperations}/{task.TotalOperations} عملیات)");
+                    result.AppendLine();
+
+                    counter++;
+                }
+
+                // ⭐ اضافه کردن آمار کلی
+                result.AppendLine($"📊 جمع کل: {pendingTasks.Count} تسک در حال انجام");
+
+                return result.ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ خطا در ساخت لیست تسک‌های انجام نشده");
+                return "⚠️ خطا در دریافت لیست تسک‌ها";
+            }
+        }
+
+        /// <summary>
+        /// بررسی اینکه رویداد مرتبط با تسک است یا خیر
+        /// </summary>
+        private bool IsTaskRelatedEvent(NotificationEventType eventType)
+        {
+            return eventType switch
+            {
+                NotificationEventType.TaskAssigned => true,
+                NotificationEventType.TaskCompleted => true,
+                NotificationEventType.TaskCommentAdded => true,
+                NotificationEventType.TaskUpdated => true,
+                NotificationEventType.TaskDeleted => true,
+                NotificationEventType.TaskStatusChanged => true,
+                NotificationEventType.TaskReassigned => true,
+                NotificationEventType.TaskDeadlineReminder => true,
+                NotificationEventType.TaskOperationCompleted => true,
+                NotificationEventType.OperationAssigned => true,
+                NotificationEventType.CommentMentioned => true,
+                NotificationEventType.TaskPriorityChanged => true,
+                NotificationEventType.DailyTaskDigest => true,
+                NotificationEventType.TaskWorkLog => true,
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ جایگزینی همه متغیرها در قالب (با پشتیبانی از {{Variable}} و {Variable})
+        /// </summary>
+        private string ReplaceAllPlaceholders(string template, Dictionary<string, string> data)
+        {
+            if (string.IsNullOrEmpty(template) || data == null || !data.Any())
+                return template;
+
+            var result = template;
+
+            foreach (var kvp in data)
+            {
+                // جایگزینی فرمت {{Variable}}
+                result = result.Replace($"{{{{{kvp.Key}}}}}", kvp.Value, StringComparison.OrdinalIgnoreCase);
+                
+                // جایگزینی فرمت {Variable}
+                result = result.Replace($"{{{kvp.Key}}}", kvp.Value, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// جایگزینی متغیرهای قالب (متد قدیمی - حفظ شده برای سازگاری)
+        /// </summary>
+        [Obsolete("از ReplaceAllPlaceholders استفاده کنید")]
+        private string ReplaceTemplatePlaceholders(string template, string title, string message, string actionUrl)
+        {
+            return template
+                .Replace("{Title}", title)
+                .Replace("{Message}", message)
+                .Replace("{ActionUrl}", actionUrl)
+                .Replace("{Date}", DateTime.Now.ToString("yyyy/MM/dd"))
+                .Replace("{Time}", DateTime.Now.ToString("HH:mm"));
         }
 
         #endregion

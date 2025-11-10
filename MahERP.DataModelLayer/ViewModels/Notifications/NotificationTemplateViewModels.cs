@@ -101,6 +101,30 @@ namespace MahERP.DataModelLayer.ViewModels.Notifications
         [Display(Name = "کاربران انتخاب شده")]
         public List<string>? SelectedUserIds { get; set; }
 
+        // ⭐⭐⭐ تنظیمات زمان‌بندی
+        [Display(Name = "زمان‌بندی فعال")]
+        public bool IsScheduled { get; set; } = false;
+
+        [Display(Name = "نوع زمان‌بندی")]
+        public byte ScheduleType { get; set; } = 0;
+
+        [Display(Name = "ساعت اجرا")]
+        [MaxLength(5)]
+        public string? ScheduledTime { get; set; }
+
+        [Display(Name = "روزهای هفته")]
+        [MaxLength(50)]
+        public string? ScheduledDaysOfWeek { get; set; }
+
+        [Display(Name = "روز ماه")]
+        public int? ScheduledDayOfMonth { get; set; }
+
+        [Display(Name = "آخرین اجرا")]
+        public DateTime? LastExecutionDate { get; set; }
+
+        [Display(Name = "اجرای بعدی")]
+        public DateTime? NextExecutionDate { get; set; }
+
         // برای نمایش در فرم
         public List<NotificationTypeSelectItem> AvailableNotificationTypes { get; set; } = new();
         public List<SystemVariableViewModel> SystemVariables { get; set; } = new();
@@ -116,6 +140,12 @@ namespace MahERP.DataModelLayer.ViewModels.Notifications
         public string Name { get; set; }
         public string ModuleName { get; set; }
         public string DisplayName => $"{ModuleName} - {Name}";
+        
+        /// <summary>
+        /// آیا این نوع اعلان قابل زمان‌بندی است؟
+        /// (فقط برای اعلان‌های دوره‌ای مثل DailyTaskDigest)
+        /// </summary>
+        public bool IsSchedulable { get; set; }
     }
 
     /// <summary>

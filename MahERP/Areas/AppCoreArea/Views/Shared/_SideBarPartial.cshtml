@@ -435,7 +435,7 @@
 							<span class="nav-main-link-name">اعلان‌رسانی</span>
 						</a>
 						<ul class="nav-main-submenu">
-							<!-- ============== تنظیمات کلی ============== -->
+							<!-- ============== تنظیمات سیستم ============== -->
 							@if (Html.CanAccessAny("NOTIFICATION.SETTINGS", "NOTIFICATION.SETTINGS.VIEW"))
 							{
 								<li class="nav-main-item nav-submenu-separator">
@@ -445,12 +445,22 @@
 								</li>
 
 								<li class="nav-main-item">
+									<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Settings", "SystemSettings") ? "active" : "")"
+									   asp-area="AppCoreArea"
+									   asp-controller="Settings"
+									   asp-action="SystemSettings">
+										<i class="nav-main-link-icon fa fa-cogs text-warning"></i>
+										<span class="nav-main-link-name">تنظیمات کلی سیستم</span>
+									</a>
+								</li>
+
+								<li class="nav-main-item">
 									<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "NotificationSettings", "Index") ? "active" : "")"
 									   asp-area="AppCoreArea"
 									   asp-controller="NotificationSettings"
 									   asp-action="Index">
 										<i class="nav-main-link-icon fa fa-sliders-h"></i>
-										<span class="nav-main-link-name">تنظیمات کلی</span>
+										<span class="nav-main-link-name">مدیریت انواع اعلان</span>
 									</a>
 								</li>
 							}

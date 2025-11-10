@@ -173,6 +173,9 @@ builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddScoped<NotificationManagementService>();
 builder.Services.AddHostedService<NotificationProcessingBackgroundService>();
 
+// ⭐⭐⭐ NEW: سرویس زمان‌بندی اعلان‌های دوره‌ای
+builder.Services.AddHostedService<ScheduledNotificationBackgroundService>();
+
 var app = builder.Build();
 
 

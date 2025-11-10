@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251110093655_dailytakstemolate")]
+    partial class dailytakstemolate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -321,7 +324,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("ParentId")
                         .HasDatabaseName("IX_Branch_ParentId");
 
-                    b.ToTable("Branch_Tbl", (string)null);
+                    b.ToTable("Branch_Tbl");
 
                     b.HasData(
                         new
@@ -376,7 +379,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "BranchId", "ContactId" }, "IX_BranchContact_Branch_Contact")
                         .IsUnique();
 
-                    b.ToTable("BranchContact_Tbl", (string)null);
+                    b.ToTable("BranchContact_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchModulePermission", b =>
@@ -413,7 +416,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("GrantedByUserId");
 
-                    b.ToTable("BranchModulePermission_Tbl", (string)null);
+                    b.ToTable("BranchModulePermission_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchOrganization", b =>
@@ -460,7 +463,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "BranchId", "OrganizationId" }, "IX_BranchOrganization_Branch_Organization")
                         .IsUnique();
 
-                    b.ToTable("BranchOrganization_Tbl", (string)null);
+                    b.ToTable("BranchOrganization_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchTaskCategoryStakeholder", b =>
@@ -501,7 +504,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskCategoryId");
 
-                    b.ToTable("BranchTaskCategoryStakeholder_Tbl", (string)null);
+                    b.ToTable("BranchTaskCategoryStakeholder_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.BranchUser", b =>
@@ -547,7 +550,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_BranchUser_Branch_User");
 
-                    b.ToTable("BranchUser_Tbl", (string)null);
+                    b.ToTable("BranchUser_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Contract", b =>
@@ -613,7 +616,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("Contract_Tbl", (string)null);
+                    b.ToTable("Contract_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Permission", b =>
@@ -689,7 +692,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Permission_Tbl", (string)null);
+                    b.ToTable("Permission_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.PermissionChangeLog", b =>
@@ -745,7 +748,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PermissionChangeLog_Tbl", (string)null);
+                    b.ToTable("PermissionChangeLog_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.PermissionLog", b =>
@@ -795,7 +798,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PermissionLog_Tbl", (string)null);
+                    b.ToTable("PermissionLog_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Role", b =>
@@ -861,7 +864,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterId");
 
-                    b.ToTable("Role_Tbl", (string)null);
+                    b.ToTable("Role_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.RolePattern", b =>
@@ -908,7 +911,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.ToTable("RolePattern_Tbl", (string)null);
+                    b.ToTable("RolePattern_Tbl");
 
                     b.HasData(
                         new
@@ -999,7 +1002,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("RolePatternId");
 
-                    b.ToTable("RolePatternDetails_Tbl", (string)null);
+                    b.ToTable("RolePatternDetails_Tbl");
 
                     b.HasData(
                         new
@@ -1277,7 +1280,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RolePermission_Tbl", (string)null);
+                    b.ToTable("RolePermission_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.Stakeholder", b =>
@@ -1399,7 +1402,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.ToTable("Stakeholder_Tbl", (string)null);
+                    b.ToTable("Stakeholder_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderBranch", b =>
@@ -1443,7 +1446,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("StakeholderBranch_Tbl", (string)null);
+                    b.ToTable("StakeholderBranch_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderContact", b =>
@@ -1527,7 +1530,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("StakeholderContact_Tbl", (string)null);
+                    b.ToTable("StakeholderContact_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderOrganization", b =>
@@ -1589,7 +1592,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("StakeholderOrganization_Tbl", (string)null);
+                    b.ToTable("StakeholderOrganization_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderOrganizationMember", b =>
@@ -1643,7 +1646,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("PositionId");
 
-                    b.ToTable("StakeholderOrganizationMember_Tbl", (string)null);
+                    b.ToTable("StakeholderOrganizationMember_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.StakeholderOrganizationPosition", b =>
@@ -1692,7 +1695,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.ToTable("StakeholderOrganizationPosition_Tbl", (string)null);
+                    b.ToTable("StakeholderOrganizationPosition_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.TeamModulePermission", b =>
@@ -1729,7 +1732,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("TeamModulePermission_Tbl", (string)null);
+                    b.ToTable("TeamModulePermission_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserModulePermission", b =>
@@ -1767,7 +1770,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserModulePermission_Tbl", (string)null);
+                    b.ToTable("UserModulePermission_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserModulePreference", b =>
@@ -1795,7 +1798,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserModulePreference_Tbl", (string)null);
+                    b.ToTable("UserModulePreference_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserPermission", b =>
@@ -1853,7 +1856,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserPermission_Tbl", (string)null);
+                    b.ToTable("UserPermission_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserRole", b =>
@@ -1904,7 +1907,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserRole_Tbl", (string)null);
+                    b.ToTable("UserRole_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.AcControl.UserRolePattern", b =>
@@ -1949,7 +1952,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserRolePattern_Tbl", (string)null);
+                    b.ToTable("UserRolePattern_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.BranchContactGroup", b =>
@@ -2024,7 +2027,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "BranchId", "Code" }, "IX_BranchContactGroup_Branch_Code")
                         .IsUnique();
 
-                    b.ToTable("BranchContactGroup_Tbl", (string)null);
+                    b.ToTable("BranchContactGroup_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.BranchContactGroupMember", b =>
@@ -2071,7 +2074,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "BranchGroupId", "BranchContactId" }, "IX_BranchContactGroupMember_Group_Contact")
                         .IsUnique();
 
-                    b.ToTable("BranchContactGroupMember_Tbl", (string)null);
+                    b.ToTable("BranchContactGroupMember_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.BranchOrganizationGroup", b =>
@@ -2143,7 +2146,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_BranchOrganizationGroup_Branch_Code");
 
-                    b.ToTable("BranchOrganizationGroup_Tbl", (string)null);
+                    b.ToTable("BranchOrganizationGroup_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.Contact", b =>
@@ -2246,7 +2249,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasFilter("[NationalCode] IS NOT NULL");
 
-                    b.ToTable("Contact_Tbl", (string)null);
+                    b.ToTable("Contact_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.ContactGroup", b =>
@@ -2323,7 +2326,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "Code" }, "IX_ContactGroup_Code")
                         .IsUnique();
 
-                    b.ToTable("ContactGroup_Tbl", (string)null);
+                    b.ToTable("ContactGroup_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.ContactGroupMember", b =>
@@ -2370,7 +2373,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "GroupId", "ContactId" }, "IX_ContactGroupMember_Group_Contact")
                         .IsUnique();
 
-                    b.ToTable("ContactGroupMember_Tbl", (string)null);
+                    b.ToTable("ContactGroupMember_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.ContactPhone", b =>
@@ -2439,7 +2442,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "ContactId", "PhoneNumber" }, "IX_ContactPhone_Contact_Number")
                         .IsUnique();
 
-                    b.ToTable("ContactPhone_Tbl", (string)null);
+                    b.ToTable("ContactPhone_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.DepartmentMember", b =>
@@ -2507,7 +2510,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "DepartmentId", "ContactId" }, "IX_DepartmentMember_Department_Contact")
                         .IsUnique();
 
-                    b.ToTable("DepartmentMember_Tbl", (string)null);
+                    b.ToTable("DepartmentMember_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.DepartmentPosition", b =>
@@ -2585,7 +2588,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_DepartmentPosition_Dept_Title");
 
-                    b.ToTable("DepartmentPosition_Tbl", (string)null);
+                    b.ToTable("DepartmentPosition_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.Organization", b =>
@@ -2705,7 +2708,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasFilter("[RegistrationNumber] IS NOT NULL");
 
-                    b.ToTable("Organization_Tbl", (string)null);
+                    b.ToTable("Organization_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.OrganizationContact", b =>
@@ -2786,7 +2789,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "OrganizationId", "ContactId", "RelationType" }, "IX_OrganizationContact_Org_Contact_Type")
                         .IsUnique();
 
-                    b.ToTable("OrganizationContact_Tbl", (string)null);
+                    b.ToTable("OrganizationContact_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.OrganizationDepartment", b =>
@@ -2864,7 +2867,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("OrganizationId", "Level")
                         .HasDatabaseName("IX_OrganizationDepartment_Org_Level");
 
-                    b.ToTable("OrganizationDepartment_Tbl", (string)null);
+                    b.ToTable("OrganizationDepartment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.OrganizationGroupMember", b =>
@@ -2911,7 +2914,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "GroupId", "OrganizationId" }, "IX_OrganizationGroupMember_Group_Organization")
                         .IsUnique();
 
-                    b.ToTable("OrganizationGroupMember_Tbl", (string)null);
+                    b.ToTable("OrganizationGroupMember_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityAttachment", b =>
@@ -2962,7 +2965,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UploaderUserId");
 
-                    b.ToTable("ActivityAttachment_Tbl", (string)null);
+                    b.ToTable("ActivityAttachment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityBase", b =>
@@ -3053,7 +3056,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("BranchId", "ActivityType")
                         .HasDatabaseName("IX_ActivityBase_Branch_Type");
 
-                    b.ToTable("ActivityBase_Tbl", (string)null);
+                    b.ToTable("ActivityBase_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityCRM", b =>
@@ -3100,7 +3103,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_ActivityCRM_Activity_CRM");
 
-                    b.ToTable("ActivityCRM_Tbl", (string)null);
+                    b.ToTable("ActivityCRM_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityComment", b =>
@@ -3138,7 +3141,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ParentCommentId");
 
-                    b.ToTable("ActivityComment_Tbl", (string)null);
+                    b.ToTable("ActivityComment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityHistory", b =>
@@ -3182,7 +3185,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("ActivityId", "CreateDate")
                         .HasDatabaseName("IX_ActivityHistory_Activity_Date");
 
-                    b.ToTable("ActivityHistory_Tbl", (string)null);
+                    b.ToTable("ActivityHistory_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.ActivityTask", b =>
@@ -3229,7 +3232,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_ActivityTask_Activity_Task");
 
-                    b.ToTable("ActivityTask_Tbl", (string)null);
+                    b.ToTable("ActivityTask_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.CoreNotification", b =>
@@ -3322,7 +3325,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("SystemId", "CreateDate")
                         .HasDatabaseName("IX_CoreNotification_System_Date");
 
-                    b.ToTable("CoreNotification_Tbl", (string)null);
+                    b.ToTable("CoreNotification_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.CoreNotificationDelivery", b =>
@@ -3383,7 +3386,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("CoreNotificationId", "DeliveryStatus")
                         .HasDatabaseName("IX_CoreNotificationDelivery_Notification_Status");
 
-                    b.ToTable("CoreNotificationDelivery_Tbl", (string)null);
+                    b.ToTable("CoreNotificationDelivery_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.CoreNotificationDetail", b =>
@@ -3430,7 +3433,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("CoreNotificationId")
                         .HasDatabaseName("IX_CoreNotificationDetail_NotificationId");
 
-                    b.ToTable("CoreNotificationDetail_Tbl", (string)null);
+                    b.ToTable("CoreNotificationDetail_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.CoreNotificationSetting", b =>
@@ -3488,7 +3491,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_CoreNotificationSetting_User_System_Type");
 
-                    b.ToTable("CoreNotificationSetting_Tbl", (string)null);
+                    b.ToTable("CoreNotificationSetting_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.Team", b =>
@@ -3556,7 +3559,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ParentTeamId");
 
-                    b.ToTable("Team_Tbl", (string)null);
+                    b.ToTable("Team_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.TeamMember", b =>
@@ -3617,7 +3620,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_TeamMember_Team_User");
 
-                    b.ToTable("TeamMember_Tbl", (string)null);
+                    b.ToTable("TeamMember_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.TeamPosition", b =>
@@ -3691,7 +3694,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_TeamPosition_Team_Title");
 
-                    b.ToTable("TeamPosition_Tbl", (string)null);
+                    b.ToTable("TeamPosition_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Core.UserActivityLog", b =>
@@ -3826,7 +3829,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("UserId", "ActivityDateTime")
                         .HasDatabaseName("IX_UserActivityLog_User_Date");
 
-                    b.ToTable("UserActivityLog_Tbl", (string)null);
+                    b.ToTable("UserActivityLog_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMAttachment", b =>
@@ -3875,7 +3878,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UploaderUserId");
 
-                    b.ToTable("CRMAttachment_Tbl", (string)null);
+                    b.ToTable("CRMAttachment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMComment", b =>
@@ -3911,7 +3914,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ParentCommentId");
 
-                    b.ToTable("CRMComment_Tbl", (string)null);
+                    b.ToTable("CRMComment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMInteraction", b =>
@@ -4016,7 +4019,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("CRMInteraction_Tbl", (string)null);
+                    b.ToTable("CRMInteraction_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMParticipant", b =>
@@ -4067,7 +4070,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("CRMParticipant_Tbl", (string)null);
+                    b.ToTable("CRMParticipant_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CRMTeam", b =>
@@ -4106,7 +4109,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("CRMTeam_Tbl", (string)null);
+                    b.ToTable("CRMTeam_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.StakeholderCRM", b =>
@@ -4167,7 +4170,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("StakeholderId");
 
-                    b.ToTable("StakeholderCRM_Tbl", (string)null);
+                    b.ToTable("StakeholderCRM_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.TaskCRMDetails", b =>
@@ -4211,7 +4214,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskCRMDetails_Tbl", (string)null);
+                    b.ToTable("TaskCRMDetails_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailLog", b =>
@@ -4295,7 +4298,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("EmailLog_Tbl", (string)null);
+                    b.ToTable("EmailLog_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailQueue", b =>
@@ -4375,7 +4378,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("RequestedByUserId");
 
-                    b.ToTable("EmailQueue_Tbl", (string)null);
+                    b.ToTable("EmailQueue_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailTemplate", b =>
@@ -4445,7 +4448,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.ToTable("EmailTemplate_Tbl", (string)null);
+                    b.ToTable("EmailTemplate_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailTemplateRecipient", b =>
@@ -4486,7 +4489,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TemplateId");
 
-                    b.ToTable("EmailTemplateRecipient_Tbl", (string)null);
+                    b.ToTable("EmailTemplateRecipient_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationBlacklist", b =>
@@ -4530,7 +4533,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("UserId", "IsActive")
                         .HasDatabaseName("IX_NotificationBlacklist_User_Active");
 
-                    b.ToTable("NotificationBlacklist_Tbl", (string)null);
+                    b.ToTable("NotificationBlacklist_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationDeliveryStats", b =>
@@ -4584,7 +4587,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_DeliveryStats_DeliveryId");
 
-                    b.ToTable("NotificationDeliveryStats_Tbl", (string)null);
+                    b.ToTable("NotificationDeliveryStats_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationModuleConfig", b =>
@@ -4634,7 +4637,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_NotificationModuleConfig_ModuleCode");
 
-                    b.ToTable("NotificationModuleConfig_Tbl", (string)null);
+                    b.ToTable("NotificationModuleConfig_Tbl");
 
                     b.HasData(
                         new
@@ -4690,7 +4693,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_NotificationRecipient_TypeUser");
 
-                    b.ToTable("NotificationRecipient_Tbl", (string)null);
+                    b.ToTable("NotificationRecipient_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationScheduledMessage", b =>
@@ -4797,7 +4800,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_ScheduledMessage_Status");
 
-                    b.ToTable("NotificationScheduledMessage_Tbl", (string)null);
+                    b.ToTable("NotificationScheduledMessage_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate", b =>
@@ -4906,7 +4909,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastModifiedByUserId");
 
-                    b.ToTable("NotificationTemplate_Tbl", (string)null);
+                    b.ToTable("NotificationTemplate_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateHistory", b =>
@@ -4952,7 +4955,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("TemplateId", "Version")
                         .HasDatabaseName("IX_TemplateHistory_Template_Version");
 
-                    b.ToTable("NotificationTemplateHistory_Tbl", (string)null);
+                    b.ToTable("NotificationTemplateHistory_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateRecipient", b =>
@@ -5001,7 +5004,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("NotificationTemplateRecipient_Tbl", (string)null);
+                    b.ToTable("NotificationTemplateRecipient_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTemplateVariable", b =>
@@ -5046,7 +5049,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TemplateId");
 
-                    b.ToTable("NotificationTemplateVariable_Tbl", (string)null);
+                    b.ToTable("NotificationTemplateVariable_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationTypeConfig", b =>
@@ -5132,7 +5135,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_NotificationTypeConfig_Module_TypeCode");
 
-                    b.ToTable("NotificationTypeConfig_Tbl", (string)null);
+                    b.ToTable("NotificationTypeConfig_Tbl");
 
                     b.HasData(
                         new
@@ -5307,7 +5310,7 @@ namespace MahERP.DataModelLayer.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_UserNotificationPreference_User_Type");
 
-                    b.ToTable("UserNotificationPreference_Tbl", (string)null);
+                    b.ToTable("UserNotificationPreference_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organizations.BranchOrganizationGroupMember", b =>
@@ -5354,7 +5357,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "BranchGroupId", "BranchOrganizationId" }, "IX_BranchOrganizationGroupMember_Group_Organization")
                         .IsUnique();
 
-                    b.ToTable("BranchOrganizationGroupMember_Tbl", (string)null);
+                    b.ToTable("BranchOrganizationGroupMember_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organizations.OrganizationGroup", b =>
@@ -5431,7 +5434,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "Code" }, "IX_OrganizationGroup_Code")
                         .IsUnique();
 
-                    b.ToTable("OrganizationGroup_Tbl", (string)null);
+                    b.ToTable("OrganizationGroup_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Settings", b =>
@@ -5496,7 +5499,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("Settings_Tbl", (string)null);
+                    b.ToTable("Settings_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsLog", b =>
@@ -5580,7 +5583,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SmsLog_Tbl", (string)null);
+                    b.ToTable("SmsLog_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsProvider", b =>
@@ -5666,7 +5669,7 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex(new[] { "ProviderCode" }, "IX_SmsProvider_Code")
                         .IsUnique();
 
-                    b.ToTable("SmsProvider_Tbl", (string)null);
+                    b.ToTable("SmsProvider_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsQueue", b =>
@@ -5753,7 +5756,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SmsQueue_Tbl", (string)null);
+                    b.ToTable("SmsQueue_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsTemplate", b =>
@@ -5808,7 +5811,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
-                    b.ToTable("SmsTemplate_Tbl", (string)null);
+                    b.ToTable("SmsTemplate_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Sms.SmsTemplateRecipient", b =>
@@ -5849,7 +5852,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TemplateId");
 
-                    b.ToTable("SmsTemplateRecipient_Tbl", (string)null);
+                    b.ToTable("SmsTemplateRecipient_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.PredefinedCopyDescription", b =>
@@ -5873,7 +5876,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PredefinedCopyDescription_Tbl", (string)null);
+                    b.ToTable("PredefinedCopyDescription_Tbl");
 
                     b.HasData(
                         new
@@ -6038,7 +6041,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskAssignment_Tbl", (string)null);
+                    b.ToTable("TaskAssignment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskAttachment", b =>
@@ -6092,7 +6095,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UploaderUserId");
 
-                    b.ToTable("TaskAttachment_Tbl", (string)null);
+                    b.ToTable("TaskAttachment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCategory", b =>
@@ -6124,7 +6127,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ParentCategoryId");
 
-                    b.ToTable("TaskCategory_Tbl", (string)null);
+                    b.ToTable("TaskCategory_Tbl");
 
                     b.HasData(
                         new
@@ -6249,7 +6252,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskComment_Tbl", (string)null);
+                    b.ToTable("TaskComment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCommentAttachment", b =>
@@ -6291,7 +6294,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UploaderUserId");
 
-                    b.ToTable("TaskCommentAttachment_Tbl", (string)null);
+                    b.ToTable("TaskCommentAttachment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskCommentMention", b =>
@@ -6323,7 +6326,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("MentionedUserId");
 
-                    b.ToTable("TaskCommentMention_Tbl", (string)null);
+                    b.ToTable("TaskCommentMention_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskHistory", b =>
@@ -6383,7 +6386,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskHistory_Tbl", (string)null);
+                    b.ToTable("TaskHistory_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskMyDay", b =>
@@ -6430,7 +6433,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskAssignmentId");
 
-                    b.ToTable("TaskMyDay_Tbl", (string)null);
+                    b.ToTable("TaskMyDay_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskNotification", b =>
@@ -6490,7 +6493,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskNotification_Tbl", (string)null);
+                    b.ToTable("TaskNotification_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskOperation", b =>
@@ -6557,7 +6560,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskOperation_Tbl", (string)null);
+                    b.ToTable("TaskOperation_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskOperationWorkLog", b =>
@@ -6604,7 +6607,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskOperationWorkLog_Tbl", (string)null);
+                    b.ToTable("TaskOperationWorkLog_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskReminderEvent", b =>
@@ -6676,7 +6679,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskReminderEvent_Tbl", (string)null);
+                    b.ToTable("TaskReminderEvent_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskReminderSchedule", b =>
@@ -6738,7 +6741,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskReminderSchedule_Tbl", (string)null);
+                    b.ToTable("TaskReminderSchedule_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskSchedule", b =>
@@ -6814,7 +6817,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TaskTemplateId");
 
-                    b.ToTable("TaskSchedule_Tbl", (string)null);
+                    b.ToTable("TaskSchedule_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleAssignment", b =>
@@ -6862,7 +6865,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskScheduleAssignment_Tbl", (string)null);
+                    b.ToTable("TaskScheduleAssignment_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleExecution", b =>
@@ -6902,7 +6905,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("ScheduleId");
 
-                    b.ToTable("TaskScheduleExecution", (string)null);
+                    b.ToTable("TaskScheduleExecution");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskScheduleViewer", b =>
@@ -6938,7 +6941,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskScheduleViewer_Tbl", (string)null);
+                    b.ToTable("TaskScheduleViewer_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplate", b =>
@@ -6985,7 +6988,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("CreatorUserId");
 
-                    b.ToTable("TaskTemplate_Tbl", (string)null);
+                    b.ToTable("TaskTemplate_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskTemplateOperation", b =>
@@ -7012,7 +7015,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TemplateId");
 
-                    b.ToTable("TaskTemplateOperation_Tbl", (string)null);
+                    b.ToTable("TaskTemplateOperation_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskViewPermission", b =>
@@ -7079,7 +7082,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("TaskViewPermission_Tbl", (string)null);
+                    b.ToTable("TaskViewPermission_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskViewer", b =>
@@ -7150,7 +7153,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskViewer_Tbl", (string)null);
+                    b.ToTable("TaskViewer_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.TaskWorkLog", b =>
@@ -7197,7 +7200,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskWorkLog_Tbl", (string)null);
+                    b.ToTable("TaskWorkLog_Tbl");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", b =>
@@ -7346,7 +7349,7 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("Tasks_Tbl", (string)null);
+                    b.ToTable("Tasks_Tbl");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

@@ -117,5 +117,48 @@ namespace MahERP.DataModelLayer.Entities.Notifications
         /// </summary>
         public virtual ICollection<NotificationRecipient> Recipients { get; set; } = new List<NotificationRecipient>();
 
+        /// <summary>
+        /// ⭐⭐⭐ لیست انواع رویدادهای مرتبط (به صورت JSON)
+        /// مثال: "[4,5,14]" برای TaskCommentAdded, TaskUpdated, TaskWorkLog
+        /// </summary>
+        [Column(TypeName = "nvarchar(500)")]
+        public string? RelatedEventTypes { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ Helper Property برای کار با لیست به صورت strongly-typed
+        /// </summary>
+        [NotMapped]
+        public List<byte> EventTypesList
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(RelatedEventTypes))
+                    return new List<byte>();
+
+                try
+                {
+                    return System.Text.Json.JsonSerializer.Deserialize<List<byte>>(RelatedEventTypes) 
+                        ?? new List<byte>();
+                }
+                catch
+                {
+                    return new List<byte>();
+                }
+            }
+            set
+            {
+                RelatedEventTypes = value != null && value.Any()
+                    ? System.Text.Json.JsonSerializer.Serialize(value)
+                    : null;
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ بررسی اینکه آیا این نوع اعلان، یک رویداد خاص را پوشش می‌دهد
+        /// </summary>
+        public bool SupportsEventType(byte eventType)
+        {
+            return EventTypesList.Contains(eventType);
+        }
     }
 }

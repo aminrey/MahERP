@@ -4,6 +4,7 @@
     var selectedNotificationType = ViewBag.SelectedNotificationType as int?;
     var selectedChannelType = ViewBag.SelectedChannelType as byte?;
 }
+@Html.AntiForgeryToken()
 
 <!-- Hero -->
 <div class="bg-body-light">

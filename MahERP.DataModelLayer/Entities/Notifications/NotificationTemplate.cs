@@ -96,6 +96,68 @@ namespace MahERP.DataModelLayer.Entities.Notifications
 
         #endregion
 
+        #region 🔹 تنظیمات زمان‌بندی (برای اعلان‌های دوره‌ای)
+
+        /// <summary>
+        /// آیا این قالب زمان‌بندی شده است؟
+        /// (برای اعلان‌های دوره‌ای مثل اعلان روزانه)
+        /// </summary>
+        public bool IsScheduled { get; set; } = false;
+
+        /// <summary>
+        /// نوع زمان‌بندی
+        /// 0 = Manual (دستی - بدون زمان‌بندی)
+        /// 1 = Daily (روزانه)
+        /// 2 = Weekly (هفتگی)
+        /// 3 = Monthly (ماهانه)
+        /// 4 = Custom (سفارشی با Cron Expression)
+        /// </summary>
+        public byte ScheduleType { get; set; } = 0;
+
+        /// <summary>
+        /// ساعت اجرا (24 ساعته) - مثال: "08:00"
+        /// </summary>
+        [MaxLength(5)]
+        public string? ScheduledTime { get; set; }
+
+        /// <summary>
+        /// روزهای هفته برای اجرا (برای Weekly)
+        /// مثال: "1,3,5" = دوشنبه، چهارشنبه، جمعه
+        /// 0=یکشنبه، 1=دوشنبه، ..., 6=شنبه
+        /// </summary>
+        [MaxLength(50)]
+        public string? ScheduledDaysOfWeek { get; set; }
+
+        /// <summary>
+        /// روز ماه برای اجرا (برای Monthly)
+        /// مثال: 1, 15, 30
+        /// </summary>
+        public int? ScheduledDayOfMonth { get; set; }
+
+        /// <summary>
+        /// Cron Expression برای زمان‌بندی پیشرفته
+        /// مثال: "0 8 * * 1-5" = هر روز کاری ساعت 8 صبح
+        /// </summary>
+        [MaxLength(100)]
+        public string? CronExpression { get; set; }
+
+        /// <summary>
+        /// آخرین زمان اجرای موفق
+        /// </summary>
+        public DateTime? LastExecutionDate { get; set; }
+
+        /// <summary>
+        /// زمان بعدی اجرا (محاسبه شده)
+        /// </summary>
+        public DateTime? NextExecutionDate { get; set; }
+
+        /// <summary>
+        /// آیا زمان‌بندی فعال است؟
+        /// </summary>
+        public bool IsScheduleEnabled { get; set; } = true;
+
+        #endregion
+
         #region 🔹 متادیتا و آمار
 
         /// <summary>
@@ -226,6 +288,31 @@ namespace MahERP.DataModelLayer.Entities.Notifications
             3 => "fa-telegram",     // Telegram
             _ => "fa-bell"
         };
+
+        /// <summary>
+        /// نام نوع زمان‌بندی (برای نمایش)
+        /// </summary>
+        [NotMapped]
+        public string ScheduleTypeName => ScheduleType switch
+        {
+            0 => "دستی",
+            1 => "روزانه",
+            2 => "هفتگی",
+            3 => "ماهانه",
+            4 => "سفارشی",
+            _ => "نامشخص"
+        };
+
+        /// <summary>
+        /// آیا زمان اجرای بعدی رسیده است؟
+        /// </summary>
+        [NotMapped]
+        public bool IsDueForExecution =>
+            IsScheduled &&
+            IsScheduleEnabled &&
+            IsActive &&
+            NextExecutionDate.HasValue &&
+            NextExecutionDate.Value <= DateTime.Now;
 
         #endregion
     }

@@ -154,7 +154,11 @@
                                     {
                                         <!-- دکمه‌های عادی برای کاربران فعال -->
                                         <div class="btn-group" role="group" aria-label="عملیات کاربر">
-
+                                            <!-- دکمه ارسال پیام -->
+                                            <button asp-controller="UserManager" asp-action="SendMessageToUser" asp-route-UserId="@item.Id" asp-route-page="users" 
+                                                    class="btn btn-sm btn-alt-info" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title="ارسال پیام" type="button">
+                                                <i class="fa fa-paper-plane"></i>
+                                            </button>
                                             <!-- دکمه تغییر رمز عبور -->
                                             <button asp-controller="UserManager" asp-action="ChangePasswordByAdmin" asp-route-UserId="@item.Id"
                                                     class="btn btn-sm btn-alt-secondary" data-bs-target="#modal-action" data-toggle="modal-ajax" data-bs-toggle="tooltip" title="تغییر رمز عبور" type="button">

@@ -298,22 +298,51 @@ namespace MahERP.DataModelLayer.Repository.Notifications
             // متغیرهای سیستمی عمومی
             return new List<SystemVariableViewModel>
             {
+                // ⭐ متغیرهای پایه
                 new() { VariableName = "Title", DisplayName = "عنوان", Description = "عنوان اعلان" },
                 new() { VariableName = "Message", DisplayName = "پیام", Description = "متن پیام" },
                 new() { VariableName = "ActionUrl", DisplayName = "لینک", Description = "لینک عملیات" },
                 new() { VariableName = "Date", DisplayName = "تاریخ", Description = "تاریخ جاری" },
                 new() { VariableName = "Time", DisplayName = "ساعت", Description = "ساعت جاری" },
-                new() { VariableName = "UserName", DisplayName = "نام کاربر", Description = "نام کاربری کامل" },
-                new() { VariableName = "FirstName", DisplayName = "نام", Description = "نام کوچک کاربر" },
-                new() { VariableName = "LastName", DisplayName = "نام خانوادگی", Description = "نام خانوادگی کاربر" },
-                new() { VariableName = "Email", DisplayName = "ایمیل", Description = "آدرس ایمیل" },
-                new() { VariableName = "PhoneNumber", DisplayName = "شماره تماس", Description = "شماره موبایل" },
+                
+                // ⭐ اطلاعات کاربر دریافت‌کننده
+                new() { VariableName = "RecipientFullName", DisplayName = "نام کامل گیرنده", Description = "نام و نام خانوادگی گیرنده" },
+                new() { VariableName = "RecipientFirstName", DisplayName = "نام گیرنده", Description = "نام کوچک گیرنده" },
+                new() { VariableName = "RecipientLastName", DisplayName = "نام خانوادگی گیرنده", Description = "نام خانوادگی گیرنده" },
+                new() { VariableName = "RecipientUserName", DisplayName = "نام کاربری", Description = "نام کاربری سیستم" },
+                new() { VariableName = "RecipientEmail", DisplayName = "ایمیل گیرنده", Description = "آدرس ایمیل گیرنده" },
+                new() { VariableName = "RecipientPhone", DisplayName = "تلفن گیرنده", Description = "شماره موبایل گیرنده" },
+                
+                // ⭐ اطلاعات تسک
+                new() { VariableName = "TaskTitle", DisplayName = "عنوان تسک", Description = "عنوان تسک" },
+                new() { VariableName = "TaskCode", DisplayName = "کد تسک", Description = "کد یکتای تسک" },
+                new() { VariableName = "TaskDescription", DisplayName = "توضیحات تسک", Description = "توضیحات تسک" },
+                new() { VariableName = "TaskStartDate", DisplayName = "تاریخ شروع", Description = "تاریخ شروع تسک" },
+                new() { VariableName = "TaskDueDate", DisplayName = "مهلت انجام", Description = "تاریخ سررسید تسک" },
+                new() { VariableName = "TaskPriority", DisplayName = "اولویت", Description = "اولویت تسک (عادی/متوسط/بالا/فوری)" },
+                new() { VariableName = "TaskCategory", DisplayName = "دسته‌بندی", Description = "دسته‌بندی تسک" },
+                new() { VariableName = "TaskStakeholder", DisplayName = "طرف حساب", Description = "شخص یا سازمان مرتبط" },
+                new() { VariableName = "TaskBranch", DisplayName = "شعبه", Description = "شعبه مربوط به تسک" },
+                new() { VariableName = "TaskCreatorName", DisplayName = "سازنده تسک", Description = "نام سازنده تسک" },
+                new() { VariableName = "SenderName", DisplayName = "ارسال‌کننده", Description = "نام ارسال‌کننده اعلان" },
+                
+                // ⭐⭐⭐ NEW: لیست تسک‌های انجام نشده
+                new() { 
+                    VariableName = "PendingTasks", 
+                    DisplayName = "لیست تسک‌های انجام نشده", 
+                    Description = "لیست کامل تسک‌های در حال انجام کاربر با جزئیات (عنوان، توضیح، تاریخ، اولویت، پیشرفت)" 
+                },
+                
+                // ⭐ متغیرهای قدیمی (حفظ برای سازگاری)
+                new() { VariableName = "UserName", DisplayName = "[قدیمی] نام کاربر", Description = "استفاده از RecipientFullName پیشنهاد می‌شود" },
+                new() { VariableName = "FirstName", DisplayName = "[قدیمی] نام", Description = "استفاده از RecipientFirstName پیشنهاد می‌شود" },
+                new() { VariableName = "LastName", DisplayName = "[قدیمی] نام خانوادگی", Description = "استفاده از RecipientLastName پیشنهاد می‌شود" },
+                new() { VariableName = "Email", DisplayName = "[قدیمی] ایمیل", Description = "استفاده از RecipientEmail پیشنهاد می‌شود" },
+                new() { VariableName = "PhoneNumber", DisplayName = "[قدیمی] شماره تماس", Description = "استفاده از RecipientPhone پیشنهاد می‌شود" },
                 new() { VariableName = "SystemName", DisplayName = "نام سیستم", Description = "نام سیستم ERP" },
                 new() { VariableName = "CompanyName", DisplayName = "نام شرکت", Description = "نام شرکت" },
                 new() { VariableName = "BranchName", DisplayName = "نام شعبه", Description = "نام شعبه فعلی" },
-                new() { VariableName = "TaskTitle", DisplayName = "عنوان تسک", Description = "عنوان تسک" },
-                new() { VariableName = "TaskCode", DisplayName = "کد تسک", Description = "کد یکتای تسک" },
-                new() { VariableName = "DueDate", DisplayName = "مهلت انجام", Description = "تاریخ سررسید تسک" }
+                new() { VariableName = "DueDate", DisplayName = "[قدیمی] مهلت", Description = "استفاده از TaskDueDate پیشنهاد می‌شود" }
             };
         }
 
@@ -482,29 +511,43 @@ namespace MahERP.DataModelLayer.Repository.Notifications
         {
             var templates = await GetAllTemplatesAsync(notificationTypeId, channelType);
 
+            // ⭐⭐⭐ دریافت نام فارسی از NotificationTypeConfig
+            var typeConfigs = await _context.NotificationTypeConfig_Tbl
+                .Include(t => t.ModuleConfig) // ⭐ Include ModuleName
+                .Where(t => t.IsActive)
+                .ToListAsync();
+
             return new NotificationTemplateListViewModel
             {
-                Templates = templates.Select(t => new NotificationTemplateItemViewModel
+                Templates = templates.Select(t =>
                 {
-                    Id = t.Id,
-                    TemplateCode = t.TemplateCode,
-                    TemplateName = t.TemplateName,
-                    NotificationTypeName = t.EventTypeName, // ✅ از Helper Property استفاده می‌کنیم
-                    ModuleName = "تسکینگ", // ✅ فعلاً ثابت (بعداً از config بخوانید)
-                    Channel = t.Channel, // ✅ اصلاح
-                    ChannelTypeName = t.ChannelName, // ✅ از Helper Property استفاده می‌کنیم
-                    RecipientMode = t.RecipientMode,
-                    RecipientCount = t.Recipients.Count(r => r.IsActive),
-                    Description = t.Description,
-                    IsSystemTemplate = t.IsSystemTemplate,
-                    IsActive = t.IsActive,
-                    Version = t.Version,
-                    UsageCount = t.UsageCount,
-                    LastUsedDate = t.LastUsedDate,
-                    CreatedDate = t.CreatedDate,
-                    CreatorName = t.CreatedBy != null
-                        ? $"{t.CreatedBy.FirstName} {t.CreatedBy.LastName}"
-                        : "سیستم"
+                    // ⭐ پیدا کردن TypeConfig که این EventType را پوشش می‌دهد
+                    var typeConfig = typeConfigs.FirstOrDefault(tc =>
+                        tc.EventTypesList.Contains(t.NotificationEventType));
+
+                    return new NotificationTemplateItemViewModel
+                    {
+                        Id = t.Id,
+                        TemplateCode = t.TemplateCode,
+                        TemplateName = t.TemplateName,
+                        // ⭐⭐⭐ استفاده از نام فارسی از Config
+                        NotificationTypeName = typeConfig?.TypeNameFa ?? t.EventTypeName,
+                        ModuleName = typeConfig?.ModuleConfig?.ModuleNameFa ?? "تسکینگ",
+                        Channel = t.Channel,
+                        ChannelTypeName = t.ChannelName,
+                        RecipientMode = t.RecipientMode,
+                        RecipientCount = t.Recipients.Count(r => r.IsActive),
+                        Description = t.Description,
+                        IsSystemTemplate = t.IsSystemTemplate,
+                        IsActive = t.IsActive,
+                        Version = t.Version,
+                        UsageCount = t.UsageCount,
+                        LastUsedDate = t.LastUsedDate,
+                        CreatedDate = t.CreatedDate,
+                        CreatorName = t.CreatedBy != null
+                            ? $"{t.CreatedBy.FirstName} {t.CreatedBy.LastName}"
+                            : "سیستم"
+                    };
                 }).ToList()
             };
         }
@@ -513,17 +556,21 @@ namespace MahERP.DataModelLayer.Repository.Notifications
         // ⭐ متد جدید برای دریافت لیست انواع اعلان
         private async Task<List<NotificationTypeSelectItem>> GetAvailableNotificationTypesAsync()
         {
-            return await _context.NotificationTypeConfig_Tbl
+            var configs = await _context.NotificationTypeConfig_Tbl
                 .Where(t => t.IsActive)
                 .OrderBy(t => t.ModuleConfigId)
-                .ThenBy(t => t.TypeNameFa)
-                .Select(t => new NotificationTypeSelectItem
-                {
-                    Id = t.Id,
-                    Name = t.TypeNameFa,
-                    ModuleName = t.ModuleConfig.ModuleNameFa 
-                })
+                .ThenBy(t => t.TypeNameFa).Include(t=> t.ModuleConfig)
                 .ToListAsync();
+
+            return configs.Select(t => new NotificationTypeSelectItem
+            {
+                // ⭐⭐⭐ استفاده از اولین EventType به جای Id
+                Id = t.EventTypesList.Any() ? t.EventTypesList.First() : 0,
+                Name = t.TypeNameFa,
+                ModuleName = t.ModuleConfig.ModuleNameFa,
+                // ⭐⭐⭐ فقط اعلان‌های دوره‌ای قابل زمان‌بندی هستند
+                IsSchedulable = t.EventTypesList.Contains(13) // DailyTaskDigest
+            }).ToList();
         }
 
         // ⭐ اصلاح متد GetTemplateFormViewModelAsync
@@ -555,6 +602,16 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                     RecipientMode = template.RecipientMode,
                     SelectedUserIds = selectedUserIds,
                     IsActive = template.IsActive,
+                    
+                    // ⭐⭐⭐ فیلدهای زمان‌بندی
+                    IsScheduled = template.IsScheduled,
+                    ScheduleType = template.ScheduleType,
+                    ScheduledTime = template.ScheduledTime,
+                    ScheduledDaysOfWeek = template.ScheduledDaysOfWeek,
+                    ScheduledDayOfMonth = template.ScheduledDayOfMonth,
+                    LastExecutionDate = template.LastExecutionDate,
+                    NextExecutionDate = template.NextExecutionDate,
+                    
                     SystemVariables = await GetSystemVariablesAsync(),
                     AvailableUsers = await GetUsersForSelectAsync(),
                     AvailableNotificationTypes = await GetAvailableNotificationTypesAsync() // ✅ اضافه شد

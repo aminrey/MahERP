@@ -112,6 +112,20 @@
                                             <label asp-for="Email" class="form-label input-label " for="example-text-input-floating">آدرس ایمیل</label>
 
                                         </div>
+                                        
+                                        <div class="form-floating  mb-3 col-6">
+                                            <input asp-for="TelegramChatId" class="form-control" id="telegram-chat-id-input" placeholder="چت آی دی تلگرام" type="number">
+                                            <label asp-for="TelegramChatId" class="form-label input-label" for="telegram-chat-id-input">چت آی دی تلگرام</label>
+                                            <span asp-validation-for="TelegramChatId" class="text-danger"></span>
+                                            <div class="form-text text-muted fs-sm">
+                                                <i class="fa fa-info-circle me-1"></i>
+                                            <span>
+                                                برای دریافت چت آی دی خود در تلگرام، به ربات 
+                                            </span>
+                                                
+                                                <code><text>@@</text>userinfobot</code> پیام دهید
+                                            </div>
+                                        </div>
                                     </div>
 
                                 </div>

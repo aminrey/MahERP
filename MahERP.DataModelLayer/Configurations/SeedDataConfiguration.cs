@@ -1,5 +1,4 @@
 ﻿using MahERP.DataModelLayer.AcControl;
-using MahERP.DataModelLayer.Entities;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Notifications;
 using MahERP.DataModelLayer.Entities.TaskManagement;
@@ -220,8 +219,8 @@ namespace MahERP.DataModelLayer.Configurations
                     Id = 1,
                     ModuleConfigId = 1,
                     TypeCode = "TASK_DAILY_DIGEST",
-                    TypeNameFa = "اعلان روزانه تسک‌های انجام نشده",
-                    Description = "ارسال لیست تسک‌های انجام نشده هر روز",
+                    TypeNameFa = "اعلان زمانبدی شده",
+                    Description = "ارسال پیام زمان بندی شده)",
                     CoreNotificationTypeGeneral = 0,
                     CoreNotificationTypeSpecific = 0,
                     IsActive = true,
@@ -230,7 +229,8 @@ namespace MahERP.DataModelLayer.Configurations
                     SupportsSms = false,
                     SupportsTelegram = true,
                     AllowUserCustomization = true,
-                    DisplayOrder = 1
+                    DisplayOrder = 1,
+                    RelatedEventTypes = "[13]" // ⭐ فقط DailyTaskDigest
                 },
                 
                 // تخصیص تسک
@@ -249,7 +249,8 @@ namespace MahERP.DataModelLayer.Configurations
                     SupportsSms = true,
                     SupportsTelegram = true,
                     AllowUserCustomization = true,
-                    DisplayOrder = 2
+                    DisplayOrder = 2,
+                    RelatedEventTypes = "[1,12]" // ⭐ TaskAssigned و TaskReassigned
                 },
                 
                 // تکمیل تسک
@@ -268,7 +269,8 @@ namespace MahERP.DataModelLayer.Configurations
                     SupportsSms = false,
                     SupportsTelegram = true,
                     AllowUserCustomization = true,
-                    DisplayOrder = 3
+                    DisplayOrder = 3,
+                    RelatedEventTypes = "[2,6]" // ⭐ TaskCompleted و TaskOperationCompleted
                 },
                 
                 // یادآوری
@@ -287,10 +289,11 @@ namespace MahERP.DataModelLayer.Configurations
                     SupportsSms = true,
                     SupportsTelegram = true,
                     AllowUserCustomization = true,
-                    DisplayOrder = 4
+                    DisplayOrder = 4,
+                    RelatedEventTypes = "[3]" // ⭐ فقط TaskDeadlineReminder
                 },
                 
-                // تغییرات
+                // تغییرات در تسک
                 new NotificationTypeConfig
                 {
                     Id = 5,
@@ -306,7 +309,8 @@ namespace MahERP.DataModelLayer.Configurations
                     SupportsSms = false,
                     SupportsTelegram = true,
                     AllowUserCustomization = true,
-                    DisplayOrder = 5
+                    DisplayOrder = 5,
+                    RelatedEventTypes = "[4,5,8,10,11,14]" // ⭐ TaskCommentAdded, TaskUpdated, TaskStatusChanged, CommentMentioned, TaskPriorityChanged, TaskWorkLog
                 }
             );
         }
