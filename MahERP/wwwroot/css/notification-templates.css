@@ -1,4 +1,4 @@
-/* Notification Templates Styles */
+﻿/* Notification Templates Styles */
 
 /* Template Cards */
 .template-card {
@@ -21,6 +21,26 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* ⭐⭐⭐ Schedule Box Styles */
+.template-card .alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+    border-left: 3px solid #ffc107;
+}
+
+.template-card .alert-warning strong {
+    color: #856404;
+}
+
+.template-card .alert-warning small {
+    color: #856404;
+    font-size: 0.75rem;
+}
+
+.template-card .alert-warning .text-success {
+    color: #28a745 !important;
 }
 
 /* Variable List */
@@ -49,7 +69,8 @@
 
 /* Form Fields Animation */
 #subjectField,
-#htmlEditorField {
+#htmlEditorField,
+#schedulingBlock {
     animation: slideDown 0.3s ease;
 }
 
@@ -87,5 +108,23 @@
     .template-card .btn-sm {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
+    }
+    
+    .template-card .alert-warning {
+        font-size: 0.85rem;
+    }
+}
+
+/* ⭐ Schedule Icon Animation */
+.fa-clock {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
     }
 }

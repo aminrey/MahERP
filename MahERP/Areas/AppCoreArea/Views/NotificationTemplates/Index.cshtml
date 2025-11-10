@@ -142,6 +142,54 @@
                                 </small>
                             </div>
 
+                            <!-- ⭐⭐⭐ بخش زمان‌بندی -->
+                            @if (template.IsScheduled)
+                            {
+                                <div class="alert alert-warning mb-3 p-2">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fa fa-clock me-2"></i>
+                                        <strong>زمان‌بندی خودکار فعال</strong>
+                                    </div>
+                                    <small class="d-block">
+                                        <i class="fa fa-calendar me-1"></i>
+                                        @switch (template.ScheduleType)
+                                        {
+                                            case 1:
+                                                <text>روزانه ساعت @template.ScheduledTime</text>
+                                                break;
+                                            case 2:
+                                                var dayNames = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
+                                                var selectedDays = template.ScheduledDaysOfWeek?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                    .Select(d => int.TryParse(d, out var day) ? dayNames[day] : "")
+                                                    .Where(d => !string.IsNullOrEmpty(d))
+                                                    .ToList() ?? new List<string>();
+                                                <text>هفتگی (@string.Join(", ", selectedDays)) ساعت @template.ScheduledTime</text>
+                                                break;
+                                            case 3:
+                                                <text>ماهانه (روز @template.ScheduledDayOfMonth) ساعت @template.ScheduledTime</text>
+                                                break;
+                                            default:
+                                                <text>دستی</text>
+                                                break;
+                                        }
+                                    </small>
+                                    @if (template.NextExecutionDate.HasValue)
+                                    {
+                                        <small class="d-block mt-1">
+                                            <i class="fa fa-arrow-left me-1"></i>
+                                            اجرای بعدی: @template.NextExecutionDate.Value.ToString("yyyy/MM/dd HH:mm")
+                                        </small>
+                                    }
+                                    @if (template.LastExecutionDate.HasValue)
+                                    {
+                                        <small class="d-block text-success">
+                                            <i class="fa fa-check-circle me-1"></i>
+                                            آخرین اجرا: @template.LastExecutionDate.Value.ToString("yyyy/MM/dd HH:mm")
+                                        </small>
+                                    }
+                                </div>
+                            }
+
                             <p class="fs-sm text-muted mb-3">
                                 @(string.IsNullOrEmpty(template.Description) ? "بدون توضیحات" : template.Description)
                             </p>

@@ -111,6 +111,24 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                 existing.LastModifiedDate = DateTime.Now;
                 existing.LastModifiedByUserId = userId;
 
+                // ⭐⭐⭐ بروزرسانی فیلدهای زمان‌بندی
+                existing.IsScheduled = template.IsScheduled;
+                existing.ScheduleType = template.ScheduleType;
+                existing.ScheduledTime = template.ScheduledTime;
+                existing.ScheduledDaysOfWeek = template.ScheduledDaysOfWeek;
+                existing.ScheduledDayOfMonth = template.ScheduledDayOfMonth;
+                existing.IsScheduleEnabled = template.IsScheduleEnabled;
+                
+                // ⭐ محاسبه زمان اجرای بعدی اگر زمان‌بندی فعال شد
+                if (template.IsScheduled && !string.IsNullOrEmpty(template.ScheduledTime))
+                {
+                    existing.NextExecutionDate = CalculateNextExecutionDate(existing);
+                }
+                else
+                {
+                    existing.NextExecutionDate = null;
+                }
+
                 _context.NotificationTemplate_Tbl.Update(existing);
                 await _context.SaveChangesAsync();
 
@@ -123,6 +141,115 @@ namespace MahERP.DataModelLayer.Repository.Notifications
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// محاسبه زمان اجرای بعدی بر اساس تنظیمات زمان‌بندی
+        /// </summary>
+        private DateTime? CalculateNextExecutionDate(NotificationTemplate template)
+        {
+            if (string.IsNullOrEmpty(template.ScheduledTime))
+                return null;
+
+            var now = DateTime.Now;
+            var timeParts = template.ScheduledTime.Split(':');
+
+            if (timeParts.Length != 2 ||
+                !int.TryParse(timeParts[0], out int hour) ||
+                !int.TryParse(timeParts[1], out int minute))
+            {
+                return null;
+            }
+
+            DateTime nextExecution;
+
+            switch (template.ScheduleType)
+            {
+                case 1: // روزانه
+                    nextExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0);
+                    if (nextExecution <= now)
+                    {
+                        nextExecution = nextExecution.AddDays(1);
+                    }
+                    break;
+
+                case 2: // هفتگی
+                    if (string.IsNullOrEmpty(template.ScheduledDaysOfWeek))
+                        return null;
+
+                    var daysOfWeek = template.ScheduledDaysOfWeek
+                        .Split(',')
+                        .Select(d => int.Parse(d.Trim()))
+                        .OrderBy(d => d)
+                        .ToList();
+
+                    nextExecution = FindNextWeeklyExecution(now, hour, minute, daysOfWeek);
+                    break;
+
+                case 3: // ماهانه
+                    if (!template.ScheduledDayOfMonth.HasValue)
+                        return null;
+
+                    nextExecution = FindNextMonthlyExecution(now, hour, minute, template.ScheduledDayOfMonth.Value);
+                    break;
+
+                default:
+                    return null;
+            }
+
+            return nextExecution;
+        }
+
+        /// <summary>
+        /// پیدا کردن زمان بعدی برای زمان‌بندی هفتگی
+        /// </summary>
+        private DateTime FindNextWeeklyExecution(DateTime now, int hour, int minute, List<int> daysOfWeek)
+        {
+            var currentDayOfWeek = (int)now.DayOfWeek;
+
+            // چک کردن امروز
+            var todayExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0);
+            if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > now)
+            {
+                return todayExecution;
+            }
+
+            // پیدا کردن روز بعدی
+            for (int i = 1; i <= 7; i++)
+            {
+                var nextDate = now.AddDays(i);
+                var nextDayOfWeek = (int)nextDate.DayOfWeek;
+
+                if (daysOfWeek.Contains(nextDayOfWeek))
+                {
+                    return new DateTime(nextDate.Year, nextDate.Month, nextDate.Day, hour, minute, 0);
+                }
+            }
+
+            return now.AddDays(7);
+        }
+
+        /// <summary>
+        /// پیدا کردن زمان بعدی برای زمان‌بندی ماهانه
+        /// </summary>
+        private DateTime FindNextMonthlyExecution(DateTime now, int hour, int minute, int dayOfMonth)
+        {
+            // چک کردن این ماه
+            var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
+            var targetDay = Math.Min(dayOfMonth, daysInMonth);
+
+            var thisMonthExecution = new DateTime(now.Year, now.Month, targetDay, hour, minute, 0);
+            if (thisMonthExecution > now)
+            {
+                return thisMonthExecution;
+            }
+
+            // ماه بعد
+            var nextMonth = now.AddMonths(1);
+            daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
+            targetDay = Math.Min(dayOfMonth, daysInMonth);
+
+            return new DateTime(nextMonth.Year, nextMonth.Month, targetDay, hour, minute, 0);
         }
 
         public async Task<bool> DeleteTemplateAsync(int templateId)
@@ -546,7 +673,16 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                         CreatedDate = t.CreatedDate,
                         CreatorName = t.CreatedBy != null
                             ? $"{t.CreatedBy.FirstName} {t.CreatedBy.LastName}"
-                            : "سیستم"
+                            : "سیستم",
+                        
+                        // ⭐⭐⭐ فیلدهای زمان‌بندی
+                        IsScheduled = t.IsScheduled,
+                        ScheduleType = t.ScheduleType,
+                        ScheduledTime = t.ScheduledTime,
+                        ScheduledDaysOfWeek = t.ScheduledDaysOfWeek,
+                        ScheduledDayOfMonth = t.ScheduledDayOfMonth,
+                        LastExecutionDate = t.LastExecutionDate,
+                        NextExecutionDate = t.NextExecutionDate
                     };
                 }).ToList()
             };
@@ -587,6 +723,14 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                     .Where(r => r.IsActive && r.RecipientType == 2)
                     .Select(r => r.UserId)
                     .ToList();
+
+                // ⭐⭐⭐ Debug: لاگ مقادیر زمان‌بندی
+                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] Template ID: {template.Id}");
+                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] IsScheduled: {template.IsScheduled}");
+                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] ScheduleType: {template.ScheduleType}");
+                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] ScheduledTime: {template.ScheduledTime}");
+                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] ScheduledDaysOfWeek: {template.ScheduledDaysOfWeek}");
+                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] ScheduledDayOfMonth: {template.ScheduledDayOfMonth}");
 
                 return new NotificationTemplateFormViewModel
                 {

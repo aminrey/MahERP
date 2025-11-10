@@ -39,6 +39,15 @@ namespace MahERP.DataModelLayer.ViewModels.Notifications
         public DateTime? LastUsedDate { get; set; }
         public DateTime CreatedDate { get; set; }
         public string? CreatorName { get; set; }
+        
+        // ⭐⭐⭐ فیلدهای زمان‌بندی
+        public bool IsScheduled { get; set; }
+        public byte ScheduleType { get; set; }
+        public string? ScheduledTime { get; set; }
+        public string? ScheduledDaysOfWeek { get; set; }
+        public int? ScheduledDayOfMonth { get; set; }
+        public DateTime? LastExecutionDate { get; set; }
+        public DateTime? NextExecutionDate { get; set; }
     }
 
     /// <summary>

@@ -179,6 +179,15 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                     RecipientMode = model.RecipientMode,
                     IsActive = model.IsActive,
                     IsSystemTemplate = false,
+                    
+                    // ⭐⭐⭐ فیلدهای زمان‌بندی
+                    IsScheduled = model.IsScheduled,
+                    ScheduleType = model.ScheduleType,
+                    ScheduledTime = model.ScheduledTime,
+                    ScheduledDaysOfWeek = model.ScheduledDaysOfWeek,
+                    ScheduledDayOfMonth = model.ScheduledDayOfMonth,
+                    IsScheduleEnabled = model.IsScheduled,
+                    
                     CreatedByUserId = currentUserId,
                     CreatedDate = DateTime.Now
                 };
@@ -326,6 +335,15 @@ namespace MahERP.Areas.AppCoreArea.Controllers
 
                     RecipientMode = model.RecipientMode,
                     IsActive = model.IsActive,
+                    
+                    // ⭐⭐⭐ فیلدهای زمان‌بندی
+                    IsScheduled = model.IsScheduled,
+                    ScheduleType = model.ScheduleType,
+                    ScheduledTime = model.ScheduledTime,
+                    ScheduledDaysOfWeek = model.ScheduledDaysOfWeek,
+                    ScheduledDayOfMonth = model.ScheduledDayOfMonth,
+                    IsScheduleEnabled = model.IsScheduled, // وقتی IsScheduled فعال است، IsScheduleEnabled هم فعال است
+                    
                     LastModifiedDate = DateTime.Now,
                     LastModifiedByUserId = currentUserId
                 };
