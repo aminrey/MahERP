@@ -194,11 +194,26 @@
     </div>
 </div>
 <!-- END یادآوری‌ها -->
+
+
 @section Scripts {
 
     
     <script>
         $(document).ready(function() {
+          @if (ViewBag.ShowTelegramGuide == true)
+            {
+                    <text>
+                    // استفاده از createAndShowModal از main.js
+                    createAndShowModal({
+                        url: '@Url.Action("ShowTelegramGuideModal", "Dashboard", new { area = "TaskingArea" })',
+                        backdrop: 'static',
+                        keyboard: false,
+                        removeOnHide: true
+                    });
+                    </text>
+            }
+
             // بارگذاری داده‌های داشبورد
             loadDashboardData();
             loadRecentTasks();

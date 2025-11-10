@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
+using Telegram.Bot;
 ;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -175,7 +176,7 @@ builder.Services.AddHostedService<NotificationProcessingBackgroundService>();
 
 // ⭐⭐⭐ NEW: سرویس زمان‌بندی اعلان‌های دوره‌ای
 builder.Services.AddHostedService<ScheduledNotificationBackgroundService>();
-
+builder.Services.AddHostedService<TelegramPollingBackgroundService>();
 var app = builder.Build();
 
 
@@ -209,5 +210,6 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
+
 
 app.Run();

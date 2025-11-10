@@ -61,13 +61,16 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             _taskrepository = taskRepository;
             _notify = notify;
         }
-
         public async Task<IActionResult> Index()
         {
             try
             {
                 var userId = _UserManager.GetUserId(User);
+                var currentUser = await _UserManager.GetUserAsync(User);
                 var model = await _mainDashboardRepository.PrepareDashboardModelAsync(userId, User.Identity.Name);
+
+                // بررسی وضعیت Telegram Chat ID
+                ViewBag.ShowTelegramGuide = currentUser?.TelegramChatId == null;
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Dashboard", "Index", "مشاهده داشبورد اصلی");
@@ -334,6 +337,15 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
                     return $"{(int)timeSpan.TotalHours} ساعت دیگر";
                 return $"{(int)timeSpan.TotalDays} روز دیگر";
             }
+        }
+
+        /// <summary>
+        /// نمایش مودال راهنمای دریافت Chat ID تلگرام
+        /// </summary>
+        [HttpGet]
+        public IActionResult ShowTelegramGuideModal()
+        {
+            return PartialView("_TelegramGuideModal");
         }
     }
 }

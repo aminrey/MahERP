@@ -15,11 +15,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
+using Telegram.Bot;
 
 namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
 {
     [Area("TaskingArea")]
-    [Authorize]
     //[PermissionRequired("CORE.USER")]
     public class UserManagerController : BaseController
     {
@@ -162,7 +162,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
                         currentUser.Address,
                         currentUser.MelliCode,
                         currentUser.Gender,
-                        currentUser.ProfileImagePath
+                        currentUser.ProfileImagePath,
+                        currentUser.TelegramChatId
                     };
 
                     // به‌روزرسانی اطلاعات
@@ -178,6 +179,12 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
                     currentUser.MelliCode = model.MelliCode;
                     currentUser.ProfileImagePath = model.ProfileImagePath;
                     currentUser.Gender = model.Gender ?? 1;
+
+                    // فقط در صورتی که TelegramChatId قبلاً ثبت نشده باشد، امکان تغییر وجود دارد
+                    if (!currentUser.TelegramChatId.HasValue )
+                    {
+                        currentUser.TelegramChatId = model.TelegramChatId;
+                    }
 
                     var result = await _UserManager.UpdateAsync(currentUser);
                     if (result.Succeeded)
@@ -196,7 +203,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
                             currentUser.Address,
                             currentUser.MelliCode,
                             currentUser.Gender,
-                            currentUser.ProfileImagePath
+                            currentUser.ProfileImagePath,
+                            currentUser.TelegramChatId
                         };
 
                         // ثبت لاگ تغییرات
@@ -247,8 +255,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
                 }
             }
 
-            // در صورت نامعتبر بودن ModelState، فقط از ResponseMessage استفاده کنید
-            // ModelState.Clear() تا خطاهای مکرر نمایش داده نشوند
             var modelErrors = ModelState
                 .Where(x => x.Value.Errors.Count > 0)
                 .SelectMany(x => x.Value.Errors.Select(e => e.ErrorMessage))
@@ -256,9 +262,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
 
             if (modelErrors.Any())
             {
-                // پاک کردن ModelState تا خطاهای مکرر نمایش داده نشوند
                 ModelState.Clear();
-
                 var errorMessages = ResponseMessage.CreateErrorResponse(modelErrors);
                 TempData["ResponseMessages"] = System.Text.Json.JsonSerializer.Serialize(errorMessages);
             }
@@ -477,6 +481,196 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
 
                 return Json(new { status = "error", message = $"خطا در آپلود تصویر: {ex.Message}" });
             }
+        }
+
+        /// <summary>
+        /// API برای دریافت و ثبت Chat ID از طریق Telegram Bot
+        /// این endpoint توسط ربات تلگرام فراخوانی می‌شود
+        /// </summary>
+        [HttpPost]
+        [AllowAnonymous] // چون از Telegram Bot فراخوانی می‌شود
+        public async Task<IActionResult> RegisterTelegramChatId([FromBody] TelegramChatIdRequest request)
+        {
+            try
+            {
+                // اعتبارسنجی ورودی
+                if (request == null || request.ChatId == 0 || string.IsNullOrEmpty(request.Token))
+                {
+                    return Json(new { success = false, message = "اطلاعات ناقص است" });
+                }
+
+                // پیدا کردن کاربر بر اساس توکن (userId)
+                var user = _Context.UserManagerUW.Get(u => u.Id == request.Token && !u.IsRemoveUser).FirstOrDefault();
+
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "کاربر یافت نشد" });
+                }
+
+                // بررسی اینکه Chat ID قبلاً ثبت نشده باشد
+                if (user.TelegramChatId.HasValue)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = "Chat ID قبلاً ثبت شده است",
+                        alreadyRegistered = true,
+                        userName = $"{user.FirstName} {user.LastName}"
+                    });
+                }
+
+                // ⭐ ثبت Chat ID
+                user.TelegramChatId = request.ChatId;
+        
+                // ⭐⭐⭐ روش 1: استفاده از UserManager (پیشنهادی)
+                var result = await _UserManager.UpdateAsync(user);
+
+                if (result.Succeeded)
+                {
+                    // ⭐⭐⭐ COMMIT تغییرات به دیتابیس
+                    await _Context.SaveAsync();
+
+                    // ثبت لاگ
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Edit,
+                        "UserManager",
+                        "RegisterTelegramChatId",
+                        $"ثبت Chat ID تلگرام: {user.FirstName} {user.LastName} - Chat ID: {request.ChatId}",
+                        recordId: user.Id,
+                        entityType: "AppUsers",
+                        recordTitle: $"{user.FirstName} {user.LastName}"
+                    );
+
+                    return Json(new 
+                    { 
+                        success = true, 
+                        message = "Chat ID با موفقیت ثبت شد",
+                        userName = $"{user.FirstName} {user.LastName}"
+                    });
+                }
+                else
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = "خطا در ثبت Chat ID: " + string.Join(", ", result.Errors.Select(e => e.Description))
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "UserManager",
+                    "RegisterTelegramChatId",
+                    "خطا در ثبت Chat ID تلگرام",
+                    ex
+                );
+
+                return Json(new { success = false, message = $"خطای سیستمی: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// تولید لینک اختصاصی تلگرام برای کاربر جاری
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetTelegramBotLink()
+        {
+            try
+            {
+                var currentUser = await _UserManager.GetUserAsync(User);
+                if (currentUser == null)
+                {
+                    return Json(new { success = false, message = "کاربر یافت نشد" });
+                }
+
+                // بررسی اینکه Chat ID قبلاً ثبت نشده باشد
+                if (currentUser.TelegramChatId.HasValue)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = "Chat ID قبلاً ثبت شده است",
+                        alreadyRegistered = true
+                    });
+                }
+
+                // ⭐ دریافت Bot Username از Settings
+                var settings =  _Context.SettingsUW.Get().FirstOrDefault();
+                if (settings == null || string.IsNullOrEmpty(settings.TelegramBotToken))
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = "ربات تلگرام تنظیم نشده است" 
+                    });
+                }
+
+                // استخراج Bot Username از توکن (فرمت: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)
+                var botUsername = await GetBotUsernameFromToken(settings.TelegramBotToken);
+                
+                if (string.IsNullOrEmpty(botUsername))
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = "خطا در دریافت اطلاعات ربات" 
+                    });
+                }
+
+                // ایجاد لینک با پارامتر start که شامل userId است
+                var telegramLink = $"https://t.me/{botUsername}?start={currentUser.Id}";
+
+                return Json(new 
+                { 
+                    success = true, 
+                    telegramLink = telegramLink,
+                    userId = currentUser.Id,
+                    userName = $"{currentUser.FirstName} {currentUser.LastName}"
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "UserManager",
+                    "GetTelegramBotLink",
+                    "خطا در تولید لینک تلگرام",
+                    ex
+                );
+
+                return Json(new { success = false, message = "خطای سیستمی" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت Username ربات از Telegram API
+        /// </summary>
+        private async Task<string> GetBotUsernameFromToken(string botToken)
+        {
+            try
+            {
+                var botClient = new TelegramBotClient(botToken);
+                var botInfo = await botClient.GetMe();
+                return botInfo.Username;
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "UserManager",
+                    "GetBotUsernameFromToken",
+                    "خطا در دریافت اطلاعات ربات",
+                    ex
+                );
+                return null;
+            }
+        }
+       
+        // ViewModel برای درخواست ثبت Chat ID
+        public class TelegramChatIdRequest
+        {
+            public long ChatId { get; set; }
+            public string Token { get; set; } // UserId کاربر
         }
     }
 }

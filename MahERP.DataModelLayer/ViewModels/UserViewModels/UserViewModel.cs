@@ -33,7 +33,7 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         [Required(AllowEmptyStrings = false, ErrorMessage = "{0} وارد نشده است.")]
         [StringLength(maximumLength: 11, MinimumLength = 11, ErrorMessage = "{0} باید 11  کاراکتر باشد.")]
         [RegularExpression(@"^[^\\/:*;\.\)\(]+$", ErrorMessage = "از کاراکترهای غیرمجاز استفاده نکنید.")]
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
         public bool IsActive { get; set; }
         public bool IsAdmin { get; set; }
 
@@ -127,7 +127,7 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
     {
         public string? FullNamesString { get; set; }
         public DateTime RegisterDate { get; set; }
-
+   
         /// <summary>
         /// مسیر تصویر پروفایل کاربر
         /// </summary>

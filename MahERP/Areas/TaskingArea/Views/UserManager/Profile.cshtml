@@ -166,12 +166,68 @@
                             </div>
                         </div>
 
+
+
+
+
+
+
+
                         <div class="mb-4">
                             <label class="form-label" asp-for="Address">آدرس</label>
                             <textarea @(string.IsNullOrEmpty(Model.Address) ? "" : "readonly") class="form-control"  name="Address" rows="3" placeholder="آدرس کامل خود را وارد کنید"> @Model.Address</textarea>
                             <span asp-validation-for="Address" class="text-danger"></span>
                         </div>
-
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" asp-for="TelegramChatId">
+                                        <i class="fab fa-telegram me-1 text-primary"></i>
+                                        چت آی دی تلگرام
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text"
+                                               class="form-control @(Model.TelegramChatId.HasValue ? "bg-light" : "")"
+                                               name="TelegramChatId"
+                                               value="@Model.TelegramChatId"
+                                               placeholder="مثال: 123456789"
+                                               @(Model.TelegramChatId.HasValue ? "readonly" : "")
+                                               pattern="^-?\d+$"
+                                               title="Chat ID باید یک عدد صحیح باشد" />
+                                        @if (!Model.TelegramChatId.HasValue)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-outline-primary"
+                                                    onclick="showTelegramGuideFromProfile()">
+                                                <i class="fa fa-question-circle"></i>
+                                                راهنما
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="input-group-text bg-success text-white">
+                                                <i class="fa fa-check-circle"></i>
+                                            </span>
+                                        }
+                                    </div>
+                                    @if (Model.TelegramChatId.HasValue)
+                                    {
+                                        <div class="form-text text-success">
+                                            <i class="fa fa-check-circle me-1"></i>
+                                            Chat ID شما با موفقیت ثبت شده و دیگر قابل تغییر نیست.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="form-text">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            برای دریافت اعلان‌های تلگرام، Chat ID خود را ثبت کنید.
+                                        </div>
+                                    }
+                                    <span asp-validation-for="TelegramChatId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="mb-4">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fa fa-save me-1"></i>
@@ -292,10 +348,24 @@
             </div>
         </div>
     </div>
+
+    <!-- در بخش فرم، بعد از فیلد Gender، این بخش را اضافه کنید: -->
+    
+
+
+
 </div>
 
 @section Scripts {
     <script>
+            function showTelegramGuideFromProfile() {
+            createAndShowModal({
+                url: '@Url.Action("ShowTelegramGuideModal", "Dashboard", new { area = "TaskingArea" })',
+                backdrop: true,
+                keyboard: true,
+                removeOnHide: true
+            });
+        }
         $(document).ready(function() {
             // Change Password Form Submission (فقط فرم تغییر رمز عبور همچنان AJAX باشد)
             $('#changePasswordForm').on('submit', function(e) {
