@@ -3,254 +3,387 @@
 }
 
 <!-- مودال راهنمای اتصال به تلگرام -->
-<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-    <div class="modal-content modal-contents">
-        <div class="block block-rounded block-themed block-transparent mb-0">
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
 
-            <!-- هدر مودال -->
-            <div class="block-header bg-primary">
-                <h3 class="block-title" style="color:white;">
-                    <i class="fab fa-telegram me-2"></i>
-                    اتصال به تلگرام
-                </h3>
-                <div class="block-options">
-                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
-                        <i class="fa fa-fw fa-times"></i>
-                    </button>
-                </div>
-            </div>
+        <!-- هدر مودال -->
+        <div class="modal-header bg-primary-dark">
+            <h5 class="modal-title text-white">
+                <i class="fab fa-telegram me-2"></i>
+                اتصال به تلگرام
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
-            <!-- محتوای مودال -->
-            <div class="block-content">
-                <div class="row push">
-                    <div class="col-12">
-                        <!-- توضیح اهمیت -->
-                        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
-                            <i class="fa fa-info-circle fa-2x me-3"></i>
-                            <div>
-                                <strong>چرا اتصال به تلگرام مهم است؟</strong>
-                                <p class="mb-0 mt-1 fs-sm">
-                                    با اتصال حساب خود به تلگرام، تمام اعلان‌های تسک، یادآوری‌ها و پیام‌های مهم را
-                                    به صورت فوری در تلگرام دریافت خواهید کرد.
-                                </p>
-                            </div>
-                        </div>
+        <!-- محتوای مودال -->
+        <div class="modal-body">
 
-                        <!-- ⭐⭐⭐ راهنمای ساده شده -->
-                        <div class="step-item mb-4 p-4 border rounded bg-success bg-opacity-10 border-success">
-                            <div class="text-center">
-                                <span class="badge bg-success rounded-circle mb-3" style="width: 60px; height: 60px; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem;">
-                                    <i class="fab fa-telegram"></i>
-                                </span>
-                                <h5 class="fw-bold mb-3 text-success">
-                                    <i class="fa fa-magic me-2"></i>
-                                    اتصال به تلگرام در 3 مرحله ساده
-                                </h5>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4 text-center mb-3">
-                                    <div class="badge bg-primary rounded-circle mb-2" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem;">1</div>
-                                    <h6 class="fw-semibold mb-2">دریافت لینک</h6>
-                                    <p class="fs-sm text-muted">روی دکمه زیر کلیک کنید</p>
-                                </div>
-                                <div class="col-md-4 text-center mb-3">
-                                    <div class="badge bg-primary rounded-circle mb-2" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem;">2</div>
-                                    <h6 class="fw-semibold mb-2">باز کردن تلگرام</h6>
-                                    <p class="fs-sm text-muted">در تلگرام باز می‌شود</p>
-                                </div>
-                                <div class="col-md-4 text-center mb-3">
-                                    <div class="badge bg-success rounded-circle mb-2" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem;">3</div>
-                                    <h6 class="fw-semibold mb-2">کلیک روی Start</h6>
-                                    <p class="fs-sm text-muted">اتصال خودکار برقرار می‌شود</p>
-                                </div>
-                            </div>
-
-                            <div class="text-center mt-3">
-                                <button type="button"
-                                        class="btn btn-lg btn-hero btn-success"
-                                        id="getTelegramLinkBtn"
-                                        onclick="openTelegramBot()">
-                                    <i class="fab fa-telegram me-2"></i>
-                                    اتصال به تلگرام
-                                </button>
-                            </div>
-
-                            <div id="linkStatus" class="mt-3" style="display: none;">
-                                <!-- پیام‌های وضعیت -->
-                            </div>
-                        </div>
-
-                        <!-- راهنمای تصویری -->
-                        <div class="alert alert-light border">
-                            <h6 class="fw-bold mb-3">
-                                <i class="fa fa-lightbulb me-2 text-warning"></i>
-                                نکات مهم:
-                            </h6>
-                            <ul class="mb-0">
-                                <li class="mb-2">
-                                    <i class="fa fa-check-circle text-success me-1"></i>
-                                    پس از کلیک روی دکمه، تلگرام به صورت خودکار باز می‌شود
-                                </li>
-                                <li class="mb-2">
-                                    <i class="fa fa-check-circle text-success me-1"></i>
-                                    در تلگرام فقط روی دکمه <strong>Start</strong> کلیک کنید
-                                </li>
-                                <li class="mb-2">
-                                    <i class="fa fa-check-circle text-success me-1"></i>
-                                    ربات به صورت خودکار حساب شما را متصل می‌کند
-                                </li>
-                                <li>
-                                    <i class="fa fa-info-circle text-info me-1"></i>
-                                    بعد از اتصال، این صفحه را ببندید و دوباره وارد شوید
-                                </li>
-                            </ul>
-                        </div>
-
-                        <!-- روش دستی (اختیاری) -->
-                        <div class="text-center mt-3">
-                            <button type="button"
-                                    class="btn btn-sm btn-link text-muted"
-                                    onclick="toggleManualMethod()">
-                                <i class="fa fa-question-circle me-1"></i>
-                                مشکل دارید؟ روش دستی را ببینید
-                            </button>
-                        </div>
-
-                        <div id="manualMethodSteps" style="display: none;" class="mt-3 p-3 border rounded bg-light">
-                            <h6 class="fw-bold mb-3">روش دستی:</h6>
-                            <ol class="mb-0">
-                                <li class="mb-2">
-                                    به ربات <code dir="ltr">@@getmyid_bot</code> در تلگرام پیام دهید
-                                    <a href="https://t.me/getmyid_bot" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
-                                        <i class="fab fa-telegram"></i> باز کردن
-                                    </a>
-                                </li>
-                                <li class="mb-2">
-                                    عدد Chat ID را که ربات می‌فرستد کپی کنید
-                                </li>
-                                <li>
-                                    در <a asp-area="TaskingArea" asp-controller="UserManager" asp-action="Profile">صفحه پروفایل</a>
-                                    وارد کرده و ذخیره کنید
-                                </li>
-                            </ol>
-                        </div>
-
+            <!-- توضیح کوتاه -->
+            <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+                <div class="d-flex align-items-start">
+                    <i class="fa fa-info-circle mt-1 me-2"></i>
+                    <div class="fs-sm">
+                        با اتصال به تلگرام، تمام اعلان‌های تسک و یادآوری‌ها را فوری دریافت کنید.
                     </div>
                 </div>
             </div>
 
-            <!-- دکمه‌های عملیات -->
-            <div class="block-content block-content-full text-end bg-body">
-                <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">
-                    <i class="fa fa-times me-1"></i>
-                    بستن
-                </button>
+            <!-- مراحل به صورت compact -->
+            <div class="card border-0 bg-light mb-3">
+                <div class="card-body p-3">
+                    <h6 class="fw-bold mb-3 text-primary">
+                        <i class="fa fa-tasks me-1"></i>
+                        مراحل اتصال:
+                    </h6>
+
+                    <div class="steps-compact">
+                        <div class="step-item-compact mb-2">
+                            <span class="step-number">1</span>
+                            <div class="step-content">
+                                <span class="fw-semibold">ربات را باز کنید</span>
+                                <a href="https://t.me/useridinfobot" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                    <i class="fab fa-telegram fa-sm"></i> باز کردن
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="step-item-compact mb-2">
+                            <span class="step-number">2</span>
+                            <div class="step-content">
+                                <span class="fw-semibold">Chat ID را کپی کنید</span>
+                                <small class="text-muted d-block">یک عدد 9-10 رقمی</small>
+                            </div>
+                        </div>
+
+                        <div class="step-item-compact">
+                            <span class="step-number">3</span>
+                            <div class="step-content">
+                                <span class="fw-semibold">در فرم زیر وارد کنید</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
+            <!-- فرم ثبت -->
+            <form id="registerChatIdForm">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label for="chatIdInput" class="form-label fw-semibold">
+                        <i class="fab fa-telegram text-primary me-1"></i>
+                        Chat ID تلگرام
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           id="chatIdInput"
+                           name="chatId"
+                           placeholder="123456789"
+                           required
+                           pattern="[0-9]{9,10}"
+                           inputmode="numeric">
+                    <div class="form-text">
+                        <i class="fa fa-info-circle me-1"></i>
+                        از ربات <code dir="ltr">@@useridinfobot</code> دریافت کنید
+                    </div>
+                </div>
+
+                <div id="registrationStatus" class="mb-3" style="display: none;"></div>
+
+                <!-- ⭐ بخش نمایش لینک ربات (پس از ثبت موفق) -->
+                <div id="botLinkSection" class="mb-3" style="display: none;">
+                    <div class="card border-success">
+                        <div class="card-body p-3  bg-opacity-10">
+                            <h6 class="fw-bold text-success mb-2">
+                                <i class="fa fa-check-circle me-1"></i>
+                                مرحله نهایی - فعال‌سازی
+                            </h6>
+                            <p class="mb-2 fs-sm">
+                                حالا به ربات اصلی ما بروید و دکمه <strong>Start</strong> را بزنید تا اتصال کامل شود:
+                            </p>
+                            <div class="d-grid gap-2">
+                                <a id="botLinkButton" href="#" target="_blank" class="btn btn-success">
+                                    <i class="fab fa-telegram me-2"></i>
+                                    <span id="botLinkText">باز کردن ربات سیستم</span>
+                                </a>
+                            </div>
+                            <small class="text-muted d-block mt-2 text-center">
+                                <i class="fa fa-lightbulb me-1"></i>
+                                بعد از زدن Start در ربات، اتصال کامل می‌شود
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary" id="registerChatIdBtn">
+                        <i class="fa fa-check me-2"></i>
+                        ثبت و فعال‌سازی
+                    </button>
+                </div>
+            </form>
+
         </div>
+
+        <!-- فوتر -->
+        <div class="modal-footer bg-light">
+            <small class="text-muted">
+                <i class="fa fa-shield-alt me-1"></i>
+                Chat ID شما محرمانه بوده و قابل تغییر نیست
+            </small>
+        </div>
+
     </div>
 </div>
 
 <script>
-    // ⭐⭐⭐ ساده شده - فقط باز کردن لینک
-    async function openTelegramBot() {
-        const statusDiv = document.getElementById('linkStatus');
-        const btn = document.getElementById('getTelegramLinkBtn');
+    // ⭐ ثبت Chat ID
+    document.getElementById('registerChatIdForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const chatIdInput = document.getElementById('chatIdInput');
+        const statusDiv = document.getElementById('registrationStatus');
+        const submitBtn = document.getElementById('registerChatIdBtn');
+        const botLinkSection = document.getElementById('botLinkSection');
+        const chatId = chatIdInput.value.trim();
+
+        // اعتبارسنجی
+        if (!chatId || chatId.length < 9 || chatId.length > 10 || !/^\d+$/.test(chatId)) {
+            showStatusMessage('error', 'لطفاً یک Chat ID معتبر (9 یا 10 رقم) وارد کنید');
+            return;
+        }
 
         // غیرفعال کردن دکمه
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>در حال دریافت لینک...';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>در حال ثبت...';
 
         try {
-            // دریافت لینک تلگرام
-            const response = await fetch('@Url.Action("GetTelegramBotLink", "UserManager", new { area = "TaskingArea" })', {
-                method: 'GET',
+            const token = getAntiForgeryToken();
+
+            if (!token) {
+                throw new Error('توکن امنیتی یافت نشد. لطفاً صفحه را رفرش کنید.');
+            }
+
+            const response = await fetch('@Url.Action("RegisterTelegramChatId", "UserManager", new { area = "TaskingArea" })', {
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
-                }
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    chatId: parseInt(chatId)
+                })
             });
 
             const result = await response.json();
-            console.log('📱 Telegram link:', result);
 
             if (result.success) {
-                // باز کردن لینک تلگرام
-                window.open(result.telegramLink, '_blank');
+                showStatusMessage('success',
+                    `<i class="fa fa-check-circle me-1"></i>
+                    <strong>موفق!</strong> Chat ID با موفقیت ثبت شد.`
+                );
 
-                // نمایش پیام موفقیت
-                statusDiv.style.display = 'block';
-                statusDiv.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fa fa-check-circle me-2"></i>
-                        <strong>عالی!</strong> تلگرام باز شد.
-                        <hr class="my-2">
-                        <p class="mb-2 fs-sm">
-                            🔹 در تلگرام روی دکمه <strong>Start</strong> کلیک کنید<br>
-                            🔹 ربات به صورت خودکار حساب شما را متصل می‌کند<br>
-                            🔹 بعد از اتصال، این صفحه را ببندید و دوباره لاگین کنید
-                        </p>
-                        <div class="mt-2">
-                            <small class="text-muted">
-                                <i class="fa fa-info-circle me-1"></i>
-                                اگر تلگرام باز نشد،
-                                <a href="${result.telegramLink}" target="_blank" class="text-decoration-underline">اینجا کلیک کنید</a>
-                            </small>
-                        </div>
-                    </div>
-                `;
+                // غیرفعال کردن فرم
+                chatIdInput.disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa fa-check me-2"></i>ثبت شده';
+                submitBtn.classList.remove('btn-primary');
+                submitBtn.classList.add('btn-secondary');
 
-                // فعال کردن دکمه برای استفاده مجدد
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fab fa-telegram me-2"></i>باز کردن مجدد تلگرام';
+                // ⭐⭐⭐ دریافت و نمایش لینک ربات
+                await loadAndShowBotLink();
+
+                // نوتیفیکیشن
+                if (typeof Dashmix !== 'undefined') {
+                    Dashmix.helpers('jq-notify', {
+                        type: 'success',
+                        icon: 'fa fa-check me-1',
+                        message: 'Chat ID با موفقیت ثبت شد'
+                    });
+                }
 
             } else if (result.alreadyRegistered) {
-                statusDiv.style.display = 'block';
-                statusDiv.innerHTML = `
-                    <div class="alert alert-info">
-                        <i class="fa fa-check-circle me-2"></i>
-                        حساب شما قبلاً به تلگرام متصل شده است!
-                    </div>
-                `;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa fa-check me-2"></i>متصل شده';
+                showStatusMessage('warning',
+                    `<i class="fa fa-info-circle me-1"></i>
+                    حساب شما قبلاً متصل شده است.`
+                );
+
+                chatIdInput.disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa fa-check me-2"></i>متصل شده';
+                submitBtn.classList.remove('btn-primary');
+                submitBtn.classList.add('btn-secondary');
+
+                // نمایش لینک ربات برای کاربران قبلاً ثبت شده
+                await loadAndShowBotLink();
+
             } else {
-                throw new Error(result.message || 'خطا در دریافت لینک');
+                throw new Error(result.message || 'خطا در ثبت Chat ID');
             }
 
         } catch (error) {
             console.error('❌ Error:', error);
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fa fa-times-circle me-2"></i>
-                    <strong>خطا:</strong> ${error.message}
-                    <hr class="my-2">
-                    <small>لطفاً دوباره تلاش کنید یا از روش دستی استفاده کنید.</small>
-                </div>
-            `;
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fab fa-telegram me-2"></i>تلاش مجدد';
+            showStatusMessage('error',
+                `<i class="fa fa-times-circle me-1"></i>
+                <strong>خطا:</strong> ${error.message}`
+            );
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa fa-check me-2"></i>تلاش مجدد';
+
+            if (typeof Dashmix !== 'undefined') {
+                Dashmix.helpers('jq-notify', {
+                    type: 'danger',
+                    icon: 'fa fa-times me-1',
+                    message: 'خطا در ثبت Chat ID'
+                });
+            }
+        }
+    });
+
+    // ⭐⭐⭐ تابع دریافت و نمایش لینک ربات
+    async function loadAndShowBotLink() {
+        try {
+            const response = await fetch('@Url.Action("GetTelegramBotLink", "UserManager", new { area = "TaskingArea" })');
+            const result = await response.json();
+
+            console.log('📱 Bot link response:', result);
+
+            if (result.success && result.botLink) {
+                const botLinkSection = document.getElementById('botLinkSection');
+                const botLinkButton = document.getElementById('botLinkButton');
+                const botLinkText = document.getElementById('botLinkText');
+
+                // تنظیم لینک و متن
+                botLinkButton.href = result.botLink;
+                if (result.botUsername) {
+                    botLinkText.textContent = `باز کردن ربات (@@${result.botUsername})`;
+                }
+
+                // نمایش بخش لینک با انیمیشن
+                botLinkSection.style.display = 'block';
+
+                // اسکرول به پایین
+                setTimeout(() => {
+                    botLinkSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+
+            } else {
+                console.warn('⚠️ Bot link not available:', result.message);
+                showStatusMessage('warning', 
+                    `<i class="fa fa-exclamation-triangle me-1"></i>
+                    <strong>توجه:</strong> لینک ربات در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید.`
+                );
+            }
+        } catch (error) {
+            console.error('❌ Error loading bot link:', error);
+            showStatusMessage('error',
+                `<i class="fa fa-times-circle me-1"></i>
+                خطا در دریافت لینک ربات. لطفاً با پشتیبانی تماس بگیرید.`
+            );
         }
     }
 
-    // نمایش/مخفی روش دستی
-    function toggleManualMethod() {
-        const manualSteps = document.getElementById('manualMethodSteps');
-        if (manualSteps.style.display === 'none') {
-            manualSteps.style.display = 'block';
-        } else {
-            manualSteps.style.display = 'none';
-        }
+    // تابع نمایش پیام
+    function showStatusMessage(type, message) {
+        const statusDiv = document.getElementById('registrationStatus');
+        const alertClass = type === 'error' ? 'alert-danger' :
+                          type === 'success' ? 'alert-success' :
+                          type === 'warning' ? 'alert-warning' : 'alert-info';
+
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = `<div class="alert ${alertClass} alert-dismissible fade show mb-0" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`;
     }
 </script>
 
 <style>
-    .step-item {
-        transition: all 0.3s ease;
+    /* استایل‌های سفارشی برای مودال کوچک و زیبا */
+    .bg-primary-dark {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
-        .step-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    .steps-compact {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .step-item-compact {
+        display: flex;
+        align-items: start;
+        gap: 0.75rem;
+    }
+
+    .step-number {
+        flex-shrink: 0;
+        width: 26px;
+        height: 26px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.813rem;
+        font-weight: 600;
+    }
+
+    .step-content {
+        flex: 1;
+        padding-top: 2px;
+        font-size: 0.875rem;
+    }
+
+    /* حذف فلش‌های input number */
+    input[type="text"][inputmode="numeric"]::-webkit-inner-spin-button,
+    input[type="text"][inputmode="numeric"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* بهبود نمایش alert ها */
+    .alert {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+        .alert i {
+            font-size: 1rem;
         }
+
+    /* کاهش padding modal */
+    .modal-body {
+        padding: 1.25rem;
+    }
+
+    .modal-footer {
+        padding: 0.75rem 1.25rem;
+        border-top: 1px solid #dee2e6;
+    }
+
+    /* استایل بخش لینک ربات */
+    #botLinkSection {
+        animation: slideDown 0.4s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* responsive */
+    @@media (max-width: 576px) {
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+    }
 </style>

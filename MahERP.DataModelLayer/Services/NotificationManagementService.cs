@@ -446,9 +446,8 @@ namespace MahERP.DataModelLayer.Services
                 _logger.LogError(ex, "❌ خطا در SendSmsNotificationAsync");
             }
         }
-
         /// <summary>
-        /// ارسال اعلان تلگرامی
+        /// ارسال اعلان تلگرامی با دکمه‌های پویا
         /// </summary>
         private async Task SendTelegramNotificationAsync(
             string userId,
@@ -458,7 +457,7 @@ namespace MahERP.DataModelLayer.Services
             try
             {
                 var user = await _context.Users.FindAsync(userId);
-                
+
                 // ✅ اصلاح: بررسی long? به جای string
                 if (user == null || !user.TelegramChatId.HasValue)
                 {
@@ -471,7 +470,7 @@ namespace MahERP.DataModelLayer.Services
                 {
                     CoreNotificationId = coreNotificationId,
                     DeliveryMethod = 3, // Telegram
-                    DeliveryAddress = user.TelegramChatId.Value.ToString(), // ✅ تبدیل long به string
+                    DeliveryAddress = user.TelegramChatId.Value.ToString(),
                     DeliveryStatus = 0,
                     AttemptCount = 0,
                     CreateDate = DateTime.Now,
@@ -483,7 +482,7 @@ namespace MahERP.DataModelLayer.Services
 
                 // ✅ ارسال مستقیم تلگرام
                 var botToken = GetTelegramBotToken();
-                
+
                 if (string.IsNullOrEmpty(botToken) || botToken == "YOUR_DEFAULT_BOT_TOKEN")
                 {
                     _logger.LogWarning("⚠️ توکن تلگرام معتبر یافت نشد");
@@ -493,26 +492,31 @@ namespace MahERP.DataModelLayer.Services
                     return;
                 }
 
+                // ⭐⭐⭐ ساخت NotificationContext برای دکمه‌های پویا
+                var notificationContext = await BuildNotificationContextAsync(coreNotificationId, userId);
+
                 try
                 {
+                    // ⭐ ارسال با Context
                     await _telegramService.SendNotificationAsync(
                         message,
-                        user.TelegramChatId.Value, // ✅ استفاده مستقیم از long
-                        botToken
+                        user.TelegramChatId.Value,
+                        botToken,
+                        notificationContext // ⭐ پارامتر جدید
                     );
 
                     // ✅ بروزرسانی وضعیت موفق
                     delivery.DeliveryStatus = 1; // ارسال شده
                     delivery.DeliveryDate = DateTime.Now;
-                    
-                    _logger.LogInformation($"✈️ پیام تلگرام برای {user.UserName} (ChatId: {user.TelegramChatId.Value}) ارسال شد");
+
+                    _logger.LogInformation($"✈️ پیام تلگرام با دکمه‌های پویا برای {user.UserName} (ChatId: {user.TelegramChatId.Value}) ارسال شد");
                 }
                 catch (Exception sendEx)
                 {
                     // ✅ ثبت خطای ارسال
                     delivery.DeliveryStatus = 3; // خطا
                     delivery.ErrorMessage = $"خطا در ارسال: {sendEx.Message}";
-                    
+
                     _logger.LogError(sendEx, $"❌ خطا در ارسال تلگرام به ChatId: {user.TelegramChatId.Value}");
                 }
 
@@ -523,7 +527,108 @@ namespace MahERP.DataModelLayer.Services
                 _logger.LogError(ex, "❌ خطا در SendTelegramNotificationAsync");
             }
         }
+        /// <summary>
+        /// ⭐⭐⭐ ساخت Context برای دکمه‌های پویای تلگرام
+        /// </summary>
+        private async Task<MahERP.CommonLayer.Repository.NotificationContext> BuildNotificationContextAsync(
+            int coreNotificationId,
+            string userId)
+        {
+            try
+            {
+                // دریافت اطلاعات اعلان
+                var notification = await _context.CoreNotification_Tbl
+                    .Where(n => n.Id == coreNotificationId)
+                    .Select(n => new
+                    {
+                        n.RelatedRecordId,
+                        n.RelatedRecordType,
+                        n.ActionUrl,
+                        n.Message
+                    })
+                    .FirstOrDefaultAsync();
 
+                if (notification == null)
+                    return null;
+
+                // ⭐ تعیین نوع رویداد از ActionUrl یا Message
+                byte? eventType = ExtractEventTypeFromNotification(notification.ActionUrl, notification.Message);
+
+                // ⭐ بررسی اینکه آیا پیام شامل لیست تسک‌ها است
+                bool hasPendingTasksList = notification.Message?.Contains("📌 تسک‌های در حال انجام شما") == true;
+
+                // ⭐ استخراج TaskId اگر مرتبط با Task باشد
+                string taskId = null;
+                if (notification.RelatedRecordType == "Task" && !string.IsNullOrEmpty(notification.RelatedRecordId))
+                {
+                    taskId = notification.RelatedRecordId;
+                }
+
+                // ⭐ دریافت BaseUrl از تنظیمات
+                // TODO: بهتر است از Configuration یا Settings دریافت شود
+                string baseUrl = "https://resnaco.ir"; // ⭐ URL سایت شما
+
+                return new MahERP.CommonLayer.Repository.NotificationContext
+                {
+                    BaseUrl = baseUrl,
+                    TaskId = taskId,
+                    EventType = eventType,
+                    HasPendingTasksList = hasPendingTasksList,
+                    RecipientUserId = userId
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "⚠️ خطا در ساخت NotificationContext");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// ⭐ استخراج نوع رویداد از URL یا محتوای پیام
+        /// </summary>
+        private byte? ExtractEventTypeFromNotification(string actionUrl, string message)
+        {
+            // ⭐ روش 1: تشخیص از URL
+            if (!string.IsNullOrEmpty(actionUrl))
+            {
+                if (actionUrl.Contains("/Tasks/Details/"))
+                    return 1; // احتمالاً TaskAssigned
+
+                if (actionUrl.Contains("/Tasks/MyTasks"))
+                    return 13; // احتمالاً DailyTaskDigest
+
+                if (actionUrl.Contains("CompleteTask"))
+                    return 3; // TaskDeadlineReminder
+            }
+
+            // ⭐ روش 2: تشخیص از محتوای پیام
+            if (!string.IsNullOrEmpty(message))
+            {
+                if (message.Contains("📌 تسک‌های در حال انجام"))
+                    return 13; // DailyTaskDigest
+
+                if (message.Contains("تسک جدیدی") || message.Contains("اختصاص داده شد"))
+                    return 1; // TaskAssigned
+
+                if (message.Contains("یادآوری سررسید") || message.Contains("سررسید تسک"))
+                    return 3; // TaskDeadlineReminder
+
+                if (message.Contains("کامنت جدید"))
+                    return 4; // TaskCommentAdded
+
+                if (message.Contains("تکمیل شد"))
+                    return 2; // TaskCompleted
+
+                if (message.Contains("ویرایش"))
+                    return 5; // TaskUpdated
+
+                if (message.Contains("تغییر وضعیت"))
+                    return 8; // TaskStatusChanged
+            }
+
+            return null; // نامشخص - دکمه‌های پیش‌فرض
+        }
         #endregion
 
         #region 🔧 مدیریت وضعیت - Status Management

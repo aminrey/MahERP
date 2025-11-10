@@ -18,22 +18,148 @@ namespace MahERP.CommonLayer.Repository
         // ⭐ حذف IHttpClientFactory
         private static readonly HttpClient _httpClient = new HttpClient();
 
-        public async Task SendNotificationAsync(string message, long? chatId, string botToken)
+        /// <summary>
+        /// ⭐⭐⭐ ارسال اعلان با دکمه‌های پویا بر اساس نوع و محتوا
+        /// </summary>
+        /// <param name="message">متن پیام</param>
+        /// <param name="chatId">شناسه چت</param>
+        /// <param name="botToken">توکن ربات</param>
+        /// <param name="notificationContext">اطلاعات اضافی برای تولید دکمه‌ها (nullable)</param>
+        public async Task SendNotificationAsync(
+            string message, 
+            long? chatId, 
+            string botToken, 
+            NotificationContext notificationContext = null)
         {
+            if (chatId == null) return;
+
             var botClient = new TelegramBotClient(botToken);
 
-            var keyboardMarkup = new InlineKeyboardMarkup(new[]
+            // ⭐ تولید دکمه‌های پویا
+            var keyboard = BuildDynamicKeyboard(notificationContext);
+
+            await botClient.SendMessage(
+                chatId: chatId.Value, 
+                text: message, 
+                replyMarkup: keyboard,
+                parseMode: ParseMode.Html // ⭐ پشتیبانی از HTML formatting
+            );
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ متد overload برای سازگاری با کد قدیمی
+        /// </summary>
+        public async Task SendNotificationAsync(string message, long? chatId, string botToken)
+        {
+            await SendNotificationAsync(message, chatId, botToken, null);
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ ساخت دکمه‌های پویا بر اساس Context
+        /// </summary>
+        private InlineKeyboardMarkup BuildDynamicKeyboard(NotificationContext context)
+        {
+            var buttons = new List<List<InlineKeyboardButton>>();
+
+            if (context == null || string.IsNullOrEmpty(context.BaseUrl))
             {
-                new []
+                // ⭐ دکمه‌های پیش‌فرض اگر context نداشتیم
+                buttons.Add(new List<InlineKeyboardButton>
                 {
-                    InlineKeyboardButton.WithUrl("صفحه وظایف", "https://resnaco.ir/AdminArea/Tasks/IndexTaskS?NotificationId=0"),
-                    InlineKeyboardButton.WithUrl("صفحه ناتیفیکیشن سایت", "https://resnaco.ir/AdminArea/Notification"),
-                    InlineKeyboardButton.WithUrl("در حال تست- صفحه مبتط ", "http://resnaco.ir")
+                    InlineKeyboardButton.WithUrl("📋 لیست تسک‌ها", "https://resnaco.ir/AdminArea/Tasks/IndexTaskS")
+                });
+                return new InlineKeyboardMarkup(buttons);
+            }
+
+            // ⭐⭐⭐ سناریو 1: اعلان‌های مرتبط با تسک خاص
+            if (!string.IsNullOrEmpty(context.TaskId) && 
+                context.EventType != null && 
+                context.EventType != 13) // نه DailyTaskDigest
+            {
+                // ⭐ دکمه مشاهده تسک
+                var taskUrl = $"{context.BaseUrl}/TaskingArea/Tasks/Details/{context.TaskId}";
+                buttons.Add(new List<InlineKeyboardButton>
+                {
+                    InlineKeyboardButton.WithUrl("📄 مشاهده تسک", taskUrl)
+                });
+
+                // ⭐ دکمه ثبت کامنت (برای اعلان‌های خاص)
+                if (IsCommentableEvent(context.EventType.Value))
+                {
+                    var commentUrl = $"{context.BaseUrl}/TaskingArea/Tasks/Details/{context.TaskId}#comments";
+                    buttons.Add(new List<InlineKeyboardButton>
+                    {
+                        InlineKeyboardButton.WithUrl("💬 ثبت کامنت", commentUrl)
+                    });
                 }
+            }
+
+            // ⭐⭐⭐ سناریو 2: اعلان روزانه تسک‌های انجام نشده (DailyTaskDigest)
+            if (context.EventType == 13 || context.HasPendingTasksList)
+            {
+                // ⭐ دکمه لیست تمام تسک‌های در حال انجام
+                var myTasksUrl = $"{context.BaseUrl}/TaskingArea/Tasks/MyTasks";
+                buttons.Add(new List<InlineKeyboardButton>
+                {
+                    InlineKeyboardButton.WithUrl("📋 مشاهده لیست تسک‌ها", myTasksUrl)
+                });
+
+                // ⭐ دکمه تسک‌های امروز
+                var todayTasksUrl = $"{context.BaseUrl}/TaskingArea/Tasks/MyTasks?filter=today";
+                buttons.Add(new List<InlineKeyboardButton>
+                {
+                    InlineKeyboardButton.WithUrl("📅 تسک‌های امروز", todayTasksUrl)
+                });
+            }
+
+            // ⭐⭐⭐ سناریو 3: اعلان‌های یادآوری سررسید
+            if (context.EventType == 3) // TaskDeadlineReminder
+            {
+                if (!string.IsNullOrEmpty(context.TaskId))
+                {
+                    var taskUrl = $"{context.BaseUrl}/TaskingArea/Tasks/Details/{context.TaskId}";
+                    buttons.Add(new List<InlineKeyboardButton>
+                    {
+                        InlineKeyboardButton.WithUrl("⚠️ مشاهده تسک", taskUrl),
+                        InlineKeyboardButton.WithUrl("✅ تکمیل شد", $"{context.BaseUrl}/TaskingArea/Tasks/CompleteTask/{context.TaskId}")
+                    });
+                }
+            }
+
+            // ⭐ دکمه پیش‌فرض برای دسترسی سریع
+            if (!buttons.Any())
+            {
+                var dashboardUrl = $"{context.BaseUrl}/TaskingArea/Dashboard";
+                buttons.Add(new List<InlineKeyboardButton>
+                {
+                    InlineKeyboardButton.WithUrl("🏠 داشبورد", dashboardUrl)
+                });
+            }
+
+            // ⭐ همیشه دکمه لیست اعلان‌ها را اضافه کن
+            var notificationsUrl = $"{context.BaseUrl}/AppCoreArea/Notification";
+            buttons.Add(new List<InlineKeyboardButton>
+            {
+                InlineKeyboardButton.WithUrl("🔔 همه اعلان‌ها", notificationsUrl)
             });
 
-            if (chatId != null)
-                await botClient.SendMessage(chatId.Value, message, replyMarkup: keyboardMarkup);
+            return new InlineKeyboardMarkup(buttons);
+        }
+
+        /// <summary>
+        /// ⭐ بررسی اینکه رویداد قابل کامنت است یا خیر
+        /// </summary>
+        private bool IsCommentableEvent(byte eventType)
+        {
+            return eventType switch
+            {
+                1 => true,  // TaskAssigned
+                5 => true,  // TaskUpdated
+                8 => true,  // TaskStatusChanged
+                11 => true, // TaskPriorityChanged
+                12 => true, // TaskReassigned
+                _ => false
+            };
         }
 
         public async Task SendLogAsync(string message, long? groupId, string botToken)
@@ -164,5 +290,46 @@ namespace MahERP.CommonLayer.Repository
             public bool AlreadyRegistered { get; set; }
             public string UserName { get; set; }
         }
+    }
+
+    /// <summary>
+    /// ⭐⭐⭐ کلاس Context برای تولید دکمه‌های پویا
+    /// </summary>
+    public class NotificationContext
+    {
+        /// <summary>
+        /// URL پایه سیستم (مثل: https://yourdomain.com)
+        /// </summary>
+        public string? BaseUrl { get; set; }
+
+        /// <summary>
+        /// شناسه تسک (اگر مرتبط با تسک باشد)
+        /// </summary>
+        public string TaskId { get; set; }
+
+        /// <summary>
+        /// نوع رویداد از Enum NotificationEventType
+        /// </summary>
+        public byte? EventType { get; set; }
+
+        /// <summary>
+        /// آیا پیام شامل لیست تسک‌های انجام نشده است؟
+        /// </summary>
+        public bool HasPendingTasksList { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر دریافت‌کننده (برای لینک‌های شخصی‌سازی شده)
+        /// </summary>
+        public string? RecipientUserId { get; set; }
+
+        /// <summary>
+        /// عنوان تسک (برای متن دکمه)
+        /// </summary>
+        public string? TaskTitle { get; set; }
+
+        /// <summary>
+        /// اولویت تسک (برای نمایش ایموجی مناسب)
+        /// </summary>
+        public byte? TaskPriority { get; set; }
     }
 }

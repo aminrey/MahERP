@@ -483,69 +483,88 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
             }
         }
 
+       
         /// <summary>
-        /// API برای دریافت و ثبت Chat ID از طریق Telegram Bot
-        /// این endpoint توسط ربات تلگرام فراخوانی می‌شود
+        /// ثبت دستی Chat ID تلگرام برای کاربر جاری
         /// </summary>
         [HttpPost]
-        [AllowAnonymous] // چون از Telegram Bot فراخوانی می‌شود
+        [Authorize]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterTelegramChatId([FromBody] TelegramChatIdRequest request)
         {
             try
             {
                 // اعتبارسنجی ورودی
-                if (request == null || request.ChatId == 0 || string.IsNullOrEmpty(request.Token))
+                if (request == null || request.ChatId == 0)
                 {
-                    return Json(new { success = false, message = "اطلاعات ناقص است" });
+                    return Json(new { success = false, message = "Chat ID وارد نشده است" });
                 }
 
-                // پیدا کردن کاربر بر اساس توکن (userId)
-                var user = _Context.UserManagerUW.Get(u => u.Id == request.Token && !u.IsRemoveUser).FirstOrDefault();
-
-                if (user == null)
+                // دریافت کاربر جاری
+                var currentUser = await _UserManager.GetUserAsync(User);
+                if (currentUser == null)
                 {
                     return Json(new { success = false, message = "کاربر یافت نشد" });
                 }
 
                 // بررسی اینکه Chat ID قبلاً ثبت نشده باشد
-                if (user.TelegramChatId.HasValue)
+                if (currentUser.TelegramChatId.HasValue)
                 {
                     return Json(new 
                     { 
                         success = false, 
                         message = "Chat ID قبلاً ثبت شده است",
                         alreadyRegistered = true,
-                        userName = $"{user.FirstName} {user.LastName}"
+                        userName = $"{currentUser.FirstName} {currentUser.LastName}"
                     });
                 }
 
+                // بررسی اینکه Chat ID توسط کاربر دیگری استفاده نشده باشد
+                var existingUser =  _UserManager.Users
+                    .FirstOrDefault(u => u.TelegramChatId == request.ChatId && u.Id != currentUser.Id);
+
+                if (existingUser != null)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = "این Chat ID قبلاً توسط کاربر دیگری ثبت شده است"
+                    });
+                }
+
+                // ذخیره مقدار قبلی برای لاگ
+                var oldChatId = currentUser.TelegramChatId;
+
                 // ⭐ ثبت Chat ID
-                user.TelegramChatId = request.ChatId;
-        
-                // ⭐⭐⭐ روش 1: استفاده از UserManager (پیشنهادی)
-                var result = await _UserManager.UpdateAsync(user);
+                currentUser.TelegramChatId = request.ChatId;
+
+                // ⭐ به‌روزرسانی در دیتابیس
+                var result = await _UserManager.UpdateAsync(currentUser);
 
                 if (result.Succeeded)
                 {
-                    // ⭐⭐⭐ COMMIT تغییرات به دیتابیس
+                    // ⭐ COMMIT تغییرات
                     await _Context.SaveAsync();
 
-                    // ثبت لاگ
-                    await _activityLogger.LogActivityAsync(
+                    // ثبت لاگ تغییرات
+                    await _activityLogger.LogChangeAsync<object>(
                         ActivityTypeEnum.Edit,
                         "UserManager",
                         "RegisterTelegramChatId",
-                        $"ثبت Chat ID تلگرام: {user.FirstName} {user.LastName} - Chat ID: {request.ChatId}",
-                        recordId: user.Id,
+                        $"ثبت دستی Chat ID تلگرام: {currentUser.FirstName} {currentUser.LastName}",
+                        new { TelegramChatId = oldChatId },
+                        new { TelegramChatId = request.ChatId },
+                        recordId: currentUser.Id,
                         entityType: "AppUsers",
-                        recordTitle: $"{user.FirstName} {user.LastName}"
+                        recordTitle: $"{currentUser.FirstName} {currentUser.LastName}"
                     );
 
                     return Json(new 
                     { 
                         success = true, 
                         message = "Chat ID با موفقیت ثبت شد",
-                        userName = $"{user.FirstName} {user.LastName}"
+                        userName = $"{currentUser.FirstName} {currentUser.LastName}",
+                        chatId = request.ChatId
                     });
                 }
                 else
@@ -569,9 +588,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
                 return Json(new { success = false, message = $"خطای سیستمی: {ex.Message}" });
             }
         }
-
         /// <summary>
-        /// تولید لینک اختصاصی تلگرام برای کاربر جاری
+        /// دریافت لینک ربات تلگرام از تنظیمات
         /// </summary>
         [HttpGet]
         [Authorize]
@@ -579,55 +597,45 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
         {
             try
             {
-                var currentUser = await _UserManager.GetUserAsync(User);
-                if (currentUser == null)
-                {
-                    return Json(new { success = false, message = "کاربر یافت نشد" });
-                }
-
-                // بررسی اینکه Chat ID قبلاً ثبت نشده باشد
-                if (currentUser.TelegramChatId.HasValue)
-                {
-                    return Json(new 
-                    { 
-                        success = false, 
-                        message = "Chat ID قبلاً ثبت شده است",
-                        alreadyRegistered = true
-                    });
-                }
-
-                // ⭐ دریافت Bot Username از Settings
-                var settings =  _Context.SettingsUW.Get().FirstOrDefault();
+                // ⭐ دریافت Bot Token از Settings
+                var settings = _Context.SettingsUW.Get().FirstOrDefault();
                 if (settings == null || string.IsNullOrEmpty(settings.TelegramBotToken))
                 {
-                    return Json(new 
-                    { 
-                        success = false, 
-                        message = "ربات تلگرام تنظیم نشده است" 
+                    return Json(new
+                    {
+                        success = false,
+                        message = "ربات تلگرام در تنظیمات سیستم ثبت نشده است"
                     });
                 }
 
-                // استخراج Bot Username از توکن (فرمت: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)
+                // استخراج Bot Username از API تلگرام
                 var botUsername = await GetBotUsernameFromToken(settings.TelegramBotToken);
-                
+
                 if (string.IsNullOrEmpty(botUsername))
                 {
-                    return Json(new 
-                    { 
-                        success = false, 
-                        message = "خطا در دریافت اطلاعات ربات" 
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در دریافت اطلاعات ربات از تلگرام"
                     });
                 }
 
-                // ایجاد لینک با پارامتر start که شامل userId است
-                var telegramLink = $"https://t.me/{botUsername}?start={currentUser.Id}";
+                // ایجاد لینک ربات
+                var botLink = $"https://t.me/{botUsername}";
 
-                return Json(new 
-                { 
-                    success = true, 
-                    telegramLink = telegramLink,
-                    userId = currentUser.Id,
-                    userName = $"{currentUser.FirstName} {currentUser.LastName}"
+                // ثبت لاگ
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "UserManager",
+                    "GetTelegramBotLink",
+                    $"دریافت لینک ربات تلگرام: @{botUsername}"
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    botLink = botLink,
+                    botUsername = botUsername
                 });
             }
             catch (Exception ex)
@@ -635,16 +643,16 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
                 await _activityLogger.LogErrorAsync(
                     "UserManager",
                     "GetTelegramBotLink",
-                    "خطا در تولید لینک تلگرام",
+                    "خطا در دریافت لینک ربات",
                     ex
                 );
 
-                return Json(new { success = false, message = "خطای سیستمی" });
+                return Json(new { success = false, message = "خطای سیستمی در دریافت لینک ربات" });
             }
         }
 
         /// <summary>
-        /// دریافت Username ربات از Telegram API
+        /// دریافت Username ربات از Telegram API با استفاده از توکن
         /// </summary>
         private async Task<string> GetBotUsernameFromToken(string botToken)
         {
@@ -659,13 +667,12 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
                 await _activityLogger.LogErrorAsync(
                     "UserManager",
                     "GetBotUsernameFromToken",
-                    "خطا در دریافت اطلاعات ربات",
+                    "خطا در دریافت اطلاعات ربات از API تلگرام",
                     ex
                 );
                 return null;
             }
         }
-       
         // ViewModel برای درخواست ثبت Chat ID
         public class TelegramChatIdRequest
         {
