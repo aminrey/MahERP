@@ -139,6 +139,8 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.AssignmentsTaskUser, opt => opt.MapFrom(src => src.TaskAssignments))
                 .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => CalculateProgress(src)))
                 .ForMember(dest => dest.WorkLogs, opt => opt.MapFrom(src => src.TaskWorkLogs))
+                .ForMember(dest => dest.TaskCode, opt => opt.MapFrom(src => src.TaskCode))
+    .ForMember(dest => dest.IsIndependentCompletion, opt => opt.MapFrom(src => src.IsIndependentCompletion)) 
                 .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => $"{src.Creator.FirstName} {src.Creator.LastName}" ))
                 .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.TaskComments));
             CreateMap<TaskViewModel, Tasks>()
@@ -174,6 +176,7 @@ namespace MahERP.AutoMapper
 
             // Task assignments mapping
             CreateMap<TaskAssignment, TaskAssignmentViewModel>()
+                .ForMember(dest => dest.CompletionNote, opt => opt.MapFrom(src => src.UserReport ))
                 .ForMember(dest => dest.AssignedUserName, opt => opt.MapFrom(src => src.AssignedUser != null ? $"{src.AssignedUser.FirstName} {src.AssignedUser.LastName}" : null))
                 .ForMember(dest => dest.AssignerUserName, opt => opt.MapFrom(src => src.AssignerUser != null ? $"{src.AssignerUser.FirstName} {src.AssignerUser.LastName}" : null))
                 .ForMember(dest => dest.CompletionNote, opt => opt.MapFrom(src => src.UserReport)); // ⭐⭐⭐ اضافه کنید

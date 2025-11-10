@@ -164,38 +164,50 @@
                     </nav>
 
     <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
-        @if (isCompletedByMe)
-        {
-            <!-- ⭐ نمایش Badge قفل شده -->
-            <div class="alert alert-success d-flex align-items-center mb-0">
-                <i class="fa fa-lock fa-2x me-3"></i>
-                <div>
-                    <div class="fw-bold">تسک قفل شده</div>
-                    <small>این تسک تکمیل شده و قابل ویرایش نیست</small>
-                </div>
-            </div>
-        }
-        else
-        {
-            @if (isCreator || isManager)
-            {
-                <a href="#"
-                   onclick="showComingSoonNotification(event, 'ویرایش تسک')"
-                   class="btn btn-hero btn-warning btn-lg">
-                    <i class="fa fa-pencil-alt me-2"></i>
-                    <span>ویرایش</span>
-                </a>
-            }
+                        @if (isCompletedByMe && !Model.IsIndependentCompletion)
+                        {
+                            <!-- ⭐ حالت مشترک: کل تسک قفل -->
+                            <div class="alert alert-success d-flex align-items-center mb-0">
+                                <i class="fa fa-lock fa-2x me-3"></i>
+                                <div>
+                                    <div class="fw-bold">تسک قفل شده</div>
+                                    <small>این تسک تکمیل شده و برای همه قفل است</small>
+                                </div>
+                            </div>
+                        }
+                        else if (isCompletedByMe && Model.IsIndependentCompletion)
+                        {
+                            <!-- ⭐⭐⭐ حالت مستقل: فقط برای من تکمیل شده -->
+                            <div class="alert alert-info d-flex align-items-center mb-0">
+                                <i class="fa fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <div class="fw-bold">شما این تسک را تکمیل کرده‌اید</div>
+                                    <small>سایر اعضا هنوز در حال انجام هستند</small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- ⭐ دکمه‌های عملیات -->
+                            @if (isCreator || isManager)
+                            {
+                                <a href="#"
+                                   onclick="showComingSoonNotification(event, 'ویرایش تسک')"
+                                   class="btn btn-hero btn-warning btn-lg">
+                                    <i class="fa fa-pencil-alt me-2"></i>
+                                    <span>ویرایش</span>
+                                </a>
+                            }
 
-            @if (isAssignedToCurrentUser)
-            {
-                <a href="@Url.Action("CompleteTask", new { id = Model.Id })"
-                   data-toggle="modal-ajax"
-                   class="btn btn-hero btn-success btn-lg">
-                    <i class="fa fa-check me-2"></i>
-                    <span>تکمیل تسک</span>
-                </a>
-            }
+                            @if (isAssignedToCurrentUser)
+                            {
+                                <a href="@Url.Action("CompleteTask", new { id = Model.Id })"
+                                   data-toggle="modal-ajax"
+                                   class="btn btn-hero btn-success btn-lg">
+                                    <i class="fa fa-check me-2"></i>
+                                    <span>تکمیل تسک</span>
+                                </a>
+                            }
         }
 
         <div class="dropdown">
@@ -394,29 +406,200 @@
                             }
                         </div>
                     </div>
+                
+
+
+
+
+
+
                     <!-- در تب اول (tab-overview) بعد از بخش "توضیحات تسک" -->
-                    @if (Model.CompletionDate.HasValue)
+                    @{
+                        // ⭐⭐⭐ شرط صحیح: بررسی وجود گزارش تکمیل در assignments
+                        var hasCompletionReport = Model.AssignmentsTaskUser?.Any(a => a.CompletionDate.HasValue) ?? false;
+                    }
+
+                    @if (hasCompletionReport)
                     {
                         <!-- ⭐⭐⭐ گزارش تکمیل تسک -->
                         <div class="block block-rounded block-fx-shadow">
                             <div class="block-header bg-success text-white">
                                 <h3 class="block-title text-white mb-0">
                                     <i class="fa fa-check-circle me-2"></i>گزارش تکمیل تسک
+                                    @if (Model.IsIndependentCompletion)
+                                    {
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="fa fa-users me-1"></i>تکمیل مستقل
+                                        </span>
+                                    }
                                 </h3>
                                 <div class="block-options">
-                                    <span class="badge bg-light text-success">
-                                        @ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate.Value, "yyyy/MM/dd HH:mm")
-                                    </span>
+                                    @{
+                                        // ⭐ نمایش تاریخ اولین تکمیل
+                                        var firstCompletion = Model.AssignmentsTaskUser
+                                        .Where(a => a.CompletionDate.HasValue)
+                                        .OrderBy(a => a.CompletionDate)
+                                        .FirstOrDefault();
+                                    }
+                                    @if (firstCompletion != null)
+                                    {
+                                        <span class="badge bg-light text-success">
+                                            @ConvertDateTime.ConvertMiladiToShamsi(firstCompletion.CompletionDate.Value, "yyyy/MM/dd HH:mm")
+                                        </span>
+                                    }
                                 </div>
                             </div>
                             <div class="block-content">
                                 @{
-                                    var completionAssignment = Model.AssignmentsTaskUser?
-                                    .FirstOrDefault(a => a.CompletionDate.HasValue);
+                                    // ⭐⭐⭐ دریافت تمام گزارش‌های تکمیل
+                                    var completedAssignments = Model.AssignmentsTaskUser
+                                    .Where(a => a.CompletionDate.HasValue)
+                                    .OrderBy(a => a.CompletionDate)
+                                    .ToList();
+
+                                    var totalAssignedUsers = Model.AssignmentsTaskUser?.Count ?? 0;
+                                    var completedCount = completedAssignments.Count;
                                 }
 
-                                @if (completionAssignment != null)
+                                @if (Model.IsIndependentCompletion)
                                 {
+                                    <!-- ⭐⭐⭐ حالت تکمیل مستقل: نمایش گزارش همه افراد -->
+                                    <div class="alert alert-info mb-3">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <i class="fa fa-info-circle me-2"></i>
+                                                <strong>نوع تکمیل: مستقل</strong>
+                                                <p class="mb-0 mt-1">هر کاربر باید جداگانه این تسک را تکمیل کند</p>
+                                            </div>
+                                            <div class="col-md-4 text-center">
+                                                <div class="fs-3 fw-bold text-primary">
+                                                    @completedCount / @totalAssignedUsers
+                                                </div>
+                                                <small class="text-muted">تعداد تکمیل شده</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ⭐ نمایش همه گزارش‌ها به صورت Timeline -->
+                                    <div class="timeline timeline-alt py-0">
+                                        @foreach (var assignment in completedAssignments)
+                                        {
+                                            <div class="timeline-event">
+                                                <div class="timeline-event-icon bg-success">
+                                                    <i class="fa fa-check-circle"></i>
+                                                </div>
+                                                <div class="timeline-event-block block block-rounded">
+                                                    <div class="block-header bg-body-light">
+                                                        <div class="d-flex align-items-center w-100">
+                                                            <!-- عکس کاربر -->
+                                                            <div class="flex-shrink-0 me-3">
+                                                                <img src="@(assignment.AssignedUserProfileImage ?? "/images/default-avatar.png")"
+                                                                     class="rounded-circle"
+                                                                     style="width: 60px; height: 60px; object-fit: cover;"
+                                                                     alt="@assignment.AssignedUserName">
+                                                            </div>
+                                                            <div class="flex-grow-1">
+                                                                <h6 class="mb-0">@assignment.AssignedUserName</h6>
+                                                                <small class="text-muted">
+                                                                    <i class="fa fa-calendar me-1"></i>
+                                                                    @ConvertDateTime.ConvertMiladiToShamsi(assignment.CompletionDate.Value, "yyyy/MM/dd HH:mm")
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="block-content">
+                                                        <!-- گزارش تکمیل -->
+                                                        <div class="mb-3">
+                                                            <h6 class="mb-2">
+                                                                <i class="fa fa-file-alt text-success me-1"></i>
+                                                                گزارش تکمیل:
+                                                            </h6>
+                                                            @if (!string.IsNullOrEmpty(assignment.CompletionNote))
+                                                            {
+                                                                <p class="mb-0">@Html.Raw(assignment.CompletionNote.Replace("\n", "<br/>"))</p>
+                                                            }
+                                                            else
+                                                            {
+                                                                <p class="text-muted mb-0">
+                                                                    <i class="fa fa-info-circle me-1"></i>
+                                                                    بدون توضیحات
+                                                                </p>
+                                                            }
+                                                    </div>
+
+                                                    <!-- اطلاعات زمانی -->
+                                                    <div class="row g-2">
+                                                        <div class="col-md-6">
+                                                            <div class="p-2 bg-body-light rounded">
+                                                                <small class="text-muted d-block">تاریخ شروع</small>
+                                                                <strong>
+                                                                    @(assignment.PersonalStartDate.HasValue
+                                                                                                                                ? ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalStartDate.Value, "yyyy/MM/dd HH:mm")
+                                                                                                                                : "ثبت نشده")
+                                                                    </strong>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="p-2 bg-body-light rounded">
+                                                                    <small class="text-muted d-block">مدت زمان</small>
+                                                                    <strong>
+                                                                        @if (assignment.PersonalStartDate.HasValue)
+                                                                        {
+                                                                            var duration = assignment.CompletionDate.Value - assignment.PersonalStartDate.Value;
+                                                                            <text>@duration.Days روز، @duration.Hours ساعت</text>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <text>نامشخص</text>
+                                                                        }
+                                                                    </strong>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- ⭐ نمایش افراد باقیمانده (اگر همه تکمیل نکرده‌اند) -->
+                                    @if (completedCount < totalAssignedUsers)
+                                    {
+                                        var pendingUsers = Model.AssignmentsTaskUser
+                                        .Where(a => !a.CompletionDate.HasValue)
+                                        .ToList();
+
+                                        <div class="alert alert-warning mt-3">
+                                            <h6 class="mb-2">
+                                                <i class="fa fa-clock me-1"></i>
+                                                در انتظار تکمیل توسط:
+                                            </h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @foreach (var pending in pendingUsers)
+                                                {
+                                                    <span class="badge bg-warning text-dark">
+                                                        <img src="@(pending.AssignedUserProfileImage ?? "/images/default-avatar.png")"
+                                                             class="rounded-circle me-1"
+                                                             style="width: 20px; height: 20px; object-fit: cover;"
+                                                             alt="@pending.AssignedUserName">
+                                                        @pending.AssignedUserName
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <!-- ⭐⭐⭐ حالت تکمیل مشترک: نمایش گزارش یک نفر -->
+                                    var completionAssignment = completedAssignments.First();
+
+                                    <div class="alert alert-success mb-3">
+                                        <i class="fa fa-info-circle me-2"></i>
+                                        <strong>نوع تکمیل: مشترک</strong>
+                                        <p class="mb-0 mt-1">تکمیل یک نفر برای همه اعتبار دارد</p>
+                                    </div>
+
                                     <div class="row g-3">
                                         <!-- عکس و اطلاعات تکمیل کننده -->
                                         <div class="col-md-4">
@@ -451,38 +634,38 @@
                                                     </p>
                                                 }
 
-                                            <!-- آمار عملیات -->
-                                            <div class="row g-2 mt-3">
-                                                <div class="col-6">
-                                                    <div class="p-2 bg-white rounded text-center">
-                                                        <div class="fs-3 fw-bold text-success">
-                                                            @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)/@(Model.Operations?.Count ?? 0)
-                                                        </div>
-                                                        <small class="text-muted">عملیات تکمیل شده</small>
+                                        <!-- آمار عملیات -->
+                                        <div class="row g-2 mt-3">
+                                            <div class="col-6">
+                                                <div class="p-2 bg-white rounded text-center">
+                                                    <div class="fs-3 fw-bold text-success">
+                                                        @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)/@(Model.Operations?.Count ?? 0)
                                                     </div>
+                                                    <small class="text-muted">عملیات تکمیل شده</small>
                                                 </div>
-                                                <div class="col-6">
-                                                    <div class="p-2 bg-white rounded text-center">
-                                                        <div class="fs-3 fw-bold text-primary">
-                                                            @Model.ProgressPercentage%
-                                                        </div>
-                                                        <small class="text-muted">درصد پیشرفت</small>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="p-2 bg-white rounded text-center">
+                                                    <div class="fs-3 fw-bold text-primary">
+                                                        @Model.ProgressPercentage%
                                                     </div>
+                                                    <small class="text-muted">درصد پیشرفت</small>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- اطلاعات بیشتر -->
-                                <div class="row g-2 mt-3">
-                                    <div class="col-md-4">
-                                        <div class="p-2 bg-body-light rounded">
-                                            <small class="text-muted d-block">تاریخ شروع</small>
-                                            <strong>
-                                                @(completionAssignment.PersonalStartDate.HasValue
-                                                                                            ? ConvertDateTime.ConvertMiladiToShamsi(completionAssignment.PersonalStartDate.Value, "yyyy/MM/dd HH:mm")
-                                                                                            : "ثبت نشده")
+                            <!-- اطلاعات بیشتر -->
+                            <div class="row g-2 mt-3">
+                                <div class="col-md-4">
+                                    <div class="p-2 bg-body-light rounded">
+                                        <small class="text-muted d-block">تاریخ شروع</small>
+                                        <strong>
+                                            @(completionAssignment.PersonalStartDate.HasValue
+                                                                                        ? ConvertDateTime.ConvertMiladiToShamsi(completionAssignment.PersonalStartDate.Value, "yyyy/MM/dd HH:mm")
+                                                                                        : "ثبت نشده")
                                                 </strong>
                                             </div>
                                         </div>
@@ -512,16 +695,21 @@
                                         </div>
                                     </div>
                                 }
-                                else
-                                {
-                                    <div class="text-center py-4 text-muted">
-                                        <i class="fa fa-info-circle fa-2x mb-2"></i>
-                                        <p class="mb-0">اطلاعات تکمیل یافت نشد</p>
-                                    </div>
-                                }
                             </div>
                         </div>
                     }
+
+
+
+
+
+
+
+
+
+
+
+
                     <!-- اطلاعات جزئیات -->
                     <div class="block block-rounded block-fx-shadow">
                         <div class="block-header block-header-default">
@@ -775,6 +963,7 @@
     </div>
 </div>
 
+
         <!-- Tab 3: عملیات‌ها -->
         <div class="tab-pane fade" id="tab-operations" role="tabpanel">
             <div class="block block-rounded block-fx-shadow">
@@ -892,10 +1081,10 @@
                                     @foreach (var comment in Model.Comments.OrderBy(c => c.CreateDate))
                                     {
                                         var isMyMessage = comment.CreatorUserId == currentUserId;
-                                        var messageClass = isMyMessage ? "chat-message-right" : "chat-message-left";
+                                        var messageClass = isMyMessage ? "chat-message-right " : "chat-message-left";
 
-                                        <div class="chat-message @messageClass mb-3" data-comment-id="@comment.Id">
-                                            <div class="d-flex @(isMyMessage ? "flex-row-reverse" : "")">
+                                        <div class="chat-message  @messageClass mb-3" data-comment-id="@comment.Id">
+                                            <div class="d-flex @(isMyMessage ? "flex-row-reverse justify-content-right" : "justify-content-left")">
                                              
 
                                                 <!-- Message Content -->

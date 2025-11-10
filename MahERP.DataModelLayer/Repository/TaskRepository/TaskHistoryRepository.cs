@@ -471,28 +471,132 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         }
         #endregion
         /// <summary>
-        /// ثبت تکمیل تسک در تاریخچه - نسخه اصلاح شده
+        /// ثبت تکمیل تسک در تاریخچه - با پشتیبانی از تکمیل مستقل/مشترک
         /// </summary>
-        public async Task LogTaskCompletedAsync(int taskId, string userId, string taskTitle, string taskCode)
+        /// <param name="taskId">شناسه تسک</param>
+        /// <param name="userId">شناسه کاربر تکمیل کننده</param>
+        /// <param name="taskTitle">عنوان تسک</param>
+        /// <param name="taskCode">کد تسک</param>
+        /// <param name="isFullyCompleted">آیا کل تسک تکمیل شد؟ (برای نمایش متمایز)</param>
+        public async Task LogTaskCompletedAsync(
+            int taskId,
+            string userId,
+            string taskTitle,
+            string taskCode,
+            bool isFullyCompleted = false)
         {
             try
             {
-                // دریافت اطلاعات کاربر
+                // ⭐ دریافت اطلاعات کاربر و تسک
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
                 var userName = user != null ? $"{user.FirstName} {user.LastName}" : "نامشخص";
 
-                // ⭐ ایجاد رکورد تاریخچه با فیلدهای صحیح
+                // ⭐ دریافت اطلاعات تسک
+                var task = await _context.Tasks_Tbl
+                    .Include(t => t.TaskAssignments)
+                    .FirstOrDefaultAsync(t => t.Id == taskId);
+
+                if (task == null)
+                {
+                    Console.WriteLine($"❌ Task {taskId} not found in LogTaskCompletedAsync");
+                    return;
+                }
+
+                // ⭐⭐⭐ تعیین متن و وضعیت بر اساس نوع تکمیل
+                string description;
+                string oldValue;
+                string newValue;
+
+                if (task.IsIndependentCompletion)
+                {
+                    // ========================================
+                    // ⭐⭐⭐ تکمیل مستقل (Independent)
+                    // ========================================
+
+                    var totalMembers = task.TaskAssignments.Count;
+                    var completedMembers = task.TaskAssignments.Count(a => a.CompletionDate.HasValue);
+
+                    if (isFullyCompleted)
+                    {
+                        // ⭐ همه افراد تکمیل کردند
+                        description = $"تسک «{taskTitle}» ({taskCode}) توسط {userName} تکمیل شد. " +
+                                     $"✅ همه اعضا ({completedMembers}/{totalMembers}) تسک را تکمیل کردند - تسک به پایان رسید";
+                        oldValue = $"مستقل - {completedMembers - 1}/{totalMembers} تکمیل شده";
+                        newValue = $"مستقل - همه ({completedMembers}/{totalMembers}) تکمیل شدند ✅";
+                    }
+                    else
+                    {
+                        // ⭐ هنوز برخی افراد تکمیل نکرده‌اند
+                        description = $"تسک «{taskTitle}» ({taskCode}) توسط {userName} تکمیل شد. " +
+                                     $"⏳ {completedMembers}/{totalMembers} نفر تکمیل کردند - منتظر تکمیل سایرین";
+                        oldValue = $"مستقل - {completedMembers - 1}/{totalMembers} تکمیل شده";
+                        newValue = $"مستقل - {completedMembers}/{totalMembers} تکمیل شده";
+                    }
+                }
+                else
+                {
+                    // ========================================
+                    // ⭐⭐⭐ تکمیل مشترک (Shared)
+                    // ========================================
+
+                    var totalMembers = task.TaskAssignments.Count;
+                    description = $"تسک «{taskTitle}» ({taskCode}) توسط {userName} تکمیل شد. " +
+                                 $"✅ تسک برای همه ({totalMembers} نفر) قفل شد";
+                    oldValue = "در حال انجام";
+                    newValue = "تکمیل شده - برای همه قفل شد ✅";
+                }
+
+                // ⭐ ایجاد رکورد تاریخچه
                 var history = new TaskHistory
                 {
                     TaskId = taskId,
-                    UserId = userId,                    // ✅ اصلاح شده: UserId
-                    ActionType = 2,                     // ✅ StatusChanged (تغییر وضعیت)
-                    Title = "تکمیل تسک",
-                    Description = $"تسک «{taskTitle}» ({taskCode}) توسط {userName} تکمیل شد",
-                    OldValue = "در حال انجام",
-                    NewValue = "تکمیل شده - منتظر تایید",
+                    UserId = userId,
+                    ActionType = 2, // StatusChanged
+                    Title = isFullyCompleted ? "تکمیل نهایی تسک" : "تکمیل تسک",
+                    Description = description,
+                    OldValue = oldValue,
+                    NewValue = newValue,
                     ActionDate = DateTime.Now,
-                    // ⭐ فیلدهای اختیاری:
+                    RelatedItemType = task.IsIndependentCompletion ? "IndependentCompletion" : "SharedCompletion",
+                    UserIp = GetUserIp(),
+                    UserAgent = GetUserAgent()
+                };
+
+                await _context.TaskHistory_Tbl.AddAsync(history);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Logged task completion: {description}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in LogTaskCompletedAsync: {ex.Message}");
+            }
+        }
+        /// <summary>
+        /// ثبت شروع کار روی تسک توسط یک عضو (مخصوص تکمیل مستقل)
+        /// </summary>
+        public async Task LogTaskStartedByMemberAsync(
+            int taskId,
+            string userId,
+            string taskTitle,
+            string taskCode)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                var userName = user != null ? $"{user.FirstName} {user.LastName}" : "نامشخص";
+
+                var history = new TaskHistory
+                {
+                    TaskId = taskId,
+                    UserId = userId,
+                    ActionType = 2, // StatusChanged
+                    Title = "شروع کار روی تسک",
+                    Description = $"{userName} شروع به کار روی تسک «{taskTitle}» ({taskCode}) کرد",
+                    OldValue = "اختصاص داده شده",
+                    NewValue = "در حال انجام",
+                    ActionDate = DateTime.Now,
+                    RelatedItemType = "TaskStart",
                     UserIp = GetUserIp(),
                     UserAgent = GetUserAgent()
                 };
@@ -502,7 +606,44 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error in LogTaskCompletedAsync: {ex.Message}");
+                Console.WriteLine($"❌ Error in LogTaskStartedByMemberAsync: {ex.Message}");
+            }
+        }
+        /// <summary>
+        /// ثبت بروزرسانی گزارش تکمیل (زمانی که کاربر قبلاً تکمیل کرده و فقط گزارش را ویرایش می‌کند)
+        /// </summary>
+        public async Task LogCompletionReportUpdatedAsync(
+            int taskId,
+            string userId,
+            string taskTitle,
+            string taskCode)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                var userName = user != null ? $"{user.FirstName} {user.LastName}" : "نامشخص";
+
+                var history = new TaskHistory
+                {
+                    TaskId = taskId,
+                    UserId = userId,
+                    ActionType = 1, // TaskEdited
+                    Title = "بروزرسانی گزارش تکمیل",
+                    Description = $"{userName} گزارش تکمیل تسک «{taskTitle}» ({taskCode}) را بروزرسانی کرد",
+                    OldValue = "گزارش قبلی",
+                    NewValue = "گزارش جدید",
+                    ActionDate = DateTime.Now,
+                    RelatedItemType = "CompletionReportUpdate",
+                    UserIp = GetUserIp(),
+                    UserAgent = GetUserAgent()
+                };
+
+                await _context.TaskHistory_Tbl.AddAsync(history);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in LogCompletionReportUpdatedAsync: {ex.Message}");
             }
         }
         /// <summary>
@@ -598,55 +739,52 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             );
         }
         /// <summary>
-        /// دریافت آیکون برای نوع تغییر
+        /// دریافت آیکون برای نوع تغییر - بروزرسانی شده
         /// </summary>
         public string GetHistoryIcon(byte actionType)
         {
             return actionType switch
             {
-                0 => "fa-plus",              // ایجاد
-                1 => "fa-edit",              // ویرایش
-                2 => "fa-sync",              // تغییر وضعیت
-                3 => "fa-user-plus",         // اضافه کاربر
-                4 => "fa-user-minus",        // حذف کاربر
-                5 => "fa-plus-circle",       // افزودن عملیات
-                6 => "fa-edit",              // ویرایش عملیات
-                7 => "fa-check-circle",      // تکمیل عملیات
-                8 => "fa-trash",             // حذف عملیات
-                9 => "fa-clipboard-check",   // ثبت گزارش کار
-                10 => "fa-bell-plus",        // افزودن یادآوری
-                11 => "fa-bell",             // ویرایش یادآوری
-                12 => "fa-bell-slash",       // حذف یادآوری
-                15 => "fa-user-check",       // تایید سرپرست
-                16 => "fa-award",            // تایید مدیر
-                17 => "fa-times-circle",     // رد تسک
+                0 => "fa-plus",                    // ایجاد
+                1 => "fa-edit",                    // ویرایش
+                2 => "fa-check-circle",            // ⭐ تغییر: تکمیل/تغییر وضعیت
+                3 => "fa-user-plus",               // اضافه کاربر
+                4 => "fa-user-minus",              // حذف کاربر
+                5 => "fa-plus-circle",             // افزودن عملیات
+                6 => "fa-edit",                    // ویرایش عملیات
+                7 => "fa-check-square",            // تکمیل عملیات
+                8 => "fa-trash",                   // حذف عملیات
+                9 => "fa-clipboard-check",         // ثبت گزارش کار
+                10 => "fa-bell-plus",              // افزودن یادآوری
+                15 => "fa-user-check",             // تایید سرپرست
+                16 => "fa-award",                  // تایید مدیر
+                20 => "fa-calendar-plus",          // افزودن به روز من
+                21 => "fa-calendar-minus",         // حذف از روز من
                 _ => "fa-circle"
             };
         }
 
         /// <summary>
-        /// دریافت رنگ Badge برای نوع تغییر
+        /// دریافت رنگ Badge - بروزرسانی شده
         /// </summary>
         public string GetHistoryBadgeClass(byte actionType)
         {
             return actionType switch
             {
-                0 => "bg-primary",           // ایجاد
-                1 => "bg-warning",           // ویرایش
-                2 => "bg-info",              // تغییر وضعیت
-                3 => "bg-info",              // اضافه کاربر
-                4 => "bg-warning",           // حذف کاربر
-                5 => "bg-primary",           // افزودن عملیات
-                6 => "bg-warning",           // ویرایش عملیات
-                7 => "bg-success",           // تکمیل عملیات
-                8 => "bg-danger",            // حذف
-                9 => "bg-info",              // گزارش کار
-                10 => "bg-primary",          // افزودن یادآوری
-                11 => "bg-warning",          // ویرایش یادآوری
-                12 => "bg-danger",           // حذف یادآوری
-                15 => "bg-info",             // تایید سرپرست
-                16 => "bg-success",          // تایید مدیر
-                17 => "bg-danger",           // رد تسک
+                0 => "bg-primary",                 // ایجاد
+                1 => "bg-warning",                 // ویرایش
+                2 => "bg-success",                 // ⭐ تغییر: تکمیل/تغییر وضعیت
+                3 => "bg-info",                    // اضافه کاربر
+                4 => "bg-warning",                 // حذف کاربر
+                5 => "bg-primary",                 // افزودن عملیات
+                7 => "bg-success",                 // تکمیل عملیات
+                8 => "bg-danger",                  // حذف
+                9 => "bg-info",                    // گزارش کار
+                10 => "bg-primary",                // افزودن یادآوری
+                15 => "bg-info",                   // تایید سرپرست
+                16 => "bg-success",                // تایید مدیر
+                20 => "bg-info",                   // افزودن به روز من
+                21 => "bg-secondary",              // حذف از روز من
                 _ => "bg-secondary"
             };
         }

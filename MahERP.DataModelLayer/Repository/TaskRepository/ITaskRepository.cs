@@ -579,7 +579,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <summary>
         /// ثبت تکمیل تسک
         /// </summary>
-        Task<(bool IsSuccess, string ErrorMessage)> CompleteTaskAsync(CompleteTaskViewModel model, string userId);
+        Task<(bool IsSuccess, string ErrorMessage, bool IsFullyCompleted)> CompleteTaskAsync(
+            CompleteTaskViewModel model,
+            string userId);
 
         /// <summary>
         /// غیرفعال کردن یادآوری‌های یک تسک
