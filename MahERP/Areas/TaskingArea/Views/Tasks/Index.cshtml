@@ -23,28 +23,48 @@
         <div class="block-content">
             <div class="row g-sm">
                 <div class="col-6 col-md-3">
-                    <div class="p-3 bg-body-light rounded text-center">
-                        <div class="fs-3 fw-semibold text-primary">@Model.Stats.TotalPending</div>
-                        <div class="text-muted">در حال انجام</div>
-                    </div>
+                    <a href="javascript:void(0)" 
+                       class="text-decoration-none quick-status-filter" 
+                       data-filter="@((int)QuickStatusFilter.Pending)"
+                       style="display: block;">
+                        <div class="p-3 bg-body-light rounded text-center hover-lift @(Model.CurrentStatusFilter == QuickStatusFilter.Pending ? "border border-2 border-primary" : "")">
+                            <div class="fs-3 fw-semibold text-primary">@Model.Stats.TotalPending</div>
+                            <div class="text-muted">در حال انجام</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="p-3 bg-body-light rounded text-center">
-                        <div class="fs-3 fw-semibold text-success">@Model.Stats.TotalCompleted</div>
-                        <div class="text-muted">تکمیل شده</div>
-                    </div>
+                    <a href="javascript:void(0)" 
+                       class="text-decoration-none quick-status-filter" 
+                       data-filter="@((int)QuickStatusFilter.Completed)"
+                       style="display: block;">
+                        <div class="p-3 bg-body-light rounded text-center hover-lift @(Model.CurrentStatusFilter == QuickStatusFilter.Completed ? "border border-2 border-success" : "")">
+                            <div class="fs-3 fw-semibold text-success">@Model.Stats.TotalCompleted</div>
+                            <div class="text-muted">تکمیل شده</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="p-3 bg-body-light rounded text-center">
-                        <div class="fs-3 fw-semibold text-danger">@Model.Stats.TotalOverdue</div>
-                        <div class="text-muted">عقب افتاده</div>
-                    </div>
+                    <a href="javascript:void(0)" 
+                       class="text-decoration-none quick-status-filter" 
+                       data-filter="@((int)QuickStatusFilter.Overdue)"
+                       style="display: block;">
+                        <div class="p-3 bg-body-light rounded text-center hover-lift @(Model.CurrentStatusFilter == QuickStatusFilter.Overdue ? "border border-2 border-danger" : "")">
+                            <div class="fs-3 fw-semibold text-danger">@Model.Stats.TotalOverdue</div>
+                            <div class="text-muted">عقب افتاده</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="p-3 bg-body-light rounded text-center">
-                        <div class="fs-3 fw-semibold text-warning">@Model.Stats.TotalUrgent</div>
-                        <div class="text-muted">فوری</div>
-                    </div>
+                    <a href="javascript:void(0)" 
+                       class="text-decoration-none quick-status-filter" 
+                       data-filter="@((int)QuickStatusFilter.Urgent)"
+                       style="display: block;">
+                        <div class="p-3 bg-body-light rounded text-center hover-lift @(Model.CurrentStatusFilter == QuickStatusFilter.Urgent ? "border border-2 border-warning" : "")">
+                            <div class="fs-3 fw-semibold text-warning">@Model.Stats.TotalUrgent</div>
+                            <div class="text-muted">فوری</div>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>
@@ -120,11 +140,102 @@
         window.TaskListConfig = {
             currentViewType: @((int)Model.CurrentViewType),
             currentGrouping: @((int)Model.CurrentGrouping),
+            currentStatusFilter: @((int)Model.CurrentStatusFilter),
             urls: {
                 changeGrouping: '@Url.Action("ChangeGrouping", "Tasks")',
+                changeStatusFilter: '@Url.Action("ChangeQuickStatusFilter", "Tasks")',
                 toggleComplete: '@Url.Action("ToggleTaskComplete", "Tasks")',
                 deleteTask: '@Url.Action("Delete", "Tasks")'
             }
         };
+
+        // ⭐⭐⭐ Event handler برای کلیک روی آمار سریع
+        $(document).on('click', '.quick-status-filter', function(e) {
+            e.preventDefault();
+            
+            const $this = $(this);
+            const statusFilter = parseInt($this.data('filter'));
+            
+            console.log('🎯 Quick Status Filter clicked:', statusFilter);
+            
+            // نمایش loading
+            $('#task-groups-container').html('<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-3">در حال بارگذاری...</p></div>');
+            
+            // ارسال درخواست AJAX
+            $.ajax({
+                url: TaskListConfig.urls.changeStatusFilter,
+                type: 'POST',
+                data: {
+                    viewType: TaskListConfig.currentViewType,
+                    grouping: TaskListConfig.currentGrouping,
+                    statusFilter: statusFilter,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    console.log('✅ Status filter changed:', response);
+                    
+                    if (response.status === 'update-view' && response.viewList && response.viewList.length > 0) {
+                        response.viewList.forEach(function(item) {
+                            if (item.elementId && item.view && item.view.result) {
+                                $('#' + item.elementId).html(item.view.result);
+                                
+                                // Process URLs
+                                if (typeof ModalUtils !== 'undefined') {
+                                    ModalUtils.processUrlsInContainer($('#' + item.elementId));
+                                }
+                            }
+                        });
+                        
+                        // بروزرسانی متغیر config
+                        TaskListConfig.currentStatusFilter = statusFilter;
+                        
+                        // بروزرسانی کلاس active در آمار
+                        $('.quick-status-filter').each(function() {
+                            const $card = $(this).find('.p-3');
+                            $card.removeClass('border border-2 border-primary border-success border-danger border-warning');
+                        });
+                        
+                        $this.find('.p-3').addClass('border border-2');
+                        
+                        // اضافه کردن رنگ متناسب
+                        if (statusFilter === 1) { // Pending
+                            $this.find('.p-3').addClass('border-primary');
+                        } else if (statusFilter === 2) { // Completed
+                            $this.find('.p-3').addClass('border-success');
+                        } else if (statusFilter === 3) { // Overdue
+                            $this.find('.p-3').addClass('border-danger');
+                        } else if (statusFilter === 4) { // Urgent
+                            $this.find('.p-3').addClass('border-warning');
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Error changing status filter:', error);
+                    $('#task-groups-container').html('<div class="alert alert-danger">خطا در بارگذاری اطلاعات</div>');
+                }
+            });
+        });
     </script>
+    
+    <style>
+        /* ⭐ افکت hover برای آمار کلیک‌پذیر */
+        .hover-lift {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+        }
+        
+        .quick-status-filter:hover .hover-lift {
+            background-color: #f0f0f0 !important;
+        }
+        
+        /* انیمیشن برای border فعال */
+        .quick-status-filter .p-3 {
+            transition: all 0.3s ease;
+        }
+    </style>
 }

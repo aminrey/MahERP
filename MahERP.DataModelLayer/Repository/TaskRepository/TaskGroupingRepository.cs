@@ -26,7 +26,8 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         public async Task<List<TaskGroupViewModel>> GroupTasksAsync(
             List<Tasks> tasks,
             TaskGroupingType grouping,
-            string currentUserId)
+            string currentUserId,
+            TaskViewType? viewType = null)  // ⭐ اضافه شده
         {
             var groups = new List<TaskGroupViewModel>();
 
@@ -56,16 +57,16 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             // ⭐ تبدیل به کارت برای هر گروه
             foreach (var group in groups)
             {
-                var groupTasks = tasks.Where(t => IsTaskInGroup(t, group.GroupKey, grouping)).ToList();
+                var groupTasks = tasks.Where(t => IsTaskInGroup(t, group.GroupKey, grouping, currentUserId)).ToList();  // ⭐ پاس دادن currentUserId
 
                 group.PendingTasks = groupTasks
                     .Where(t => !IsTaskCompletedForUser(t.Id, currentUserId))
-                    .Select((t, index) => MapToTaskCard(t, index + 1, currentUserId))
+                    .Select((t, index) => MapToTaskCard(t, index + 1, currentUserId, viewType))  // ⭐ پاس دادن viewType
                     .ToList();
 
                 group.CompletedTasks = groupTasks
                     .Where(t => IsTaskCompletedForUser(t.Id, currentUserId))
-                    .Select((t, index) => MapToTaskCard(t, index + 1, currentUserId))
+                    .Select((t, index) => MapToTaskCard(t, index + 1, currentUserId, viewType))  // ⭐ پاس دادن viewType
                     .ToList();
             }
 
@@ -171,11 +172,25 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// <summary>
         /// بررسی تعلق تسک به گروه
         /// </summary>
-        public bool IsTaskInGroup(Tasks task, string groupKey, TaskGroupingType grouping)
+        public bool IsTaskInGroup(Tasks task, string groupKey, TaskGroupingType grouping, string currentUserId = null)
         {
             switch (grouping)
             {
                 case TaskGroupingType.Team:
+                    // ⭐⭐⭐ اصلاح: گرفتن تیم از AssignedInTeamId نه از task.TeamId
+                    if (!string.IsNullOrEmpty(currentUserId))
+                    {
+                        var userAssignment = task.TaskAssignments?
+                            .FirstOrDefault(a => a.AssignedUserId == currentUserId);
+
+                        if (userAssignment != null)
+                        {
+                            var teamId = userAssignment.AssignedInTeamId;
+                            return groupKey == (teamId.HasValue ? $"team-{teamId}" : "no-team");
+                        }
+                    }
+
+                    // اگر کاربر فعالی assignment نداشت، از TeamId اصلی تسک استفاده کن
                     return groupKey == (task.TeamId.HasValue ? $"team-{task.TeamId}" : "no-team");
 
                 case TaskGroupingType.Creator:
@@ -226,7 +241,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// <summary>
         /// تبدیل Task به TaskCard
         /// </summary>
-        public TaskCardViewModel MapToTaskCard(Tasks task, int cardNumber, string currentUserId)
+        public TaskCardViewModel MapToTaskCard(Tasks task, int cardNumber, string currentUserId, TaskViewType? viewType = null)
         {
             var card = new TaskCardViewModel
             {
@@ -253,8 +268,8 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
 
                 Priority = task.Priority,
                 Important = task.Important,
-                PriorityText = GetPriorityText(task.Priority, task.Important),
-                PriorityBadgeClass = GetPriorityBadgeClass(task.Priority, task.Important),
+                PriorityText = GetTaskTypeText(task.TaskType),
+                PriorityBadgeClass = GetTaskTypeBadgeClass(task.TaskType),
 
                 CreateDate = task.CreateDate,
                 CreateDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.CreateDate, "yyyy/MM/dd"),
@@ -272,8 +287,20 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
 
                 CanEdit = task.CreatorUserId == currentUserId,
                 CanDelete = task.CreatorUserId == currentUserId,
-                CanComplete = task.TaskAssignments?.Any(a => a.AssignedUserId == currentUserId) ?? false
+                CanComplete = task.TaskAssignments?.Any(a => a.AssignedUserId == currentUserId) ?? false,
+
+                // ⭐⭐⭐ دریافت اطلاعات IsInMyDay و IsFocused
+                IsInMyDay = IsTaskInMyDay(task.Id, currentUserId),
+                IsFocused = IsTaskFocused(task.Id, currentUserId)
             };
+
+            // ⭐⭐⭐ تشخیص نوع نظارت برای تسک‌های نظارتی
+            if (viewType == TaskViewType.Supervised)
+            {
+                var (supervisionType, supervisionReason) = GetSupervisionTypeAndReason(task.Id, currentUserId);
+                card.SupervisionType = supervisionType;
+                card.SupervisionReason = supervisionReason;
+            }
 
             // ⭐ اعضای تسک
             if (task.TaskAssignments != null)
@@ -296,6 +323,187 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         }
 
         #region Helper Methods
+
+        /// <summary>
+        /// ⭐⭐⭐ تشخیص نوع نظارت و دلیل آن
+        /// </summary>
+        private (string supervisionType, string supervisionReason) GetSupervisionTypeAndReason(int taskId, string userId)
+        {
+            // ========================================
+            // 1️⃣ بررسی رونوشت
+            // ========================================
+            var carbonCopy = _context.TaskViewer_Tbl
+                .Include(tv => tv.AddedByUser)
+                .FirstOrDefault(tv => tv.TaskId == taskId &&
+                          tv.UserId == userId &&
+                          tv.IsActive &&
+                          (tv.StartDate == null || tv.StartDate <= DateTime.Now) &&
+                          (tv.EndDate == null || tv.EndDate > DateTime.Now));
+
+            if (carbonCopy != null)
+            {
+                var adderName = carbonCopy.AddedByUser != null
+                    ? $"{carbonCopy.AddedByUser.FirstName} {carbonCopy.AddedByUser.LastName}"
+                    : "نامشخص";
+
+                var addedDatePersian = CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(
+                    carbonCopy.AddedDate, "yyyy/MM/dd");
+
+                return ("carbon-copy", $"شما توسط {adderName} در تاریخ {addedDatePersian} به این تسک رونوشت شده‌اید");
+            }
+
+            // ========================================
+            // 2️⃣ نظارت سیستمی - تشخیص دلیل
+            // ========================================
+            var task = _context.Tasks_Tbl
+                .Include(t => t.Team)
+                .Include(t => t.Creator)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(a => a.AssignedUser)
+                .Include(t => t.TaskAssignments)
+                    .ThenInclude(a => a.AssignedInTeam)
+                .FirstOrDefault(t => t.Id == taskId);
+
+            if (task == null)
+                return ("system", "ناظر سیستمی");
+
+            var reasons = new List<string>();
+
+            // ⭐ 1. سازنده تسک
+            if (task.CreatorUserId == userId)
+            {
+                reasons.Add("شما سازنده این تسک هستید");
+            }
+
+            // ⭐ 2. مدیر تیم تسک
+            if (task.Team != null && task.Team.ManagerUserId == userId)
+            {
+                reasons.Add($"شما مدیر تیم «{task.Team.Title}» هستید");
+            }
+
+            // ⭐ 3. دریافت تیم‌های کاربر
+            var userTeamMemberships = _context.TeamMember_Tbl
+                .Include(tm => tm.Team)
+                .Include(tm => tm.Position)
+                .Where(tm => tm.UserId == userId && tm.IsActive)
+                .ToList();
+
+            // ⭐⭐⭐ 4. بررسی نظارت بر اساس تیم assigned users
+            foreach (var assignment in task.TaskAssignments ?? new List<TaskAssignment>())
+            {
+                if (assignment.AssignedInTeamId.HasValue)
+                {
+                    var assignedTeam = assignment.AssignedInTeam;
+                    var assignedUserName = assignment.AssignedUser != null
+                        ? $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}"
+                        : "نامشخص";
+
+                    // بررسی مدیر تیم عضو
+                    if (assignedTeam != null && assignedTeam.ManagerUserId == userId)
+                    {
+                        reasons.Add($"شما مدیر تیم «{assignedTeam.Title}» هستید که {assignedUserName} در آن عضو است");
+                    }
+
+                    // بررسی سمت بالاتر در تیم
+                    var userMembershipInSameTeam = userTeamMemberships.FirstOrDefault(tm => tm.TeamId == assignment.AssignedInTeamId.Value);
+
+                    if (userMembershipInSameTeam != null && userMembershipInSameTeam.Position != null)
+                    {
+                        var assignedUserMembership = _context.TeamMember_Tbl
+                            .Include(tm => tm.Position)
+                            .FirstOrDefault(tm => tm.UserId == assignment.AssignedUserId && tm.TeamId == assignment.AssignedInTeamId.Value && tm.IsActive);
+
+                        if (assignedUserMembership != null && assignedUserMembership.Position != null)
+                        {
+                            // ⭐ اصلاح: PowerLevel کمتر = قدرت بیشتر
+                            if (userMembershipInSameTeam.Position.PowerLevel < assignedUserMembership.Position.PowerLevel)
+                            {
+                                reasons.Add($"شما در تیم «{assignedTeam.Title}» سمت بالاتر از {assignedUserName} دارید");
+                            }
+                        }
+                    }
+
+                    // ⭐⭐⭐ بررسی ناظر رسمی (MembershipType = 1)
+                    var isFormalSupervisorInTeam = userTeamMemberships.Any(tm => tm.TeamId == assignment.AssignedInTeamId.Value && tm.MembershipType == 1);
+
+                    if (isFormalSupervisorInTeam)
+                    {
+                        reasons.Add($"شما ناظر رسمی تیم «{assignedTeam?.Title}» هستید که {assignedUserName} در آن عضو است");
+                    }
+                }
+            }
+
+            // ⭐⭐⭐ 5. بررسی نظارت بر اساس همه اعضای تیم‌های کاربر (حتی اگر assigned نباشند)
+            foreach (var userMembership in userTeamMemberships)
+            {
+                // 5.1 - اگر سمت بالاتر دارید
+                if (userMembership.Position != null && userMembership.Position.CanViewSubordinateTasks)
+                {
+                    // پیدا کردن زیردستان در این تیم
+                    var subordinatesInTeam = _context.TeamMember_Tbl
+                        .Include(tm => tm.Position)
+                        .Where(tm => tm.TeamId == userMembership.TeamId &&
+                                    tm.IsActive &&
+                                    tm.UserId != userId &&
+                                    tm.Position != null &&
+                                    tm.Position.PowerLevel > userMembership.Position.PowerLevel)
+                        .ToList();
+
+                    // بررسی آیا هیچ‌کدام از زیردستان در این تسک assign شده‌اند؟
+                    var assignedSubordinates = task.TaskAssignments?
+                        .Where(a => subordinatesInTeam.Any(s => s.UserId == a.AssignedUserId))
+                        .ToList();
+
+                    if (assignedSubordinates != null && assignedSubordinates.Any())
+                    {
+                        var subNames = assignedSubordinates
+                            .Select(a => a.AssignedUser != null 
+                                ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" 
+                                : "نامشخص")
+                            .Distinct()
+                            .Take(3); // فقط 3 نفر اول
+
+                        var namesList = string.Join("، ", subNames);
+                        if (assignedSubordinates.Count > 3)
+                            namesList += $" و {assignedSubordinates.Count - 3} نفر دیگر";
+
+                        reasons.Add($"شما در تیم «{userMembership.Team.Title}» سمت بالاتر از {namesList} دارید");
+                    }
+                }
+
+                // 5.2 - اگر ناظر رسمی هستید
+                if (userMembership.MembershipType == 1)
+                {
+                    // پیدا کردن اعضای عادی تیم
+                    var normalMembersInTeam = _context.TeamMember_Tbl
+                        .Where(tm => tm.TeamId == userMembership.TeamId &&
+                                    tm.IsActive &&
+                                    tm.UserId != userId &&
+                                    tm.MembershipType == 0)
+                        .Select(tm => tm.UserId)
+                        .ToList();
+
+                    // بررسی آیا هیچ‌کدام از اعضای عادی در این تسک assign شده‌اند؟
+                    var assignedMembers = task.TaskAssignments?
+                        .Where(a => normalMembersInTeam.Contains(a.AssignedUserId))
+                        .ToList();
+
+                    if (assignedMembers != null && assignedMembers.Any())
+                    {
+                        reasons.Add($"شما ناظر رسمی تیم «{userMembership.Team.Title}» هستید");
+                    }
+                }
+            }
+
+            // برگرداندن دلایل
+            if (reasons.Any())
+            {
+                return ("system", string.Join(" و ", reasons));
+            }
+
+            return ("system", "ناظر سیستمی");
+        }
+
 
         private string GetStakeholderName(Tasks task)
         {
@@ -345,17 +553,17 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             return (int)((double)completed / task.TaskOperations.Count * 100);
         }
 
-        private string GetPriorityText(byte priority, bool important)
+        private string GetTaskTypeText(byte taskType)
         {
-            if (priority == 2) return "فوری";
-            if (important || priority == 1) return "مهم";
+            if (taskType == 2) return "اضطراری";
+            if (taskType == 1) return "مهم";
             return "عادی";
         }
 
-        private string GetPriorityBadgeClass(byte priority, bool important)
+        private string GetTaskTypeBadgeClass(byte taskType)
         {
-            if (priority == 2) return "bg-danger";
-            if (important || priority == 1) return "bg-warning";
+            if (taskType == 2) return "bg-danger";
+            if (taskType == 1) return "bg-warning";
             return "bg-primary";
         }
 
@@ -385,6 +593,31 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 5 => "bg-primary",
                 _ => "bg-dark"
             };
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ بررسی آیا تسک در "روز من" کاربر است
+        /// </summary>
+        private bool IsTaskInMyDay(int taskId, string userId)
+        {
+            var today = DateTime.Now.Date;
+            
+            return _context.TaskMyDay_Tbl
+                .Any(tmd => tmd.TaskAssignment.TaskId == taskId &&
+                           tmd.TaskAssignment.AssignedUserId == userId &&
+                           !tmd.IsRemoved &&
+                           tmd.PlannedDate.Date == today);
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ بررسی آیا تسک فوکوس کاربر است
+        /// </summary>
+        private bool IsTaskFocused(int taskId, string userId)
+        {
+            return _context.TaskAssignment_Tbl
+                .Any(ta => ta.TaskId == taskId &&
+                          ta.AssignedUserId == userId &&
+                          ta.IsFocused);
         }
 
         #endregion

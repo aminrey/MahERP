@@ -95,6 +95,11 @@ namespace MahERP.DataModelLayer
         public DbSet<TaskHistory> TaskHistory_Tbl { get; set; }
         public DbSet<TaskWorkLog> TaskWorkLog_Tbl { get; set; }
 
+        /// <summary>
+        /// ⭐⭐⭐ رونوشت تسک - ناظران دستی
+        /// </summary>
+        public DbSet<TaskCarbonCopy> TaskCarbonCopy_Tbl { get; set; }
+
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
         public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }

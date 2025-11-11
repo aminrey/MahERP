@@ -369,6 +369,13 @@
                 <span class="d-none d-sm-inline">یادآوری‌ها</span>
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="viewers-tab" data-bs-toggle="tab" data-bs-target="#tab-viewers" type="button" role="tab">
+                <i class="fa fa-eye me-1"></i>
+                <span class="d-none d-sm-inline">ناظرین</span>
+                <span class="badge bg-info rounded-pill ms-1" id="viewers-badge-count">0</span>
+            </button>
+        </li>
         <li class="nav-item">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-timeline" 
                     type="button" role="tab">
@@ -1348,6 +1355,133 @@
         </div>
     </div>
 </div>
+
+        <!-- ⭐⭐⭐ تب ناظرین تسک -->
+        <div class="tab-pane fade" id="tab-viewers" role="tabpanel">
+            <div class="row">
+                <!-- ⭐ بخش 1: ناظرین خودکار سیستمی -->
+                <div class="col-lg-6">
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header bg-primary text-white">
+                            <h3 class="block-title text-white mb-0">
+                                <i class="fa fa-robot me-2"></i>ناظرین خودکار (سیستمی)
+                            </h3>
+                            <div class="block-options">
+                                <span class="badge bg-white text-primary" id="system-viewers-count">0</span>
+                            </div>
+                        </div>
+                        <div class="block-content">
+                            <!-- راهنما -->
+                            <div class="alert alert-info mb-3">
+                                <h6 class="mb-2">
+                                    <i class="fa fa-info-circle me-1"></i>ناظرین خودکار شامل:
+                                </h6>
+                                <ul class="mb-0 small">
+                                    <li>سازنده تسک</li>
+                                    <li>کاربران منتصب به تسک</li>
+                                    <li>مدیر تیم (اگر تیم مشخص باشد)</li>
+                                    <li>سرپرستان بر اساس سلسله مراتب</li>
+                                </ul>
+                            </div>
+
+                            <!-- لیست ناظران سیستمی -->
+                            <div id="system-viewers-list">
+                                <div class="text-center py-4">
+                                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                                    <p class="text-muted mt-2">در حال بارگذاری...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ⭐ بخش 2: ناظرین رونوشت (دستی) -->
+                <div class="col-lg-6">
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header bg-success text-white">
+                            <h3 class="block-title text-white mb-0">
+                                <i class="fa fa-user-plus me-2"></i>ناظرین رونوشت (دستی)
+                            </h3>
+                            <div class="block-options d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-success" id="carbon-copy-viewers-count">0</span>
+                                @if ((isCreator || isManager) && !isCompletedByMe)
+                                {
+                                    <button type="button" 
+                                            class="btn btn-sm btn-light"
+                                            data-toggle="modal-ajax"
+                                            href="@Url.Action("AddCarbonCopyModal", "TaskViewers", new { taskId = Model.Id })">
+                                        <i class="fa fa-plus me-1"></i>افزودن ناظر
+                                    </button>
+                                }
+                                else if (isCompletedByMe)
+                                {
+                                    <span class="badge bg-light text-dark">
+                                        <i class="fa fa-lock me-1"></i>قفل شده
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                        <div class="block-content">
+                            <!-- راهنما -->
+                            <div class="alert alert-success mb-3">
+                                <h6 class="mb-2">
+                                    <i class="fa fa-info-circle me-1"></i>درباره ناظرین رونوشت:
+                                </h6>
+                                <ul class="mb-0 small">
+                                    <li>افرادی که به صورت دستی اضافه می‌شوند</li>
+                                    <li>می‌توانند تسک را مشاهده کنند</li>
+                                    <li>نمی‌توانند تسک را تکمیل یا ویرایش کنند</li>
+                                    <li>فقط سازنده یا مدیر می‌تواند آن‌ها را حذف کند</li>
+                                </ul>
+                            </div>
+
+                            @if (isCompletedByMe)
+                            {
+                                <div class="alert alert-warning mb-3">
+                                    <i class="fa fa-exclamation-triangle me-2"></i>
+                                    <strong>توجه:</strong> این تسک تکمیل شده است. امکان افزودن یا حذف ناظر رونوشتی وجود ندارد.
+                                </div>
+                            }
+
+                            <!-- لیست ناظران رونوشت -->
+                            <div id="carbon-copy-viewers-list">
+                                <div class="text-center py-4">
+                                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                                    <p class="text-muted mt-2">در حال بارگذاری...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ⭐ آمار کل ناظران -->
+            <div class="block block-rounded block-fx-shadow mt-3">
+                <div class="block-content">
+                    <div class="row text-center g-3">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="fs-2 fw-bold text-primary" id="total-viewers-count">0</div>
+                                <small class="text-muted">کل ناظران</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="fs-2 fw-bold text-primary" id="system-viewers-stat">0</div>
+                                <small class="text-muted">ناظرین خودکار</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="fs-2 fw-bold text-success" id="carbon-copy-viewers-stat">0</div>
+                                <small class="text-muted">ناظرین رونوشت</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Tab 5: تاریخچه کامل -->
         <div class="tab-pane fade" id="tab-timeline" role="tabpanel">
             <div class="block block-rounded block-fx-shadow">
@@ -1393,16 +1527,254 @@
                  deleteOperation: '@Url.Action("DeleteOperation", "TaskOperations", new { area = "TaskingArea" })',
                  addOperation: '@Url.Action("AddOperation", "TaskOperations", new { area = "TaskingArea" })',
                  getAllOperations: '@Url.Action("GetAllOperations", "TaskOperations", new { area = "TaskingArea" })',
-                refreshAllTaskStats: '@Url.Action("RefreshAllTaskStats", "Tasks", new { area = "TaskingArea" })'
-
+                 refreshAllTaskStats: '@Url.Action("RefreshAllTaskStats", "Tasks", new { area = "TaskingArea" })',
+                 getTaskViewers: '@Url.Action("GetTaskViewers", "TaskViewers", new { area = "TaskingArea" })',
+                 removeCarbonCopy: '@Url.Action("RemoveCarbonCopy", "TaskViewers", new { area = "TaskingArea" })'
              }
          };
 
     </script>
 
+    <script>
+        // ⭐⭐⭐ بارگذاری ناظران تسک
+        $(document).ready(function() {
+            // بارگذاری ناظران هنگام کلیک روی تب
+            $('#viewers-tab').on('shown.bs.tab', function() {
+                loadTaskViewers();
+            });
+
+            // ⭐⭐⭐ بروزرسانی لیست بعد از افزودن ناظر رونوشتی موفق
+            $(document).on('modal-ajax-success', function(event, response) {
+                // بررسی که آیا این response مربوط به افزودن ناظر است
+                if (response && response.status === 'success' && 
+                    response.message && response.message[0] && 
+                    response.message[0].text && 
+                    response.message[0].text.includes('ناظر')) {
+                    
+                    console.log('✅ Carbon copy added successfully, refreshing viewers list...');
+                    
+                    // بارگذاری مجدد لیست ناظران
+                    setTimeout(function() {
+                        loadTaskViewers();
+                    }, 300);
+                }
+            });
+        });
+
+        function loadTaskViewers() {
+            console.log('🔄 Loading task viewers...');
+
+            // نمایش loading
+            $('#system-viewers-list').html(`
+                <div class="text-center py-4">
+                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="text-muted mt-2">در حال بارگذاری...</p>
+                </div>
+            `);
+
+            $('#carbon-copy-viewers-list').html(`
+                <div class="text-center py-4">
+                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="text-muted mt-2">در حال بارگذاری...</p>
+                </div>
+            `);
+
+            $.ajax({
+                url: window.TaskDetailConfig.urls.getTaskViewers,
+                type: 'GET',
+                data: { taskId: window.TaskDetailConfig.taskId },
+                success: function(response) {
+                    console.log('✅ Task viewers loaded:', response);
+
+                    if (response.systemViewers) {
+                        renderSystemViewers(response.systemViewers);
+                    }
+
+                    if (response.carbonCopyViewers) {
+                        renderCarbonCopyViewers(response.carbonCopyViewers);
+                    }
+
+                    updateViewersStats(response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Error loading viewers:', error);
+
+                    $('#system-viewers-list').html(`
+                        <div class="alert alert-danger">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            خطا در بارگذاری ناظران خودکار
+                        </div>
+                    `);
+
+                    $('#carbon-copy-viewers-list').html(`
+                        <div class="alert alert-danger">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            خطا در بارگذاری ناظران رونوشت
+                        </div>
+                    `);
+
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در بارگذاری ناظران تسک');
+                    }
+                }
+            });
+        }
+
+        function renderSystemViewers(viewers) {
+            const $container = $('#system-viewers-list');
+
+            if (!viewers || viewers.length === 0) {
+                $container.html(`
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa fa-users-slash fa-3x mb-3 opacity-25"></i>
+                        <p class="mb-1">هیچ ناظر سیستمی یافت نشد</p>
+                        <small>ناظران خودکار پس از تخصیص کاربران نمایش داده می‌شوند</small>
+                    </div>
+                `);
+                return;
+            }
+
+            let html = '<div class="list-group">';
+
+            viewers.forEach(viewer => {
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <img src="${viewer.profileImage || '/images/default-avatar.png'}"
+                                 class="rounded-circle me-3"
+                                 style="width: 48px; height: 48px; object-fit: cover;"
+                                 alt="${viewer.fullName}">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${viewer.fullName}</h6>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <span class="badge bg-primary">
+                                        <i class="fa fa-shield-alt me-1"></i>${viewer.viewerReason}
+                                    </span>
+                                    ${viewer.teamName ? `<span class="badge bg-info"><i class="fa fa-users me-1"></i>${viewer.teamName}</span>` : ''}
+                                </div>
+                                ${viewer.email ? `<small class="text-muted"><i class="fa fa-envelope me-1"></i>${viewer.email}</small>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            $container.html(html);
+        }
+
+        function renderCarbonCopyViewers(viewers) {
+            const $container = $('#carbon-copy-viewers-list');
+
+            if (!viewers || viewers.length === 0) {
+                $container.html(`
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa fa-user-slash fa-3x mb-3 opacity-25"></i>
+                        <p class="mb-1">هیچ ناظر رونوشتی اضافه نشده است</p>
+                        <small>فقط سازنده یا مدیر می‌تواند ناظر رونوشتی اضافه کند</small>
+                    </div>
+                `);
+                return;
+            }
+
+            let html = '<div class="list-group">';
+
+            viewers.forEach(viewer => {
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-start">
+                            <img src="${viewer.profileImage || '/images/default-avatar.png'}"
+                                 class="rounded-circle me-3"
+                                 style="width: 48px; height: 48px; object-fit: cover;"
+                                 alt="${viewer.fullName}">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">${viewer.fullName}</h6>
+                                        <span class="badge bg-success mb-2">
+                                            <i class="fa fa-copy me-1"></i>رونوشت
+                                        </span>
+                                    </div>
+                                    ${viewer.canRemove && !window.TaskDetailConfig.isTaskCompleted ? 
+                                        `<button type="button" 
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="removeCarbonCopyViewer(${viewer.id})"
+                                                title="حذف ناظر">
+                                            <i class="fa fa-trash"></i>
+                                        </button>` 
+                                        : ''}
+                                </div>
+                                ${viewer.email ? `<small class="text-muted d-block"><i class="fa fa-envelope me-1"></i>${viewer.email}</small>` : ''}
+                                ${viewer.note ? `<div class="alert alert-light p-2 mb-0 mt-2"><small class="text-muted"><i class="fa fa-sticky-note me-1"></i>${viewer.note}</small></div>` : ''}
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fa fa-user me-1"></i>اضافه شده توسط: ${viewer.addedByUserName}
+                                    <i class="fa fa-calendar me-1 ms-2"></i>${viewer.addedDatePersian}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            $container.html(html);
+        }
+
+        function updateViewersStats(response) {
+            const systemCount = response.systemViewers?.length || 0;
+            const carbonCopyCount = response.carbonCopyViewers?.length || 0;
+            const totalCount = systemCount + carbonCopyCount;
+
+            $('#system-viewers-count, #system-viewers-stat').text(systemCount);
+            $('#carbon-copy-viewers-count, #carbon-copy-viewers-stat').text(carbonCopyCount);
+            $('#total-viewers-count').text(totalCount);
+            $('#viewers-badge-count').text(totalCount);
+
+            console.log(`📊 Viewers stats updated: Total=${totalCount}, System=${systemCount}, CarbonCopy=${carbonCopyCount}`);
+        }
+
+        function removeCarbonCopyViewer(carbonCopyId) {
+            if (!confirm('آیا از حذف این ناظر رونوشتی اطمینان دارید؟')) {
+                return;
+            }
+
+            console.log('🗑️ Removing carbon copy viewer:', carbonCopyId);
+
+            $.ajax({
+                url: window.TaskDetailConfig.urls.removeCarbonCopy,
+                type: 'POST',
+                data: {
+                    carbonCopyId: carbonCopyId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    console.log('✅ Carbon copy removed:', response);
+
+                    if (response.status === 'success') {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('ناظر رونوشتی با موفقیت حذف شد');
+                        }
+
+                        // بارگذاری مجدد لیست
+                        loadTaskViewers();
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(response.message?.[0]?.text || 'خطا در حذف ناظر');
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Error removing carbon copy:', error);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در حذف ناظر رونوشتی');
+                    }
+                }
+            });
+        }
+    </script>
+
 <script src="~/assets/js/taskdetail.js"></script>
 }
-
 
 <!-- ⭐⭐⭐ اضافه کردن CSS سفارشی -->
 @section Styles {

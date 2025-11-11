@@ -198,109 +198,258 @@
 </div>
 
     <partial name="_ValidationScriptsPartial" />
-    
-    <script>
-        $(document).ready(function() {
-            // ⭐⭐⭐ بارگذاری قالب‌های زمان‌بندی شده
-            if (typeof window.loadScheduledTemplates === 'function') {
-                window.loadScheduledTemplates();
-            } else {
-                console.error('loadScheduledTemplates function not found');
-            }
+<script>
+    $(document).ready(function() {
+        // ⭐⭐⭐ بارگذاری فوری قالب‌ها (بدون تاخیر)
+        loadScheduledTemplates();
 
-            // ⭐ جستجو در قالب‌ها
-            $('#searchTemplate').on('keyup', function() {
-                const searchValue = $(this).val().toLowerCase();
-                $('.template-item').each(function() {
-                    const templateName = $(this).data('name').toLowerCase();
-                    if (templateName.includes(searchValue)) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-            });
-
-            // حداقل یکی از روش‌های ارسال باید انتخاب شود
-            $('#sendMessageForm').on('submit', function(e) {
-                const sendViaTelegram = $('#sendViaTelegram').is(':checked');
-                const sendViaEmail = $('#sendViaEmail').is(':checked');
-                const sendViaSms = $('#sendViaSms').is(':checked');
-                
-                if (!sendViaTelegram && !sendViaEmail && !sendViaSms) {
-                    e.preventDefault();
-                    alert('لطفاً حداقل یک روش ارسال را انتخاب کنید');
-                    return false;
+        // ⭐ جستجو در قالب‌ها
+        $('#searchTemplate').on('keyup', function() {
+            const searchValue = $(this).val().toLowerCase();
+            $('.template-item').each(function() {
+                const templateName = $(this).data('name').toLowerCase();
+                if (templateName.includes(searchValue)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
                 }
             });
         });
 
-        // ⭐⭐⭐ بروزرسانی انتخاب کانال
-        function updateChannelSelection(channel) {
-            // پاک کردن همه
-            $('#sendViaTelegram').prop('checked', false);
-            $('#sendViaEmail').prop('checked', false);
-            $('#sendViaSms').prop('checked', false);
-            
-            // انتخاب کانال مناسب
-            switch(channel) {
-                case 1: // Email
-                    $('#sendViaEmail').prop('checked', true);
-                    break;
-                case 2: // SMS
-                    $('#sendViaSms').prop('checked', true);
-                    break;
-                case 3: // Telegram
-                    $('#sendViaTelegram').prop('checked', true);
-                    break;
+        // حداقل یکی از روش‌های ارسال باید انتخاب شود
+        $('#sendMessageForm').on('submit', function(e) {
+            const sendViaTelegram = $('#sendViaTelegram').is(':checked');
+            const sendViaEmail = $('#sendViaEmail').is(':checked');
+            const sendViaSms = $('#sendViaSms').is(':checked');
+
+            if (!sendViaTelegram && !sendViaEmail && !sendViaSms) {
+                e.preventDefault();
+                alert('لطفاً حداقل یک روش ارسال را انتخاب کنید');
+                return false;
             }
+        });
+    });
+
+    // ⭐⭐⭐ بروزرسانی انتخاب کانال
+    function updateChannelSelection(channel) {
+        // پاک کردن همه
+        $('#sendViaTelegram').prop('checked', false);
+        $('#sendViaEmail').prop('checked', false);
+        $('#sendViaSms').prop('checked', false);
+
+        // انتخاب کانال مناسب
+        switch(channel) {
+            case 1: // Email
+                $('#sendViaEmail').prop('checked', true);
+                break;
+            case 2: // SMS
+                $('#sendViaSms').prop('checked', true);
+                break;
+            case 3: // Telegram
+                $('#sendViaTelegram').prop('checked', true);
+                break;
+        }
+    }
+
+    // ⭐ دریافت آیکون کانال
+    function getChannelIcon(channel) {
+        switch(channel) {
+            case 1: return '<i class="fa fa-envelope fa-2x text-primary"></i>';
+            case 2: return '<i class="fa fa-sms fa-2x text-success"></i>';
+            case 3: return '<i class="fab fa-telegram fa-2x text-info"></i>';
+            default: return '<i class="fa fa-bell fa-2x text-secondary"></i>';
+        }
+    }
+
+    // ⭐ دریافت Badge کانال
+    function getChannelBadge(channel, channelName) {
+        const colors = {
+            1: 'primary',
+            2: 'success',
+            3: 'info'
+        };
+        return `<span class="badge bg-${colors[channel] || 'secondary'}">${channelName}</span>`;
+    }
+
+    // ⭐ نمایش پیام
+    function showNotification(type, message) {
+        const icon = type === 'success' ? 'check' : (type === 'warning' ? 'exclamation-triangle' : 'times');
+        const bgColor = type === 'success' ? 'success' : (type === 'warning' ? 'warning' : 'danger');
+
+        const notification = `
+            <div class="alert alert-${bgColor} alert-dismissible fade show" role="alert">
+                <i class="fa fa-${icon} me-1"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        // نمایش در بالای فرم
+        $('#sendMessageForm').prepend(notification);
+
+        // حذف خودکار بعد از 3 ثانیه
+        setTimeout(() => {
+            $('.alert').fadeOut(function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+
+    // ⭐⭐⭐ بارگذاری قالب‌های زمان‌بندی شده
+    function loadScheduledTemplates() {
+        // ⭐ بررسی flag قبل از شروع
+        if (window.isLoadingTemplates) {
+            console.warn('⚠️ Templates are already loading');
+            return;
         }
 
-        // ⭐ دریافت آیکون کانال
-        function getChannelIcon(channel) {
-            switch(channel) {
-                case 1: return '<i class="fa fa-envelope fa-2x text-primary"></i>';
-                case 2: return '<i class="fa fa-sms fa-2x text-success"></i>';
-                case 3: return '<i class="fab fa-telegram fa-2x text-info"></i>';
-                default: return '<i class="fa fa-bell fa-2x text-secondary"></i>';
+        // ⭐ تنظیم flag
+        window.isLoadingTemplates = true;
+
+        $.ajax({
+            url: '/AppCoreArea/NotificationTemplates/GetScheduledTemplatesForManualSend',
+            type: 'GET',
+            success: function (response) {
+                // ⭐ Reset flag
+                window.isLoadingTemplates = false;
+
+                if (response.success && response.templates && response.templates.length > 0) {
+                    renderTemplates(response.templates);
+                } else {
+                    $('#templatesList').html(`
+                        <div class="text-center py-4">
+                            <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">هیچ قالب زمان‌بندی شده‌ای یافت نشد</p>
+                        </div>
+                    `);
+                }
+            },
+            error: function (xhr, status, error) {
+                // ⭐ Reset flag on error
+                window.isLoadingTemplates = false;
+
+                console.error('Error loading templates:', error);
+                $('#templatesList').html(`
+                    <div class="text-center py-4">
+                        <i class="fa fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <p class="text-danger">خطا در بارگذاری قالب‌ها</p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="loadScheduledTemplates()">
+                            <i class="fa fa-refresh me-1"></i>
+                            تلاش مجدد
+                        </button>
+                    </div>
+                `);
             }
-        }
+        });
+    }
 
-        // ⭐ دریافت Badge کانال
-        function getChannelBadge(channel, channelName) {
-            const colors = {
-                1: 'primary',
-                2: 'success',
-                3: 'info'
-            };
-            return `<span class="badge bg-${colors[channel] || 'secondary'}">${channelName}</span>`;
-        }
+    // ⭐⭐⭐ رندر کردن لیست قالب‌ها
+    function renderTemplates(templates) {
+        let html = '';
 
-        // ⭐ نمایش پیام
-        function showNotification(type, message) {
-            const icon = type === 'success' ? 'check' : (type === 'warning' ? 'exclamation-triangle' : 'times');
-            const bgColor = type === 'success' ? 'success' : (type === 'warning' ? 'warning' : 'danger');
-            
-            const notification = `
-                <div class="alert alert-${bgColor} alert-dismissible fade show" role="alert">
-                    <i class="fa fa-${icon} me-1"></i>
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        templates.forEach(template => {
+            const channelIcon = getChannelIcon(template.channel);
+            const channelBadge = getChannelBadge(template.channel, template.channelName);
+
+            html += `
+                <div class="template-item" data-name="${template.templateName}" data-id="${template.id}">
+                    <a href="javascript:void(0)" class="block block-link-shadow text-center" onclick="selectTemplate(${template.id})">
+                        <div class="block-content block-content-full">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1 text-start">
+                                    <div class="fw-semibold">${template.templateName}</div>
+                                    ${template.description ? `<div class="fs-sm text-muted mt-1">${template.description}</div>` : ''}
+                                </div>
+                                <div class="ms-2">
+                                    ${channelIcon}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                ${channelBadge}
+                                <small class="text-muted">
+                                    <i class="fa fa-calendar me-1"></i>
+                                    ${template.scheduleTypeName}
+                                </small>
+                            </div>
+                        </div>
+                    </a>
                 </div>
             `;
-            
-            // نمایش در بالای فرم
-            $('#sendMessageForm').prepend(notification);
-            
-            // حذف خودکار بعد از 3 ثانیه
-            setTimeout(() => {
-                $('.alert').fadeOut(function() {
-                    $(this).remove();
-                });
-            }, 3000);
-        }
-    </script>
+        });
 
+        $('#templatesList').html(html);
+    }
+
+    // ⭐⭐⭐ انتخاب قالب
+    function selectTemplate(templateId) {
+        // ⭐ بررسی flag قبل از شروع
+        if (window.isLoadingTemplates) {
+            console.warn('⚠️ Templates are loading, please wait...');
+            showNotification('warning', 'لطفاً صبر کنید...');
+            return;
+        }
+
+        // ⭐ تنظیم flag
+        window.isLoadingTemplates = true;
+
+        $.ajax({
+            url: `/AppCoreArea/NotificationTemplates/GetTemplateById/${templateId}`,
+            type: 'GET',
+            success: function(response) {
+                // ⭐ Reset flag
+                window.isLoadingTemplates = false;
+
+                if (response.success && response.template) {
+                    const template = response.template;
+
+                    // ⭐ پر کردن فیلدها
+                    $('#subject').val(template.subject || '');
+                    $('#message').val(template.messageTemplate || '');
+                    $('#selectedTemplateId').val(templateId);
+
+                    // ⭐ انتخاب کانال ارسال بر اساس قالب
+                    updateChannelSelection(template.channel);
+
+                    // ⭐ هایلایت قالب انتخاب شده
+                    $('.template-item').removeClass('bg-body-light');
+                    $(`.template-item[data-id="${templateId}"]`).addClass('bg-body-light');
+
+                    // نمایش پیام موفقیت
+                    showNotification('success', 'قالب با موفقیت انتخاب شد');
+                } else {
+                    showNotification('error', 'قالب یافت نشد');
+                }
+            },
+            error: function(xhr, status, error) {
+                // ⭐ Reset flag on error
+                window.isLoadingTemplates = false;
+
+                console.error('Error loading template:', error);
+                showNotification('error', 'خطا در دریافت اطلاعات قالب');
+            }
+        });
+    }
+</script>
+
+<style>
+    .template-item {
+        border-bottom: 1px solid #e9ecef;
+        transition: all 0.2s;
+    }
+
+        .template-item:hover {
+            background-color: #f8f9fa !important;
+        }
+
+        .template-item.bg-body-light {
+            background-color: #e3f2fd !important;
+            border-left: 4px solid #2196F3;
+        }
+
+        .template-item .block {
+            margin-bottom: 0;
+        }
+</style>
     <style>
         .template-item {
             border-bottom: 1px solid #e9ecef;

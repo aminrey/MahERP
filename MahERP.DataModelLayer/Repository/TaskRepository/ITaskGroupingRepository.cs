@@ -14,7 +14,8 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         Task<List<TaskGroupViewModel>> GroupTasksAsync(
             List<Tasks> tasks,
             TaskGroupingType grouping,
-            string currentUserId);
+            string currentUserId,
+            TaskViewType? viewType = null);  // ⭐ اضافه شده
 
         /// <summary>
         /// گروه‌بندی بر اساس تیم
@@ -44,11 +45,11 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// <summary>
         /// بررسی تعلق تسک به گروه
         /// </summary>
-        bool IsTaskInGroup(Tasks task, string groupKey, TaskGroupingType grouping);
+        bool IsTaskInGroup(Tasks task, string groupKey, TaskGroupingType grouping, string currentUserId = null);
 
         /// <summary>
         /// تبدیل Task به TaskCard
         /// </summary>
-        TaskCardViewModel MapToTaskCard(Tasks task, int cardNumber, string currentUserId);
+        TaskCardViewModel MapToTaskCard(Tasks task, int cardNumber, string currentUserId, TaskViewType? viewType = null);  // ⭐ اضافه شده
     }
 }

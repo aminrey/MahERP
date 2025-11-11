@@ -1,8 +1,26 @@
 ﻿@model TaskCardViewModel
 
 <div class="col-12 col-md-6 col-xl-4">
-    <div class="block block-rounded h-100 @(Model.IsCompleted ? "block-mode-loading-success" : "")"
+    <div class="block block-rounded h-100 @(Model.IsCompleted ? "block-mode-loading-success" : "") position-relative"
          style="border: 2px solid #e4e7ed; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s ease;">
+
+        @* ⭐⭐⭐ Ribbons برای فوکوس و روز من *@
+        @if (Model.IsFocused)
+        {
+            <div class="ribbon ribbon-left ribbon-warning">
+                <div class="ribbon-box">
+                    <i class="fa fa-star me-1"></i>فوکوس
+                </div>
+            </div>
+        }
+        @if (Model.IsInMyDay)
+        {
+            <div class="ribbon @(Model.IsFocused ? "ribbon-right" : "ribbon-left") ribbon-success">
+                <div class="ribbon-box">
+                    <i class="fa fa-calendar-check me-1"></i>روز من
+                </div>
+            </div>
+        }
 
         <!-- ⭐ هدر رنگی کارت -->
         <div class="block-header"
@@ -25,6 +43,62 @@
                        title="جزئیات">
                         <i class="fa fa-eye"></i>
                     </a>
+                    
+                    @* ⭐⭐⭐ دکمه افزودن به روز من *@
+                    @if (!Model.IsCompleted && Model.CanEdit)
+                    {
+                        @if (Model.IsInMyDay)
+                        {
+                            <button type="button"
+                                    class="btn btn-sm text-white"
+                                    style="background: rgba(34, 139, 34, 0.5); border: 1px solid rgba(255,255,255,0.3);"
+                                    disabled
+                                    data-bs-toggle="tooltip"
+                                    title="در روز من قرار دارد">
+                                <i class="fa fa-calendar-check"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="btn btn-sm text-white"
+                                    style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("AddToMyDayModal", "Tasks", new { taskId = Model.Id })"
+                                    data-bs-toggle="tooltip"
+                                    title="افزودن به روز من">
+                                <i class="fa fa-calendar-alt"></i>
+                            </button>
+                        }
+                    }
+
+                    @* ⭐⭐⭐ دکمه تنظیم/حذف فوکوس *@
+                    @if (!Model.IsCompleted && Model.CanEdit)
+                    {
+                        @if (Model.IsFocused)
+                        {
+                            <button type="button"
+                                    class="btn btn-sm text-white"
+                                    style="background: rgba(255, 193, 7, 0.5); border: 1px solid rgba(255,255,255,0.3);"
+                                    onclick="removeTaskFocus(@Model.Id)"
+                                    data-bs-toggle="tooltip"
+                                    title="حذف از فوکوس">
+                                <i class="fa fa-star"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="btn btn-sm text-white"
+                                    style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);"
+                                    onclick="setTaskFocus(@Model.Id)"
+                                    data-bs-toggle="tooltip"
+                                    title="تنظیم به عنوان فوکوس">
+                                <i class="fa fa-bullseye"></i>
+                            </button>
+                        }
+                    }
+
                     @if (Model.CanEdit)
                     {
                         <button class="btn btn-sm text-white"
@@ -82,10 +156,25 @@
                         <i class="fa fa-exclamation-triangle me-1"></i>عقب افتاده
                     </span>
                 }
+                @* ⭐⭐⭐ نمایش نوع نظارت *@
+                @if (!string.IsNullOrEmpty(Model.SupervisionType))
+                {
+                    <span class="badge @Model.SupervisionBadgeClass mb-1" style="font-size: 0.7rem; padding: 0.35rem 0.6rem;">
+                        <i class="fa @Model.SupervisionIcon me-1"></i>@Model.SupervisionTypeText
+                    </span>
+                }
             </div>
 
             <!-- ⭐ اطلاعات اضافی -->
             <div class="mb-3" style="background: #f8f9fa; padding: 0.75rem; border-radius: 0.375rem; border-right: 3px solid #4285f4;">
+                @* ⭐⭐⭐ نمایش دلیل نظارت *@
+                @if (!string.IsNullOrEmpty(Model.SupervisionReason))
+                {
+                    <div class="alert alert-info mb-2 py-2 px-3" style="font-size: 0.85rem; border-left: 3px solid #0dcaf0;">
+                        <i class="fa fa-info-circle me-2"></i>
+                        <strong>دلیل نظارت:</strong> @Model.SupervisionReason
+                    </div>
+                }
                 @if (!string.IsNullOrEmpty(Model.StakeholderName))
                 {
                     <div class="d-flex align-items-center mb-2">
@@ -223,5 +312,88 @@
     /* افکت hover برای عنوان */
     .block-content h4 a:hover {
         color: #4285f4 !important;
+    }
+
+    /* ⭐⭐⭐ Ribbon Styles */
+    .ribbon {
+        position: absolute;
+        top: -4px;
+        z-index: 10;
+        overflow: hidden;
+        width: 100px;
+        height: 100px;
+        text-align: right;
+    }
+
+    .ribbon-left {
+        left: -4px;
+    }
+
+    .ribbon-right {
+        right: -4px;
+        text-align: left;
+    }
+
+    .ribbon-box {
+        font-size: 10px;
+        font-weight: 600;
+        color: #fff;
+        text-align: center;
+        line-height: 20px;
+        transform: rotate(-45deg);
+        width: 140px;
+        display: block;
+        box-shadow: 0 3px 10px -5px rgba(0, 0, 0, 0.5);
+        position: absolute;
+        top: 19px;
+        left: -33px;
+    }
+
+    .ribbon-right .ribbon-box {
+        transform: rotate(45deg);
+        left: auto;
+        right: -33px;
+    }
+
+    .ribbon-warning .ribbon-box {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    .ribbon-success .ribbon-box {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .ribbon-primary .ribbon-box {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+
+    .ribbon-danger .ribbon-box {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .ribbon-info .ribbon-box {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+
+    /* افکت خاص برای کارت‌های فوکوس */
+    .block:has(.ribbon-warning) {
+        border-color: #ffc107 !important;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3) !important;
+    }
+
+    /* افکت خاص برای کارت‌های روز من */
+    .block:has(.ribbon-success) {
+        border-color: #28a745 !important;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3) !important;
+    }
+
+    /* افکت ترکیبی برای تسک‌های فوکوس + روز من */
+    .block:has(.ribbon-warning):has(.ribbon-success) {
+        border: 3px solid transparent;
+        background-image: linear-gradient(white, white), 
+                         linear-gradient(135deg, #ffc107 0%, #28a745 100%);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4), 0 6px 20px rgba(40, 167, 69, 0.4) !important;
     }
 </style>

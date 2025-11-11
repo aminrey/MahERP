@@ -210,6 +210,11 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// گزارش کارهای انجام شده روی این تسک
         /// </summary>
         public virtual ICollection<TaskWorkLog> TaskWorkLogs { get; set; } = new HashSet<TaskWorkLog>();
+
+        /// <summary>
+        /// ⭐⭐⭐ ناظران رونوشت شده (دستی) این تسک
+        /// </summary>
+        public virtual ICollection<TaskCarbonCopy> CarbonCopies { get; set; } = new HashSet<TaskCarbonCopy>();
     }
 }
 

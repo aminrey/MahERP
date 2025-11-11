@@ -10,6 +10,7 @@ using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using MahERP.Extentions;
@@ -19,6 +20,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Linq;
@@ -228,7 +230,6 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             var userBranches = _branchRepository.GetBrnachListByUserId(currentUserId);
             if (!userBranches.Any(b => b.Id == team.BranchId))
                 return RedirectToAction("ErrorView", "Home");
-
 
 
             return View(team);
@@ -2256,6 +2257,119 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                 5 => "منتصب",
                 _ => "نامشخص"
             };
+        }
+
+        /// <summary>
+        /// نمایش ناظران خودکار تیم
+        /// </summary>
+        public async Task<IActionResult> ShowTeamSupervisors(int teamId)
+        {
+            try
+            {
+                var team = _teamRepository.GetTeamById(teamId);
+                if (team == null)
+                    return NotFound();
+
+                // بررسی دسترسی
+                var currentUserId = _userManager.GetUserId(User);
+                var userBranches = _branchRepository.GetBrnachListByUserId(currentUserId);
+                if (!userBranches.Any(b => b.Id == team.BranchId))
+                    return Forbid();
+
+                var model = new TeamSupervisorsViewModel
+                {
+                    TeamId = teamId,
+                    TeamTitle = team.Title,
+                    Supervisors = new List<SupervisorInfoViewModel>()
+                };
+
+                // دریافت تمام اعضای تیم
+                var members = _teamRepository.GetTeamMembers(teamId);
+
+                // برای هر عضو، ناظرانش را پیدا کن
+                foreach (var member in members.Where(m => m.IsActive))
+                {
+                    var memberSupervisors = await _taskVisibilityRepository.GetUserSupervisorsInTeamAsync(
+                        member.UserId,
+                        teamId,
+                        team.BranchId
+                    );
+
+                    foreach (var supervisorId in memberSupervisors)
+                    {
+                        if (!model.Supervisors.Any(s => s.UserId == supervisorId))
+                        {
+                            var user = await _userManager.FindByIdAsync(supervisorId);
+                            if (user != null)
+                            {
+                                var supervisionType = DetermineSupervisionType(supervisorId, teamId);
+
+                                model.Supervisors.Add(new SupervisorInfoViewModel
+                                {
+                                    UserId = supervisorId,
+                                    FullName = $"{user.FirstName} {user.LastName}",
+                                    Email = user.Email,
+                                    PhoneNumber = user.PhoneNumber,
+                                    ProfileImagePath = user.ProfileImagePath,
+                                    SupervisionType = supervisionType
+                                });
+                            }
+                        }
+                    }
+                }
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "Team",
+                    "ShowTeamSupervisors",
+                    $"مشاهده ناظران تیم: {team.Title}",
+                    recordId: teamId.ToString()
+                );
+
+                return PartialView("_TeamSupervisorsModal", model);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Team",
+                    "ShowTeamSupervisors",
+                    "خطا در نمایش ناظران تیم",
+                    ex,
+                    recordId: teamId.ToString()
+                );
+                return BadRequest("خطا در بارگذاری اطلاعات: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// تشخیص نوع نظارت
+        /// </summary>
+        private string DetermineSupervisionType(string supervisorId, int teamId)
+        {
+            var types = new List<string>();
+
+            // بررسی مدیر تیم
+            var team = _teamRepository.GetTeamById(teamId);
+            if (team != null && team.ManagerUserId == supervisorId)
+            {
+                types.Add("مدیر تیم");
+            }
+
+            // بررسی ناظر رسمی
+            var members = _teamRepository.GetTeamMembers(teamId);
+            var isSupervisor = members.Any(tm => tm.UserId == supervisorId &&
+                                                 tm.MembershipType == 1 &&
+                                                 tm.IsActive);
+            if (isSupervisor) types.Add("ناظر تیم");
+
+            // بررسی سمت بالاتر
+            var member = members.FirstOrDefault(tm => tm.UserId == supervisorId && tm.IsActive);
+            if (member != null && member.PowerLevel.HasValue && member.PowerLevel < 5)
+            {
+                types.Add("سمت بالاتر");
+            }
+
+            return types.Any() ? string.Join(", ", types) : "نامشخص";
         }
     }
     }

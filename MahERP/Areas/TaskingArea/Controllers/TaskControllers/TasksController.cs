@@ -283,7 +283,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return RedirectToAction("ErrorView", "Home");
             }
         }
-
         /// <summary>
         /// تغییر گروه‌بندی - AJAX
         /// </summary>
@@ -313,13 +312,67 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     {
                         pending = model.Stats.TotalPending,
                         completed = model.Stats.TotalCompleted,
-                        overdue = model.Stats.TotalOverdue
+                        overdue = model.Stats.TotalOverdue,
+                        urgent = model.Stats.TotalUrgent
                     }
                 });
             }
             catch (Exception ex)
             {
                 return Json(new { status = "error", message = "خطا در تغییر گروه‌بندی" });
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ تغییر فیلتر سریع وضعیت - AJAX
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> ChangeQuickStatusFilter(
+            TaskViewType viewType,
+            TaskGroupingType grouping,
+            QuickStatusFilter statusFilter)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // دریافت لیست اولیه
+                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping);
+
+                // اعمال فیلتر وضعیت
+                model.CurrentStatusFilter = statusFilter;
+
+                // رندر Partial View
+                var html = await this.RenderViewToStringAsync("_TaskListGroupsPartial", model);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "ChangeQuickStatusFilter",
+                    $"تغییر فیلتر وضعیت به: {statusFilter}");
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "task-groups-container",
+                    view = new { result = html }
+                }
+            },
+                    stats = new
+                    {
+                        pending = model.Stats.TotalPending,
+                        completed = model.Stats.TotalCompleted,
+                        overdue = model.Stats.TotalOverdue,
+                        urgent = model.Stats.TotalUrgent
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "ChangeQuickStatusFilter", "خطا در تغییر فیلتر", ex);
+                return Json(new { status = "error", message = "خطا در تغییر فیلتر" });
             }
         }
 

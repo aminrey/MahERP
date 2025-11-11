@@ -4954,12 +4954,11 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             }
         }
 
-
         public async Task<TaskListViewModel> GetTaskListAsync(
-            string userId,
-            TaskViewType viewType,
-            TaskGroupingType grouping,
-            TaskFilterViewModel filters = null)
+    string userId,
+    TaskViewType viewType,
+    TaskGroupingType grouping,
+    TaskFilterViewModel filters = null)
         {
             try
             {
@@ -4985,8 +4984,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 // ⭐ حذف تکرار
                 var uniqueTasks = tasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
 
-                // ⭐⭐⭐ استفاده از GroupingRepository
-                model.TaskGroups = await _groupingRepository.GroupTasksAsync(uniqueTasks, grouping, userId);
+                // ⭐⭐⭐ اصلاح: پاس دادن viewType به GroupTasksAsync
+                model.TaskGroups = await _groupingRepository.GroupTasksAsync(uniqueTasks, grouping, userId, viewType);
 
                 // ⭐⭐⭐ استفاده از FilteringRepository برای آمار
                 model.Stats = _filteringRepository.CalculateStats(uniqueTasks, userId);

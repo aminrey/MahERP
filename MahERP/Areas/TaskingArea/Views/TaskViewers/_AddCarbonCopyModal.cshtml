@@ -1,0 +1,180 @@
+﻿@* مودال افزودن ناظر رونوشتی به تسک موجود *@
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+            <h5 class="modal-title text-white">
+                <i class="fa fa-user-plus me-2"></i>افزودن ناظر رونوشتی
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="@Url.Action("AddCarbonCopySubmit", "TaskViewers")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="taskId" value="@ViewBag.TaskId" />
+            
+            <div class="modal-body">
+                <!-- اطلاعات تسک -->
+                <div class="alert alert-info mb-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-info-circle fa-2x me-3"></i>
+                        <div>
+                            <strong>تسک:</strong> @ViewBag.TaskTitle
+                            <br>
+                            <small class="text-muted">این فرد به عنوان ناظر رونوشتی به این تسک اضافه می‌شود</small>
+                        </div>
+                    </div>
+                </div>
+
+                @if (ViewBag.AvailableUsers != null && ((IEnumerable<dynamic>)ViewBag.AvailableUsers).Any())
+                {
+                    <!-- انتخاب کاربر -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            انتخاب کاربر <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="carbon-copy-user-select" name="userId" required>
+                            <option value="">یک کاربر انتخاب کنید...</option>
+                            @foreach (var user in (IEnumerable<dynamic>)ViewBag.AvailableUsers)
+                            {
+                                <option value="@user.Id" 
+                                        data-profile-image="@user.ProfileImagePath"
+                                        data-email="@user.Email">
+                                    @user.FullName
+                                    @if (!string.IsNullOrEmpty(user.Email))
+                                    {
+                                        <text> - @user.Email</text>
+                                    }
+                                </option>
+                            }
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="fa fa-users me-1"></i>
+                            فقط کاربران شعبه که قبلاً به عنوان ناظر رونوشتی اضافه نشده‌اند
+                        </small>
+                    </div>
+
+                    <!-- یادداشت -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            یادداشت (اختیاری)
+                        </label>
+                        <textarea class="form-control" 
+                                  name="note" 
+                                  rows="3"
+                                  maxlength="500"
+                                  placeholder="دلیل یا توضیحات مربوط به افزودن این ناظر رونوشتی..."></textarea>
+                        <small class="form-text text-muted">
+                            <i class="fa fa-sticky-note me-1"></i>
+                            این یادداشت فقط برای سازنده و مدیر قابل مشاهده است
+                        </small>
+                    </div>
+
+                    <!-- راهنمای حقوق دسترسی -->
+                    <div class="alert alert-warning">
+                        <h6 class="mb-2">
+                            <i class="fa fa-shield-alt me-1"></i>
+                            سطح دسترسی ناظر رونوشتی:
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li><i class="fa fa-check text-success me-1"></i>مشاهده تسک و جزئیات آن</li>
+                            <li><i class="fa fa-check text-success me-1"></i>مشاهده کامنت‌ها و فایل‌های پیوست</li>
+                            <li><i class="fa fa-check text-success me-1"></i>مشاهده تاریخچه تغییرات</li>
+                            <li><i class="fa fa-times text-danger me-1"></i>تکمیل یا ویرایش تسک</li>
+                            <li><i class="fa fa-times text-danger me-1"></i>تغییر وضعیت یا اولویت</li>
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                    <!-- پیام عدم وجود کاربر -->
+                    <div class="alert alert-warning">
+                        <div class="d-flex align-items-center">
+                            <i class="fa fa-exclamation-triangle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="mb-1">کاربری برای افزودن موجود نیست</h6>
+                                <small class="mb-0">
+                                    تمام کاربران شعبه قبلاً به عنوان ناظر رونوشتی اضافه شده‌اند
+                                    یا به تسک منتصب شده‌اند
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>انصراف
+                </button>
+                @if (ViewBag.AvailableUsers != null && ((IEnumerable<dynamic>)ViewBag.AvailableUsers).Any())
+                {
+                    <button type="submit" class="btn btn-success" data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i>افزودن ناظر رونوشتی
+                    </button>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // راه‌اندازی Select2 با قابلیت جستجو
+        $('#carbon-copy-user-select').select2({
+            width: '100%',
+            placeholder: 'یک کاربر انتخاب کنید...',
+            allowClear: true,
+            dropdownParent: $('.modal-content'),
+            templateResult: formatUserOption,
+            templateSelection: formatUserSelection
+        });
+
+        // فرمت سفارشی برای نمایش کاربران در dropdown
+        function formatUserOption(user) {
+            if (!user.id) {
+                return user.text;
+            }
+
+            const $user = $(user.element);
+            const imageUrl = $user.data('profile-image') || '/images/default-avatar.png';
+            const email = $user.data('email') || '';
+
+            return $(`
+                <div class="d-flex align-items-center">
+                    <img src="${imageUrl}" 
+                         class="rounded-circle me-2" 
+                         style="width: 32px; height: 32px; object-fit: cover;"
+                         onerror="this.src='/images/default-avatar.png'">
+                    <div>
+                        <div>${user.text}</div>
+                        ${email ? `<small class="text-muted">${email}</small>` : ''}
+                    </div>
+                </div>
+            `);
+        }
+
+        // فرمت سفارشی برای نمایش کاربر انتخاب شده
+        function formatUserSelection(user) {
+            if (!user.id) {
+                return user.text;
+            }
+
+            const $user = $(user.element);
+            const imageUrl = $user.data('profile-image') || '/images/default-avatar.png';
+
+            return $(`
+                <div class="d-flex align-items-center">
+                    <img src="${imageUrl}" 
+                         class="rounded-circle me-2" 
+                         style="width: 24px; height: 24px; object-fit: cover;"
+                         onerror="this.src='/images/default-avatar.png'">
+                    <span>${user.text}</span>
+                </div>
+            `);
+        }
+
+        // فوکوس خودکار روی Select2 بعد از باز شدن مودال
+        setTimeout(function() {
+            $('#carbon-copy-user-select').select2('open');
+        }, 300);
+    });
+</script>

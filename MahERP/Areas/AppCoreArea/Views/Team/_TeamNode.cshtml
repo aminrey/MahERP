@@ -22,6 +22,14 @@
         </div>
 
         <div class="team-actions">
+            <!-- دکمه جدید: نمایش ناظران خودکار تیم -->
+            <button type="button" class="btn btn-sm btn-outline-light"
+                    data-toggle="modal-ajax"
+                    href="@Url.Action("ShowTeamSupervisors", "Team", new { teamId = Model.Id })"
+                    data-bs-toggle="tooltip" title="نمایش ناظران خودکار تیم">
+                <i class="fa fa-users-cog"></i>
+            </button>
+
             <!-- مجوزهای مشاهده تسک - دکمه اصلاح شده -->
             <button type="button" class="btn btn-sm btn-outline-light"
                     data-toggle="modal-ajax"

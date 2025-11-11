@@ -1,0 +1,227 @@
+﻿@model TaskViewersViewModel
+
+<div class="row">
+    <!-- ⭐ بخش 1: ناظران خودکار سیستمی -->
+    <div class="col-lg-6">
+        <div class="block block-rounded">
+            <div class="block-header bg-primary text-white">
+                <h3 class="block-title text-white mb-0">
+                    <i class="fa fa-robot me-2"></i>ناظران خودکار سیستم
+                </h3>
+                <div class="block-options">
+                    <span class="badge bg-white text-primary">@Model.SystemViewers.Count نفر</span>
+                </div>
+            </div>
+            <div class="block-content p-3">
+                @if (Model.SystemViewers.Any())
+                {
+                    <div class="alert alert-info mb-3">
+                        <i class="fa fa-info-circle me-1"></i>
+                        <strong>توضیح:</strong> این افراد به صورت خودکار بر اساس نقش‌شان (مدیر، سرپرست، ...) می‌توانند تسک را مشاهده کنند
+                    </div>
+
+                    <div class="list-group">
+                        @foreach (var viewer in Model.SystemViewers)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex align-items-center">
+                                    <img src="@viewer.ProfileImage"
+                                         class="rounded-circle me-3"
+                                         style="width: 48px; height: 48px; object-fit: cover;"
+                                         alt="@viewer.FullName">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">@viewer.FullName</h6>
+                                        <div class="d-flex flex-wrap gap-2 mb-1">
+                                            <span class="badge bg-primary">
+                                                <i class="fa fa-shield-alt me-1"></i>@viewer.ViewerReason
+                                            </span>
+                                            @if (!string.IsNullOrEmpty(viewer.TeamName))
+                                            {
+                                                <span class="badge bg-info">
+                                                    <i class="fa fa-users me-1"></i>@viewer.TeamName
+                                                </span>
+                                            }
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(viewer.Email))
+                                        {
+                                            <small class="text-muted">
+                                                <i class="fa fa-envelope me-1"></i>@viewer.Email
+                                            </small>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa fa-users-slash fa-3x mb-3 opacity-25"></i>
+                        <p class="mb-0">ناظر خودکاری یافت نشد</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ⭐ بخش 2: ناظران رونوشت شده (دستی) -->
+    <div class="col-lg-6">
+        <div class="block block-rounded">
+            <div class="block-header bg-success text-white">
+                <h3 class="block-title text-white mb-0">
+                    <i class="fa fa-user-plus me-2"></i>ناظران رونوشت شده
+                </h3>
+                <div class="block-options d-flex align-items-center gap-2">
+                    <span class="badge bg-white text-success">@Model.CarbonCopyViewers.Count نفر</span>
+                    @if (Model.CanAddViewer)
+                    {
+                        <button type="button"
+                                class="btn btn-sm btn-light"
+                                data-toggle="modal-ajax"
+                                href="@Url.Action("AddCarbonCopyModal", "TaskViewers", new { taskId = Model.TaskId })">
+                            <i class="fa fa-plus me-1"></i>افزودن ناظر
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="block-content p-3">
+                @if (Model.CarbonCopyViewers.Any())
+                {
+                    <div class="alert alert-warning mb-3">
+                        <i class="fa fa-exclamation-triangle me-1"></i>
+                        <strong>توضیح:</strong> این افراد به صورت دستی توسط سازنده یا مدیر تسک به عنوان ناظر اضافه شده‌اند
+                    </div>
+
+                    <div class="list-group">
+                        @foreach (var cc in Model.CarbonCopyViewers)
+                        {
+                            <div class="list-group-item" id="carbonCopy-@cc.Id">
+                                <div class="d-flex align-items-start">
+                                    <img src="@cc.ProfileImage"
+                                         class="rounded-circle me-3"
+                                         style="width: 48px; height: 48px; object-fit: cover;"
+                                         alt="@cc.FullName">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="mb-1">@cc.FullName</h6>
+                                            @if (cc.CanRemove)
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="removeCarbonCopy(@cc.Id)"
+                                                        title="حذف ناظر">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <span class="badge bg-success">
+                                                <i class="fa fa-copy me-1"></i>رونوشت
+                                            </span>
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(cc.Note))
+                                        {
+                                            <div class="alert alert-light p-2 mb-2">
+                                                <small class="text-muted mb-0">
+                                                    <i class="fa fa-sticky-note me-1"></i>
+                                                    @cc.Note
+                                                </small>
+                                            </div>
+                                        }
+
+                                        <div class="small text-muted">
+                                            <i class="fa fa-user me-1"></i>
+                                            اضافه شده توسط: <strong>@cc.AddedByUserName</strong>
+                                            <br>
+                                            <i class="fa fa-calendar me-1"></i>
+                                            @cc.AddedDatePersian
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(cc.Email))
+                                        {
+                                            <small class="text-muted d-block mt-1">
+                                                <i class="fa fa-envelope me-1"></i>@cc.Email
+                                            </small>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa fa-user-slash fa-3x mb-3 opacity-25"></i>
+                        <p class="mb-1">هیچ ناظر رونوشتی اضافه نشده است</p>
+                        @if (Model.CanAddViewer)
+                        {
+                            <button type="button"
+                                    class="btn btn-success mt-2"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("AddCarbonCopyModal", "TaskViewers", new { taskId = Model.TaskId })">
+                                <i class="fa fa-plus me-1"></i>افزودن اولین ناظر
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آمار کل -->
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="fs-2 fw-bold text-primary">@Model.TotalViewers</div>
+                    <small class="text-muted">کل ناظران</small>
+                </div>
+                <div class="col-md-4">
+                    <div class="fs-2 fw-bold text-primary">@Model.SystemViewers.Count</div>
+                    <small class="text-muted">خودکار</small>
+                </div>
+                <div class="col-md-4">
+                    <div class="fs-2 fw-bold text-success">@Model.CarbonCopyViewers.Count</div>
+                    <small class="text-muted">رونوشت</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function removeCarbonCopy(carbonCopyId) {
+            const confirmed = await showDeleteConfirmation('این ناظر');
+            if (!confirmed) return;
+
+            $.ajax({
+                url: '@Url.Action("RemoveCarbonCopy", "TaskViewers")',
+                type: 'POST',
+                data: {
+                    carbonCopyId: carbonCopyId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    if (response.status === 'success') {
+                        $(`#carbonCopy-${carbonCopyId}`).fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                        SendResposeMessage(response.message);
+                    } else {
+                        SendResposeMessage(response.message);
+                    }
+                },
+                error: function () {
+                    NotificationHelper.error('خطا در حذف ناظر');
+                }
+            });
+        }
+    </script>
+}

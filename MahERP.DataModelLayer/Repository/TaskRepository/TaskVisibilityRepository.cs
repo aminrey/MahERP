@@ -204,8 +204,10 @@ public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId
 
                     if (subordinateUserIds.Any())
                     {
+                        // ⭐⭐⭐ اصلاح: فقط تسک‌های همان تیم
                         var subordinateTasks = await _context.TaskAssignment_Tbl
                             .Where(ta => subordinateUserIds.Contains(ta.AssignedUserId) &&
+                                        ta.AssignedInTeamId == membership.TeamId && // ⭐ فیلتر تیم
                                         ta.Task.BranchId == branchIdItem &&
                                         !ta.Task.IsDeleted)
                             .Select(ta => ta.TaskId)
@@ -232,8 +234,10 @@ public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId
 
                     if (peerUserIds.Any())
                     {
+                        // ⭐⭐⭐ اصلاح: فقط تسک‌های همان تیم
                         var peerTasks = await _context.TaskAssignment_Tbl
                             .Where(ta => peerUserIds.Contains(ta.AssignedUserId) &&
+                                        ta.AssignedInTeamId == membership.TeamId && // ⭐ فیلتر تیم
                                         ta.Task.BranchId == branchIdItem &&
                                         !ta.Task.IsDeleted)
                             .Select(ta => ta.TaskId)
@@ -259,8 +263,10 @@ public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId
 
                 if (supervisedUserIds.Any())
                 {
+                    // ⭐⭐⭐ اصلاح: فقط تسک‌های همان تیم
                     var supervisedTasks = await _context.TaskAssignment_Tbl
                         .Where(ta => supervisedUserIds.Contains(ta.AssignedUserId) &&
+                                    ta.AssignedInTeamId == membership.TeamId && // ⭐ فیلتر تیم
                                     ta.Task.BranchId == branchIdItem &&
                                     !ta.Task.IsDeleted)
                         .Select(ta => ta.TaskId)
@@ -278,9 +284,18 @@ public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId
                 var teamVisibleTasks = await _context.Tasks_Tbl
                     .Where(t => t.TeamId == membership.TeamId &&
                                t.BranchId == branchIdItem &&
-                               t.VisibilityLevel >= 2 &&
+
                                !t.IsDeleted &&
-                               !t.IsPrivate)
+                               !t.IsPrivate &&
+               (
+                   // تسک‌های ساخته شده توسط خودم
+                   t.CreatorUserId == userId ||
+
+                   // تسک‌های منتصب شده به من
+                   _context.TaskAssignment_Tbl.Any(ta =>
+                       ta.TaskId == t.Id &&
+                       ta.AssignedUserId == userId)
+               ))
                     .Select(t => t.Id)
                     .ToListAsync();
 
@@ -381,15 +396,15 @@ public async Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId
     Console.WriteLine($"   ✅ تسک‌های مجوز مستقیم: {directPermissionTasks.Count}");
 
     // ⭐ 7. تسک‌های عمومی (VisibilityLevel = 3) فقط در شعبه‌های کاربر
-    var publicTasks = await _context.Tasks_Tbl
-        .Where(t => t.VisibilityLevel >= 3 &&
-                    userBranchIds.Contains(t.BranchId ?? 0) &&
-                    !t.IsDeleted &&
-                    !t.IsPrivate)
-        .Select(t => t.Id)
-        .ToListAsync();
-    visibleTaskIds.UnionWith(publicTasks);
-    Console.WriteLine($"   ✅ تسک‌های عمومی: {publicTasks.Count}");
+    //var publicTasks = await _context.Tasks_Tbl
+    //    .Where(t => 
+    //                userBranchIds.Contains(t.BranchId ?? 0) &&
+    //                !t.IsDeleted &&
+    //                !t.IsPrivate)
+    //    .Select(t => t.Id)
+    //    .ToListAsync();
+    //visibleTaskIds.UnionWith(publicTasks);
+    //Console.WriteLine($"   ✅ تسک‌های عمومی: {publicTasks.Count}");
 
     Console.WriteLine($"📊 مجموع تسک‌های قابل مشاهده: {visibleTaskIds.Count}");
     return visibleTaskIds.ToList();

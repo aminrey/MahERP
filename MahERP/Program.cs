@@ -56,6 +56,7 @@ builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
 builder.Services.AddScoped<ITaskOperationsRepository, TaskOperationsRepository>(); // ⭐ جدید
 builder.Services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
 builder.Services.AddScoped<IMyDayTaskRepository, MyDayTaskRepository>();
+builder.Services.AddScoped<ITaskCarbonCopyRepository, TaskCarbonCopyRepository>(); // ⭐⭐⭐ جدید
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IOrganizationGroupRepository, OrganizationGroupRepository>();

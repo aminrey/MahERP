@@ -1,0 +1,69 @@
+﻿@* مودال افزودن ناظر رونوشتی در CreateTask *@
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+            <h5 class="modal-title text-white">
+                <i class="fa fa-user-plus me-2"></i>افزودن ناظر رونوشتی
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="@Url.Action("AddCarbonCopyViewerSubmit", "TaskViewers")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="branchId" value="@ViewBag.BranchId" />
+            
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    این فرد به عنوان ناظر رونوشتی به تسک اضافه می‌شود
+                </div>
+
+                @if (ViewBag.AvailableUsers != null && ((IEnumerable<dynamic>)ViewBag.AvailableUsers).Any())
+                {
+                    <div class="mb-3">
+                        <label class="form-label">انتخاب کاربر <span class="text-danger">*</span></label>
+                        <select class="form-select" id="carbon-copy-user-select" name="userId" required>
+                            <option value="">یک کاربر انتخاب کنید...</option>
+                            @foreach (var user in (IEnumerable<dynamic>)ViewBag.AvailableUsers)
+                            {
+                                <option value="@user.Id" 
+                                        data-profile-image="@user.ProfileImagePath"
+                                        data-email="@user.Email">
+                                    @user.FullName
+                                    @if (!string.IsNullOrEmpty(user.Email))
+                                    {
+                                        <text> (@user.Email)</text>
+                                    }
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">یادداشت (اختیاری)</label>
+                        <textarea class="form-control" name="note" rows="3"
+                                  placeholder="دلیل یا توضیحات مربوط به افزودن این ناظر..."></textarea>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle me-1"></i>
+                        کاربری برای اضافه کردن به عنوان ناظر رونوشتی موجود نیست
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>انصراف
+                </button>
+                @if (ViewBag.AvailableUsers != null && ((IEnumerable<dynamic>)ViewBag.AvailableUsers).Any())
+                {
+                    <button type="submit" class="btn btn-success" data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i>افزودن ناظر
+                    </button>
+                }
+            </div>
+        </form>
+    </div>
+</div>

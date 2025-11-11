@@ -169,6 +169,11 @@ namespace MahERP.DataModelLayer.ViewModels
         public bool IsCardView => TaskGroups.Any();
 
         /// <summary>
+        /// ⭐⭐⭐ فیلتر سریع وضعیت فعلی
+        /// </summary>
+        public QuickStatusFilter CurrentStatusFilter { get; set; } = QuickStatusFilter.All;
+
+        /// <summary>
         /// دریافت متن نوع نمایش فعلی
         /// </summary>
         public string GetCurrentViewTypeText()
@@ -314,10 +319,63 @@ namespace MahERP.DataModelLayer.ViewModels
         public bool CanEdit { get; set; }
         public bool CanDelete { get; set; }
         public bool CanComplete { get; set; }
+
+        // ⭐⭐⭐ ویژگی‌های تسک
+        /// <summary>
+        /// آیا این تسک در "روز من" کاربر فعلی قرار دارد؟
+        /// </summary>
+        public bool IsInMyDay { get; set; }
+
+        /// <summary>
+        /// آیا این تسک فوکوس کاربر فعلی است؟
+        /// </summary>
+        public bool IsFocused { get; set; }
+
+        // ⭐⭐⭐ نوع نظارت (برای تسک‌های نظارتی)
+        /// <summary>
+        /// نوع نظارت: "system" (سیستمی) یا "carbon-copy" (رونوشت)
+        /// </summary>
+        public string? SupervisionType { get; set; }
+
+        /// <summary>
+        /// متن نمایشی نوع نظارت
+        /// </summary>
+        public string? SupervisionTypeText => SupervisionType switch
+        {
+            "system" => "ناظر سیستمی",
+            "carbon-copy" => "رونوشت شده",
+            _ => null
+        };
+
+        /// <summary>
+        /// کلاس Badge برای نوع نظارت
+        /// </summary>
+        public string? SupervisionBadgeClass => SupervisionType switch
+        {
+            "system" => "bg-primary",
+            "carbon-copy" => "bg-success",
+            _ => null
+        };
+
+        /// <summary>
+        /// آیکون نوع نظارت
+        /// </summary>
+        public string? SupervisionIcon => SupervisionType switch
+        {
+            "system" => "fa-eye",
+            "carbon-copy" => "fa-copy",
+            _ => null
+        };
+
+        /// <summary>
+        /// ⭐⭐⭐ دلیل نظارت (برای نظارت سیستمی)
+        /// مثلاً: "شما ناظر تیم فروش هستید و این تسک برای علی رضایی در همان تیم است"
+        /// </summary>
+        public string? SupervisionReason { get; set; }
     }
 
     /// <summary>
-    /// اطلاعات عضو برای نمایش آواتار
+    /// اطلاعاتMember برای نمایش آواتار
     /// </summary>
     public class TaskMemberAvatarViewModel
     {
@@ -361,6 +419,18 @@ namespace MahERP.DataModelLayer.ViewModels
         CreateDate = 2,  // بر اساس زمان ساخت
         DueDate = 3,     // بر اساس زمان پایان
         Priority = 4     // بر اساس اولویت
+    }
+
+    /// <summary>
+    /// ⭐⭐⭐ فیلتر سریع وضعیت تسک‌ها (برای آمار)
+    /// </summary>
+    public enum QuickStatusFilter
+    {
+        All = 0,         // همه
+        Pending = 1,     // در حال انجام
+        Completed = 2,   // تکمیل شده
+        Overdue = 3,     // عقب افتاده
+        Urgent = 4       // فوری
     }
 
     #endregion

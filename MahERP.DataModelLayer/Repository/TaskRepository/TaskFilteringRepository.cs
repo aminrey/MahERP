@@ -84,23 +84,70 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         }
 
         /// <summary>
-        /// دریافت تسک‌های نظارتی
+        /// دریافت تسک‌های نظارتی - ⭐⭐⭐ اصلاح شده برای شامل شدن رونوشت‌ها
         /// </summary>
         public async Task<List<Tasks>> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters = null)
         {
             Console.WriteLine($"🔍 GetSupervisedTasksAsync - User: {userId}");
 
+            // ⭐⭐⭐ 1. تسک‌های نظارتی سیستمی (بر اساس visibility)
             var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
+            Console.WriteLine($"   📋 Total Visible TaskIds from Visibility: {visibleTaskIds.Count}");
 
-            var supervisedTaskIds = await _context.Tasks_Tbl
+            // ⭐⭐⭐ DEBUG: چک کردن تسک خاص
+            var debugTaskId = await _context.Tasks_Tbl
+                .Where(t => t.Title.Contains("ثبت بانک شرکت"))
+                .Select(t => new { t.Id, t.Title, t.CreatorUserId })
+                .FirstOrDefaultAsync();
+
+            if (debugTaskId != null)
+            {
+                Console.WriteLine($"   🐛 DEBUG Task Found: Id={debugTaskId.Id}, Title={debugTaskId.Title}, Creator={debugTaskId.CreatorUserId}");
+                Console.WriteLine($"   🐛 Is in visibleTaskIds? {visibleTaskIds.Contains(debugTaskId.Id)}");
+                Console.WriteLine($"   🐛 Creator == userId? {debugTaskId.CreatorUserId == userId}");
+                
+                var hasAssignment = await _context.TaskAssignment_Tbl
+                    .AnyAsync(ta => ta.TaskId == debugTaskId.Id && ta.AssignedUserId == userId);
+                Console.WriteLine($"   🐛 Has Assignment to user? {hasAssignment}");
+            }
+
+            var systemSupervisedTaskIds = await _context.Tasks_Tbl
                 .Where(t => visibleTaskIds.Contains(t.Id) &&
-                           t.CreatorUserId != userId &&
+                           t.CreatorUserId != userId && // تسک‌هایی که خودم نساخته‌ام
                            !t.IsDeleted)
+                .Where(t => !_context.TaskAssignment_Tbl.Any(ta => ta.TaskId == t.Id && ta.AssignedUserId == userId)) // به من منتصب نشده
                 .Select(t => t.Id)
                 .ToListAsync();
 
+            Console.WriteLine($"   ✅ System Supervised (Filtered): {systemSupervisedTaskIds.Count}");
+            if (debugTaskId != null && systemSupervisedTaskIds.Contains(debugTaskId.Id))
+            {
+                Console.WriteLine($"   🐛 DEBUG Task is in System Supervised list!");
+            }
+
+            // ⭐⭐⭐ 2. تسک‌های رونوشت شده (از TaskViewer)
+            var carbonCopyTaskIds = await _context.TaskViewer_Tbl
+                .Where(tv => tv.UserId == userId &&
+                            tv.IsActive &&
+                            (tv.StartDate == null || tv.StartDate <= DateTime.Now) &&
+                            (tv.EndDate == null || tv.EndDate > DateTime.Now))
+                .Select(tv => tv.TaskId)
+                .ToListAsync();
+
+            Console.WriteLine($"   ✅ Carbon Copy: {carbonCopyTaskIds.Count}");
+            if (debugTaskId != null && carbonCopyTaskIds.Contains(debugTaskId.Id))
+            {
+                Console.WriteLine($"   🐛 DEBUG Task is in Carbon Copy list!");
+            }
+
+            // ⭐⭐⭐ 3. ترکیب هر دو نوع
+            var allSupervisedTaskIds = systemSupervisedTaskIds.Union(carbonCopyTaskIds).Distinct().ToList();
+
+            Console.WriteLine($"   📊 System Supervised: {systemSupervisedTaskIds.Count}, Carbon Copy: {carbonCopyTaskIds.Count}, Total: {allSupervisedTaskIds.Count}");
+
+            // ⭐⭐⭐ 4. دریافت تسک‌ها با اطلاعات نوع نظارت
             var tasks = await _context.Tasks_Tbl
-                .Where(t => supervisedTaskIds.Contains(t.Id))
+                .Where(t => allSupervisedTaskIds.Contains(t.Id))
                 .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
                 .Include(t => t.TaskCategory)
                 .Include(t => t.Creator)
@@ -244,6 +291,26 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                                                 !IsTaskCompletedForUser(t.Id, userId)),
                 TotalUrgent = tasks.Count(t => t.Priority == 2),
                 TotalImportant = tasks.Count(t => t.Important || t.Priority == 1)
+            };
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ اعمال فیلتر سریع وضعیت (Quick Status Filter)
+        /// </summary>
+        public List<Tasks> ApplyQuickStatusFilter(List<Tasks> tasks, QuickStatusFilter filter, string userId)
+        {
+            return filter switch
+            {
+                QuickStatusFilter.Pending => tasks.Where(t => !IsTaskCompletedForUser(t.Id, userId)).ToList(),
+                QuickStatusFilter.Completed => tasks.Where(t => IsTaskCompletedForUser(t.Id, userId)).ToList(),
+                QuickStatusFilter.Overdue => tasks.Where(t => 
+                    t.DueDate.HasValue && 
+                    t.DueDate.Value < DateTime.Now && 
+                    !IsTaskCompletedForUser(t.Id, userId)).ToList(),
+                QuickStatusFilter.Urgent => tasks.Where(t => 
+                    t.Priority == 2 && 
+                    !IsTaskCompletedForUser(t.Id, userId)).ToList(),
+                _ => tasks // QuickStatusFilter.All
             };
         }
 

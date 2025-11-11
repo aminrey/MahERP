@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -104,6 +105,30 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         #endregion
 
+        #region Supervisor Management - ⭐ جدید
+
+        /// <summary>
+        /// دریافت ناظران یک تسک خاص
+        /// </summary>
+        Task<List<string>> GetTaskSupervisorsAsync(int taskId, bool includeCreator = false);
+
+        /// <summary>
+        /// دریافت ناظران یک کاربر در تیم خاص
+        /// </summary>
+        Task<List<string>> GetUserSupervisorsInTeamAsync(string userId, int teamId, int branchId);
+
+        /// <summary>
+        /// دریافت ناظران یک کاربر در تمام تیم‌های او
+        /// </summary>
+        Task<List<string>> GetUserAllSupervisorsAsync(string userId, int? branchId = null);
+
+        /// <summary>
+        /// دریافت ناظران تسک با جزئیات کامل
+        /// </summary>
+        Task<List<SupervisorInfoViewModel>> GetTaskSupervisorsWithDetailsAsync(int taskId);
+
+        #endregion
+
         /// <summary>
         /// دریافت تسک‌های زیرتیم‌ها به صورت گروه‌بندی شده
         /// </summary>
@@ -113,7 +138,5 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// دریافت تسک‌های زیرتیم‌ها به صورت Dictionary ساده
         /// </summary>
         Task<Dictionary<int, List<int>>> GetSubTeamTasksGroupedAsync(string userId, int? branchId = null);
-      Task<List<string>> GetTaskSupervisorsAsync(int taskId, bool includeCreator = false);
-
     }
 }
