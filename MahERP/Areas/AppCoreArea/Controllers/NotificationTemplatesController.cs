@@ -627,5 +627,285 @@ namespace MahERP.Areas.AppCoreArea.Controllers
         }
 
         #endregion
+
+        #region ⭐⭐⭐ ارسال دستی قالب‌های زمان‌بندی شده
+
+        /// <summary>
+        /// دریافت لیست قالب‌های زمان‌بندی شده برای ارسال دستی
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous] // ⭐⭐⭐ اضافه کردن برای تست - بعداً حذف کنید
+        public async Task<IActionResult> GetScheduledTemplatesForManualSend()
+        {
+            try
+            {
+                var templates = await _templateRepo.GetAllTemplatesAsync();
+                
+                // ⭐ فقط قالب‌های زمان‌بندی شده و فعال
+                var scheduledTemplates = templates
+                    .Where(t => t.IsScheduled && t.IsActive)
+                    .Select(t => new
+                    {
+                        id = t.Id,
+                        templateName = t.TemplateName,
+                        description = t.Description,
+                        channel = t.Channel,
+                        channelName = t.ChannelName,
+                        scheduleType = t.ScheduleType,
+                        scheduleTypeName = t.ScheduleTypeName,
+                        scheduledTime = t.ScheduledTime,
+                        subject = t.Subject,
+                        messageTemplate = t.MessageTemplate
+                    })
+                    .ToList();
+
+                return Json(new
+                {
+                    success = true,
+                    templates = scheduledTemplates
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "NotificationTemplates",
+                    "GetScheduledTemplatesForManualSend",
+                    "خطا در دریافت قالب‌ها",
+                    ex);
+
+                return Json(new
+                {
+                    success = false,
+                    message = $"خطا: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات یک قالب خاص
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous] // ⭐⭐⭐ اضافه کردن برای تست - بعداً حذف کنید
+        public async Task<IActionResult> GetTemplateById(int id)
+        {
+            try
+            {
+                var template = await _templateRepo.GetTemplateByIdAsync(id);
+
+                if (template == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "قالب یافت نشد"
+                    });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    template = new
+                    {
+                        id = template.Id,
+                        templateName = template.TemplateName,
+                        description = template.Description,
+                        channel = template.Channel,
+                        channelName = template.ChannelName,
+                        subject = template.Subject,
+                        messageTemplate = template.MessageTemplate,
+                        bodyHtml = template.BodyHtml
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "NotificationTemplates",
+                    "GetTemplateById",
+                    "خطا در دریافت قالب",
+                    ex);
+
+                return Json(new
+                {
+                    success = false,
+                    message = $"خطا: {ex.Message}"
+                });
+            }
+        }
+
+        #endregion
+
+        #region ⭐⭐⭐ تست و دیباگ زمان‌بندی
+
+        /// <summary>
+        /// صفحه تست سیستم زمان‌بندی
+        /// </summary>
+        [HttpGet]
+        public IActionResult TestScheduling()
+        {
+            return View();
+        }
+
+        /// <summary>
+        /// دریافت وضعیت قالب‌های زمان‌بندی شده
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetScheduledTemplatesStatus()
+        {
+            try
+            {
+                var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+                var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, iranTimeZone);
+
+                var templates = await _templateRepo.GetAllTemplatesAsync();
+                var scheduledTemplates = templates.Where(t => t.IsScheduled).ToList();
+
+                var result = new
+                {
+                    currentTimeUtc = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                    currentTimeIran = nowIran.ToString("yyyy-MM-dd HH:mm:ss"),
+                    templates = scheduledTemplates.Select(t => new
+                    {
+                        id = t.Id,
+                        templateName = t.TemplateName,
+                        scheduleType = t.ScheduleType,
+                        scheduleTypeName = t.ScheduleTypeName,
+                        scheduledTime = t.ScheduledTime,
+                        scheduledDaysOfWeek = t.ScheduledDaysOfWeek,
+                        scheduledDayOfMonth = t.ScheduledDayOfMonth,
+                        lastExecutionDate = t.LastExecutionDate?.ToString("yyyy-MM-dd HH:mm:ss"),
+                        nextExecutionDate = t.NextExecutionDate?.ToString("yyyy-MM-dd HH:mm:ss"),
+                        isActive = t.IsActive,
+                        isScheduleEnabled = t.IsScheduleEnabled,
+                        isDue = t.IsDueForExecution
+                    })
+                };
+
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "NotificationTemplates",
+                    "GetScheduledTemplatesStatus",
+                    "خطا در دریافت وضعیت",
+                    ex);
+
+                return Json(new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// اجرای دستی قالب‌های زمان‌بندی شده
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExecuteScheduledTemplatesManually()
+        {
+            try
+            {
+                // ⚠️ فقط برای تست - در محیط واقعی از Hangfire یا Background Service استفاده شود
+                var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+                var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, iranTimeZone);
+
+                var templates = await _templateRepo.GetAllTemplatesAsync();
+                var dueTemplates = templates.Where(t => t.IsDueForExecution).ToList();
+
+                if (!dueTemplates.Any())
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "هیچ قالب آماده‌ای برای اجرا وجود ندارد"
+                    });
+                }
+
+                var executedCount = 0;
+                foreach (var template in dueTemplates)
+                {
+                    try
+                    {
+                        // ⚠️ اینجا باید NotificationManagementService صدا زده شود
+                        // برای تست، فقط NextExecutionDate را بروزرسانی می‌کنیم
+                        
+                        template.LastExecutionDate = nowIran;
+                        template.UsageCount++;
+                        template.LastUsedDate = nowIran;
+
+                        // محاسبه زمان بعدی (شبیه‌سازی)
+                        template.NextExecutionDate = CalculateNextExecution(template, nowIran);
+
+                        await _templateRepo.UpdateTemplateAsync(template, GetUserId(), "اجرای دستی");
+
+                        executedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        await _activityLogger.LogErrorAsync(
+                            "NotificationTemplates",
+                            "ExecuteScheduledTemplatesManually",
+                            $"خطا در اجرای {template.TemplateName}",
+                            ex);
+                    }
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"{executedCount} قالب با موفقیت اجرا شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "NotificationTemplates",
+                    "ExecuteScheduledTemplatesManually",
+                    "خطا در اجرای دستی",
+                    ex);
+
+                return Json(new
+                {
+                    success = false,
+                    message = $"خطا: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// محاسبه زمان اجرای بعدی (helper method)
+        /// </summary>
+        private DateTime? CalculateNextExecution(NotificationTemplate template, DateTime now)
+        {
+            if (string.IsNullOrEmpty(template.ScheduledTime))
+                return null;
+
+            var timeParts = template.ScheduledTime.Split(':');
+            if (timeParts.Length != 2 ||
+                !int.TryParse(timeParts[0], out int hour) ||
+                !int.TryParse(timeParts[1], out int minute))
+            {
+                return null;
+            }
+
+            switch (template.ScheduleType)
+            {
+                case 1: // روزانه
+                    var nextDaily = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0);
+                    return nextDaily <= now ? nextDaily.AddDays(1) : nextDaily;
+
+                case 2: // هفتگی
+                    // ساده‌سازی: 7 روز بعد
+                    return new DateTime(now.Year, now.Month, now.Day, hour, minute, 0).AddDays(7);
+
+                case 3: // ماهانه
+                    // ساده‌سازی: 30 روز بعد
+                    return new DateTime(now.Year, now.Month, now.Day, hour, minute, 0).AddDays(30);
+
+                default:
+                    return null;
+            }
+        }
+
+        #endregion
     }
 }

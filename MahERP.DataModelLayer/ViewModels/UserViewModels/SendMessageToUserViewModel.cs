@@ -38,6 +38,11 @@ namespace MahERP.DataModelLayer.ViewModels.UserViewModels
         public long? TelegramChatId { get; set; }
         
         /// <summary>
+        /// ⭐⭐⭐ شناسه قالب انتخاب شده (اختیاری)
+        /// </summary>
+        public int? TemplateId { get; set; }
+        
+        /// <summary>
         /// عنوان پیام (برای ایمیل)
         /// </summary>
         [Display(Name = "عنوان پیام")]

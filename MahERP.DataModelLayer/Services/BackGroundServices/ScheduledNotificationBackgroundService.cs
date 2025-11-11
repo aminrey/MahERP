@@ -20,6 +20,9 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         private readonly ILogger<ScheduledNotificationBackgroundService> _logger;
         private readonly IServiceProvider _serviceProvider;
 
+        // ⭐⭐⭐ تنظیم TimeZone ایران
+        private static readonly TimeZoneInfo IranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+
         public ScheduledNotificationBackgroundService(
             ILogger<ScheduledNotificationBackgroundService> _logger,
             IServiceProvider serviceProvider)
@@ -31,6 +34,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("⏰ Scheduled Notification Background Service شروع شد");
+            _logger.LogInformation($"🌍 TimeZone: {IranTimeZone.DisplayName}");
 
             // ⭐ صبر 30 ثانیه تا سیستم بوت شود
             await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
@@ -62,6 +66,11 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+            // ⭐⭐⭐ استفاده از زمان ایران به جای UTC
+            var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
+
+            _logger.LogInformation($"🕐 زمان فعلی ایران: {nowIran:yyyy-MM-dd HH:mm:ss}");
+
             // ⭐ دریافت قالب‌های آماده برای اجرا
             var dueTemplates = await context.NotificationTemplate_Tbl
                 .Where(t =>
@@ -69,7 +78,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                     t.IsScheduleEnabled &&
                     t.IsActive &&
                     t.NextExecutionDate.HasValue &&
-                    t.NextExecutionDate.Value <= DateTime.Now)
+                    t.NextExecutionDate.Value <= nowIran)
                 .ToListAsync(stoppingToken);
 
             if (!dueTemplates.Any())
@@ -86,6 +95,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                 try
                 {
+                    _logger.LogInformation($"📤 اجرای قالب: {template.TemplateName} (NextExecution: {template.NextExecutionDate:yyyy-MM-dd HH:mm})");
                     await ExecuteScheduledTemplateAsync(template, scope.ServiceProvider);
                 }
                 catch (Exception ex)
@@ -119,30 +129,41 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 return;
             }
 
-            // ⭐⭐⭐ ارسال اعلان به تمام دریافت‌کنندگان
-            var count = await notificationService.ProcessEventNotificationAsync(
-                (NotificationEventType)template.NotificationEventType,
-                recipients,
-                "SYSTEM", // ارسال‌کننده: سیستم
-                "اعلان روزانه", // عنوان (از متغیرهای قالب پر می‌شود)
-                template.MessageTemplate ?? "",
-                "", // بدون لینک
-                null, // بدون رکورد مرتبط
-                null,
-                0 // اولویت عادی
+            // ⭐⭐⭐ استفاده از متد جدید که مستقیماً با قالب کار می‌کند
+            var count = await notificationService.ProcessScheduledNotificationAsync(
+                template,
+                recipients
             );
 
             _logger.LogInformation($"✅ قالب {template.TemplateName} به {count} کاربر ارسال شد");
 
-            // ⭐ بروزرسانی اطلاعات اجرا
-            template.LastExecutionDate = DateTime.Now;
-            template.UsageCount++;
-            template.LastUsedDate = DateTime.Now;
+            // ⭐⭐⭐ بروزرسانی اطلاعات اجرا با زمان ایران (بدون Include)
+            var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
 
-            // ⭐ محاسبه زمان بعدی
-            await UpdateNextExecutionDateAsync(template, context);
+            // ⭐ بارگذاری Entity بدون Navigation Properties
+            var templateToUpdate = await context.NotificationTemplate_Tbl
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == template.Id);
 
-            await context.SaveChangesAsync();
+            if (templateToUpdate != null)
+            {
+                templateToUpdate.LastExecutionDate = nowIran;
+                templateToUpdate.UsageCount++;
+                templateToUpdate.LastUsedDate = nowIran;
+
+                // ⭐ محاسبه زمان بعدی
+                var nextExecution = CalculateNextExecutionDate(template);
+                templateToUpdate.NextExecutionDate = nextExecution;
+
+                // ⭐ Attach و علامت‌گذاری فیلدهای تغییر یافته
+                context.NotificationTemplate_Tbl.Attach(templateToUpdate);
+                context.Entry(templateToUpdate).Property(t => t.LastExecutionDate).IsModified = true;
+                context.Entry(templateToUpdate).Property(t => t.UsageCount).IsModified = true;
+                context.Entry(templateToUpdate).Property(t => t.LastUsedDate).IsModified = true;
+                context.Entry(templateToUpdate).Property(t => t.NextExecutionDate).IsModified = true;
+
+                await context.SaveChangesAsync();
+            }
         }
 
         /// <summary>
@@ -200,12 +221,23 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             {
                 var nextExecution = CalculateNextExecutionDate(template);
 
-                template.NextExecutionDate = nextExecution;
+                // ⭐⭐⭐ FIX: فقط فیلد NextExecutionDate را بروزرسانی کن (بدون Include)
+                var templateToUpdate = await context.NotificationTemplate_Tbl
+                    .AsNoTracking() // ⭐ عدم Track کردن Entity
+                    .FirstOrDefaultAsync(t => t.Id == template.Id);
 
-                context.NotificationTemplate_Tbl.Update(template);
-                await context.SaveChangesAsync();
+                if (templateToUpdate != null)
+                {
+                    templateToUpdate.NextExecutionDate = nextExecution;
 
-                _logger.LogInformation($"📅 زمان بعدی اجرا برای {template.TemplateName}: {nextExecution:yyyy-MM-dd HH:mm}");
+                    // ⭐ Attach کردن و فقط NextExecutionDate را Modified کن
+                    context.NotificationTemplate_Tbl.Attach(templateToUpdate);
+                    context.Entry(templateToUpdate).Property(t => t.NextExecutionDate).IsModified = true;
+
+                    await context.SaveChangesAsync();
+
+                    _logger.LogInformation($"📅 زمان بعدی اجرا برای {template.TemplateName}: {nextExecution:yyyy-MM-dd HH:mm}");
+                }
             }
             catch (Exception ex)
             {
@@ -214,7 +246,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         }
 
         /// <summary>
-        /// محاسبه زمان اجرای بعدی بر اساس نوع زمان‌بندی
+        /// محاسبه زمان اجرای بعدی بر اساس نوع زمان‌بندی - با استفاده از TimeZone ایران
         /// </summary>
         private DateTime? CalculateNextExecutionDate(
             MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate template)
@@ -222,7 +254,9 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             if (string.IsNullOrEmpty(template.ScheduledTime))
                 return null;
 
-            var now = DateTime.Now;
+            // ⭐⭐⭐ استفاده از زمان ایران
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
+            
             var timeParts = template.ScheduledTime.Split(':');
 
             if (timeParts.Length != 2 ||
@@ -238,11 +272,12 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             switch (template.ScheduleType)
             {
                 case 1: // روزانه
-                    nextExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0);
+                    nextExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0, DateTimeKind.Unspecified);
                     if (nextExecution <= now)
                     {
                         nextExecution = nextExecution.AddDays(1);
                     }
+                    _logger.LogInformation($"📅 روزانه: NextExecution = {nextExecution:yyyy-MM-dd HH:mm}");
                     break;
 
                 case 2: // هفتگی
@@ -256,6 +291,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         .ToList();
 
                     nextExecution = FindNextWeeklyExecution(now, hour, minute, daysOfWeek);
+                    _logger.LogInformation($"📅 هفتگی: NextExecution = {nextExecution:yyyy-MM-dd HH:mm}");
                     break;
 
                 case 3: // ماهانه
@@ -263,6 +299,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         return null;
 
                     nextExecution = FindNextMonthlyExecution(now, hour, minute, template.ScheduledDayOfMonth.Value);
+                    _logger.LogInformation($"📅 ماهانه: NextExecution = {nextExecution:yyyy-MM-dd HH:mm}");
                     break;
 
                 case 4: // Cron Expression
@@ -285,7 +322,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             var currentDayOfWeek = (int)now.DayOfWeek;
 
             // ⭐ چک کردن امروز
-            var todayExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0);
+            var todayExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0, DateTimeKind.Unspecified);
             if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > now)
             {
                 return todayExecution;
@@ -299,7 +336,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                 if (daysOfWeek.Contains(nextDayOfWeek))
                 {
-                    return new DateTime(nextDate.Year, nextDate.Month, nextDate.Day, hour, minute, 0);
+                    return new DateTime(nextDate.Year, nextDate.Month, nextDate.Day, hour, minute, 0, DateTimeKind.Unspecified);
                 }
             }
 
@@ -316,7 +353,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
             var targetDay = Math.Min(dayOfMonth, daysInMonth);
 
-            var thisMonthExecution = new DateTime(now.Year, now.Month, targetDay, hour, minute, 0);
+            var thisMonthExecution = new DateTime(now.Year, now.Month, targetDay, hour, minute, 0, DateTimeKind.Unspecified);
             if (thisMonthExecution > now)
             {
                 return thisMonthExecution;
@@ -327,7 +364,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
             targetDay = Math.Min(dayOfMonth, daysInMonth);
 
-            return new DateTime(nextMonth.Year, nextMonth.Month, targetDay, hour, minute, 0);
+            return new DateTime(nextMonth.Year, nextMonth.Month, targetDay, hour, minute, 0, DateTimeKind.Unspecified);
         }
     }
 }

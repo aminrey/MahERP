@@ -1504,243 +1504,95 @@ namespace MahERP.Areas.AppCoreArea.Controllers.UserControllers
         /// <returns>نتیجه عملیات</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendMessageToUserPost(SendMessageToUserViewModel model ,string page = null)
+        public async Task<IActionResult> SendMessageToUserPost(SendMessageToUserViewModel model, string page = null)
         {
             if (!ModelState.IsValid)
             {
-                return Json(new { 
-                    status = "validation-error", 
-                    message = ResponseMessage.CreateErrorResponse("لطفاً تمام فیلدهای الزامی را پر کنید") 
-                });
-            }
-
-            // حداقل یک روش ارسال باید انتخاب شده باشد
-            if (!model.SendViaTelegram && !model.SendViaEmail && !model.SendViaSms)
-            {
-                return Json(new { 
-                    status = "validation-error", 
-                    message = ResponseMessage.CreateErrorResponse("لطفاً حداقل یک روش ارسال را انتخاب کنید") 
-                });
+                return Json(new { status = "error", message = new[] { new { status = "error", text = "اطلاعات ورودی نامعتبر است" } } });
             }
 
             try
             {
-                var user = _Context.UserManagerUW.GetById(model.UserId);
-                if (user == null)
+                var currentUserId = GetUserId();
+
+                // ⭐ دریافت NotificationManagementService
+                var notificationService = HttpContext.RequestServices.GetService<NotificationManagementService>();
+
+                if (notificationService == null)
                 {
-                    return Json(new { 
-                        status = "error", 
-                        message = ResponseMessage.CreateErrorResponse("کاربر یافت نشد") 
-                    });
+                    return Json(new { status = "error", message = new[] { new { status = "error", text = "سرویس اعلان‌رسانی در دسترس نیست" } } });
                 }
 
-                var currentUser = await _UserManager.GetUserAsync(User);
-                bool success = false;
-                List<string> sentMethods = new List<string>();
-                List<string> errors = new List<string>();
+                // ⭐⭐⭐ رندر کردن قالب با استفاده از Service
+                string renderedSubject = model.Subject;
+                string renderedMessage = model.Message;
 
-                // ✅ ارسال از طریق تلگرام
-                if (model.SendViaTelegram && user.TelegramChatId.HasValue)
+                if (model.TemplateId > 0)
                 {
-                    try
-                    {
-                        var settings = _Context.SettingsUW.Get().FirstOrDefault();
-                        if (settings != null && settings.IsTelegramEnabled && !string.IsNullOrEmpty(settings.TelegramBotToken))
-                        {
-                            var telegramService = new MahERP.CommonLayer.Repository.TelegramBotSendNotification();
-                            string telegramMessage = $"🔔 {model.Subject}\n\n{model.Message}";
-                            
-                            await telegramService.SendNotificationAsync(
-                                telegramMessage,
-                                user.TelegramChatId.Value,
-                                settings.TelegramBotToken
-                            );
-                            
-                            sentMethods.Add("تلگرام");
-                            success = true;
-                            
-                            await _activityLogger.LogActivityAsync(
-                                ActivityTypeEnum.Create,
-                                "UserManager",
-                                "SendMessageToUser",
-                                $"ارسال پیام تلگرام به {user.FirstName} {user.LastName} - عنوان: {model.Subject}",
-                                recordId: user.Id,
-                                entityType: "AppUsers",
-                                recordTitle: $"{user.FirstName} {user.LastName}"
-                            );
-                        }
-                        else
-                        {
-                            errors.Add("تنظیمات تلگرام فعال نیست");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        errors.Add($"خطا در ارسال تلگرام: {ex.Message}");
-                        await _activityLogger.LogErrorAsync(
-                            "UserManager",
-                            "SendMessageToUser",
-                            "خطا در ارسال تلگرام",
-                            ex,
-                            recordId: user.Id
-                        );
-                    }
+                    var (subject, message) = await notificationService.RenderTemplateForManualSendAsync(
+                        model.TemplateId ?? 0,
+                        model.UserId,
+                        currentUserId,
+                        model.Subject,
+                        model.Message
+                    );
+
+                    renderedSubject = subject;
+                    renderedMessage = message;
                 }
 
-                // ✅ ارسال از طریق ایمیل
-                if (model.SendViaEmail && !string.IsNullOrEmpty(user.Email))
-                {
-                    try
-                    {
-                        var settings = _Context.SettingsUW.Get().FirstOrDefault();
-                        if (settings != null && !string.IsNullOrEmpty(settings.SmtpHost))
-                        {
-                            // استفاده از AppDbContext برای دسترسی به صف ایمیل
-                            var emailQueue = new MahERP.DataModelLayer.Entities.Email.EmailQueue
-                            {
-                                ToEmail = user.Email,
-                                ToName = $"{user.FirstName} {user.LastName}",
-                                Subject = model.Subject,
-                                Body = model.Message.Replace("\n", "<br/>"), // تبدیل به HTML
-                                IsHtml = true,
-                                Priority = 1,
-                                Status = 0,
-                                CreatedDate = DateTime.Now,
-                                RequestedByUserId = currentUser.Id
-                            };
+                int sentCount = 0;
 
-                            _dbContext.EmailQueue_Tbl.Add(emailQueue);
-                            await _dbContext.SaveChangesAsync();
-                            
-                            sentMethods.Add("ایمیل");
-                            success = true;
-                            
-                            await _activityLogger.LogActivityAsync(
-                                ActivityTypeEnum.Create,
-                                "UserManager",
-                                "SendMessageToUser",
-                                $"ایمیل به صف ارسال اضافه شد برای {user.FirstName} {user.LastName} - عنوان: {model.Subject}",
-                                recordId: user.Id,
-                                entityType: "AppUsers",
-                                recordTitle: $"{user.FirstName} {user.LastName}"
-                            );
-                        }
-                        else
-                        {
-                            errors.Add("تنظیمات ایمیل کامل نشده است");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        errors.Add($"خطا در افزودن به صف ایمیل: {ex.Message}");
-                        await _activityLogger.LogErrorAsync(
-                            "UserManager",
-                            "SendMessageToUser",
-                            "خطا در افزودن به صف ایمیل",
-                            ex,
-                            recordId: user.Id
-                        );
-                    }
+                // ⭐⭐⭐ ارسال مستقیم از طریق متدهای public Service
+                if (model.SendViaEmail)
+                {
+                    await notificationService.SendEmailNotificationAsync(
+                        model.UserId,
+                        renderedSubject,
+                        renderedMessage,
+                        0 // بدون اعلان سیستمی
+                    );
+                    sentCount++;
                 }
 
-                // ✅ ارسال از طریق SMS (آماده برای آینده)
-                if (model.SendViaSms && !string.IsNullOrEmpty(user.PhoneNumber))
+                if (model.SendViaSms)
                 {
-                    try
-                    {
-                        // استفاده از AppDbContext برای دسترسی به صف SMS
-                        var smsQueue = new MahERP.DataModelLayer.Entities.Sms.SmsQueue
-                        {
-                            PhoneNumber = user.PhoneNumber,
-                            MessageText = $"{model.Subject}\n{model.Message}",
-                            RecipientType = 2, // کاربر سیستم
-                            UserId = user.Id,
-                            Priority = 1,
-                            Status = 0,
-                            CreatedDate = DateTime.Now,
-                            RequestedByUserId = currentUser.Id
-                        };
-
-                        _dbContext.SmsQueue_Tbl.Add(smsQueue);
-                        await _dbContext.SaveChangesAsync();
-                        
-                        sentMethods.Add("پیامک");
-                        success = true;
-                        
-                        await _activityLogger.LogActivityAsync(
-                            ActivityTypeEnum.Create,
-                            "UserManager",
-                            "SendMessageToUser",
-                            $"پیامک به صف ارسال اضافه شد برای {user.FirstName} {user.LastName}",
-                            recordId: user.Id,
-                            entityType: "AppUsers",
-                            recordTitle: $"{user.FirstName} {user.LastName}"
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        errors.Add($"خطا در افزودن به صف پیامک: {ex.Message}");
-                        await _activityLogger.LogErrorAsync(
-                            "UserManager",
-                            "SendMessageToUser",
-                            "خطا در افزودن به صف پیامک",
-                            ex,
-                            recordId: user.Id
-                        );
-                    }
+                    await notificationService.SendSmsNotificationAsync(
+                        model.UserId,
+                        renderedMessage,
+                        0
+                    );
+                    sentCount++;
                 }
 
-                // ✅ ایجاد پاسخ نهایی
-                if (success)
+                if (model.SendViaTelegram)
                 {
-                    string successMsg = $"پیام با موفقیت از طریق {string.Join(" و ", sentMethods)} ارسال شد";
-                    if (errors.Any())
-                    {
-                        successMsg += $"\n⚠️ خطاها: {string.Join(", ", errors)}";
-                    }
-                    if(page == "users")
-                    {
-                        return Json(new
-                        {
-                            status = "redirect",
-                            redirectUrl = Url.Action("Users"),
-                            message = ResponseMessage.CreateSuccessResponse(successMsg)
-                        });
-                    }
-                    else
-                    {
-                        return Json(new
-                        {
-                            status = "redirect",
-                            redirectUrl = Url.Action("Index"),
-                            message = ResponseMessage.CreateSuccessResponse(successMsg)
-                        });
-                    }
-                      
+                    await notificationService.SendTelegramNotificationAsync(
+                        model.UserId,
+                        renderedMessage,
+                        0
+                    );
+                    sentCount++;
                 }
-                else
+
+             
+
+                return Json(new
                 {
-                    return Json(new { 
-                        status = "error", 
-                        message = ResponseMessage.CreateErrorResponse(errors.ToArray()) 
-                    });
-                }
+                    status = "success",
+                    message = new[] { new { status = "success", text = $"پیام با موفقیت از طریق {sentCount} کانال ارسال شد" } }
+                });
             }
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync(
                     "UserManager",
-                    "SendMessageToUserPost",
-                    "خطا در ارسال پیام به کاربر",
-                    ex,
-                    recordId: model.UserId
-                );
+                    "SendMessageToUser",
+                    "خطا در ارسال پیام",
+                    ex);
 
-                return Json(new { 
-                    status = "error", 
-                    message = ResponseMessage.CreateErrorResponse($"خطا در ارسال پیام: {ex.Message}") 
-                });
+                return Json(new { status = "error", message = new[] { new { status = "error", text = $"خطا: {ex.Message}" } } });
             }
         }
     }
-}
+    }

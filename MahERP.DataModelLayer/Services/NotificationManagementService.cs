@@ -132,6 +132,113 @@ namespace MahERP.DataModelLayer.Services
         #region 📤 ثبت اعلان - Create Notifications
 
         /// <summary>
+        /// ⭐⭐⭐ ثبت اعلان برای قالب زمان‌بندی شده (Scheduled Template)
+        /// این متد مستقیماً از قالب استفاده می‌کند و دوباره Query نمی‌زند
+        /// ⚠️ برای اعلان‌های زمان‌بندی شده، اعلان سیستمی ثبت نمی‌شود
+        /// </summary>
+        public async Task<int> ProcessScheduledNotificationAsync(
+            NotificationTemplate template,
+            List<string> recipientUserIds)
+        {
+            if (!recipientUserIds.Any())
+            {
+                _logger.LogWarning($"⚠️ هیچ کاربری برای قالب {template.TemplateName} یافت نشد");
+                return 0;
+            }
+
+            try
+            {
+                int totalNotifications = 0;
+
+                foreach (var recipientUserId in recipientUserIds.Distinct())
+                {
+                    // ⭐⭐⭐ برای اعلان‌های زمان‌بندی شده، فقط ارسال مستقیم از طریق کانال
+                    // بدون ثبت اعلان سیستمی
+                    await ProcessSingleTemplateNotificationAsync(
+                        template,
+                        recipientUserId,
+                        0 // ⭐ systemNotificationId = 0 (بدون اعلان سیستمی)
+                    );
+                    
+                    totalNotifications++;
+                }
+
+                _logger.LogInformation($"✅ {totalNotifications} اعلان برای قالب {template.TemplateName} ارسال شد (بدون ثبت سیستمی)");
+                return totalNotifications;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ خطا در ProcessScheduledNotificationAsync");
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ پردازش یک قالب خاص برای یک کاربر
+        /// </summary>
+        private async Task ProcessSingleTemplateNotificationAsync(
+            NotificationTemplate template,
+            string recipientUserId,
+            int systemNotificationId)
+        {
+            try
+            {
+                _logger.LogInformation($"📤 ارسال قالب {template.TemplateName} به کاربر {recipientUserId} از طریق کانال {template.Channel}");
+
+                // ⭐⭐⭐ دریافت اطلاعات کامل برای جایگزینی متغیرها
+                var templateData = await BuildTemplateDataAsync(
+                    (NotificationEventType)template.NotificationEventType,
+                    recipientUserId,
+                    template.Subject ?? "اعلان",
+                    template.MessageTemplate ?? "",
+                    "",
+                    systemNotificationId
+                );
+
+                // ⭐⭐⭐ جایگزینی متغیرها
+                var finalMessage = ReplaceAllPlaceholders(template.MessageTemplate, templateData);
+                var finalSubject = ReplaceAllPlaceholders(template.Subject ?? "", templateData);
+
+                // ⭐⭐⭐ ارسال بر اساس کانال
+                switch ((NotificationChannel)template.Channel)
+                {
+                    case NotificationChannel.Email:
+                        await SendEmailNotificationAsync(
+                            recipientUserId,
+                            finalSubject,
+                            finalMessage,
+                            systemNotificationId
+                        );
+                        break;
+
+                    case NotificationChannel.Sms:
+                        await SendSmsNotificationAsync(
+                            recipientUserId,
+                            finalMessage,
+                            systemNotificationId
+                        );
+                        break;
+
+                    case NotificationChannel.Telegram:
+                        await SendTelegramNotificationAsync(
+                            recipientUserId,
+                            finalMessage,
+                            systemNotificationId
+                        );
+                        break;
+
+                    default:
+                        _logger.LogWarning($"⚠️ کانال نامعتبر: {template.Channel}");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ خطا در ProcessSingleTemplateNotificationAsync برای کاربر {recipientUserId}");
+            }
+        }
+
+        /// <summary>
         /// ثبت اعلان برای یک رویداد خاص با ارسال خودکار اعلان‌های خارجی
         /// </summary>
         public async Task<int> ProcessEventNotificationAsync(
@@ -212,12 +319,17 @@ namespace MahERP.DataModelLayer.Services
         {
             try
             {
+                // ⭐⭐⭐ FIX: اگر SenderUserId برابر "SYSTEM" است، آن را null کن
+                string actualSenderId = (senderUserId == "SYSTEM" || string.IsNullOrEmpty(senderUserId)) 
+                    ? null 
+                    : senderUserId;
+
                 var notification = new CoreNotification
                 {
                     SystemId = 7, // Tasking
                     SystemName = "مدیریت تسک‌ها",
                     RecipientUserId = recipientUserId,
-                    SenderUserId = senderUserId,
+                    SenderUserId = actualSenderId, // ⭐ می‌تواند null باشد
                     NotificationTypeGeneral = MapEventTypeToGeneralType(eventType),
                     Title = title,
                     Message = message,
@@ -234,11 +346,13 @@ namespace MahERP.DataModelLayer.Services
                 _context.CoreNotification_Tbl.Add(notification);
                 await _context.SaveChangesAsync();
 
+                _logger.LogInformation($"✅ اعلان سیستمی #{notification.Id} برای {recipientUserId} ثبت شد");
+
                 return notification.Id;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "خطا در CreateSystemNotificationAsync");
+                _logger.LogError(ex, $"❌ خطا در CreateSystemNotificationAsync برای {recipientUserId}");
                 return 0;
             }
         }
@@ -337,7 +451,7 @@ namespace MahERP.DataModelLayer.Services
         /// <summary>
         /// ارسال اعلان ایمیلی
         /// </summary>
-        private async Task SendEmailNotificationAsync(
+        public async Task SendEmailNotificationAsync(
             string userId,
             string subject,
             string body,
@@ -352,20 +466,24 @@ namespace MahERP.DataModelLayer.Services
                     return;
                 }
 
-                // ✅ ایجاد رکورد Delivery
-                var delivery = new CoreNotificationDelivery
+                // ⭐⭐⭐ فقط اگر systemNotificationId مشخص شده، CoreNotificationDelivery ثبت کن
+                if (coreNotificationId > 0)
                 {
-                    CoreNotificationId = coreNotificationId,
-                    DeliveryMethod = 1, // Email
-                    DeliveryAddress = user.Email,
-                    DeliveryStatus = 0, // Pending
-                    AttemptCount = 0,
-                    CreateDate = DateTime.Now,
-                    IsActive = true
-                };
+                    // ✅ ایجاد رکورد Delivery
+                    var delivery = new CoreNotificationDelivery
+                    {
+                        CoreNotificationId = coreNotificationId,
+                        DeliveryMethod = 1, // Email
+                        DeliveryAddress = user.Email,
+                        DeliveryStatus = 0, // Pending
+                        AttemptCount = 0,
+                        CreateDate = DateTime.Now,
+                        IsActive = true
+                    };
 
-                _context.CoreNotificationDelivery_Tbl.Add(delivery);
-                await _context.SaveChangesAsync();
+                    _context.CoreNotificationDelivery_Tbl.Add(delivery);
+                    await _context.SaveChangesAsync();
+                }
 
                 // ✅ افزودن به صف ایمیل
                 var emailQueue = new EmailQueue
@@ -395,7 +513,7 @@ namespace MahERP.DataModelLayer.Services
         /// <summary>
         /// ارسال اعلان پیامکی
         /// </summary>
-        private async Task SendSmsNotificationAsync(
+        public async Task SendSmsNotificationAsync(
             string userId,
             string message,
             int coreNotificationId)
@@ -409,20 +527,24 @@ namespace MahERP.DataModelLayer.Services
                     return;
                 }
 
-                // ✅ ایجاد رکورد Delivery
-                var delivery = new CoreNotificationDelivery
+                // ⭐⭐⭐ فقط اگر systemNotificationId مشخص شده، CoreNotificationDelivery ثبت کن
+                if (coreNotificationId > 0)
                 {
-                    CoreNotificationId = coreNotificationId,
-                    DeliveryMethod = 2, // SMS
-                    DeliveryAddress = user.PhoneNumber,
-                    DeliveryStatus = 0,
-                    AttemptCount = 0,
-                    CreateDate = DateTime.Now,
-                    IsActive = true
-                };
+                    // ✅ ایجاد رکورد Delivery
+                    var delivery = new CoreNotificationDelivery
+                    {
+                        CoreNotificationId = coreNotificationId,
+                        DeliveryMethod = 2, // SMS
+                        DeliveryAddress = user.PhoneNumber,
+                        DeliveryStatus = 0,
+                        AttemptCount = 0,
+                        CreateDate = DateTime.Now,
+                        IsActive = true
+                    };
 
-                _context.CoreNotificationDelivery_Tbl.Add(delivery);
-                await _context.SaveChangesAsync();
+                    _context.CoreNotificationDelivery_Tbl.Add(delivery);
+                    await _context.SaveChangesAsync();
+                }
 
                 // ✅ افزودن به صف پیامک
                 var smsQueue = new MahERP.DataModelLayer.Entities.Sms.SmsQueue
@@ -449,7 +571,7 @@ namespace MahERP.DataModelLayer.Services
         /// <summary>
         /// ارسال اعلان تلگرامی با دکمه‌های پویا
         /// </summary>
-        private async Task SendTelegramNotificationAsync(
+        public async Task SendTelegramNotificationAsync(
             string userId,
             string message,
             int coreNotificationId)
@@ -465,20 +587,25 @@ namespace MahERP.DataModelLayer.Services
                     return;
                 }
 
-                // ✅ ایجاد رکورد Delivery
-                var delivery = new CoreNotificationDelivery
+                // ⭐⭐⭐ فقط اگر systemNotificationId مشخص شده، CoreNotificationDelivery ثبت کن
+                CoreNotificationDelivery delivery = null;
+                if (coreNotificationId > 0)
                 {
-                    CoreNotificationId = coreNotificationId,
-                    DeliveryMethod = 3, // Telegram
-                    DeliveryAddress = user.TelegramChatId.Value.ToString(),
-                    DeliveryStatus = 0,
-                    AttemptCount = 0,
-                    CreateDate = DateTime.Now,
-                    IsActive = true
-                };
+                    // ✅ ایجاد رکورد Delivery
+                    delivery = new CoreNotificationDelivery
+                    {
+                        CoreNotificationId = coreNotificationId,
+                        DeliveryMethod = 3, // Telegram
+                        DeliveryAddress = user.TelegramChatId.Value.ToString(),
+                        DeliveryStatus = 0,
+                        AttemptCount = 0,
+                        CreateDate = DateTime.Now,
+                        IsActive = true
+                    };
 
-                _context.CoreNotificationDelivery_Tbl.Add(delivery);
-                await _context.SaveChangesAsync();
+                    _context.CoreNotificationDelivery_Tbl.Add(delivery);
+                    await _context.SaveChangesAsync();
+                }
 
                 // ✅ ارسال مستقیم تلگرام
                 var botToken = GetTelegramBotToken();
@@ -486,9 +613,12 @@ namespace MahERP.DataModelLayer.Services
                 if (string.IsNullOrEmpty(botToken) || botToken == "YOUR_DEFAULT_BOT_TOKEN")
                 {
                     _logger.LogWarning("⚠️ توکن تلگرام معتبر یافت نشد");
-                    delivery.DeliveryStatus = 3; // خطا
-                    delivery.ErrorMessage = "توکن تلگرام تنظیم نشده است";
-                    await _context.SaveChangesAsync();
+                    if (delivery != null)
+                    {
+                        delivery.DeliveryStatus = 3; // خطا
+                        delivery.ErrorMessage = "توکن تلگرام تنظیم نشده است";
+                        await _context.SaveChangesAsync();
+                    }
                     return;
                 }
 
@@ -506,21 +636,30 @@ namespace MahERP.DataModelLayer.Services
                     );
 
                     // ✅ بروزرسانی وضعیت موفق
-                    delivery.DeliveryStatus = 1; // ارسال شده
-                    delivery.DeliveryDate = DateTime.Now;
+                    if (delivery != null)
+                    {
+                        delivery.DeliveryStatus = 1; // ارسال شده
+                        delivery.DeliveryDate = DateTime.Now;
+                    }
 
                     _logger.LogInformation($"✈️ پیام تلگرام با دکمه‌های پویا برای {user.UserName} (ChatId: {user.TelegramChatId.Value}) ارسال شد");
                 }
                 catch (Exception sendEx)
                 {
                     // ✅ ثبت خطای ارسال
-                    delivery.DeliveryStatus = 3; // خطا
-                    delivery.ErrorMessage = $"خطا در ارسال: {sendEx.Message}";
+                    if (delivery != null)
+                    {
+                        delivery.DeliveryStatus = 3; // خطا
+                        delivery.ErrorMessage = $"خطا در ارسال: {sendEx.Message}";
+                    }
 
                     _logger.LogError(sendEx, $"❌ خطا در ارسال تلگرام به ChatId: {user.TelegramChatId.Value}");
                 }
 
-                await _context.SaveChangesAsync();
+                if (delivery != null)
+                {
+                    await _context.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -796,6 +935,55 @@ namespace MahERP.DataModelLayer.Services
 
         #endregion
 
+        #region 🎨 متدهای عمومی - Public Utilities
+
+        /// <summary>
+        /// ⭐⭐⭐ رندر کردن قالب برای ارسال دستی (بدون ثبت اعلان سیستمی)
+        /// این متد برای استفاده در Controller ها و ارسال دستی پیام است
+        /// </summary>
+        public async Task<(string RenderedSubject, string RenderedMessage)> RenderTemplateForManualSendAsync(
+            int templateId,
+            string recipientUserId,
+            string senderUserId,
+            string defaultSubject,
+            string defaultMessage)
+        {
+            try
+            {
+                var template = await _context.NotificationTemplate_Tbl
+                    .FirstOrDefaultAsync(t => t.Id == templateId);
+
+                if (template == null)
+                {
+                    _logger.LogWarning($"⚠️ قالب {templateId} یافت نشد");
+                    return (defaultSubject, defaultMessage);
+                }
+
+                // ⭐ ساخت Dictionary داده‌ها
+                var templateData = await BuildTemplateDataAsync(
+                    (NotificationEventType)template.NotificationEventType,
+                    recipientUserId,
+                    defaultSubject,
+                    defaultMessage,
+                    "",
+                    0 // بدون systemNotificationId
+                );
+
+                // ⭐ جایگزینی متغیرها
+                var renderedSubject = ReplaceAllPlaceholders(defaultSubject ?? template.Subject ?? "", templateData);
+                var renderedMessage = ReplaceAllPlaceholders(defaultMessage ?? template.MessageTemplate ?? "", templateData);
+
+                return (renderedSubject, renderedMessage);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ خطا در رندر کردن قالب برای ارسال دستی");
+                return (defaultSubject, defaultMessage);
+            }
+        }
+
+        #endregion
+
         #region 🛠️ متدهای کمکی - Helper Methods
 
         /// <summary>
@@ -805,10 +993,11 @@ namespace MahERP.DataModelLayer.Services
         {
             try
             {
+                var telegramToken = _context.Settings_Tbl.FirstOrDefault().TelegramBotToken;
                 // ⭐ استفاده مستقیم از توکن ثابت (در صورتی که جدول تنظیمات نداریم)
                 // TODO: بهتر است از appsettings.json یا دیتابیس دریافت شود
                 
-                return "7931841421:AAFna2M4CkkktixVeIxWWE1XRruum9j-kY0"; // ⭐ توکن پیش‌فرض
+                return telegramToken; // ⭐ توکن پیش‌فرض
             }
             catch (Exception ex)
             {
@@ -1103,7 +1292,7 @@ namespace MahERP.DataModelLayer.Services
                         _ => "عادی"
                     };
 
-                    // ⭐ توضیح کوتاه (حداکثر 60 کاراکتر)
+                    // ⭐ توضیح کوتاه (حداقل 60 کاراکتر)
                     string shortDescription = string.IsNullOrEmpty(task.Description) 
                         ? "بدون توضیحات" 
                         : (task.Description.Length > 60 

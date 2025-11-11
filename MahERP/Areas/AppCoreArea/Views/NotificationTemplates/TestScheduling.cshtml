@@ -1,0 +1,227 @@
+﻿@{
+    ViewData["Title"] = "تست زمان‌بندی اعلان‌ها";
+}
+
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-clock me-2"></i>
+                تست سیستم زمان‌بندی اعلان‌ها
+            </h3>
+        </div>
+        <div class="block-content">
+            <div class="alert alert-info">
+                <strong>📋 راهنما:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>زمان فعلی سرور و زمان ایران را مشاهده کنید</li>
+                    <li>لیست قالب‌های زمان‌بندی شده را ببینید</li>
+                    <li>محاسبه زمان اجرای بعدی را تست کنید</li>
+                </ul>
+            </div>
+
+            <!-- اطلاعات زمان -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5>🌍 زمان سرور (UTC)</h5>
+                            <h3 id="serverTime" class="text-primary">@DateTime.UtcNow.ToString("HH:mm:ss")</h3>
+                            <p class="text-muted">@DateTime.UtcNow.ToString("yyyy-MM-dd")</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5>🇮🇷 زمان ایران</h5>
+                            <h3 id="iranTime" class="text-success">
+                                @TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).ToString("HH:mm:ss")
+                            </h3>
+                            <p class="text-muted">
+                                @TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).ToString("yyyy-MM-dd")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5>⏰ Background Service</h5>
+                            <h3 class="text-warning">
+                                <span id="serviceStatus" class="badge bg-warning">
+                                    <i class="fa fa-spinner fa-spin"></i> در حال بررسی...
+                                </span>
+                            </h3>
+                            <p class="text-muted">آخرین چک: هر 1 دقیقه</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- جدول قالب‌های زمان‌بندی شده -->
+            <h4 class="mb-3">📋 قالب‌های زمان‌بندی شده</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>نام قالب</th>
+                            <th>نوع</th>
+                            <th>زمان اجرا</th>
+                            <th>آخرین اجرا</th>
+                            <th>اجرای بعدی</th>
+                            <th>وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduledTemplatesTable">
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- دکمه تست دستی -->
+            <div class="mt-4">
+                <button type="button" class="btn btn-primary" onclick="testSchedulingNow()">
+                    <i class="fa fa-play me-1"></i>
+                    اجرای دستی الگو
+                </button>
+                <button type="button" class="btn btn-info" onclick="refreshData()">
+                    <i class="fa fa-sync me-1"></i>
+                    بروزرسانی داده‌ها
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ⏰ بروزرسانی زمان هر ثانیه
+        setInterval(() => {
+            const now = new Date();
+            
+            // زمان UTC
+            const utcTime = now.toUTCString().split(' ')[4];
+            document.getElementById('serverTime').textContent = utcTime;
+
+            // زمان ایران (UTC+3:30)
+            const iranOffset = 3.5 * 60 * 60 * 1000;
+            const iranDate = new Date(now.getTime() + iranOffset);
+            const iranTime = iranDate.toISOString().split('T')[1].substr(0, 8);
+            document.getElementById('iranTime').textContent = iranTime;
+        }, 1000);
+
+        // 📊 بارگذاری داده‌های قالب‌های زمان‌بندی شده
+        function loadScheduledTemplates() {
+            fetch('/AppCoreArea/NotificationTemplates/GetScheduledTemplatesStatus')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('scheduledTemplatesTable');
+                    
+                    if (!data.templates || data.templates.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    <i class="fa fa-inbox me-1"></i>
+                                    هیچ قالب زمان‌بندی شده‌ای یافت نشد
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    tbody.innerHTML = data.templates.map(t => `
+                        <tr>
+                            <td><strong>${t.templateName}</strong></td>
+                            <td>
+                                <span class="badge bg-${t.scheduleType === 1 ? 'primary' : t.scheduleType === 2 ? 'info' : 'success'}">
+                                    ${t.scheduleTypeName}
+                                </span>
+                            </td>
+                            <td>${t.scheduledTime}</td>
+                            <td>${t.lastExecutionDate || '<span class="text-muted">هرگز</span>'}</td>
+                            <td>
+                                <strong class="text-${t.isDue ? 'danger' : 'primary'}">
+                                    ${t.nextExecutionDate}
+                                </strong>
+                            </td>
+                            <td>
+                                ${t.isActive 
+                                    ? '<span class="badge bg-success">فعال</span>' 
+                                    : '<span class="badge bg-secondary">غیرفعال</span>'}
+                                ${t.isDue 
+                                    ? '<span class="badge bg-danger ms-1">آماده اجرا!</span>' 
+                                    : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+
+                    // بررسی وضعیت سرویس
+                    const hasDue = data.templates.some(t => t.isDue);
+                    const serviceStatus = document.getElementById('serviceStatus');
+                    
+                    if (hasDue) {
+                        serviceStatus.innerHTML = '<i class="fa fa-exclamation-triangle"></i> آماده اجرا';
+                        serviceStatus.className = 'badge bg-danger';
+                    } else {
+                        serviceStatus.innerHTML = '<i class="fa fa-check-circle"></i> در حال اجرا';
+                        serviceStatus.className = 'badge bg-success';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('scheduledTemplatesTable').innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-danger">
+                                <i class="fa fa-exclamation-triangle me-1"></i>
+                                خطا در بارگذاری داده‌ها
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+
+        // 🔄 بروزرسانی داده‌ها
+        function refreshData() {
+            loadScheduledTemplates();
+        }
+
+        // ⏯️ اجرای دستی
+        function testSchedulingNow() {
+            if (!confirm('آیا مطمئنید می‌خواهید الگوهای زمان‌بندی شده را به صورت دستی اجرا کنید؟')) {
+                return;
+            }
+
+            fetch('/AppCoreArea/NotificationTemplates/ExecuteScheduledTemplatesManually', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    refreshData();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('❌ خطا در اجرای دستی');
+                console.error(error);
+            });
+        }
+
+        // بارگذاری اولیه
+        loadScheduledTemplates();
+
+        // بروزرسانی خودکار هر 10 ثانیه
+        setInterval(loadScheduledTemplates, 10000);
+    </script>
+}
