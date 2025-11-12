@@ -61,7 +61,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 {
                     await ProcessQueueAsync(stoppingToken);
                     await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken); // چک سریع‌تر
-                }
+               }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "❌ خطا در حلقه اصلی پردازش اعلان‌ها");

@@ -71,14 +71,17 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
             _logger.LogInformation($"🕐 زمان فعلی ایران: {nowIran:yyyy-MM-dd HH:mm:ss}");
 
-            // ⭐ دریافت قالب‌های آماده برای اجرا
+            // ⭐⭐⭐ FIX: اضافه کردن شرط‌های جدید برای جلوگیری از اجرای مکرر
             var dueTemplates = await context.NotificationTemplate_Tbl
                 .Where(t =>
                     t.IsScheduled &&
                     t.IsScheduleEnabled &&
                     t.IsActive &&
                     t.NextExecutionDate.HasValue &&
-                    t.NextExecutionDate.Value <= nowIran)
+                    t.NextExecutionDate.Value <= nowIran &&
+                    // ⭐⭐⭐ شرط اصلی: اگر قبلاً اجرا شده، حداقل یک دقیقه فاصله باشد
+                    (!t.LastExecutionDate.HasValue || 
+                     EF.Functions.DateDiffMinute(t.LastExecutionDate.Value, nowIran) >= 1))
                 .ToListAsync(stoppingToken);
 
             if (!dueTemplates.Any())
@@ -95,6 +98,14 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                 try
                 {
+                    // ⭐⭐⭐ FIX: چک مجدد در حافظه (Double-check)
+                    if (template.LastExecutionDate.HasValue &&
+                        (nowIran - template.LastExecutionDate.Value).TotalMinutes < 1)
+                    {
+                        _logger.LogWarning($"⚠️ قالب {template.TemplateName} در کمتر از 1 دقیقه پیش اجرا شده است. Skip.");
+                        continue;
+                    }
+
                     _logger.LogInformation($"📤 اجرای قالب: {template.TemplateName} (NextExecution: {template.NextExecutionDate:yyyy-MM-dd HH:mm})");
                     await ExecuteScheduledTemplateAsync(template, scope.ServiceProvider);
                 }
@@ -140,9 +151,8 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             // ⭐⭐⭐ بروزرسانی اطلاعات اجرا با زمان ایران (بدون Include)
             var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
 
-            // ⭐ بارگذاری Entity بدون Navigation Properties
+            // ⭐⭐⭐ FIX: بارگذاری مجدد از دیتابیس برای اطمینان از آخرین وضعیت
             var templateToUpdate = await context.NotificationTemplate_Tbl
-                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == template.Id);
 
             if (templateToUpdate != null)
@@ -151,18 +161,21 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 templateToUpdate.UsageCount++;
                 templateToUpdate.LastUsedDate = nowIran;
 
-                // ⭐ محاسبه زمان بعدی
-                var nextExecution = CalculateNextExecutionDate(template);
+                // ⭐⭐⭐ محاسبه زمان بعدی (حتماً بعد از زمان فعلی باشد)
+                var nextExecution = CalculateNextExecutionDate(templateToUpdate);
                 templateToUpdate.NextExecutionDate = nextExecution;
 
-                // ⭐ Attach و علامت‌گذاری فیلدهای تغییر یافته
-                context.NotificationTemplate_Tbl.Attach(templateToUpdate);
-                context.Entry(templateToUpdate).Property(t => t.LastExecutionDate).IsModified = true;
-                context.Entry(templateToUpdate).Property(t => t.UsageCount).IsModified = true;
-                context.Entry(templateToUpdate).Property(t => t.LastUsedDate).IsModified = true;
-                context.Entry(templateToUpdate).Property(t => t.NextExecutionDate).IsModified = true;
+                // ⭐⭐⭐ لاگ برای دیباگ
+                _logger.LogInformation($"📅 بروزرسانی زمان‌ها:");
+                _logger.LogInformation($"   LastExecutionDate: {templateToUpdate.LastExecutionDate:yyyy-MM-dd HH:mm:ss}");
+                _logger.LogInformation($"   NextExecutionDate: {templateToUpdate.NextExecutionDate:yyyy-MM-dd HH:mm:ss}");
 
+                // ⭐⭐⭐ FIX: استفاده از Update به جای Attach
+                // چون AsNoTracking استفاده کردیم، باید با Update کل entity رو بروزرسانی کنیم
+                 context.NotificationTemplate_Tbl.Update(templateToUpdate);
                 await context.SaveChangesAsync();
+                
+                _logger.LogInformation($"✅ اطلاعات زمان‌بندی برای {template.TemplateName} بروزرسانی شد");
             }
         }
 
@@ -273,10 +286,13 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             {
                 case 1: // روزانه
                     nextExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0, DateTimeKind.Unspecified);
+                    
+                    // ⭐⭐⭐ FIX: اگر زمان امروز گذشته، حتماً یک روز اضافه کن
                     if (nextExecution <= now)
                     {
                         nextExecution = nextExecution.AddDays(1);
                     }
+                    
                     _logger.LogInformation($"📅 روزانه: NextExecution = {nextExecution:yyyy-MM-dd HH:mm}");
                     break;
 

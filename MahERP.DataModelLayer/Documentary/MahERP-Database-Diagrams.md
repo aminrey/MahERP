@@ -6,7 +6,8 @@
 3. [نمودار سیستم تسک](#نمودار-سیستم-تسک)
 4. [نمودار سیستم نظارت بر تسک‌ها](#نمودار-سیستم-نظارت-بر-تسکها) ⭐ **جدید**
 5. [نمودار سیستم اعلان‌رسانی](#نمودار-سیستم-اعلانرسانی)
-6. [نمودار جریان کاربر](#نمودار-جریان-کاربر)
+6. [نمودار Background Services و زمان‌بندی](#نمودار-background-services-و-زمانبندی) ⭐ **به‌روزرسانی شده**
+7. [نمودار جریان کاربر](#نمودار-جریان-کاربر)
 
 ---
 
@@ -607,10 +608,14 @@ mindmap
       DeadlineReminder
       TaskViewerAdded ⭐ جدید
       SupervisionGranted ⭐ جدید
-    Scheduled
+    Scheduled ⭐ به‌روزرسانی شده
       DailyDigest
+        Daily 07:15 AM
+        Anti-duplicate Check
       WeeklyReport
+        Monday Wednesday Friday
       MonthlyReport
+        Day 15 of Month
       SupervisedTasksDigest ⭐ جدید
     Manual
       BulkEmail
@@ -625,259 +630,243 @@ mindmap
 
 ---
 
-## 👤 نمودار جریان کاربر
+## ⏰ نمودار Background Services و زمان‌بندی
 
-### جریان ورود کاربر
-
-```mermaid
-flowchart TD
-    Start([کاربر وارد سیستم می‌شود]) --> Login[صفحه Login]
-    
-    Login --> ValidateUser{اعتبارسنجی}
-    
-    ValidateUser -->|نامعتبر ❌| ShowError[نمایش خطا]
-    ShowError --> Login
-    
-    ValidateUser -->|معتبر ✅| CheckModuleAccess{بررسی دسترسی به ماژول‌ها}
-    
-    CheckModuleAccess -->|دسترسی ندارد| NoAccessPage[صفحه عدم دسترسی]
-    CheckModuleAccess -->|دسترسی دارد| SelectModule{انتخاب ماژول}
-    
-    SelectModule -->|Core| CoreDashboard[📊 Core Dashboard]
-    SelectModule -->|Tasking| TaskingDashboard[📋 Tasking Dashboard]
-    SelectModule -->|CRM| CRMDashboard[📞 CRM Dashboard]
-    
-    CoreDashboard --> CoreFeatures[امکانات Core]
-    TaskingDashboard --> TaskingFeatures[امکانات Tasking]
-    CRMDashboard --> CRMFeatures[امکانات CRM]
-    
-    CoreFeatures --> ManageUsers[مدیریت کاربران]
-    CoreFeatures --> ManagePermissions[مدیریت دسترسی‌ها]
-    CoreFeatures --> ManageContacts[مدیریت افراد]
-    CoreFeatures --> ManageOrganizations[مدیریت سازمان‌ها]
-    
-    TaskingFeatures --> ViewTasks[مشاهده تسک‌ها]
-    TaskingFeatures --> CreateTask[ایجاد تسک]
-    TaskingFeatures --> ManageTasks[مدیریت تسک‌ها]
-    TaskingFeatures --> SupervisedTasks[👁️ تسک‌های نظارتی] ⭐
-    TaskingFeatures --> TaskReports[گزارش‌گیری]
-    
-    SupervisedTasks --> ViewSupervisionReason[مشاهده دلیل نظارت]
-    SupervisedTasks --> FilterByTeam[فیلتر بر اساس تیم]
-    
-    CRMFeatures --> ManageInteractions[مدیریت تعاملات]
-    CRMFeatures --> SendBulkMessages[ارسال دسته‌جمعی]
-    CRMFeatures --> CRMReports[گزارش‌های CRM]
-    
-    %% Real-time Updates
-    CoreFeatures -.->|SignalR| Notifications[🔔 اعلان‌های لحظه‌ای]
-    TaskingFeatures -.->|SignalR| Notifications
-    CRMFeatures -.->|SignalR| Notifications
-    
-    %% Styling
-    style Start fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
-    style NoAccessPage fill:#F44336,stroke:#333,stroke-width:2px,color:#fff
-    style CoreDashboard fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
-    style TaskingDashboard fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
-    style CRMDashboard fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
-    style SupervisedTasks fill:#9C27B0,stroke:#333,stroke-width:2px,color:#fff
-```
-
-### جریان مشاهده تسک‌های نظارتی
-
-```mermaid
-flowchart TD
-    Start([کاربر به بخش تسک‌ها می‌رود]) --> SelectView{انتخاب نوع نمایش}
-    
-    SelectView -->|My Tasks| MyTasks[تسک‌های من]
-    SelectView -->|Assigned By Me| AssignedByMe[تسک‌های اختصاص داده شده]
-    SelectView -->|Supervised ⭐| SupervisedTasks[تسک‌های نظارتی]
-    SelectView -->|All Visible| AllTasks[همه تسک‌ها]
-    
-    SupervisedTasks --> CallRepo[فراخوانی GetVisibleTaskIdsAsync]
-    
-    CallRepo --> CheckBranches[بررسی شعبه‌های کاربر]
-    CheckBranches --> CheckTeams[بررسی تیم‌های کاربر]
-    CheckTeams --> CheckPositions[بررسی سمت‌های کاربر]
-    
-    CheckPositions --> FilterTasks{فیلتر تسک‌ها}
-    
-    FilterTasks -->|بر اساس سمت| PositionBased[تسک‌های بر اساس PowerLevel]
-    FilterTasks -->|نظارت رسمی| FormalSupervision[تسک‌های اعضای تیم]
-    FilterTasks -->|رونوشت| CarbonCopy[تسک‌های رونوشت شده]
-    FilterTasks -->|مجوز خاص| SpecialPermission[تسک‌های با مجوز خاص]
-    
-    PositionBased --> ApplyTeamFilter[⭐ اعمال فیلتر AssignedInTeamId]
-    FormalSupervision --> ApplyTeamFilter
-    CarbonCopy --> MergeTasks
-    SpecialPermission --> MergeTasks
-    
-    ApplyTeamFilter --> MergeTasks[ترکیب و حذف تکراری]
-    
-    MergeTasks --> GroupTasks[گروه‌بندی تسک‌ها]
-    
-    GroupTasks --> GetSupervisionReason[⭐ دریافت دلیل نظارت]
-    
-    GetSupervisionReason --> DisplayTasks[نمایش تسک‌ها با دلیل نظارت]
-    
-    DisplayTasks --> UserView([کاربر تسک‌های نظارتی را می‌بیند])
-    
-    %% Styling
-    style Start fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
-    style SupervisedTasks fill:#9C27B0,stroke:#333,stroke-width:2px,color:#fff
-    style ApplyTeamFilter fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
-    style GetSupervisionReason fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
-    style UserView fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
-```
-
----
-
-## 📱 نمودار ارتباطات
-
-### ارسال دسته‌جمعی
+### معماری Background Services
 
 ```mermaid
 graph TB
-    User[👤 کاربر] -->|انتخاب| Recipients[🎯 دریافت‌کنندگان]
-    
-    Recipients --> IndividualContacts[👥 افراد خاص]
-    Recipients --> SystemGroup[📋 گروه سیستمی]
-    Recipients --> BranchGroup[🏢 گروه شعبه]
-    
-    IndividualContacts --> Validation{اعتبارسنجی}
-    SystemGroup --> Validation
-    BranchGroup --> Validation
-    
-    Validation -->|Email| EmailValidation[بررسی ایمیل]
-    Validation -->|SMS| SmsValidation[بررسی شماره تلفن]
-    
-    EmailValidation --> EmailQueue[صف ایمیل]
-    SmsValidation --> SmsQueue[صف پیامک]
-    
-    EmailQueue --> EmailBG[EmailBackgroundService]
-    SmsQueue --> SmsBG[SmsBackgroundService]
-    
-    EmailBG --> EmailSent[📧 ایمیل ارسال شد]
-    SmsBG --> SmsSent[📱 پیامک ارسال شد]
-    
-    EmailSent --> Log[ثبت لاگ]
-    SmsSent --> Log
-    
-    Log --> Report[📊 گزارش ارسال]
-    
-    %% Styling
-    style User fill:#4A90E2,stroke:#333,stroke-width:2px,color:#fff
-    style EmailSent fill:#28a745,stroke:#333,stroke-width:2px,color:#fff
-    style SmsSent fill:#28a745,stroke:#333,stroke-width:2px,color:#fff
-    style Report fill:#FF6B6B,stroke:#333,stroke-width:2px,color:#fff
-```
-
----
-
-## 🏗️ معماری لایه‌ای
-
-```mermaid
-graph TD
-    subgraph "Presentation Layer"
-        MVC[ASP.NET Core MVC]
-        Areas[Areas: Core, Tasking, CRM]
-        Controllers[Controllers]
-        Views[Razor Views]
+    subgraph "Background Services Layer"
+        NotifProcessing[NotificationProcessingBackgroundService<br/>⏱️ هر 10 ثانیه]
+        ScheduledNotif[ScheduledNotificationBackgroundService<br/>⏱️ هر 1 دقیقه ⭐]
+        EmailBG[EmailBackgroundService<br/>⏱️ هر 30 ثانیه]
+        SmsBG[SmsBackgroundService<br/>⏱️ هر 20 ثانیه]
+        TelegramBG[TelegramPollingBackgroundService<br/>⏱️ هر 5 ثانیه]
+        ModuleTracking[ModuleTrackingBackgroundService<br/>⏱️ هر 5 دقیقه]
+        RoleCleanup[ExpiredRoleCleanupBackgroundService<br/>⏱️ روزانه 02:00]
     end
     
-    subgraph "Business Logic Layer"
-        Services[Services]
-        Repositories[Repositories]
-        TaskVisibilityRepo[⭐ TaskVisibilityRepository]
-        TaskFilteringRepo[⭐ TaskFilteringRepository]
-        TaskGroupingRepo[⭐ TaskGroupingRepository]
-        UnitOfWork[Unit of Work]
-    end
-    
-    subgraph "Data Access Layer"
-        EF[Entity Framework Core 9]
-        DbContext[AppDbContext]
-        Entities[Entities]
-    end
-    
-    subgraph "Database"
-        SQL[(SQL Server)]
+    subgraph "Database Tables"
+        CoreNotif[(CoreNotification_Tbl)]
+        NotifTemplate[(NotificationTemplate_Tbl)]
+        EmailQueue[(EmailQueue_Tbl)]
+        SmsQueue[(SmsQueue_Tbl)]
     end
     
     subgraph "External Services"
-        SignalR[SignalR Hub]
-        Telegram[Telegram Bot API]
-        EmailService[Email SMTP]
-        SmsProvider[SMS Provider API]
+        Email[📧 SMTP Server]
+        SMS[📱 SMS Provider]
+        Telegram[✈️ Telegram API]
     end
     
-    MVC --> Services
-    Controllers --> Services
-    Services --> Repositories
-    Services --> TaskVisibilityRepo
-    Services --> TaskFilteringRepo
-    Services --> TaskGroupingRepo
-    Repositories --> UnitOfWork
-    UnitOfWork --> EF
-    EF --> DbContext
-    DbContext --> Entities
-    Entities --> SQL
+    NotifProcessing --> CoreNotif
+    ScheduledNotif --> NotifTemplate
+    EmailBG --> EmailQueue
+    SmsBG --> SmsQueue
     
-    Services --> SignalR
-    Services --> Telegram
-    Services --> EmailService
-    Services --> SmsProvider
+    EmailBG --> Email
+    SmsBG --> SMS
+    TelegramBG --> Telegram
     
-    %% Styling
-    style MVC fill:#4A90E2,stroke:#333,stroke-width:2px,color:#fff
-    style Services fill:#50C878,stroke:#333,stroke-width:2px,color:#fff
-    style TaskVisibilityRepo fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
-    style TaskFilteringRepo fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
-    style TaskGroupingRepo fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
-    style EF fill:#FF6B6B,stroke:#333,stroke-width:2px,color:#fff
-    style SQL fill:#FFA500,stroke:#333,stroke-width:3px,color:#fff
+    ScheduledNotif -.->|ارسال مستقیم| Email
+    ScheduledNotif -.->|ارسال مستقیم| SMS
+    ScheduledNotif -.->|ارسال مستقیم| Telegram
+    
+    style ScheduledNotif fill:#FF9800,stroke:#333,stroke-width:3px,color:#fff
+    style NotifTemplate fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
 ```
 
----
-
-## 📊 مدل داده Contact/Organization (جدید)
-
-### تفاوت با ساختار قدیمی (Stakeholder)
+### جریان اجرای Scheduled Notification
 
 ```mermaid
-graph LR
-    subgraph "❌ OLD: Stakeholder (Obsolete)"
-        Stakeholder[Stakeholder<br/>شخص یا شرکت در یک جدول]
-        Stakeholder --> Task1[Tasks]
-    end
+flowchart TD
+    Start([Background Service<br/>هر 1 دقیقه]) --> GetIranTime[دریافت زمان ایران<br/>TimeZoneInfo.ConvertTimeFromUtc]
     
-    subgraph "✅ NEW: Contact & Organization"
-        Contact[Contact<br/>فقط افراد]
-        Organization[Organization<br/>فقط سازمان‌ها]
-        
-        Contact --> Task2[Tasks]
-        Organization --> Task2
-        
-        Contact -.->|عضو| Organization
-        Organization --> Department[Departments]
-        Department --> Position[Positions]
-        Position --> Member[Members]
-        Member -.-> Contact
-    end
+    GetIranTime --> QueryTemplates[Query از دیتابیس]
+    
+    QueryTemplates --> CheckConditions{شرط‌های Query}
+    
+    CheckConditions --> Condition1[✅ IsScheduled = true]
+    CheckConditions --> Condition2[✅ IsScheduleEnabled = true]
+    CheckConditions --> Condition3[✅ IsActive = true]
+    CheckConditions --> Condition4[✅ NextExecutionDate <= Now]
+    CheckConditions --> Condition5[⭐ LastExecutionDate فاصله >= 1 دقیقه]
+    
+    Condition1 --> FindTemplates
+    Condition2 --> FindTemplates
+    Condition3 --> FindTemplates
+    Condition4 --> FindTemplates
+    Condition5 --> FindTemplates[یافت قالب‌های آماده]
+    
+    FindTemplates --> AnyTemplates{قالبی وجود دارد؟}
+    
+    AnyTemplates -->|خیر| WaitNextMinute([صبر تا دقیقه بعد])
+    AnyTemplates -->|بله| LoopTemplates[حلقه روی قالب‌ها]
+    
+    LoopTemplates --> DoubleCheck{⭐ Double-check<br/>در حافظه}
+    
+    DoubleCheck -->|فاصله < 1 دقیقه| SkipTemplate[Skip - اجرا شده]
+    DoubleCheck -->|فاصله >= 1 دقیقه| GetRecipients[دریافت دریافت‌کنندگان]
+    
+    SkipTemplate --> NextTemplate{قالب بعدی؟}
+    
+    GetRecipients --> CheckRecipients{کاربری وجود دارد؟}
+    
+    CheckRecipients -->|خیر| UpdateNext[بروزرسانی NextExecutionDate]
+    CheckRecipients -->|بله| SendNotifications[ارسال به کاربران]
+    
+    SendNotifications --> BuildVariables[⭐ ساخت متغیرهای پویا<br/>{{PendingTasks}}, {{RecipientFullName}}, ...]
+    
+    BuildVariables --> SendViaChannel{کانال ارسال}
+    
+    SendViaChannel -->|Email| SendEmail[📧 ارسال Email]
+    SendViaChannel -->|SMS| SendSMS[📱 ارسال SMS]
+    SendViaChannel -->|Telegram| SendTelegram[✈️ ارسال Telegram]
+    
+    SendEmail --> UpdateTemplate
+    SendSMS --> UpdateTemplate
+    SendTelegram --> UpdateTemplate[⭐ بروزرسانی قالب]
+    
+    UpdateTemplate --> UpdateFields[LastExecutionDate = Now<br/>UsageCount++<br/>NextExecutionDate = Calculate]
+    
+    UpdateFields --> CalculateNext[⭐ محاسبه NextExecutionDate]
+    
+    CalculateNext --> CheckScheduleType{نوع زمان‌بندی}
+    
+    CheckScheduleType -->|Daily| DailyCalc[همان ساعت فردا]
+    CheckScheduleType -->|Weekly| WeeklyCalc[روز بعدی در هفته]
+    CheckScheduleType -->|Monthly| MonthlyCalc[همان روز ماه بعد]
+    
+    DailyCalc --> SaveChanges
+    WeeklyCalc --> SaveChanges
+    MonthlyCalc --> SaveChanges[ذخیره تغییرات]
+    
+    SaveChanges --> LogSuccess[✅ لاگ موفقیت]
+    
+    LogSuccess --> NextTemplate
+    UpdateNext --> NextTemplate
+    
+    NextTemplate -->|بله| DoubleCheck
+    NextTemplate -->|خیر| End([پایان - صبر تا دقیقه بعد])
+    
+    WaitNextMinute --> End
     
     %% Styling
-    style Stakeholder fill:#F44336,stroke:#333,stroke-width:2px,color:#fff
-    style Contact fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
-    style Organization fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
+    style Start fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
+    style DoubleCheck fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
+    style BuildVariables fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
+    style CalculateNext fill:#9C27B0,stroke:#333,stroke-width:2px,color:#fff
+    style End fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
+```
+
+### الگوریتم محاسبه NextExecutionDate
+
+```mermaid
+flowchart TD
+    Start([محاسبه NextExecutionDate]) --> CheckTime{ScheduledTime معتبر؟}
+    
+    CheckTime -->|خیر ❌| ReturnNull[return null]
+    CheckTime -->|بله ✅| GetNow[دریافت زمان ایران]
+    
+    GetNow --> ParseTime[Parse ساعت و دقیقه<br/>از ScheduledTime]
+    
+    ParseTime --> CheckType{نوع زمان‌بندی}
+    
+    CheckType -->|Daily = 1| CalcDaily[محاسبه روزانه]
+    CheckType -->|Weekly = 2| CalcWeekly[محاسبه هفتگی]
+    CheckType -->|Monthly = 3| CalcMonthly[محاسبه ماهانه]
+    
+    %% Daily Calculation
+    CalcDaily --> CreateToday[ایجاد DateTime امروز<br/>با ساعت تنظیم شده]
+    CreateToday --> CheckIfPassed{⭐ آیا گذشته؟<br/>nextExecution <= now}
+    CheckIfPassed -->|بله| AddDay[nextExecution.AddDays(1)]
+    CheckIfPassed -->|خیر| ReturnDaily[return nextExecution]
+    AddDay --> ReturnDaily
+    
+    %% Weekly Calculation
+    CalcWeekly --> ParseDays[Parse روزهای هفته<br/>ScheduledDaysOfWeek]
+    ParseDays --> CheckToday{امروز در لیست؟}
+    CheckToday -->|بله + زمان نگذشته| ReturnWeekly[return امروز با ساعت]
+    CheckToday -->|خیر| FindNextDay[پیدا کردن روز بعدی<br/>در 7 روز آینده]
+    FindNextDay --> ReturnWeekly
+    
+    %% Monthly Calculation
+    CalcMonthly --> GetDayOfMonth[دریافت ScheduledDayOfMonth]
+    GetDayOfMonth --> CheckThisMonth{این ماه گذشته؟}
+    CheckThisMonth -->|خیر| ReturnThisMonth[return این ماه]
+    CheckThisMonth -->|بله| CalcNextMonth[محاسبه ماه بعد<br/>با توجه به تعداد روز]
+    CalcNextMonth --> ReturnMonthly[return ماه بعد]
+    
+    ReturnDaily --> LogResult[⭐ لاگ نتیجه]
+    ReturnWeekly --> LogResult
+    ReturnMonthly --> LogResult
+    ReturnNull --> End([پایان])
+    
+    LogResult --> End
+    
+    %% Styling
+    style Start fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
+    style CheckIfPassed fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
+    style AddDay fill:#F44336,stroke:#333,stroke-width:2px,color:#fff
+    style LogResult fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
+```
+
+### مثال عملی: اجرای Daily Digest
+
+```mermaid
+sequenceDiagram
+    participant BG as ⚙️ Background Service
+    participant DB as 🗄️ Database
+    participant Calc as 📊 Calculator
+    participant Service as 🔧 NotificationService
+    participant User1 as 👤 کاربر 1
+    participant User2 as 👤 کاربر 2
+    
+    Note over BG: هر 1 دقیقه چک می‌کند
+    
+    BG->>DB: Query: IsScheduled + NextExecution <= Now + DateDiff >= 1
+    DB-->>BG: قالب "خلاصه روزانه"
+    
+    Note over BG: ⭐ Double-check در حافظه
+    BG->>BG: if (LastExecution - Now < 1 min) Skip
+    
+    BG->>DB: دریافت لیست کاربران
+    DB-->>BG: [User1, User2, ...]
+    
+    loop برای هر کاربر
+        BG->>Service: BuildTemplateDataAsync(userId)
+        
+        Service->>DB: دریافت تسک‌های انجام نشده
+        DB-->>Service: [Task1, Task2, ...]
+        
+        Service->>Service: ساخت متغیر {{PendingTasks}}<br/>با فرمت کامل
+        
+        Service-->>BG: داده‌های آماده
+        
+        BG->>User1: ارسال تلگرام<br/>(بدون ثبت CoreNotification)
+        User1-->>BG: ✅ ارسال شد
+    end
+    
+    BG->>DB: Update Template:<br/>LastExecution = Now<br/>UsageCount++
+    
+    BG->>Calc: CalculateNextExecutionDate()
+    Calc->>Calc: nextExec = امروز 07:15<br/>if <= now: AddDays(1)
+    Calc-->>BG: NextExecution = فردا 07:15
+    
+    BG->>DB: Update NextExecutionDate
+    DB-->>BG: ✅ ذخیره شد
+    
+    Note over BG: لاگ موفقیت
+    BG->>BG: Log: ✅ 2 کاربر - فردا 07:15
 ```
 
 ---
 
-## 🔄 Background Services
+## 🔄 Background Services - نمودار Gantt
 
 ```mermaid
 gantt
-    title Background Services زمان‌بندی
+    title Background Services زمان‌بندی (24 ساعته)
     dateFormat HH:mm
     axisFormat %H:%M
     
@@ -893,16 +882,22 @@ gantt
     
     section Notifications
     NotificationProcessing :active, notify, 00:00, 24h
-    ScheduledNotifications :crit, scheduled, 09:00, 1h
+    ScheduledNotifications :crit, scheduled, 00:00, 24h
     
     section Maintenance
     ExpiredRoleCleanup :done, cleanup, 02:00, 1h
     ModuleTracking :active, track, 00:00, 24h
+    
+    section ⭐ مثال Daily Digest
+    FirstExecution :milestone, first, 07:15, 0
+    SecondExecution :milestone, second, 07:15, 0
 ```
 
 ---
 
-## 📈 نمودار آماری استفاده
+## 📈 نمودارهای آماری
+
+### توزیع استفاده از ماژول‌ها
 
 ```mermaid
 pie title توزیع استفاده از ماژول‌ها
@@ -910,6 +905,8 @@ pie title توزیع استفاده از ماژول‌ها
     "Core" : 30
     "CRM" : 20
 ```
+
+### کانال‌های ارسال اعلان
 
 ```mermaid
 pie title کانال‌های ارسال اعلان
@@ -919,11 +916,107 @@ pie title کانال‌های ارسال اعلان
     "SMS" : 30
 ```
 
+### انواع نظارت بر تسک‌ها ⭐ جدید
+
 ```mermaid
-pie title انواع نظارت بر تسک‌ها ⭐ جدید
+pie title انواع نظارت بر تسک‌ها
     "نظارت سیستمی (بر اساس سمت)" : 60
     "نظارت رونوشتی (دستی)" : 25
     "مجوز خاص" : 15
+```
+
+### ⭐ نوع زمان‌بندی قالب‌ها (جدید)
+
+```mermaid
+pie title توزیع نوع زمان‌بندی قالب‌های اعلان
+    "روزانه (Daily)" : 60
+    "هفتگی (Weekly)" : 25
+    "ماهانه (Monthly)" : 15
+```
+
+---
+
+## 🐛 نمودار رفع مشکلات (Troubleshooting)
+
+### جریان دیباگ: اجرای مکرر اعلان
+
+```mermaid
+flowchart TD
+    Start([مشکل: اعلان هر دقیقه ارسال می‌شود]) --> CheckLogs[بررسی لاگ‌های Background Service]
+    
+    CheckLogs --> LogPattern{الگوی لاگ}
+    
+    LogPattern -->|📤 اجرای قالب هر دقیقه| CheckDB[بررسی دیتابیس]
+    LogPattern -->|⚠️ Skip پیام| ProblemSolved[✅ مشکل حل شده]
+    
+    CheckDB --> QueryDB[اجرای Query تست]
+    
+    QueryDB --> CheckFields{بررسی فیلدها}
+    
+    CheckFields --> CheckLastExec{LastExecutionDate<br/>بروزرسانی می‌شود؟}
+    
+    CheckLastExec -->|خیر ❌| FixUpdate[🔧 اصلاح بروزرسانی<br/>در ExecuteScheduledTemplateAsync]
+    CheckLastExec -->|بله ✅| CheckNextExec{NextExecutionDate<br/>در آینده است؟}
+    
+    CheckNextExec -->|خیر ❌| FixCalculation[🔧 اصلاح محاسبه<br/>در CalculateNextExecutionDate]
+    CheckNextExec -->|بله ✅| CheckQuery{Query شرط<br/>DateDiffMinute دارد؟}
+    
+    CheckQuery -->|خیر ❌| AddCondition[🔧 اضافه کردن شرط<br/>DateDiffMinute >= 1]
+    CheckQuery -->|بله ✅| CheckDoubleCheck{Double-check<br/>در کد وجود دارد؟}
+    
+    CheckDoubleCheck -->|خیر ❌| AddDoubleCheck[🔧 اضافه کردن<br/>if TotalMinutes < 1]
+    CheckDoubleCheck -->|بله ✅| DeepDebug[🔍 دیباگ عمیق<br/>با Breakpoint]
+    
+    FixUpdate --> TestAgain[تست مجدد]
+    FixCalculation --> TestAgain
+    AddCondition --> TestAgain
+    AddDoubleCheck --> TestAgain
+    
+    TestAgain --> Solved{مشکل حل شد؟}
+    
+    Solved -->|بله ✅| ProblemSolved
+    Solved -->|خیر ❌| DeepDebug
+    
+    DeepDebug --> ContactSupport[📞 تماس با پشتیبانی<br/>با ارسال لاگ‌ها]
+    
+    ProblemSolved --> End([✅ سیستم عادی شد])
+    ContactSupport --> End
+    
+    %% Styling
+    style Start fill:#F44336,stroke:#333,stroke-width:2px,color:#fff
+    style ProblemSolved fill:#4CAF50,stroke:#333,stroke-width:3px,color:#fff
+    style FixUpdate fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
+    style FixCalculation fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
+    style AddCondition fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
+    style AddDoubleCheck fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
+```
+
+### Query تست برای دیباگ
+
+```sql
+-- بررسی وضعیت قالب‌های زمان‌بندی شده
+SELECT 
+    Id,
+    TemplateName,
+    ScheduleType,
+    ScheduledTime,
+    LastExecutionDate,
+    NextExecutionDate,
+    DATEDIFF(MINUTE, LastExecutionDate, GETDATE()) AS MinutesSinceLastExecution,
+    CASE 
+        WHEN NextExecutionDate IS NULL THEN '⚠️ NextExecution خالی'
+        WHEN NextExecutionDate <= GETDATE() THEN '⚡ آماده اجرا'
+        ELSE '⏳ در انتظار'
+    END AS Status,
+    CASE 
+        WHEN LastExecutionDate IS NULL THEN '⚠️ هرگز اجرا نشده'
+        WHEN DATEDIFF(MINUTE, LastExecutionDate, GETDATE()) < 1 THEN '✅ اخیراً اجرا شده'
+        WHEN DATEDIFF(MINUTE, LastExecutionDate, GETDATE()) < 60 THEN '🟡 در ساعت گذشته'
+        ELSE '🔴 مدت زیادی گذشته'
+    END AS LastExecutionStatus
+FROM NotificationTemplate_Tbl
+WHERE IsScheduled = 1
+ORDER BY NextExecutionDate;
 ```
 
 ---
@@ -937,11 +1030,12 @@ pie title انواع نظارت بر تسک‌ها ⭐ جدید
 ✅ استفاده از الگوهای طراحی (Repository, Unit of Work)
 ✅ **سیستم نظارت هوشمند بر تسک‌ها** ⭐ **جدید**
 ✅ سیستم اعلان‌رسانی چندکاناله
-✅ پشتیبانی از Background Services
+✅ **پشتیبانی از Background Services با Anti-duplicate** ⭐ **به‌روزرسانی شده**
 ✅ مدل داده مدرن (Contact/Organization جایگزین Stakeholder)
 ✅ **فیلتر محدود به تیم (Team-scoped)** ⭐ **جدید**
+✅ **سیستم زمان‌بندی پیشرفته با TimeZone ایران** ⭐ **جدید**
 
 ---
 
-**نسخه مستند:** 2.0.0 ⭐ **(به‌روزرسانی شده با سیستم نظارت)**
-**تاریخ:** دی 1403 (اضافه شدن نمودارهای سیستم نظارت)
+**نسخه مستند:** 2.1.0 ⭐ **(به‌روزرسانی شده با دیاگرام‌های کامل Background Services)**
+**تاریخ:** دی 1403 (اضافه شدن نمودارهای زمان‌بندی و رفع باگ اجرای مکرر)
