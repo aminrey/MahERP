@@ -100,6 +100,11 @@ namespace MahERP.DataModelLayer
         /// </summary>
         public DbSet<TaskCarbonCopy> TaskCarbonCopy_Tbl { get; set; }
 
+        /// <summary>
+        /// ⭐⭐⭐ زمان‌بندی ایجاد خودکار تسک‌ها
+        /// </summary>
+        public DbSet<ScheduledTaskCreation> ScheduledTaskCreation_Tbl { get; set; }
+
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
         public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }
@@ -199,6 +204,9 @@ namespace MahERP.DataModelLayer
             NotificationEntitiesConfiguration.Configure(modelBuilder);
             ContactOrganizationConfiguration.Configure(modelBuilder);
             CoreEntitiesConfiguration.Configure(modelBuilder);
+            
+            // ⭐⭐⭐ کانفیگ زمان‌بندی تسک‌ها
+            modelBuilder.ApplyConfiguration(new ScheduledTaskCreationConfiguration());
             
             // ⭐ کانفیگ Seed Data
             SeedDataConfiguration.Configure(modelBuilder);

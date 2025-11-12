@@ -58,10 +58,6 @@
 				{
 					<li class="nav-main-heading">مدیریت تسک‌ها</li>
 
-
-				
-
-
 					@if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.VIEW"))
 					{
 						@if (Html.CanAccessAny("TASK", "TASK.OPERATIONS.VIEW"))
@@ -79,15 +75,25 @@
 							</li>
 						}
 					}
-						<!-- 🎯 صفحات مهم -->
-						<li class="nav-main-item nav-submenu-separator mt-2">
-							<div class="nav-submenu-title">
-								<small class="text-muted fw-semibold">صفحات اصلی</small>
-							</div>
-						</li>
 
-						
-					
+					<!-- 🎯 صفحات مهم -->
+					<li class="nav-main-item nav-submenu-separator mt-2">
+						<div class="nav-submenu-title">
+							<small class="text-muted fw-semibold">صفحات اصلی</small>
+						</div>
+					</li>
+
+					<!-- ⭐⭐⭐ تسک‌های زمان‌بندی شده -->
+					<li class="nav-main-item">
+						<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "ScheduledTasks") ? "active" : "")" 
+						   asp-area="TaskingArea" 
+						   asp-controller="Tasks" 
+						   asp-action="ScheduledTasks">
+							<i class="nav-main-link-icon fa fa-calendar-alt text-purple"></i>
+							<span class="nav-main-link-name">تسک‌های زمان‌بندی</span>
+						</a>
+					</li>
+
 					<!-- یادآوری‌های من -->
 					<li class="nav-main-item">
 						<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")" asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskReminders">

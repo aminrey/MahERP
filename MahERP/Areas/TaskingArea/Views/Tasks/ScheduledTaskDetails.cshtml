@@ -1,0 +1,299 @@
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModel
+
+@{
+    ViewData["Title"] = "جزئیات تسک زمان‌بندی شده";
+    var scheduleId = ViewBag.ScheduleId;
+    var executionCount = ViewBag.ExecutionCount ?? 0;
+    var lastExecutionDate = ViewBag.LastExecutionDate as string;
+    var nextExecutionDate = ViewBag.NextExecutionDate as string;
+    var isActive = ViewBag.IsActive ?? false;
+    var isScheduleEnabled = ViewBag.IsScheduleEnabled ?? false;
+}
+
+<div class="content">
+    <!-- ⭐ Header -->
+    <div class="block block-rounded">
+        <div class="block-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <h3 class="block-title text-white mb-0">
+                    <i class="fa fa-calendar-alt me-2"></i>
+                    @Model.TaskSchedule.ScheduleTitle
+                </h3>
+                <div class="btn-group">
+                    <a href="@Url.Action("ScheduledTasks")" class="btn btn-sm btn-light">
+                        <i class="fa fa-arrow-right me-1"></i>بازگشت
+                    </a>
+                    <a href="@Url.Action("EditScheduledTask", new { id = scheduleId })" class="btn btn-sm btn-warning">
+                        <i class="fa fa-edit me-1"></i>ویرایش
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- ⭐ بخش اصلی -->
+        <div class="col-lg-8">
+            <!-- اطلاعات تسک -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-tasks text-primary me-2"></i>اطلاعات تسک
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded">
+                                <div class="fs-xs text-muted mb-1">عنوان تسک</div>
+                                <div class="fw-semibold">@Model.Title</div>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.TaskCode))
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded">
+                                    <div class="fs-xs text-muted mb-1">کد تسک</div>
+                                    <div class="fw-semibold">@Model.TaskCode</div>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <div class="col-12">
+                                <div class="p-3 bg-body-light rounded">
+                                    <div class="fs-xs text-muted mb-2">توضیحات</div>
+                                    <div>@Html.Raw(Model.Description.Replace("\n", "<br/>"))</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- جزئیات زمان‌بندی -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-clock text-success me-2"></i>جزئیات زمان‌بندی
+                    </h3>
+                </div>
+                <div class="block-content">
+                    @if (!string.IsNullOrEmpty(Model.TaskSchedule.ScheduleDescription))
+                    {
+                        <div class="alert alert-info mb-4">
+                            <i class="fa fa-info-circle me-2"></i>
+                            <strong>توضیحات:</strong> @Model.TaskSchedule.ScheduleDescription
+                        </div>
+                    }
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded">
+                                <div class="fs-xs text-muted mb-1">نوع زمان‌بندی</div>
+                                <div class="fw-semibold">
+                                    @switch (Model.TaskSchedule.ScheduleType)
+                                    {
+                                        case 0: <span class="badge bg-secondary">یکبار</span> break;
+                                        case 1: <span class="badge bg-primary">روزانه</span> break;
+                                        case 2: <span class="badge bg-info">هفتگی</span> break;
+                                        case 3: <span class="badge bg-success">ماهانه</span> break;
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded">
+                                <div class="fs-xs text-muted mb-1">ساعت اجرا</div>
+                                <div class="fw-semibold">
+                                    <i class="fa fa-clock text-success me-1"></i>
+                                    @Model.TaskSchedule.ScheduledTime
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.TaskSchedule.ScheduleType == 2 && !string.IsNullOrEmpty(Model.TaskSchedule.ScheduledDaysOfWeek))
+                        {
+                            <div class="col-12">
+                                <div class="p-3 bg-body-light rounded">
+                                    <div class="fs-xs text-muted mb-2">روزهای هفته</div>
+                                    <div>
+                                        @{
+                                            var days = Model.TaskSchedule.ScheduledDaysOfWeek.Split(',');
+                                            var dayNames = new Dictionary<string, string>
+                                            {
+                                                {"0", "یکشنبه"}, {"1", "دوشنبه"}, {"2", "سه‌شنبه"},
+                                                {"3", "چهارشنبه"}, {"4", "پنج‌شنبه"}, {"5", "جمعه"}, {"6", "شنبه"}
+                                            };
+                                            foreach (var day in days)
+                                            {
+                                                if (dayNames.ContainsKey(day.Trim()))
+                                                {
+                                                    <span class="badge bg-info me-1">@dayNames[day.Trim()]</span>
+                                                }
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.TaskSchedule.ScheduleType == 3 && Model.TaskSchedule.ScheduledDayOfMonth.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded">
+                                    <div class="fs-xs text-muted mb-1">روز ماه</div>
+                                    <div class="fw-semibold">
+                                        <span class="badge bg-warning">روز @Model.TaskSchedule.ScheduledDayOfMonth</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.TaskSchedule.StartDatePersian))
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded">
+                                    <div class="fs-xs text-muted mb-1">تاریخ شروع</div>
+                                    <div class="fw-semibold">@Model.TaskSchedule.StartDatePersian</div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.TaskSchedule.EndDatePersian))
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded">
+                                    <div class="fs-xs text-muted mb-1">تاریخ پایان</div>
+                                    <div class="fw-semibold">@Model.TaskSchedule.EndDatePersian</div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.TaskSchedule.MaxOccurrences.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded">
+                                    <div class="fs-xs text-muted mb-1">حداکثر تعداد</div>
+                                    <div class="fw-semibold">@Model.TaskSchedule.MaxOccurrences بار</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- عملیات‌ها -->
+            @if (Model.Operations != null && Model.Operations.Any())
+            {
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-list-check text-info me-2"></i>عملیات‌های تسک
+                        </h3>
+                        <div class="block-options">
+                            <span class="badge bg-primary">@Model.Operations.Count عملیات</span>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <div class="list-group">
+                            @foreach (var operation in Model.Operations)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="checkbox" disabled 
+                                                   @(operation.IsCompleted ? "checked" : "")>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="@(operation.IsCompleted ? "text-decoration-line-through text-muted" : "")">
+                                                @operation.Title
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(operation.Description))
+                                            {
+                                                <small class="text-muted">@operation.Description</small>
+                                            }
+                                        </div>
+                                        @if (operation.IsRequired)
+                                        {
+                                            <span class="badge bg-danger">ضروری</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- ⭐ Sidebar -->
+        <div class="col-lg-4">
+            <!-- وضعیت -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-info-circle me-2"></i>وضعیت
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="row g-3 text-center">
+                        <div class="col-6">
+                            <div class="p-3 @(isScheduleEnabled ? "bg-success-light" : "bg-secondary-light") rounded">
+                                <div class="fs-3 fw-bold @(isScheduleEnabled ? "text-success" : "text-secondary")">
+                                    <i class="fa @(isScheduleEnabled ? "fa-check-circle" : "fa-pause-circle")"></i>
+                                </div>
+                                <small class="text-muted">@(isScheduleEnabled ? "فعال" : "غیرفعال")</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 @(isActive ? "bg-primary-light" : "bg-danger-light") rounded">
+                                <div class="fs-3 fw-bold @(isActive ? "text-primary" : "text-danger")">
+                                    <i class="fa fa-circle"></i>
+                                </div>
+                                <small class="text-muted">@(isActive ? "موجود" : "حذف شده")</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- آمار اجرا -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-chart-bar me-2"></i>آمار اجرا
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="text-center mb-3">
+                        <div class="fs-1 fw-bold text-primary">@executionCount</div>
+                        <small class="text-muted">دفعات اجرا شده</small>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(lastExecutionDate))
+                    {
+                        <div class="p-3 bg-body-light rounded mb-3">
+                            <div class="fs-xs text-muted mb-1">آخرین اجرا</div>
+                            <div class="fw-semibold">
+                                <i class="fa fa-calendar text-info me-1"></i>
+                                @lastExecutionDate
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(nextExecutionDate))
+                    {
+                        <div class="p-3 bg-warning-light rounded">
+                            <div class="fs-xs text-muted mb-1">اجرای بعدی</div>
+                            <div class="fw-semibold text-warning">
+                                <i class="fa fa-arrow-left me-1"></i>
+                                @nextExecutionDate
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

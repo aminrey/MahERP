@@ -83,6 +83,30 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         
         public DateTime? DueDate { get; set; }
         
+        /// <summary>
+        /// تاریخ شروع پیشنهادی توسط سازنده تسک
+        /// </summary>
+        [Display(Name = "تاریخ شروع پیشنهادی")]
+        public DateTime? SuggestedStartDate { get; set; }
+
+        /// <summary>
+        /// مدت زمان تخمینی انجام (به ساعت)
+        /// </summary>
+        [Display(Name = "مدت زمان تخمینی (ساعت)")]
+        public decimal? EstimatedHours { get; set; }
+
+        /// <summary>
+        /// آیا مهلت سخت است؟
+        /// </summary>
+        [Display(Name = "مهلت سخت")]
+        public bool IsHardDeadline { get; set; }
+
+        /// <summary>
+        /// یادداشت زمان‌بندی
+        /// </summary>
+        [Display(Name = "یادداشت زمان‌بندی")]
+        [MaxLength(500)]
+        public string? TimeNote { get; set; }
 
         public bool? SupervisorApproved { get; set; }
         

@@ -455,7 +455,11 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         public string? CurrentUserId { get; set; }
         public TaskUserContext? CurrentUserContext { get; set; }
 
-
+        /// <summary>
+        /// ⭐⭐⭐ تنظیمات زمان‌بندی ساخت تسک
+        /// </summary>
+        [Display(Name = "زمان‌بندی ساخت")]
+        public TaskScheduleViewModel? TaskSchedule { get; set; }
 
     }
     /// <summary>
