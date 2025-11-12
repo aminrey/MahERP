@@ -42,7 +42,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
-  </ItemGroup>
+
+
+		<PropertyGroup>
+			<HotReloadAutoRestart>true</HotReloadAutoRestart>
+		</PropertyGroup>
+
+	</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MahERP.CommonLayer\MahERP.CommonLayer.csproj" />
