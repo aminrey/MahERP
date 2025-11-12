@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 	  <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+	  <HotReloadAutoRestart>true</HotReloadAutoRestart>
 
 	  <!-- ⭐ اضافه کردن ورژن -->
     <Version>1.0.0</Version>
@@ -44,9 +45,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
 
 
-		<PropertyGroup>
-			<HotReloadAutoRestart>true</HotReloadAutoRestart>
-		</PropertyGroup>
+	
 
 	</ItemGroup>
 
