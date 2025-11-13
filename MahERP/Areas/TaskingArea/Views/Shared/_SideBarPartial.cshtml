@@ -85,10 +85,10 @@
 
 					<!-- ⭐⭐⭐ تسک‌های زمان‌بندی شده -->
 					<li class="nav-main-item">
-						<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Tasks", "ScheduledTasks") ? "active" : "")" 
+						<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "ScheduledTasks", "Index") ? "active" : "")"
 						   asp-area="TaskingArea" 
-						   asp-controller="Tasks" 
-						   asp-action="ScheduledTasks">
+						   asp-controller="ScheduledTasks"
+						   asp-action="Index">
 							<i class="nav-main-link-icon fa fa-calendar-alt text-purple"></i>
 							<span class="nav-main-link-name">تسک‌های زمان‌بندی</span>
 						</a>

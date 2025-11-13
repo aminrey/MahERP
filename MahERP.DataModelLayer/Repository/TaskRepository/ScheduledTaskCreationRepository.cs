@@ -67,6 +67,11 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         Task<ScheduledTaskListViewModel> GetScheduledTasksListAsync(string userId);
         
         /// <summary>
+        /// ⭐⭐⭐ دریافت لیست تسک‌های زمان‌بندی شده با پشتیبانی از Admin
+        /// </summary>
+        Task<ScheduledTaskListViewModel> GetScheduledTasksListAsync(string userId, bool isAdmin);
+        
+        /// <summary>
         /// ⭐⭐⭐ دریافت تسک زمان‌بندی شده برای ویرایش
         /// </summary>
         Task<TaskViewModel?> GetScheduledTaskForEditAsync(int scheduleId);
@@ -333,10 +338,26 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         public async Task<ScheduledTaskListViewModel> GetScheduledTasksListAsync(string userId)
         {
-            var schedules = await _context.ScheduledTaskCreation_Tbl
+            return await GetScheduledTasksListAsync(userId, false);
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت لیست تسک‌های زمان‌بندی شده با پشتیبانی از Admin
+        /// </summary>
+        public async Task<ScheduledTaskListViewModel> GetScheduledTasksListAsync(string userId, bool isAdmin)
+        {
+            var query = _context.ScheduledTaskCreation_Tbl
                 .Include(s => s.CreatedByUser)
                 .Include(s => s.Branch)
-                .Where(s => s.CreatedByUserId == userId)
+                .AsQueryable();
+
+            // اگر کاربر Admin نیست، فقط تسک‌های خودش را ببیند
+            if (!isAdmin)
+            {
+                query = query.Where(s => s.CreatedByUserId == userId);
+            }
+
+            var schedules = await query
                 .OrderByDescending(s => s.CreatedDate)
                 .ToListAsync();
 

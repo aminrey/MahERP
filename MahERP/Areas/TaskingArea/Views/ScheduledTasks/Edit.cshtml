@@ -1,0 +1,273 @@
+﻿@model TaskViewModel
+@{
+    ViewData["Title"] = "ویرایش تسک زمان‌بندی شده";
+    var scheduleId = ViewBag.ScheduleId as int?;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="mb-1">
+                        <i class="fas fa-edit text-primary me-2"></i>
+                        ویرایش تسک زمان‌بندی شده
+                    </h3>
+                    <p class="text-muted mb-0">
+                        ویرایش تنظیمات تسک و زمان‌بندی
+                    </p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Details", "ScheduledTasks", new { id = scheduleId })" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>
+                        انصراف
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="Edit" asp-controller="ScheduledTasks" asp-route-id="@scheduleId" method="post" enctype="multipart/form-data" id="editScheduledTaskForm">
+        @Html.AntiForgeryToken()
+        
+        @* Hidden Fields *@
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="TaskCode" />
+        <input type="hidden" asp-for="CreatorUserId" />
+
+        <div class="row">
+            @* Main Content *@
+            <div class="col-lg-8">
+                @* اطلاعات اصلی تسک *@
+                <div class="card mb-4">
+                    <div class="card-header bg-primary bg-opacity-10">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-tasks me-2"></i>
+                            اطلاعات تسک
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="Title" class="form-label">عنوان تسک <span class="text-danger">*</span></label>
+                                <input asp-for="Title" class="form-control" placeholder="عنوان تسک را وارد کنید..." />
+                                <span asp-validation-for="Title" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="Description" class="form-label">توضیحات</label>
+                                <textarea asp-for="Description" class="form-control" rows="4" placeholder="توضیحات تسک..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="BranchIdSelected" class="form-label">شعبه <span class="text-danger">*</span></label>
+                                <select asp-for="BranchIdSelected" class="form-select" asp-items="@(new SelectList(Model.branchListInitial, "Value", "Text"))">
+                                    <option value="">انتخاب شعبه...</option>
+                                </select>
+                                <span asp-validation-for="BranchIdSelected" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="Priority" class="form-label">اولویت</label>
+                                <select asp-for="Priority" class="form-select">
+                                    <option value="0">عادی</option>
+                                    <option value="1">مهم</option>
+                                    <option value="2">فوری</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="TaskType" class="form-label">نوع</label>
+                                <select asp-for="TaskType" class="form-select">
+                                    <option value="0">تسک</option>
+                                    <option value="1">پروژه</option>
+                                    <option value="2">مایلستون</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-12">
+                                <div class="form-check">
+                                    <input asp-for="Important" class="form-check-input" type="checkbox" />
+                                    <label asp-for="Important" class="form-check-label">
+                                        <i class="fas fa-star text-warning me-1"></i>
+                                        تسک مهم
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* تنظیمات زمان‌بندی *@
+                <div class="card mb-4">
+                    <div class="card-header bg-warning bg-opacity-10">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            تنظیمات زمان‌بندی
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" asp-for="TaskSchedule.IsScheduled" value="true" />
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="TaskSchedule.ScheduleTitle" class="form-label">عنوان زمان‌بندی</label>
+                                <input asp-for="TaskSchedule.ScheduleTitle" class="form-control" placeholder="عنوان زمان‌بندی..." />
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="TaskSchedule.ScheduleDescription" class="form-label">توضیحات زمان‌بندی</label>
+                                <textarea asp-for="TaskSchedule.ScheduleDescription" class="form-control" rows="2"></textarea>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="TaskSchedule.ScheduleType" class="form-label">نوع تکرار <span class="text-danger">*</span></label>
+                                <select asp-for="TaskSchedule.ScheduleType" class="form-select" id="scheduleType">
+                                    <option value="0">یکبار</option>
+                                    <option value="1">روزانه</option>
+                                    <option value="2">هفتگی</option>
+                                    <option value="3">ماهانه</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="TaskSchedule.ScheduledTime" class="form-label">ساعت اجرا <span class="text-danger">*</span></label>
+                                <input asp-for="TaskSchedule.ScheduledTime" type="time" class="form-control" />
+                            </div>
+
+                            @* Weekly Options *@
+                            <div class="col-md-12 mb-3" id="weeklyOptions" style="display: none;">
+                                <label class="form-label">روزهای هفته</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="checkbox" class="btn-check" name="dayOfWeek" value="0" id="day0">
+                                    <label class="btn btn-outline-primary" for="day0">یکشنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" name="dayOfWeek" value="1" id="day1">
+                                    <label class="btn btn-outline-primary" for="day1">دوشنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" name="dayOfWeek" value="2" id="day2">
+                                    <label class="btn btn-outline-primary" for="day2">سه‌شنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" name="dayOfWeek" value="3" id="day3">
+                                    <label class="btn btn-outline-primary" for="day3">چهارشنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" name="dayOfWeek" value="4" id="day4">
+                                    <label class="btn btn-outline-primary" for="day4">پنج‌شنبه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" name="dayOfWeek" value="5" id="day5">
+                                    <label class="btn btn-outline-primary" for="day5">جمعه</label>
+                                    
+                                    <input type="checkbox" class="btn-check" name="dayOfWeek" value="6" id="day6">
+                                    <label class="btn btn-outline-primary" for="day6">شنبه</label>
+                                </div>
+                                <input type="hidden" asp-for="TaskSchedule.ScheduledDaysOfWeek" id="scheduledDaysOfWeek" />
+                            </div>
+
+                            @* Monthly Options *@
+                            <div class="col-md-6 mb-3" id="monthlyOptions" style="display: none;">
+                                <label asp-for="TaskSchedule.ScheduledDayOfMonth" class="form-label">روز ماه</label>
+                                <input asp-for="TaskSchedule.ScheduledDayOfMonth" type="number" min="1" max="31" class="form-control" placeholder="روز ماه (1-31)" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="TaskSchedule.StartDatePersian" class="form-label">تاریخ شروع</label>
+                                <input asp-for="TaskSchedule.StartDatePersian" type="text" class="form-control persian-date" placeholder="yyyy/mm/dd" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="TaskSchedule.EndDatePersian" class="form-label">تاریخ پایان</label>
+                                <input asp-for="TaskSchedule.EndDatePersian" type="text" class="form-control persian-date" placeholder="yyyy/mm/dd" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="TaskSchedule.MaxOccurrences" class="form-label">حداکثر تعداد اجرا</label>
+                                <input asp-for="TaskSchedule.MaxOccurrences" type="number" min="1" class="form-control" placeholder="نامحدود" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Sidebar *@
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 80px;">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">عملیات</h5>
+                        
+                        <button type="submit" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-save me-2"></i>
+                            ذخیره تغییرات
+                        </button>
+                        
+                        <a href="@Url.Action("Details", "ScheduledTasks", new { id = scheduleId })" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-times me-2"></i>
+                            انصراف
+                        </a>
+
+                        <hr class="my-4">
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>نکته:</strong> با ذخیره تغییرات، زمان اجرای بعدی مجدداً محاسبه می‌شود.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            // Schedule Type Change Handler
+            function updateScheduleOptions() {
+                const scheduleType = parseInt($('#scheduleType').val());
+                
+                $('#weeklyOptions, #monthlyOptions').hide();
+                
+                if (scheduleType === 2) {
+                    $('#weeklyOptions').show();
+                } else if (scheduleType === 3) {
+                    $('#monthlyOptions').show();
+                }
+            }
+
+            $('#scheduleType').on('change', updateScheduleOptions);
+            updateScheduleOptions();
+
+            // Days of Week Handler
+            $('input[name="dayOfWeek"]').on('change', function() {
+                const selectedDays = [];
+                $('input[name="dayOfWeek"]:checked').each(function() {
+                    selectedDays.push($(this).val());
+                });
+                $('#scheduledDaysOfWeek').val(selectedDays.join(','));
+            });
+
+            // Initialize selected days
+            const initialDays = $('#scheduledDaysOfWeek').val();
+            if (initialDays) {
+                initialDays.split(',').forEach(day => {
+                    $(`#day${day.trim()}`).prop('checked', true);
+                });
+            }
+
+            // Persian Date Picker
+            if (typeof $().persianDatepicker === 'function') {
+                $('.persian-date').persianDatepicker({
+                    format: 'YYYY/MM/DD',
+                    autoClose: true,
+                    calendar: {
+                        persian: {
+                            locale: 'fa'
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}

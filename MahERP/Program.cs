@@ -69,6 +69,7 @@ builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettings
 builder.Services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
 builder.Services.AddScoped<IScheduledTaskCreationRepository, ScheduledTaskCreationRepository>();
 builder.Services.AddHostedService<ScheduledTaskCreationBackgroundService>();
+
 // ⭐ یا اگر می‌خواهید به صورت Singleton در Dependency Injection باشد:
 builder.Services.AddSingleton<ModuleTrackingBackgroundService>();
 builder.Services.AddHostedService(provider => provider.GetRequiredService<ModuleTrackingBackgroundService>());

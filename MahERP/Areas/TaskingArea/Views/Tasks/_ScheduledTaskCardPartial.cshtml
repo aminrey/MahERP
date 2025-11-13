@@ -1,0 +1,191 @@
+﻿@model MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels.ScheduledTaskCardViewModel
+
+<div class="card scheduled-task-card @(Model.IsScheduleEnabled && Model.IsActive ? "active" : Model.IsExecuted ? "executed" : "inactive") border-0 shadow-sm h-100">
+    <div class="card-body">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+                <h5 class="card-title mb-1">
+                    <a href="@Url.Action("Details", "ScheduledTasks", new { id = Model.Id })" class="text-decoration-none text-dark">
+                        @Model.ScheduleTitle
+                    </a>
+                </h5>
+                <small class="text-muted">@Model.TaskTitle</small>
+            </div>
+            <div class="card-actions">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="@Url.Action("Details", "ScheduledTasks", new { id = Model.Id })">
+                                <i class="fas fa-eye me-2"></i>مشاهده جزئیات
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="@Url.Action("Edit", "ScheduledTasks", new { id = Model.Id })">
+                                <i class="fas fa-edit me-2"></i>ویرایش
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="toggleScheduleStatus(@Model.Id)">
+                                <i class="fas fa-@(Model.IsScheduleEnabled ? "pause" : "play")-circle me-2"></i>
+                                @(Model.IsScheduleEnabled ? "غیرفعال کردن" : "فعال کردن")
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="deleteSchedule(@Model.Id)">
+                                <i class="fas fa-trash me-2"></i>حذف
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Badges -->
+        <div class="mb-3">
+            <span class="badge @Model.StatusBadgeClass schedule-badge me-1">
+                <i class="fas fa-circle fa-xs me-1"></i>
+                @Model.StatusText
+            </span>
+            <span class="badge bg-secondary schedule-badge me-1">
+                <i class="fas fa-@(Model.ScheduleType == 0 ? "clock" : Model.ScheduleType == 1 ? "calendar-day" : Model.ScheduleType == 2 ? "calendar-week" : "calendar-alt") fa-xs me-1"></i>
+                @Model.ScheduleTypeText
+            </span>
+            @if (Model.Priority > 0)
+            {
+                <span class="badge @Model.PriorityBadgeClass schedule-badge">
+                    <i class="fas fa-flag fa-xs me-1"></i>
+                    @Model.PriorityText
+                </span>
+            }
+        </div>
+
+        <!-- Description -->
+        @if (!string.IsNullOrEmpty(Model.ScheduleDescription))
+        {
+            <p class="card-text text-muted small mb-3" style="max-height: 3em; overflow: hidden;">
+                @Model.ScheduleDescription
+            </p>
+        }
+
+        <!-- Schedule Details -->
+        <div class="schedule-details mb-3">
+            <div class="row g-2 small">
+                <!-- ساعت اجرا -->
+                @if (!string.IsNullOrEmpty(Model.ScheduledTime))
+                {
+                    <div class="col-6">
+                        <i class="fas fa-clock text-primary me-1"></i>
+                        <span class="text-muted">ساعت:</span>
+                        <strong>@Model.ScheduledTime</strong>
+                    </div>
+                }
+
+                <!-- تعداد اجرا -->
+                <div class="col-6 text-end">
+                    <i class="fas fa-sync-alt text-info me-1"></i>
+                    <span class="text-muted">اجرا شده:</span>
+                    <strong>@Model.ExecutionCount</strong>
+                    @if (Model.MaxOccurrences.HasValue)
+                    {
+                        <span class="text-muted">/ @Model.MaxOccurrences</span>
+                    }
+                </div>
+
+                <!-- روزهای هفته (برای Weekly) -->
+                @if (Model.ScheduleType == 2 && !string.IsNullOrEmpty(Model.ScheduledDaysOfWeek))
+                {
+                    <div class="col-12 mt-2">
+                        <i class="fas fa-calendar-week text-success me-1"></i>
+                        <span class="text-muted">روزها:</span>
+                        @{
+                            var days = Model.ScheduledDaysOfWeek.Split(',');
+                            var dayNames = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
+                            foreach (var day in days)
+                            {
+                                if (int.TryParse(day.Trim(), out int dayIndex) && dayIndex >= 0 && dayIndex < 7)
+                                {
+                                    <span class="badge bg-light text-dark me-1">@dayNames[dayIndex]</span>
+                                }
+                            }
+                        }
+                    </div>
+                }
+
+                <!-- روز ماه (برای Monthly) -->
+                @if (Model.ScheduleType == 3 && Model.ScheduledDayOfMonth.HasValue)
+                {
+                    <div class="col-12 mt-2">
+                        <i class="fas fa-calendar-alt text-warning me-1"></i>
+                        <span class="text-muted">روز:</span>
+                        <strong>@Model.ScheduledDayOfMonth</strong>
+                        <span class="text-muted">ام هر ماه</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Next/Last Execution -->
+        <div class="execution-info border-top pt-2">
+            @if (!string.IsNullOrEmpty(Model.NextExecutionDatePersian))
+            {
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-arrow-circle-left text-success me-2"></i>
+                    <div class="flex-grow-1">
+                        <small class="text-muted d-block">اجرای بعدی:</small>
+                        <strong class="small">@Model.NextExecutionDatePersian</strong>
+                        @if (Model.DaysUntilNextExecution.HasValue)
+                        {
+                            <span class="badge bg-light text-dark ms-2">@Model.DaysUntilNextExecutionText</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.LastExecutionDatePersian))
+            {
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-history text-muted me-2"></i>
+                    <div class="flex-grow-1">
+                        <small class="text-muted d-block">آخرین اجرا:</small>
+                        <strong class="small">@Model.LastExecutionDatePersian</strong>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Progress Bar (if MaxOccurrences is set) -->
+        @if (Model.MaxOccurrences.HasValue && Model.MaxOccurrences.Value > 0)
+        {
+            <div class="progress progress-mini mt-3">
+                <div class="progress-bar @(Model.ProgressPercentage >= 100 ? "bg-success" : "bg-primary")" 
+                     role="progressbar" 
+                     style="width: @Model.ProgressPercentage%"
+                     aria-valuenow="@Model.ProgressPercentage" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <small class="text-muted">پیشرفت: @Model.ProgressPercentage%</small>
+        }
+    </div>
+
+    <!-- Footer -->
+    <div class="card-footer bg-transparent border-top-0 pt-0">
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                <i class="fas fa-user fa-xs me-1"></i>
+                @Model.CreatedByUserName
+            </small>
+            <small class="text-muted">
+                <i class="fas fa-calendar fa-xs me-1"></i>
+                @Model.CreatedDatePersian
+            </small>
+        </div>
+    </div>
+</div>
