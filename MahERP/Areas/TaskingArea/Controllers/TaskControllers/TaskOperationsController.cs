@@ -472,11 +472,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     "خطا در نمایش مودال",
                     ex);
 
-                return Json(new
-                {
-                    status = "error",
-                    message = new[] { new { status = "error", text = "خطا در بارگذاری مودال" } }
-                });
+                return BadRequest(new { message = "خطا در بارگذاری مودال" });
             }
         }
 
@@ -484,11 +480,27 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// ثبت گزارش کار جدید (POST)
         /// </summary>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddWorkLog(OperationWorkLogViewModel model)
         {
             try
             {
-                // ⭐ فقط بررسی فیلد WorkDescription
+                // ⭐ بررسی ModelState
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => new { status = "error", text = e.ErrorMessage })
+                        .ToArray();
+
+                    return Json(new
+                    {
+                        status = "validation-error",
+                        message = errors
+                    });
+                }
+
+                // ⭐ بررسی دستی WorkDescription
                 if (string.IsNullOrWhiteSpace(model.WorkDescription))
                 {
                     return Json(new
@@ -508,6 +520,18 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 }
 
                 var userId = _userManager.GetUserId(User);
+
+                // ⭐ بررسی دسترسی
+                if (!await _operationsRepository.CanUserAccessOperationAsync(model.TaskOperationId, userId))
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما مجاز به انجام این عملیات نیستید" } }
+                    });
+                }
+
+                // ⭐ ثبت WorkLog
                 var result = await _operationsRepository.AddWorkLogAsync(model, userId);
 
                 if (result.Success)
@@ -524,6 +548,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     var operation = await _operationsRepository.GetOperationByIdAsync(model.TaskOperationId);
                     var taskId = operation.TaskId;
 
+                    // ⭐⭐⭐ ارسال اعلان به صف
+                    NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                        taskId,
+                        userId,
+                        NotificationEventType.TaskWorkLog,
+                        priority: 1
+                    );
+
                     // ⭐ دریافت تسک بروز شده
                     var task = _taskRepository.GetTaskById(taskId, includeOperations: true, includeAssignments: true);
                     var isAdmin = User.IsInRole("Admin");
@@ -536,24 +568,33 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
                     }
 
+                
+
+                    // ⭐⭐⭐ Set کردن ViewBag قبل از render
+                    ViewBag.IsAdmin = isAdmin;
+                    ViewBag.IsManager = isManager;
+                    ViewBag.IsSupervisor = isSupervisor;
+                    
                     var viewModel = _mapper.Map<TaskViewModel>(task);
                     viewModel.SetUserContext(userId, isAdmin, isManager, isSupervisor);
 
-                    var viewbags = new
+                    ViewBag.Task = viewModel;
+                    var viewbag = new
                     {
-                        Task = viewModel,
-                        IsSupervisor = isSupervisor,
+                        IsAdmin = isAdmin,
                         IsManager = isManager,
-                        IsAdmin = isAdmin
+                        IsSupervisor = isSupervisor,
+                        Task = viewModel
                     };
-
                     // ⭐ دریافت لیست آپدیت شده WorkLog ها
                     var updatedWorkLogs = await _operationsRepository.GetOperationWorkLogsAsync(model.TaskOperationId, take: 5);
 
-                    // ⭐ رندر Partial Views
-                    var workLogsHtml = await this.RenderViewToStringAsync("_WorkLogsList", updatedWorkLogs);
+                    // ⭐⭐⭐ رندر Partial Views
+                    var heroHtml = await this.RenderViewToStringAsync("../Tasks/_TaskHeroStats", viewModel, viewbag);
+                    var sidebarHtml = await this.RenderViewToStringAsync("../Tasks/_TaskSidebarStats", viewModel, viewbag);
+                    var workLogsHtml = await this.RenderViewToStringAsync("_WorkLogsList", updatedWorkLogs, viewbag);
                     var operationHtml = await this.RenderViewToStringAsync("_OperationListPartialView", 
-                        _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations), viewbags);
+                        _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations), viewbag);
 
                     return Json(new
                     {
@@ -563,9 +604,18 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         {
                             new
                             {
+                                elementId = "hero-stats-container",
+                                view = new { result = heroHtml }
+                            },
+                            new
+                            {
+                                elementId = "sidebar-stats-container",
+                                view = new { result = sidebarHtml }
+                            },
+                            new
+                            {
                                 elementId = "workLogsListContainer",
-                                view = new { result = workLogsHtml },
-                                appendMode = false
+                                view = new { result = workLogsHtml }
                             },
                             new
                             {

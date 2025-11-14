@@ -91,21 +91,11 @@
 
                     <!-- ⭐ دکمه Add WorkLog -->
                     <button type="button"
-                            class="btn @(hasWorkLogs ? "btn-info" : "btn-outline-info") btn-sm btn-add-worklog"
-                            data-operation-id="@Model.Id"
+                            href="@Url.Action("AddWorkLogModal", "TaskOperations", new { operationId = Model.Id })"
+                            class="btn @(hasWorkLogs ? "btn-info" : "btn-outline-info") btn-sm "
+                            data-toggle="modal-ajax"
                             title="ثبت کار">
                         <i class="fa fa-clipboard-check"></i>
-                    </button>
-                }
-
-                @if (hasWorkLogs)
-                {
-                    <!-- ⭐ دکمه View WorkLogs -->
-                    <button type="button"
-                            class="btn btn-outline-primary btn-sm mb-1 btn-view-worklogs"
-                            data-operation-id="@Model.Id"
-                            title="مشاهده لیست کارها">
-                        <i class="fa fa-list"></i>
                     </button>
                 }
 

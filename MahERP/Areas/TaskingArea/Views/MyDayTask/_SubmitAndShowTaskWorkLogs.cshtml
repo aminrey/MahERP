@@ -1,0 +1,420 @@
+﻿@model TaskWorkLogViewModel
+
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+        <!-- Modal Header -->
+        <div class="block block-rounded block-themed mb-0">
+            <div class="block-header bg-success-dark">
+                <h3 class="block-title text-white">
+                    <i class="fa fa-clock me-2"></i>
+                    ثبت و مشاهده کارهای انجام شده
+                </h3>
+                <div class="block-options">
+                    <button type="button" 
+                            class="btn-block-option" 
+                            data-bs-dismiss="modal" 
+                            aria-label="Close">
+                        <i class="fa fa-fw fa-times text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="block-content block-content-full">
+                <!-- ⭐⭐⭐ فرم ثبت گزارش کار جدید -->
+                <div class="block block-rounded block-bordered mb-4">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-plus-circle text-success me-2"></i>
+                            ثبت گزارش کار جدید
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <form id="submitWorkLogForm" 
+                              asp-action="SubmitAndShowTaskWorkLogs" 
+                              asp-controller="MyDayTask" 
+                              asp-area="TaskingArea"
+                              method="post">
+                            
+                            <input type="hidden" asp-for="TaskId" />
+                            @Html.AntiForgeryToken()
+
+                            @if (!string.IsNullOrEmpty(Model.TaskTitle))
+                            {
+                                <div class="alert alert-info d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0">
+                                        <i class="fa fa-info-circle fa-2x"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <p class="mb-0">
+                                            <strong>تسک:</strong> @Model.TaskTitle
+                                        </p>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- توضیحات کار انجام شده - اجباری -->
+                            <div class="mb-3">
+                                <label class="form-label" for="WorkDescription">
+                                    توضیحات کار انجام شده 
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <textarea asp-for="WorkDescription" 
+                                          class="form-control" 
+                                          id="WorkDescription"
+                                          rows="4" 
+                                          placeholder="مثال: بررسی مستندات و شروع طراحی پایگاه داده"
+                                          maxlength="2000"
+                                          required></textarea>
+                                <span asp-validation-for="WorkDescription" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fa fa-lightbulb me-1"></i>
+                                    توضیحات دقیق در مورد کاری که انجام دادید (حداقل 5 کاراکتر)
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- مدت زمان - اختیاری -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="DurationMinutes">
+                                        مدت زمان (دقیقه)
+                                        <small class="text-muted fw-normal">(اختیاری)</small>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-clock"></i>
+                                        </span>
+                                        <input asp-for="DurationMinutes" 
+                                               type="number" 
+                                               class="form-control" 
+                                               id="DurationMinutes"
+                                               placeholder="60"
+                                               min="0"
+                                               max="1440" />
+                                    </div>
+                                    <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                                </div>
+
+                                <!-- درصد پیشرفت - اختیاری -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="ProgressPercentage">
+                                        درصد پیشرفت کلی تسک
+                                        <small class="text-muted fw-normal">(اختیاری)</small>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-chart-line"></i>
+                                        </span>
+                                        <input asp-for="ProgressPercentage" 
+                                               type="number" 
+                                               class="form-control" 
+                                               id="ProgressPercentage"
+                                               placeholder="25"
+                                               min="0"
+                                               max="100" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    <span asp-validation-for="ProgressPercentage" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="button" 
+                                        class="btn btn-success" 
+                                        data-save="modal-ajax-save">
+                                    <i class="fa fa-check me-1"></i>
+                                    ثبت گزارش کار
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ⭐⭐⭐ لیست کارهای انجام شده قبلی -->
+                @{
+                    var workLogs = ViewBag.WorkLogs as List<TaskWorkLogViewModel>;
+                }
+
+                @if (workLogs == null || !workLogs.Any())
+                {
+                    <!-- Empty State -->
+                    <div class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="fa fa-clipboard-check fa-3x text-muted opacity-50"></i>
+                        </div>
+                        <h5 class="text-muted">هنوز گزارش کاری ثبت نشده است</h5>
+                        <p class="text-muted fs-sm">
+                            پس از ثبت اولین گزارش کار، اینجا نمایش داده می‌شود.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="block block-rounded block-bordered">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-history text-primary me-2"></i>
+                                تاریخچه کارهای انجام شده (@workLogs.Count)
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <!-- آمار کلی -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <div class="alert alert-primary d-flex align-items-center mb-0">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-tasks fa-2x opacity-50"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <div class="fs-sm text-muted">تعداد گزارش‌ها</div>
+                                            <div class="fs-3 fw-bold">@workLogs.Count</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert alert-success d-flex align-items-center mb-0">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-clock fa-2x opacity-50"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <div class="fs-sm text-muted">مجموع زمان</div>
+                                            <div class="fs-3 fw-bold">
+                                                @{
+                                                    var totalMinutes = workLogs.Where(w => w.DurationMinutes.HasValue).Sum(w => w.DurationMinutes.Value);
+                                                    var hours = totalMinutes / 60;
+                                                    var minutes = totalMinutes % 60;
+                                                }
+                                                @if (hours > 0)
+                                                {
+                                                    <span>@hours ساعت</span>
+                                                }
+                                                @if (minutes > 0)
+                                                {
+                                                    <span>@minutes دقیقه</span>
+                                                }
+                                                @if (hours == 0 && minutes == 0)
+                                                {
+                                                    <span class="text-muted fs-sm">ثبت نشده</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Timeline لیست کارها -->
+                            <div class="timeline timeline-alt mb-0">
+                                @foreach (var workLog in workLogs.OrderByDescending(w => w.WorkDate))
+                                {
+                                    <div class="timeline-event">
+                                        <div class="timeline-event-icon bg-success">
+                                            <i class="fa fa-check"></i>
+                                        </div>
+                                        <div class="timeline-event-block block block-rounded">
+                                            <div class="block-header">
+                                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <h4 class="block-title mb-1">
+                                                            <i class="fa fa-sticky-note text-primary me-1"></i>
+                                                            گزارش کار
+                                                        </h4>
+                                                        <div class="fs-sm text-muted">
+                                                            <i class="fa fa-user me-1"></i>
+                                                            @workLog.UserName
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="fs-sm fw-bold text-primary">
+                                                            <i class="fa fa-calendar me-1"></i>
+                                                            @workLog.WorkDatePersian
+                                                        </div>
+                                                        <div class="fs-xs text-muted">
+                                                            @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(workLog.WorkDate, "HH:mm")
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="block-content">
+                                                <!-- توضیحات -->
+                                                <div class="p-3 bg-body-light rounded mb-3">
+                                                    <div class="fs-sm">
+                                                        @workLog.WorkDescription
+                                                    </div>
+                                                </div>
+
+                                                <!-- اطلاعات تکمیلی -->
+                                                <div class="row g-2">
+                                                    @if (workLog.DurationMinutes.HasValue && workLog.DurationMinutes.Value > 0)
+                                                    {
+                                                        <div class="col-md-6">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="flex-shrink-0">
+                                                                    <span class="badge bg-info">
+                                                                        <i class="fa fa-clock"></i>
+                                                                    </span>
+                                                                </div>
+                                                                <div class="flex-grow-1 ms-2">
+                                                                    <div class="fs-xs text-muted">مدت زمان</div>
+                                                                    <div class="fw-semibold">
+                                                                        @{
+                                                                            var h = workLog.DurationMinutes.Value / 60;
+                                                                            var m = workLog.DurationMinutes.Value % 60;
+                                                                        }
+                                                                        @if (h > 0)
+                                                                        {
+                                                                            <span>@h ساعت </span>
+                                                                        }
+                                                                        @if (m > 0 || h == 0)
+                                                                        {
+                                                                            <span>@m دقیقه</span>
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+
+                                                    @if (workLog.ProgressPercentage.HasValue)
+                                                    {
+                                                        <div class="col-md-6">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="flex-shrink-0">
+                                                                    <span class="badge @(workLog.ProgressPercentage.Value == 100 ? "bg-success" : "bg-warning")">
+                                                                        <i class="fa fa-chart-line"></i>
+                                                                    </span>
+                                                                </div>
+                                                                <div class="flex-grow-1 ms-2">
+                                                                    <div class="fs-xs text-muted">درصد پیشرفت</div>
+                                                                    <div class="fw-semibold">
+                                                                        @workLog.ProgressPercentage%
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+
+                                                @* نمایش Progress Bar *@
+                                                @if (workLog.ProgressPercentage.HasValue)
+                                                {
+                                                    <div class="mt-3">
+                                                        <div class="progress" style="height: 8px;">
+                                                            <div class="progress-bar @(workLog.ProgressPercentage.Value == 100 ? "bg-success" : "bg-primary")" 
+                                                                 role="progressbar" 
+                                                                 style="width: @workLog.ProgressPercentage%"
+                                                                 aria-valuenow="@workLog.ProgressPercentage" 
+                                                                 aria-valuemin="0" 
+                                                                 aria-valuemax="100">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="block-content block-content-full block-content-sm text-end border-top">
+                <button type="button" 
+                        class="btn btn-alt-secondary" 
+                        data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    بستن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Timeline Styles */
+    .timeline {
+        position: relative;
+        padding: 20px 0 20px 30px;
+        margin-bottom: 0;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 11px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #28a745 0%, #e9ecef 100%);
+    }
+
+    .timeline-event {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .timeline-event:last-child {
+        margin-bottom: 0;
+    }
+
+    .timeline-event-icon {
+        position: absolute;
+        left: -19px;
+        top: 10px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        z-index: 1;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 2px #28a745;
+    }
+
+    .timeline-event-block {
+        margin-left: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .timeline-event-block:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        transform: translateX(-3px);
+    }
+
+    /* Empty State */
+    .fa-3x {
+        font-size: 3rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+        
+        .timeline {
+            padding-left: 20px;
+        }
+        
+        .timeline-event-icon {
+            left: -14px;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+        }
+        
+        .timeline-event-block {
+            margin-left: 15px;
+        }
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -13,6 +13,7 @@ class NotificationManager {
         await this.setupSignalR();
         this.setupAudioPermission();
         this.loadInitialNotifications();
+        this.updateBadge(); // ⭐ بارگذاری اولیه badge
         this.startPeriodicCheck();
     }
 
@@ -39,6 +40,7 @@ class NotificationManager {
             this.connection.onreconnected(() => {
                 console.log("✅ SignalR reconnected");
                 this.loadInitialNotifications();
+                this.updateBadge();
             });
 
             this.connection.onclose(() => {
@@ -49,7 +51,7 @@ class NotificationManager {
             console.log("✅ SignalR Connected");
         } catch (err) {
             console.error("❌ SignalR Error:", err);
-            setTimeout(() => this.setupSignalR(), 5000); // تلاش مجدد بعد از 5 ثانیه
+            setTimeout(() => this.setupSignalR(), 5000);
         }
     }
 
@@ -74,7 +76,7 @@ class NotificationManager {
         this.showBrowserNotification(notification);
         this.playNotificationSound();
         this.highlightRelatedRows(notification);
-        this.loadInitialNotifications(); // بروزرسانی لیست
+        this.loadInitialNotifications();
     }
 
     // ⭐ پخش صدا
@@ -83,6 +85,7 @@ class NotificationManager {
         if (this.audioEnabled && (now - this.lastPlayTime) >= this.audioInterval) {
             const audio = document.getElementById('notificationSound');
             if (audio) {
+                audio.volume = 0.5;
                 audio.play().catch(() => {
                     console.log("❌ Cannot play sound");
                 });
@@ -123,23 +126,51 @@ class NotificationManager {
             row.addClass('notification-blink');
             setTimeout(() => {
                 row.removeClass('notification-blink');
-            }, 10000); // 10 ثانیه
+            }, 10000);
         }
     }
 
-    // ⭐ بروزرسانی Badge
+    // ⭐⭐⭐ بروزرسانی Badge با انیمیشن
     updateBadge() {
         $.get('/TaskingArea/Notification/GetUnreadCount').done((data) => {
             if (data.success) {
+                const count = data.count || 0;
                 const badge = $('#headerNotificationBadge');
-                if (data.count > 0) {
-                    badge.text(data.count > 99 ? '99+' : data.count).show();
-                    badge.addClass('animate__animated animate__heartBeat');
-                    setTimeout(() => badge.removeClass('animate__animated animate__heartBeat'), 1000);
+                const bell = $('.notification-bell');
+                const oldCount = parseInt(badge.text()) || 0;
+                
+                console.log('🔔 Badge Update: old=' + oldCount + ', new=' + count);
+                
+                if (count > 0) {
+                    badge.text(count > 99 ? '99+' : count).show();
+                    
+                    // اگر تعداد افزایش یافته (نوتیفیکیشن جدید)
+                    if (count > oldCount && oldCount !== 0) {
+                        console.log('✨ New notification animation!');
+                        
+                        // اضافه کردن کلاس برای انیمیشن
+                        badge.removeClass('new-notification').addClass('new-notification');
+                        bell.removeClass('shake has-new').addClass('shake has-new');
+                        
+                        // حذف کلاس بعد از اتمام انیمیشن
+                        setTimeout(() => {
+                            badge.removeClass('new-notification');
+                            bell.removeClass('shake');
+                        }, 600);
+                        
+                        // حذف ring effect بعد از 3 ثانیه
+                        setTimeout(() => {
+                            bell.removeClass('has-new');
+                        }, 3000);
+                    }
                 } else {
+                    console.log('✅ No notifications');
                     badge.hide();
+                    bell.removeClass('has-new');
                 }
             }
+        }).fail(() => {
+            console.error('❌ Failed to load notification count');
         });
     }
 
@@ -147,6 +178,13 @@ class NotificationManager {
     loadInitialNotifications() {
         $.get('/TaskingArea/Notification/GetHeaderNotifications').done((html) => {
             $('#headerNotificationsList').html(html);
+        }).fail(() => {
+            $('#headerNotificationsList').html(`
+                <div class="text-center p-3 text-muted">
+                    <i class="fa fa-exclamation-triangle mb-2"></i>
+                    <p>خطا در بارگذاری اعلان‌ها</p>
+                </div>
+            `);
         });
     }
 
@@ -160,10 +198,12 @@ class NotificationManager {
     // ⭐ علامت‌گذاری یک اعلان
     async markAsRead(notificationId) {
         try {
+            const token = $('input[name="__RequestVerificationToken"]').val();
             const response = await fetch('/TaskingArea/Notification/MarkAsRead', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
                 },
                 body: JSON.stringify({ id: notificationId })
             });
@@ -180,12 +220,19 @@ class NotificationManager {
     // ⭐ علامت‌گذاری همه
     async markAllAsRead() {
         try {
+            const token = $('input[name="__RequestVerificationToken"]').val();
             const response = await fetch('/TaskingArea/Notification/MarkAllAsRead', {
-                method: 'POST'
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                }
             });
 
             if (response.ok) {
-                toastr.success('همه اعلان‌ها خوانده شدند');
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('همه اعلان‌ها خوانده شدند');
+                }
                 this.updateBadge();
                 this.loadInitialNotifications();
             }
@@ -196,16 +243,25 @@ class NotificationManager {
 }
 
 // ⭐ مقداردهی اولیه
-const notificationManager = new NotificationManager();
+let notificationManager;
+
+$(document).ready(function() {
+    notificationManager = new NotificationManager();
+    console.log('🔔 Notification Manager initialized');
+});
 
 // ⭐ توابع Global
 function goToNotification(notificationId, actionUrl) {
-    notificationManager.markAsRead(notificationId);
+    if (notificationManager) {
+        notificationManager.markAsRead(notificationId);
+    }
     if (actionUrl) {
         window.location.href = actionUrl;
     }
 }
 
 function markAllHeaderNotificationsAsRead() {
-    notificationManager.markAllAsRead();
-}
+    if (notificationManager) {
+        notificationManager.markAllAsRead();
+    }
+} 

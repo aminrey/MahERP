@@ -2,7 +2,6 @@
 
 @{
     ViewData["Title"] = "افزودن دسته‌بندی تسک به شعبه";
-    Layout = "~/Areas/AdminArea/Views/Shared/_AdminLayout.cshtml";
 }
 
 <!-- Main Container -->
@@ -21,7 +20,7 @@
                             <a class="link-fx" href="@Url.Action("Index", "Home")">داشبورد</a>
                         </li>
                         <li class="breadcrumb-item">
-                            <a class="link-fx" href="@Url.Action("Index", "Branch", new { area = "AdminArea" })">شعب</a>
+                            <a class="link-fx" href="@Url.Action("Index", "Branch", new { area = "TaskingArea" })">شعب</a>
                         </li>
                         <li class="breadcrumb-item">
                             <a class="link-fx" href="@Url.Action("Index", new { branchId = Model.BranchId })">دسته‌بندی‌های تسک</a>

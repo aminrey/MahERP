@@ -3,8 +3,10 @@ using MahERP.Areas.AppCoreArea.Controllers.BaseControllers;
 using MahERP.Attributes;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.MyDayTaskRepository;
+using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
@@ -23,6 +25,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
     public class MyDayTaskController : BaseController
     {
         private readonly IMyDayTaskRepository _myDayTaskRepository;
+        private readonly ITaskRepository _TaskRepository;
         private new readonly UserManager<AppUsers> _userManager;
 
         public MyDayTaskController(
@@ -33,13 +36,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             UserManager<AppUsers> userManager, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking,
-            IModuleAccessService moduleAccessService)
+            IModuleAccessService moduleAccessService , ITaskRepository taskRepository)
 
 
  : base(Context, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _myDayTaskRepository = myDayTaskRepository;
             _userManager = userManager;
+            _TaskRepository = taskRepository;
         }
 
         /// <summary>
@@ -151,14 +155,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// مودال ثبت گزارش کار
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> LogWorkModal(int myDayId)
+        public async Task<IActionResult> SubmitWorkNote(int myDayId)
         {
             var model = new MyDayLogWorkViewModel
             {
                 MyDayId = myDayId
             };
 
-            return PartialView("_MyDayLogWorkModal", model);
+            return PartialView("_SubmitWorkNoteModal", model);
         }
 
         /// <summary>
@@ -166,7 +170,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LogWork(MyDayLogWorkViewModel model)
+        public async Task<IActionResult> SubmitWorkNote(MyDayLogWorkViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -253,20 +257,77 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// ⭐⭐⭐ مودال نمایش لیست کارهای انجام شده - استفاده از Repository
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> ViewWorkLogsModal(int taskId)
+        public async Task<IActionResult> SubmitAndShowTaskWorkLogs(int taskId)
         {
             try
             {
                 // ✅ استفاده از Repository به جای دسترسی مستقیم به دیتابیس
                 var workLogs = await _myDayTaskRepository.GetTaskWorkLogsAsync(taskId);
-
-                return PartialView("_TaskWorkLogsModal", workLogs);
+                ViewBag.WorkLogs = workLogs;
+                return  PartialView("_SubmitAndShowTaskWorkLogs", new TaskWorkLogViewModel());
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error in ViewWorkLogsModal: {ex.Message}");
-                return PartialView("_TaskWorkLogsModal", new List<TaskWorkLogViewModel>());
+
+                 
+return BadRequest(ex.Message);
             }
+        }
+        /// <summary>
+        /// ثبت گزارش کار
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitAndShowTaskWorkLogs(TaskWorkLogViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new
+                {
+                    status = "error",
+                    message = "لطفاً توضیحات کار را وارد کنید"
+                });
+            }
+
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            // ✅ استفاده از Repository
+            var result = await _TaskRepository.AddTaskWorkLogAsync(
+                model.TaskId,
+                currentUserId,
+                model.WorkDescription,
+                model.DurationMinutes,
+                model.ProgressPercentage
+            );
+
+            if (result.Success)
+            { // ⭐⭐⭐ ارسال اعلان به صف - فوری و بدون Blocking
+                NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                    model.TaskId,
+                    currentUserId,
+                    NotificationEventType.TaskWorkLog,
+                    priority: 1
+                );
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Tasks",
+                    "LogTaskWork",
+                    $"ثبت گزارش کار برای تسک {model.TaskId}",
+                    recordId: model.TaskId.ToString(),
+                    entityType: "Tasks");
+                return Json(new
+                {
+                    status = "redirect",
+                    redirectUrl = Url.Action("Index"),
+                    message = result.Message
+                });
+            }
+
+            return Json(new
+            {
+                status = "error",
+                message = result.Message
+            });
         }
 
         /// <summary>

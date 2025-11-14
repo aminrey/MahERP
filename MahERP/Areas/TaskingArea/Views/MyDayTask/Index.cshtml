@@ -79,12 +79,12 @@
                     <nav class="mb-3" aria-label="breadcrumb">
                         <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
                             <li class="breadcrumb-item">
-                                <a asp-area="AdminArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
+                                <a asp-area="TaskingArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
                                     <i class="fa fa-home me-1"></i>داشبورد
                                 </a>
                             </li>
                             <li class="breadcrumb-item">
-                                <a asp-area="AdminArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
+                                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
                                     تسک‌ها
                                 </a>
                             </li>
@@ -197,7 +197,7 @@
                                                         <i class="fa fa-bullseye"></i> متمرکز
                                                     </span>
                                                 }
-                                                <a asp-area="AdminArea" 
+                                                <a asp-area="TaskingArea" 
                                                    asp-controller="Tasks" 
                                                    asp-action="Details" 
                                                    asp-route-id="@task.TaskId"
@@ -290,15 +290,7 @@
                                             }
                                         </div>
                                     }
-                                    else if (!string.IsNullOrEmpty(task.StakeholderName))
-                                    {
-                                        <!-- ⚠️ Fallback -->
-                                        <div class="alert alert-secondary py-2 mb-2">
-                                            <i class="fa fa-archive me-1"></i>
-                                            <small><strong>طرف حساب (قدیمی):</strong> @task.StakeholderName</small>
-                                        </div>
-                                    }
-
+                      
                                     <!-- ⭐⭐⭐ Actions (با قفل برای تسک‌های تکمیل شده) -->
                                     <div class="btn-group w-100" role="group">
                                         @if (task.IsCompleted)
@@ -308,7 +300,7 @@
                                                data-toggle="modal-ajax"
                                                class="btn btn-sm btn-info"
                                                title="مشاهده گزارش کارها">
-                                                <i class="fa fa-list me-1"></i>لیست کارها
+                                                <i class="fa fa-list me-1"></i>ثبت کار انجام شده
                                             </a>
 
                                             <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
@@ -321,11 +313,11 @@
                                         else
                                         {
                                             <!-- ⭐ تسک در حال انجام: همه دکمه‌ها فعال -->
-                                            <a href="@Url.Action("LogWorkModal", "MyDayTask", new { myDayId = task.MyDayId })"
+                                            <a href="@Url.Action("SubmitWorkNote", "MyDayTask", new { myDayId = task.MyDayId })"
                                                data-toggle="modal-ajax"
                                                class="btn btn-sm btn-success"
                                                title="ثبت کار">
-                                                <i class="fa fa-clock me-1"></i>ثبت کار
+                                                <i class="fa fa-clock me-1"></i>ثبت یادداشت
                                             </a>
 
                                             @if (task.IsFocused)
@@ -347,11 +339,11 @@
                                                 </button>
                                             }
 
-                                            <a href="@Url.Action("ViewWorkLogsModal", "MyDayTask", new { taskId = task.TaskId })"
+                                            <a href="@Url.Action("SubmitAndShowTaskWorkLogs", "MyDayTask", new { taskId = task.TaskId })"
                                                data-toggle="modal-ajax"
                                                class="btn btn-sm btn-info"
                                                title="مشاهده گزارش کارها">
-                                                <i class="fa fa-list me-1"></i>لیست
+                                                <i class="fa fa-list me-1"></i>کارهای انجام شده
                                             </a>
 
                                             <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"

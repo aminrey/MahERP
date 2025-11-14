@@ -257,7 +257,7 @@
                     <!-- ⭐ Menu Items -->
                     <div class="p-2">
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "UserManager", "Profile") ? "active" : "")"
-                           asp-area="AdminArea" asp-controller="UserManager" asp-action="Profile">
+                           asp-area="AppCoreArea" asp-controller="UserManager" asp-action="Profile">
                             <i class="fa fa-fw fa-user me-2 text-primary"></i>
                             <div>
                                 <div class="fw-semibold">پروفایل من</div>
@@ -279,7 +279,7 @@
                       
 
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")"
-                           asp-area="AdminArea" asp-controller="Tasks" asp-action="TaskReminders">
+                           asp-area="AppCoreArea" asp-controller="Tasks" asp-action="TaskReminders">
                             <i class="fa fa-fw fa-bell me-2 text-success"></i>
                             <div>
                                 <div class="fw-semibold">یادآوری‌ها</div>
@@ -315,7 +315,7 @@
                             <button class="btn btn-sm btn-outline-light me-1" onclick="markAllHeaderNotificationsAsRead()" title="همه را خوانده شده علامت‌گذاری کن">
                                 <i class="fa fa-check-double fa-xs"></i>
                             </button>
-                            <a href="@Url.Action("Index", "Notification", new { area = "AdminArea" })" class="btn btn-sm btn-outline-light" title="مشاهده همه">
+                            <a href="@Url.Action("Index", "Notification", new { area = "AppCoreArea" })" class="btn btn-sm btn-outline-light" title="مشاهده همه">
                                 <i class="fa fa-external-link-alt fa-xs"></i>
                             </a>
                         </div>
@@ -333,7 +333,7 @@
 
                     <!-- Footer -->
                     <div class="p-2 border-top">
-                        <a class="btn btn-alt-primary w-100 text-center" href="@Url.Action("Index", "Notification", new { area = "AdminArea" })">
+                        <a class="btn btn-alt-primary w-100 text-center" href="@Url.Action("Index", "Notification", new { area = "AppCoreArea" })">
                             <i class="fa fa-fw fa-eye opacity-50 me-1"></i> مشاهده همه
                         </a>
                     </div>
@@ -423,7 +423,7 @@
     });
 
     function loadUserHeaderStats() {
-        $.get('@Url.Action("GetUserHeaderStats", "Dashboard", new { area = "AdminArea" })').done(function(data) {
+        $.get('@Url.Action("GetUserHeaderStats", "Dashboard", new { area = "AppCoreArea" })').done(function(data) {
             if (data.success) {
                 $('#userStatsMyTasks').text(data.myTasksCount || 0);
                 $('#userStatsReminders').text(data.remindersCount || 0);

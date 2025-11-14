@@ -128,12 +128,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// 5- در انتظار
         /// </summary>
         public byte Status { get; set; }
-        /// <summary>
-        /// شناسه زمان‌بندی که این تسک را ایجاد کرده (برای تسک‌های خودکار)
-        /// </summary>
-        public int? ScheduleId { get; set; }
-        [ForeignKey("ScheduleId")]
-        public virtual TaskSchedule? TaskSchedule { get; set; }
+
 
         /// <summary>
         /// 0- دستی

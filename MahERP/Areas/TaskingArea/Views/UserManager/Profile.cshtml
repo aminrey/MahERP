@@ -387,7 +387,7 @@
                 var formData = $(this).serialize();
 
                 $.ajax({
-                    url: '@Url.Action("ChangePassword", "UserManager", new { area = "AdminArea" })',
+                    url: '@Url.Action("ChangePassword", "UserManager", new { area = "TaskingArea" })',
                     type: 'POST',
                     data: formData,
                     beforeSend: function() {
@@ -462,7 +462,7 @@
                 console.log('شروع آپلود تصویر...'); // برای دیباگ
 
                 $.ajax({
-                    url: '@Url.Action("UploadProfileImage", "UserManager", new { area = "AdminArea" })',
+                    url: '@Url.Action("UploadProfileImage", "UserManager", new { area = "TaskingArea" })',
                     type: 'POST',
                     data: formData,
                     processData: false,

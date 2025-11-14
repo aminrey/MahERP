@@ -54,4 +54,8 @@
     <ProjectReference Include="..\MahERP.DataModelLayer\MahERP.DataModelLayer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MappingProfiles\" />
+  </ItemGroup>
+
 </Project>

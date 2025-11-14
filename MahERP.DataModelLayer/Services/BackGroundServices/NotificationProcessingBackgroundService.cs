@@ -160,60 +160,66 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             {
                 case NotificationEventType.TaskAssigned:
                 case NotificationEventType.TaskReassigned:
-                    // ⭐ اعضای تسک (بدون سازنده)
+                    // ⭐ اعضای تسک (بدون سازنده و sender)
                     var assignees = await taskRepo.GetTaskAssignedUserIdsAsync(task.Id);
-                    recipients.AddRange(assignees.Where(id => id != senderUserId));
+                    recipients.AddRange(assignees.Where(id => id != senderUserId && id != task.CreatorUserId));
                     break;
 
                 case NotificationEventType.TaskCompleted:
-                    // ⭐ فقط سازنده تسک
-                    if (!string.IsNullOrEmpty(task.CreatorUserId) && task.CreatorUserId != senderUserId)
+                    // ⭐ فقط سازنده تسک (بدون sender)
+                    if (!string.IsNullOrEmpty(task.CreatorUserId) && 
+                        task.CreatorUserId != senderUserId)
                     {
                         recipients.Add(task.CreatorUserId);
                     }
                     break;
 
                 case NotificationEventType.TaskCommentAdded:
-                    // ⭐ همه افراد مرتبط با تسک
+                    // ⭐ همه افراد مرتبط با تسک (بدون sender)
                     var relatedUsers = await taskRepo.GetTaskRelatedUserIdsAsync(task.Id);
                     recipients.AddRange(relatedUsers.Where(id => id != senderUserId));
                     break;
 
                 case NotificationEventType.TaskUpdated:
-                    // ⭐ اعضا + سازنده
+                    // ⭐ اعضا + سازنده (بدون sender)
                     var assignedUsers = await taskRepo.GetTaskAssignedUserIdsAsync(task.Id);
-                    recipients.AddRange(assignedUsers);
+                    recipients.AddRange(assignedUsers.Where(id => id != senderUserId));
                     
-                    if (!string.IsNullOrEmpty(task.CreatorUserId) && task.CreatorUserId != senderUserId)
+                    if (!string.IsNullOrEmpty(task.CreatorUserId) && 
+                        task.CreatorUserId != senderUserId)
                     {
                         recipients.Add(task.CreatorUserId);
                     }
                     break;
 
                 case NotificationEventType.TaskDeadlineReminder:
-                    // ⭐ همه اعضا (بدون فیلتر سازنده)
+                    // ⭐⭐⭐ EXCEPTION: یادآوری‌های زمان‌بندی شده - همه اعضا (بدون فیلتر sender)
+                    // این رویداد از طریق Background Service اجرا می‌شود نه توسط کاربر
                     var allAssignees = await taskRepo.GetTaskAssignedUserIdsAsync(task.Id);
                     recipients.AddRange(allAssignees);
                     break;
 
                 case NotificationEventType.TaskDeleted:
-                    // ⭐ همه افراد مرتبط
+                    // ⭐ همه افراد مرتبط (بدون sender)
                     var allRelated = await taskRepo.GetTaskRelatedUserIdsAsync(task.Id);
                     recipients.AddRange(allRelated.Where(id => id != senderUserId));
                     break;
 
                 case NotificationEventType.TaskStatusChanged:
-                    // ⭐ سازنده + اعضا
+                case NotificationEventType.TaskWorkLog:
+                    // ⭐ سازنده + اعضا (بدون sender)
                     var members = await taskRepo.GetTaskAssignedUserIdsAsync(task.Id);
-                    recipients.AddRange(members);
+                    recipients.AddRange(members.Where(id => id != senderUserId));
                     
-                    if (!string.IsNullOrEmpty(task.CreatorUserId))
+                    if (!string.IsNullOrEmpty(task.CreatorUserId) && 
+                        task.CreatorUserId != senderUserId)
                     {
                         recipients.Add(task.CreatorUserId);
                     }
                     break;
             }
 
+            // ⭐ حذف تکراری‌ها و برگرداندن لیست یکتا
             return recipients.Distinct().ToList();
         }
 

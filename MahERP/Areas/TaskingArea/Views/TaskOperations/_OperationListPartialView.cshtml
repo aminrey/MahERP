@@ -43,16 +43,16 @@
                                     </h6>
                                 </div>
                                 <div class="card-body">
-                                    <div class="input-group input-group-lg">
-                                        <textarea class="form-control border-2"
-                                          id="newOperationTitleInput"
-                                          placeholder="عنوان عملیات جدید را وارد کنید و Enter بزنید..."
-                                          rows="2"
-                                          autocomplete="off"></textarea>
-                                        <button class="btn btn-primary px-4" type="button" id="addNewOperationBtn">
-                                            <i class="fa fa-plus me-1"></i>افزودن
-                                        </button>
-                                    </div>
+                                    <div class=" input-group-lg flex-md-row">
+    <textarea class="form-control border-2"
+              id="newOperationTitleInput"
+              placeholder="عنوان عملیات جدید را وارد کنید و Enter بزنید..."
+              rows="3"
+              autocomplete="off"></textarea>
+    <button class="btn btn-primary px-4 mt-2 mt-md-0 w-100 w-md-auto" type="button" id="addNewOperationBtn">
+        <i class="fa fa-plus me-1"></i>افزودن
+    </button>
+</div>
                                     <small class="form-text text-muted mt-2">
                                         <i class="fa fa-keyboard me-1"></i>برای افزودن سریع، Enter را فشار دهید
                                     </small>
@@ -169,3 +169,66 @@
          
 
                                             </div>
+                          
+@* ⭐⭐⭐ اسکریپت راه‌اندازی مجدد Event Handlers بعد از بروزرسانی *@
+<script>
+(function() {
+    console.log('🔄 _OperationListPartialView rendered - Reinitializing handlers...');
+    
+    // ⭐ تأخیر کوتاه برای اطمینان از render شدن کامل DOM
+    setTimeout(function() {
+        // ⭐⭐⭐ بررسی وجود تابع initializeOperationHandlers
+        if (typeof initializeOperationHandlers === 'function') {
+            console.log('✅ Operation handlers reinitialized successfully');
+        } else {
+            console.warn('⚠️ initializeOperationHandlers function not found');
+        }
+
+        // ⭐⭐⭐ بروزرسانی آمار عملیات
+        if (typeof DynamicOperationsManager !== 'undefined' && DynamicOperationsManager.updateStats) {
+            DynamicOperationsManager.updateStats();
+            console.log('✅ Operation stats updated');
+        }
+
+        // ⭐⭐⭐ راه‌اندازی مجدد Event Handlers برای input افزودن عملیات
+        const $input = $('#newOperationTitleInput');
+        const $addBtn = $('#addNewOperationBtn');
+
+        if ($input.length && $addBtn.length) {
+            // حذف handler های قبلی برای جلوگیری از duplicate
+            $input.off('keypress.operations');
+            $addBtn.off('click.operations');
+
+            // ⭐ Handler برای Textarea: Ctrl + Enter
+            $input.on('keypress.operations', function(e) {
+                if (e.ctrlKey && e.which === 13) {
+                    e.preventDefault();
+                    if (typeof DynamicOperationsManager !== 'undefined' && DynamicOperationsManager.addOperation) {
+                        DynamicOperationsManager.addOperation();
+                    }
+                    return false;
+                }
+
+                // ⭐ Handler برای Input معمولی: فقط Enter
+                if (!e.ctrlKey && e.which === 13 && $(this).is('input')) {
+                    e.preventDefault();
+                    if (typeof DynamicOperationsManager !== 'undefined' && DynamicOperationsManager.addOperation) {
+                        DynamicOperationsManager.addOperation();
+                    }
+                    return false;
+                }
+            });
+
+            // ⭐ Handler برای دکمه افزودن
+            $addBtn.on('click.operations', function() {
+                if (typeof DynamicOperationsManager !== 'undefined' && DynamicOperationsManager.addOperation) {
+                    DynamicOperationsManager.addOperation();
+                }
+            });
+
+            console.log('✅ Input handlers reinitialized');
+        }
+
+    }, 150); // تأخیر 150ms
+})();
+</script>

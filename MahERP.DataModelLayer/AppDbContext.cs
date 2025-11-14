@@ -82,11 +82,8 @@ namespace MahERP.DataModelLayer
         public DbSet<TaskCommentMention> TaskCommentMention_Tbl { get; set; }
         public DbSet<TaskNotification> TaskNotification_Tbl { get; set; }
         public DbSet<TaskOperation> TaskOperation_Tbl { get; set; }
-        public DbSet<TaskSchedule> TaskSchedule_Tbl { get; set; }
-        public DbSet<TaskScheduleAssignment> TaskScheduleAssignment_Tbl { get; set; }
-        public DbSet<TaskScheduleViewer> TaskScheduleViewer_Tbl { get; set; }
-        public DbSet<TaskTemplate> TaskTemplate_Tbl { get; set; }
-        public DbSet<TaskTemplateOperation> TaskTemplateOperation_Tbl { get; set; }
+
+
         public DbSet<TaskViewer> TaskViewer_Tbl { get; set; }
         public DbSet<PredefinedCopyDescription> PredefinedCopyDescription_Tbl { get; set; }
         public DbSet<BranchTaskCategoryStakeholder> BranchTaskCategoryStakeholder_Tbl { get; set; }

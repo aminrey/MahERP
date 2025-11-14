@@ -779,7 +779,7 @@ function initializeTaskDetails() {
 
     // ⭐⭐⭐ فراخوانی Event Handlers
     initializeOperationHandlers();
-
+ 
     // Operations input handlers
     $('#newOperationTitleInput').on('keypress', function (e) {
         // ⭐⭐⭐ برای textarea: Ctrl + Enter
@@ -1324,6 +1324,7 @@ const DynamicOperationsManager = {
 
                     // بروزرسانی آمار
                     DynamicOperationsManager.updateStats();
+                    
 
                     console.log('✅ Operation added successfully');
                 } else {
@@ -1415,3 +1416,5 @@ const DynamicOperationsManager = {
 * بروزرسانی چندین view به صورت همزمان
 * @param {Array} viewList - آرایه‌ای از اشیاء {elementId, view}
 */
+
+    

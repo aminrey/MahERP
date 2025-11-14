@@ -2,14 +2,14 @@
 
 <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-        <form asp-action="LogWork" asp-controller="MyDayTask" method="post">
+        <form asp-action="SubmitWorkNote" asp-controller="MyDayTask" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="MyDayId" />
 
             <div class="block block-rounded mb-0">
                 <div class="block-header bg-success text-white">
                     <h3 class="block-title text-white">
-                        <i class="fa fa-clock me-2"></i>ثبت گزارش کار
+                        <i class="fa fa-clock me-2"></i>ثبت یادداشت
                     </h3>
                     <button type="button" class="btn-block-option" data-bs-dismiss="modal">
                         <i class="fa fa-times text-white"></i>
@@ -19,7 +19,7 @@
                 <div class="block-content">
                     <div class="mb-3">
                         <label asp-for="WorkNote" class="form-label">
-                            توضیحات کار انجام شده <span class="text-danger">*</span>
+                            متن یادداشت شما <span class="text-danger">*</span>
                         </label>
                         <textarea asp-for="WorkNote" class="form-control" rows="5" 
                                   placeholder="توضیح دقیق کاری که انجام دادید..." required></textarea>

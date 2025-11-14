@@ -76,11 +76,7 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<TaskCommentAttachment> TaskCommentAttachmentUW { get; }
         GenereicClass<TaskCommentMention> TaskCommentMentionUW { get; }
         GenereicClass<TaskNotification> TaskNotificationUW { get; }
-        GenereicClass<TaskSchedule> TaskScheduleUW { get; }
-        GenereicClass<TaskScheduleAssignment> TaskScheduleAssignmentUW { get; }
-        GenereicClass<TaskScheduleViewer> TaskScheduleViewerUW { get; }
-        GenereicClass<TaskTemplate> TaskTemplateUW { get; }
-        GenereicClass<TaskTemplateOperation> TaskTemplateOperationUW { get; }
+
         GenereicClass<TaskViewer> TaskViewerUW { get; }
         GenereicClass<PredefinedCopyDescription> PredefinedCopyDescriptionUW { get; }
         GenereicClass<TaskViewPermission> TaskViewPermissionUW { get; }

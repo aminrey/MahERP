@@ -1037,7 +1037,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("Tasks", "CreateNewTask", "خطا در ایجاد تسک", ex);
-                ModelState.AddModelError("", $"خطا در ثبت تسک: {ex.Message}");
+                ModelState.AddModelError("", $" خطا در ثبت تسک. لطفا با پشتیبان نرم افزار تماس بگیرید.");
 
                 model = await _taskRepository.PrepareCreateTaskModelAsync(_userManager.GetUserId(User));
                 return View(model);
@@ -2668,7 +2668,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// مودال ثبت کار انجام شده روی تسک
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> LogTaskWorkModal(int taskId)
+        public async Task<IActionResult> SubmitTaskWorkLogModal(int taskId)
         {
             try
             {
@@ -2695,11 +2695,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     entityType: "Tasks",
                     recordTitle: model.TaskTitle);
 
-                return PartialView("_LogTaskWorkModal", model);
+                return PartialView("_SubmitTaskWorkLogModal", model);
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "LogTaskWorkModal", "خطا در نمایش مودال ثبت کار", ex);
+                await _activityLogger.LogErrorAsync("Tasks", "SubmitTaskWorkLogModal", "خطا در نمایش مودال ثبت کار", ex);
                 return Json(new
                 {
                     success = false,

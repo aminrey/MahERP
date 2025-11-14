@@ -1,20 +1,24 @@
 ﻿@model OperationWorkLogViewModel
 
-<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-dialog modal-lg modal-dialog-centered ">
     <div class="modal-content">
-        <form id="addWorkLogForm" asp-action="AddWorkLog" asp-controller="TaskOperations" asp-area="AdminArea" method="post">
+         
+
+        <form id="addWorkLogForm" asp-action="AddWorkLog" asp-controller="TaskOperations" asp-area="TaskingArea" method="post">
             @Html.AntiForgeryToken()
             @Html.HiddenFor(m => m.TaskOperationId)
 
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
+                <h5 class="modal-title text-white">
                     <i class="fa fa-clipboard-check me-2"></i>
-                    ثبت گزارش کار
+                    ثبت گزارش کار 
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body">
+                   <div class="block-content block-content-full">
+
                 <!-- اطلاعات عملیات -->
                 <div class="alert alert-info border-0 mb-4">
                     <div class="d-flex align-items-center">
@@ -89,7 +93,7 @@
                             <i class="fa fa-history text-warning me-2"></i>
                             آخرین گزارش‌ها (@Model.TotalWorkLogsCount)
                         </h6>
-                        <div class="list-group list-group-flush">
+                        <div class="list-group list-group-flush" id="workLogsListContainer">
                             @foreach (var log in Model.RecentWorkLogs.Take(3))
                             {
                                 <div class="list-group-item px-0">
@@ -102,10 +106,7 @@
                                                 {
                                                     <span class="mx-2">•</span>
                                                     <i class="fa fa-clock me-1"></i>
-                                                    <span>
-                                                        @log.DurationMinutes دقیقه
-
-                                                    </span>
+                                                    <span>@log.DurationMinutes دقیقه</span>
                                                 }
                                             </small>
                                         </div>
@@ -115,29 +116,36 @@
                         </div>
                     </div>
                 }
-            </div>
+                  </div>
+    </div>
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fa fa-times me-1"></i>
                     انصراف
                 </button>
-                <button type="submit" class="btn btn-primary">
+                <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
                     <i class="fa fa-save me-1"></i>
                     ثبت گزارش کار
                 </button>
             </div>
         </form>
     </div>
+  
 </div>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+@* ⭐⭐⭐ Script Inline برای Validation *@
+<script>
+(function() {
+    console.log('🔄 _AddOperationWorkLogModal loaded - Initializing validation...');
     
-    <script>
-        $(document).ready(function() {
-            // فعال‌سازی Validation
-            $('#addWorkLogForm').validate({
+    // ⭐ تأخیر کوتاه برای اطمینان از render شدن کامل
+    setTimeout(function() {
+        const $form = $('#addWorkLogForm');
+        
+        if ($form.length) {
+            // ⭐⭐⭐ فعال‌سازی jQuery Validation
+            $form.validate({
                 rules: {
                     WorkDescription: {
                         required: true,
@@ -178,52 +186,10 @@
                 }
             });
 
-            // Handle form submission
-            $('#addWorkLogForm').on('submit', function(e) {
-                e.preventDefault();
-                
-                if (!$(this).valid()) {
-                    return false;
-                }
-
-                const formData = $(this).serialize();
-                
-                $.ajax({
-                    url: $(this).attr('action'),
-                    type: 'POST',
-                    data: formData,
-                    success: function(result) {
-                        if (result.status === 'success') {
-                            Dashmix.helpers('jq-notify', {
-                                type: 'success',
-                                icon: 'fa fa-check me-1',
-                                message: 'گزارش کار با موفقیت ثبت شد'
-                            });
-                            
-                            // بستن مودال
-                            $('#addWorkLogForm').closest('.modal').modal('hide');
-                            
-                            // Refresh صفحه
-                            if (result.refreshPage) {
-                                location.reload();
-                            }
-                        } else {
-                            Dashmix.helpers('jq-notify', {
-                                type: 'danger',
-                                icon: 'fa fa-times me-1',
-                                message: result.message?.[0]?.text || 'خطا در ثبت گزارش کار'
-                            });
-                        }
-                    },
-                    error: function() {
-                        Dashmix.helpers('jq-notify', {
-                            type: 'danger',
-                            icon: 'fa fa-times me-1',
-                            message: 'خطا در ارتباط با سرور'
-                        });
-                    }
-                });
-            });
-        });
-    </script>
-}
+            console.log('✅ Validation initialized for AddWorkLog form');
+        } else {
+            console.warn('⚠️ Form #addWorkLogForm not found');
+        }
+    }, 100);
+})();
+</script>

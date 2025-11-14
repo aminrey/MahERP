@@ -338,18 +338,6 @@ button.block {
     overflow: visible !important;
 }
 
-/* فیکس برای کانتینرهای block */
-.block {
-    overflow: visible !important;
-}
-
-.block-content {
-    overflow: visible !important;
-}
-
-.block-content-full {
-    overflow: visible !important;
-}
 
 /* فیکس برای btn-group ها */
 .btn-group {

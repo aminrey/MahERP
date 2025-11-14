@@ -23,7 +23,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// کد تسک - برای نمایش در مودال (اختیاری)
         /// </summary>
         [Display(Name = "کد تسک")]
-        public string TaskCode { get; set; }
+        public string? TaskCode { get; set; }
 
         /// <summary>
         /// شناسه عملیات (اختیاری - در صورت ثبت روی عملیات خاص)
@@ -34,13 +34,13 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// عنوان عملیات (فقط برای نمایش)
         /// </summary>
         [Display(Name = "عنوان عملیات")]
-        public string OperationTitle { get; set; }
+        public string? OperationTitle { get; set; }
 
         /// <summary>
         /// عنوان تسک (فقط برای نمایش)
         /// </summary>
         [Display(Name = "عنوان تسک")]
-        public string TaskTitle { get; set; }
+        public string? TaskTitle { get; set; }
 
         /// <summary>
         /// توضیحات کار انجام شده - تنها فیلد اجباری ⭐
@@ -92,18 +92,18 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// تاریخ انجام کار (شمسی - برای نمایش) - اختیاری
         /// </summary>
         [Display(Name = "تاریخ انجام کار")]
-        public string WorkDatePersian { get; set; }
+        public string? WorkDatePersian { get; set; }
 
         /// <summary>
         /// شناسه کاربر
         /// </summary>
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
 
         /// <summary>
         /// نام کامل کاربر (فقط برای نمایش)
         /// </summary>
         [Display(Name = "انجام دهنده")]
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
 
         /// <summary>
         /// آیا کاربر قبلاً روی این تسک/عملیات کار کرده است؟
@@ -118,7 +118,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// <summary>
         /// تاریخ ایجاد (شمسی)
         /// </summary>
-        public string CreatedDatePersian { get; set; }
+        public string? CreatedDatePersian { get; set; }
 
         /// <summary>
         /// لیست WorkLog های اخیر (برای نمایش در مودال)

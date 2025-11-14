@@ -175,11 +175,7 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<TaskCommentAttachment> _taskCommentAttachmentRepository;
         private GenereicClass<TaskCommentMention> _taskCommentMentionRepository;
         private GenereicClass<TaskNotification> _taskNotificationRepository;
-        private GenereicClass<TaskSchedule> _taskScheduleRepository;
-        private GenereicClass<TaskScheduleAssignment> _taskScheduleAssignmentRepository;
-        private GenereicClass<TaskScheduleViewer> _taskScheduleViewerRepository;
-        private GenereicClass<TaskTemplate> _taskTemplateRepository;
-        private GenereicClass<TaskTemplateOperation> _taskTemplateOperationRepository;
+
         private GenereicClass<TaskViewer> _taskViewerRepository;
         private GenereicClass<TaskViewPermission> _taskViewPermissionRepository;
         private GenereicClass<PredefinedCopyDescription> _predefinedCopyDescriptionRepository;
@@ -716,65 +712,7 @@ namespace MahERP.DataModelLayer.Services
             }
         }
 
-        public GenereicClass<TaskSchedule> TaskScheduleUW
-        {
-            get
-            {
-                if (_taskScheduleRepository == null)
-                {
-                    _taskScheduleRepository = new GenereicClass<TaskSchedule>(_Context);
-                }
-                return _taskScheduleRepository;
-            }
-        }
 
-        public GenereicClass<TaskScheduleAssignment> TaskScheduleAssignmentUW
-        {
-            get
-            {
-                if (_taskScheduleAssignmentRepository == null)
-                {
-                    _taskScheduleAssignmentRepository = new GenereicClass<TaskScheduleAssignment>(_Context);
-                }
-                return _taskScheduleAssignmentRepository;
-            }
-        }
-
-        public GenereicClass<TaskScheduleViewer> TaskScheduleViewerUW
-        {
-            get
-            {
-                if (_taskScheduleViewerRepository == null)
-                {
-                    _taskScheduleViewerRepository = new GenereicClass<TaskScheduleViewer>(_Context);
-                }
-                return _taskScheduleViewerRepository;
-            }
-        }
-
-        public GenereicClass<TaskTemplate> TaskTemplateUW
-        {
-            get
-            {
-                if (_taskTemplateRepository == null)
-                {
-                    _taskTemplateRepository = new GenereicClass<TaskTemplate>(_Context);
-                }
-                return _taskTemplateRepository;
-            }
-        }
-
-        public GenereicClass<TaskTemplateOperation> TaskTemplateOperationUW
-        {
-            get
-            {
-                if (_taskTemplateOperationRepository == null)
-                {
-                    _taskTemplateOperationRepository = new GenereicClass<TaskTemplateOperation>(_Context);
-                }
-                return _taskTemplateOperationRepository;
-            }
-        }
 
         public GenereicClass<TaskViewer> TaskViewerUW
         {
