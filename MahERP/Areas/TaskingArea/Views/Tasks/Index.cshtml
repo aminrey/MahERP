@@ -95,10 +95,11 @@
     </div>
 
     <!-- ⭐⭐⭐ دکمه‌های گروه‌بندی -->
-    <!-- ⭐⭐⭐ دکمه‌های گروه‌بندی -->
     <div class="block block-rounded">
         <div class="block-content">
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+             
+                <!-- دکمه‌های گروه‌بندی -->
                 <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Team ? "btn-primary" : "btn-alt-secondary")"
                         data-grouping="@((int)TaskGroupingType.Team)"
                         onclick="changeGrouping(@((int)TaskGroupingType.Team))">
@@ -124,6 +125,22 @@
                         onclick="changeGrouping(@((int)TaskGroupingType.Priority))">
                     <i class="fa fa-flag me-1"></i>اولویت
                 </button>
+                <!-- ⭐⭐⭐ دکمه جدید طرف حساب -->
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Stakeholder ? "btn-primary" : "btn-alt-secondary")"
+                        data-grouping="@((int)TaskGroupingType.Stakeholder)"
+                        onclick="changeGrouping(@((int)TaskGroupingType.Stakeholder))">
+                    <i class="fa fa-address-book me-1"></i>طرف حساب
+                </button>
+                <!-- ⭐⭐⭐ دکمه‌های باز/بسته کردن همه -->
+                <div class="btn-group ms-auto gap-2" role="group">
+                    <button type="button" class="btn btn-sm btn-alt-secondary " id="expand-all-groups" title="بازکردن همه گروه‌ها">
+                        <i class="fa fa-chevron-down me-1"></i>بازکردن همه
+                    </button>
+                    <button type="button" class="btn btn-sm btn-alt-secondary" id="collapse-all-groups" title="بستن همه گروه‌ها">
+                        <i class="fa fa-chevron-up me-1"></i>بستن همه
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -149,6 +166,92 @@
             }
         };
 
+        // ========================================
+        // ⭐⭐⭐ مدیریت وضعیت باز/بسته تب‌ها
+        // ========================================
+        const GroupCollapseManager = {
+            storageKey: 'taskGroupsCollapseState',
+
+            // ذخیره وضعیت یک گروه
+            saveState: function(groupKey, isCollapsed) {
+                const state = this.getState();
+                state[groupKey] = isCollapsed;
+                localStorage.setItem(this.storageKey, JSON.stringify(state));
+                console.log('💾 Saved collapse state:', groupKey, isCollapsed);
+            },
+
+            // دریافت وضعیت تمام گروه‌ها
+            getState: function() {
+                const saved = localStorage.getItem(this.storageKey);
+                return saved ? JSON.parse(saved) : {};
+            },
+
+            // بازیابی وضعیت یک گروه
+            getGroupState: function(groupKey) {
+                const state = this.getState();
+                return state[groupKey] !== undefined ? state[groupKey] : false; // پیش‌فرض: باز
+            },
+
+            // پاک کردن همه وضعیت‌ها
+            clearState: function() {
+                localStorage.removeItem(this.storageKey);
+            },
+
+            // اعمال وضعیت ذخیره شده به تمام گروه‌ها
+            applyState: function() {
+                console.log('🔄 Applying saved collapse states...');
+                const state = this.getState();
+                
+                $('.block-rounded.block-bordered').each(function() {
+                    const $block = $(this);
+                    const groupTitle = $block.find('.block-title').text().trim();
+                    const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
+                    
+                    const isCollapsed = state[groupKey] || false;
+                    
+                    if (isCollapsed) {
+                        $block.find('.block-content').hide();
+                        $block.find('.btn-block-option i').removeClass('si-arrow-up').addClass('si-arrow-down');
+                        console.log('📦 Collapsed:', groupTitle);
+                    } else {
+                        $block.find('.block-content').show();
+                        $block.find('.btn-block-option i').removeClass('si-arrow-down').addClass('si-arrow-up');
+                        console.log('📂 Expanded:', groupTitle);
+                    }
+                });
+            },
+
+            // بازکردن همه گروه‌ها
+            expandAll: function() {
+                console.log('📂 Expanding all groups...');
+                $('.block-rounded.block-bordered').each(function() {
+                    const $block = $(this);
+                    const groupTitle = $block.find('.block-title').text().trim();
+                    const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
+                    
+                    $block.find('.block-content').slideDown(300);
+                    $block.find('.btn-block-option i').removeClass('si-arrow-down').addClass('si-arrow-up');
+                    
+                    GroupCollapseManager.saveState(groupKey, false);
+                });
+            },
+
+            // بستن همه گروه‌ها
+            collapseAll: function() {
+                console.log('📦 Collapsing all groups...');
+                $('.block-rounded.block-bordered').each(function() {
+                    const $block = $(this);
+                    const groupTitle = $block.find('.block-title').text().trim();
+                    const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
+                    
+                    $block.find('.block-content').slideUp(300);
+                    $block.find('.btn-block-option i').removeClass('si-arrow-up').addClass('si-arrow-down');
+                    
+                    GroupCollapseManager.saveState(groupKey, true);
+                });
+            }
+        };
+
         // ⭐⭐⭐ Event handler برای کلیک روی آمار سریع
         $(document).on('click', '.quick-status-filter', function(e) {
             e.preventDefault();
@@ -157,6 +260,7 @@
             const statusFilter = parseInt($this.data('filter'));
             
             console.log('🎯 Quick Status Filter clicked:', statusFilter);
+            console.log('📊 Current grouping:', TaskListConfig.currentGrouping);
             
             // نمایش loading
             $('#task-groups-container').html('<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-3">در حال بارگذاری...</p></div>');
@@ -167,7 +271,7 @@
                 type: 'POST',
                 data: {
                     viewType: TaskListConfig.currentViewType,
-                    grouping: TaskListConfig.currentGrouping,
+                    grouping: TaskListConfig.currentGrouping,  // ⭐ استفاده از گروه‌بندی فعلی
                     statusFilter: statusFilter,
                     __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                 },
@@ -179,6 +283,12 @@
                             if (item.elementId && item.view && item.view.result) {
                                 $('#' + item.elementId).html(item.view.result);
                                 
+                                // ⭐⭐⭐ بازیابی وضعیت باز/بسته
+                                setTimeout(function() {
+                                    GroupCollapseManager.applyState();
+                                    initializeGroupToggle();
+                                }, 100);
+                                
                                 // Process URLs
                                 if (typeof ModalUtils !== 'undefined') {
                                     ModalUtils.processUrlsInContainer($('#' + item.elementId));
@@ -186,8 +296,9 @@
                             }
                         });
                         
-                        // بروزرسانی متغیر config
+                        // ⭐⭐⭐ بروزرسانی متغیر config
                         TaskListConfig.currentStatusFilter = statusFilter;
+                        // ⭐ گروه‌بندی تغییر نمی‌کنه، پس نیازی به بروزرسانی نداره
                         
                         // بروزرسانی کلاس active در آمار
                         $('.quick-status-filter').each(function() {
@@ -207,6 +318,8 @@
                         } else if (statusFilter === 4) { // Urgent
                             $this.find('.p-3').addClass('border-warning');
                         }
+                        
+                        console.log('✅ Filter applied with grouping:', TaskListConfig.currentGrouping);
                     }
                 },
                 error: function(xhr, status, error) {
@@ -214,6 +327,57 @@
                     $('#task-groups-container').html('<div class="alert alert-danger">خطا در بارگذاری اطلاعات</div>');
                 }
             });
+        });
+
+        // ========================================
+        // ⭐⭐⭐ Event Handlers
+        // ========================================
+
+        // دکمه بازکردن همه
+        $(document).on('click', '#expand-all-groups', function() {
+            GroupCollapseManager.expandAll();
+        });
+
+        // دکمه بستن همه
+        $(document).on('click', '#collapse-all-groups', function() {
+            GroupCollapseManager.collapseAll();
+        });
+
+        // ⭐⭐⭐ Initialize group toggle با ذخیره وضعیت
+        function initializeGroupToggle() {
+            $(document).off('click', '.btn-block-option').on('click', '.btn-block-option', function(e) {
+                e.preventDefault();
+                
+                const $btn = $(this);
+                const $block = $btn.closest('.block');
+                const $content = $block.find('.block-content');
+                const $icon = $btn.find('i');
+                
+                // دریافت عنوان گروه برای ذخیره وضعیت
+                const groupTitle = $block.find('.block-title').text().trim();
+                const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
+                
+                if ($content.is(':visible')) {
+                    $content.slideUp(300);
+                    $icon.removeClass('si-arrow-up').addClass('si-arrow-down');
+                    GroupCollapseManager.saveState(groupKey, true);
+                } else {
+                    $content.slideDown(300);
+                    $icon.removeClass('si-arrow-down').addClass('si-arrow-up');
+                    GroupCollapseManager.saveState(groupKey, false);
+                }
+            });
+        }
+
+        // ⭐⭐⭐ Document Ready
+        $(document).ready(function() {
+            console.log('🚀 Initializing Task List with Collapse Manager...');
+            
+            // اعمال وضعیت ذخیره شده
+            GroupCollapseManager.applyState();
+            
+            // فعال‌سازی toggle
+            initializeGroupToggle();
         });
     </script>
     

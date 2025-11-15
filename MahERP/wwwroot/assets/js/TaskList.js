@@ -27,7 +27,7 @@ const TaskListManager = {
             return;
         }
 
-        console.log('🔄 Changing grouping to:', grouping);
+        console.log('🔄 Changing grouping from', this.currentGrouping, 'to:', grouping);
 
         // ⭐ ابتدا دکمه‌ها رو اکتیو/غیرفعال کن
         $('.btn-grouping').each(function () {
@@ -62,9 +62,32 @@ const TaskListManager = {
             if (result.status === 'update-view' && result.viewList) {
                 updateMultipleViews(result.viewList);
 
+                // ⭐⭐⭐ بروزرسانی هر دو متغیر
                 this.currentGrouping = grouping;
+                this.config.currentGrouping = grouping;
+                
+                // ⭐ بروزرسانی window.TaskListConfig هم
+                if (window.TaskListConfig) {
+                    window.TaskListConfig.currentGrouping = grouping;
+                }
 
-                console.log('✅ Grouping changed successfully');
+                console.log('✅ Grouping updated:', grouping);
+                console.log('📊 TaskListManager.currentGrouping:', this.currentGrouping);
+                console.log('📊 window.TaskListConfig.currentGrouping:', window.TaskListConfig.currentGrouping);
+
+                // ⭐⭐⭐ بازیابی وضعیت باز/بسته تب‌ها بعد از تغییر گروه‌بندی
+                setTimeout(function() {
+                    if (typeof GroupCollapseManager !== 'undefined') {
+                        GroupCollapseManager.applyState();
+                        
+                        // ⭐ دوباره initialize کردن toggle handlers
+                        if (typeof initializeGroupToggle === 'function') {
+                            initializeGroupToggle();
+                        }
+                    }
+                }, 150);
+
+                console.log('✅ Grouping changed successfully to:', grouping);
             }
         } catch (error) {
             console.error('❌ Error changing grouping:', error);

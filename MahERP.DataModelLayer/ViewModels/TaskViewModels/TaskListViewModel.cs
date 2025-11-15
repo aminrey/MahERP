@@ -418,7 +418,8 @@ namespace MahERP.DataModelLayer.ViewModels
         Creator = 1,     // بر اساس سازنده
         CreateDate = 2,  // بر اساس زمان ساخت
         DueDate = 3,     // بر اساس زمان پایان
-        Priority = 4     // بر اساس اولویت
+        Priority = 4,    // بر اساس اولویت
+        Stakeholder = 5  // ⭐⭐⭐ بر اساس طرف حساب (Contact/Organization)
     }
 
     /// <summary>

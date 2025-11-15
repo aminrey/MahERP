@@ -27,7 +27,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
             List<Tasks> tasks,
             TaskGroupingType grouping,
             string currentUserId,
-            TaskViewType? viewType = null)  // ⭐ اضافه شده
+            TaskViewType? viewType = null)
         {
             var groups = new List<TaskGroupViewModel>();
 
@@ -51,6 +51,10 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
 
                 case TaskGroupingType.Priority:
                     groups = GroupByPriority(tasks);
+                    break;
+
+                case TaskGroupingType.Stakeholder:  // ⭐⭐⭐ جدید
+                    groups = GroupByStakeholder(tasks);
                     break;
             }
 
@@ -170,6 +174,62 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         }
 
         /// <summary>
+        /// ⭐⭐⭐ گروه‌بندی بر اساس طرف حساب (Contact/Organization)
+        /// </summary>
+        public List<TaskGroupViewModel> GroupByStakeholder(List<Tasks> tasks)
+        {
+            var groups = new List<TaskGroupViewModel>
+            {
+                new TaskGroupViewModel
+                {
+                    GroupKey = "no-stakeholder",
+                    GroupTitle = "بدون طرف حساب",
+                    GroupIcon = "fa-user-slash",
+                    GroupBadgeClass = "bg-secondary"
+                }
+            };
+
+            // گروه‌بندی بر اساس Contact
+            var contactGroups = tasks
+                .Where(t => t.ContactId.HasValue && t.Contact != null)
+                .GroupBy(t => t.ContactId.Value)
+                .Select(g =>
+                {
+                    var contact = g.First().Contact;
+                    return new TaskGroupViewModel
+                    {
+                        GroupKey = $"contact-{g.Key}",
+                        GroupTitle = $"{contact.FirstName} {contact.LastName}",
+                        GroupIcon = "fa-user",
+                        GroupBadgeClass = "bg-primary"
+                    };
+                });
+
+            // گروه‌بندی بر اساس Organization
+            var organizationGroups = tasks
+                .Where(t => t.OrganizationId.HasValue && 
+                           t.Organization != null && 
+                           !t.ContactId.HasValue) // فقط تسک‌هایی که Contact ندارند
+                .GroupBy(t => t.OrganizationId.Value)
+                .Select(g =>
+                {
+                    var org = g.First().Organization;
+                    return new TaskGroupViewModel
+                    {
+                        GroupKey = $"organization-{g.Key}",
+                        GroupTitle = org.DisplayName,
+                        GroupIcon = "fa-building",
+                        GroupBadgeClass = "bg-info"
+                    };
+                });
+
+            groups.AddRange(contactGroups);
+            groups.AddRange(organizationGroups);
+
+            return groups.OrderBy(g => g.GroupTitle).ToList();
+        }
+
+        /// <summary>
         /// بررسی تعلق تسک به گروه
         /// </summary>
         public bool IsTaskInGroup(Tasks task, string groupKey, TaskGroupingType grouping, string currentUserId = null)
@@ -232,6 +292,27 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                     if (task.Priority == 2) return groupKey == "urgent";
                     if (task.Important || task.Priority == 1) return groupKey == "important";
                     return groupKey == "normal";
+
+                case TaskGroupingType.Stakeholder:  // ⭐⭐⭐ جدید
+                    // بدون طرف حساب
+                    if (groupKey == "no-stakeholder")
+                        return !task.ContactId.HasValue && !task.OrganizationId.HasValue;
+
+                    // Contact
+                    if (groupKey.StartsWith("contact-"))
+                    {
+                        var contactId = int.Parse(groupKey.Replace("contact-", ""));
+                        return task.ContactId == contactId;
+                    }
+
+                    // Organization
+                    if (groupKey.StartsWith("organization-"))
+                    {
+                        var orgId = int.Parse(groupKey.Replace("organization-", ""));
+                        return task.OrganizationId == orgId && !task.ContactId.HasValue;
+                    }
+
+                    return false;
 
                 default:
                     return false;

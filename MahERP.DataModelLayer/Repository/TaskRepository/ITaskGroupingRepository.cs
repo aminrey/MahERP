@@ -43,6 +43,11 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         List<TaskGroupViewModel> GroupByPriority(List<Tasks> tasks);
 
         /// <summary>
+        /// ⭐⭐⭐ گروه‌بندی بر اساس طرف حساب (Contact/Organization)
+        /// </summary>
+        List<TaskGroupViewModel> GroupByStakeholder(List<Tasks> tasks);
+
+        /// <summary>
         /// بررسی تعلق تسک به گروه
         /// </summary>
         bool IsTaskInGroup(Tasks task, string groupKey, TaskGroupingType grouping, string currentUserId = null);

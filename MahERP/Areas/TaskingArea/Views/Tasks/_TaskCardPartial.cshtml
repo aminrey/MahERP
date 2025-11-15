@@ -4,21 +4,29 @@
     <div class="block block-rounded h-100 @(Model.IsCompleted ? "block-mode-loading-success" : "") position-relative"
          style="border: 2px solid #e4e7ed; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s ease;">
 
-        @* ⭐⭐⭐ Ribbons برای فوکوس و روز من *@
-        @if (Model.IsFocused)
+        @* ⭐⭐⭐ Ribbons جدید - نسخه کامپکت *@
+        @if (Model.IsFocused && Model.IsInMyDay)
         {
-            <div class="ribbon ribbon-left ribbon-warning">
-                <div class="ribbon-box">
-                    <i class="fa fa-star me-1"></i>فوکوس
-                </div>
+            @* هر دو ویژگی فعال - نمایش ترکیبی *@
+            <div class="ribbon-corner ribbon-corner-top-left ribbon-modern ribbon-warning">
+                <i class="fa fa-star"></i>
+            </div>
+            <div class="ribbon-corner ribbon-corner-top-right ribbon-modern ribbon-success">
+                <i class="fa fa-calendar-check"></i>
             </div>
         }
-        @if (Model.IsInMyDay)
+        else if (Model.IsFocused)
         {
-            <div class="ribbon @(Model.IsFocused ? "ribbon-right" : "ribbon-left") ribbon-success">
-                <div class="ribbon-box">
-                    <i class="fa fa-calendar-check me-1"></i>روز من
-                </div>
+            @* فقط فوکوس *@
+            <div class="ribbon-corner ribbon-corner-top-left ribbon-modern ribbon-warning">
+                <i class="fa fa-star"></i>
+            </div>
+        }
+        else if (Model.IsInMyDay)
+        {
+            @* فقط روز من *@
+            <div class="ribbon-corner ribbon-corner-top-left ribbon-modern ribbon-success">
+                <i class="fa fa-calendar-check"></i>
             </div>
         }
 
@@ -314,86 +322,124 @@
         color: #4285f4 !important;
     }
 
-    /* ⭐⭐⭐ Ribbon Styles */
-    .ribbon {
+    /* ========================================
+       ⭐⭐⭐ Modern Ribbon Corner Styles
+       ======================================== */
+    
+    /* Ribbon اصلی در گوشه */
+    .ribbon-corner {
         position: absolute;
-        top: -4px;
-        z-index: 10;
+        width: 0;
+        height: 0;
+        z-index: 5;
         overflow: hidden;
-        width: 100px;
-        height: 100px;
-        text-align: right;
     }
 
-    .ribbon-left {
-        left: -4px;
+    /* گوشه بالا چپ */
+    .ribbon-corner-top-left {
+        top: 0;
+        left: 0;
+        border-top: 50px solid;
+        border-right: 50px solid transparent;
     }
 
-    .ribbon-right {
-        right: -4px;
-        text-align: left;
+    /* گوشه بالا راست */
+    .ribbon-corner-top-right {
+        top: 0;
+        right: 0;
+        border-top: 50px solid;
+        border-left: 50px solid transparent;
     }
 
-    .ribbon-box {
-        font-size: 10px;
-        font-weight: 600;
-        color: #fff;
-        text-align: center;
-        line-height: 20px;
-        transform: rotate(-45deg);
-        width: 140px;
-        display: block;
-        box-shadow: 0 3px 10px -5px rgba(0, 0, 0, 0.5);
+    /* آیکون داخل ribbon */
+    .ribbon-corner i {
         position: absolute;
-        top: 19px;
-        left: -33px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: bold;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
 
-    .ribbon-right .ribbon-box {
-        transform: rotate(45deg);
-        left: auto;
-        right: -33px;
+    .ribbon-corner-top-left i {
+        top: -42px;
+        left: 8px;
     }
 
-    .ribbon-warning .ribbon-box {
-        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    .ribbon-corner-top-right i {
+        top: -42px;
+        right: 8px;
     }
 
-    .ribbon-success .ribbon-box {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    /* رنگ‌های ribbon */
+    .ribbon-warning {
+        border-top-color: #ffc107;
     }
 
-    .ribbon-primary .ribbon-box {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    .ribbon-success {
+        border-top-color: #28a745;
     }
 
-    .ribbon-danger .ribbon-box {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    .ribbon-primary {
+        border-top-color: #007bff;
     }
 
-    .ribbon-info .ribbon-box {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    .ribbon-danger {
+        border-top-color: #dc3545;
     }
 
-    /* افکت خاص برای کارت‌های فوکوس */
+    .ribbon-info {
+        border-top-color: #17a2b8;
+    }
+
+    /* افکت خاص برای کارت‌های دارای ribbon */
     .block:has(.ribbon-warning) {
         border-color: #ffc107 !important;
-        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3) !important;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.25) !important;
     }
 
-    /* افکت خاص برای کارت‌های روز من */
     .block:has(.ribbon-success) {
         border-color: #28a745 !important;
-        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3) !important;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.25) !important;
     }
 
     /* افکت ترکیبی برای تسک‌های فوکوس + روز من */
     .block:has(.ribbon-warning):has(.ribbon-success) {
         border: 3px solid transparent;
-        background-image: linear-gradient(white, white), 
-                         linear-gradient(135deg, #ffc107 0%, #28a745 100%);
+        background-image: 
+            linear-gradient(white, white), 
+            linear-gradient(135deg, #ffc107 0%, #28a745 100%);
         background-origin: border-box;
         background-clip: padding-box, border-box;
-        box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4), 0 6px 20px rgba(40, 167, 69, 0.4) !important;
+        box-shadow: 
+            0 6px 20px rgba(255, 193, 7, 0.3), 
+            0 6px 20px rgba(40, 167, 69, 0.3) !important;
+    }
+
+    /* انیمیشن pulse برای آیکون‌های ribbon */
+    .ribbon-corner i {
+        animation: ribbon-pulse 2s ease-in-out infinite;
+    }
+
+    @@keyframes ribbon-pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    /* Hover effect برای ribbon */
+    .block:hover .ribbon-corner i {
+        animation: ribbon-bounce 0.6s ease;
+    }
+
+    @@keyframes ribbon-bounce {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.2);
+        }
     }
 </style>
