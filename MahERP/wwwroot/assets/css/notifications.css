@@ -76,3 +76,6 @@
         transform: scale(1);
     }
 }
+#headerNotificationBadge {
+    left: 1px;
+}
