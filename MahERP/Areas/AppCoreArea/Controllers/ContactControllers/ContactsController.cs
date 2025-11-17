@@ -607,6 +607,28 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
         }
 
         /// <summary>
+        /// ویرایش شماره - Modal
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> EditPhoneModal(int id)
+        {
+            try
+            {
+                var phone = _uow.ContactPhoneUW.GetById(id);
+                if (phone == null)
+                    return NotFound();
+
+                var viewModel = _mapper.Map<ContactPhoneViewModel>(phone);
+                return PartialView("_EditPhoneModal", viewModel);
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Contacts", "EditPhoneModal", "خطا در نمایش فرم ویرایش", ex);
+                return StatusCode(500);
+            }
+        }
+
+        /// <summary>
         /// ذخیره شماره جدید
         /// </summary>
         [HttpPost]
@@ -628,27 +650,127 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
                     }
 
                     var phone = _mapper.Map<ContactPhone>(model);
-
                     phone.CreatorUserId = GetUserId();
                     
                     _uow.ContactPhoneUW.Create(phone);
                     _uow.Save();
 
-                    // رندر لیست به‌روزرسانی شده
-                    var phones = _contactRepository.GetContactPhones(model.ContactId);
-                    var viewModels = _mapper.Map<List<ContactPhoneViewModel>>(phones);
-                    var renderedView = await this.RenderViewToStringAsync("_PhoneTableRows", viewModels);
+                    // ⭐ اگر IsSmsDefault انتخاب شده، باید سایر شماره‌ها غیرفعال شوند
+                    if (model.IsSmsDefault)
+                    {
+                        await _contactRepository.SetSmsDefaultPhoneAsync(phone.Id, model.ContactId);
+                    }
+
+                    // ⭐ اگر IsDefault انتخاب شده
+                    if (model.IsDefault)
+                    {
+                        await _contactRepository.SetDefaultPhoneAsync(phone.Id, model.ContactId);
+                    }
 
                     return Json(new
                     {
                         status = "redirect",
-                        redirectUrl = Url.Action(nameof(ManagePhones) , new {contactId = model.ContactId })
-
+                        redirectUrl = Url.Action(nameof(ManagePhones), new { contactId = model.ContactId })
                     });
                 }
                 catch (Exception ex)
                 {
                     await _activityLogger.LogErrorAsync("Contacts", "AddPhone", "خطا در افزودن شماره", ex);
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "خطا در ذخیره: " + ex.Message } }
+                    });
+                }
+            }
+
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => new { status = "error", text = e.ErrorMessage })
+                .ToArray();
+
+            return Json(new
+            {
+                status = "validation-error",
+                message = errors
+            });
+        }
+
+        /// <summary>
+        /// ذخیره ویرایش شماره
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditPhone(ContactPhoneViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var phone = _uow.ContactPhoneUW.GetById(model.Id);
+                    if (phone == null)
+                    {
+                        return Json(new
+                        {
+                            status = "error",
+                            message = new[] { new { status = "error", text = "شماره یافت نشد" } }
+                        });
+                    }
+
+                    // بررسی تکراری نبودن شماره (به جز خودش)
+                    if (_contactRepository.IsPhoneNumberExists(model.PhoneNumber, model.Id))
+                    {
+                        return Json(new
+                        {
+                            status = "error",
+                            message = new[] { new { status = "warning", text = "این شماره قبلاً ثبت شده است" } }
+                        });
+                    }
+
+                    // ذخیره مقادیر قدیمی
+                    var originalCreated = phone.CreatedDate;
+                    var originalCreatorId = phone.CreatorUserId;
+
+                    // Map کردن تغییرات
+                    _mapper.Map(model, phone);
+
+                    // بازگرداندن مقادیر سیستمی
+                    phone.CreatedDate = originalCreated;
+                    phone.CreatorUserId = originalCreatorId;
+
+                    _uow.ContactPhoneUW.Update(phone);
+                    _uow.Save();
+
+                    // ⭐ اگر IsSmsDefault انتخاب شده، باید سایر شماره‌ها غیرفعال شوند
+                    if (model.IsSmsDefault)
+                    {
+                        await _contactRepository.SetSmsDefaultPhoneAsync(phone.Id, model.ContactId);
+                    }
+
+                    // ⭐ اگر IsDefault انتخاب شده
+                    if (model.IsDefault)
+                    {
+                        await _contactRepository.SetDefaultPhoneAsync(phone.Id, model.ContactId);
+                    }
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Edit,
+                        "Contacts",
+                        "EditPhone",
+                        $"ویرایش شماره تماس: {phone.FormattedNumber}",
+                        recordId: phone.Id.ToString(),
+                        entityType: "ContactPhone"
+                    );
+
+                    return Json(new
+                    {
+                        status = "redirect",
+                        redirectUrl = Url.Action(nameof(ManagePhones), new { contactId = model.ContactId })
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync("Contacts", "EditPhone", "خطا در ویرایش شماره", ex);
                     return Json(new
                     {
                         status = "error",
@@ -690,6 +812,31 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
             catch (Exception ex)
             {
                 await _activityLogger.LogErrorAsync("Contacts", "SetDefaultPhone", "خطا", ex);
+                return Json(new { success = false, message = "خطا در عملیات" });
+            }
+        }
+
+        /// <summary>
+        /// تنظیم شماره به عنوان پیش‌فرض پیامک
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetSmsDefaultPhone(int phoneId, int contactId)
+        {
+            try
+            {
+                var result = await _contactRepository.SetSmsDefaultPhoneAsync(phoneId, contactId);
+                
+                if (result)
+                {
+                    return Json(new { success = true, message = "شماره پیش‌فرض پیامک تغییر کرد" });
+                }
+
+                return Json(new { success = false, message = "خطا در تغییر شماره پیش‌فرض پیامک" });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Contacts", "SetSmsDefaultPhone", "خطا", ex);
                 return Json(new { success = false, message = "خطا در عملیات" });
             }
         }

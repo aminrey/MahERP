@@ -58,9 +58,19 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
         ContactPhone GetDefaultPhone(int contactId);
 
         /// <summary>
+        /// دریافت شماره پیش‌فرض پیامک یک فرد
+        /// </summary>
+        ContactPhone GetSmsDefaultPhone(int contactId);
+
+        /// <summary>
         /// تنظیم شماره به عنوان پیش‌فرض
         /// </summary>
         Task<bool> SetDefaultPhoneAsync(int phoneId, int contactId);
+
+        /// <summary>
+        /// تنظیم شماره به عنوان پیش‌فرض پیامک
+        /// </summary>
+        Task<bool> SetSmsDefaultPhoneAsync(int phoneId, int contactId);
 
         /// <summary>
         /// بررسی وجود شماره تلفن

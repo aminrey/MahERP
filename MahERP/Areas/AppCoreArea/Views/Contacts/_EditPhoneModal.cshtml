@@ -2,14 +2,15 @@
 
 <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-        <form asp-action="AddPhone" asp-controller="Contacts" method="post">
+        <form asp-action="EditPhone" asp-controller="Contacts" method="post">
             @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
             <input type="hidden" asp-for="ContactId" />
 
             <div class="block block-rounded mb-0">
-                <div class="block-header bg-primary text-white">
+                <div class="block-header bg-warning text-white">
                     <h3 class="block-title text-white">
-                        <i class="fa fa-phone me-2"></i>افزودن شماره تماس جدید
+                        <i class="fa fa-edit me-2"></i>ویرایش شماره تماس
                     </h3>
                     <button type="button" class="btn-block-option" data-bs-dismiss="modal">
                         <i class="fa fa-times text-white"></i>
@@ -79,7 +80,7 @@
 
                         <div class="col-md-4 mb-3">
                             <div class="form-check form-switch">
-                                <input asp-for="IsActive" class="form-check-input" checked />
+                                <input asp-for="IsActive" class="form-check-input" />
                                 <label class="form-check-label" asp-for="IsActive">
                                     فعال
                                 </label>
@@ -97,8 +98,8 @@
                     <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
                         <i class="fa fa-times me-1"></i>انصراف
                     </button>
-                    <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
-                        <i class="fa fa-check me-1"></i>ذخیره
+                    <button type="button" class="btn btn-warning" data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i>ذخیره تغییرات
                     </button>
                 </div>
             </div>

@@ -150,10 +150,29 @@
                 <!-- Tab 2: مخاطبین -->
                 <div class="tab-pane fade" id="tab-recipients" role="tabpanel">
                     <div class="block-content">
+                        <div class="alert alert-info mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fa fa-info-circle fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5 class="alert-heading mb-1">راهنمای افزودن مخاطب</h5>
+                                    <p class="mb-0">
+                                        می‌توانید افراد یا سازمان‌ها را به این قالب اضافه کنید.
+                                        <br>
+                                        <strong>توجه:</strong> برای هر فرد، شماره تماس پیش‌فرض پیامک به صورت خودکار انتخاب می‌شود.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mb-3">
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-add-recipients">
-                                <i class="fa fa-plus me-1"></i> افزودن مخاطب
-                            </button>
+                            <a href="@Url.Action("ShowAddRecipientsModal", new { id = Model.Id })" 
+                               class="btn btn-primary"
+                               data-bs-target="#modal-block-select2"
+                               data-toggle="modal-ajax">
+                                <i class="fa fa-plus me-1"></i> افزودن مخاطب جدید
+                            </a>
                         </div>
 
                         <div class="table-responsive">
@@ -161,11 +180,12 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 5%;">#</th>
-                                        <th style="width: 15%;">نوع</th>
-                                        <th style="width: 30%;">نام</th>
-                                        <th style="width: 20%;">شماره/ایمیل</th>
+                                        <th style="width: 10%;">نوع</th>
+                                        <th style="width: 25%;">نام</th>
+                                        <th style="width: 25%;">شماره تماس</th>
                                         <th style="width: 15%;">تاریخ افزودن</th>
-                                        <th style="width: 10%;">عملیات</th>
+                                        <th style="width: 15%;">افزوده شده توسط</th>
+                                        <th style="width: 5%;">عملیات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -175,22 +195,42 @@
                                         foreach (var recipient in Model.Recipients)
                                         {
                                             <tr>
-                                                <td>@counter</td>
+                                                <td class="text-center">@counter</td>
                                                 <td>
                                                     @if (recipient.RecipientType == 0)
                                                     {
-                                                        <span class="badge bg-info">شخص</span>
+                                                        <span class="badge bg-primary">
+                                                            <i class="fa fa-user"></i> شخص
+                                                        </span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="badge bg-warning">سازمان</span>
+                                                        <span class="badge bg-info">
+                                                            <i class="fa fa-building"></i> سازمان
+                                                        </span>
                                                     }
                                                 </td>
-                                                <td>@recipient.RecipientName</td>
-                                                <td>@recipient.RecipientContact</td>
-                                                <td>@recipient.AddedDate.ToString("yyyy/MM/dd")</td>
+                                                <td class="fw-semibold">@recipient.RecipientName</td>
                                                 <td>
-                                                    <button type="button" class="btn btn-sm btn-danger remove-recipient" data-id="@recipient.Id">
+                                                    @if (!string.IsNullOrEmpty(recipient.RecipientContact))
+                                                    {
+                                                        <span dir="ltr" class="d-inline-block">@recipient.RecipientContact</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        @recipient.AddedDate.ToString("yyyy/MM/dd HH:mm")
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">@recipient.AddedByName</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm btn-danger remove-recipient" data-id="@recipient.Id" title="حذف">
                                                         <i class="fa fa-trash"></i>
                                                     </button>
                                                 </td>
@@ -201,8 +241,15 @@
                                     else
                                     {
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted">
-                                                هنوز مخاطبی اضافه نشده است
+                                            <td colspan="7" class="text-center py-5">
+                                                <i class="fa fa-users fa-3x text-muted mb-3 d-block"></i>
+                                                <p class="text-muted mb-3">هنوز مخاطبی اضافه نشده است</p>
+                                                <a href="@Url.Action("ShowAddRecipientsModal", new { id = Model.Id })" 
+                                                   class="btn btn-primary"
+                                                   data-bs-target="#modal-block-select2"
+                                                   data-toggle="modal-ajax">
+                                                    <i class="fa fa-plus me-1"></i> افزودن اولین مخاطب
+                                                </a>
                                             </td>
                                         </tr>
                                     }
@@ -322,98 +369,9 @@
     </div>
 </main>
 
-<!-- Modal: افزودن مخاطب -->
-<div class="modal fade" id="modal-add-recipients" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">افزودن مخاطب به قالب</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="form-add-recipients">
-                    <div class="mb-3">
-                        <label class="form-label">انتخاب افراد</label>
-                        <select class="form-select" id="select-contacts" multiple></select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">انتخاب سازمان‌ها</label>
-                        <select class="form-select" id="select-organizations" multiple></select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-primary" id="btn-save-recipients">
-                    <i class="fa fa-check me-1"></i> ذخیره
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
     <script>
         $(document).ready(function () {
-            // Initialize Select2
-            $('#select-contacts').select2({
-                placeholder: 'جستجو و انتخاب افراد',
-                ajax: {
-                    url: '@Url.Action("SearchContacts", "SmsTemplate")',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return { search: params.term };
-                    },
-                    processResults: function (data) {
-                        return { results: data };
-                    }
-                }
-            });
-
-            $('#select-organizations').select2({
-                placeholder: 'جستجو و انتخاب سازمان‌ها',
-                ajax: {
-                    url: '@Url.Action("SearchOrganizations", "SmsTemplate")',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return { search: params.term };
-                    },
-                    processResults: function (data) {
-                        return { results: data };
-                    }
-                }
-            });
-
-            // ذخیره مخاطبین
-            $('#btn-save-recipients').on('click', function () {
-                const contactIds = $('#select-contacts').val() || [];
-                const organizationIds = $('#select-organizations').val() || [];
-
-                if (contactIds.length === 0 && organizationIds.length === 0) {
-                    toastr.warning('لطفا حداقل یک مخاطب انتخاب کنید');
-                    return;
-                }
-
-                $.post('@Url.Action("AddRecipients")', {
-                    templateId: @Model.Id,
-                    contactIds: contactIds,
-                    organizationIds: organizationIds
-                }).done(function (response) {
-                    if (response.success) {
-                        Swal.fire('موفق', response.message, 'success')
-                            .then(() => location.reload());
-                    } else {
-                        Swal.fire('خطا', response.message, 'error');
-                    }
-                });
-            });
-
             // حذف مخاطب
             $('.remove-recipient').on('click', function () {
                 const recipientId = $(this).data('id');
@@ -427,15 +385,17 @@
                     cancelButtonText: 'خیر'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        $.post('@Url.Action("RemoveRecipient")', { recipientId: recipientId })
-                            .done(function (response) {
-                                if (response.success) {
-                                    Swal.fire('حذف شد', response.message, 'success')
-                                        .then(() => location.reload());
-                                } else {
-                                    Swal.fire('خطا', response.message, 'error');
-                                }
-                            });
+                        $.post('@Url.Action("RemoveRecipient")', { 
+                            recipientId: recipientId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        }).done(function (response) {
+                            if (response.success) {
+                                Swal.fire('حذف شد', response.message, 'success')
+                                    .then(() => location.reload());
+                            } else {
+                                Swal.fire('خطا', response.message, 'error');
+                            }
+                        });
                     }
                 });
             });
@@ -455,7 +415,8 @@
                     if (result.isConfirmed) {
                         $.post('@Url.Action("SendToTemplateRecipients", "SmsSend")', {
                             templateId: @Model.Id,
-                            useQueue: $('#useQueue').is(':checked')
+                            useQueue: $('#useQueue').is(':checked'),
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                         }).done(function (response) {
                             if (response.success) {
                                 Swal.fire('موفق', response.message, 'success');

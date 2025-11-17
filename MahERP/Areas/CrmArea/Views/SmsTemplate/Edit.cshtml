@@ -1,0 +1,337 @@
+﻿@using MahERP.DataModelLayer.Entities.Sms
+@model SmsTemplate
+@{
+    ViewData["Title"] = "ویرایش قالب پیامک";
+}
+
+<main id="main-container">
+    <!-- Hero -->
+    <div class="bg-image" style="background-image: url('/assets/media/photos/photo13@2x.jpg');">
+        <div class="bg-black-50">
+            <div class="content content-full">
+                <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+                    <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3 text-white">
+                        <i class="fa fa-edit me-2"></i>
+                        ویرایش قالب: @Model.Title
+                    </h1>
+                    <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-alt">
+                            <li class="breadcrumb-item">
+                                <a class="link-fx text-white" asp-area="CrmArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a class="link-fx text-white" asp-action="Index">قالب‌های پیامک</a>
+                            </li>
+                            <li class="breadcrumb-item text-white" aria-current="page">
+                                ویرایش
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero -->
+
+    <!-- Page Content -->
+    <div class="content">
+        <div class="row">
+            <!-- فرم ویرایش -->
+            <div class="col-lg-8">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle me-1"></i> اطلاعات قالب
+                        </h3>
+                    </div>
+                    <div class="block-content block-content-full">
+                        <form asp-action="Edit" method="post">
+                            @Html.AntiForgeryToken()
+                            <input asp-for="Id" type="hidden" />
+
+                            @if (!ViewData.ModelState.IsValid)
+                            {
+                                <div class="alert alert-danger alert-dismissible fade show">
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    <h5 class="alert-heading">
+                                        <i class="fa fa-exclamation-triangle me-1"></i> خطا در اعتبارسنجی
+                                    </h5>
+                                    <ul class="mb-0">
+                                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                        {
+                                            <li>@error.ErrorMessage</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+
+                            <!-- عنوان قالب -->
+                            <div class="mb-4">
+                                <label asp-for="Title" class="form-label">
+                                    عنوان قالب <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Title" class="form-control form-control-lg" placeholder="مثال: پیام خوش‌آمدگویی" />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+
+                            <!-- نوع قالب -->
+                            <div class="mb-4">
+                                <label asp-for="TemplateType" class="form-label">
+                                    نوع قالب <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="TemplateType" class="form-select">
+                                    <option value="0">عمومی</option>
+                                    <option value="1">تبلیغاتی</option>
+                                    <option value="2">اطلاع‌رسانی</option>
+                                    <option value="3">یادآوری</option>
+                                </select>
+                                <span asp-validation-for="TemplateType" class="text-danger small"></span>
+                            </div>
+
+                            <!-- متن قالب -->
+                            <div class="mb-4">
+                                <label asp-for="MessageTemplate" class="form-label">
+                                    متن قالب پیامک <span class="text-danger">*</span>
+                                </label>
+                                <textarea asp-for="MessageTemplate" class="form-control" rows="6" 
+                                          id="message-template" maxlength="500"></textarea>
+                                <span asp-validation-for="MessageTemplate" class="text-danger small"></span>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="form-text text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        متغیرها: <code>{Name}</code>, <code>{Date}</code>, <code>{Phone}</code>
+                                    </small>
+                                    <span id="char-count" class="badge bg-secondary">0 / 500</span>
+                                </div>
+                            </div>
+
+                            <!-- توضیحات -->
+                            <div class="mb-4">
+                                <label asp-for="Description" class="form-label">
+                                    توضیحات (اختیاری)
+                                </label>
+                                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+
+                            <!-- وضعیت -->
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                    <label asp-for="IsActive" class="form-check-label">
+                                        قالب فعال باشد
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- دکمه‌ها -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-check me-1"></i> ذخیره تغییرات
+                                    </button>
+                                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                                        <i class="fa fa-times me-1"></i> انصراف
+                                    </a>
+                                    <button type="button" class="btn btn-danger float-end" id="btn-delete">
+                                        <i class="fa fa-trash me-1"></i> حذف قالب
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- آمار استفاده -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-chart-bar me-1"></i> آمار استفاده
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="fs-2 fw-bold text-primary">@Model.UsageCount</div>
+                                <div class="text-muted small">تعداد استفاده</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="fs-2 fw-bold text-success">@Model.CreatedDate.ToString("yyyy/MM/dd")</div>
+                                <div class="text-muted small">تاریخ ایجاد</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="fs-2 fw-bold text-info">
+                                    @(Model.LastUpdateDate?.ToString("yyyy/MM/dd") ?? "-")
+                                </div>
+                                <div class="text-muted small">آخرین بروزرسانی</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- پیش‌نمایش -->
+            <div class="col-lg-4">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-eye me-1"></i> پیش‌نمایش پیامک
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="alert alert-info mb-0" id="preview-box" style="min-height: 150px; white-space: pre-wrap;">
+                            @Model.MessageTemplate
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نکات -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default bg-warning-light">
+                        <h3 class="block-title">
+                            <i class="fa fa-exclamation-triangle me-1 text-warning"></i> نکات مهم
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fa fa-check text-success me-2"></i>
+                                تغییرات فقط برای ارسال‌های آینده اعمال می‌شود
+                            </li>
+                            <li class="mb-2">
+                                <i class="fa fa-check text-success me-2"></i>
+                                پیامک‌های قبلی تغییری نمی‌کنند
+                            </li>
+                            <li class="mb-2">
+                                <i class="fa fa-check text-success me-2"></i>
+                                غیرفعال کردن قالب مانع از استفاده در ارسال‌های جدید می‌شود
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- دسترسی سریع -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-link me-1"></i> دسترسی سریع
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="d-grid gap-2">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                                <i class="fa fa-eye me-1"></i> مشاهده جزئیات کامل
+                            </a>
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="fa fa-list me-1"></i> بازگشت به لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function() {
+            const messageTemplate = $('#message-template');
+            const charCount = $('#char-count');
+            const previewBox = $('#preview-box');
+
+            // شمارش کاراکتر
+            function updateCharCount() {
+                const length = messageTemplate.val().length;
+                charCount.text(`${length} / 500`);
+
+                if (length > 450) {
+                    charCount.removeClass('bg-secondary bg-warning').addClass('bg-danger');
+                } else if (length > 350) {
+                    charCount.removeClass('bg-secondary bg-danger').addClass('bg-warning');
+                } else {
+                    charCount.removeClass('bg-warning bg-danger').addClass('bg-secondary');
+                }
+
+                // بروزرسانی پیش‌نمایش
+                previewBox.text(messageTemplate.val() || 'متن پیامک...');
+            }
+
+            messageTemplate.on('input', updateCharCount);
+            updateCharCount(); // اجرای اولیه
+
+            // حذف قالب
+            $('#btn-delete').on('click', function() {
+                Swal.fire({
+                    title: 'تایید حذف',
+                    text: 'آیا از حذف این قالب اطمینان دارید؟ این عملیات قابل بازگشت نیست!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'بله، حذف شود',
+                    cancelButtonText: 'خیر'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '@Url.Action("Delete")',
+                            type: 'POST',
+                            data: { 
+                                id: @Model.Id,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire('حذف شد!', response.message, 'success')
+                                        .then(() => {
+                                            window.location.href = '@Url.Action("Index")';
+                                        });
+                                } else {
+                                    Swal.fire('خطا!', response.message, 'error');
+                                }
+                            },
+                            error: function() {
+                                Swal.fire('خطا!', 'خطا در برقراری ارتباط با سرور', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // اعتبارسنجی فرم
+            $('form').on('submit', function(e) {
+                const title = $('#Title').val().trim();
+                const message = messageTemplate.val().trim();
+
+                if (!title || !message) {
+                    e.preventDefault();
+                    Swal.fire('خطا', 'لطفا تمام فیلدهای الزامی را پر کنید', 'error');
+                    return false;
+                }
+
+                if (message.length > 500) {
+                    e.preventDefault();
+                    Swal.fire('خطا', 'متن قالب نباید بیشتر از 500 کاراکتر باشد', 'error');
+                    return false;
+                }
+            });
+        });
+    </script>
+}
+
+<style>
+    #preview-box {
+        font-family: Tahoma, sans-serif;
+        font-size: 14px;
+        line-height: 1.8;
+        direction: rtl;
+        text-align: right;
+    }
+
+    .bg-warning-light {
+        background-color: #fff3cd !important;
+    }
+</style>

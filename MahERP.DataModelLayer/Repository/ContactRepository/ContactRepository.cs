@@ -153,6 +153,15 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
                 .FirstOrDefault(cp => cp.ContactId == contactId && cp.IsDefault && cp.IsActive);
         }
 
+        /// <summary>
+        /// دریافت شماره پیش‌فرض پیامک یک فرد
+        /// </summary>
+        public ContactPhone GetSmsDefaultPhone(int contactId)
+        {
+            return _context.ContactPhone_Tbl
+                .FirstOrDefault(cp => cp.ContactId == contactId && cp.IsSmsDefault && cp.IsActive);
+        }
+
         public async Task<bool> SetDefaultPhoneAsync(int phoneId, int contactId)
         {
             try
@@ -173,6 +182,41 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
                 {
                     newDefault.IsDefault = true;
                      _context.ContactPhone_Tbl.Update(newDefault);
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// تنظیم شماره به عنوان پیش‌فرض پیامک
+        /// </summary>
+        public async Task<bool> SetSmsDefaultPhoneAsync(int phoneId, int contactId)
+        {
+            try
+            {
+                // حذف پیش‌فرض پیامک قبلی
+                var previousSmsDefault = _context.ContactPhone_Tbl
+                    .Where(cp => cp.ContactId == contactId && cp.IsSmsDefault)
+                    .ToList();
+
+                foreach (var phone in previousSmsDefault)
+                {
+                    phone.IsSmsDefault = false;
+                }
+
+                // تنظیم پیش‌فرض جدید
+                var newSmsDefault = await _context.ContactPhone_Tbl.FindAsync(phoneId);
+                if (newSmsDefault != null && newSmsDefault.ContactId == contactId)
+                {
+                    newSmsDefault.IsSmsDefault = true;
+                    _context.ContactPhone_Tbl.Update(newSmsDefault);
                     await _context.SaveChangesAsync();
                     return true;
                 }

@@ -434,6 +434,230 @@ namespace MahERP.DataModelLayer.Repository
                 return result;
             }
         }
+
+        // ==================== ⭐ NEW: ارسال به گروه‌های سازمان ====================
+
+        /// <summary>
+        /// ارسال ایمیل به یک گروه سازمان (System Level)
+        /// </summary>
+        public async Task<EmailBulkResult> SendToOrganizationGroupAsync(
+            int groupId,
+            string subject,
+            string body,
+            string senderUserId,
+            byte sendMode = 0,
+            bool isHtml = true,
+            List<string> attachmentPaths = null)
+        {
+            var result = new EmailBulkResult
+            {
+                GroupId = groupId,
+                GroupType = "OrganizationGroup"
+            };
+
+            try
+            {
+                // دریافت گروه سازمان
+                var group = _context.OrganizationGroup_Tbl
+                    .Include(g => g.Members.Where(m => m.IsActive))
+                        .ThenInclude(m => m.Organization)
+                    .FirstOrDefault(g => g.Id == groupId);
+
+                if (group == null)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = "گروه سازمان یافت نشد";
+                    return result;
+                }
+
+                result.GroupTitle = group.Title;
+
+                // دریافت Organizations
+                var organizations = group.Members
+                    .Where(m => m.IsActive && m.Organization != null)
+                    .Select(m => m.Organization)
+                    .ToList();
+
+                if (!organizations.Any())
+                {
+                    result.Success = false;
+                    result.ErrorMessage = "گروه سازمان خالی است";
+                    return result;
+                }
+
+                var logs = new List<EmailLog>();
+
+                foreach (var org in organizations)
+                {
+                    try
+                    {
+                        // sendMode = 0: فقط ایمیل سازمان
+                        if (sendMode == 0 || sendMode == 2)
+                        {
+                            if (!string.IsNullOrEmpty(org.Email))
+                            {
+                                var log = await SendToOrganizationAsync(
+                                    org.Id,
+                                    subject,
+                                    body,
+                                    senderUserId,
+                                    isHtml,
+                                    attachmentPaths
+                                );
+                                logs.Add(log);
+                            }
+                        }
+
+                        // sendMode = 1: فقط افراد مرتبط
+                        // sendMode = 2: هر دو
+                        if (sendMode == 1 || sendMode == 2)
+                        {
+                            var contactLogs = await SendToOrganizationContactsAsync(
+                                org.Id,
+                                subject,
+                                body,
+                                senderUserId,
+                                isHtml,
+                                attachmentPaths
+                            );
+                            logs.AddRange(contactLogs);
+                        }
+
+                        await Task.Delay(500);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"خطا در ارسال به سازمان {org.Name}");
+                    }
+                }
+
+                result.Logs = logs;
+                result.TotalSent = logs.Count;
+                result.SuccessCount = logs.Count(l => l.IsSuccess);
+                result.FailedCount = logs.Count - result.SuccessCount;
+                result.Success = true;
+                result.Message = $"ایمیل به {result.SuccessCount} مورد از {result.TotalSent} مورد گروه سازمان '{group.Title}' ارسال شد";
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"خطا در ارسال: {ex.Message}";
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// ارسال ایمیل به گروه سازمان شعبه (Branch Level)
+        /// </summary>
+        public async Task<EmailBulkResult> SendToBranchOrganizationGroupAsync(
+            int branchGroupId,
+            string subject,
+            string body,
+            string senderUserId,
+            byte sendMode = 0,
+            bool isHtml = true,
+            List<string> attachmentPaths = null)
+        {
+            var result = new EmailBulkResult
+            {
+                GroupId = branchGroupId,
+                GroupType = "BranchOrganizationGroup"
+            };
+
+            try
+            {
+                // دریافت گروه سازمان شعبه
+                var group = _context.BranchOrganizationGroup_Tbl
+                    .Include(g => g.Members.Where(m => m.IsActive))
+                        .ThenInclude(m => m.BranchOrganization)
+                            .ThenInclude(bo => bo.Organization)
+                    .FirstOrDefault(g => g.Id == branchGroupId);
+
+                if (group == null)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = "گروه سازمان شعبه یافت نشد";
+                    return result;
+                }
+
+                result.GroupTitle = group.Title;
+
+                // دریافت Organizations
+                var organizations = group.Members
+                    .Where(m => m.IsActive && m.BranchOrganization?.Organization != null)
+                    .Select(m => m.BranchOrganization.Organization)
+                    .ToList();
+
+                if (!organizations.Any())
+                {
+                    result.Success = false;
+                    result.ErrorMessage = "گروه سازمان شعبه خالی است";
+                    return result;
+                }
+
+                var logs = new List<EmailLog>();
+
+                foreach (var org in organizations)
+                {
+                    try
+                    {
+                        // sendMode = 0: فقط ایمیل سازمان
+                        if (sendMode == 0 || sendMode == 2)
+                        {
+                            if (!string.IsNullOrEmpty(org.Email))
+                            {
+                                var log = await SendToOrganizationAsync(
+                                    org.Id,
+                                    subject,
+                                    body,
+                                    senderUserId,
+                                    isHtml,
+                                    attachmentPaths
+                                );
+                                logs.Add(log);
+                            }
+                        }
+
+                        // sendMode = 1 یا 2: افراد مرتبط
+                        if (sendMode == 1 || sendMode == 2)
+                        {
+                            var contactLogs = await SendToOrganizationContactsAsync(
+                                org.Id,
+                                subject,
+                                body,
+                                senderUserId,
+                                isHtml,
+                                attachmentPaths
+                            );
+                            logs.AddRange(contactLogs);
+                        }
+
+                        await Task.Delay(500);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"خطا در ارسال به سازمان {org.Name}");
+                    }
+                }
+
+                result.Logs = logs;
+                result.TotalSent = logs.Count;
+                result.SuccessCount = logs.Count(l => l.IsSuccess);
+                result.FailedCount = logs.Count - result.SuccessCount;
+                result.Success = true;
+                result.Message = $"ایمیل به {result.SuccessCount} مورد از {result.TotalSent} مورد گروه سازمان شعبه '{group.Title}' ارسال شد";
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"خطا در ارسال: {ex.Message}";
+                return result;
+            }
+        }
     }
 
 }

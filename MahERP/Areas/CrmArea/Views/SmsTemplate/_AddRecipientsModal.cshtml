@@ -1,0 +1,486 @@
+﻿@model int
+
+<div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+        <form asp-action="AddRecipients" asp-controller="SmsTemplate" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="templateId" value="@Model" />
+
+            <div class="block block-rounded mb-0">
+                <div class="block-header bg-primary text-white">
+                    <h3 class="block-title text-white">
+                        <i class="fa fa-users me-2"></i>افزودن مخاطب به قالب پیامک
+                    </h3>
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal">
+                        <i class="fa fa-times text-white"></i>
+                    </button>
+                </div>
+
+                <div class="block-content">
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle me-2"></i>
+                        ابتدا افراد یا سازمان‌ها را انتخاب کنید، سپس برای هر فرد می‌توانید شماره‌های خاص را انتخاب کنید.
+                    </div>
+
+                    <div class="row">
+                        <!-- ستون چپ: انتخاب Contacts -->
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fa fa-user me-1 text-primary"></i>
+                                    1️⃣ انتخاب افراد
+                                </label>
+                                <select class="js-select2 form-select" 
+                                        id="select-contacts" 
+                                        multiple="multiple"
+                                        data-placeholder="جستجو و انتخاب افراد..."
+                                        style="width: 100%;">
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    ابتدا افراد را انتخاب کنید
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fa fa-building me-1 text-info"></i>
+                                    انتخاب سازمان‌ها
+                                </label>
+                                <select class="js-select2 form-select" 
+                                        id="select-organizations" 
+                                        multiple="multiple"
+                                        data-placeholder="جستجو و انتخاب سازمان‌ها..."
+                                        style="width: 100%;">
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-search me-1"></i>
+                                    با انتخاب سازمان، لیست افراد آن نمایش داده می‌شود
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- COLUMN 2: Selected Numbers -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fa fa-phone me-1 text-success"></i>
+                                2️⃣ انتخاب شماره‌های تماس
+                            </label>
+                            
+                            <div id="phone-selection-area" class="border rounded p-3" style="min-height: 300px; max-height: 400px; overflow-y: auto;">
+                                <div class="text-center text-muted py-5">
+                                    <i class="fa fa-hand-point-left fa-3x mb-3"></i>
+                                    <p>ابتدا افراد را از لیست چپ انتخاب کنید</p>
+                                </div>
+                            </div>
+                            
+                            <small class="form-text text-muted mt-2 d-block">
+                                <i class="fa fa-check-circle me-1 text-success"></i>
+                                شماره‌های انتخاب شده در لیست بالا نمایش داده می‌شوند
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="block-content block-content-full text-end border-top">
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i>انصراف
+                    </button>
+                    <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i>افزودن مخاطبین
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* ⭐ Select2 Styling */
+    .select2-container--default .select2-selection--multiple {
+        min-height: 100px;
+        border: 1px solid #d4dae3;
+        border-radius: 0.375rem;
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        margin: 0.25rem;
+        border-radius: 0.25rem;
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: white;
+        margin-left: 0.25rem;
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #ffcccc;
+    }
+
+    .select2-dropdown {
+        border-radius: 0.375rem;
+        border-color: #d4dae3;
+    }
+
+    .select2-results__option--highlighted {
+        background-color: #0d6efd !important;
+    }
+
+    /* ⭐ Phone Card Styling */
+    .phone-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        background: white;
+        transition: all 0.2s;
+    }
+
+    .phone-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .phone-card.selected {
+        border-color: #0d6efd;
+        background-color: #f0f7ff;
+    }
+
+    .phone-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .phone-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .phone-item input[type="checkbox"] {
+        margin-left: 0.75rem;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .contact-name {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .phone-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+</style>
+
+<script>
+    (function() {
+        console.log('🎯 AddRecipientsModal loaded');
+        
+        // ⭐ ذخیره اطلاعات Contacts انتخاب شده
+        let selectedContactsData = {};
+        let selectedOrganizationsData = {};
+
+        $(document).one('shown.bs.modal', '.modal', function() {
+            console.log('📢 Modal shown event fired');
+            
+            setTimeout(function() {
+                console.log('🚀 Initializing Select2 with AJAX...');
+                
+                if ($('#select-contacts').hasClass('select2-hidden-accessible')) {
+                    $('#select-contacts').select2('destroy');
+                    $('#select-organizations').select2('destroy');
+                }
+                
+                // ⭐ Initialize Select2 for Contacts (بدون شماره در dropdown)
+                $('#select-contacts').select2({
+                    placeholder: 'جستجو و انتخاب افراد...',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('.modal:visible'),
+                    ajax: {
+                        url: '@Url.Action("SearchContactsSimple", "SmsTemplate", new { area = "CrmArea" })',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return { search: params.term || '' };
+                        },
+                        processResults: function (data) {
+                            console.log('📊 Contacts received:', data);
+                            return { results: data || [] };
+                        },
+                        cache: true
+                    },
+                    minimumInputLength: 0,
+                    language: {
+                        noResults: function () { return 'نتیجه‌ای یافت نشد'; },
+                        searching: function () { return 'در حال جستجو...'; }
+                    }
+                }).on('select2:select', function(e) {
+                    const contactId = e.params.data.id;
+                    const contactName = e.params.data.text;
+                    const bestPhoneId = e.params.data.phoneId;
+                    const hasPhone = e.params.data.hasPhone;
+                    
+                    console.log('✅ Contact selected:', contactId, contactName, 'Best phone:', bestPhoneId);
+                    
+                    // دریافت شماره‌های Contact
+                    loadContactPhones(contactId, contactName, 'contact', bestPhoneId);
+                }).on('select2:unselect', function(e) {
+                    const contactId = e.params.data.id;
+                    
+                    console.log('❌ Contact unselected:', contactId);
+                    
+                    // حذف شماره‌های Contact
+                    removeContactPhones(contactId);
+                });
+
+                // ⭐ Initialize Select2 for Organizations
+                $('#select-organizations').select2({
+                    placeholder: 'جستجو و انتخاب سازمان‌ها...',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('.modal:visible'),
+                    ajax: {
+                        url: '@Url.Action("SearchOrganizations", "SmsTemplate", new { area = "CrmArea" })',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return { search: params.term || '' };
+                        },
+                        processResults: function (data) {
+                            return { results: data || [] };
+                        },
+                        cache: true
+                    },
+                    minimumInputLength: 0,
+                    language: {
+                        noResults: function () { return 'نتیجه‌ای یافت نشد'; },
+                        searching: function () { return 'در حال جستجو...'; }
+                    }
+                }).on('select2:select', function(e) {
+                    const orgId = e.params.data.id;
+                    const orgName = e.params.data.text;
+                    
+                    console.log('✅ Organization selected:', orgId, orgName);
+                    
+                    // دریافت افراد سازمان
+                    loadOrganizationContacts(orgId, orgName);
+                }).on('select2:unselect', function(e) {
+                    const orgId = e.params.data.id;
+                    
+                    console.log('❌ Organization unselected:', orgId);
+                    
+                    // حذف افراد سازمان
+                    removeOrganizationContacts(orgId);
+                });
+                
+                console.log('✅ Select2 initialized successfully');
+            }, 300);
+        });
+
+        // ⭐ تابع دریافت شماره‌های یک Contact
+        function loadContactPhones(contactId, contactName, source, preselectedPhoneId) {
+            $.ajax({
+                url: '@Url.Action("GetContactPhones", "SmsTemplate", new { area = "CrmArea" })',
+                type: 'GET',
+                data: { contactId: contactId },
+                success: function(phones) {
+                    console.log('📞 Phones loaded for contact:', contactId, phones, 'Preselected:', preselectedPhoneId);
+                    
+                    // ذخیره اطلاعات
+                    selectedContactsData[contactId] = {
+                        name: contactName,
+                        phones: phones,
+                        source: source, // 'contact' or 'organization'
+                        preselectedPhoneId: preselectedPhoneId // ⭐ اضافه شده
+                    };
+                    
+                    // نمایش UI
+                    renderPhoneSelection();
+                },
+                error: function() {
+                    console.error('❌ Failed to load phones for contact:', contactId);
+                }
+            });
+        }
+
+        // ⭐ تابع دریافت افراد یک Organization
+        function loadOrganizationContacts(orgId, orgName) {
+            $.ajax({
+                url: '@Url.Action("GetOrganizationContacts", "SmsTemplate", new { area = "CrmArea" })',
+                type: 'GET',
+                data: { organizationId: orgId },
+                success: function(contacts) {
+                    console.log('👥 Contacts loaded for organization:', orgId, contacts);
+                    
+                    // ذخیره اطلاعات سازمان
+                    selectedOrganizationsData[orgId] = {
+                        name: orgName,
+                        contacts: contacts
+                    };
+                    
+                    // برای هر فرد، دریافت شماره‌ها
+                    $.each(contacts, function(index, contact) {
+                        // برای افراد سازمان، phoneId ممکنه از API نیاد، پس undefined می‌فرستیم
+                        const phoneId = contact.phoneId || null;
+                        loadContactPhones(contact.id, contact.text, 'organization_' + orgId, phoneId);
+                    });
+                },
+                error: function() {
+                    console.error('❌ Failed to load contacts for organization:', orgId);
+                }
+            });
+        }
+
+        // ⭐ تابع حذف شماره‌های یک Contact
+        function removeContactPhones(contactId) {
+            delete selectedContactsData[contactId];
+            renderPhoneSelection();
+        }
+
+        // ⭐ تابع حذف افراد یک Organization
+        function removeOrganizationContacts(orgId) {
+            // حذف تمام Contacts این Organization
+            $.each(selectedContactsData, function(contactId, data) {
+                if (data.source === 'organization_' + orgId) {
+                    delete selectedContactsData[contactId];
+                }
+            });
+            
+            delete selectedOrganizationsData[orgId];
+            renderPhoneSelection();
+        }
+
+        // ⭐ تابع نمایش UI انتخاب شماره‌ها
+        function renderPhoneSelection() {
+            const $area = $('#phone-selection-area');
+            
+            if (Object.keys(selectedContactsData).length === 0) {
+                $area.html(`
+                    <div class="text-center text-muted py-5">
+                        <i class="fa fa-hand-point-left fa-3x mb-3"></i>
+                        <p>ابتدا افراد یا سازمان‌ها را از لیست چپ انتخاب کنید</p>
+                    </div>
+                `);
+                return;
+            }
+
+            let html = '';
+            
+            // ⭐ گروه‌بندی بر اساس Organization
+            const organizationGroups = {};
+            const directContacts = {};
+            
+            $.each(selectedContactsData, function(contactId, data) {
+                if (data.source.startsWith('organization_')) {
+                    const orgId = data.source.replace('organization_', '');
+                    if (!organizationGroups[orgId]) {
+                        organizationGroups[orgId] = [];
+                    }
+                    organizationGroups[orgId].push({ id: contactId, data: data });
+                } else {
+                    directContacts[contactId] = data;
+                }
+            });
+            
+            // ⭐ نمایش افراد مستقیم
+            if (Object.keys(directContacts).length > 0) {
+                html += '<div class="mb-3"><h6 class="text-primary"><i class="fa fa-user me-2"></i>افراد انتخاب شده:</h6></div>';
+                
+                $.each(directContacts, function(contactId, data) {
+                    html += renderContactCard(contactId, data);
+                });
+            }
+            
+            // ⭐ نمایش افراد سازمان‌ها
+            $.each(organizationGroups, function(orgId, contacts) {
+                const orgData = selectedOrganizationsData[orgId];
+                if (orgData) {
+                    html += `
+                        <div class="mb-3 mt-4">
+                            <h6 class="text-info">
+                                <i class="fa fa-building me-2"></i>${orgData.name}
+                                <span class="badge bg-info ms-2">${contacts.length} نفر</span>
+                            </h6>
+                        </div>
+                    `;
+                    
+                    $.each(contacts, function(index, item) {
+                        html += renderContactCard(item.id, item.data);
+                    });
+                }
+            });
+
+            $area.html(html);
+        }
+
+        // ⭐ تابع رندر کارت یک Contact
+        function renderContactCard(contactId, data) {
+            let html = `
+                <div class="phone-card" data-contact-id="${contactId}">
+                    <div class="contact-name">
+                        <i class="fa fa-user-circle me-2 text-primary"></i>
+                        ${data.name}
+                    </div>
+            `;
+            
+            if (data.phones && data.phones.length > 0) {
+                $.each(data.phones, function(index, phone) {
+                    const isDefault = phone.isDefault ? '<span class="badge bg-info phone-badge ms-2">پیش‌فرض</span>' : '';
+                    const isSmsDefault = phone.isSmsDefault ? '<span class="badge bg-success phone-badge ms-2">پیامک</span>' : '';
+                    
+                    // ⭐ منطق انتخاب خودکار:
+                    // 1. اگر preselectedPhoneId مشخص شده، اون رو انتخاب کن
+                    // 2. وگرنه اگر IsSmsDefault، انتخاب کن
+                    let checked = '';
+                    if (data.preselectedPhoneId) {
+                        checked = (phone.id === data.preselectedPhoneId) ? 'checked' : '';
+                    } else {
+                        checked = phone.isSmsDefault ? 'checked' : '';
+                    }
+                    
+                    html += `
+                        <div class="phone-item">
+                            <input type="checkbox" 
+                                   name="selectedContacts" 
+                                   value="c${contactId}_p${phone.id}" 
+                                   id="phone_${contactId}_${phone.id}"
+                                   ${checked}>
+                            <label for="phone_${contactId}_${phone.id}" class="mb-0 ms-2 flex-grow-1" style="cursor: pointer;">
+                                <i class="fa fa-phone me-2 text-success"></i>
+                                ${phone.formattedNumber}
+                                <span class="badge bg-primary phone-badge ms-2">${phone.phoneTypeText}</span>
+                                ${isDefault}
+                                ${isSmsDefault}
+                            </label>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `
+                    <div class="text-muted small">
+                        <i class="fa fa-exclamation-circle me-1"></i>
+                        هیچ شماره‌ای ثبت نشده است
+                    </div>
+                    <input type="hidden" name="selectedContacts" value="c${contactId}_p0">
+                `;
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+
+    })();
+</script>

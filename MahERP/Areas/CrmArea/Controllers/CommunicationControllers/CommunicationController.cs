@@ -318,6 +318,398 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
             }
         }
 
+        // ==================== ⭐ NEW: ارسال پیامک به گروه‌های سازمان ====================
+
+        /// <summary>
+        /// ارسال پیامک به یک گروه سازمان (System Level)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendSmsToOrganizationGroup(
+            int organizationGroupId, 
+            string message, 
+            byte sendMode = 0, 
+            int? providerId = null)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var result = await _smsService.SendToOrganizationGroupAsync(
+                    organizationGroupId, 
+                    message, 
+                    userId, 
+                    sendMode, 
+                    providerId);
+
+                if (!result.Success)
+                    return Json(new { success = false, message = result.ErrorMessage });
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Communication",
+                    "SendSmsToOrganizationGroup",
+                    $"ارسال پیامک به گروه سازمان '{result.GroupTitle}' - حالت: {GetSendModeText(sendMode)} - {result.SuccessCount}/{result.TotalSent} موفق",
+                    recordId: organizationGroupId.ToString()
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    successCount = result.SuccessCount,
+                    failedCount = result.FailedCount,
+                    totalSent = result.TotalSent,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Communication", "SendSmsToOrganizationGroup", "خطا", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// ارسال پیامک به گروه سازمان شعبه (Branch Level)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendSmsToBranchOrganizationGroup(
+            int branchOrganizationGroupId, 
+            string message, 
+            byte sendMode = 0, 
+            int? providerId = null)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var result = await _smsService.SendToBranchOrganizationGroupAsync(
+                    branchOrganizationGroupId, 
+                    message, 
+                    userId, 
+                    sendMode, 
+                    providerId);
+
+                if (!result.Success)
+                    return Json(new { success = false, message = result.ErrorMessage });
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Communication",
+                    "SendSmsToBranchOrganizationGroup",
+                    $"ارسال پیامک به گروه سازمان شعبه '{result.GroupTitle}' - حالت: {GetSendModeText(sendMode)} - {result.SuccessCount}/{result.TotalSent} موفق",
+                    recordId: branchOrganizationGroupId.ToString()
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    successCount = result.SuccessCount,
+                    failedCount = result.FailedCount,
+                    totalSent = result.TotalSent,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Communication", "SendSmsToBranchOrganizationGroup", "خطا", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        // ==================== ⭐ NEW: ارسال پیامک به چند گروه ====================
+
+        /// <summary>
+        /// ارسال پیامک به چند گروه افراد
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendSmsToMultipleContactGroups(
+            List<int> contactGroupIds, 
+            string message, 
+            int? providerId = null)
+        {
+            try
+            {
+                if (contactGroupIds == null || !contactGroupIds.Any())
+                    return Json(new { success = false, message = "لیست گروه‌ها خالی است" });
+
+                var userId = GetUserId();
+                var result = await _smsService.SendToMultipleContactGroupsAsync(
+                    contactGroupIds, 
+                    message, 
+                    userId, 
+                    providerId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Communication",
+                    "SendSmsToMultipleContactGroups",
+                    $"ارسال پیامک به {contactGroupIds.Count} گروه افراد - {result.SuccessCount}/{result.TotalSent} موفق"
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    totalGroups = result.TotalGroups,
+                    successfulGroups = result.SuccessfulGroups,
+                    successCount = result.SuccessCount,
+                    failedCount = result.FailedCount,
+                    totalSent = result.TotalSent,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Communication", "SendSmsToMultipleContactGroups", "خطا", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// ارسال پیامک به چند گروه سازمان
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendSmsToMultipleOrganizationGroups(
+            List<int> organizationGroupIds, 
+            string message, 
+            byte sendMode = 0, 
+            int? providerId = null)
+        {
+            try
+            {
+                if (organizationGroupIds == null || !organizationGroupIds.Any())
+                    return Json(new { success = false, message = "لیست گروه‌ها خالی است" });
+
+                var userId = GetUserId();
+                var result = await _smsService.SendToMultipleOrganizationGroupsAsync(
+                    organizationGroupIds, 
+                    message, 
+                    userId, 
+                    sendMode, 
+                    providerId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Communication",
+                    "SendSmsToMultipleOrganizationGroups",
+                    $"ارسال پیامک به {organizationGroupIds.Count} گروه سازمان - حالت: {GetSendModeText(sendMode)} - {result.SuccessCount}/{result.TotalSent} موفق"
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    totalGroups = result.TotalGroups,
+                    successfulGroups = result.SuccessfulGroups,
+                    successCount = result.SuccessCount,
+                    failedCount = result.FailedCount,
+                    totalSent = result.TotalSent,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Communication", "SendSmsToMultipleOrganizationGroups", "خطا", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// ارسال پیامک به چند گروه شعبه افراد
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendSmsToMultipleBranchContactGroups(
+            List<int> branchContactGroupIds, 
+            string message, 
+            int? providerId = null)
+        {
+            try
+            {
+                if (branchContactGroupIds == null || !branchContactGroupIds.Any())
+                    return Json(new { success = false, message = "لیست گروه‌ها خالی است" });
+
+                var userId = GetUserId();
+                var result = await _smsService.SendToMultipleBranchContactGroupsAsync(
+                    branchContactGroupIds, 
+                    message, 
+                    userId, 
+                    providerId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Communication",
+                    "SendSmsToMultipleBranchContactGroups",
+                    $"ارسال پیامک به {branchContactGroupIds.Count} گروه شعبه افراد - {result.SuccessCount}/{result.TotalSent} موفق"
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    totalGroups = result.TotalGroups,
+                    successfulGroups = result.SuccessfulGroups,
+                    successCount = result.SuccessCount,
+                    failedCount = result.FailedCount,
+                    totalSent = result.TotalSent,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Communication", "SendSmsToMultipleBranchContactGroups", "خطا", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// ارسال پیامک به چند گروه شعبه سازمان
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendSmsToMultipleBranchOrganizationGroups(
+            List<int> branchOrganizationGroupIds, 
+            string message, 
+            byte sendMode = 0, 
+            int? providerId = null)
+        {
+            try
+            {
+                if (branchOrganizationGroupIds == null || !branchOrganizationGroupIds.Any())
+                    return Json(new { success = false, message = "لیست گروه‌ها خالی است" });
+
+                var userId = GetUserId();
+                var result = await _smsService.SendToMultipleBranchOrganizationGroupsAsync(
+                    branchOrganizationGroupIds, 
+                    message, 
+                    userId, 
+                    sendMode, 
+                    providerId);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Communication",
+                    "SendSmsToMultipleBranchOrganizationGroups",
+                    $"ارسال پیامک به {branchOrganizationGroupIds.Count} گروه شعبه سازمان - حالت: {GetSendModeText(sendMode)} - {result.SuccessCount}/{result.TotalSent} موفق"
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    totalGroups = result.TotalGroups,
+                    successfulGroups = result.SuccessfulGroups,
+                    successCount = result.SuccessCount,
+                    failedCount = result.FailedCount,
+                    totalSent = result.TotalSent,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Communication", "SendSmsToMultipleBranchOrganizationGroups", "خطا", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// ارسال ایمیل به یک گروه سازمان (System Level)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendEmailToOrganizationGroup(
+            int organizationGroupId, 
+            string subject, 
+            string body, 
+            byte sendMode = 0, 
+            bool isHtml = true)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var result = await _emailRepository.SendToOrganizationGroupAsync(
+                    organizationGroupId, 
+                    subject, 
+                    body, 
+                    userId, 
+                    sendMode, 
+                    isHtml);
+
+                if (!result.Success)
+                    return Json(new { success = false, message = result.ErrorMessage });
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Communication",
+                    "SendEmailToOrganizationGroup",
+                    $"ارسال ایمیل به 그룹 سازمان '{result.GroupTitle}' - حالت: {GetSendModeText(sendMode)} - {result.SuccessCount}/{result.TotalSent} موفق",
+                    recordId: organizationGroupId.ToString()
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    successCount = result.SuccessCount,
+                    failedCount = result.FailedCount,
+                    totalSent = result.TotalSent,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Communication", "SendEmailToOrganizationGroup", "خطا", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// ارسال ایمیل به گروه سازمان شعبه (Branch Level)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendEmailToBranchOrganizationGroup(
+            int branchOrganizationGroupId, 
+            string subject, 
+            string body, 
+            byte sendMode = 0, 
+            bool isHtml = true)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var result = await _emailRepository.SendToBranchOrganizationGroupAsync(
+                    branchOrganizationGroupId, 
+                    subject, 
+                    body, 
+                    userId, 
+                    sendMode, 
+                    isHtml);
+
+                if (!result.Success)
+                    return Json(new { success = false, message = result.ErrorMessage });
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Create,
+                    "Communication",
+                    "SendEmailToBranchOrganizationGroup",
+                    $"ارسال ایمیل به گروه سازمان شعبه '{result.GroupTitle}' - حالت: {GetSendModeText(sendMode)} - {result.SuccessCount}/{result.TotalSent} موفق",
+                    recordId: branchOrganizationGroupId.ToString()
+                );
+
+                return Json(new
+                {
+                    success = true,
+                    successCount = result.SuccessCount,
+                    failedCount = result.FailedCount,
+                    totalSent = result.TotalSent,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Communication", "SendEmailToBranchOrganizationGroup", "خطا", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
         // ==================== HELPER METHODS ====================
 
         /// <summary>
@@ -348,6 +740,135 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
                 }
 
                 return Json(new { success = true, count });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// ⭐ دریافت تعداد سازمان‌ها در یک 그룹
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetOrganizationGroupCount(int groupId, bool isBranchGroup = false)
+        {
+            try
+            {
+                int count = 0;
+
+                if (isBranchGroup)
+                {
+                    count = await _context.BranchOrganizationGroupMember_Tbl
+                        .Where(m => m.BranchGroupId == groupId && m.IsActive)
+                        .CountAsync();
+                }
+                else
+                {
+                    count = await _context.OrganizationGroupMember_Tbl
+                        .Where(m => m.GroupId == groupId && m.IsActive)
+                        .CountAsync();
+                }
+
+                return Json(new { success = true, count });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// ⭐ دریافت لیست گروه‌های افراد برای Dropdown
+        /// </summary>
+        [HttpGet]
+        public IActionResult GetContactGroupsDropdown(int? branchId = null)
+        {
+            try
+            {
+                if (branchId.HasValue)
+                {
+                    // گروه‌های شعبه
+                    var branchGroups = _context.BranchContactGroup_Tbl
+                        .Where(g => g.BranchId == branchId.Value && g.IsActive)
+                        .OrderBy(g => g.DisplayOrder)
+                        .ThenBy(g => g.Title)
+                        .Select(g => new
+                        {
+                            id = g.Id,
+                            text = g.Title,
+                            memberCount = g.Members.Count(m => m.IsActive)
+                        })
+                        .ToList();
+
+                    return Json(branchGroups);
+                }
+                else
+                {
+                    // گروه‌های سیستمی
+                    var groups = _context.ContactGroup_Tbl
+                        .Where(g => g.IsActive)
+                        .OrderBy(g => g.DisplayOrder)
+                        .ThenBy(g => g.Title)
+                        .Select(g => new
+                        {
+                            id = g.Id,
+                            text = g.Title,
+                            memberCount = g.Members.Count(m => m.IsActive)
+                        })
+                        .ToList();
+
+                    return Json(groups);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// ⭐ دریافت لیست گروه‌های سازمان برای Dropdown
+        /// </summary>
+        [HttpGet]
+        public IActionResult GetOrganizationGroupsDropdown(int? branchId = null)
+        {
+            try
+            {
+                if (branchId.HasValue)
+                {
+                    // گروه‌های سازمان شعبه
+                    var branchGroups = _context.BranchOrganizationGroup_Tbl
+                        .Where(g => g.BranchId == branchId.Value && g.IsActive)
+                        .OrderBy(g => g.DisplayOrder)
+                        .ThenBy(g => g.Title)
+                        .Select(g => new
+                        {
+                            id = g.Id,
+                            text = g.Title,
+                            memberCount = g.Members.Count(m => m.IsActive)
+                        })
+                        .ToList();
+
+                    return Json(branchGroups);
+                }
+                else
+                {
+                    // گروه‌های سازمان سیستمی
+                    var groups = _context.OrganizationGroup_Tbl
+                        .Where(g => g.IsActive)
+                        .OrderBy(g => g.DisplayOrder)
+                        .ThenBy(g => g.Title)
+                        .Select(g => new
+                        {
+                            id = g.Id,
+                            text = g.Title,
+                            memberCount = g.Members.Count(m => m.IsActive)
+                        })
+                        .ToList();
+
+                    return Json(groups);
+                }
             }
             catch (Exception ex)
             {
@@ -432,6 +953,22 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
             {
                 return Json(new { success = false, message = ex.Message });
             }
+        }
+
+        // ==================== PRIVATE HELPER ====================
+
+        /// <summary>
+        /// دریافت متن توضیحی برای حالت ارسال
+        /// </summary>
+        private string GetSendModeText(byte sendMode)
+        {
+            return sendMode switch
+            {
+                0 => "فقط شماره سازمان",
+                1 => "فقط افراد مرتبط",
+                2 => "هر دو",
+                _ => "نامشخص"
+            };
         }
     }
 }

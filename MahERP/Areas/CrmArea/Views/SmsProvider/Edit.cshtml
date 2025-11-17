@@ -1,0 +1,196 @@
+﻿@model SmsProvider
+@{
+    ViewData["Title"] = "ویرایش خدمات‌دهنده";
+}
+
+<main id="main-container">
+    <!-- Hero -->
+    <div class="bg-image" style="background-image: url('/assets/media/photos/photo13@2x.jpg');">
+        <div class="bg-black-50">
+            <div class="content content-full">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="fw-bold my-2 text-white">
+                        <i class="fa fa-edit me-2"></i>
+                        ویرایش خدمات‌دهنده: @Model.ProviderName
+                    </h1>
+                    <div>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left me-1"></i> بازگشت
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.Id)
+            @Html.HiddenFor(m => m.CreatedDate)
+            @Html.HiddenFor(m => m.CreatorUserId)
+
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-info-circle me-1"></i> اطلاعات خدمات‌دهنده
+                    </h3>
+                </div>
+
+                <div class="block-content">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row">
+                        <!-- کد خدمات‌دهنده -->
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProviderCode" class="form-label">کد خدمات‌دهنده *</label>
+                            <input asp-for="ProviderCode" class="form-control text-uppercase" readonly />
+                            <span asp-validation-for="ProviderCode" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                کد خدمات‌دهنده قابل تغییر نیست
+                            </small>
+                        </div>
+
+                        <!-- نام خدمات‌دهنده -->
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProviderName" class="form-label">نام خدمات‌دهنده *</label>
+                            <input asp-for="ProviderName" class="form-control" />
+                            <span asp-validation-for="ProviderName" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- نام کاربری -->
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Username" class="form-label">نام کاربری *</label>
+                            <input asp-for="Username" class="form-control" autocomplete="off" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+
+                        <!-- رمز عبور -->
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Password" class="form-label">رمز عبور *</label>
+                            <div class="input-group">
+                                <input asp-for="Password" type="password" class="form-control" id="password-input" autocomplete="new-password" />
+                                <button class="btn btn-secondary" type="button" id="toggle-password">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- شماره اختصاصی -->
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="SenderNumber" class="form-label">شماره اختصاصی</label>
+                            <input asp-for="SenderNumber" class="form-control" dir="ltr" />
+                            <span asp-validation-for="SenderNumber" class="text-danger"></span>
+                        </div>
+
+                        <!-- API URL -->
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ApiUrl" class="form-label">API URL (اختیاری)</label>
+                            <input asp-for="ApiUrl" class="form-control" dir="ltr" />
+                            <span asp-validation-for="ApiUrl" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- API Key -->
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="ApiKey" class="form-label">API Key (اختیاری)</label>
+                            <input asp-for="ApiKey" class="form-control" dir="ltr" />
+                            <span asp-validation-for="ApiKey" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- توضیحات -->
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Description" class="form-label">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- تنظیمات -->
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsDefault" class="form-check-input" />
+                                <label asp-for="IsDefault" class="form-check-label">
+                                    تنظیم به عنوان پیش‌فرض
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" />
+                                <label asp-for="IsActive" class="form-check-label">
+                                    فعال
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- اطلاعات اعتبار -->
+                    @if (Model.RemainingCredit.HasValue)
+                    {
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>اعتبار باقیمانده:</strong>
+                                    <span class="badge bg-dark ms-2">@Model.RemainingCredit.Value.ToString("N0")</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>آخرین بررسی:</strong>
+                                    @if (Model.LastCreditCheckDate.HasValue)
+                                    {
+                                        <span class="text-muted">@Model.LastCreditCheckDate.Value.ToString("yyyy/MM/dd HH:mm")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">هرگز</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="block-content block-content-full text-end border-top">
+                    <a asp-action="Index" class="btn btn-alt-secondary">
+                        <i class="fa fa-times me-1"></i>انصراف
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-check me-1"></i>ذخیره تغییرات
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            // Toggle password visibility
+            $('#toggle-password').on('click', function() {
+                const input = $('#password-input');
+                const icon = $(this).find('i');
+                
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+        });
+    </script>
+}

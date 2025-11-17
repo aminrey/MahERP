@@ -164,33 +164,88 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
         }
 
         // ========== مدیریت مخاطبین ==========
+        [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
+        public IActionResult ShowAddRecipientsModal(int id)
+        {
+            return PartialView("_AddRecipientsModal", id);
+        }
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public async Task<IActionResult> AddRecipients(
             int templateId,
-            List<int> contactIds,
+            List<string> selectedContacts,
             List<int> organizationIds)
         {
             try
             {
+                if ((selectedContacts == null || selectedContacts.Count == 0) && 
+                    (organizationIds == null || organizationIds.Count == 0))
+                {
+                    return Json(new
+                    {
+                        status = "validation-error",
+                        message = new[]
+                        {
+                            new { status = "warning", text = "لطفا حداقل یک مخاطب انتخاب کنید" }
+                        }
+                    });
+                }
+
                 var currentUser = await _userManager.GetUserAsync(User);
-                int count = await _templateRepo.AddMultipleRecipientsAsync(
+                
+                // Parse selectedContacts
+                var contactData = new List<(int contactId, int? phoneId)>();
+                if (selectedContacts != null)
+                {
+                    foreach (var item in selectedContacts)
+                    {
+                        // فرمت: "c123_p456" یا "c123_p0"
+                        var parts = item.Split('_');
+                        if (parts.Length == 2)
+                        {
+                            var contactId = int.Parse(parts[0].Replace("c", ""));
+                            var phoneIdStr = parts[1].Replace("p", "");
+                            var phoneId = phoneIdStr == "0" ? (int?)null : int.Parse(phoneIdStr);
+                            
+                            contactData.Add((contactId, phoneId));
+                        }
+                    }
+                }
+                
+                int count = await _templateRepo.AddMultipleRecipientsWithPhonesAsync(
                     templateId,
-                    contactIds,
-                    organizationIds,
+                    contactData,
+                    organizationIds ?? new List<int>(),
                     currentUser.Id
                 );
 
-                return Json(new { success = true, message = $"{count} مخاطب اضافه شد" });
+                return Json(new
+                {
+                    status = "redirect",
+                    redirectUrl = Url.Action("Details", new { id = templateId }),
+                    message = new[]
+                    {
+                        new { status = "success", text = $"{count} مخاطب با موفقیت اضافه شد" }
+                    }
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+                return Json(new
+                {
+                    status = "error",
+                    message = new[]
+                    {
+                        new { status = "error", text = $"خطا: {ex.Message}" }
+                    }
+                });
             }
         }
 
         [HttpPost]
-        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.CREATE")]
         public async Task<IActionResult> RemoveRecipient(int recipientId)
         {
             try
@@ -207,18 +262,83 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
         // ========== جستجو ==========
         [HttpGet]
         [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
+        public async Task<IActionResult> SearchContactsSimple(string search = "")
+        {
+            try
+            {
+                var contacts = await _templateRepo.SearchContactsSimpleAsync(search);
+                return Json(contacts);
+            }
+            catch (Exception ex)
+            {
+                return Json(new List<object>());
+            }
+        }
+
+        /// <summary>
+        /// دریافت شماره‌های یک Contact
+        /// </summary>
+        [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
+        public async Task<IActionResult> GetContactPhones(int contactId)
+        {
+            try
+            {
+                var phones = await _templateRepo.GetContactPhonesAsync(contactId);
+                return Json(phones);
+            }
+            catch (Exception ex)
+            {
+                return Json(new List<object>());
+            }
+        }
+
+        /// <summary>
+        /// دریافت افراد یک Organization
+        /// </summary>
+        [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
+        public async Task<IActionResult> GetOrganizationContacts(int organizationId)
+        {
+            try
+            {
+                var contacts = await _templateRepo.GetOrganizationContactsAsync(organizationId);
+                return Json(contacts);
+            }
+            catch (Exception ex)
+            {
+                return Json(new List<object>());
+            }
+        }
+
+        [HttpGet]
+        [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
         public async Task<IActionResult> SearchContacts(string search = "")
         {
-            var contacts = await _templateRepo.SearchContactsAsync(search);
-            return Json(contacts);
+            try
+            {
+                var contacts = await _templateRepo.SearchContactsAsync(search);
+                return Json(contacts);
+            }
+            catch (Exception ex)
+            {
+                return Json(new List<object>());
+            }
         }
 
         [HttpGet]
         [PermissionRequired("COMMUNICATION.SMS.TEMPLATE.VIEW")]
         public async Task<IActionResult> SearchOrganizations(string search = "")
         {
-            var organizations = await _templateRepo.SearchOrganizationsAsync(search);
-            return Json(organizations);
+            try
+            {
+                var organizations = await _templateRepo.SearchOrganizationsAsync(search);
+                return Json(organizations);
+            }
+            catch (Exception ex)
+            {
+                return Json(new List<object>());
+            }
         }
     }
 }

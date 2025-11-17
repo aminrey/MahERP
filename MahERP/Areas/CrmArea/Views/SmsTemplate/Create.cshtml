@@ -1,0 +1,360 @@
+﻿@model SmsTemplate
+@{
+    ViewData["Title"] = "ایجاد قالب پیامک جدید";
+}
+
+<main id="main-container">
+    <!-- Hero -->
+    <div class="bg-image" style="background-image: url('/assets/media/photos/photo13@2x.jpg');">
+        <div class="bg-black-50">
+            <div class="content content-full">
+                <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+                    <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3 text-white">
+                        <i class="fa fa-plus-circle me-2"></i>
+                        ایجاد قالب پیامک جدید
+                    </h1>
+                    <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-alt">
+                            <li class="breadcrumb-item">
+                                <a class="link-fx text-white" asp-area="CrmArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a class="link-fx text-white" asp-action="Index">قالب‌های پیامک</a>
+                            </li>
+                            <li class="breadcrumb-item text-white" aria-current="page">
+                                ایجاد جدید
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero -->
+
+    <!-- Page Content -->
+    <div class="content">
+        <div class="row">
+            <!-- فرم ایجاد قالب -->
+            <div class="col-lg-8">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle me-1"></i> اطلاعات قالب
+                        </h3>
+                    </div>
+                    <div class="block-content block-content-full">
+                        <form asp-action="Create" method="post">
+                            @Html.AntiForgeryToken()
+
+                            @if (!ViewData.ModelState.IsValid)
+                            {
+                                <div class="alert alert-danger alert-dismissible fade show">
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    <h5 class="alert-heading">
+                                        <i class="fa fa-exclamation-triangle me-1"></i> خطا در اعتبارسنجی
+                                    </h5>
+                                    <ul class="mb-0">
+                                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                        {
+                                            <li>@error.ErrorMessage</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+
+                            <!-- عنوان قالب -->
+                            <div class="mb-4">
+                                <label asp-for="Title" class="form-label">
+                                    عنوان قالب <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Title" class="form-control form-control-lg" placeholder="مثال: پیام خوش‌آمدگویی" />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    عنوان قالب برای شناسایی آن در لیست قالب‌ها
+                                </small>
+                            </div>
+
+                            <!-- نوع قالب -->
+                            <div class="mb-4">
+                                <label asp-for="TemplateType" class="form-label">
+                                    نوع قالب <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="TemplateType" class="form-select">
+                                    <option value="0">عمومی</option>
+                                    <option value="1">تبلیغاتی</option>
+                                    <option value="2">اطلاع‌رسانی</option>
+                                    <option value="3">یادآوری</option>
+                                </select>
+                                <span asp-validation-for="TemplateType" class="text-danger small"></span>
+                            </div>
+
+                            <!-- متن قالب -->
+                            <div class="mb-4">
+                                <label asp-for="MessageTemplate" class="form-label">
+                                    متن قالب پیامک <span class="text-danger">*</span>
+                                </label>
+                                <textarea asp-for="MessageTemplate" class="form-control" rows="6" 
+                                          id="message-template" maxlength="500" 
+                                          placeholder="متن پیامک خود را وارد کنید..."></textarea>
+                                <span asp-validation-for="MessageTemplate" class="text-danger small"></span>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="form-text text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        می‌توانید از متغیرها استفاده کنید: <code>{Name}</code>, <code>{Date}</code>, <code>{Phone}</code>
+                                    </small>
+                                    <span id="char-count" class="badge bg-secondary">0 / 500</span>
+                                </div>
+                            </div>
+
+                            <!-- توضیحات -->
+                            <div class="mb-4">
+                                <label asp-for="Description" class="form-label">
+                                    توضیحات (اختیاری)
+                                </label>
+                                <textarea asp-for="Description" class="form-control" rows="3" 
+                                          placeholder="توضیحات اضافی درباره این قالب..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+
+                            <!-- وضعیت فعال/غیرفعال -->
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                                    <label asp-for="IsActive" class="form-check-label">
+                                        قالب فعال باشد
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    فقط قالب‌های فعال در لیست انتخاب قابل نمایش هستند
+                                </small>
+                            </div>
+
+                            <!-- دکمه‌ها -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-check me-1"></i> ذخیره قالب
+                                    </button>
+                                    <a asp-action="Index" class="btn btn-secondary">
+                                        <i class="fa fa-times me-1"></i> انصراف
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- پیش‌نمایش و راهنما -->
+            <div class="col-lg-4">
+                <!-- پیش‌نمایش -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-eye me-1"></i> پیش‌نمایش پیامک
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="alert alert-info mb-0" id="preview-box" style="min-height: 150px; white-space: pre-wrap;">
+                            متن پیامک شما اینجا نمایش داده می‌شود...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- راهنمای متغیرها -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-question-circle me-1"></i> راهنمای متغیرها
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <p class="text-muted mb-3">
+                            می‌توانید از متغیرهای زیر در متن پیامک استفاده کنید:
+                        </p>
+                        
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-semibold">{Name}</span>
+                                    <code class="text-primary">نام مخاطب</code>
+                                </div>
+                                <small class="text-muted">نام کامل فرد یا سازمان</small>
+                            </div>
+
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-semibold">{FirstName}</span>
+                                    <code class="text-primary">نام</code>
+                                </div>
+                                <small class="text-muted">فقط نام کوچک</small>
+                            </div>
+
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-semibold">{Date}</span>
+                                    <code class="text-primary">تاریخ</code>
+                                </div>
+                                <small class="text-muted">تاریخ فعلی (شمسی)</small>
+                            </div>
+
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-semibold">{Phone}</span>
+                                    <code class="text-primary">شماره تلفن</code>
+                                </div>
+                                <small class="text-muted">شماره تماس مخاطب</small>
+                            </div>
+
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-semibold">{Code}</span>
+                                    <code class="text-primary">کد</code>
+                                </div>
+                                <small class="text-muted">کد اختصاصی (در صورت وجود)</small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <i class="fa fa-lightbulb me-2"></i>
+                            <strong>نکته:</strong> متغیرها هنگام ارسال پیامک، به‌طور خودکار با مقادیر واقعی جایگزین می‌شوند.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نمونه قالب -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-star me-1"></i> نمونه قالب
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <p class="text-muted mb-2">مثال برای پیام خوش‌آمدگویی:</p>
+                        <div class="alert alert-secondary mb-3">
+                            <code>
+                                سلام {Name} عزیز!<br/>
+                                خوش آمدید به سیستم ما.<br/>
+                                تاریخ ثبت‌نام: {Date}<br/>
+                                شماره تماس شما: {Phone}
+                            </code>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-outline-primary w-100" id="btn-use-sample">
+                            <i class="fa fa-copy me-1"></i> استفاده از این نمونه
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function() {
+            const messageTemplate = $('#message-template');
+            const charCount = $('#char-count');
+            const previewBox = $('#preview-box');
+
+            // شمارش کاراکتر و پیش‌نمایش
+            messageTemplate.on('input', function() {
+                const length = $(this).val().length;
+                charCount.text(`${length} / 500`);
+
+                // تغییر رنگ بر اساس تعداد کاراکتر
+                if (length > 450) {
+                    charCount.removeClass('bg-secondary bg-warning').addClass('bg-danger');
+                } else if (length > 350) {
+                    charCount.removeClass('bg-secondary bg-danger').addClass('bg-warning');
+                } else {
+                    charCount.removeClass('bg-warning bg-danger').addClass('bg-secondary');
+                }
+
+                // بروزرسانی پیش‌نمایش
+                const preview = $(this).val() || 'متن پیامک شما اینجا نمایش داده می‌شود...';
+                previewBox.text(preview);
+            });
+
+            // استفاده از نمونه
+            $('#btn-use-sample').on('click', function() {
+                const sampleText = `سلام {Name} عزیز!
+خوش آمدید به سیستم ما.
+تاریخ ثبت‌نام: {Date}
+شماره تماس شما: {Phone}`;
+                
+                messageTemplate.val(sampleText).trigger('input');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'انجام شد',
+                    text: 'نمونه قالب در متن وارد شد',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            });
+
+            // اعتبارسنجی فرم
+            $('form').on('submit', function(e) {
+                const title = $('#Title').val().trim();
+                const message = messageTemplate.val().trim();
+
+                if (!title) {
+                    e.preventDefault();
+                    Swal.fire('خطا', 'لطفا عنوان قالب را وارد کنید', 'error');
+                    $('#Title').focus();
+                    return false;
+                }
+
+                if (!message) {
+                    e.preventDefault();
+                    Swal.fire('خطا', 'لطفا متن قالب را وارد کنید', 'error');
+                    messageTemplate.focus();
+                    return false;
+                }
+
+                if (message.length > 500) {
+                    e.preventDefault();
+                    Swal.fire('خطا', 'متن قالب نباید بیشتر از 500 کاراکتر باشد', 'error');
+                    messageTemplate.focus();
+                    return false;
+                }
+            });
+
+            // مقداردهی اولیه
+            messageTemplate.trigger('input');
+        });
+    </script>
+}
+
+<style>
+    #preview-box {
+        font-family: Tahoma, sans-serif;
+        font-size: 14px;
+        line-height: 1.8;
+        direction: rtl;
+        text-align: right;
+    }
+
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        padding: 0.75rem 0;
+    }
+
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+    code {
+        font-size: 0.85em;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+    }
+</style>

@@ -37,7 +37,6 @@
                             <th>نوع</th>
                             <th>شماره تماس</th>
                             <th>داخلی</th>
-                            <th class="text-center">پیش‌فرض</th>
                             <th class="text-center">وضعیت</th>
                             <th class="text-center" style="width: 150px;">عملیات</th>
                         </tr>
@@ -66,9 +65,9 @@
 
 @section Scripts {
     <script>
-        function setDefaultPhone(phoneId) {
-            if (confirm('آیا می‌خواهید این شماره را به عنوان پیش‌فرض تنظیم کنید؟')) {
-                $.post('@Url.Action("SetDefaultPhone")', {
+        function setSmsDefaultPhone(phoneId) {
+            if (confirm('آیا می‌خواهید این شماره را به عنوان پیش‌فرض پیامک تنظیم کنید؟')) {
+                $.post('@Url.Action("SetSmsDefaultPhone")', {
                     phoneId: phoneId,
                     contactId: @ViewBag.ContactId,
                     __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()

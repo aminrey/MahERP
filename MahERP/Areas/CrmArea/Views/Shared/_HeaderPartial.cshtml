@@ -20,9 +20,7 @@
                 <i class="fa fa-fw fa-bars"></i>
             </button>
             <!-- END Toggle Sidebar -->
-            <!-- Open Search Section -->
 
-            <!-- END Open Search Section -->
             <!-- ============== 🎨 MODULE SELECTOR ============== -->
             @{
                 var isTaskingEnabled = ViewBag.IsTaskingModuleEnabled ?? true;
@@ -41,19 +39,16 @@
                             @if (currentArea == "TaskingArea")
                             {
                                 <i class="fa fa-tasks me-1"></i>
-
                                 <text>تسکینگ</text>
                             }
                             else if (currentArea == "CrmArea")
                             {
                                 <i class="fa fa-chart-line me-1"></i>
-
                                 <text>CRM</text>
                             }
                             else
                             {
                                 <i class="fa fa-home me-1"></i>
-
                                 <text>هسته مرکزی</text>
                             }
                         </span>
@@ -168,16 +163,77 @@
                     </div>
                 </div>
             }
-
-
-
             <!-- ============== END MODULE SELECTOR ============== -->
-
-
         </div>
         <!-- END Left Section -->
+
         <!-- Right Section -->
         <div class="space-x-1">
+            <!-- ============== ⚡ QUICK ADD BUTTON (CRM SPECIFIC) ============== -->
+            @if (currentArea == "CrmArea" && Html.CanAccessAny("CONTACT", "CONTACT.CREATE"))
+            {
+                <a asp-area="CrmArea" asp-controller="Contact" asp-action="Create"
+                   class="btn btn-success btn-quick-add d-none d-md-inline-block"
+                   title="ایجاد مخاطب جدید">
+                    <i class="fa fa-plus-circle me-1"></i>
+                    <span class="d-none d-lg-inline-block">مخاطب جدید</span>
+                </a>
+
+                <!-- Mobile Version -->
+                <a asp-area="CrmArea" asp-controller="Contact" asp-action="Create"
+                   class="btn btn-success btn-quick-add-mobile d-md-none"
+                   title="ایجاد مخاطب جدید">
+                    <i class="fa fa-plus"></i>
+                </a>
+            }
+            <!-- ============== END QUICK ADD BUTTON ============== -->
+
+            <!-- ============== ⭐ BACKGROUND JOBS (CRM ONLY) ============== -->
+            @if (currentArea == "CrmArea")
+            {
+                <div class="dropdown d-inline-block" id="background-jobs-dropdown-container">
+                    <button aria-expanded="false" aria-haspopup="true"
+                            class="btn btn-alt-secondary position-relative d-none"
+                            data-bs-toggle="dropdown" 
+                            id="page-header-jobs-dropdown" 
+                            type="button">
+                        <i class="fa fa-fw fa-tasks"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" 
+                              id="headerJobsBadge" 
+                              style="font-size: 0.65em; display: none;">
+                            0
+                        </span>
+                    </button>
+                    <div aria-labelledby="page-header-jobs-dropdown" 
+                         class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0" 
+                         style="width: 450px; max-height: 600px;">
+                        <!-- Header -->
+                        <div class="bg-primary-dark rounded-top fw-semibold text-white text-center p-3 d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fa fa-tasks me-2"></i>
+                                کارهای پس‌زمینه
+                            </span>
+                            <button class="btn btn-sm btn-outline-light" 
+                                    onclick="refreshBackgroundJobs()" 
+                                    title="بروزرسانی">
+                                <i class="fa fa-sync fa-xs"></i>
+                            </button>
+                        </div>
+
+                        <!-- Jobs List -->
+                        <div id="backgroundJobsList">
+                            <div class="text-center p-4">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">در حال بارگذاری...</span>
+                                </div>
+                                <div class="mt-2 text-muted small">در حال بارگذاری...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            <!-- ============== END BACKGROUND JOBS ============== -->
+
             <!-- ⭐ User Dropdown - Enhanced -->
             <div class="dropdown d-inline-block">
                 <button aria-expanded="false" aria-haspopup="true"
@@ -185,7 +241,7 @@
                         data-bs-toggle="dropdown" id="page-header-user-dropdown" type="button">
                     <!-- ⭐ Avatar Image -->
                     <img alt="تصویر پروفایل" class="img-avatar img-avatar32 img-avatar-thumb d-none d-sm-inline-block me-1"
-                         src=" @(!string.IsNullOrEmpty(currentUser.ProfileImagePath) ? currentUser.ProfileImagePath : " /assets/media/avatars/avatar0.jpg")"
+                         src="@(!string.IsNullOrEmpty(currentUser?.ProfileImagePath) ? currentUser.ProfileImagePath : "/assets/media/avatars/avatar0.jpg")"
                          style="border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);" />
 
                     <!-- ⭐ User Icon for mobile -->
@@ -202,7 +258,7 @@
                     <div class="rounded-top fw-semibold text-center p-3 border-bottom bg-primary-dark text-white">
                         <div class="mb-2">
                             <img alt="تصویر پروفایل" class="img-avatar img-avatar48 img-avatar-thumb"
-                                 src=" @(!string.IsNullOrEmpty(currentUser.ProfileImagePath) ? currentUser.ProfileImagePath : " /assets/media/avatars/avatar0.jpg")"
+                                 src="@(!string.IsNullOrEmpty(currentUser?.ProfileImagePath) ? currentUser.ProfileImagePath : "/assets/media/avatars/avatar0.jpg")"
                                  style="border: 3px solid rgba(255,255,255,0.3);" />
                         </div>
 
@@ -297,6 +353,7 @@
                 </div>
             </div>
             <!-- END User Dropdown -->
+
             <!-- ⭐ Notifications Dropdown -->
             <div class="dropdown d-inline-block">
                 <button aria-expanded="false" aria-haspopup="true"
@@ -340,13 +397,11 @@
                 </div>
             </div>
             <!-- END Notifications Dropdown -->
-            <!-- Toggle Side Overlay -->
-           
-            <!-- END Toggle Side Overlay -->
         </div>
         <!-- END Right Section -->
     </div>
     <!-- END Header Content -->
+
     <!-- Header Search -->
     <div class="overlay-header bg-header-dark" id="page-header-search">
         <div class="bg-white-10">
@@ -363,6 +418,7 @@
         </div>
     </div>
     <!-- END Header Search -->
+
     <!-- Header Loader -->
     <div class="overlay-header bg-header-dark" id="page-header-loader">
         <div class="bg-white-10">
@@ -374,6 +430,7 @@
         </div>
     </div>
     <!-- END Header Loader -->
+
     <!-- ⭐ Audio notification element -->
     <audio id="notificationSound" preload="auto">
         <source src="/assets/sounds/notification.mp3" type="audio/mpeg">
@@ -381,6 +438,84 @@
     </audio>
 </header>
 <!-- END Header -->
+
+<!-- ⭐ Background Jobs JavaScript -->
+<script>
+    var backgroundJobsTimer;
+    var hasActiveJobs = false;
+
+    $(document).ready(function() {
+        // Load initial jobs
+        if ($('#background-jobs-dropdown-container').length > 0) {
+            loadBackgroundJobs();
+            
+            // Auto-refresh every 5 seconds if there are active jobs
+            backgroundJobsTimer = setInterval(function() {
+                if (hasActiveJobs) {
+                    loadBackgroundJobs();
+                }
+            }, 5000);
+        }
+    });
+
+    function loadBackgroundJobs() {
+        $.get('@Url.Action("GetJobsPartial", "BackgroundJob", new { area = "CrmArea" })')
+            .done(function(html) {
+                $('#backgroundJobsList').html(html);
+                updateJobsBadge();
+            })
+            .fail(function() {
+                $('#backgroundJobsList').html(`
+                    <div class="p-4 text-center text-danger">
+                        <i class="fa fa-exclamation-triangle fa-2x mb-2"></i>
+                        <p class="mb-0">خطا در بارگذاری</p>
+                    </div>
+                `);
+            });
+    }
+
+    function updateJobsBadge() {
+        $.get('@Url.Action("GetActiveJobs", "BackgroundJob", new { area = "CrmArea" })')
+            .done(function(response) {
+                if (response.success && response.jobs) {
+                    var activeCount = response.jobs.length;
+                    hasActiveJobs = activeCount > 0;
+                    
+                    if (activeCount > 0) {
+                        $('#page-header-jobs-dropdown').removeClass('d-none');
+                        $('#headerJobsBadge').text(activeCount).show();
+                    } else {
+                        $('#page-header-jobs-dropdown').addClass('d-none');
+                        $('#headerJobsBadge').hide();
+                    }
+                } else {
+                    $('#page-header-jobs-dropdown').addClass('d-none');
+                    hasActiveJobs = false;
+                }
+            });
+    }
+
+    function refreshBackgroundJobs() {
+        var btn = event.target.closest('button');
+        var icon = $(btn).find('i');
+        
+        icon.addClass('fa-spin');
+        
+        loadBackgroundJobs();
+        
+        setTimeout(function() {
+            icon.removeClass('fa-spin');
+        }, 1000);
+    }
+
+    // Cleanup on page unload
+    $(window).on('beforeunload', function() {
+        if (backgroundJobsTimer) {
+            clearInterval(backgroundJobsTimer);
+        }
+    });
+</script>
+
 @functions {
     /// <summary>
     /// بررسی active بودن منوی کاربر
@@ -511,6 +646,46 @@
         box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
     }
 
+    /* ============== QUICK ADD BUTTON ============== */
+    .btn-quick-add {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+
+        .btn-quick-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+            background: linear-gradient(135deg, #20c997, #28a745);
+        }
+
+        .btn-quick-add:active {
+            transform: translateY(0);
+        }
+
+    .btn-quick-add-mobile {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+
+        .btn-quick-add-mobile:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+
     /* ============== DROPDOWN ITEM ENHANCEMENTS ============== */
     .dropdown-item {
         transition: all 0.2s ease;
@@ -525,14 +700,16 @@
         }
 
         .dropdown-item.active,
-        .dropdown-item.current-page {
+        .dropdown-item.current-page,
+        .dropdown-item.current-module {
             background: linear-gradient(135deg, rgba(13, 110, 253, 0.15), rgba(13, 110, 253, 0.25));
             border-left: 3px solid #0d6efd;
             font-weight: 600;
         }
 
             .dropdown-item.active::before,
-            .dropdown-item.current-page::before {
+            .dropdown-item.current-page::before,
+            .dropdown-item.current-module::before {
                 content: '';
                 position: absolute;
                 left: 0;
@@ -549,15 +726,28 @@
             background-color: rgba(13, 110, 253, 0.2);
         }
 
-    /* ============== STATS NUMBERS ANIMATION ============== */
-    #userStatsMyTasks, #userStatsReminders, #userStatsNotifications {
+    /* ============== MODULE ITEMS ============== */
+    .module-item {
+        padding: 1rem;
         transition: all 0.3s ease;
     }
 
-        #userStatsMyTasks:hover, #userStatsReminders:hover, #userStatsNotifications:hover {
-            transform: scale(1.1);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .module-item:hover {
+            background-color: rgba(0,123,255,0.08);
+            transform: translateX(-3px);
         }
+
+        .module-item.disabled {
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+    .module-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+    }
 
     /* ============== USER PROFILE SECTION ============== */
     .bg-primary-dark {
@@ -579,16 +769,12 @@
         }
 
     @@keyframes shimmer {
-        0%
-
-    {
-        transform: translateX(-100%) translateY(-100%) rotate(45deg);
-    }
-
-    100% {
-        transform: translateX(100%) translateY(100%) rotate(45deg);
-    }
-
+        0% {
+            transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        }
+        100% {
+            transform: translateX(100%) translateY(100%) rotate(45deg);
+        }
     }
 
     /* ============== NOTIFICATION BADGE ENHANCEMENTS ============== */
@@ -598,20 +784,15 @@
     }
 
     @@keyframes badgePulse {
-        0%
-
-    {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.1);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+        }
     }
 
     /* ============== MOBILE RESPONSIVE ============== */
@@ -689,10 +870,10 @@
             padding: 1rem 0.75rem;
         }
 
-        .dropdown-item.active::before,
-        .dropdown-item.current-page::before {
-            width: 6px;
-        }
+            .dropdown-item.active::before,
+            .dropdown-item.current-page::before {
+                width: 6px;
+            }
 
         /* ⭐ Module items mobile spacing */
         .module-item {
@@ -738,6 +919,11 @@
         .dropdown-menu {
             z-index: 1050 !important;
         }
+
+        /* ⭐ Hide Quick Add text on small screens */
+        .btn-quick-add {
+            padding: 0.5rem;
+        }
     }
 
     /* ============== TABLET RESPONSIVE (576px - 768px) ============== */
@@ -755,3 +941,29 @@
     }
 
     /* ============== HOVER EFFECTS ============== */
+    .content-header .btn {
+        transition: all 0.3s ease;
+    }
+
+        .content-header .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+    /* ============== DROPDOWN ANIMATIONS ============== */
+    .dropdown-menu {
+        animation: dropdownFadeIn 0.3s ease;
+        transform-origin: top;
+    }
+
+    @@keyframes dropdownFadeIn {
+        0% {
+            opacity: 0;
+            transform: scaleY(0.8) translateY(-10px);
+        }
+        100% {
+            opacity: 1;
+            transform: scaleY(1) translateY(0);
+        }
+    }
+</style>

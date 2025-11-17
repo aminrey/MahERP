@@ -39,6 +39,14 @@ namespace MahERP.DataModelLayer.Entities.Sms
         public virtual Contact? Contact { get; set; }
 
         /// <summary>
+        /// شناسه شماره تماس خاص Contact (اختیاری - اگر نباشد از DefaultPhone استفاده می‌شود)
+        /// </summary>
+        public int? ContactPhoneId { get; set; }
+
+        [ForeignKey(nameof(ContactPhoneId))]
+        public virtual ContactPhone? ContactPhone { get; set; }
+
+        /// <summary>
         /// شناسه Organization (اگر نوع = 1)
         /// </summary>
         public int? OrganizationId { get; set; }
@@ -81,11 +89,52 @@ namespace MahERP.DataModelLayer.Entities.Sms
         };
 
         [NotMapped]
-        public string RecipientContact => RecipientType switch
+        public string RecipientContact
         {
-            0 => Contact?.DefaultPhone?.PhoneNumber ?? Contact?.PrimaryEmail ?? "",
-            1 => Organization?.PrimaryPhone ?? Organization?.Email ?? "",
-            _ => ""
-        };
+            get
+            {
+                if (RecipientType == 0) // Contact
+                {
+                    // اگر شماره خاصی انتخاب شده، از اون استفاده کن
+                    if (ContactPhone != null)
+                        return ContactPhone.FormattedNumber;
+                    
+                    // وگرنه از شماره پیش‌فرض استفاده کن
+                    return Contact?.DefaultPhone?.FormattedNumber ?? Contact?.PrimaryEmail ?? "";
+                }
+                else if (RecipientType == 1) // Organization
+                {
+                    return Organization?.PrimaryPhone ?? Organization?.Email ?? "";
+                }
+                
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// شماره واقعی برای ارسال پیامک
+        /// </summary>
+        [NotMapped]
+        public string ActualPhoneNumber
+        {
+            get
+            {
+                if (RecipientType == 0) // Contact
+                {
+                    // اگر شماره خاصی انتخاب شده
+                    if (ContactPhone != null)
+                        return ContactPhone.PhoneNumber;
+                    
+                    // وگرنه از شماره پیش‌فرض
+                    return Contact?.DefaultPhone?.PhoneNumber ?? "";
+                }
+                else if (RecipientType == 1) // Organization
+                {
+                    return Organization?.PrimaryPhone ?? "";
+                }
+                
+                return "";
+            }
+        }
     }
 }

@@ -30,6 +30,15 @@ namespace MahERP.DataModelLayer.Repository
             List<int> organizationIds,
             string addedByUserId);
 
+        /// <summary>
+        /// افزودن چند مخاطب با شماره‌های خاص
+        /// </summary>
+        Task<int> AddMultipleRecipientsWithPhonesAsync(
+            int templateId,
+            List<(int contactId, int? phoneId)> contactData,
+            List<int> organizationIds,
+            string addedByUserId);
+
         Task RemoveRecipientAsync(int recipientId);
         
         Task<List<SmsTemplateRecipient>> GetTemplateRecipientsAsync(int templateId);
@@ -39,6 +48,23 @@ namespace MahERP.DataModelLayer.Repository
         Task<SmsTemplateDetailViewModel> GetTemplateDetailAsync(int templateId);
 
         // اضافه کنید:
+        
+        // ========== جستجو ==========
+        
+        /// <summary>
+        /// جستجوی ساده Contacts (بدون شماره‌ها)
+        /// </summary>
+        Task<List<object>> SearchContactsSimpleAsync(string search);
+        
+        /// <summary>
+        /// دریافت شماره‌های یک Contact
+        /// </summary>
+        Task<List<object>> GetContactPhonesAsync(int contactId);
+        
+        /// <summary>
+        /// دریافت افراد یک Organization
+        /// </summary>
+        Task<List<object>> GetOrganizationContactsAsync(int organizationId);
         
         Task<List<object>> SearchContactsAsync(string search);
         Task<List<object>> SearchOrganizationsAsync(string search);

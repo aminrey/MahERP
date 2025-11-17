@@ -3,100 +3,191 @@
 }
 
 <main id="main-container">
-    <div class="content">
-        <div class="block block-rounded">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">
-                    <i class="fa fa-paper-plane me-2"></i>
-                    ارسال پیامک
-                </h3>
-            </div>
-            <div class="block-content">
-                <ul class="nav nav-tabs nav-tabs-block" role="tablist">
-                    <li class="nav-item">
-                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-contacts">
-                            <i class="fa fa-users me-1"></i> ارسال به افراد
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-organization">
-                            <i class="fa fa-building me-1"></i> ارسال به سازمان
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-template">
-                            <i class="fa fa-file-alt me-1"></i> ارسال با قالب
-                        </button>
-                    </li>
-                </ul>
-
-                <div class="tab-content">
-                    <!-- Tab: ارسال به افراد -->
-                    <div class="tab-pane fade show active" id="tab-contacts" role="tabpanel">
-                        <form id="form-send-contacts" class="p-4">
-                            <div class="mb-3">
-                                <label class="form-label">انتخاب مخاطبین</label>
-                                <select class="form-select" id="select-contacts" multiple></select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">خدمات‌دهنده</label>
-                                <select class="form-select" name="providerId">
-                                    <option value="">پیش‌فرض</option>
-                                    @foreach (var provider in ViewBag.Providers)
-                                    {
-                                        <option value="@provider.Id">@provider.ProviderName</option>
-                                    }
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">متن پیام</label>
-                                <textarea class="form-control" name="message" rows="4" maxlength="500"></textarea>
-                                <small class="text-muted">حداکثر 500 کاراکتر</small>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fa fa-paper-plane me-1"></i> ارسال
-                            </button>
-                        </form>
+    <!-- Hero -->
+    <div class="bg-image" style="background-image: url('/assets/media/photos/photo13@2x.jpg');">
+        <div class="bg-black-50">
+            <div class="content content-full">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="fw-bold my-2 text-white">
+                        <i class="fa fa-paper-plane me-2"></i>
+                        ارسال پیامک
+                    </h1>
+                    <div>
+                        <a asp-area="CrmArea" asp-controller="SmsTemplate" asp-action="Index" class="btn btn-secondary">
+                            <i class="fa fa-file-alt me-1"></i> قالب‌ها
+                        </a>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Tab: ارسال به سازمان -->
-                    <div class="tab-pane fade" id="tab-organization" role="tabpanel">
-                        <form id="form-send-organization" class="p-4">
-                            <div class="mb-3">
-                                <label class="form-label">انتخاب سازمان</label>
-                                <select class="form-select" name="organizationId" required>
-                                    <option value="">-- انتخاب کنید --</option>
-                                </select>
+    <div class="content">
+        <!-- Tabs -->
+        <div class="block block-rounded">
+            <ul class="nav nav-tabs nav-tabs-block" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-contacts">
+                        <i class="fa fa-users me-1"></i> ارسال به افراد
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-template">
+                        <i class="fa fa-file-alt me-1"></i> ارسال با قالب
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Tab: ارسال به افراد -->
+                <div class="tab-pane fade show active" id="tab-contacts" role="tabpanel">
+                    <form id="form-send-contacts">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="block-content">
+                            <div class="alert alert-info">
+                                <i class="fa fa-info-circle me-2"></i>
+                                ابتدا افراد را انتخاب کنید، سپس برای هر فرد می‌توانید شماره‌های خاص را انتخاب کنید.
                             </div>
 
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="sendToContacts" id="sendToContacts">
-                                    <label class="form-check-label" for="sendToContacts">
-                                        ارسال به تمام افراد مرتبط با سازمان
+                            <div class="row">
+                                <!-- ستون چپ: انتخاب افراد -->
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">
+                                            <i class="fa fa-user me-1 text-primary"></i>
+                                            1️⃣ انتخاب افراد
+                                        </label>
+                                        <select class="js-select2 form-select" 
+                                                id="select-contacts" 
+                                                multiple="multiple"
+                                                data-placeholder="جستجو و انتخاب افراد..."
+                                                style="width: 100%;">
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">
+                                            <i class="fa fa-server me-1 text-success"></i>
+                                            خدمات‌دهنده پیامک
+                                        </label>
+                                        <select class="form-select" id="providerId" name="providerId">
+                                            <option value="">پیش‌فرض سیستم</option>
+                                            @foreach (var provider in ViewBag.Providers)
+                                            {
+                                                <option value="@provider.Id">@provider.ProviderName</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- ستون راست: انتخاب شماره‌ها -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">
+                                        <i class="fa fa-phone me-1 text-success"></i>
+                                        2️⃣ انتخاب شماره‌های تماس
                                     </label>
+                                    
+                                    <div id="phone-selection-area" class="border rounded p-3" style="min-height: 250px; max-height: 400px; overflow-y: auto;">
+                                        <div class="text-center text-muted py-5">
+                                            <i class="fa fa-hand-point-left fa-3x mb-3"></i>
+                                            <p>ابتدا افراد را از لیست چپ انتخاب کنید</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">متن پیام</label>
-                                <textarea class="form-control" name="message" rows="4" maxlength="500" required></textarea>
+                            <!-- متن پیام -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">
+                                        <i class="fa fa-comment me-1 text-primary"></i>
+                                        3️⃣ متن پیام
+                                    </label>
+                                    <textarea class="form-control" 
+                                              id="message" 
+                                              name="message" 
+                                              rows="5" 
+                                              maxlength="500" 
+                                              placeholder="متن پیامک خود را وارد کنید..."
+                                              required></textarea>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <small class="text-muted">
+                                            <span id="char-count">0</span> / 500 کاراکتر
+                                        </small>
+                                        <small class="text-muted">
+                                            تعداد پیامک: <span id="sms-count" class="badge bg-info">0</span>
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fa fa-paper-plane me-1"></i> ارسال
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Tab: ارسال با قالب -->
-                    <div class="tab-pane fade" id="tab-template" role="tabpanel">
-                        <div class="p-4">
-                            <p class="text-muted">این بخش به زودی اضافه می‌شود...</p>
+                            <!-- گزینه‌ها -->
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="useQueue" name="useQueue">
+                                        <label class="form-check-label" for="useQueue">
+                                            افزودن به صف (ارسال در پس‌زمینه)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="block-content block-content-full text-end border-top">
+                            <button type="button" class="btn btn-alt-secondary" onclick="location.reload()">
+                                <i class="fa fa-redo me-1"></i>پاک کردن فرم
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-paper-plane me-1"></i>ارسال پیامک
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab: ارسال با قالب -->
+                <div class="tab-pane fade" id="tab-template" role="tabpanel">
+                    <div class="block-content">
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-2"></i>
+                            برای ارسال با قالب، به صفحه قالب‌ها مراجعه کنید و از قسمت "جزئیات قالب" اقدام به ارسال نمایید.
+                        </div>
+
+                        <div class="text-center py-5">
+                            <i class="fa fa-file-alt fa-4x text-muted mb-3"></i>
+                            <h4>قالب‌های پیامک</h4>
+                            <p class="text-muted mb-4">می‌توانید قالب‌های آماده را مدیریت و به مخاطبین ارسال کنید</p>
+                            
+                            <a asp-area="CrmArea" asp-controller="SmsTemplate" asp-action="Index" class="btn btn-primary">
+                                <i class="fa fa-list me-1"></i> مشاهده قالب‌ها
+                            </a>
+                        </div>
+
+                        @if (ViewBag.Templates != null && ViewBag.Templates.Count > 0)
+                        {
+                            <div class="row">
+                                @foreach (var template in ViewBag.Templates)
+                                {
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">@template.Title</h5>
+                                                <p class="card-text text-muted small">
+                                                    @template.MessageTemplate.Substring(0, Math.Min(100, template.MessageTemplate.Length))...
+                                                </p>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="badge bg-info">@template.UsageCount بار استفاده</span>
+                                                    <a asp-area="CrmArea" asp-controller="SmsTemplate" asp-action="Details" asp-route-id="@template.Id" class="btn btn-sm btn-primary">
+                                                        <i class="fa fa-eye me-1"></i> جزئیات
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -104,72 +195,259 @@
     </div>
 </main>
 
+<style>
+    .phone-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        background: white;
+        transition: all 0.2s;
+    }
+
+    .phone-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .phone-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .phone-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .phone-item input[type="checkbox"] {
+        margin-left: 0.75rem;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .contact-name {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .phone-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+</style>
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <script>
-        $(document).ready(function () {
-            // Initialize Select2
-            $('#select-contacts').select2({
-                placeholder: 'جستجو و انتخاب مخاطبین',
-                ajax: {
-                    url: '@Url.Action("GetContacts")',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return { search: params.term };
+        (function() {
+            let selectedContactsData = {};
+
+            $(document).ready(function() {
+                // ⭐ Initialize Select2
+                $('#select-contacts').select2({
+                    placeholder: 'جستجو و انتخاب افراد...',
+                    allowClear: true,
+                    width: '100%',
+                    ajax: {
+                        url: '@Url.Action("SearchContacts", "SmsSend", new { area = "CrmArea" })',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return { search: params.term || '' };
+                        },
+                        processResults: function (data) {
+                            return { results: data || [] };
+                        },
+                        cache: true
                     },
-                    processResults: function (data) {
-                        return { results: data };
+                    minimumInputLength: 0
+                }).on('select2:select', function(e) {
+                    const contactId = e.params.data.id;
+                    const contactName = e.params.data.text;
+                    const preselectedPhoneId = e.params.data.phoneId;
+                    
+                    loadContactPhones(contactId, contactName, preselectedPhoneId);
+                }).on('select2:unselect', function(e) {
+                    const contactId = e.params.data.id;
+                    removeContactPhones(contactId);
+                });
+
+                // ⭐ Character counter
+                $('#message').on('input', function() {
+                    const length = $(this).val().length;
+                    $('#char-count').text(length);
+                    
+                    // محاسبه تعداد پیامک (هر 70 کاراکتر یک پیامک)
+                    const smsCount = Math.ceil(length / 70) || 0;
+                    $('#sms-count').text(smsCount);
+                });
+
+                // ⭐ Submit form
+                $('#form-send-contacts').on('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const selectedPhones = $('input[name="selectedContacts"]:checked')
+                        .map(function() { return $(this).val(); })
+                        .get();
+                    
+                    const message = $('#message').val();
+                    const providerId = $('#providerId').val();
+                    const useQueue = $('#useQueue').is(':checked');
+
+                    if (selectedPhones.length === 0) {
+                        Swal.fire('توجه', 'لطفا حداقل یک شماره انتخاب کنید', 'warning');
+                        return;
                     }
-                }
-            });
 
-            // ارسال به افراد
-            $('#form-send-contacts').on('submit', function (e) {
-                e.preventDefault();
-                
-                const contactIds = $('#select-contacts').val();
-                const message = $(this).find('[name="message"]').val();
-                const providerId = $(this).find('[name="providerId"]').val();
-
-                if (!contactIds || contactIds.length === 0) {
-                    toastr.warning('لطفا حداقل یک مخاطب انتخاب کنید');
-                    return;
-                }
-
-                $.post('@Url.Action("SendToContacts")', {
-                    contactIds: contactIds,
-                    message: message,
-                    providerId: providerId
-                }).done(function (response) {
-                    if (response.success) {
-                        Swal.fire('موفق', response.message, 'success');
-                        $('#form-send-contacts')[0].reset();
-                        $('#select-contacts').val(null).trigger('change');
-                    } else {
-                        Swal.fire('خطا', response.message, 'error');
+                    if (!message.trim()) {
+                        Swal.fire('توجه', 'لطفا متن پیام را وارد کنید', 'warning');
+                        return;
                     }
+
+                    Swal.fire({
+                        title: 'تایید ارسال',
+                        text: `آیا می‌خواهید به ${selectedPhones.length} شماره پیامک ارسال کنید؟`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'بله، ارسال شود',
+                        cancelButtonText: 'خیر'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.post('@Url.Action("SendToContacts")', {
+                                selectedContacts: selectedPhones,
+                                message: message,
+                                providerId: providerId || null,
+                                useQueue: useQueue,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            }).done(function(response) {
+                                if (response.success) {
+                                    Swal.fire('موفق', response.message, 'success');
+                                    $('#form-send-contacts')[0].reset();
+                                    $('#select-contacts').val(null).trigger('change');
+                                    $('#phone-selection-area').html(`
+                                        <div class="text-center text-muted py-5">
+                                            <i class="fa fa-hand-point-left fa-3x mb-3"></i>
+                                            <p>ابتدا افراد را از لیست چپ انتخاب کنید</p>
+                                        </div>
+                                    `);
+                                } else {
+                                    Swal.fire('خطا', response.message, 'error');
+                                }
+                            }).fail(function() {
+                                Swal.fire('خطا', 'خطا در برقراری ارتباط با سرور', 'error');
+                            });
+                        }
+                    });
                 });
             });
 
-            // ارسال به سازمان
-            $('#form-send-organization').on('submit', function (e) {
-                e.preventDefault();
-                
-                const formData = $(this).serialize();
+            // ⭐ Load phones
+            function loadContactPhones(contactId, contactName, preselectedPhoneId) {
+                $.ajax({
+                    url: '@Url.Action("GetContactPhones", "SmsSend", new { area = "CrmArea" })',
+                    type: 'GET',
+                    data: { contactId: contactId },
+                    success: function(phones) {
+                        selectedContactsData[contactId] = {
+                            name: contactName,
+                            phones: phones,
+                            preselectedPhoneId: preselectedPhoneId
+                        };
+                        renderPhoneSelection();
+                    }
+                });
+            }
 
-                $.post('@Url.Action("SendToOrganization")', formData)
-                    .done(function (response) {
-                        if (response.success) {
-                            Swal.fire('موفق', response.message, 'success');
-                            $('#form-send-organization')[0].reset();
+            // ⭐ Remove phones
+            function removeContactPhones(contactId) {
+                delete selectedContactsData[contactId];
+                renderPhoneSelection();
+            }
+
+            // ⭐ Render UI
+            function renderPhoneSelection() {
+                const $area = $('#phone-selection-area');
+                
+                if (Object.keys(selectedContactsData).length === 0) {
+                    $area.html(`
+                        <div class="text-center text-muted py-5">
+                            <i class="fa fa-hand-point-left fa-3x mb-3"></i>
+                            <p>ابتدا افراد را از لیست چپ انتخاب کنید</p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                let html = '';
+                
+                $.each(selectedContactsData, function(contactId, data) {
+                    html += renderContactCard(contactId, data);
+                });
+
+                $area.html(html);
+            }
+
+            // ⭐ Render card
+            function renderContactCard(contactId, data) {
+                let html = `
+                    <div class="phone-card">
+                        <div class="contact-name">
+                            <i class="fa fa-user-circle me-2 text-primary"></i>
+                            ${data.name}
+                        </div>
+                `;
+                
+                if (data.phones && data.phones.length > 0) {
+                    $.each(data.phones, function(index, phone) {
+                        const isDefault = phone.isDefault ? '<span class="badge bg-info phone-badge ms-2">پیش‌فرض</span>' : '';
+                        const isSmsDefault = phone.isSmsDefault ? '<span class="badge bg-success phone-badge ms-2">پیامک</span>' : '';
+                        
+                        let checked = '';
+                        if (data.preselectedPhoneId) {
+                            checked = (phone.id === data.preselectedPhoneId) ? 'checked' : '';
                         } else {
-                            Swal.fire('خطا', response.message, 'error');
+                            checked = phone.isSmsDefault ? 'checked' : '';
                         }
+                        
+                        html += `
+                            <div class="phone-item">
+                                <input type="checkbox" 
+                                       name="selectedContacts" 
+                                       value="c${contactId}_p${phone.id}" 
+                                       id="phone_${contactId}_${phone.id}"
+                                       ${checked}>
+                                <label for="phone_${contactId}_${phone.id}" class="mb-0 ms-2 flex-grow-1">
+                                    <i class="fa fa-phone me-2 text-success"></i>
+                                    ${phone.formattedNumber}
+                                    <span class="badge bg-primary phone-badge ms-2">${phone.phoneTypeText}</span>
+                                    ${isDefault}
+                                    ${isSmsDefault}
+                                </label>
+                            </div>
+                        `;
                     });
-            });
-        });
+                } else {
+                    html += `
+                        <div class="text-muted small">
+                            <i class="fa fa-exclamation-circle me-1"></i>
+                            هیچ شماره‌ای ثبت نشده است
+                        </div>
+                    `;
+                }
+                
+                html += `</div>`;
+                return html;
+            }
+        })();
     </script>
 }

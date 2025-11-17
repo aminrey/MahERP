@@ -31,7 +31,7 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         Task<List<EmailLog>> SendToOrganizationContactsAsync(int organizationId, string subject, string body, string senderUserId, bool isHtml = true, List<string> attachmentPaths = null);
 
-        // ========== ⭐ NEW: ارسال به گروه‌ها ==========
+        // ========== ⭐ NEW: ارسال به گروه‌های افراد ==========
 
         /// <summary>
         /// ارسال ایمیل به یک گروه کامل (System Level)
@@ -42,6 +42,25 @@ namespace MahERP.DataModelLayer.Repository
         /// ارسال ایمیل به گروه شعبه (Branch Level)
         /// </summary>
         Task<EmailBulkResult> SendToBranchContactGroupAsync(int branchGroupId, string subject, string body, string senderUserId, bool isHtml = true, List<string> attachmentPaths = null);
+
+        // ========== ⭐ NEW: ارسال به گروه‌های سازمان ==========
+
+        /// <summary>
+        /// ارسال ایمیل به یک گروه سازمان (System Level)
+        /// </summary>
+        /// <param name="groupId">شناسه گروه سازمان</param>
+        /// <param name="subject">موضوع ایمیل</param>
+        /// <param name="body">متن ایمیل</param>
+        /// <param name="senderUserId">کاربر ارسال‌کننده</param>
+        /// <param name="sendMode">حالت ارسال: 0=فقط ایمیل سازمان، 1=فقط افراد مرتبط، 2=هر دو</param>
+        /// <param name="isHtml">HTML یا Plain Text</param>
+        /// <param name="attachmentPaths">مسیر فایل‌های پیوست</param>
+        Task<EmailBulkResult> SendToOrganizationGroupAsync(int groupId, string subject, string body, string senderUserId, byte sendMode = 0, bool isHtml = true, List<string> attachmentPaths = null);
+
+        /// <summary>
+        /// ارسال ایمیل به گروه سازمان شعبه (Branch Level)
+        /// </summary>
+        Task<EmailBulkResult> SendToBranchOrganizationGroupAsync(int branchGroupId, string subject, string body, string senderUserId, byte sendMode = 0, bool isHtml = true, List<string> attachmentPaths = null);
 
         // ========== قالب‌ها ==========
 

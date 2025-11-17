@@ -31,6 +31,11 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         Task<List<SmsLog>> SendToOrganizationContactsAsync(int organizationId, string message, string senderUserId, int? providerId = null);
 
+        /// <summary>
+        /// ارسال پیامک به چند سازمان
+        /// </summary>
+        Task<List<SmsLog>> SendToMultipleOrganizationsAsync(List<int> organizationIds, string message, string senderUserId, int? providerId = null, bool sendToOrganizationPhone = true);
+
         // ========== ارسال با قالب ==========
 
         /// <summary>
@@ -41,14 +46,49 @@ namespace MahERP.DataModelLayer.Repository
         // ========== ⭐ NEW: ارسال به گروه‌ها ==========
 
         /// <summary>
-        /// ارسال پیامک به یک گروه کامل (System Level)
+        /// ارسال پیامک به یک گروه افراد (System Level)
         /// </summary>
         Task<SmsBulkResult> SendToContactGroupAsync(int groupId, string message, string senderUserId, int? providerId = null);
 
         /// <summary>
-        /// ارسال پیامک به گروه شعبه (Branch Level)
+        /// ارسال پیامک به گروه افراد شعبه (Branch Level)
         /// </summary>
         Task<SmsBulkResult> SendToBranchContactGroupAsync(int branchGroupId, string message, string senderUserId, int? providerId = null);
+
+        /// <summary>
+        /// ⭐ ارسال پیامک به یک گروه سازمان (System Level)
+        /// </summary>
+        /// <param name="groupId">شناسه گروه سازمان</param>
+        /// <param name="message">متن پیام</param>
+        /// <param name="senderUserId">کاربر ارسال‌کننده</param>
+        /// <param name="sendMode">حالت ارسال: 0=فقط شماره سازمان، 1=فقط افراد مرتبط، 2=هر دو</param>
+        /// <param name="providerId">شناسه Provider</param>
+        Task<SmsBulkResult> SendToOrganizationGroupAsync(int groupId, string message, string senderUserId, byte sendMode = 0, int? providerId = null);
+
+        /// <summary>
+        /// ⭐ ارسال پیامک به گروه سازمان شعبه (Branch Level)
+        /// </summary>
+        Task<SmsBulkResult> SendToBranchOrganizationGroupAsync(int branchGroupId, string message, string senderUserId, byte sendMode = 0, int? providerId = null);
+
+        /// <summary>
+        /// ⭐ ارسال پیامک به چند گروه افراد
+        /// </summary>
+        Task<SmsBulkResult> SendToMultipleContactGroupsAsync(List<int> groupIds, string message, string senderUserId, int? providerId = null);
+
+        /// <summary>
+        /// ⭐ ارسال پیامک به چند گروه سازمان
+        /// </summary>
+        Task<SmsBulkResult> SendToMultipleOrganizationGroupsAsync(List<int> groupIds, string message, string senderUserId, byte sendMode = 0, int? providerId = null);
+
+        /// <summary>
+        /// ⭐ ارسال پیامک به چند گروه شعبه افراد
+        /// </summary>
+        Task<SmsBulkResult> SendToMultipleBranchContactGroupsAsync(List<int> branchGroupIds, string message, string senderUserId, int? providerId = null);
+
+        /// <summary>
+        /// ⭐ ارسال پیامک به چند گروه شعبه سازمان
+        /// </summary>
+        Task<SmsBulkResult> SendToMultipleBranchOrganizationGroupsAsync(List<int> branchGroupIds, string message, string senderUserId, byte sendMode = 0, int? providerId = null);
 
         // ========== جستجو و فیلتر ==========
 
@@ -107,5 +147,10 @@ namespace MahERP.DataModelLayer.Repository
         public string GroupTitle { get; set; }
         public int GroupId { get; set; }
         public string GroupType { get; set; } // "System" یا "Branch"
+
+        // ⭐ برای ارسال به چند گروه
+        public List<SmsBulkResult> SubResults { get; set; } = new();
+        public int TotalGroups { get; set; }
+        public int SuccessfulGroups { get; set; }
     }
 }

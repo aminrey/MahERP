@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Sms;
 using MahERP.DataModelLayer.ViewModels;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,7 @@ namespace MahERP.DataModelLayer.Repository
             return await _context.SmsTemplate_Tbl
                 .Include(t => t.Creator)
                 .Include(t => t.Recipients)
+                .AsNoTracking() // ⭐ اضافه شده برای جلوگیری از مشکلات tracking
                 .OrderByDescending(t => t.CreatedDate)
                 .ToListAsync();
         }
@@ -158,6 +160,77 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
+        /// افزودن چند مخاطب به یکباره با شماره‌های خاص
+        /// </summary>
+        public async Task<int> AddMultipleRecipientsWithPhonesAsync(
+            int templateId,
+            List<(int contactId, int? phoneId)> contactData,
+            List<int> organizationIds,
+            string addedByUserId)
+        {
+            var recipients = new List<SmsTemplateRecipient>();
+
+            // افزودن Contacts با شماره‌های خاص
+            if (contactData != null && contactData.Any())
+            {
+                foreach (var (contactId, phoneId) in contactData)
+                {
+                    // بررسی تکراری نبودن (Contact + Phone ترکیبی)
+                    var exists = await _context.SmsTemplateRecipient_Tbl
+                        .AnyAsync(r => r.TemplateId == templateId &&
+                                      r.RecipientType == 0 &&
+                                      r.ContactId == contactId &&
+                                      r.ContactPhoneId == phoneId);
+
+                    if (!exists)
+                    {
+                        recipients.Add(new SmsTemplateRecipient
+                        {
+                            TemplateId = templateId,
+                            RecipientType = 0,
+                            ContactId = contactId,
+                            ContactPhoneId = phoneId,
+                            AddedByUserId = addedByUserId,
+                            AddedDate = DateTime.Now
+                        });
+                    }
+                }
+            }
+
+            // افزودن Organizations
+            if (organizationIds != null && organizationIds.Any())
+            {
+                foreach (var orgId in organizationIds)
+                {
+                    var exists = await _context.SmsTemplateRecipient_Tbl
+                        .AnyAsync(r => r.TemplateId == templateId &&
+                                      r.RecipientType == 1 &&
+                                      r.OrganizationId == orgId);
+
+                    if (!exists)
+                    {
+                        recipients.Add(new SmsTemplateRecipient
+                        {
+                            TemplateId = templateId,
+                            RecipientType = 1,
+                            OrganizationId = orgId,
+                            AddedByUserId = addedByUserId,
+                            AddedDate = DateTime.Now
+                        });
+                    }
+                }
+            }
+
+            if (recipients.Any())
+            {
+                _context.SmsTemplateRecipient_Tbl.AddRange(recipients);
+                await _context.SaveChangesAsync();
+            }
+
+            return recipients.Count;
+        }
+
+        /// <summary>
         /// حذف مخاطب از قالب
         /// </summary>
         public async Task RemoveRecipientAsync(int recipientId)
@@ -208,6 +281,17 @@ namespace MahERP.DataModelLayer.Repository
                 .Take(20)
                 .ToListAsync();
 
+            // ⭐ دریافت Recipients با Include کامل
+            var recipients = await _context.SmsTemplateRecipient_Tbl
+                .Include(r => r.Contact)
+                    .ThenInclude(c => c.Phones)
+                .Include(r => r.ContactPhone) // ⭐ اضافه شده
+                .Include(r => r.Organization)
+                .Include(r => r.AddedBy)
+                .Where(r => r.TemplateId == templateId)
+                .OrderByDescending(r => r.AddedDate)
+                .ToListAsync();
+
             var viewModel = new SmsTemplateDetailViewModel
             {
                 Id = template.Id,
@@ -221,25 +305,58 @@ namespace MahERP.DataModelLayer.Repository
                 CreatedDate = template.CreatedDate,
                 CreatorName = $"{template.Creator?.FirstName} {template.Creator?.LastName}",
 
-                TotalRecipients = template.Recipients.Count,
-                ContactRecipients = template.Recipients.Count(r => r.RecipientType == 0),
-                OrganizationRecipients = template.Recipients.Count(r => r.RecipientType == 1),
+                TotalRecipients = recipients.Count,
+                ContactRecipients = recipients.Count(r => r.RecipientType == 0),
+                OrganizationRecipients = recipients.Count(r => r.RecipientType == 1),
 
                 TotalSent = sentLogs.Count,
                 SuccessfulSent = sentLogs.Count(l => l.IsSuccess),
                 FailedSent = sentLogs.Count(l => !l.IsSuccess),
 
-                Recipients = template.Recipients.Select(r => new RecipientItemViewModel
+                Recipients = recipients.Select(r =>
                 {
-                    Id = r.Id,
-                    RecipientType = r.RecipientType,
-                    RecipientTypeText = r.RecipientTypeText,
-                    ContactId = r.ContactId,
-                    OrganizationId = r.OrganizationId,
-                    RecipientName = r.RecipientName,
-                    RecipientContact = r.RecipientContact,
-                    AddedDate = r.AddedDate,
-                    AddedByName = $"{r.AddedBy?.FirstName} {r.AddedBy?.LastName}"
+                    // ⭐ انتخاب شماره برای نمایش
+                    string phoneNumber = null;
+                    
+                    if (r.RecipientType == 0) // Contact
+                    {
+                        if (r.ContactPhone != null)
+                        {
+                            // اگر شماره مشخصی انتخاب شده
+                            phoneNumber = r.ContactPhone.FormattedNumber;
+                        }
+                        else if (r.Contact?.Phones != null && r.Contact.Phones.Any())
+                        {
+                            // اگر شماره مشخص نیست، شماره پیش‌فرض پیامک
+                            var smsPhone = r.Contact.Phones.FirstOrDefault(p => p.IsSmsDefault);
+                            if (smsPhone == null)
+                            {
+                                smsPhone = r.Contact.Phones.FirstOrDefault(p => p.IsDefault);
+                            }
+                            if (smsPhone == null)
+                            {
+                                smsPhone = r.Contact.Phones.OrderBy(p => p.DisplayOrder).FirstOrDefault();
+                            }
+                            phoneNumber = smsPhone?.FormattedNumber;
+                        }
+                    }
+                    else if (r.RecipientType == 1) // Organization
+                    {
+                        phoneNumber = r.Organization?.PrimaryPhone;
+                    }
+                    
+                    return new RecipientItemViewModel
+                    {
+                        Id = r.Id,
+                        RecipientType = r.RecipientType,
+                        RecipientTypeText = r.RecipientTypeText,
+                        ContactId = r.ContactId,
+                        OrganizationId = r.OrganizationId,
+                        RecipientName = r.RecipientName,
+                        RecipientContact = phoneNumber ?? "-",
+                        AddedDate = r.AddedDate,
+                        AddedByName = $"{r.AddedBy?.FirstName} {r.AddedBy?.LastName}"
+                    };
                 }).ToList(),
 
                 RecentLogs = recentLogs.Select(l => new SmsLogItemViewModel
@@ -262,12 +379,13 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// جستجوی Contacts با شماره تلفن
+        /// جستجوی ساده Contacts (فقط نام، بدون شماره‌ها)
+        /// و انتخاب خودکار بهترین شماره برای پیامک
         /// </summary>
-        public async Task<List<object>> SearchContactsAsync(string search)
+        public async Task<List<object>> SearchContactsSimpleAsync(string search)
         {
             var query = _context.Contact_Tbl
-                .Include(c => c.Phones)
+                .Include(c => c.Phones.Where(p => p.IsActive))
                 .Where(c => c.IsActive);
 
             if (!string.IsNullOrEmpty(search))
@@ -279,14 +397,218 @@ namespace MahERP.DataModelLayer.Repository
 
             var contacts = await query
                 .Take(50)
-                .Select(c => new
-                {
-                    id = c.Id,
-                    text = $"{c.FirstName} {c.LastName} - {c.DefaultPhone.PhoneNumber}"
-                })
                 .ToListAsync();
 
-            return contacts.Cast<object>().ToList();
+            var results = new List<object>();
+
+            foreach (var contact in contacts)
+            {
+                // انتخاب بهترین شماره با اولویت:
+                // 1. IsSmsDefault = true
+                // 2. IsDefault = true  
+                // 3. اولین موبایل (PhoneType = 0)
+                // 4. اولین شماره
+                ContactPhone bestPhone = null;
+
+                if (contact.Phones != null && contact.Phones.Any())
+                {
+                    // 1️⃣ اولویت اول: شماره پیش‌فرض پیامک
+                    bestPhone = contact.Phones.FirstOrDefault(p => p.IsSmsDefault);
+
+                    // 2️⃣ اولویت دوم: شماره پیش‌فرض
+                    if (bestPhone == null)
+                    {
+                        bestPhone = contact.Phones.FirstOrDefault(p => p.IsDefault);
+                    }
+
+                    // 3️⃣ اولویت سوم: اولین موبایل
+                    if (bestPhone == null)
+                    {
+                        bestPhone = contact.Phones
+                            .Where(p => p.PhoneType == 0) // موبایل
+                            .OrderBy(p => p.DisplayOrder)
+                            .FirstOrDefault();
+                    }
+
+                    // 4️⃣ اولویت چهارم: اولین شماره
+                    if (bestPhone == null)
+                    {
+                        bestPhone = contact.Phones
+                            .OrderBy(p => p.DisplayOrder)
+                            .FirstOrDefault();
+                    }
+                }
+
+                results.Add(new
+                {
+                    id = contact.Id,
+                    text = $"{contact.FirstName} {contact.LastName}",
+                    phoneId = bestPhone?.Id,
+                    phoneNumber = bestPhone?.PhoneNumber,
+                    hasPhone = bestPhone != null
+                });
+            }
+
+            return results.Cast<object>().ToList();
+        }
+
+        /// <summary>
+        /// دریافت شماره‌های یک Contact
+        /// </summary>
+        public async Task<List<object>> GetContactPhonesAsync(int contactId)
+        {
+            var contact = await _context.Contact_Tbl
+                .Include(c => c.Phones.Where(p => p.IsActive))
+                .FirstOrDefaultAsync(c => c.Id == contactId && c.IsActive);
+
+            if (contact == null || contact.Phones == null || !contact.Phones.Any())
+            {
+                return new List<object>();
+            }
+
+            var phones = contact.Phones
+                .OrderByDescending(p => p.IsSmsDefault) // ⭐ شماره پیش‌فرض پیامک اول
+                .ThenByDescending(p => p.IsDefault)
+                .ThenBy(p => p.DisplayOrder)
+                .Select(p => new
+                {
+                    id = p.Id,
+                    phoneNumber = p.PhoneNumber,
+                    formattedNumber = p.FormattedNumber,
+                    phoneType = p.PhoneType,
+                    phoneTypeText = p.PhoneTypeText,
+                    isDefault = p.IsDefault,
+                    isSmsDefault = p.IsSmsDefault, // ⭐ اضافه شده
+                    isVerified = p.IsVerified
+                })
+                .Cast<object>()
+                .ToList();
+
+            return phones;
+        }
+
+        /// <summary>
+        /// جستجوی Contacts با شماره تلفن - نمایش تمام شماره‌های هر Contact
+        /// </summary>
+        public async Task<List<object>> SearchContactsAsync(string search)
+        {
+            var query = _context.Contact_Tbl
+                .Include(c => c.Phones.Where(p => p.IsActive))
+                .Where(c => c.IsActive);
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(c =>
+                    c.FirstName.Contains(search) ||
+                    c.LastName.Contains(search));
+            }
+
+            var contacts = await query
+                .Take(50)
+                .ToListAsync();
+
+            var results = new List<object>();
+
+            foreach (var contact in contacts)
+            {
+                // اگر شماره‌ای دارد، هر شماره رو جداگانه نمایش بده
+                if (contact.Phones != null && contact.Phones.Any())
+                {
+                    foreach (var phone in contact.Phones.OrderByDescending(p => p.IsDefault).ThenBy(p => p.DisplayOrder))
+                    {
+                        results.Add(new
+                        {
+                            id = $"c{contact.Id}_p{phone.Id}", // ترکیبی از ContactId و PhoneId
+                            text = $"{contact.FirstName} {contact.LastName} - {phone.FormattedNumber} ({phone.PhoneTypeText})" + 
+                                   (phone.IsDefault ? " [پیش‌فرض]" : ""),
+                            contactId = contact.Id,
+                            phoneId = phone.Id,
+                            phoneNumber = phone.PhoneNumber
+                        });
+                    }
+                }
+                else
+                {
+                    // اگر شماره‌ای نداره، فقط Contact رو نمایش بده
+                    results.Add(new
+                    {
+                        id = $"c{contact.Id}_p0",
+                        text = $"{contact.FirstName} {contact.LastName} (بدون شماره)",
+                        contactId = contact.Id,
+                        phoneId = (int?)null,
+                        phoneNumber = (string)null
+                    });
+                }
+            }
+
+            return results.Cast<object>().ToList();
+        }
+
+        /// <summary>
+        /// دریافت افراد یک Organization برای استفاده در SMS
+        /// </summary>
+        public async Task<List<object>> GetOrganizationContactsAsync(int organizationId)
+        {
+            var orgContacts = await _context.OrganizationContact_Tbl
+                .Include(oc => oc.Contact)
+                    .ThenInclude(c => c.Phones.Where(p => p.IsActive))
+                .Where(oc => oc.OrganizationId == organizationId && oc.IsActive)
+                .ToListAsync();
+
+            if (!orgContacts.Any())
+            {
+                return new List<object>();
+            }
+
+            var results = new List<object>();
+
+            foreach (var oc in orgContacts.Where(oc => oc.Contact != null))
+            {
+                var contact = oc.Contact;
+
+                // ⭐ انتخاب بهترین شماره (مشابه SearchContactsSimpleAsync)
+                ContactPhone bestPhone = null;
+
+                if (contact.Phones != null && contact.Phones.Any())
+                {
+                    // 1️⃣ شماره پیش‌فرض پیامک
+                    bestPhone = contact.Phones.FirstOrDefault(p => p.IsSmsDefault);
+
+                    // 2️⃣ شماره پیش‌فرض
+                    if (bestPhone == null)
+                    {
+                        bestPhone = contact.Phones.FirstOrDefault(p => p.IsDefault);
+                    }
+
+                    // 3️⃣ اولین موبایل
+                    if (bestPhone == null)
+                    {
+                        bestPhone = contact.Phones
+                            .Where(p => p.PhoneType == 0)
+                            .OrderBy(p => p.DisplayOrder)
+                            .FirstOrDefault();
+                    }
+
+                    // 4️⃣ اولین شماره
+                    if (bestPhone == null)
+                    {
+                        bestPhone = contact.Phones
+                            .OrderBy(p => p.DisplayOrder)
+                            .FirstOrDefault();
+                    }
+                }
+
+                results.Add(new
+                {
+                    id = contact.Id,
+                    text = $"{contact.FirstName} {contact.LastName}",
+                    phoneId = bestPhone?.Id,
+                    phoneNumber = bestPhone?.PhoneNumber,
+                    hasPhone = bestPhone != null
+                });
+            }
+
+            return results.Cast<object>().ToList();
         }
 
         /// <summary>
@@ -304,14 +626,21 @@ namespace MahERP.DataModelLayer.Repository
 
             var orgs = await query
                 .Take(50)
+                .ToListAsync();
+
+            // ⭐ تبدیل به anonymous object در حافظه
+            var results = orgs
                 .Select(o => new
                 {
                     id = o.Id,
-                    text = $"{o.Name} - {o.PrimaryPhone}"
+                    text = !string.IsNullOrEmpty(o.PrimaryPhone)
+                        ? $"{o.Name} - {o.PrimaryPhone}"
+                        : o.Name
                 })
-                .ToListAsync();
+                .Cast<object>()
+                .ToList();
 
-            return orgs.Cast<object>().ToList();
+            return results;
         }
 
         /// <summary>

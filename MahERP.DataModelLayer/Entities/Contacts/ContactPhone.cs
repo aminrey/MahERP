@@ -55,6 +55,12 @@ namespace MahERP.DataModelLayer.Entities.Contacts
         public bool IsDefault { get; set; } = false;
 
         /// <summary>
+        /// آیا این شماره برای ارسال پیامک پیش‌فرض است؟
+        /// هر Contact فقط یک شماره با IsSmsDefault = true دارد
+        /// </summary>
+        public bool IsSmsDefault { get; set; } = false;
+
+        /// <summary>
         /// آیا شماره تایید شده است؟
         /// </summary>
         public bool IsVerified { get; set; } = false;
@@ -127,6 +133,8 @@ namespace MahERP.DataModelLayer.Entities.Contacts
                     text += $" داخلی: {Extension}";
                 if (IsDefault)
                     text += " [پیش‌فرض]";
+                if (IsSmsDefault)
+                    text += " [پیامک]";
                 return text;
             }
         }

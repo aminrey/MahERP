@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MahERP.DataModelLayer.Entities.Notifications;
 using MahERP.DataModelLayer.Configurations; // ⭐ اضافه کردن این using
+using MahERP.DataModelLayer.Entities.BackgroundJobs; // ⭐ اضافه کردن
 
 namespace MahERP.DataModelLayer
 {
@@ -192,6 +193,9 @@ namespace MahERP.DataModelLayer
         public DbSet<NotificationTemplateHistory> NotificationTemplateHistory_Tbl { get; set; }
         public DbSet<NotificationScheduledMessage> NotificationScheduledMessage_Tbl { get; set; }
         public DbSet<NotificationDeliveryStats> NotificationDeliveryStats_Tbl { get; set; }
+
+        // ⭐⭐⭐ Background Jobs System
+        public DbSet<BackgroundJob> BackgroundJob_Tbl { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

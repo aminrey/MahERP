@@ -29,6 +29,9 @@ namespace MahERP.DataModelLayer.ViewModels.ContactViewModels
         [Display(Name = "پیش‌فرض")]
         public bool IsDefault { get; set; } = false;
 
+        [Display(Name = "پیش‌فرض پیامک")]
+        public bool IsSmsDefault { get; set; } = false;
+
         [Display(Name = "تایید شده")]
         public bool IsVerified { get; set; } = false;
 

@@ -1,0 +1,341 @@
+﻿@model List<SmsTemplate>
+@{
+    ViewData["Title"] = "مدیریت قالب‌های پیامک";
+}
+
+<main id="main-container">
+    <!-- Hero -->
+    <div class="bg-image" style="background-image: url('/assets/media/photos/photo13@2x.jpg');">
+        <div class="bg-black-50">
+            <div class="content content-full">
+                <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+                    <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3 text-white">
+                        <i class="fa fa-file-alt me-2"></i>
+                        قالب‌های پیامک
+                    </h1>
+                    <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-alt">
+                            <li class="breadcrumb-item">
+                                <a class="link-fx text-white" asp-area="CrmArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a class="link-fx text-white" href="#">ارتباطات</a>
+                            </li>
+                            <li class="breadcrumb-item text-white" aria-current="page">
+                                قالب‌های پیامک
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero -->
+
+    <!-- Page Content -->
+    <div class="content">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fa fa-check-circle me-2"></i>
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- آمار کلی -->
+        <div class="row">
+            <div class="col-6 col-md-3 col-lg-6 col-xl-3">
+                <a class="block block-rounded block-link-shadow text-center" href="javascript:void(0)">
+                    <div class="block-content block-content-full">
+                        <div class="fs-2 fw-semibold text-primary">@Model.Count</div>
+                    </div>
+                    <div class="block-content py-2 bg-body-light">
+                        <p class="fw-medium fs-sm text-muted mb-0">
+                            کل قالب‌ها
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-3 col-lg-6 col-xl-3">
+                <a class="block block-rounded block-link-shadow text-center" href="javascript:void(0)">
+                    <div class="block-content block-content-full">
+                        <div class="fs-2 fw-semibold text-success">@Model.Count(t => t.IsActive)</div>
+                    </div>
+                    <div class="block-content py-2 bg-body-light">
+                        <p class="fw-medium fs-sm text-success mb-0">
+                            قالب‌های فعال
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-3 col-lg-6 col-xl-3">
+                <a class="block block-rounded block-link-shadow text-center" href="javascript:void(0)">
+                    <div class="block-content block-content-full">
+                        <div class="fs-2 fw-semibold text-info">@Model.Sum(t => t.UsageCount)</div>
+                    </div>
+                    <div class="block-content py-2 bg-body-light">
+                        <p class="fw-medium fs-sm text-muted mb-0">
+                            تعداد استفاده
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-3 col-lg-6 col-xl-3">
+                <a class="block block-rounded block-link-shadow text-center" href="javascript:void(0)">
+                    <div class="block-content block-content-full">
+                        <div class="fs-2 fw-semibold text-warning">@Model.Count(t => !t.IsActive)</div>
+                    </div>
+                    <div class="block-content py-2 bg-body-light">
+                        <p class="fw-medium fs-sm text-warning mb-0">
+                            غیرفعال
+                        </p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- لیست قالب‌ها -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-list me-1"></i> لیست قالب‌های پیامک
+                </h3>
+                <div class="block-options">
+                    <a asp-action="Create" class="btn btn-sm btn-primary">
+                        <i class="fa fa-plus me-1"></i> ایجاد قالب جدید
+                    </a>
+                </div>
+            </div>
+
+            <div class="block-content">
+                <!-- فیلترها -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="search-box" placeholder="جستجو در عنوان یا متن قالب...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filter-status">
+                            <option value="">همه</option>
+                            <option value="active">فعال</option>
+                            <option value="inactive">غیرفعال</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filter-type">
+                            <option value="">همه انواع</option>
+                            <option value="0">عمومی</option>
+                            <option value="1">تبلیغاتی</option>
+                            <option value="2">اطلاع‌رسانی</option>
+                            <option value="3">یادآوری</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-secondary w-100" id="btn-reset-filters">
+                            <i class="fa fa-redo me-1"></i> پاک کردن فیلتر
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-vcenter" id="templates-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 5%;">
+                                    <i class="fa fa-hashtag"></i>
+                                </th>
+                                <th style="width: 25%;">عنوان</th>
+                                <th style="width: 35%;">متن قالب</th>
+                                <th style="width: 10%;">نوع</th>
+                                <th class="text-center" style="width: 8%;">استفاده</th>
+                                <th class="text-center" style="width: 7%;">وضعیت</th>
+                                <th class="text-center" style="width: 10%;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                int counter = 1;
+                                foreach (var template in Model)
+                                {
+                                    <tr data-status="@(template.IsActive ? "active" : "inactive")" data-type="@((int)template.TemplateType)">
+                                        <td class="text-center">@counter</td>
+                                        <td class="fw-semibold">
+                                            <a asp-action="Details" asp-route-id="@template.Id" class="text-decoration-none">
+                                                <i class="fa fa-file-alt me-1 text-primary"></i>
+                                                @template.Title
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <div class="text-muted" style="max-height: 60px; overflow: hidden; text-overflow: ellipsis; white-space: pre-wrap;">
+                                                @template.MessageTemplate
+                                            </div>
+                                            <small class="text-muted">
+                                                (@template.MessageTemplate.Length کاراکتر)
+                                            </small>
+                                        </td>
+                                        <td>
+                                            @switch (template.TemplateType)
+                                            {
+                                                case 0:
+                                                    <span class="badge bg-secondary">عمومی</span>
+                                                    break;
+                                                case 1:
+                                                    <span class="badge bg-primary">تبلیغاتی</span>
+                                                    break;
+                                                case 2:
+                                                    <span class="badge bg-info">اطلاع‌رسانی</span>
+                                                    break;
+                                                case 3:
+                                                    <span class="badge bg-warning">یادآوری</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-dark">@template.UsageCount</span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (template.IsActive)
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="fa fa-check me-1"></i>فعال
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="fa fa-times me-1"></i>غیرفعال
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group" role="group">
+                                                <a asp-action="Details" asp-route-id="@template.Id" 
+                                                   class="btn btn-sm btn-info" title="جزئیات و آمار">
+                                                    <i class="fa fa-eye"></i>
+                                                </a>
+                                                <a href="@Url.Action("ShowAddRecipientsModal", new { id = template.Id })" 
+                                                   class="btn btn-sm btn-success"
+                                                   data-bs-target="#modal-block-select2"
+                                                   data-toggle="modal-ajax"
+                                                   title="افزودن مخاطب">
+                                                    <i class="fa fa-user-plus"></i>
+                                                </a>
+                                                <a asp-action="Edit" asp-route-id="@template.Id" 
+                                                   class="btn btn-sm btn-warning" title="ویرایش قالب">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                                        data-id="@template.Id" title="حذف قالب">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    counter++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <i class="fa fa-inbox fa-3x text-muted mb-3 d-block"></i>
+                                        <p class="text-muted">هنوز قالبی ایجاد نشده است</p>
+                                        <a asp-action="Create" class="btn btn-primary mt-2">
+                                            <i class="fa fa-plus me-1"></i> ایجاد اولین قالب
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // جستجو در جدول
+            $('#search-box').on('keyup', function() {
+                const value = $(this).val().toLowerCase();
+                $('#templates-table tbody tr').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // فیلتر وضعیت
+            $('#filter-status').on('change', function() {
+                const status = $(this).val();
+                if (status === '') {
+                    $('#templates-table tbody tr').show();
+                } else {
+                    $('#templates-table tbody tr').hide();
+                    $(`#templates-table tbody tr[data-status="${status}"]`).show();
+                }
+            });
+
+            // فیلتر نوع
+            $('#filter-type').on('change', function() {
+                const type = $(this).val();
+                if (type === '') {
+                    $('#templates-table tbody tr').show();
+                } else {
+                    $('#templates-table tbody tr').hide();
+                    $(`#templates-table tbody tr[data-type="${type}"]`).show();
+                }
+            });
+
+            // پاک کردن فیلترها
+            $('#btn-reset-filters').on('click', function() {
+                $('#search-box').val('');
+                $('#filter-status').val('');
+                $('#filter-type').val('');
+                $('#templates-table tbody tr').show();
+            });
+
+            // حذف قالب
+            $('.btn-delete').on('click', function() {
+                const templateId = $(this).data('id');
+                const row = $(this).closest('tr');
+
+                Swal.fire({
+                    title: 'تایید حذف',
+                    text: 'آیا از حذف این قالب اطمینان دارید؟',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'بله، حذف شود',
+                    cancelButtonText: 'خیر'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '@Url.Action("Delete")',
+                            type: 'POST',
+                            data: { 
+                                id: templateId,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    row.fadeOut(400, function() {
+                                        $(this).remove();
+                                    });
+                                    Swal.fire('حذف شد!', response.message, 'success');
+                                } else {
+                                    Swal.fire('خطا!', response.message, 'error');
+                                }
+                            },
+                            error: function() {
+                                Swal.fire('خطا!', 'خطا در برقراری ارتباط با سرور', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

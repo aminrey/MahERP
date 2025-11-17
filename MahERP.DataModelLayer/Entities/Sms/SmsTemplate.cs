@@ -57,9 +57,8 @@ namespace MahERP.DataModelLayer.Entities.Sms
         [Required]
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
-        [Required]
         [MaxLength(450)]
-        public string CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; }
 
         [ForeignKey(nameof(CreatorUserId))]
         public virtual AppUsers? Creator { get; set; }
