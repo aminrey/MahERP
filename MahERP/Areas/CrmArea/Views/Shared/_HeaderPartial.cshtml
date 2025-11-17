@@ -360,10 +360,11 @@
                         class="btn btn-alt-secondary position-relative @(IsNotificationMenuActive(currentController, currentAction) ? "active" : "")"
                         data-bs-toggle="dropdown" id="page-header-notifications-dropdown" type="button">
                     <i class="fa fa-fw fa-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="headerNotificationBadge" style="font-size: 0.65em; display: none;">
-                        0
-                    </span>
+                  
                 </button>
+                <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" id="headerNotificationBadge" style="font-size: 0.65em; display: none;">
+                    0
+                </span>
                 <div aria-labelledby="page-header-notifications-dropdown" class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0" style="width: 380px; max-height: 500px;">
                     <!-- Notification Header -->
                     <div class="bg-primary-dark rounded-top fw-semibold text-white text-center p-3 d-flex justify-content-between align-items-center">

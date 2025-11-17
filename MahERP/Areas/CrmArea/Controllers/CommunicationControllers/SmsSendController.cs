@@ -30,34 +30,35 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
         private readonly ISmsQueueRepository _queueRepo;
         private readonly ISmsTemplateRepository _templateRepo;
         private readonly ILogger<SmsSendController> _logger;
-        private readonly IBackgroundJobRepository _jobRepo;
-        private readonly IBackgroundJobNotificationService _jobNotificationService;
+        private readonly IBackgroundJobRepository _backgroundJobRepo; // ⭐ تغییر نام
+        private readonly IBackgroundJobNotificationService _backgroundJobNotificationService; // ⭐ تغییر نام
 
         public SmsSendController(
             ISmsService smsService,
             ISmsProviderRepository providerRepo,
             ISmsQueueRepository queueRepo,
             ISmsTemplateRepository templateRepo,
-            IBackgroundJobRepository jobRepo,
-            IBackgroundJobNotificationService jobNotificationService,
+            IBackgroundJobRepository backgroundJobRepo, // ⭐ تغییر نام
+            IBackgroundJobNotificationService backgroundJobNotificationService, // ⭐ تغییر نام
             IUnitOfWork uow,
             UserManager<AppUsers> userManager,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository,
-            ILogger<SmsSendController> logger, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
-
-
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
+            IUserManagerRepository userRepository, 
+            IBaseRepository BaseRepository,
+            ILogger<SmsSendController> logger, 
+            ModuleTrackingBackgroundService moduleTracking, 
+            IModuleAccessService moduleAccessService)
+            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _smsService = smsService;
             _providerRepo = providerRepo;
             _queueRepo = queueRepo;
             _templateRepo = templateRepo;
             _logger = logger;
-            _jobRepo = jobRepo;
-            _jobNotificationService = jobNotificationService;
+            _backgroundJobRepo = backgroundJobRepo; // ⭐ تغییر نام
+            _backgroundJobNotificationService = backgroundJobNotificationService; // ⭐ تغییر نام
         }
 
         // ========== صفحه اصلی ارسال ==========
@@ -173,17 +174,17 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
                     StartDate = DateTime.Now
                 };
 
-                var jobId = await _jobRepo.CreateJobAsync(job);
+                var jobId = await _backgroundJobRepo.CreateJobAsync(job);
 
                 // ⭐ اطلاع‌رسانی شروع Job
-                await _jobNotificationService.NotifyJobStarted(currentUser.Id, jobId, job.Title);
+                await _backgroundJobNotificationService.NotifyJobStarted(currentUser.Id, jobId, job.Title);
 
                 // ⭐ ارسال در Background (Task.Run)
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await _jobRepo.UpdateJobAsync(new MahERP.DataModelLayer.Entities.BackgroundJobs.BackgroundJob
+                        await _backgroundJobRepo.UpdateJobAsync(new MahERP.DataModelLayer.Entities.BackgroundJobs.BackgroundJob
                         {
                             Id = jobId,
                             Status = 1 // Running
@@ -213,10 +214,10 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
                                 
                                 processed++;
                                 var progress = (int)((processed / (double)contactPhoneData.Count) * 100);
-                                await _jobRepo.UpdateProgressAsync(jobId, progress, processed, processed, 0);
+                                await _backgroundJobRepo.UpdateProgressAsync(jobId, progress, processed, processed, 0);
                                 
                                 // ⭐ اطلاع‌رسانی پیشرفت
-                                await _jobNotificationService.NotifyJobProgress(currentUser.Id, jobId, progress, processed, processed, 0);
+                                await _backgroundJobNotificationService.NotifyJobProgress(currentUser.Id, jobId, progress, processed, processed, 0);
                             }
 
                             successCount = await _queueRepo.EnqueueBulkAsync(queueItems);
@@ -245,26 +246,26 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
                                 
                                 processed++;
                                 var progress = (int)((processed / (double)contactPhoneData.Count) * 100);
-                                await _jobRepo.UpdateProgressAsync(jobId, progress, processed, successCount, failCount);
+                                await _backgroundJobRepo.UpdateProgressAsync(jobId, progress, processed, successCount, failCount);
                                 
                                 // ⭐ اطلاع‌رسانی پیشرفت
-                                await _jobNotificationService.NotifyJobProgress(currentUser.Id, jobId, progress, processed, successCount, failCount);
+                                await _backgroundJobNotificationService.NotifyJobProgress(currentUser.Id, jobId, progress, processed, successCount, failCount);
                                 
                                 await Task.Delay(200); // Rate limiting
                             }
                         }
 
-                        await _jobRepo.CompleteJobAsync(jobId, true);
+                        await _backgroundJobRepo.CompleteJobAsync(jobId, true);
                         
                         // ⭐ اطلاع‌رسانی تکمیل
-                        await _jobNotificationService.NotifyJobCompleted(currentUser.Id, jobId, true);
+                        await _backgroundJobNotificationService.NotifyJobCompleted(currentUser.Id, jobId, true);
                     }
                     catch (Exception ex)
                     {
-                        await _jobRepo.CompleteJobAsync(jobId, false, ex.Message);
+                        await _backgroundJobRepo.CompleteJobAsync(jobId, false, ex.Message);
                         
                         // ⭐ اطلاع‌رسانی خطا
-                        await _jobNotificationService.NotifyJobCompleted(currentUser.Id, jobId, false, ex.Message);
+                        await _backgroundJobNotificationService.NotifyJobCompleted(currentUser.Id, jobId, false, ex.Message);
                         
                         _logger.LogError(ex, "خطا در پردازش Background Job {JobId}", jobId);
                     }
@@ -444,9 +445,82 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
                 if (!recipients.Any())
                     return Json(new { success = false, message = "مخاطبی برای ارسال یافت نشد" });
 
-                int sentCount = 0;
+                // ⭐ ایجاد BackgroundJob برای ارسال انبوه
+                var backgroundJob = new MahERP.DataModelLayer.Entities.BackgroundJobs.BackgroundJob
+                {
+                    JobType = 0, // SMS Bulk Send
+                    Title = $"ارسال انبوه پیامک - قالب: {template.Title}",
+                    Description = $"ارسال {recipients.Count} پیامک از قالب {template.Title}",
+                    Status = 0, // Pending
+                    Progress = 0,
+                    TotalItems = recipients.Count,
+                    ProcessedItems = 0,
+                    SuccessCount = 0,
+                    FailedCount = 0,
+                    StartDate = DateTime.Now,
+                    CreatedByUserId = currentUser.Id,
+                    Metadata = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        TemplateId = templateId,
+                        TemplateName = template.Title,
+                        UseQueue = useQueue
+                    })
+                };
 
-                foreach (var recipient in recipients)
+                var jobId = await _backgroundJobRepo.CreateJobAsync(backgroundJob);
+
+                // ⭐ اطلاع‌رسانی شروع Job
+                await _backgroundJobNotificationService.NotifyJobStarted(
+                    currentUser.Id, 
+                    jobId, 
+                    backgroundJob.Title
+                );
+
+                // ⭐ شروع پردازش در بک‌گراند (استفاده از Task.Run)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await ProcessBulkSmsAsync(jobId, recipients, template, useQueue, currentUser.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"خطا در پردازش BackgroundJob {jobId}");
+                        await _backgroundJobRepo.CompleteJobAsync(jobId, false, ex.Message);
+                        await _backgroundJobNotificationService.NotifyJobCompleted(
+                            currentUser.Id, jobId, false, ex.Message);
+                    }
+                });
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"عملیات ارسال {recipients.Count} پیامک آغاز شد",
+                    jobId = jobId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "خطا در ارسال به مخاطبین قالب");
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        // ⭐⭐⭐ متد پردازش در بک‌گراند
+        private async Task ProcessBulkSmsAsync(
+            int jobId,
+            List<SmsTemplateRecipient> recipients,
+            SmsTemplate template,
+            bool useQueue,
+            string userId)
+        {
+            int processed = 0;
+            int success = 0;
+            int failed = 0;
+
+            foreach (var recipient in recipients)
+            {
+                try
                 {
                     string phoneNumber = null;
 
@@ -459,44 +533,63 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
                         phoneNumber = recipient.Organization.PrimaryPhone;
                     }
 
-                    if (string.IsNullOrEmpty(phoneNumber))
-                        continue;
-
-                    if (useQueue)
+                    if (!string.IsNullOrEmpty(phoneNumber))
                     {
-                        await _queueRepo.EnqueueAsync(new SmsQueue
+                        if (useQueue)
                         {
-                            PhoneNumber = phoneNumber,
-                            MessageText = template.MessageTemplate,
-                            RecipientType = recipient.RecipientType,
-                            ContactId = recipient.ContactId,
-                            OrganizationId = recipient.OrganizationId,
-                            RequestedByUserId = currentUser.Id
-                        });
-                        sentCount++;
+                            await _queueRepo.EnqueueAsync(new SmsQueue
+                            {
+                                PhoneNumber = phoneNumber,
+                                MessageText = template.MessageTemplate,
+                                RecipientType = recipient.RecipientType,
+                                ContactId = recipient.ContactId,
+                                OrganizationId = recipient.OrganizationId,
+                                RequestedByUserId = userId
+                            });
+                            success++;
+                        }
+                        else
+                        {
+                            // ارسال مستقیم
+                            success++;
+                        }
                     }
                     else
                     {
-                        // ارسال مستقیم از طریق Service
-                        sentCount++;
+                        failed++;
                     }
+
+                    processed++;
+
+                    // بروزرسانی Progress هر 10 آیتم
+                    if (processed % 10 == 0 || processed == recipients.Count)
+                    {
+                        int progress = (processed * 100) / recipients.Count;
+                        await _backgroundJobRepo.UpdateProgressAsync(jobId, progress, processed, success, failed);
+                        
+                        await _backgroundJobNotificationService.NotifyJobProgress(
+                            userId, jobId, progress, processed, success, failed);
+                    }
+
+                    // تاخیر کوچک برای جلوگیری از فشار بیش از حد
+                    await Task.Delay(50);
                 }
-
-                // بروزرسانی تعداد استفاده
-                await _templateRepo.IncrementUsageCountAsync(templateId);
-
-                return Json(new
+                catch (Exception ex)
                 {
-                    success = true,
-                    message = $"{sentCount} پیامک {(useQueue ? "به صف اضافه شد" : "ارسال شد")}"
+                    _logger.LogError(ex, $"خطا در پردازش مخاطب {recipient.Id}");
+                    failed++;
+                    processed++;
+                }
+            }
 
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطا در ارسال به مخاطبین قالب");
-                return Json(new { success = false, message = $"خطا: {ex.Message}" });
-            }
+            // بروزرسانی تعداد استفاده
+            await _templateRepo.IncrementUsageCountAsync(template.Id);
+
+            // تکمیل Job
+            await _backgroundJobRepo.CompleteJobAsync(jobId, true);
+            
+            await _backgroundJobNotificationService.NotifyJobCompleted(
+                userId, jobId, true, $"{success} موفق، {failed} ناموفق");
         }
     }
 }

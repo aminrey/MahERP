@@ -42,6 +42,9 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<Settings> SettingsUW { get; }
         #endregion
 
+        #region Background Jobs
+        GenereicClass<MahERP.DataModelLayer.Entities.BackgroundJobs.BackgroundJob> BackgroundJobUW { get; }
+        #endregion
 
         #region Stakeholder Management
         GenereicClass<Contact> ContactUW { get; }

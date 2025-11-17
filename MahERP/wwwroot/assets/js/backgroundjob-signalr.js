@@ -157,6 +157,11 @@ class BackgroundJobSignalR {
                 console.error("Error requesting jobs update:", error);
             }
         }
+        
+        // ⭐ همیشه لیست را از سرور بارگذاری کن (حتی اگر SignalR قطع باشد)
+        if (typeof loadBackgroundJobs === 'function') {
+            loadBackgroundJobs();
+        }
     }
 
     /**
@@ -164,14 +169,19 @@ class BackgroundJobSignalR {
      */
     scheduleReconnect() {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.error("Max reconnect attempts reached");
+            console.error("❌ Max reconnect attempts reached");
+            
+            // ⭐ حتی اگر SignalR fail شد، لیست Job ها را بارگذاری کن
+            if (typeof loadBackgroundJobs === 'function') {
+                loadBackgroundJobs();
+            }
             return;
         }
 
         this.reconnectAttempts++;
         const delay = this.reconnectDelay * this.reconnectAttempts;
 
-        console.log(`Reconnecting in ${delay}ms (Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+        console.log(`⏳ Reconnecting in ${delay}ms (Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
         setTimeout(() => {
             this.start();

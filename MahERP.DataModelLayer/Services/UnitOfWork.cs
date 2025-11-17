@@ -142,6 +142,10 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<CoreNotificationSetting> _coreNotificationSetting;
         #endregion
 
+        #region Background Jobs
+        private GenereicClass<MahERP.DataModelLayer.Entities.BackgroundJobs.BackgroundJob> _backgroundJob;
+        #endregion
+
         #region Stakeholder Management
         private GenereicClass<Stakeholder> _stakeholder;
         private GenereicClass<StakeholderCRM> _stakeholderCRM;
@@ -405,6 +409,22 @@ namespace MahERP.DataModelLayer.Services
                     _coreNotificationSetting = new GenereicClass<CoreNotificationSetting>(_Context);
                 }
                 return _coreNotificationSetting;
+            }
+        }
+
+        #endregion
+
+        #region Background Jobs Properties
+
+        public GenereicClass<MahERP.DataModelLayer.Entities.BackgroundJobs.BackgroundJob> BackgroundJobUW
+        {
+            get
+            {
+                if (_backgroundJob == null)
+                {
+                    _backgroundJob = new GenereicClass<MahERP.DataModelLayer.Entities.BackgroundJobs.BackgroundJob>(_Context);
+                }
+                return _backgroundJob;
             }
         }
 

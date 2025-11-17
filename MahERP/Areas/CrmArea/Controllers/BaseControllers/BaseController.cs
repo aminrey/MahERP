@@ -56,6 +56,7 @@ namespace MahERP.Areas.CrmArea.Controllers.BaseControllers
                 SetUserInfoInViewBag();
                 SetModuleSettingsInViewBag();
                 TrackCurrentModule(context);
+                SetActiveBackgroundJobsInViewBag(); // ⭐ NEW
 
                 // ⭐⭐⭐ بررسی فعال بودن ماژول CRM در سیستم
                 if (!_baseRepository.IsCrmModuleEnabled())
@@ -278,6 +279,45 @@ namespace MahERP.Areas.CrmArea.Controllers.BaseControllers
                 ViewBag.HasTaskingAccess = true;
                 ViewBag.HasCrmAccess = true;
                 System.Diagnostics.Debug.WriteLine($"⚠️ SetUserModuleAccessInViewBag failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW: تنظیم تعداد Job های فعال در ViewBag
+        /// </summary>
+        private void SetActiveBackgroundJobsInViewBag()
+        {
+            try
+            {
+                var userId = GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    ViewBag.HasActiveBackgroundJobs = false;
+                    ViewBag.ActiveBackgroundJobsCount = 0;
+                    return;
+                }
+
+                // بررسی کش (5 ثانیه)
+                var cacheKey = $"active_jobs_count_{userId}";
+                if (!_memoryCache.TryGetValue(cacheKey, out int activeJobsCount))
+                {
+                    // ⭐ استفاده از BackgroundJobUW
+                    activeJobsCount = _uow.BackgroundJobUW.Get()
+                        .Where(j => j.CreatedByUserId == userId && (j.Status == 0 || j.Status == 1))
+                        .Count();
+
+                    // ذخیره در کش برای 5 ثانیه
+                    _memoryCache.Set(cacheKey, activeJobsCount, TimeSpan.FromSeconds(5));
+                }
+
+                ViewBag.HasActiveBackgroundJobs = activeJobsCount > 0;
+                ViewBag.ActiveBackgroundJobsCount = activeJobsCount;
+            }
+            catch (Exception ex)
+            {
+                ViewBag.HasActiveBackgroundJobs = false;
+                ViewBag.ActiveBackgroundJobsCount = 0;
+                System.Diagnostics.Debug.WriteLine($"⚠️ SetActiveBackgroundJobsInViewBag failed: {ex.Message}");
             }
         }
     }

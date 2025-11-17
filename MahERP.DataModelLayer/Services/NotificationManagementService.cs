@@ -1044,6 +1044,8 @@ namespace MahERP.DataModelLayer.Services
                 RelatedRecordId = notification.RelatedRecordId,
                 RelatedRecordType = notification.RelatedRecordType,
                 RelatedRecordTitle = notification.RelatedRecordTitle,
+                RecipientUserId = notification.RecipientUserId,
+                SenderUserId = notification.SenderUserId,
                 Priority = notification.Priority,
                 IsRead = notification.IsRead,
                 IsClicked = notification.IsClicked,

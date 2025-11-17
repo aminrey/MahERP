@@ -119,7 +119,11 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<ActivityLoggerService>(); // اضافه شده
 builder.Services.AddHttpContextAccessor(); // اضافه شده
 
+// ⭐⭐⭐ Background Job Services
+builder.Services.AddScoped<IBackgroundJobRepository, BackgroundJobRepository>();
+builder.Services.AddScoped<IBackgroundJobNotificationService, BackgroundJobNotificationService>();
 
+// Configuration for Identity options
 builder.Services.Configure<IdentityOptions>(options =>
 {
     // Default Password settings.
@@ -204,6 +208,7 @@ app.UseWebOptimizer();
 app.UseRouting();
 app.UseSession();
 app.MapHub<NotificationHub>("/notificationHub");
+app.MapHub<BackgroundJobHub>("/hubs/backgroundjob"); // ⭐ NEW
 app.UseAuthentication();
 app.UseAuthorization();
 
