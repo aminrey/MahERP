@@ -1,13 +1,150 @@
 ﻿// ========================================
-// ⭐⭐⭐ Task List Manager - نسخه جدید
+// ⭐⭐⭐ State Management
 // ========================================
-
-const TaskListManager = {
-    config: null,
+const TaskListState = {
     currentViewType: 0,
     currentGrouping: 0,
+    currentStatusFilter: 1,
+    currentFilters: {},
+    hasAdvancedFilters: false,
 
-    init: function(config) {
+    update: function (newState) {
+        if (newState.currentViewType !== undefined) {
+            this.currentViewType = newState.currentViewType;
+        }
+        if (newState.currentGrouping !== undefined) {
+            this.currentGrouping = newState.currentGrouping;
+        }
+        if (newState.currentStatusFilter !== undefined) {
+            this.currentStatusFilter = newState.currentStatusFilter;
+        }
+        if (newState.currentFilters !== undefined) {
+            this.currentFilters = newState.currentFilters;
+            this.hasAdvancedFilters = Object.keys(newState.currentFilters).length > 0;
+        }
+
+        console.log('📊 State Updated:', {
+            viewType: this.currentViewType,
+            grouping: this.currentGrouping,
+            statusFilter: this.currentStatusFilter,
+            hasAdvancedFilters: this.hasAdvancedFilters
+        });
+    },
+
+    getState: function () {
+        return {
+            viewType: this.currentViewType,
+            grouping: this.currentGrouping,
+            statusFilter: this.currentStatusFilter,
+            currentFilters: this.currentFilters
+        };
+    }
+};
+
+// ========================================
+// ⭐⭐⭐ Group Collapse Manager
+// ========================================
+const GroupCollapseManager = {
+    storageKey: 'taskGroupsCollapseState',
+
+    saveState: function (groupKey, isCollapsed) {
+        const state = this.getState();
+        state[groupKey] = isCollapsed;
+        localStorage.setItem(this.storageKey, JSON.stringify(state));
+    },
+
+    getState: function () {
+        const saved = localStorage.getItem(this.storageKey);
+        return saved ? JSON.parse(saved) : {};
+    },
+
+    getGroupState: function (groupKey) {
+        const state = this.getState();
+        return state[groupKey] !== undefined ? state[groupKey] : false;
+    },
+
+    clearState: function () {
+        localStorage.removeItem(this.storageKey);
+    },
+
+    applyState: function () {
+        const state = this.getState();
+
+        $('.block-rounded.block-bordered').each(function () {
+            const $block = $(this);
+            const groupTitle = $block.find('.block-title').text().trim();
+            const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
+
+            const isCollapsed = state[groupKey] || false;
+
+            if (isCollapsed) {
+                $block.find('.block-content').hide();
+                $block.find('.btn-block-option i').removeClass('si-arrow-up').addClass('si-arrow-down');
+            } else {
+                $block.find('.block-content').show();
+                $block.find('.btn-block-option i').removeClass('si-arrow-down').addClass('si-arrow-up');
+            }
+        });
+    },
+
+    expandAll: function () {
+        $('.block-rounded.block-bordered').each(function () {
+            const $block = $(this);
+            const groupTitle = $block.find('.block-title').text().trim();
+            const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
+
+            $block.find('.block-content').slideDown(300);
+            $block.find('.btn-block-option i').removeClass('si-arrow-down').addClass('si-arrow-up');
+
+            GroupCollapseManager.saveState(groupKey, false);
+        });
+    },
+
+    collapseAll: function () {
+        $('.block-rounded.block-bordered').each(function () {
+            const $block = $(this);
+            const groupTitle = $block.find('.block-title').text().trim();
+            const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
+
+            $block.find('.block-content').slideUp(300);
+            $block.find('.btn-block-option i').removeClass('si-arrow-up').addClass('si-arrow-down');
+
+            GroupCollapseManager.saveState(groupKey, true);
+        });
+    }
+};
+
+function initializeGroupToggle() {
+    $(document).off('click', '.btn-block-option').on('click', '.btn-block-option', function (e) {
+        e.preventDefault();
+
+        const $btn = $(this);
+        const $block = $btn.closest('.block');
+        const $content = $block.find('.block-content');
+        const $icon = $btn.find('i');
+
+        const groupTitle = $block.find('.block-title').text().trim();
+        const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
+
+        if ($content.is(':visible')) {
+            $content.slideUp(300);
+            $icon.removeClass('si-arrow-up').addClass('si-arrow-down');
+            GroupCollapseManager.saveState(groupKey, true);
+        } else {
+            $content.slideDown(300);
+            $icon.removeClass('si-arrow-down').addClass('si-arrow-up');
+            GroupCollapseManager.saveState(groupKey, false);
+        }
+    });
+}
+
+// ========================================
+// ⭐⭐⭐ Task List Manager
+// ========================================
+const TaskListManager = {
+    config: null,
+
+    init: function (config) {
         this.config = config || window.TaskListConfig;
 
         if (!this.config) {
@@ -15,114 +152,295 @@ const TaskListManager = {
             return;
         }
 
-        this.currentViewType = this.config.currentViewType;
-        this.currentGrouping = this.config.currentGrouping;
-
         console.log('✅ TaskListManager initialized');
-        console.log('View Type:', this.currentViewType, 'Grouping:', this.currentGrouping);
     },
-    changeGrouping: async function (grouping) {
-        if (this.currentGrouping === grouping) {
-            console.log('ℹ️ Same grouping, skipping');
+
+    updateStats: function (stats) {
+        if (!stats) return;
+
+        $('.quick-status-filter').each(function () {
+            const filter = $(this).data('filter');
+            const $value = $(this).find('.fs-3');
+
+            if (filter === 1) $value.text(stats.pending || 0);
+            else if (filter === 2) $value.text(stats.completed || 0);
+            else if (filter === 3) $value.text(stats.overdue || 0);
+            else if (filter === 4) $value.text(stats.urgent || 0);
+        });
+    },
+
+    changeGrouping: function (grouping) {
+        const viewType = TaskListState.currentViewType;
+
+        console.log(`🔄 Changing grouping to: ${grouping}, viewType: ${viewType}`);
+
+        $('#task-groups-container').html('<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-3">در حال بارگذاری...</p></div>');
+
+        $.ajax({
+            url: this.config.urls.changeGrouping,
+            type: 'POST',
+            data: {
+                viewType: viewType,
+                grouping: grouping,
+                currentFilters: TaskListState.currentFilters,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function (response) {
+                console.log('✅ Grouping changed:', response);
+
+                if (response.status === 'update-view' && response.viewList && response.viewList.length > 0) {
+                    response.viewList.forEach(function (item) {
+                        if (item.elementId && item.view && item.view.result) {
+                            $('#' + item.elementId).html(item.view.result);
+
+                            setTimeout(function () {
+                                GroupCollapseManager.applyState();
+                                initializeGroupToggle();
+                            }, 100);
+
+                            if (typeof ModalUtils !== 'undefined') {
+                                ModalUtils.processUrlsInContainer($('#' + item.elementId));
+                            }
+                        }
+                    });
+
+                    TaskListState.update({
+                        currentGrouping: response.currentGrouping || grouping,
+                        currentViewType: response.currentViewType || viewType
+                    });
+
+                    $('.btn-grouping').removeClass('btn-primary').addClass('btn-alt-secondary');
+                    $(`.btn-grouping[data-grouping="${grouping}"]`).removeClass('btn-alt-secondary').addClass('btn-primary');
+
+                    if (response.stats) {
+                        TaskListManager.updateStats(response.stats);
+                    }
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('❌ Error:', error);
+                $('#task-groups-container').html('<div class="alert alert-danger">خطا در تغییر گروه‌بندی</div>');
+            }
+        });
+    },
+
+    changeViewType: function (viewType) {
+        if (TaskListState.currentViewType === viewType) {
             return;
         }
 
-        console.log('🔄 Changing grouping from', this.currentGrouping, 'to:', grouping);
+        window.location.href = `/TaskingArea/Tasks/Index?viewType=${viewType}&grouping=${TaskListState.currentGrouping}`;
+    }
+};
 
-        // ⭐ ابتدا دکمه‌ها رو اکتیو/غیرفعال کن
-        $('.btn-grouping').each(function () {
-            const btnGrouping = parseInt($(this).attr('onclick').match(/changeGrouping\((\d+)\)/)[1]);
-            if (btnGrouping === grouping) {
-                $(this).removeClass('btn-alt-secondary').addClass('btn-primary');
-            } else {
-                $(this).removeClass('btn-primary').addClass('btn-alt-secondary');
+// ========================================
+// ⭐⭐⭐ Advanced Filters Manager
+// ========================================
+const AdvancedFiltersManager = {
+    initialized: false,
+    filtersLoaded: false,
+
+    init: function () {
+        if (this.initialized) {
+            return;
+        }
+
+        $(document).off('click.toggleAdvancedFilters', '#toggle-advanced-filters-btn');
+        $(document).on('click.toggleAdvancedFilters', '#toggle-advanced-filters-btn', function (e) {
+            e.preventDefault();
+
+            const $panel = $('#advanced-filters-panel');
+            const $btn = $('#toggle-advanced-filters-btn');
+
+            $panel.slideToggle(300, function () {
+                if ($panel.is(':visible')) {
+                    $btn.addClass('active');
+                    $btn.find('i').removeClass('fa-filter').addClass('fa-minus');
+
+                    if (!AdvancedFiltersManager.filtersLoaded) {
+                        AdvancedFiltersManager.loadFilterData();
+                    }
+                } else {
+                    $btn.removeClass('active');
+                    $btn.find('i').removeClass('fa-minus').addClass('fa-filter');
+                }
+            });
+        });
+
+        $(document).off('submit.advancedFilters', '#advanced-filters-form');
+        $(document).on('submit.advancedFilters', '#advanced-filters-form', function (e) {
+            e.preventDefault();
+            AdvancedFiltersManager.applyFilters();
+        });
+
+        $(document).off('click.clearFilters', '#clear-filters-btn');
+        $(document).on('click.clearFilters', '#clear-filters-btn', function (e) {
+            e.preventDefault();
+            AdvancedFiltersManager.clearFilters();
+        });
+
+        this.initialized = true;
+    },
+
+    loadFilterData: function () {
+        if (this.filtersLoaded) return;
+
+        $.ajax({
+            url: '/TaskingArea/Tasks/GetAdvancedFilterData',
+            type: 'POST',
+            headers: {
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function (response) {
+                if (response.status === 'success') {
+                    const $creatorSelect = $('#creator-user-select');
+                    $creatorSelect.empty().append('<option value="">همه</option>');
+                    if (response.users && response.users.length) {
+                        response.users.forEach(function (user) {
+                            $creatorSelect.append($('<option></option>').val(user.id).text(user.fullName));
+                        });
+                    }
+
+                    const $assignedSelect = $('#assigned-user-select');
+                    $assignedSelect.empty().append('<option value="">همه</option>');
+                    if (response.users && response.users.length) {
+                        response.users.forEach(function (user) {
+                            $assignedSelect.append($('<option></option>').val(user.id).text(user.fullName));
+                        });
+                    }
+
+                    const $organizationSelect = $('#organization-select');
+                    $organizationSelect.empty().append('<option value="">همه سازمان‌ها</option>');
+                    if (response.organizations && response.organizations.length) {
+                        response.organizations.forEach(function (org) {
+                            const displayText = org.name + (org.type ? ` (${org.type})` : '');
+                            $organizationSelect.append($('<option></option>').val(org.id).text(displayText));
+                        });
+                    }
+
+                    const $teamSelect = $('#team-select');
+                    $teamSelect.empty().append('<option value="">همه تیم‌ها</option>');
+                    if (response.teams && response.teams.length) {
+                        response.teams.forEach(function (team) {
+                            const displayText = team.title + (team.managerName ? ` (مدیر: ${team.managerName})` : '');
+                            $teamSelect.append($('<option></option>').val(team.id).text(displayText));
+                        });
+                    }
+
+                    const $categorySelect = $('#category-select');
+                    $categorySelect.empty().append('<option value="">همه</option>');
+                    if (response.categories && response.categories.length) {
+                        response.categories.forEach(function (category) {
+                            $categorySelect.append($('<option></option>').val(category.id).text(category.title));
+                        });
+                    }
+
+                    this.filtersLoaded = true;
+                }
+            }.bind(this)
+        });
+    },
+
+    applyFilters: function () {
+        const formData = $('#advanced-filters-form').serializeArray();
+        const filters = {};
+
+        formData.forEach(function (field) {
+            if (field.value && field.value !== '') {
+                filters[field.name] = field.value;
             }
         });
 
-        const $container = $('#task-groups-container');
-        $container.html('<div class="text-center py-5"><i class="fa fa-spinner fa-spin fa-3x"></i></div>');
+        filters.ViewType = TaskListState.currentViewType;
+        filters.Grouping = TaskListState.currentGrouping;
 
-        const token = getAntiForgeryToken();
+        const $submitBtn = $('#advanced-filters-form button[type="submit"]');
+        const originalText = $submitBtn.html();
+        $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> در حال اعمال...');
 
-        try {
-            const response = await fetch(this.config.urls.changeGrouping, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    viewType: this.currentViewType,
-                    grouping: grouping,
-                    __RequestVerificationToken: token
-                })
-            });
+        $.ajax({
+            url: '/TaskingArea/Tasks/ApplyAdvancedFilters',
+            type: 'POST',
+            data: filters,
+            headers: {
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function (response) {
+                if (response.status === 'update-view' && response.viewList) {
+                    response.viewList.forEach(function (item) {
+                        if (item.elementId && item.view && item.view.result) {
+                            $('#' + item.elementId).html(item.view.result);
 
-            const result = await response.json();
-
-            if (result.status === 'update-view' && result.viewList) {
-                updateMultipleViews(result.viewList);
-
-                // ⭐⭐⭐ بروزرسانی هر دو متغیر
-                this.currentGrouping = grouping;
-                this.config.currentGrouping = grouping;
-                
-                // ⭐ بروزرسانی window.TaskListConfig هم
-                if (window.TaskListConfig) {
-                    window.TaskListConfig.currentGrouping = grouping;
-                }
-
-                console.log('✅ Grouping updated:', grouping);
-                console.log('📊 TaskListManager.currentGrouping:', this.currentGrouping);
-                console.log('📊 window.TaskListConfig.currentGrouping:', window.TaskListConfig.currentGrouping);
-
-                // ⭐⭐⭐ بازیابی وضعیت باز/بسته تب‌ها بعد از تغییر گروه‌بندی
-                setTimeout(function() {
-                    if (typeof GroupCollapseManager !== 'undefined') {
-                        GroupCollapseManager.applyState();
-                        
-                        // ⭐ دوباره initialize کردن toggle handlers
-                        if (typeof initializeGroupToggle === 'function') {
-                            initializeGroupToggle();
+                            setTimeout(function () {
+                                GroupCollapseManager.applyState();
+                                initializeGroupToggle();
+                            }, 100);
                         }
-                    }
-                }, 150);
-
-                console.log('✅ Grouping changed successfully to:', grouping);
-            }
-        } catch (error) {
-            console.error('❌ Error changing grouping:', error);
-            if (typeof NotificationHelper !== 'undefined') {
-                NotificationHelper.error('خطا در تغییر گروه‌بندی');
-            }
-
-            // در صورت خطا، دکمه قبلی رو دوباره اکتیو کن
-            $('.btn-grouping').each(function () {
-                const btnGrouping = parseInt($(this).attr('onclick').match(/changeGrouping\((\d+)\)/)[1]);
-                if (btnGrouping === this.currentGrouping) {
-                    $(this).removeClass('btn-alt-secondary').addClass('btn-primary');
-                } else {
-                    $(this).removeClass('btn-primary').addClass('btn-alt-secondary');
+                    });
                 }
-            }.bind(this));
-        }
+
+                TaskListState.update({
+                    currentFilters: filters,
+                    currentViewType: response.currentViewType || TaskListState.currentViewType,
+                    currentGrouping: response.currentGrouping || TaskListState.currentGrouping
+                });
+
+                if (response.stats) {
+                    TaskListManager.updateStats(response.stats);
+                }
+            },
+            complete: function () {
+                $submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
     },
-    changeViewType: function(viewType) {
-        if (this.currentViewType === viewType) {
-            console.log('ℹ️ Same view type, skipping');
-            return;
-        }
 
-        console.log('🔄 Changing view type to:', viewType);
+    clearFilters: function () {
+        $('#advanced-filters-form')[0].reset();
 
-        // ⭐ Redirect به صفحه Index با پارامترهای جدید
-        window.location.href = `/TaskingArea/Tasks/Index?viewType=${viewType}&grouping=${this.currentGrouping}`;
+        $.ajax({
+            url: '/TaskingArea/Tasks/ClearAdvancedFilters',
+            type: 'POST',
+            data: {
+                viewType: TaskListState.currentViewType,
+                grouping: TaskListState.currentGrouping,
+                statusFilter: TaskListState.currentStatusFilter
+            },
+            headers: {
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function (response) {
+                if (response.status === 'update-view' && response.viewList) {
+                    response.viewList.forEach(function (item) {
+                        if (item.elementId && item.view && item.view.result) {
+                            $('#' + item.elementId).html(item.view.result);
+
+                            setTimeout(function () {
+                                GroupCollapseManager.applyState();
+                                initializeGroupToggle();
+                            }, 100);
+                        }
+                    });
+                }
+
+                TaskListState.update({
+                    currentFilters: {},
+                    currentViewType: response.currentViewType || TaskListState.currentViewType,
+                    currentGrouping: response.currentGrouping || TaskListState.currentGrouping,
+                    currentStatusFilter: response.currentStatusFilter || TaskListState.currentStatusFilter
+                });
+
+                if (response.stats) {
+                    TaskListManager.updateStats(response.stats);
+                }
+            }
+        });
     }
 };
 
 // ========================================
 // ⭐⭐⭐ Global Functions
 // ========================================
-
 function changeGrouping(grouping) {
     TaskListManager.changeGrouping(grouping);
 }
@@ -130,74 +448,19 @@ function changeGrouping(grouping) {
 function changeViewType(viewType) {
     TaskListManager.changeViewType(viewType);
 }
-
-async function completeTask(taskId) {
-    // استفاده از مودال موجود CompleteTask
-    const modalUrl = `/TaskingArea/Tasks/CompleteTask?id=${taskId}`;
-    
-    try {
-        const response = await fetch(modalUrl);
-        const html = await response.text();
-        
-        if (typeof showModal === 'function') {
-            showModal('تکمیل تسک', html);
-        }
-    } catch (error) {
-        console.error('❌ Error loading complete modal:', error);
-    }
-}
-
-function editTask(taskId) {
-    window.location.href = `/TaskingArea/Tasks/Edit/${taskId}`;
-}
-
-async function deleteTask(taskId) {
-    if (typeof showDeleteConfirmation !== 'function') {
-        if (!confirm('آیا از حذف این تسک اطمینان دارید؟')) return;
-    } else {
-        const confirmed = await showDeleteConfirmation('این تسک');
-        if (!confirmed) return;
-    }
-
-    const token = getAntiForgeryToken();
-
-    try {
-        const response = await fetch(`/TaskingArea/Tasks/Delete/${taskId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({
-                __RequestVerificationToken: token
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            if (typeof NotificationHelper !== 'undefined') {
-                NotificationHelper.success('تسک حذف شد');
-            }
-
-            // ⭐ Reload صفحه
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        }
-    } catch (error) {
-        console.error('❌ Error deleting task:', error);
-        if (typeof NotificationHelper !== 'undefined') {
-            NotificationHelper.error('خطا در حذف تسک');
-        }
-    }
-}
-
 // ========================================
 // ⭐⭐⭐ Document Ready
 // ========================================
-
-$(document).ready(function() {
+$(document).ready(function () {
     console.log('🔄 TaskList.js: Document Ready');
+
+    // ⭐⭐⭐ مقداردهی اولیه State از window.TaskListInitialState
+    if (typeof window.TaskListInitialState !== 'undefined') {
+        TaskListState.update(window.TaskListInitialState);
+        console.log('✅ TaskListState initialized:', TaskListState.getState());
+    } else {
+        console.error('❌ window.TaskListInitialState not found!');
+    }
 
     if (typeof window.TaskListConfig === 'undefined') {
         console.error('❌ TaskListConfig not found!');
@@ -205,412 +468,110 @@ $(document).ready(function() {
     }
 
     TaskListManager.init(window.TaskListConfig);
+    AdvancedFiltersManager.init();
 
-    // ⭐ Initialize tooltips
-    if (typeof bootstrap !== 'undefined') {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+    GroupCollapseManager.applyState();
+    initializeGroupToggle();
+
+    // ⭐⭐⭐ Event handler برای دکمه‌های گروه‌بندی
+    $(document).on('click', '.btn-grouping', function (e) {
+        e.preventDefault();
+        const grouping = parseInt($(this).data('grouping'));
+        console.log('🎯 Grouping button clicked:', grouping);
+        changeGrouping(grouping);
+    });
+
+    // ⭐⭐⭐ Event handler برای expand/collapse
+    $(document).on('click', '#expand-all-groups', function () {
+        GroupCollapseManager.expandAll();
+    });
+
+    $(document).on('click', '#collapse-all-groups', function () {
+        GroupCollapseManager.collapseAll();
+    });
+
+    // ⭐⭐⭐ Event handler برای کلیک روی آمار سریع
+    $(document).on('click', '.quick-status-filter', function (e) {
+        e.preventDefault();
+
+        const $this = $(this);
+        const statusFilter = parseInt($this.data('filter'));
+
+        console.log('🎯 Quick Status Filter clicked:', statusFilter);
+        console.log('📊 Current State:', TaskListState.getState());
+
+        $('#task-groups-container').html('<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-3">در حال بارگذاری...</p></div>');
+
+        $.ajax({
+            url: TaskListManager.config.urls.changeStatusFilter,
+            type: 'POST',
+            data: {
+                viewType: TaskListState.currentViewType,
+                grouping: TaskListState.currentGrouping,
+                statusFilter: statusFilter,
+                currentFilters: TaskListState.currentFilters,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function (response) {
+                console.log('✅ Status filter changed:', response);
+
+                if (response.status === 'update-view' && response.viewList && response.viewList.length > 0) {
+                    response.viewList.forEach(function (item) {
+                        if (item.elementId && item.view && item.view.result) {
+                            $('#' + item.elementId).html(item.view.result);
+
+                            setTimeout(function () {
+                                GroupCollapseManager.applyState();
+                                initializeGroupToggle();
+                            }, 100);
+
+                            if (typeof ModalUtils !== 'undefined') {
+                                ModalUtils.processUrlsInContainer($('#' + item.elementId));
+                            }
+                        }
+                    });
+
+                    // ⭐⭐⭐ بروزرسانی state
+                    TaskListState.update({
+                        currentStatusFilter: statusFilter,
+                        currentViewType: response.currentViewType || TaskListState.currentViewType,
+                        currentGrouping: response.currentGrouping || TaskListState.currentGrouping
+                    });
+
+                    // ⭐⭐⭐ بروزرسانی UI - حذف همه border ها
+                    $('.quick-status-filter .p-3').removeClass('border border-2 border-primary border-success border-danger border-warning');
+
+                    // ⭐⭐⭐ اضافه کردن border به دکمه فعلی
+                    $this.find('.p-3').addClass('border border-2');
+
+                    if (statusFilter === 1) {
+                        $this.find('.p-3').addClass('border-primary');
+                    } else if (statusFilter === 2) {
+                        $this.find('.p-3').addClass('border-success');
+                    } else if (statusFilter === 3) {
+                        $this.find('.p-3').addClass('border-danger');
+                    } else if (statusFilter === 4) {
+                        $this.find('.p-3').addClass('border-warning');
+                    }
+
+                    // ⭐⭐⭐ بروزرسانی آمار
+                    if (response.stats) {
+                        TaskListManager.updateStats(response.stats);
+                    }
+
+                    console.log('✅ Filter applied successfully');
+                } else {
+                    console.error('❌ Invalid response:', response);
+                    $('#task-groups-container').html('<div class="alert alert-danger">خطا در دریافت اطلاعات</div>');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('❌ Error changing status filter:', error);
+                console.error('Response:', xhr.responseText);
+                $('#task-groups-container').html('<div class="alert alert-danger">خطا در بارگذاری اطلاعات</div>');
+            }
         });
-    }
+    });
 
     console.log('✅ TaskList initialized successfully');
 });
-
-$(document).ready(function () {
-    // ⭐⭐⭐ مدیریت تب‌های اکتیو
-    function setActiveTab(groupBy) {
-        // حذف کلاس active از همه تب‌ها
-        $('.group-filter-btn').removeClass('active');
-
-        // اضافه کردن کلاس active به تب انتخاب شده
-        $(`.group-filter-btn[data-group="${groupBy}"]`).addClass('active');
-    }
-
-    // تنظیم تب اکتیو اولیه
-    const initialGroupBy = $('#group-by-filter').val() || 'status';
-    setActiveTab(initialGroupBy);
-
-    // ⭐ کلیک روی کارت برای نمایش جزئیات
-    $(document).on('click', '.task-card', function (e) {
-        if (!$(e.target).closest('button').length) {
-            const taskId = $(this).data('task-id');
-            loadTaskDetail(taskId);
-        }
-    });
-
-    // ⭐ دکمه مشاهده
-    $(document).on('click', '.view-task-btn', function (e) {
-        e.stopPropagation();
-        const taskId = $(this).data('task-id');
-        loadTaskDetail(taskId);
-    });
-
-    // ⭐ دکمه تکمیل
-    $(document).on('click', '.complete-task-btn', function (e) {
-        e.stopPropagation();
-        const taskId = $(this).data('task-id');
-        completeTask(taskId);
-    });
-
-    // ⭐ دکمه بازگشایی
-    $(document).on('click', '.reopen-task-btn', function (e) {
-        e.stopPropagation();
-        const taskId = $(this).data('task-id');
-        reopenTask(taskId);
-    });
-
-    // ⭐⭐⭐ تغییر گروه‌بندی با تب‌ها
-    $('.group-filter-btn').on('click', function () {
-        const groupBy = $(this).data('group');
-        $('#group-by-filter').val(groupBy);
-        setActiveTab(groupBy);
-        loadTasks();
-    });
-
-    // ⭐ تغییر فیلتر وضعیت
-    $('#status-filter').on('change', function () {
-        loadTasks();
-    });
-
-    // ⭐ تغییر فیلتر اولویت
-    $('#priority-filter').on('change', function () {
-        loadTasks();
-    });
-
-    // ⭐ تغییر فیلتر گروه‌بندی (dropdown)
-    $('#group-by-filter').on('change', function () {
-        const groupBy = $(this).val();
-        setActiveTab(groupBy);
-        loadTasks();
-    });
-
-    // ⭐ جستجو
-    $('#search-input').on('keyup', debounce(function () {
-        loadTasks();
-    }, 500));
-
-    // ⭐ بارگذاری لیست تسک‌ها
-    function loadTasks() {
-        const filters = {
-            status: $('#status-filter').val(),
-            priority: $('#priority-filter').val(),
-            groupBy: $('#group-by-filter').val(),
-            search: $('#search-input').val()
-        };
-
-        $.ajax({
-            url: '/TaskingArea/Tasks/GetTaskList',
-            type: 'GET',
-            data: filters,
-            beforeSend: function () {
-                $('#task-list-container').html('<div class="text-center py-5"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i></div>');
-            },
-            success: function (response) {
-                $('#task-list-container').html(response);
-            },
-            error: function () {
-                $('#task-list-container').html('<div class="alert alert-danger">خطا در بارگذاری تسک‌ها</div>');
-            }
-        });
-    }
-
-    // ⭐ نمایش جزئیات تسک
-    function loadTaskDetail(taskId) {
-        $.ajax({
-            url: `/TaskingArea/Tasks/GetTaskDetail/${taskId}`,
-            type: 'GET',
-            success: function (response) {
-                $('#task-detail-container').html(response);
-                // اسکرول به بالای جزئیات
-                $('html, body').animate({
-                    scrollTop: $('#task-detail-container').offset().top - 100
-                }, 500);
-            },
-            error: function () {
-                toastr.error('خطا در بارگذاری جزئیات تسک');
-            }
-        });
-    }
-
-    // ⭐ تکمیل تسک
-    function completeTask(taskId) {
-        if (confirm('آیا از تکمیل این تسک اطمینان دارید؟')) {
-            $.ajax({
-                url: `/TaskingArea/Tasks/CompleteTask/${taskId}`,
-                type: 'POST',
-                success: function () {
-                    toastr.success('تسک با موفقیت تکمیل شد');
-                    loadTasks();
-                    loadTaskDetail(taskId);
-                },
-                error: function () {
-                    toastr.error('خطا در تکمیل تسک');
-                }
-            });
-        }
-    }
-
-    // ⭐ بازگشایی تسک
-    function reopenTask(taskId) {
-        if (confirm('آیا از بازگشایی این تسک اطمینان دارید؟')) {
-            $.ajax({
-                url: `/TaskingArea/Tasks/ReopenTask/${taskId}`,
-                type: 'POST',
-                success: function () {
-                    toastr.success('تسک با موفقیت بازگشایی شد');
-                    loadTasks();
-                    loadTaskDetail(taskId);
-                },
-                error: function () {
-                    toastr.error('خطا در بازگشایی تسک');
-                }
-            });
-        }
-    }
-
-    // ⭐ Debounce برای جستجو
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-});
-
-// ========================================
-// ⭐⭐⭐ تکمیل تسک از لیست - استفاده از createAndShowModal
-// ========================================
-// ⭐⭐⭐ تکمیل تسک از لیست - استفاده از createAndShowModal
-$(document).on('click', '.complete-task-from-list-btn', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const taskId = $(this).data('task-id');
-    const $taskContainer = $(`[data-task-container="${taskId}"]`);
-
-    console.log('🔄 Complete task from list:', taskId);
-
-    // ⭐⭐⭐ استفاده از createAndShowModal
-    createAndShowModal({
-        url: `/TaskingArea/Tasks/CompleteTask?id=${taskId}&fromList=true`,
-        // ⭐⭐⭐ حذف backdrop: 'static' - حالا با کلیک بسته می‌شه
-        backdrop: true, // یا اصلاً نذار تا default استفاده بشه
-        keyboard: true,
-        onSubmitSuccess: function (response, modalInstance) {
-            console.log('✅ Task completion submitted:', response);
-
-            if (response.status === 'success-from-list') {
-                // ⭐ بستن مودال
-                modalInstance.hide();
-
-                // ⭐ نمایش پیام موفقیت
-                const successMsg = response.message?.[0]?.text || 'تسک با موفقیت تکمیل شد';
-                if (typeof NotificationHelper !== 'undefined') {
-                    NotificationHelper.success(successMsg);
-                } else {
-                    alert(successMsg);
-                }
-
-                // ⭐ انیمیشن حذف از pending
-                $taskContainer.find('.block').addClass('task-removing');
-
-                setTimeout(function () {
-                    // حذف از DOM
-                    $taskContainer.remove();
-
-                    // ⭐ پیدا کردن بخش completed
-                    const $completedSection = $('h4:contains("تکمیل شده")')
-                        .closest('.mb-4, .mb-3, div')
-                        .find('.row.g-3')
-                        .first();
-
-                    if ($completedSection.length && response.taskCard) {
-                        console.log('✅ Adding card to completed section');
-
-                        const $newCard = $(response.taskCard);
-                        $newCard.find('.block').addClass('task-adding');
-
-                        $completedSection.append($newCard);
-
-                        // ⭐ بروزرسانی badge ها
-                        updateTaskCounts();
-
-                        // ⭐ Initialize tooltips برای کارت جدید
-                        if (typeof bootstrap !== 'undefined') {
-                            $newCard.find('[data-bs-toggle="tooltip"]').each(function () {
-                                new bootstrap.Tooltip(this);
-                            });
-                        }
-
-                        // ⭐ اسکرول به کارت جدید
-                        setTimeout(function () {
-                            $('html, body').animate({
-                                scrollTop: $newCard.offset().top - 100
-                            }, 500);
-                        }, 100);
-                    } else {
-                        console.log('⚠️ Completed section not found, reloading...');
-                        location.reload();
-                    }
-
-                }, 500);
-            }
-        },
-        onLoadError: function (error) {
-            console.error('❌ Error loading modal:', error);
-            if (typeof NotificationHelper !== 'undefined') {
-                NotificationHelper.error('خطا در بارگذاری فرم تکمیل');
-            } else {
-                alert('خطا در بارگذاری فرم تکمیل');
-            }ح
-        }
-    }).catch(error => {
-        console.error('❌ Modal creation failed:', error);
-    });
-});
-// ⭐⭐⭐ Handler Functions - اصلاح شده
-
-function handleSuccessFromList(result, $taskContainer, modalInstance) {
-    console.log('🎉 Task completed successfully from list');
-
-    // ⭐ بستن مودال
-    if (modalInstance) {
-        modalInstance.hide();
-    } else {
-        $('#modal-dialog').modal('hide');
-    }
-
-    const successMsg = result.message && result.message.length > 0
-        ? result.message[0].text
-        : 'تسک با موفقیت تکمیل شد';
-
-    if (typeof NotificationHelper !== 'undefined') {
-        NotificationHelper.success(successMsg);
-    } else {
-        alert(successMsg);
-    }
-
-    $taskContainer.find('.block').addClass('task-removing');
-
-    setTimeout(function () {
-        $taskContainer.remove();
-
-        const $completedSection = $('h4:contains("تکمیل شده")')
-            .closest('.mb-4, .mb-3, div')
-            .find('.row.g-3')
-            .first();
-
-        if ($completedSection.length && result.taskCard) {
-            console.log('✅ Adding card to completed section');
-
-            const $newCard = $(result.taskCard);
-            $newCard.find('.block').addClass('task-adding');
-
-            $completedSection.append($newCard);
-
-            updateTaskCounts();
-
-            if (typeof bootstrap !== 'undefined') {
-                $newCard.find('[data-bs-toggle="tooltip"]').each(function () {
-                    new bootstrap.Tooltip(this);
-                });
-            }
-
-            setTimeout(function () {
-                $('html, body').animate({
-                    scrollTop: $newCard.offset().top - 100
-                }, 500);
-            }, 100);
-        } else {
-            console.log('⚠️ Completed section not found, reloading...');
-            location.reload();
-        }
-
-    }, 500);
-}
-
-function handleValidationError(result, $submitBtn, originalBtnText) {
-    console.log('⚠️ Validation errors:', result.message);
-
-    $submitBtn.prop('disabled', false).html(originalBtnText);
-
-    if (result.message && Array.isArray(result.message)) {
-        result.message.forEach(function (msg) {
-            if (typeof NotificationHelper !== 'undefined') {
-                NotificationHelper.error(msg.text);
-            } else {
-                alert(msg.text);
-            }
-        });
-    }
-}
-
-function handleError(result, $submitBtn, originalBtnText) {
-    console.log('❌ Error:', result.message);
-
-    $submitBtn.prop('disabled', false).html(originalBtnText);
-
-    const errorMsg = result.message && result.message.length > 0
-        ? result.message[0].text
-        : 'خطا در تکمیل تسک';
-
-    if (typeof NotificationHelper !== 'undefined') {
-        NotificationHelper.error(errorMsg);
-    } else {
-        alert(errorMsg);
-    }
-}
-
-function handleRedirect(result, modalInstance) {
-    console.log('🔄 Redirecting...');
-
-    if (modalInstance) {
-        modalInstance.hide();
-    } else {
-        $('#modal-dialog').modal('hide');
-    }
-
-    if (typeof NotificationHelper !== 'undefined') {
-        NotificationHelper.success('تسک با موفقیت تکمیل شد');
-    }
-
-    setTimeout(function () {
-        if (result.redirectUrl) {
-            window.location.href = result.redirectUrl;
-        } else {
-            location.reload();
-        }
-    }, 500);
-}
-
-function updateTaskCounts() {
-    console.log('🔢 Updating badge counts');
-
-    const $pendingSection = $('h4:contains("در حال انجام")').closest('.d-flex');
-    const $pendingBadge = $pendingSection.find('.badge.bg-primary, .badge.badge-primary');
-
-    const $completedSection = $('h4:contains("تکمیل شده")').closest('.d-flex');
-    const $completedBadge = $completedSection.find('.badge.bg-success, .badge.badge-success');
-
-    if ($pendingBadge.length) {
-        const currentCount = parseInt($pendingBadge.text()) || 0;
-        if (currentCount > 0) {
-            const newCount = currentCount - 1;
-            $pendingBadge.text(newCount);
-            console.log('📉 Pending count:', currentCount, '→', newCount);
-        }
-    }
-
-    if ($completedBadge.length) {
-        const currentCount = parseInt($completedBadge.text()) || 0;
-        const newCount = currentCount + 1;
-        $completedBadge.text(newCount);
-        console.log('📈 Completed count:', currentCount, '→', newCount);
-    }
-}

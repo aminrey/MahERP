@@ -1,0 +1,168 @@
+﻿@model MahERP.DataModelLayer.ViewModels.TaskListViewModel
+
+@{
+    var userId = ViewBag.UserId as string ?? "";
+    var viewType = ViewBag.CurrentViewType ?? MahERP.DataModelLayer.ViewModels.TaskViewType.MyTasks;
+    var grouping = ViewBag.CurrentGrouping ?? MahERP.DataModelLayer.ViewModels.TaskGroupingType.Team;
+}
+
+<div id="advanced-filters-panel" class="card shadow-sm mb-4" style="display: none;">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fa fa-filter me-2"></i>
+            جستجوی پیشرفته
+        </h5>
+        <button type="button" class="btn btn-sm btn-light" id="close-filters-btn">
+            <i class="fa fa-times"></i>
+        </button>
+    </div>
+    <div class="card-body">
+        <form id="advanced-filters-form">
+            <input type="hidden" name="ViewType" value="@((int)viewType)" />
+            <input type="hidden" name="Grouping" value="@((int)grouping)" />
+
+            <div class="row g-3">
+                <!-- تاریخ ساخت -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-calendar text-primary me-1"></i>
+                        تاریخ ساخت (از)
+                    </label>
+                    <input type="text" 
+                           name="CreateDateFromPersian" 
+                           class="form-control persian-datepicker" 
+                           placeholder="از تاریخ..."
+                           value="@Model.Filters?.CreateDateFromPersian"
+                           autocomplete="off" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-calendar text-primary me-1"></i>
+                        تاریخ ساخت (تا)
+                    </label>
+                    <input type="text" 
+                           name="CreateDateToPersian" 
+                           class="form-control persian-datepicker" 
+                           placeholder="تا تاریخ..."
+                           value="@Model.Filters?.CreateDateToPersian"
+                           autocomplete="off" />
+                </div>
+
+                <!-- نام تسک -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-tasks text-success me-1"></i>
+                        نام تسک
+                    </label>
+                    <input type="text" 
+                           name="TaskTitle" 
+                           class="form-control" 
+                           placeholder="جستجو در عنوان..."
+                           value="@Model.Filters?.TaskTitle"
+                           autocomplete="off" />
+                </div>
+
+                <!-- کد تسک -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-hashtag text-info me-1"></i>
+                        کد تسک
+                    </label>
+                    <input type="text" 
+                           name="TaskCode" 
+                           class="form-control" 
+                           placeholder="مثال: TSK-001"
+                           value="@Model.Filters?.TaskCode"
+                           autocomplete="off" />
+                </div>
+
+                <!-- سازنده تسک -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-user-plus text-warning me-1"></i>
+                        سازنده تسک
+                    </label>
+                    <select name="CreatorUserId" class="form-select" id="creator-user-select">
+                        <option value="">همه</option>
+                    </select>
+                </div>
+
+                <!-- اعضای تسک -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-users text-primary me-1"></i>
+                        اعضای تسک
+                    </label>
+                    <select name="AssignedUserId" class="form-select" id="assigned-user-select">
+                        <option value="">همه</option>
+                    </select>
+                </div>
+
+                <!-- ⭐⭐⭐ سازمان (به جای طرف حساب) -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-building text-danger me-1"></i>
+                        سازمان / طرف حساب
+                    </label>
+                    <select name="OrganizationId" class="form-select" id="organization-select">
+                        <option value="">همه سازمان‌ها</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        شامل اشخاص حقیقی و حقوقی
+                    </small>
+                </div>
+
+                <!-- ⭐⭐⭐ تیم (جدید) -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-users-cog text-info me-1"></i>
+                        تیم
+                    </label>
+                    <select name="TeamId" class="form-select" id="team-select">
+                        <option value="">همه تیم‌ها</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        فقط تیم‌هایی که شما عضو آن‌ها هستید
+                    </small>
+                </div>
+
+                <!-- دسته‌بندی -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="fa fa-tags text-secondary me-1"></i>
+                        دسته‌بندی
+                    </label>
+                    <select name="CategoryId" class="form-select" id="category-select">
+                        <option value="">همه</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- دکمه‌های اکشن -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-secondary" id="clear-filters-btn">
+                            <i class="fa fa-eraser me-1"></i>
+                            پاک کردن فیلترها
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-search me-1"></i>
+                            اعمال فیلتر
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- نتیجه جستجو -->
+        <div id="filter-results-info" class="alert alert-info mt-3" style="display: none;">
+            <i class="fa fa-info-circle me-2"></i>
+            <span id="filter-results-text"></span>
+        </div>
+    </div>
+</div>
+

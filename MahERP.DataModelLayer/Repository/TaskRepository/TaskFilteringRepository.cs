@@ -3,6 +3,7 @@ using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.ViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.CommonLayer.PublicClasses; // ⭐ اضافه کردن این using برای ConvertDateTime
 using Microsoft.EntityFrameworkCore;
 
 namespace MahERP.DataModelLayer.Repository.TaskRepository
@@ -51,7 +52,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters);
+            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
         }
 
         /// <summary>
@@ -80,7 +81,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters);
+            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
         }
 
         /// <summary>
@@ -88,11 +89,9 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         public async Task<List<Tasks>> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters = null)
         {
-            Console.WriteLine($"🔍 GetSupervisedTasksAsync - User: {userId}");
 
             // ⭐⭐⭐ 1. تسک‌های نظارتی سیستمی (بر اساس visibility)
             var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
-            Console.WriteLine($"   📋 Total Visible TaskIds from Visibility: {visibleTaskIds.Count}");
 
             // ⭐⭐⭐ DEBUG: چک کردن تسک خاص
             var debugTaskId = await _context.Tasks_Tbl
@@ -100,17 +99,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .Select(t => new { t.Id, t.Title, t.CreatorUserId })
                 .FirstOrDefaultAsync();
 
-            if (debugTaskId != null)
-            {
-                Console.WriteLine($"   🐛 DEBUG Task Found: Id={debugTaskId.Id}, Title={debugTaskId.Title}, Creator={debugTaskId.CreatorUserId}");
-                Console.WriteLine($"   🐛 Is in visibleTaskIds? {visibleTaskIds.Contains(debugTaskId.Id)}");
-                Console.WriteLine($"   🐛 Creator == userId? {debugTaskId.CreatorUserId == userId}");
-                
-                var hasAssignment = await _context.TaskAssignment_Tbl
-                    .AnyAsync(ta => ta.TaskId == debugTaskId.Id && ta.AssignedUserId == userId);
-                Console.WriteLine($"   🐛 Has Assignment to user? {hasAssignment}");
-            }
-
+         
             var systemSupervisedTaskIds = await _context.Tasks_Tbl
                 .Where(t => visibleTaskIds.Contains(t.Id) &&
                            t.CreatorUserId != userId && // تسک‌هایی که خودم نساخته‌ام
@@ -119,12 +108,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .Select(t => t.Id)
                 .ToListAsync();
 
-            Console.WriteLine($"   ✅ System Supervised (Filtered): {systemSupervisedTaskIds.Count}");
-            if (debugTaskId != null && systemSupervisedTaskIds.Contains(debugTaskId.Id))
-            {
-                Console.WriteLine($"   🐛 DEBUG Task is in System Supervised list!");
-            }
-
+        
             // ⭐⭐⭐ 2. تسک‌های رونوشت شده (از TaskViewer)
             var carbonCopyTaskIds = await _context.TaskViewer_Tbl
                 .Where(tv => tv.UserId == userId &&
@@ -134,16 +118,11 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .Select(tv => tv.TaskId)
                 .ToListAsync();
 
-            Console.WriteLine($"   ✅ Carbon Copy: {carbonCopyTaskIds.Count}");
-            if (debugTaskId != null && carbonCopyTaskIds.Contains(debugTaskId.Id))
-            {
-                Console.WriteLine($"   🐛 DEBUG Task is in Carbon Copy list!");
-            }
+         
 
             // ⭐⭐⭐ 3. ترکیب هر دو نوع
             var allSupervisedTaskIds = systemSupervisedTaskIds.Union(carbonCopyTaskIds).Distinct().ToList();
 
-            Console.WriteLine($"   📊 System Supervised: {systemSupervisedTaskIds.Count}, Carbon Copy: {carbonCopyTaskIds.Count}, Total: {allSupervisedTaskIds.Count}");
 
             // ⭐⭐⭐ 4. دریافت تسک‌ها با اطلاعات نوع نظارت
             var tasks = await _context.Tasks_Tbl
@@ -157,7 +136,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters);
+            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
         }
 
         /// <summary>
@@ -165,7 +144,6 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         public async Task<List<Tasks>> GetAllVisibleTasksAsync(string userId, TaskFilterViewModel filters = null)
         {
-            Console.WriteLine($"🔍 GetAllVisibleTasksAsync - User: {userId}");
 
             var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
 
@@ -180,7 +158,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters);
+            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
         }
 
         /// <summary>
@@ -188,7 +166,6 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         public async Task<List<Tasks>> GetAssignedToMeTasksAsync(string userId, TaskFilterViewModel filters = null)
         {
-            Console.WriteLine($"🔍 GetAssignedToMeTasksAsync - User: {userId}");
 
             var assignedTaskIds = await _context.TaskAssignment_Tbl
                 .Where(ta => ta.AssignedUserId == userId &&
@@ -211,7 +188,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters);
+            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
         }
 
         /// <summary>
@@ -248,22 +225,186 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters);
+            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
         }
 
         /// <summary>
         /// اعمال فیلترها
         /// </summary>
-        public List<Tasks> ApplyFilters(List<Tasks> tasks, TaskFilterViewModel filters)
+        public List<Tasks> ApplyFilters(List<Tasks> tasks, TaskFilterViewModel filters, string userId = null)
         {
             if (filters == null) return tasks;
 
+            Console.WriteLine($"🔍 Applying filters...");
+            Console.WriteLine($"   Initial tasks count: {tasks.Count}");
+
+            // ⭐⭐⭐ فیلتر شعبه
             if (filters.BranchId.HasValue)
+            {
                 tasks = tasks.Where(t => t.BranchId == filters.BranchId).ToList();
+                Console.WriteLine($"   After BranchId filter: {tasks.Count}");
+            }
 
+            // ⭐⭐⭐ فیلتر دسته‌بندی
             if (filters.CategoryId.HasValue)
+            {
                 tasks = tasks.Where(t => t.TaskCategoryId == filters.CategoryId).ToList();
+                Console.WriteLine($"   After CategoryId filter: {tasks.Count}");
+            }
 
+            // ⭐⭐⭐ فیلتر طرف حساب (Stakeholder - قدیمی)
+            if (filters.StakeholderId.HasValue)
+            {
+                tasks = tasks.Where(t => t.StakeholderId == filters.StakeholderId).ToList();
+                Console.WriteLine($"   After StakeholderId filter: {tasks.Count}");
+            }
+
+            // ⭐⭐⭐ فیلتر تیم (Team)
+            if (filters.TeamId.HasValue)
+            {
+                tasks = tasks.Where(t =>
+                    t.TaskAssignments != null &&
+                    t.TaskAssignments.Any(a => a.AssignedInTeamId == filters.TeamId.Value)
+                ).ToList();
+                Console.WriteLine($"   After TeamId filter: {tasks.Count}");
+            }
+
+            // ⭐⭐⭐ فیلتر سازنده تسک (CreatorUserId)
+            if (!string.IsNullOrEmpty(filters.CreatorUserId))
+            {
+                tasks = tasks.Where(t => t.CreatorUserId == filters.CreatorUserId).ToList();
+                Console.WriteLine($"   After CreatorUserId filter: {tasks.Count}");
+            }
+
+            // ⭐⭐⭐ فیلتر کاربر منتصب شده (AssignedUserId)
+            if (!string.IsNullOrEmpty(filters.AssignedUserId))
+            {
+                tasks = tasks.Where(t =>
+                    t.TaskAssignments != null &&
+                    t.TaskAssignments.Any(a => a.AssignedUserId == filters.AssignedUserId)
+                ).ToList();
+                Console.WriteLine($"   After AssignedUserId filter: {tasks.Count}");
+            }
+
+            // ⭐⭐⭐ فیلتر عنوان تسک
+            if (!string.IsNullOrEmpty(filters.TaskTitle))
+            {
+                var search = filters.TaskTitle.ToLower();
+                tasks = tasks.Where(t =>
+                    t.Title.ToLower().Contains(search)
+                ).ToList();
+                Console.WriteLine($"   After TaskTitle filter: {tasks.Count}");
+            }
+
+            // ⭐⭐⭐ فیلتر کد تسک
+            if (!string.IsNullOrEmpty(filters.TaskCode))
+            {
+                var search = filters.TaskCode.ToLower();
+                tasks = tasks.Where(t =>
+                    t.TaskCode.ToLower().Contains(search)
+                ).ToList();
+                Console.WriteLine($"   After TaskCode filter: {tasks.Count}");
+            }
+
+            // ⭐⭐⭐ فیلتر تاریخ ساخت (از) - از Persian به DateTime
+            if (!string.IsNullOrEmpty(filters.CreateDateFromPersian))
+            {
+                try
+                {
+                    var fromDate = ConvertDateTime.ConvertShamsiToMiladi(filters.CreateDateFromPersian);
+                    tasks = tasks.Where(t => t.CreateDate >= fromDate).ToList();
+                    Console.WriteLine($"   After CreateDateFrom filter: {tasks.Count}");
+                }
+                catch
+                {
+                    Console.WriteLine($"   ⚠️ Invalid CreateDateFromPersian: {filters.CreateDateFromPersian}");
+                }
+            }
+
+            // ⭐⭐⭐ فیلتر تاریخ ساخت (تا) - از Persian به DateTime
+            if (!string.IsNullOrEmpty(filters.CreateDateToPersian))
+            {
+                try
+                {
+                    var toDate = ConvertDateTime.ConvertShamsiToMiladi(filters.CreateDateToPersian);
+                    tasks = tasks.Where(t => t.CreateDate <= toDate).ToList();
+                    Console.WriteLine($"   After CreateDateTo filter: {tasks.Count}");
+                }
+                catch
+                {
+                    Console.WriteLine($"   ⚠️ Invalid CreateDateToPersian: {filters.CreateDateToPersian}");
+                }
+            }
+
+            // ⭐⭐⭐ فیلتر وضعیت (TaskStatus) - اصلاح شده با userId
+            if (filters.TaskStatus.HasValue && filters.TaskStatus != TaskStatusFilter.All)
+            {
+                var today = DateTime.Now.Date;
+                
+                // ⭐ اگر userId موجود نیست، از منطق ساده استفاده کن
+                if (string.IsNullOrEmpty(userId))
+                {
+                    tasks = filters.TaskStatus.Value switch
+                    {
+                        TaskStatusFilter.Pending => tasks.Where(t => t.Status == 0).ToList(),
+                        TaskStatusFilter.InProgress => tasks.Where(t => t.Status == 1).ToList(),
+                        TaskStatusFilter.Completed => tasks.Where(t => t.Status == 2).ToList(),
+                        TaskStatusFilter.Overdue => tasks.Where(t => 
+                            t.DueDate.HasValue && 
+                            t.DueDate.Value.Date < today && 
+                            t.Status != 2
+                        ).ToList(),
+                        TaskStatusFilter.Approved => tasks.Where(t => t.Status == 3).ToList(),
+                        TaskStatusFilter.Rejected => tasks.Where(t => t.Status == 4).ToList(),
+                        _ => tasks
+                    };
+                }
+                else
+                {
+                    // ⭐⭐⭐ منطق اصلاح شده: استفاده از IsTaskCompletedForUser
+                    tasks = filters.TaskStatus.Value switch
+                    {
+                        // Pending: تسک‌هایی که برای این کاربر تکمیل نشده و deadline ندارند یا نگذشته
+                        TaskStatusFilter.Pending => tasks.Where(t => 
+                            !IsTaskCompletedForUser(t.Id, userId) &&
+                            (!t.DueDate.HasValue || t.DueDate.Value.Date >= today)
+                        ).ToList(),
+                        
+                        // InProgress: تسک‌هایی که برای این کاربر تکمیل نشده‌اند (مثل CalculateStats)
+                        TaskStatusFilter.InProgress => tasks.Where(t => 
+                            !IsTaskCompletedForUser(t.Id, userId)
+                        ).ToList(),
+                        
+                        // Completed: تسک‌های تکمیل شده برای این کاربر
+                        TaskStatusFilter.Completed => tasks.Where(t => 
+                            IsTaskCompletedForUser(t.Id, userId)
+                        ).ToList(),
+                        
+                        // Overdue: تسک‌های عقب افتاده (deadline گذشته و برای این کاربر تکمیل نشده)
+                        TaskStatusFilter.Overdue => tasks.Where(t => 
+                            t.DueDate.HasValue && 
+                            t.DueDate.Value.Date < today && 
+                            !IsTaskCompletedForUser(t.Id, userId)
+                        ).ToList(),
+                        
+                        // Approved: تایید شده
+                        TaskStatusFilter.Approved => tasks.Where(t => 
+                            t.Status == 3
+                        ).ToList(),
+                        
+                        // Rejected: رد شده
+                        TaskStatusFilter.Rejected => tasks.Where(t => 
+                            t.Status == 4
+                        ).ToList(),
+                        
+                        _ => tasks
+                    };
+                }
+                
+                Console.WriteLine($"   After TaskStatus filter ({filters.TaskStatus.Value}): {tasks.Count}");
+            }
+
+            // ⭐⭐⭐ فیلتر جستجوی کلی (SearchTerm)
             if (!string.IsNullOrEmpty(filters.SearchTerm))
             {
                 var search = filters.SearchTerm.ToLower();
@@ -272,7 +413,10 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                     t.TaskCode.ToLower().Contains(search) ||
                     (t.Description != null && t.Description.ToLower().Contains(search))
                 ).ToList();
+                Console.WriteLine($"   After SearchTerm filter: {tasks.Count}");
             }
+
+            Console.WriteLine($"✅ Final filtered tasks count: {tasks.Count}");
 
             return tasks;
         }

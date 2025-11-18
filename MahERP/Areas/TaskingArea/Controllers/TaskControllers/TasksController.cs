@@ -8,6 +8,7 @@ using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
+using MahERP.DataModelLayer.Repository.OrganizationRepository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
@@ -16,8 +17,10 @@ using MahERP.DataModelLayer.ViewModels;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.Core;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using MahERP.Extentions;
 using MahERP.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -47,27 +50,29 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         protected readonly IUserManagerRepository _userRepository;
         private readonly ITaskHistoryRepository _taskHistoryRepository;
         private readonly ITaskVisibilityRepository _TaskVisibilityRepository;
-
-
+        private readonly IOrganizationRepository _organizationRepository;
+        private readonly ITeamRepository _teamRepository;
         public TasksController(
-            IUnitOfWork uow,
-            ITaskRepository taskRepository,
-            IStakeholderRepository stakeholderRepository,
-            IBranchRepository branchRepository,
-            UserManager<AppUsers> userManager,
-            IMapper mapper,
-            PersianDateHelper persianDateHelper,
-            IMemoryCache memoryCache,
-            IWebHostEnvironment webHostEnvironment,
-            ActivityLoggerService activityLogger,
-            TaskCodeGenerator taskCodeGenerator,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository,
-            ITaskVisibilityRepository taskVisibilityRepository,
-            ITaskHistoryRepository taskHistoryRepository, ModuleTrackingBackgroundService moduleTracking,
-            IModuleAccessService moduleAccessService)
-
-
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
+    IUnitOfWork uow,
+    ITaskRepository taskRepository,
+    IStakeholderRepository stakeholderRepository,
+    IBranchRepository branchRepository,
+    UserManager<AppUsers> userManager,
+    IMapper mapper,
+    PersianDateHelper persianDateHelper,
+    IMemoryCache memoryCache,
+    IWebHostEnvironment webHostEnvironment,
+    ActivityLoggerService activityLogger,
+    TaskCodeGenerator taskCodeGenerator,
+    IUserManagerRepository userRepository,
+    IBaseRepository BaseRepository,
+    ITaskVisibilityRepository taskVisibilityRepository,
+    ITaskHistoryRepository taskHistoryRepository,
+    ModuleTrackingBackgroundService moduleTracking,
+    IModuleAccessService moduleAccessService,
+    IOrganizationRepository organizationRepository, // ⭐⭐⭐ اضافه شده
+    ITeamRepository teamRepository) // ⭐⭐⭐ اضافه شده
+    : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _taskRepository = taskRepository;
             _stakeholderRepository = stakeholderRepository;
@@ -79,33 +84,90 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _userRepository = userRepository;
             _taskHistoryRepository = taskHistoryRepository;
             _TaskVisibilityRepository = taskVisibilityRepository;
-
+            _organizationRepository = organizationRepository; // ⭐⭐⭐ اضافه شده
+            _teamRepository = teamRepository; // ⭐⭐⭐ اضافه شده
         }
 
         #region Dashboard
         /// <summary>
-        /// داشبورد تسک‌ها - نمای کلی و آمارها
+        /// صفحه اصلی لیست تسک‌ها - نسخه جدید
         /// </summary>
-        //[Permission("Tasks", "TaskDashboard", 0)]
-        public async Task<IActionResult> TaskDashboard()
+        public async Task<IActionResult> Index(
+            TaskViewType viewType = TaskViewType.MyTasks,
+            TaskGroupingType grouping = TaskGroupingType.Team,
+            QuickStatusFilter? statusFilter = null,
+            TaskFilterViewModel advancedFilters = null)
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
-                var model = await _taskRepository.GetTaskDashboardDataAsync(userId);
+
+                // ⭐⭐⭐ اعمال فیلتر پیش‌فرض (فقط در حال انجام)
+                if (!statusFilter.HasValue && advancedFilters == null)
+                {
+                    statusFilter = QuickStatusFilter.Pending;
+                }
+
+                // ⭐⭐⭐ ایجاد filters برای ارسال به Repository
+                var filters = advancedFilters ?? new TaskFilterViewModel();
+
+                // ⭐⭐⭐ ذخیره viewType و grouping در فیلتر
+                filters.ViewType = viewType;
+                filters.Grouping = grouping;
+
+                // اعمال فیلتر وضعیت سریع
+                if (statusFilter.HasValue)
+                {
+                    filters.TaskStatus = statusFilter.Value switch
+                    {
+                        QuickStatusFilter.Pending => TaskStatusFilter.InProgress,
+                        QuickStatusFilter.Completed => TaskStatusFilter.Completed,
+                        QuickStatusFilter.Overdue => TaskStatusFilter.Overdue,
+                        QuickStatusFilter.Urgent => TaskStatusFilter.InProgress,
+                        _ => TaskStatusFilter.InProgress
+                    };
+                }
+                else
+                {
+                    filters.TaskStatus = TaskStatusFilter.InProgress;
+                    statusFilter = QuickStatusFilter.Pending;
+                }
+
+
+                    var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping, filters);
+
+                // ⭐⭐⭐ مرتب‌سازی گروه‌ها از جدید به قدیم
+                if (model.TaskGroups != null && model.TaskGroups.Any())
+                {
+                    model.TaskGroups = model.TaskGroups
+                        .OrderByDescending(g =>
+                        {
+                            var allTasks = new List<TaskCardViewModel>();
+                            allTasks.AddRange(g.PendingTasks);
+                            allTasks.AddRange(g.CompletedTasks);
+                            return allTasks.Any() ? allTasks.Max(t => t.CreateDate) : DateTime.MinValue;
+                        })
+                        .ToList();
+                }
+
+                ViewBag.CurrentViewType = viewType;
+                ViewBag.CurrentGrouping = grouping;
+                ViewBag.CurrentStatusFilter = statusFilter ?? QuickStatusFilter.Pending;
+                ViewBag.UserId = userId;
+                ViewBag.HasAdvancedFilters = advancedFilters != null;
 
                 await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "TaskDashboard", "مشاهده داشبورد تسک‌ها");
+                    ActivityTypeEnum.View, "Tasks", "Index",
+                    $"مشاهده لیست تسک‌ها - نمایش: {viewType}, گروه‌بندی: {grouping}, فیلتر: {statusFilter}");
 
                 return View(model);
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "TaskDashboard", "خطا در نمایش داشبورد", ex);
+                await _activityLogger.LogErrorAsync("Tasks", "Index", "خطا در دریافت لیست تسک‌ها", ex);
                 return RedirectToAction("ErrorView", "Home");
             }
         }
-        
         /// <summary>
         /// تسک‌هایی که کاربر ناظر آن‌هاست
         /// </summary>
@@ -132,168 +194,238 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
         }
 
+
+        #endregion
+
         /// <summary>
-        /// یادآوری‌های تسک
+        /// اعمال فیلترهای پیشرفته - AJAX
         /// </summary>
-        //[Permission("Tasks", "TaskReminders", 0)]
-        public async Task<IActionResult> TaskReminders(TaskReminderFilterViewModel filters = null)
+        [HttpPost]
+        public async Task<IActionResult> ApplyAdvancedFilters(TaskFilterViewModel filters)
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
 
-                if (filters == null)
+                // ⭐⭐⭐ حفظ viewType و grouping از فیلتر
+                var viewType = filters.ViewType ?? TaskViewType.MyTasks;
+                var grouping = filters.Grouping ?? TaskGroupingType.Team;
+
+                // ⭐ اعمال فیلترهای پیشرفته
+                var model = await _taskRepository.GetTaskListAsync(
+                    userId,
+                    viewType,
+                    grouping,
+                    filters);
+
+                // ⭐⭐⭐ مرتب‌سازی گروه‌ها از جدید به قدیم
+                if (model.TaskGroups != null && model.TaskGroups.Any())
                 {
-                    filters = new TaskReminderFilterViewModel
-                    {
-                        FilterType = "all",  // Set default value
-                        Page = 1,
-                        PageSize = 20
-                    };
+                    model.TaskGroups = model.TaskGroups
+                        .OrderByDescending(g =>
+                        {
+                            var allTasks = new List<TaskCardViewModel>();
+                            allTasks.AddRange(g.PendingTasks);
+                            allTasks.AddRange(g.CompletedTasks);
+                            return allTasks.Any() ? allTasks.Max(t => t.CreateDate) : DateTime.MinValue;
+                        })
+                        .ToList();
                 }
 
-                // Handle query string parameter 'filter' for backward compatibility
-                if (Request.Query.ContainsKey("filter"))
-                {
-                    filters.FilterType = Request.Query["filter"].ToString();
-                }
-
-                var model = await _taskRepository.GetTaskRemindersAsync(userId, filters);
-
-                ViewBag.Title = "یادآوری‌های تسک";
+                var html = await this.RenderViewToStringAsync("_TaskListGroupsPartial", model);
 
                 await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "TaskReminders", "مشاهده یادآوری‌های تسک");
-
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "TaskReminders", "خطا در دریافت یادآوری‌ها", ex);
-                return RedirectToAction("ErrorView", "Home");
-            }
-        }
-
-        /// <summary>
-        /// دریافت آمار داشبورد به صورت AJAX
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> GetDashboardStats()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                var stats = await _taskRepository.GetUserTaskStatsAsync(userId);
+                    ActivityTypeEnum.View, "Tasks", "ApplyAdvancedFilters",
+                    $"اعمال فیلترهای پیشرفته - نتایج: {model.Tasks.Count}");
 
                 return Json(new
                 {
-                    success = true,
-                    myTasksCount = stats.MyTasksCount,
-                    assignedByMeCount = stats.AssignedByMeCount,
-                    supervisedTasksCount = stats.SupervisedTasksCount,
-                    overdueTasksCount = stats.OverdueTasksCount,
-                    todayTasksCount = stats.TodayTasksCount,
-                    thisWeekTasksCount = stats.ThisWeekTasksCount,
-                    remindersCount = stats.RemindersCount
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "task-groups-container",
+                    view = new { result = html }
+                }
+            },
+                    stats = new
+                    {
+                        pending = model.Stats.TotalPending,
+                        completed = model.Stats.TotalCompleted,
+                        overdue = model.Stats.TotalOverdue,
+                        urgent = model.Stats.TotalUrgent,
+                        total = model.Tasks.Count
+                    },
+                    // ⭐⭐⭐ اضافه کردن viewType و grouping به response
+                    currentViewType = (int)viewType,
+                    currentGrouping = (int)grouping,
+                    message = new[] { new { status = "success", text = $"{model.Tasks.Count} تسک یافت شد" } }
                 });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "GetDashboardStats", "خطا در دریافت آمار", ex);
-                return Json(new { success = false, message = "خطا در دریافت آمار" });
-            }
-        }
-        #endregion
-        #region Views Actions
-
-        /// <summary>
-        /// تقویم تسک‌ها
-        /// </summary>
-        [HttpGet]
-        //[Permission("Tasks", "TaskCalendar", 0)]
-        public async Task<IActionResult> TaskCalendar()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                var calendarTasks = await _taskRepository.GetCalendarEventsAsync(userId);
-                
-                // تنظیم داده‌های ViewBag
-                ViewBag.CalendarEvents = System.Text.Json.JsonSerializer.Serialize(
-                    calendarTasks.Select(task => new
-                    {
-                        id = task.Id,
-                        title = task.Title,
-                        start = task.DueDate?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                        end = task.DueDate?.AddDays(1).ToString("yyyy-MM-ddTHH:mm:ss"),
-                        backgroundColor = task.CalendarColor,
-                        borderColor = task.CalendarColor,
-                        textColor = "#ffffff",
-                        description = task.Description ?? "",
-                        url = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })
-                    }));
-
-                ViewBag.PageTitle = "تقویم تسک‌ها";
-                
-                // فیلترها
-                var filterModel = new TaskCalendarFilterViewModel
+                await _activityLogger.LogErrorAsync("Tasks", "ApplyAdvancedFilters", "خطا در اعمال فیلترها", ex);
+                return Json(new
                 {
-                    BranchListInitial = _branchRepository.GetBrnachListByUserId(userId)
-                };
-                ViewBag.FilterModel = filterModel;
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "TaskCalendar", "مشاهده تقویم تسک‌ها");
-
-                return View(calendarTasks);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "TaskCalendar", "خطا در نمایش تقویم", ex);
-                return RedirectToAction("ErrorView", "Home");
-            }
-        }
-
-        /// <summary>
-        /// صفحه اصلی لیست تسک‌ها - نسخه جدید
-        /// </summary>
-        public async Task<IActionResult> Index(
-            TaskViewType viewType = TaskViewType.MyTasks,
-            TaskGroupingType grouping = TaskGroupingType.Team)
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-
-                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping);
-
-                ViewBag.CurrentViewType = viewType;
-                ViewBag.CurrentGrouping = grouping;
-                ViewBag.UserId = userId;
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "Index",
-                    $"مشاهده لیست تسک‌ها - نمایش: {viewType}, گروه‌بندی: {grouping}");
-
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "Index", "خطا در دریافت لیست تسک‌ها", ex);
-                return RedirectToAction("ErrorView", "Home");
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در اعمال فیلترها" } }
+                });
             }
         }
         /// <summary>
-        /// تغییر گروه‌بندی - AJAX
+        /// دریافت داده‌های اولیه برای فیلترهای پیشرفته - AJAX
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> ChangeGrouping(TaskViewType viewType, TaskGroupingType grouping)
+        public async Task<IActionResult> GetAdvancedFilterData()
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
 
-                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping);
+                // دریافت شعبه‌های کاربر
+                var userBranches = _branchRepository.GetBrnachListByUserId(userId);
+                var branchIds = userBranches.Select(b => b.Id).ToList();
+
+                // ⭐ دریافت کاربران شعبه‌ها
+                var branchUsers = new List<UserViewModelFull>();
+                foreach (var branchId in branchIds)
+                {
+                    var users = _branchRepository.GetBranchUsersByBranchId(branchId, includeInactive: false);
+                    foreach (var branchUser in users)
+                    {
+                        if (!branchUsers.Any(u => u.Id == branchUser.UserId))
+                        {
+                            branchUsers.Add(new UserViewModelFull
+                            {
+                                Id = branchUser.UserId,
+                                FullNamesString = branchUser.UserFullName
+                            });
+                        }
+                    }
+                }
+
+                // حذف تکرار و مرتب‌سازی
+                var uniqueUsers = branchUsers
+                    .OrderBy(u => u.FullNamesString)
+                    .ToList();
+
+                // ⭐⭐⭐ دریافت سازمان‌ها (Organizations) به جای Stakeholders
+                var organizations = new List<object>();
+                var allOrganizations = await _organizationRepository.GetOrganizationsAsViewModelAsync(includeInactive: false);
+
+                foreach (var org in allOrganizations)
+                {
+                    organizations.Add(new
+                    {
+                        Id = org.Id,
+                        Name = org.DisplayName ?? org.Name,
+                        Type = org.OrganizationType == 0 ? "شخص حقیقی" : "شخص حقوقی",
+                        MemberCount = org.TotalMembers
+                    });
+                }
+
+                // حذف تکرار و مرتب‌سازی
+                var uniqueOrganizations = organizations
+                    .OrderBy(o => ((dynamic)o).Name)
+                    .ToList();
+
+                // ⭐⭐⭐ دریافت تیم‌های عضو کاربر
+                var userTeams = new List<object>();
+                foreach (var branchId in branchIds)
+                {
+                    var branchTeams = _teamRepository.GetTeamsByBranchId(branchId, includeInactive: false);
+
+                    foreach (var team in branchTeams)
+                    {
+                        // بررسی اینکه کاربر عضو این تیم است یا نه
+                        var isMember = _teamRepository.GetTeamMembers(team.Id, includeInactive: false)
+                            .Any(tm => tm.UserId == userId);
+
+                        if (isMember && !userTeams.Any(t => ((dynamic)t).Id == team.Id))
+                        {
+                            userTeams.Add(new
+                            {
+                                Id = team.Id,
+                                Title = team.Title,
+                                BranchId = team.BranchId,
+                                ManagerName = team.ManagerFullName,
+                                MemberCount = _teamRepository.GetTeamMembers(team.Id, includeInactive: false).Count
+                            });
+                        }
+                    }
+                }
+
+                // حذف تکرار و مرتب‌سازی
+                var uniqueTeams = userTeams
+                    .OrderBy(t => ((dynamic)t).Title)
+                    .ToList();
+
+                // ⭐ دریافت دسته‌بندی‌ها
+                var categories = _taskRepository.GetAllCategories(activeOnly: true);
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "GetAdvancedFilterData",
+                    $"دریافت داده‌های فیلتر پیشرفته - {uniqueUsers.Count} کاربر، {uniqueOrganizations.Count} سازمان، {uniqueTeams.Count} تیم");
+
+                return Json(new
+                {
+                    status = "success",
+                    users = uniqueUsers.Select(u => new { Id = u.Id, FullName = u.FullNamesString }).ToList(),
+                    organizations = uniqueOrganizations,
+                    teams = uniqueTeams,
+                    categories = categories.Select(c => new { c.Id, c.Title }).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "GetAdvancedFilterData", "خطا در دریافت داده‌های فیلتر", ex);
+                return Json(new { status = "error", message = "خطا در دریافت داده‌ها: " + ex.Message });
+            }
+        }
+        /// <summary>
+        /// پاک کردن فیلترهای پیشرفته
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> ClearAdvancedFilters(
+            TaskViewType viewType = TaskViewType.MyTasks,
+            TaskGroupingType grouping = TaskGroupingType.Team,
+            QuickStatusFilter statusFilter = QuickStatusFilter.Pending) // ⭐ اضافه شده
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // ⭐⭐⭐ ایجاد فیلتر خالی با حفظ statusFilter
+                var filters = new TaskFilterViewModel
+                {
+                    ViewType = viewType,
+                    Grouping = grouping,
+                    TaskStatus = statusFilter switch
+                    {
+                        QuickStatusFilter.Pending => TaskStatusFilter.InProgress,
+                        QuickStatusFilter.Completed => TaskStatusFilter.Completed,
+                        QuickStatusFilter.Overdue => TaskStatusFilter.Overdue,
+                        QuickStatusFilter.Urgent => TaskStatusFilter.InProgress,
+                        _ => TaskStatusFilter.All
+                    }
+                };
+
+                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping, filters);
+
+                // ⭐⭐⭐ مرتب‌سازی گروه‌ها از جدید به قدیم
+                if (model.TaskGroups != null && model.TaskGroups.Any())
+                {
+                    model.TaskGroups = model.TaskGroups
+                        .OrderByDescending(g =>
+                        {
+                            var allTasks = new List<TaskCardViewModel>();
+                            allTasks.AddRange(g.PendingTasks);
+                            allTasks.AddRange(g.CompletedTasks);
+                            return allTasks.Any() ? allTasks.Max(t => t.CreateDate) : DateTime.MinValue;
+                        })
+                        .ToList();
+                }
 
                 var html = await this.RenderViewToStringAsync("_TaskListGroupsPartial", model);
 
@@ -314,7 +446,63 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         completed = model.Stats.TotalCompleted,
                         overdue = model.Stats.TotalOverdue,
                         urgent = model.Stats.TotalUrgent
-                    }
+                    },
+                    // ⭐⭐⭐ برگرداندن اطلاعات فعلی
+                    currentViewType = (int)viewType,
+                    currentGrouping = (int)grouping,
+                    currentStatusFilter = (int)statusFilter,
+                    message = new[] { new { status = "success", text = "فیلترها پاک شد" } }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "ClearAdvancedFilters", "خطا در پاک کردن فیلترها", ex);
+                return Json(new { status = "error", message = "خطا در پاک کردن فیلترها" });
+            }
+        }
+        /// <summary>
+        /// تغییر گروه‌بندی - AJAX
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> ChangeGrouping(
+            TaskViewType viewType,
+            TaskGroupingType grouping,
+            TaskFilterViewModel currentFilters = null) // ⭐ اضافه شده
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+
+                // ⭐⭐⭐ استفاده از فیلترهای فعلی
+                var filters = currentFilters ?? new TaskFilterViewModel();
+                filters.ViewType = viewType;
+                filters.Grouping = grouping;
+
+                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping, filters);
+
+                var html = await this.RenderViewToStringAsync("_TaskListGroupsPartial", model);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                new
+                {
+                    elementId = "task-groups-container",
+                    view = new { result = html }
+                }
+            },
+                    stats = new
+                    {
+                        pending = model.Stats.TotalPending,
+                        completed = model.Stats.TotalCompleted,
+                        overdue = model.Stats.TotalOverdue,
+                        urgent = model.Stats.TotalUrgent
+                    },
+                    // ⭐⭐⭐ برگرداندن اطلاعات فعلی
+                    currentViewType = (int)viewType,
+                    currentGrouping = (int)grouping
                 });
             }
             catch (Exception ex)
@@ -322,32 +510,55 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return Json(new { status = "error", message = "خطا در تغییر گروه‌بندی" });
             }
         }
-
-        /// <summary>
-        /// ⭐⭐⭐ تغییر فیلتر سریع وضعیت - AJAX
-        /// </summary>
         [HttpPost]
         public async Task<IActionResult> ChangeQuickStatusFilter(
-            TaskViewType viewType,
-            TaskGroupingType grouping,
-            QuickStatusFilter statusFilter)
+    TaskViewType viewType,
+    TaskGroupingType grouping,
+    int statusFilter, // ⭐⭐⭐ تغییر از QuickStatusFilter به int
+    TaskFilterViewModel currentFilters = null)
         {
             try
             {
                 var userId = _userManager.GetUserId(User);
 
-                // دریافت لیست اولیه
-                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping);
+                // ⭐⭐⭐ تبدیل int به QuickStatusFilter
+                var statusFilterEnum = (QuickStatusFilter)statusFilter;
 
-                // اعمال فیلتر وضعیت
-                model.CurrentStatusFilter = statusFilter;
+                var filters = currentFilters ?? new TaskFilterViewModel();
+                filters.ViewType = viewType;
+                filters.Grouping = grouping;
 
-                // رندر Partial View
+                // ⭐⭐⭐ اعمال فیلتر وضعیت سریع
+                filters.TaskStatus = statusFilterEnum switch
+                {
+                    QuickStatusFilter.Pending => TaskStatusFilter.InProgress,
+                    QuickStatusFilter.Completed => TaskStatusFilter.Completed,
+                    QuickStatusFilter.Overdue => TaskStatusFilter.Overdue,
+                    QuickStatusFilter.Urgent => TaskStatusFilter.InProgress,
+                    _ => TaskStatusFilter.All
+                };
+
+                var model = await _taskRepository.GetTaskListAsync(userId, viewType, grouping, filters);
+
+                // ⭐⭐⭐ مرتب‌سازی گروه‌ها
+                if (model.TaskGroups != null && model.TaskGroups.Any())
+                {
+                    model.TaskGroups = model.TaskGroups
+                        .OrderByDescending(g =>
+                        {
+                            var allTasks = new List<TaskCardViewModel>();
+                            allTasks.AddRange(g.PendingTasks);
+                            allTasks.AddRange(g.CompletedTasks);
+                            return allTasks.Any() ? allTasks.Max(t => t.CreateDate) : DateTime.MinValue;
+                        })
+                        .ToList();
+                }
+
                 var html = await this.RenderViewToStringAsync("_TaskListGroupsPartial", model);
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "ChangeQuickStatusFilter",
-                    $"تغییر فیلتر وضعیت به: {statusFilter}");
+                    $"تغییر فیلتر وضعیت به: {statusFilterEnum}");
 
                 return Json(new
                 {
@@ -366,7 +577,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         completed = model.Stats.TotalCompleted,
                         overdue = model.Stats.TotalOverdue,
                         urgent = model.Stats.TotalUrgent
-                    }
+                    },
+                    currentViewType = (int)viewType,
+                    currentGrouping = (int)grouping,
+                    currentStatusFilter = statusFilter // ⭐⭐⭐ برگرداندن همون int که اومده
                 });
             }
             catch (Exception ex)
@@ -375,8 +589,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return Json(new { status = "error", message = "خطا در تغییر فیلتر" });
             }
         }
-
-
         /// <summary>
         /// GET: ایجاد تسک جدید
         /// </summary>
@@ -493,13 +705,13 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     return NotFound();
 
                 var userId = _userManager.GetUserId(User);
-             
+
                 var model = await _taskRepository.PrepareCompleteTaskModalAsync(id, userId);
 
                 model.FromList = fromList;
 
 
-        return PartialView("_CompleteTask", model);
+                return PartialView("_CompleteTask", model);
             }
             catch (Exception ex)
             {
@@ -507,6 +719,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return BadRequest();
             }
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -601,341 +814,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 });
             }
         }
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ToggleOperationStar(int id)
-        {
-            try
-            {
-                var operation = _taskRepository.GetTaskOperationById(id);
-                if (operation == null)
-                {
-                    return Json(new { success = false, message = "عملیات یافت نشد" });
-                }
-
-                // بررسی دسترسی کاربر
-                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var hasAccess = _taskRepository.IsUserRelatedToTask(currentUserId, operation.TaskId);
-
-                if (!hasAccess)
-                {
-                    return Json(new { success = false, message = "شما مجاز به انجام این عملیات نیستید" });
-                }
-
-                operation.IsStarred = !operation.IsStarred;
-                _uow.TaskOperationUW.Update(operation);
-                _uow.Save();
-
-                var message = operation.IsStarred ? "عملیات ستاره‌دار شد" : "ستاره عملیات حذف شد";
-                return Json(new { success = true, message = message });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = "خطا در تغییر وضعیت ستاره" });
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ToggleOperationCompletion(int id)
-        {
-            try
-            {
-                var operation = _taskRepository.GetTaskOperationById(id);
-                if (operation == null)
-                {
-                    return Json(new { success = false, message = "عملیات یافت نشد" });
-                }
-
-                // بررسی دسترسی کاربر
-                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var hasAccess = _taskRepository.IsUserRelatedToTask(currentUserId, operation.TaskId);
-
-                if (!hasAccess)
-                {
-                    return Json(new { success = false, message = "شما مجاز به انجام این عملیات نیستید" });
-                }
-
-                operation.IsCompleted = !operation.IsCompleted;
-
-                if (operation.IsCompleted)
-                {
-                    operation.CompletionDate = DateTime.Now;
-                    operation.CompletedByUserId = currentUserId;
-                }
-                else
-                {
-                    operation.CompletionDate = null;
-                    operation.CompletedByUserId = null;
-                    operation.CompletionNote = null; // پاک کردن گزارش در صورت بازگشت
-                }
-
-                _uow.TaskOperationUW.Update(operation);
-                _uow.Save();
-
-                var message = operation.IsCompleted ? "عملیات تکمیل شد" : "عملیات به حالت انتظار برگشت";
-                return Json(new { success = true, message = message });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = "خطا در تغییر وضعیت تکمیل" });
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> AddOperationNote(int operationId)
-        {
-            try
-            {
-                var operation = _taskRepository.GetTaskOperationById(operationId);
-                if (operation == null)
-                {
-                    return Json(new { status = "error", message = new[] { new { text = "عملیات یافت نشد" } } });
-                }
-
-                // بررسی دسترسی
-                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var hasAccess = _taskRepository.IsUserRelatedToTask(currentUserId, operation.TaskId);
-
-                if (!hasAccess)
-                {
-                    return Json(new { status = "error", message = new[] { new { text = "شما مجاز به انجام این عملیات نیستید" } } });
-                }
-
-                // دریافت اطلاعات تسک از طریق Repository
-                var task = _taskRepository.GetTaskById(operation.TaskId);
-
-                var model = new OperationNoteViewModel
-                {
-                    OperationId = operationId,
-                    OperationTitle = operation.Title,
-                    TaskTitle = task.Title,
-                    CompletionNote = operation.CompletionNote,
-                    IsCompleted = operation.IsCompleted
-                };
-
-                return PartialView("_AddOperationNoteModal", model);
-            }
-            catch (Exception ex)
-            {
-                return Json(new { status = "error", message = new[] { new { text = "خطا در بارگذاری فرم" } } });
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddOperationNote(OperationNoteViewModel model)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => new { text = e.ErrorMessage })
-                        .ToArray();
-                    return Json(new { status = "validation-error", message = errors });
-                }
-
-                var operation = _taskRepository.GetTaskOperationById(model.OperationId);
-                if (operation == null)
-                {
-                    return Json(new { status = "error", message = new[] { new { text = "عملیات یافت نشد" } } });
-                }
-
-                // بررسی دسترسی
-                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var hasAccess = _taskRepository.IsUserRelatedToTask(currentUserId, operation.TaskId);
-
-                if (!hasAccess)
-                {
-                    return Json(new { status = "error", message = new[] { new { text = "شما مجاز به انجام این عملیات نیستید" } } });
-                }
-
-                operation.CompletionNote = model.CompletionNote?.Trim();
-
-                // اگر گزارش اضافه شد، عملیات را تکمیل کن
-                if (!string.IsNullOrEmpty(operation.CompletionNote) && !operation.IsCompleted)
-                {
-                    operation.IsCompleted = true;
-                    operation.CompletionDate = DateTime.Now;
-                    operation.CompletedByUserId = currentUserId;
-                }
-
-                _uow.TaskOperationUW.Update(operation);
-                _uow.Save();
-
-                return Json(new
-                {
-                    status = "success",
-                    message = new[] { new { text = "گزارش با موفقیت ثبت شد" } },
-                    refreshPage = true
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { status = "error", message = new[] { new { text = "خطا در ثبت گزارش" } } });
-            }
-        }
-        /// <summary>
-        /// تسک‌های شخصی کاربر
-        /// </summary>
-        //[Permission("Tasks", "MyTasks", 0)]
-        public async Task<IActionResult> MyTasks()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                var tasks = _taskRepository.GetTasksByUser(userId, includeAssigned: true, includeCreated: false);
-                var viewModels = _mapper.Map<List<TaskViewModel>>(tasks);
-
-                foreach (var viewModel in viewModels)
-                {
-                    var operations = _taskRepository.GetTaskOperations(viewModel.Id);
-                    viewModel.Operations = _mapper.Map<List<TaskOperationViewModel>>(operations);
-                }
-
-                ViewBag.Title = "تسک‌های من";
-                ViewBag.IsMyTasks = true;
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "MyTasks", "مشاهده تسک‌های شخصی");
-
-                return View("Index", viewModels);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "MyTasks", "خطا در دریافت تسک‌های شخصی", ex);
-                return RedirectToAction("ErrorView", "Home");
-            }
-        }
-
-        #endregion
 
 
-        /// <summary>
-        /// دریافت تسک‌های فوری برای داشبورد
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> GetUrgentTasks()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                var urgentTasks = await _taskRepository.GetUrgentTasksAsync(userId, take: 5);
-
-                return PartialView("_UrgentTasksList", urgentTasks);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "GetUrgentTasks", "خطا در دریافت تسک‌های فوری", ex);
-                return PartialView("_UrgentTasksList", new List<TaskSummaryViewModel>());
-            }
-        }
-
-        /// <summary>
-        /// دریافت آخرین فعالیت‌های تسک
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> GetRecentTaskActivities()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                var activities = await _taskRepository.GetRecentTaskActivitiesAsync(userId, take: 10);
-
-                return PartialView("_RecentTaskActivities", activities);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "GetRecentTaskActivities", "خطا در دریافت فعالیت‌ها", ex);
-                return PartialView("_RecentTaskActivities", new List<RecentActivityViewModel>());
-            }
-        }
-
-        /// <summary>
-        /// علامت‌گذاری یادآوری به عنوان خوانده شده
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkReminderAsRead(int id)
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                await _taskRepository.MarkReminderAsReadAsync(id, userId);
-
-                return Json(new { success = true, message = "یادآوری به عنوان خوانده شده علامت‌گذاری شد" });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "MarkReminderAsRead", "خطا در علامت‌گذاری یادآوری", ex);
-                return Json(new { success = false, message = "خطا در علامت‌گذاری یادآوری" });
-            }
-        }
-
-        /// <summary>
-        /// علامت‌گذاری همه یادآوری‌ها به عنوان خوانده شده
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkAllRemindersAsRead()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                await _taskRepository.MarkAllRemindersAsReadAsync(userId);
-
-                return Json(new { success = true, message = "همه یادآوری‌ها به عنوان خوانده شده علامت‌گذاری شدند" });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "MarkAllRemindersAsRead", "خطا در علامت‌گذاری یادآوری‌ها", ex);
-                return Json(new { success = false, message = "خطا در علامت‌گذاری یادآوری‌ها" });
-            }
-        }
-
-        /// <summary>
-        /// حذف یادآوری
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteReminder(int id)
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                await _taskRepository.DeleteReminderAsync(id, userId);
-
-                return Json(new { success = true, message = "یادآوری حذف شد" });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "DeleteReminder", "خطا در حذف یادآوری", ex);
-                return Json(new { success = false, message = "خطا در حذف یادآوری" });
-            }
-        }
-
-        /// <summary>
-        /// حذف یادآوری‌های خوانده شده
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteReadReminders()
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                await _taskRepository.DeleteReadRemindersAsync(userId);
-
-                return Json(new { success = true, message = "یادآوری‌های خوانده شده حذف شدند" });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "DeleteReadReminders", "خطا در حذف یادآوری‌ها", ex);
-                return Json(new { success = false, message = "خطا در حذف یادآوری‌ها" });
-            }
-        }
 
 
 
@@ -1069,59 +949,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         #region AJAX Actions
 
 
-        // اصلاح GetCalendarEvents:
-        [HttpGet]
-        public async Task<IActionResult> GetCalendarEvents(
-            DateTime? start = null, DateTime? end = null, int? branchId = null,
-            string assignedUserIds = null, int? stakeholderId = null)
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-
-                List<string> userFilterList = null;
-                if (!string.IsNullOrEmpty(assignedUserIds))
-                {
-                    userFilterList = assignedUserIds.Split(',')
-                        .Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
-                }
-
-                var calendarTasks = await _taskRepository.GetCalendarEventsAsync(
-                    userId, start, end, branchId, userFilterList, stakeholderId);
-
-                var events = calendarTasks.Where(task => task.DueDate.HasValue)
-                    .Select(task => new
-                    {
-                        id = task.Id,
-                        title = task.Title,
-                        start = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy-MM-dd"),
-                        end = ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value.AddHours(3), "yyyy-MM-dd"),
-                        // ⭐ استفاده از متدهای Repository
-                        backgroundColor = _taskRepository.GetTaskStatusColor(task),
-                        borderColor = _taskRepository.GetTaskStatusColor(task),
-                        textColor = "#ffffff",
-                        description = task.Description ?? "",
-                        extendedProps = new
-                        {
-                            taskCode = task.TaskCode ?? "",
-                            categoryTitle = task.CategoryTitle ?? "",
-                            stakeholderName = task.StakeholderName ?? "",
-                            branchName = task.BranchName ?? "",
-                            statusText = _taskRepository.GetTaskStatusTextForCalendar(task),
-                            isCompleted = task.IsCompleted,
-                            isOverdue = task.IsOverdue,
-                            detailUrl = Url.Action("Details", "Tasks", new { id = task.Id, area = "AdminArea" })
-                        }
-                    }).ToList();
-
-                return Json(events);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "GetCalendarEvents", "خطا در دریافت رویدادهای تقویم", ex);
-                return Json(new List<object>());
-            }
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1168,43 +995,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         }
 
        
-
-        /// <summary>
-        /// بروزرسانی دسته‌بندی‌ها بر اساس طرف حساب
-        /// </summary>
-        [HttpPost]
-        public async Task<IActionResult> StakeholderTriggerSelectTaskCategories(int stakeholderId, int BranchIdSelected)
-        {
-            try
-            {
-                if (BranchIdSelected <= 0 || stakeholderId <= 0)
-                {
-                    return Json(new { status = "error", message = "پارامترهای ورودی نامعتبر است" });
-                }
-
-                var taskCategories = _branchRepository.GetTaskCategoriesForStakeholderChange(BranchIdSelected, stakeholderId);
-                var partialViewHtml = await this.RenderViewToStringAsync("_TaskCategoriesSelect", taskCategories, true);
-
-                var viewList = new List<object>
-                {
-                    new {
-                        elementId = "TaskCategoriesDiv",
-                        view = new { result = partialViewHtml }
-                    }
-                };
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "StakeholderTriggerSelectTaskCategories",
-                    $"بارگذاری دسته‌بندی‌های طرف حساب {stakeholderId} در شعبه {BranchIdSelected}");
-
-                return Json(new { status = "update-view", viewList = viewList });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "StakeholderTriggerSelectTaskCategories", "خطا در بارگذاری دسته‌بندی‌ها", ex);
-                return Json(new { status = "error", message = "خطا در بارگذاری دسته‌بندی‌ها" });
-            }
-        }
 
         /// <summary>
         /// نمایش مودال یادآوری سفارشی
@@ -1477,80 +1267,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     message = new[] { new { status = "error", text = "خطا در ذخیره تاریخ‌ها: " + ex.Message } }
                 });
             }
-        }
-
-        /// <summary>
-        /// دریافت رویدادهای شخصی کاربران برای یک تسک
-        /// </summary>
-        private async Task<List<object>> GetPersonalTaskEventsAsync(int taskId, string currentUserId)
-        {
-            var personalEvents = new List<object>();
-
-            // استفاده از Repository به جای UnitOfWork مستقیم
-            var assignments = await _taskRepository.GetTaskAssignmentsWithPersonalDatesAsync(taskId);
-
-            foreach (var assignment in assignments)
-            {
-                var isMyAssignment = assignment.AssignedUserId == currentUserId;
-                // استفاده از Repository متد به جای متد محلی
-                var userInitials = _taskRepository.GetUserInitials(assignment.AssignedUser?.FirstName, assignment.AssignedUser?.LastName);
-
-                // رویداد شروع شخصی
-                if (assignment.PersonalStartDate.HasValue)
-                {
-                    personalEvents.Add(new
-                    {
-                        id = $"personal-start-{assignment.Id}",
-                        title = $"[شروع {userInitials}] {assignment.Task.Title}",
-                        start = ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalStartDate, "yyyy-MM-dd"),
-                        backgroundColor = isMyAssignment ? "#4CAF50" : "#81C784", // سبز تیره/روشن
-                        borderColor = isMyAssignment ? "#388E3C" : "#66BB6A",
-                        textColor = "#ffffff",
-                        classNames = new[] { "personal-start-event", isMyAssignment ? "my-event" : "other-event" },
-                        extendedProps = new
-                        {
-                            taskId = taskId,
-                            assignmentId = assignment.Id,
-                            eventType = "personal-start",
-                            taskCode = assignment.Task.TaskCode ?? "",
-                            assignedUserName = assignment.AssignedUser?.FirstName + " " + assignment.AssignedUser?.LastName,
-                            isMyEvent = isMyAssignment,
-                            personalNote = assignment.PersonalTimeNote,
-                            detailUrl = Url.Action("Details", "Tasks", new { id = taskId, area = "AdminArea" }),
-                            editUrl = isMyAssignment ? Url.Action("SetPersonalDatesModal", "Tasks", new { taskId = taskId, area = "AdminArea" }) : null
-                        }
-                    });
-                }
-
-                // رویداد پایان شخصی
-                if (assignment.PersonalEndDate.HasValue)
-                {
-                    personalEvents.Add(new
-                    {
-                        id = $"personal-end-{assignment.Id}",
-                        title = $"[پایان {userInitials}] {assignment.Task.Title}",
-                        start = ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalEndDate, "yyyy-MM-dd"),
-                        backgroundColor = isMyAssignment ? "#FF9800" : "#FFB74D", // نارنجی تیره/روشن
-                        borderColor = isMyAssignment ? "#F57C00" : "#FFA726",
-                        textColor = "#ffffff",
-                        classNames = new[] { "personal-end-event", isMyAssignment ? "my-event" : "other-event" },
-                        extendedProps = new
-                        {
-                            taskId = taskId,
-                            assignmentId = assignment.Id,
-                            eventType = "personal-end",
-                            taskCode = assignment.Task.TaskCode ?? "",
-                            assignedUserName = assignment.AssignedUser?.FirstName + " " + assignment.AssignedUser?.LastName,
-                            isMyEvent = isMyAssignment,
-                            personalNote = assignment.PersonalTimeNote,
-                            detailUrl = Url.Action("Details", "Tasks", new { id = taskId, area = "AdminArea" }),
-                            editUrl = isMyAssignment ? Url.Action("SetPersonalDatesModal", "Tasks", new { taskId = taskId, area = "AdminArea" }) : null
-                        }
-                    });
-                }
-            }
-
-            return personalEvents;
         }
 
         #endregion
@@ -1947,242 +1663,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
         #endregion
 
-        #region My Day Actions - Quick Add Without Modal
-
-        /// <summary>
-        /// نمایش مودال افزودن تسک به "روز من" (با تاریخ و یادداشت)
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> AddToMyDayModal(int taskId)
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-
-                // دریافت اطلاعات تسک
-                var task = await _taskRepository.GetTaskByIdAsync(taskId);
-                if (task == null)
-                {
-                    return Json(new { status = "error", message = "تسک یافت نشد" });
-                }
-
-                // بررسی دسترسی کاربر به تسک
-                var hasAccess = await _taskRepository.CanUserViewTaskAsync(userId, taskId);
-                if (!hasAccess)
-                {
-                    return Json(new { status = "error", message = "شما به این تسک دسترسی ندارید" });
-                }
-
-                // بررسی اینکه آیا قبلاً در روز من است
-                var isAlreadyInMyDay = await _taskRepository.IsTaskInMyDayAsync(taskId, userId);
-
-                var model = new TaskMyDayViewModel
-                {
-                    TaskId = taskId,
-                    TaskTitle = task.Title,
-                    TaskCode = task.TaskCode,
-                    PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd"),
-                    IsAlreadyInMyDay = isAlreadyInMyDay
-                };
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "AddToMyDayModal",
-                    $"نمایش مودال افزودن تسک {task.TaskCode} به روز من");
-
-                return PartialView("_AddToMyDayModal", model);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "AddToMyDayModal", "خطا در نمایش مودال افزودن تسک به روز من", ex);
-                return Json(new { status = "error", message = "خطا در بارگذاری مودال" });
-            }
-        }
-
-        /// <summary>
-        /// افزودن تسک به "روز من" با تاریخ و یادداشت (از طریق Modal)
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddToMyDay(TaskMyDayViewModel model)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => new { status = "error", text = e.ErrorMessage })
-                        .ToArray();
-
-                    return Json(new
-                    {
-                        status = "validation-error",
-                        message = errors
-                    });
-                }
-
-                var userId = _userManager.GetUserId(User);
-
-                // بررسی دسترسی
-                var hasAccess = await _taskRepository.CanUserViewTaskAsync(userId, model.TaskId);
-                if (!hasAccess)
-                {
-                    return Json(new
-                    {
-                        status = "error",
-                        message = new[] { new { status = "error", text = "شما به این تسک دسترسی ندارید" } }
-                    });
-                }
-
-                // تبدیل تاریخ شمسی به میلادی
-                DateTime plannedDate = DateTime.Now.Date;
-                if (!string.IsNullOrEmpty(model.PlannedDatePersian))
-                {
-                    plannedDate = ConvertDateTime.ConvertShamsiToMiladi(model.PlannedDatePersian);
-                }
-
-                // اضافه کردن به روز من
-                var result = await _taskRepository.AddTaskToMyDayAsync(
-                    model.TaskId,
-                    userId,
-                    plannedDate,
-                    model.PlanNote);
-
-                if (!result)
-                {
-                    return Json(new
-                    {
-                        status = "error",
-                        message = new[] { new { status = "error", text = "خطا در افزودن تسک به روز من" } }
-                    });
-                }
-
-                // ⭐ دریافت اطلاعات تسک برای ثبت در تاریخچه
-                var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
-                
-                // ⭐ ثبت در تاریخچه
-                await _taskHistoryRepository.LogTaskAddedToMyDayAsync(
-                    model.TaskId,
-                    userId,
-                    task.Title,
-                    task.TaskCode,
-                    plannedDate
-                );
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Create, "Tasks", "AddToMyDay",
-                    $"افزودن تسک {task.TaskCode} به روز من - تاریخ: {model.PlannedDatePersian}",
-                    recordId: model.TaskId.ToString(), entityType: "Tasks", recordTitle: task.Title);
-
-                return Json(new
-                {
-                    status = "success",
-                    message = new[] { new { status = "success", text = "تسک با موفقیت به روز من اضافه شد" } }
-                });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "AddToMyDay", "خطا در افزودن تسک به روز من", ex);
-                return Json(new
-                {
-                    status = "error",
-                    message = new[] { new { status = "error", text = "خطا در افزودن تسک: " + ex.Message } }
-                });
-            }
-        }
-        /// <summary>
-        /// حذف تسک از "روز من"
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveFromMyDay(int taskId, string? targetDatePersian = null)
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-
-                // تبدیل تاریخ اگر ارسال شده
-                DateTime? targetDate = null;
-                if (!string.IsNullOrEmpty(targetDatePersian))
-                {
-                    targetDate = ConvertDateTime.ConvertShamsiToMiladi(targetDatePersian);
-                }
-
-                // حذف از روز من
-                var result = await _taskRepository.RemoveTaskFromMyDayAsync(taskId, userId, targetDate);
-
-                if (!result)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "تسک در روز من یافت نشد یا خطا در حذف"
-                    });
-                }
-
-                // ⭐ ثبت در تاریخچه
-                var task = await _taskRepository.GetTaskByIdAsync(taskId);
-                await _taskHistoryRepository.LogTaskRemovedFromMyDayAsync(
-                    taskId,
-                    userId,
-                    task.Title,
-                    task.TaskCode
-                );
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Delete, "Tasks", "RemoveFromMyDay",
-                    $"حذف تسک {task.TaskCode} از روز من",
-                    recordId: taskId.ToString(), entityType: "Tasks", recordTitle: task.Title);
-
-                return Json(new
-                {
-                    success = true,
-                    message = "تسک از روز من حذف شد"
-                });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "RemoveFromMyDay", "خطا در حذف تسک از روز من", ex);
-                return Json(new
-                {
-                    success = false,
-                    message = "خطا در حذف تسک از روز من"
-                });
-            }
-        }
-
-        /// <summary>
-        /// دریافت صفحه "روز من"
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> MyDayTasks(string? date = null)
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-
-                // تبدیل تاریخ اگر ارسال شده
-                DateTime? selectedDate = null;
-                if (!string.IsNullOrEmpty(date))
-                {
-                    selectedDate = ConvertDateTime.ConvertShamsiToMiladi(date);
-                }
-
-                // دریافت تسک‌های روز من
-                var model = await _taskRepository.GetMyDayTasksAsync(userId, selectedDate);
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.View, "Tasks", "MyDay",
-                    "مشاهده صفحه روز من");
-
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("Tasks", "MyDay", "خطا در دریافت تسک‌های روز من", ex);
-                return RedirectToAction("ErrorView", "Home");
-            }
-        }
         /// <summary>
         /// نمایش مودال افزودن کاربر به تسک
         /// </summary>
@@ -2660,7 +2140,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         }
 
 
-        #endregion
 
         #region Task Work Log
 

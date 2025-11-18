@@ -18,14 +18,13 @@
                 </a>
             </div>
         </div>
-        
         <!-- ⭐⭐⭐ آمار سریع -->
         <div class="block-content">
             <div class="row g-sm">
                 <div class="col-6 col-md-3">
-                    <a href="javascript:void(0)" 
-                       class="text-decoration-none quick-status-filter" 
-                       data-filter="@((int)QuickStatusFilter.Pending)"
+                    <a href="javascript:void(0)"
+                       class="text-decoration-none quick-status-filter"
+                       data-filter="1"
                        style="display: block;">
                         <div class="p-3 bg-body-light rounded text-center hover-lift @(Model.CurrentStatusFilter == QuickStatusFilter.Pending ? "border border-2 border-primary" : "")">
                             <div class="fs-3 fw-semibold text-primary">@Model.Stats.TotalPending</div>
@@ -34,9 +33,9 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="javascript:void(0)" 
-                       class="text-decoration-none quick-status-filter" 
-                       data-filter="@((int)QuickStatusFilter.Completed)"
+                    <a href="javascript:void(0)"
+                       class="text-decoration-none quick-status-filter"
+                       data-filter="2"
                        style="display: block;">
                         <div class="p-3 bg-body-light rounded text-center hover-lift @(Model.CurrentStatusFilter == QuickStatusFilter.Completed ? "border border-2 border-success" : "")">
                             <div class="fs-3 fw-semibold text-success">@Model.Stats.TotalCompleted</div>
@@ -45,9 +44,9 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="javascript:void(0)" 
-                       class="text-decoration-none quick-status-filter" 
-                       data-filter="@((int)QuickStatusFilter.Overdue)"
+                    <a href="javascript:void(0)"
+                       class="text-decoration-none quick-status-filter"
+                       data-filter="3"
                        style="display: block;">
                         <div class="p-3 bg-body-light rounded text-center hover-lift @(Model.CurrentStatusFilter == QuickStatusFilter.Overdue ? "border border-2 border-danger" : "")">
                             <div class="fs-3 fw-semibold text-danger">@Model.Stats.TotalOverdue</div>
@@ -56,9 +55,9 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="javascript:void(0)" 
-                       class="text-decoration-none quick-status-filter" 
-                       data-filter="@((int)QuickStatusFilter.Urgent)"
+                    <a href="javascript:void(0)"
+                       class="text-decoration-none quick-status-filter"
+                       data-filter="4"
                        style="display: block;">
                         <div class="p-3 bg-body-light rounded text-center hover-lift @(Model.CurrentStatusFilter == QuickStatusFilter.Urgent ? "border border-2 border-warning" : "")">
                             <div class="fs-3 fw-semibold text-warning">@Model.Stats.TotalUrgent</div>
@@ -94,7 +93,7 @@
         </ul>
     </div>
 
-    <!-- ⭐⭐⭐ دکمه‌های گروه‌بندی -->
+    <!-- ⭐⭐⭐ دکمه‌های گروه‌بندی + دکمه جستجوی پیشرفته -->
     <div class="block block-rounded">
         <div class="block-content">
             <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -131,6 +130,16 @@
                         onclick="changeGrouping(@((int)TaskGroupingType.Stakeholder))">
                     <i class="fa fa-address-book me-1"></i>طرف حساب
                 </button>
+
+                <!-- ⭐⭐⭐ دکمه جستجوی پیشرفته -->
+                <button type="button" 
+                        class="btn btn-sm btn-alt-success" 
+                        id="toggle-advanced-filters-btn" 
+                        title="جستجوی پیشرفته">
+                    <i class="fa fa-filter me-1"></i>
+                    جستجوی پیشرفته
+                </button>
+                
                 <!-- ⭐⭐⭐ دکمه‌های باز/بسته کردن همه -->
                 <div class="btn-group ms-auto gap-2" role="group">
                     <button type="button" class="btn btn-sm btn-alt-secondary " id="expand-all-groups" title="بازکردن همه گروه‌ها">
@@ -145,6 +154,9 @@
         </div>
     </div>
 
+    <!-- ⭐⭐⭐ پنل فیلترهای پیشرفته (مخفی به صورت پیش‌فرض) -->
+    @await Html.PartialAsync("_AdvancedFiltersPanel", Model)
+
     <!-- ⭐⭐⭐ لیست گروه‌ها -->
     <div id="task-groups-container">
         @await Html.PartialAsync("_TaskListGroupsPartial", Model)
@@ -152,8 +164,15 @@
 </div>
 
 @section Scripts {
-    <script src="~/assets/js/TaskList.js"></script>
     <script>
+        // ⭐⭐⭐ مقداردهی اولیه State
+        window.TaskListInitialState = {
+            currentViewType: @((int)Model.CurrentViewType),
+            currentGrouping: @((int)Model.CurrentGrouping),
+            currentStatusFilter: @((int)Model.CurrentStatusFilter),
+            currentFilters: @Html.Raw(Json.Serialize(Model.Filters ?? new TaskFilterViewModel()))
+        };
+
         window.TaskListConfig = {
             currentViewType: @((int)Model.CurrentViewType),
             currentGrouping: @((int)Model.CurrentGrouping),
@@ -165,221 +184,10 @@
                 deleteTask: '@Url.Action("Delete", "Tasks")'
             }
         };
-
-        // ========================================
-        // ⭐⭐⭐ مدیریت وضعیت باز/بسته تب‌ها
-        // ========================================
-        const GroupCollapseManager = {
-            storageKey: 'taskGroupsCollapseState',
-
-            // ذخیره وضعیت یک گروه
-            saveState: function(groupKey, isCollapsed) {
-                const state = this.getState();
-                state[groupKey] = isCollapsed;
-                localStorage.setItem(this.storageKey, JSON.stringify(state));
-                console.log('💾 Saved collapse state:', groupKey, isCollapsed);
-            },
-
-            // دریافت وضعیت تمام گروه‌ها
-            getState: function() {
-                const saved = localStorage.getItem(this.storageKey);
-                return saved ? JSON.parse(saved) : {};
-            },
-
-            // بازیابی وضعیت یک گروه
-            getGroupState: function(groupKey) {
-                const state = this.getState();
-                return state[groupKey] !== undefined ? state[groupKey] : false; // پیش‌فرض: باز
-            },
-
-            // پاک کردن همه وضعیت‌ها
-            clearState: function() {
-                localStorage.removeItem(this.storageKey);
-            },
-
-            // اعمال وضعیت ذخیره شده به تمام گروه‌ها
-            applyState: function() {
-                console.log('🔄 Applying saved collapse states...');
-                const state = this.getState();
-                
-                $('.block-rounded.block-bordered').each(function() {
-                    const $block = $(this);
-                    const groupTitle = $block.find('.block-title').text().trim();
-                    const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
-                    
-                    const isCollapsed = state[groupKey] || false;
-                    
-                    if (isCollapsed) {
-                        $block.find('.block-content').hide();
-                        $block.find('.btn-block-option i').removeClass('si-arrow-up').addClass('si-arrow-down');
-                        console.log('📦 Collapsed:', groupTitle);
-                    } else {
-                        $block.find('.block-content').show();
-                        $block.find('.btn-block-option i').removeClass('si-arrow-down').addClass('si-arrow-up');
-                        console.log('📂 Expanded:', groupTitle);
-                    }
-                });
-            },
-
-            // بازکردن همه گروه‌ها
-            expandAll: function() {
-                console.log('📂 Expanding all groups...');
-                $('.block-rounded.block-bordered').each(function() {
-                    const $block = $(this);
-                    const groupTitle = $block.find('.block-title').text().trim();
-                    const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
-                    
-                    $block.find('.block-content').slideDown(300);
-                    $block.find('.btn-block-option i').removeClass('si-arrow-down').addClass('si-arrow-up');
-                    
-                    GroupCollapseManager.saveState(groupKey, false);
-                });
-            },
-
-            // بستن همه گروه‌ها
-            collapseAll: function() {
-                console.log('📦 Collapsing all groups...');
-                $('.block-rounded.block-bordered').each(function() {
-                    const $block = $(this);
-                    const groupTitle = $block.find('.block-title').text().trim();
-                    const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
-                    
-                    $block.find('.block-content').slideUp(300);
-                    $block.find('.btn-block-option i').removeClass('si-arrow-up').addClass('si-arrow-down');
-                    
-                    GroupCollapseManager.saveState(groupKey, true);
-                });
-            }
-        };
-
-        // ⭐⭐⭐ Event handler برای کلیک روی آمار سریع
-        $(document).on('click', '.quick-status-filter', function(e) {
-            e.preventDefault();
-            
-            const $this = $(this);
-            const statusFilter = parseInt($this.data('filter'));
-            
-            console.log('🎯 Quick Status Filter clicked:', statusFilter);
-            console.log('📊 Current grouping:', TaskListConfig.currentGrouping);
-            
-            // نمایش loading
-            $('#task-groups-container').html('<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-3">در حال بارگذاری...</p></div>');
-            
-            // ارسال درخواست AJAX
-            $.ajax({
-                url: TaskListConfig.urls.changeStatusFilter,
-                type: 'POST',
-                data: {
-                    viewType: TaskListConfig.currentViewType,
-                    grouping: TaskListConfig.currentGrouping,  // ⭐ استفاده از گروه‌بندی فعلی
-                    statusFilter: statusFilter,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                success: function(response) {
-                    console.log('✅ Status filter changed:', response);
-                    
-                    if (response.status === 'update-view' && response.viewList && response.viewList.length > 0) {
-                        response.viewList.forEach(function(item) {
-                            if (item.elementId && item.view && item.view.result) {
-                                $('#' + item.elementId).html(item.view.result);
-                                
-                                // ⭐⭐⭐ بازیابی وضعیت باز/بسته
-                                setTimeout(function() {
-                                    GroupCollapseManager.applyState();
-                                    initializeGroupToggle();
-                                }, 100);
-                                
-                                // Process URLs
-                                if (typeof ModalUtils !== 'undefined') {
-                                    ModalUtils.processUrlsInContainer($('#' + item.elementId));
-                                }
-                            }
-                        });
-                        
-                        // ⭐⭐⭐ بروزرسانی متغیر config
-                        TaskListConfig.currentStatusFilter = statusFilter;
-                        // ⭐ گروه‌بندی تغییر نمی‌کنه، پس نیازی به بروزرسانی نداره
-                        
-                        // بروزرسانی کلاس active در آمار
-                        $('.quick-status-filter').each(function() {
-                            const $card = $(this).find('.p-3');
-                            $card.removeClass('border border-2 border-primary border-success border-danger border-warning');
-                        });
-                        
-                        $this.find('.p-3').addClass('border border-2');
-                        
-                        // اضافه کردن رنگ متناسب
-                        if (statusFilter === 1) { // Pending
-                            $this.find('.p-3').addClass('border-primary');
-                        } else if (statusFilter === 2) { // Completed
-                            $this.find('.p-3').addClass('border-success');
-                        } else if (statusFilter === 3) { // Overdue
-                            $this.find('.p-3').addClass('border-danger');
-                        } else if (statusFilter === 4) { // Urgent
-                            $this.find('.p-3').addClass('border-warning');
-                        }
-                        
-                        console.log('✅ Filter applied with grouping:', TaskListConfig.currentGrouping);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('❌ Error changing status filter:', error);
-                    $('#task-groups-container').html('<div class="alert alert-danger">خطا در بارگذاری اطلاعات</div>');
-                }
-            });
-        });
-
-        // ========================================
-        // ⭐⭐⭐ Event Handlers
-        // ========================================
-
-        // دکمه بازکردن همه
-        $(document).on('click', '#expand-all-groups', function() {
-            GroupCollapseManager.expandAll();
-        });
-
-        // دکمه بستن همه
-        $(document).on('click', '#collapse-all-groups', function() {
-            GroupCollapseManager.collapseAll();
-        });
-
-        // ⭐⭐⭐ Initialize group toggle با ذخیره وضعیت
-        function initializeGroupToggle() {
-            $(document).off('click', '.btn-block-option').on('click', '.btn-block-option', function(e) {
-                e.preventDefault();
-                
-                const $btn = $(this);
-                const $block = $btn.closest('.block');
-                const $content = $block.find('.block-content');
-                const $icon = $btn.find('i');
-                
-                // دریافت عنوان گروه برای ذخیره وضعیت
-                const groupTitle = $block.find('.block-title').text().trim();
-                const groupKey = 'group_' + groupTitle.replace(/\s+/g, '_');
-                
-                if ($content.is(':visible')) {
-                    $content.slideUp(300);
-                    $icon.removeClass('si-arrow-up').addClass('si-arrow-down');
-                    GroupCollapseManager.saveState(groupKey, true);
-                } else {
-                    $content.slideDown(300);
-                    $icon.removeClass('si-arrow-down').addClass('si-arrow-up');
-                    GroupCollapseManager.saveState(groupKey, false);
-                }
-            });
-        }
-
-        // ⭐⭐⭐ Document Ready
-        $(document).ready(function() {
-            console.log('🚀 Initializing Task List with Collapse Manager...');
-            
-            // اعمال وضعیت ذخیره شده
-            GroupCollapseManager.applyState();
-            
-            // فعال‌سازی toggle
-            initializeGroupToggle();
-        });
     </script>
+    
+    <!-- ⭐⭐⭐ فقط یک بار فایل اصلی رو لود کن -->
+    <script src="~/assets/js/TaskList.js"></script>
     
     <style>
         /* ⭐ افکت hover برای آمار کلیک‌پذیر */

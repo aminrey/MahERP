@@ -574,7 +574,10 @@ namespace MahERP.DataModelLayer.ViewModels
     {
 
         [Display(Name = "نوع نمایش")]
-        public TaskViewType ViewType { get; set; } = TaskViewType.MyTasks;
+        public TaskViewType? ViewType { get; set; }
+
+        [Display(Name = "گروه‌بندی")]
+        public TaskGroupingType? Grouping { get; set; }
 
         [Display(Name = "شعبه")]
         public int? BranchId { get; set; }
@@ -588,6 +591,7 @@ namespace MahERP.DataModelLayer.ViewModels
         [Display(Name = "نوع تسک")]
         public TaskPriorityFilter? TaskPriority { get; set; }
 
+        [Display(Name = "دسته‌بندی")]
         public int? CategoryId { get; set; }
 
         [Display(Name = "وضعیت تسک")]
@@ -604,7 +608,46 @@ namespace MahERP.DataModelLayer.ViewModels
 
         [Display(Name = "جستجو در متن")]
         public string? SearchTerm { get; set; }
+        
         public List<byte>? StatusFilters { get; set; }
+
+        // ⭐⭐⭐ فیلدهای جدید برای فیلتر پیشرفته
+
+        /// <summary>
+        /// تاریخ ساخت تسک (از) - شمسی
+        /// </summary>
+        [Display(Name = "تاریخ ساخت (از)")]
+        public string? CreateDateFromPersian { get; set; }
+
+        /// <summary>
+        /// تاریخ ساخت تسک (تا) - شمسی
+        /// </summary>
+        [Display(Name = "تاریخ ساخت (تا)")]
+        public string? CreateDateToPersian { get; set; }
+
+        /// <summary>
+        /// نام تسک برای جستجو
+        /// </summary>
+        [Display(Name = "نام تسک")]
+        public string? TaskTitle { get; set; }
+
+        /// <summary>
+        /// کد تسک برای جستجو
+        /// </summary>
+        [Display(Name = "کد تسک")]
+        public string? TaskCode { get; set; }
+
+        /// <summary>
+        /// سازنده تسک
+        /// </summary>
+        [Display(Name = "سازنده تسک")]
+        public string? CreatorUserId { get; set; }
+
+        /// <summary>
+        /// اعضای تسک
+        /// </summary>
+        [Display(Name = "عضو تسک")]
+        public string? AssignedUserId { get; set; }
 
 
         // خاصیت کمکی برای تشخیص وجود فیلتر فعال
@@ -615,6 +658,12 @@ namespace MahERP.DataModelLayer.ViewModels
             CategoryId.HasValue ||
             StakeholderId.HasValue ||
             !string.IsNullOrEmpty(SearchTerm) ||
+            !string.IsNullOrEmpty(TaskTitle) || // ⭐ جدید
+            !string.IsNullOrEmpty(TaskCode) || // ⭐ جدید
+            !string.IsNullOrEmpty(CreatorUserId) || // ⭐ جدید
+            !string.IsNullOrEmpty(AssignedUserId) || // ⭐ جدید
+            !string.IsNullOrEmpty(CreateDateFromPersian) || // ⭐ جدید
+            !string.IsNullOrEmpty(CreateDateToPersian) || // ⭐ جدید
             (TaskPriority.HasValue && TaskPriority != TaskPriorityFilter.All) ||
             (TaskStatus.HasValue && TaskStatus != TaskStatusFilter.All);
     }

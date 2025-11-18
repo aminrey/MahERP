@@ -42,6 +42,7 @@
     <link href="/assets/media/favicons/favicon-192x192.png" rel="icon" sizes="192x192" type="image/png" />
     <link href="/assets/media/favicons/apple-touch-icon-180x180.png" rel="apple-touch-icon" sizes="180x180" />
     <!-- END Icons -->
+    
     <!-- Stylesheets -->
     <!-- Page JS Plugins CSS -->
     <link href="/assets/js/plugins/datatables-bs5/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
@@ -52,7 +53,7 @@
     <link href="/assets/js/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <link href="/assets/js/plugins/dropzone/min/dropzone.min.css" rel="stylesheet" />
     <link href="/assets/js/plugins/flatpickr/flatpickr.min.css" rel="stylesheet" />
-
+	<link href="~/assets/js/plugins/persiandatepicker/persian-datepicker.min.css" rel="stylesheet" />
     <!-- Dashmix framework -->
     <link href="/assets/css/dashmix.min.css" id="css-main" rel="stylesheet" />
     <link href="~/assets/js/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
@@ -66,7 +67,9 @@
     <!-- Custom CSS -->
     <link href="/assets/css/custom-fonts.css" rel="stylesheet" />
     <link href="/assets/css/CustomStyle.css" rel="stylesheet" />
+
     @RenderSection("styles", required: false)
+
 
 </head>
 
@@ -94,10 +97,16 @@
         <!-- END Footer -->
     </div>
     <!-- END Page Container -->
+    
+    <!-- ⭐⭐⭐ Core JavaScript Libraries - Load in Order -->
+    <!-- jQuery is already loaded in HEAD -->
+    
     <!-- Dashmix JS -->
     <script src="/assets/js/dashmix.app.min.js"></script>
     <script src="/assets/js/lib/jquery.min.js"></script>
+
     <script src="/assets/js/main.js"></script>
+
 
     <!-- Page JS Plugins -->
     <script src="/assets/js/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
@@ -119,6 +128,12 @@
     <script src="/assets/js/plugins/raty-js/jquery.raty.js"></script>
     <script src="/assets/js/plugins/flatpickr/flatpickr.min.js"></script>
 	<script src="~/assets/js/signalr.js"></script>
+    
+    <!-- ⭐⭐⭐ Persian DatePicker (باید بعد از jQuery لود شود) -->
+    <script src="~/assets/js/plugins/persiandatepicker/persian-date.min.js"></script>
+    <script src="~/assets/js/plugins/persiandatepicker/persian-datepicker.min.js"></script>
+    <script src="~/assets/js/plugins/persiandatepicker/persian-datepicker-init.js"></script>
+
     <!-- Page JS Code -->
     <script src="/assets/js/pages/be_tables_datatables.min.js"></script>
     <script src="/assets/js/pages/be_comp_rating.min.js"></script>
@@ -127,6 +142,108 @@
     <script src="~/lib/tinymce/tinymce.min.js"></script>
     <script src="~/assets/js/tinymceConfig.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.14/signalr.min.js"></script>
+
+    <!-- ⭐⭐⭐ Global Re-initialization Function -->
+    <script>
+        // ⭐⭐⭐ تابع سراسری برای Re-initialize کردن تمام plugin‌ها بعد از AJAX
+        window.reinitializePlugins = function(container) {
+            var $container = container ? $(container) : $(document);
+
+            try {
+                console.log('🔄 Re-initializing plugins...');
+
+                // 1. Re-initialize Dashmix Helpers
+                if (typeof Dashmix !== 'undefined' && Dashmix.helpersOnLoad) {
+                    Dashmix.helpersOnLoad([
+                        'js-flatpickr', 
+                        'jq-datepicker', 
+                        'jq-select2', 
+                        'dm-table-tools-sections', 
+                        'jq-slick', 
+                        'bs-tooltip', 
+                        'jq-notify'
+                    ]);
+                }
+
+                // 2. Re-initialize Select2
+                $container.find('.js-select2:not(.select2-hidden-accessible)').each(function() {
+                    $(this).select2({
+                        width: '100%',
+                        dir: 'rtl'
+                    });
+                });
+
+                // 3. ⭐⭐⭐ Re-initialize Persian DatePicker
+                if (typeof window.initPersianDatePicker !== 'undefined') {
+                    window.initPersianDatePicker(container);
+                }
+
+                // 4. Re-initialize Bootstrap Tooltips
+                $container.find('[data-bs-toggle="tooltip"]').each(function() {
+                    if (!$(this).data('bs.tooltip')) {
+                        new bootstrap.Tooltip(this);
+                    }
+                });
+
+                // 5. Re-initialize Bootstrap Popovers
+                $container.find('[data-bs-toggle="popover"]').each(function() {
+                    if (!$(this).data('bs.popover')) {
+                        new bootstrap.Popover(this);
+                    }
+                });
+
+                // 6. Re-initialize DataTables (if exists)
+                $container.find('.js-dataTable-full:not(.dataTable)').each(function() {
+                    if ($.fn.DataTable && !$.fn.DataTable.isDataTable(this)) {
+                        $(this).DataTable({
+                            pageLength: 10,
+                            lengthMenu: [[5, 10, 15, 20], [5, 10, 15, 20]],
+                            autoWidth: false,
+                            language: {
+                                url: '/assets/js/plugins/datatables/i18n/Persian.json'
+                            }
+                        });
+                    }
+                });
+
+                // 7. Re-initialize Flatpickr
+                $container.find('.js-flatpickr:not(.flatpickr-input)').each(function() {
+                    if (window.flatpickr) {
+                        flatpickr(this, {
+                            dateFormat: 'Y-m-d',
+                            locale: 'fa'
+                        });
+                    }
+                });
+
+                console.log('✅ Plugins re-initialized successfully');
+            } catch (error) {
+                console.warn('⚠️ Error re-initializing plugins:', error);
+            }
+        };
+
+        // ⭐⭐⭐ تابع سراسری برای Re-initialize DataTable
+        window.reinitDataTable = function(tableId, options) {
+            try {
+                if ($.fn.DataTable.isDataTable('#' + tableId)) {
+                    $('#' + tableId).DataTable().destroy();
+                }
+                $('#' + tableId).DataTable(options);
+            } catch (error) {
+                console.warn('مشکل در initialize کردن DataTable:', error);
+            }
+        };
+
+        // ⭐⭐⭐ Initialize همه چیز در بارگذاری اولیه صفحه
+        $(document).ready(function() {
+            reinitializePlugins();
+            
+            // جلوگیری از نمایش خطاهای DataTable
+            if ($.fn.dataTable) {
+                $.fn.dataTable.ext.errMode = 'none';
+            }
+        });
+    </script>
 
     <!-- Page JS Helpers -->
     <script>
@@ -174,25 +291,11 @@
         }
     </script>
 
-    <script>
-        // جلوگیری از نمایش خطاهای DataTable
-        $.fn.dataTable.ext.errMode = 'none';
-
-        window.reinitDataTable = function(tableId, options) {
-            try {
-                if ($.fn.DataTable.isDataTable('#' + tableId)) {
-                    $('#' + tableId).DataTable().destroy();
-                }
-                $('#' + tableId).DataTable(options);
-            } catch (error) {
-                console.warn('مشکل در initialize کردن DataTable:', error);
-            }
-        };
-    </script>
-
     <script src="~/assets/js/methods.js"></script>
-            <script src="/assets/js/notifications.js"></script>
+    <script src="/assets/js/notifications.js"></script>
 
+  
+    <!-- ⭐⭐⭐ Page-specific Scripts - Load LAST -->
     @RenderSection("Scripts", required: false)
 </body>
 </html>

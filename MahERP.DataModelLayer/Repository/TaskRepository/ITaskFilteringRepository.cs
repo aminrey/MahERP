@@ -42,7 +42,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// <summary>
         /// اعمال فیلترها روی لیست تسک‌ها
         /// </summary>
-        List<Tasks> ApplyFilters(List<Tasks> tasks, TaskFilterViewModel filters);
+        List<Tasks> ApplyFilters(List<Tasks> tasks, TaskFilterViewModel filters, string userId = null);
 
         /// <summary>
         /// محاسبه آمار لیست

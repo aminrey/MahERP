@@ -943,6 +943,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 };
             }
         }
+
         /// <summary>
         /// اعمال فیلترهای اضافی بر روی لیست تسک‌ها
         /// </summary>
@@ -4953,7 +4954,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return null;
             }
         }
-
         public async Task<TaskListViewModel> GetTaskListAsync(
     string userId,
     TaskViewType viewType,
@@ -4972,8 +4972,49 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     Filters = filters ?? new TaskFilterViewModel()
                 };
 
-                // ⭐⭐⭐ استفاده از FilteringRepository
-                List<Tasks> tasks = viewType switch
+                // ⭐⭐⭐ مرحله 1: دریافت تسک‌ها بدون فیلتر وضعیت برای محاسبه Stats
+                var filtersWithoutStatus = filters != null ? new TaskFilterViewModel
+                {
+                    ViewType = filters.ViewType,
+                    Grouping = filters.Grouping,
+                    BranchId = filters.BranchId,
+                    TeamId = filters.TeamId,
+                    UserId = filters.UserId,
+                    TaskPriority = filters.TaskPriority,
+                    CategoryId = filters.CategoryId,
+                    TaskStatus = null, // ⭐ حذف فیلتر وضعیت
+                    StakeholderId = filters.StakeholderId,
+                    FromDate = filters.FromDate,
+                    ToDate = filters.ToDate,
+                    SearchTerm = filters.SearchTerm,
+                    CreateDateFromPersian = filters.CreateDateFromPersian,
+                    CreateDateToPersian = filters.CreateDateToPersian,
+                    TaskTitle = filters.TaskTitle,
+                    TaskCode = filters.TaskCode,
+                    CreatorUserId = filters.CreatorUserId,
+                    AssignedUserId = filters.AssignedUserId
+                } : null;
+
+                // دریافت تسک‌ها بدون فیلتر وضعیت
+                List<Tasks> allTasks = viewType switch
+                {
+                    TaskViewType.MyTasks => await _filteringRepository.GetMyTasksAsync(userId, filtersWithoutStatus),
+                    TaskViewType.AssignedByMe => await _filteringRepository.GetAssignedByMeTasksAsync(userId, filtersWithoutStatus),
+                    TaskViewType.Supervised => await _filteringRepository.GetSupervisedTasksAsync(userId, filtersWithoutStatus),
+                    _ => new List<Tasks>()
+                };
+
+                var uniqueAllTasks = allTasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
+
+                // ⭐⭐⭐ مرحله 2: محاسبه Stats از همه تسک‌ها (بدون فیلتر وضعیت)
+                model.Stats = _filteringRepository.CalculateStats(uniqueAllTasks, userId);
+                Console.WriteLine($"📊 Stats (از {uniqueAllTasks.Count} تسک):");
+                Console.WriteLine($"   - Pending: {model.Stats.TotalPending}");
+                Console.WriteLine($"   - Completed: {model.Stats.TotalCompleted}");
+                Console.WriteLine($"   - Overdue: {model.Stats.TotalOverdue}");
+
+                // ⭐⭐⭐ مرحله 3: دریافت تسک‌های فیلتر شده (با فیلتر وضعیت) برای نمایش
+                List<Tasks> filteredTasks = viewType switch
                 {
                     TaskViewType.MyTasks => await _filteringRepository.GetMyTasksAsync(userId, filters),
                     TaskViewType.AssignedByMe => await _filteringRepository.GetAssignedByMeTasksAsync(userId, filters),
@@ -4981,14 +5022,11 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     _ => new List<Tasks>()
                 };
 
-                // ⭐ حذف تکرار
-                var uniqueTasks = tasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
+                var uniqueTasks = filteredTasks.GroupBy(t => t.Id).Select(g => g.First()).ToList();
+                Console.WriteLine($"🔍 تسک‌های فیلتر شده برای نمایش: {uniqueTasks.Count}");
 
-                // ⭐⭐⭐ اصلاح: پاس دادن viewType به GroupTasksAsync
+                // ⭐⭐⭐ مرحله 4: گروه‌بندی و نمایش
                 model.TaskGroups = await _groupingRepository.GroupTasksAsync(uniqueTasks, grouping, userId, viewType);
-
-                // ⭐⭐⭐ استفاده از FilteringRepository برای آمار
-                model.Stats = _filteringRepository.CalculateStats(uniqueTasks, userId);
 
                 // ⭐ پر کردن لیست‌های قدیمی (compatibility)
                 model.Tasks = uniqueTasks.Select(t => MapToTaskViewModel(t)).ToList();
