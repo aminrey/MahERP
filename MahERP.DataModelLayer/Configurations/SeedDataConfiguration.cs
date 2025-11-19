@@ -311,6 +311,26 @@ namespace MahERP.DataModelLayer.Configurations
                     AllowUserCustomization = true,
                     DisplayOrder = 5,
                     RelatedEventTypes = "[4,5,8,10,11,14]" // ⭐ TaskCommentAdded, TaskUpdated, TaskStatusChanged, CommentMentioned, TaskPriorityChanged, TaskWorkLog
+                },
+                
+                // ⭐⭐⭐ یادآوری سفارشی تسک
+                new NotificationTypeConfig
+                {
+                    Id = 6,
+                    ModuleConfigId = 1,
+                    TypeCode = "TASK_CUSTOM_REMINDER",
+                    TypeNameFa = "یادآوری سفارشی تسک",
+                    Description = "یادآوری‌های سفارشی که کاربر برای تسک‌های خود یا اعضای تیم تنظیم می‌کند",
+                    CoreNotificationTypeGeneral = 6, // یادآوری
+                    CoreNotificationTypeSpecific = 15, // CustomTaskReminder
+                    IsActive = true,
+                    DefaultPriority = 1,
+                    SupportsEmail = true,
+                    SupportsSms = true,
+                    SupportsTelegram = true,
+                    AllowUserCustomization = true,
+                    DisplayOrder = 6,
+                    RelatedEventTypes = "[15]" // ⭐ فقط CustomTaskReminder
                 }
             );
         }

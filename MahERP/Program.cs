@@ -184,6 +184,10 @@ builder.Services.AddHostedService<NotificationProcessingBackgroundService>();
 
 // ⭐⭐⭐ NEW: سرویس زمان‌بندی اعلان‌های دوره‌ای
 builder.Services.AddHostedService<ScheduledNotificationBackgroundService>();
+
+// ⭐⭐⭐ NEW: سرویس پردازش یادآوری‌های تسک
+builder.Services.AddHostedService<TaskReminderBackgroundService>();
+
 builder.Services.AddHostedService<TelegramPollingBackgroundService>();
 var app = builder.Build();
 

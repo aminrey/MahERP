@@ -205,7 +205,8 @@
                         </label>
                         <input asp-for="StartDatePersian" 
                                class="form-control js-flatpickr" 
-                               placeholder="انتخاب تاریخ..." />
+                               placeholder="انتخاب تاریخ..."
+                               data-persian-picker="true" />
                         <span asp-validation-for="StartDatePersian" class="text-danger"></span>
                     </div>
                     <div class="col-md-6 mb-4">
@@ -215,7 +216,8 @@
                         </label>
                         <input asp-for="EndDatePersian" 
                                class="form-control js-flatpickr" 
-                               placeholder="انتخاب تاریخ..." />
+                               placeholder="انتخاب تاریخ..."
+                               data-persian-picker="true" />
                         <span asp-validation-for="EndDatePersian" class="text-danger"></span>
                     </div>
                 </div>
@@ -257,14 +259,10 @@
 
 <script>
 $(document).ready(function() {
-    // راه‌اندازی تقویم شمسی
-    $('.js-flatpickr').each(function() {
-        new mds.MdsPersianDateTimePicker(this, {
-            targetTextSelector: this,
-            enableTimePicker: false,
-            textFormat: 'yyyy/MM/dd'
-        });
-    });
+    // ⭐⭐⭐ راه‌اندازی Persian DatePicker
+    if (typeof window.initPersianDatePicker === 'function') {
+        window.initPersianDatePicker($('#taskReminderForm'));
+    }
 
     // تنظیم اولیه
     updateReminderFields();

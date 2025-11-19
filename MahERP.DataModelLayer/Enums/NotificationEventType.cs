@@ -72,7 +72,12 @@
         /// <summary>
         /// ثبت کار در تسک
         /// </summary>
-        TaskWorkLog = 14
+        TaskWorkLog = 14,
+
+        /// <summary>
+        /// یادآوری سفارشی تسک (کاربر تعیین می‌کند)
+        /// </summary>
+        CustomTaskReminder = 15
     }
 
     /// <summary>
