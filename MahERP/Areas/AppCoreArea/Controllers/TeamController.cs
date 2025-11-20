@@ -37,8 +37,8 @@ namespace MahERP.Areas.AppCoreArea.Controllers
         private readonly IBranchRepository _branchRepository;
         private readonly IUserManagerRepository _userRepository;
         private readonly IMapper _mapper;
+        private readonly ITaskRepository _taskrepository;
         private new readonly UserManager<AppUsers> _userManager;
-        private readonly ITaskVisibilityRepository _taskVisibilityRepository;
 
         public TeamController(
             IUnitOfWork uow,
@@ -50,7 +50,8 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             IBranchRepository branchRepository,
             IUserManagerRepository userRepository,
             IMapper mapper, IBaseRepository BaseRepository,
-            ITaskVisibilityRepository taskVisibilityRepository, ModuleTrackingBackgroundService moduleTracking,
+           ModuleTrackingBackgroundService moduleTracking,
+           ITaskRepository taskrepository,
             IModuleAccessService moduleAccessService)
 
 
@@ -61,7 +62,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             _userRepository = userRepository;
             _mapper = mapper;
             _userManager = userManager;
-            _taskVisibilityRepository = taskVisibilityRepository;
+            _taskrepository = taskrepository;
         }
 
         #region Chart Views
@@ -116,7 +117,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                 return RedirectToAction("ErrorView", "Home");
 
             // استفاده از repository به جای service
-            var chart = await _taskVisibilityRepository.GenerateVisibilityChartAsync(branchId);
+            var chart = await _taskrepository.GenerateVisibilityChartAsync(branchId);
 
             if (chart == null)
                 return RedirectToAction("ErrorView", "Home");
@@ -2289,7 +2290,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                 // برای هر عضو، ناظرانش را پیدا کن
                 foreach (var member in members.Where(m => m.IsActive))
                 {
-                    var memberSupervisors = await _taskVisibilityRepository.GetUserSupervisorsInTeamAsync(
+                    var memberSupervisors = await _taskrepository.GetUserSupervisorsInTeamAsync(
                         member.UserId,
                         teamId,
                         team.BranchId

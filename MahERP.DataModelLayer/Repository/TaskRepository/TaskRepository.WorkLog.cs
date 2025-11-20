@@ -14,7 +14,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         #region Task Work Log Methods
 
         /// <summary>
-        /// ثبت گزارش کار انجام شده روی تسک (سطح کلی تسک)
+        /// ثبت کار انجام شده روی تسک
         /// </summary>
         public async Task<(bool Success, string Message, int? WorkLogId)> AddTaskWorkLogAsync(
             int taskId,
@@ -25,16 +25,15 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         {
             try
             {
-                // بررسی اینکه کاربر عضو تسک است
-                var isAssigned = await _context.TaskAssignment_Tbl
-                    .AnyAsync(ta => ta.TaskId == taskId && ta.AssignedUserId == userId);
+                // بررسی دسترسی کاربر
+                var assignment = await _context.TaskAssignment_Tbl
+                    .FirstOrDefaultAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
 
-                if (!isAssigned)
+                if (assignment == null)
                 {
                     return (false, "شما عضو این تسک نیستید", null);
                 }
 
-                // ایجاد WorkLog
                 var workLog = new TaskWorkLog
                 {
                     TaskId = taskId,
@@ -43,127 +42,93 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     WorkDate = DateTime.Now,
                     DurationMinutes = durationMinutes,
                     ProgressPercentage = progressPercentage,
-                    CreatedDate = DateTime.Now
+                    CreatedDate = DateTime.Now,
+                    IsDeleted = false
                 };
 
                 _context.TaskWorkLog_Tbl.Add(workLog);
                 await _context.SaveChangesAsync();
 
-                // ⭐ ثبت در تاریخچه
+                // ثبت در تاریخچه
                 await _taskHistoryRepository.LogTaskWorkLogAddedAsync(
-                    taskId,
-                    userId,
-                    workLog.Id,
-                    workDescription,
-                    durationMinutes
-                );
+             taskId,
+             userId,
+             workLog.Id,
+             workDescription,
+             durationMinutes
+         );
 
                 return (true, "گزارش کار با موفقیت ثبت شد", workLog.Id);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error in AddTaskWorkLogAsync: {ex.Message}");
                 return (false, $"خطا در ثبت گزارش کار: {ex.Message}", null);
             }
         }
 
+
         /// <summary>
-        /// دریافت لیست گزارش کارهای یک تسک
+        /// دریافت لیست WorkLog های یک تسک
         /// </summary>
-        public async Task<List<TaskWorkLogViewModel>> GetTaskWorkLogsAsync(
-            int taskId,
-            int take = 0)
+        public async Task<List<TaskWorkLogViewModel>> GetTaskWorkLogsAsync(int taskId, int take = 0)
         {
-            try
+            var query = _context.TaskWorkLog_Tbl
+                .Include(w => w.User)
+                .Where(w => w.TaskId == taskId && !w.IsDeleted)
+                .OrderByDescending(w => w.WorkDate);
+
+            if (take > 0)
             {
-                var query = _context.TaskWorkLog_Tbl
-                    .Include(wl => wl.User)
-                    .Include(wl => wl.Task)
-                    .Where(wl => wl.TaskId == taskId)
-                    .OrderByDescending(wl => wl.WorkDate);
-
-                if (take > 0)
-                {
-                    query = (IOrderedQueryable<TaskWorkLog>)query.Take(take);
-                }
-
-                var workLogs = await query.ToListAsync();
-
-                return workLogs.Select(wl => new TaskWorkLogViewModel
-                {
-                    Id = wl.Id,
-                    TaskId = wl.TaskId,
-                    TaskTitle = wl.Task?.Title ?? "نامشخص",
-                    TaskCode = wl.Task?.TaskCode ?? "نامشخص",
-                    WorkDescription = wl.WorkDescription,
-                    WorkDate = wl.WorkDate,
-                    WorkDatePersian = ConvertDateTime.ConvertMiladiToShamsi(wl.WorkDate, "yyyy/MM/dd HH:mm"),
-                    DurationMinutes = wl.DurationMinutes,
-                    ProgressPercentage = wl.ProgressPercentage,
-                    UserId = wl.UserId,
-                    UserName = wl.User != null ? $"{wl.User.FirstName} {wl.User.LastName}" : "نامشخص",
-                    CreatedDate = wl.CreatedDate,
-                    CreatedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(wl.CreatedDate, "yyyy/MM/dd HH:mm")
-                }).ToList();
+                query = (IOrderedQueryable<TaskWorkLog>)query.Take(take);
             }
-            catch (Exception ex)
+
+            var workLogs = await query.ToListAsync();
+
+            return workLogs.Select(w => new TaskWorkLogViewModel
             {
-                Console.WriteLine($"❌ Error in GetTaskWorkLogsAsync: {ex.Message}");
-                return new List<TaskWorkLogViewModel>();
-            }
+                Id = w.Id,
+                TaskId = w.TaskId,
+                WorkDescription = w.WorkDescription,
+                WorkDate = w.WorkDate,
+                WorkDatePersian = ConvertDateTime.ConvertMiladiToShamsi(w.WorkDate, "yyyy/MM/dd HH:mm"),
+                DurationMinutes = w.DurationMinutes,
+                ProgressPercentage = w.ProgressPercentage,
+                UserId = w.UserId,
+                UserName = w.User != null ? $"{w.User.FirstName} {w.User.LastName}" : "نامشخص",
+                CreatedDate = w.CreatedDate,
+                CreatedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(w.CreatedDate, "yyyy/MM/dd HH:mm")
+            }).ToList();
         }
 
         /// <summary>
         /// آماده‌سازی مودال ثبت کار انجام شده روی تسک
         /// </summary>
-        public async Task<TaskWorkLogViewModel?> PrepareLogTaskWorkModalAsync(
-            int taskId,
-            string userId)
+        public async Task<TaskWorkLogViewModel?> PrepareLogTaskWorkModalAsync(int taskId, string userId)
         {
             try
             {
-                // بررسی عضویت کاربر در تسک
+                // بررسی دسترسی کاربر به تسک
                 var assignment = await _context.TaskAssignment_Tbl
-                    .Include(ta => ta.Task)
-                        .ThenInclude(t => t.TaskCategory)
-                    .FirstOrDefaultAsync(ta => ta.TaskId == taskId && ta.AssignedUserId == userId);
+                    .Include(a => a.Task)
+                    .FirstOrDefaultAsync(a => a.TaskId == taskId && a.AssignedUserId == userId);
 
                 if (assignment == null)
                 {
-                    return null;
+                    return null; // کاربر عضو این تسک نیست
                 }
 
+                // ⭐ دریافت اطلاعات تسک
                 var task = assignment.Task;
 
-                // محاسبه پیشرفت فعلی
-                var operations = await _context.TaskOperation_Tbl
-                    .Where(o => o.TaskId == taskId)
-                    .ToListAsync();
-
-                var currentProgress = 0;
-                if (operations.Any())
-                {
-                    currentProgress = (int)((double)operations.Count(o => o.IsCompleted) / operations.Count * 100);
-                }
-
-                // محاسبه مجموع زمان کار
-                var totalWorkTime = await _context.TaskWorkLog_Tbl
-                    .Where(wl => wl.TaskId == taskId)
-                    .SumAsync(wl => wl.DurationMinutes ?? 0);
-
-                return new TaskWorkLogViewModel
+                // ⭐ ایجاد ViewModel
+                var model = new TaskWorkLogViewModel
                 {
                     TaskId = taskId,
-                    TaskTitle = task.Title,
-                    TaskCode = task.TaskCode,
-                    CategoryTitle = task.TaskCategory?.Title,
-                    UserId = userId,
-                    WorkDate = DateTime.Now,
-                    ProgressPercentage = currentProgress,
-                    TotalWorkTime = totalWorkTime,
-                    DurationMinutes = null,
-                    WorkDescription = string.Empty
+                    TaskTitle = task?.Title ?? "نامشخص",
+                    TaskCode = task?.TaskCode ?? string.Empty
                 };
+
+                return model;
             }
             catch (Exception ex)
             {
@@ -171,6 +136,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return null;
             }
         }
+
 
         #endregion
     }

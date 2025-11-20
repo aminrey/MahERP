@@ -50,7 +50,6 @@ builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository
 builder.Services.AddScoped<TaskCodeGenerator>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IMainDashboardRepository, MainDashboardRepository>();
-builder.Services.AddScoped<ITaskVisibilityRepository, TaskVisibilityRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
 builder.Services.AddScoped<ITaskOperationsRepository, TaskOperationsRepository>(); // ⭐ جدید
@@ -62,7 +61,6 @@ builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IOrganizationGroupRepository, OrganizationGroupRepository>();
 builder.Services.AddScoped<IBaseRepository, BaseRepository>();
 builder.Services.AddScoped<ITaskGroupingRepository, TaskGroupingRepository>();
-builder.Services.AddScoped<ITaskFilteringRepository, TaskFilteringRepository>();
 builder.Services.AddScoped<IModuleAccessService, ModuleAccessService>();
 // ⭐⭐⭐ Notification System Repositories & Services
 builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepository>();
@@ -84,7 +82,6 @@ builder.Services.AddHostedService<SmsDeliveryCheckService>();
 builder.Services.AddHostedService<EmailBackgroundService>();
 
 
-builder.Services.AddScoped<ITaskVisibilityRepository, TaskVisibilityRepository>();
 
 
 // ⭐ اضافه کنید - SMS Services:
@@ -122,6 +119,10 @@ builder.Services.AddHttpContextAccessor(); // اضافه شده
 // ⭐⭐⭐ Background Job Services
 builder.Services.AddScoped<IBackgroundJobRepository, BackgroundJobRepository>();
 builder.Services.AddScoped<IBackgroundJobNotificationService, BackgroundJobNotificationService>();
+
+// ⭐⭐⭐ NEW: System Seed Data Services
+builder.Services.AddScoped<ISystemSeedDataRepository, SystemSeedDataRepository>();
+builder.Services.AddHostedService<SystemSeedDataBackgroundService>();
 
 // Configuration for Identity options
 builder.Services.Configure<IdentityOptions>(options =>

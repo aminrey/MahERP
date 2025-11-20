@@ -19,102 +19,80 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         public async Task<TaskDashboardViewModel> GetTaskDashboardDataAsync(string userId)
         {
-            var dashboard = new TaskDashboardViewModel();
-         
-            // دریافت تسک‌های فوری
-            dashboard.UrgentTasks = await GetUrgentTasksAsync(userId, 5);
-
-            // دریافت فعالیت‌های اخیر
-            dashboard.RecentActivities = await GetRecentTaskActivitiesAsync(userId, 10);
-
-            // آمار کلی
-            dashboard.UserStats = await GetUserTaskStatsAsync(userId);
-
-
-            return dashboard;
-        }
-
-        /// <summary>
-        /// دریافت تسک‌های واگذار شده توسط کاربر
-        /// </summary>
-        public async Task<TasksListViewModel> GetTasksAssignedByUserAsync(
-            string userId,
-            TaskFilterViewModel filters)
-        {
-            var query = _context.Tasks_Tbl
-                .Include(t => t.Creator)
-                .Include(t => t.TaskAssignments)
-                    .ThenInclude(ta => ta.AssignedUser)
-                .Include(t => t.TaskCategory)
-                .Include(t => t.TaskOperations)
-                .Where(t => t.CreatorUserId == userId && !t.IsDeleted)
-                .AsQueryable();
-
-            // اعمال فیلترها
-            query = ApplyFiltersToQuery(query, filters);
-
-            var tasks = await query
-                .OrderByDescending(t => t.CreateDate)
-                .ToListAsync();
-
-            var taskViewModels = _mapper.Map<List<TaskViewModel>>(tasks);
-
-            var stats = CalculateUserTasksStats(taskViewModels);
-
-            return new TasksListViewModel
+            try
             {
-                Tasks = taskViewModels,
-                Stats = stats,
-                TotalCount = taskViewModels.Count
-            };
-        }
+                // دریافت آمار کلی
+                var stats = await GetUserTaskStatsAsync(userId);
 
-        /// <summary>
-        /// دریافت تسک‌های تحت نظارت کاربر
-        /// </summary>
-        public async Task<TasksListViewModel> GetSupervisedTasksAsync(
-            string userId,
-            TaskFilterViewModel filters)
-        {
-            // دریافت شناسه تسک‌های نظارتی
-            var supervisedTaskIds = await GetSupervisedTaskIdsAsync(userId);
+                // دریافت تسک‌های فوری
+                var urgentTasks = await GetUrgentTasksAsync(userId, 10);
 
-            if (!supervisedTaskIds.Any())
-            {
-                return new TasksListViewModel
+                // دریافت فعالیت‌های اخیر
+                var recentActivities = await GetRecentTaskActivitiesAsync(userId, 10);
+
+                return new TaskDashboardViewModel
                 {
-                    Tasks = new List<TaskViewModel>(),
-                    Stats = new TaskStatisticsViewModel(),
-                    TotalCount = 0
+                    UserStats = stats,
+                    UrgentTasks = urgentTasks,
+                    RecentActivities = recentActivities,
+
                 };
             }
-
-            var query = _context.Tasks_Tbl
-                .Include(t => t.Creator)
-                .Include(t => t.TaskAssignments)
-                    .ThenInclude(ta => ta.AssignedUser)
-                .Include(t => t.TaskCategory)
-                .Include(t => t.TaskOperations)
-                .Where(t => supervisedTaskIds.Contains(t.Id) && !t.IsDeleted)
-                .AsQueryable();
-
-            // اعمال فیلترها
-            query = ApplyFiltersToQuery(query, filters);
-
-            var tasks = await query
-                .OrderByDescending(t => t.CreateDate)
-                .ToListAsync();
-
-            var taskViewModels = _mapper.Map<List<TaskViewModel>>(tasks);
-
-            var stats = CalculateUserTasksStats(taskViewModels);
-
-            return new TasksListViewModel
+            catch (Exception ex)
             {
-                Tasks = taskViewModels,
-                Stats = stats,
-                TotalCount = taskViewModels.Count
-            };
+                throw new Exception($"خطا در دریافت داده‌های داشبورد: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تسک‌های واگذارشده توسط کاربر
+        /// </summary>
+        public async Task<TasksListViewModel> GetTasksAssignedByUserAsync(string userId, TaskFilterViewModel filters)
+        {
+            try
+            {
+                var query = _context.Tasks_Tbl
+                    .Where(t => t.CreatorUserId == userId && !t.IsDeleted)
+                    .Include(t => t.TaskAssignments)
+                        .ThenInclude(ta => ta.AssignedUser)
+                    .Include(t => t.TaskCategory)
+    .Include(t => t.Contact)
+    .Include(t => t.Organization)
+                                    .AsQueryable();
+
+                // اعمال فیلترها
+                query = ApplyFiltersToQuery(query, filters);
+
+                var tasks = await query.OrderByDescending(t => t.CreateDate).ToListAsync();
+                var taskViewModels = tasks.Select(MapToTaskViewModel).ToList();
+
+                // محاسبه آمار
+                var stats = new TasksListStatsViewModel
+                {
+                    TotalCount = taskViewModels.Count,
+                    FilteredCount = taskViewModels.Count,
+                    NeedsAttentionCount = taskViewModels.Count(t =>
+                        (t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2) ||
+                        (t.DueDate.HasValue && t.DueDate.Value.Date <= DateTime.Now.Date.AddDays(1))),
+                    OverdueCount = taskViewModels.Count(t =>
+                        t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2),
+                    CompletedCount = taskViewModels.Count(t => t.Status == 2),
+                    InProgressCount = taskViewModels.Count(t => t.Status == 1)
+                };
+
+                return new TasksListViewModel
+                {
+                    Tasks = taskViewModels,
+                    Stats = stats,
+                    Filters = filters,
+                    TotalCount = stats.TotalCount,
+                    FilteredCount = stats.FilteredCount
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت تسک‌های واگذار شده: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -122,155 +100,73 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         public async Task<List<TaskSummaryViewModel>> GetUrgentTasksAsync(string userId, int take = 5)
         {
-            var tasks = await _context.TaskAssignment_Tbl
-                .Include(ta => ta.Task)
-                    .ThenInclude(t => t.TaskCategory)
-                .Where(ta => ta.AssignedUserId == userId &&
-                            !ta.CompletionDate.HasValue &&
-                            !ta.Task.IsDeleted &&
-                            (ta.Task.Priority == 2 || ta.Task.Important))
-                .OrderBy(ta => ta.Task.DueDate)
-                .Take(take)
-                .Select(ta => new TaskSummaryViewModel
-                {
-                    TaskId = ta.TaskId,
-                    TaskCode = ta.Task.TaskCode,
-                    Title = ta.Task.Title,
-                    DueDate = ta.Task.DueDate,
-                    DueDatePersian = ta.Task.DueDate.HasValue
-                        ? ConvertDateTime.ConvertMiladiToShamsi(ta.Task.DueDate, "yyyy/MM/dd")
-                        : null,
-                    Priority = ta.Task.Priority,
-                    Important = ta.Task.Important,
-                    CategoryTitle = ta.Task.TaskCategory != null ? ta.Task.TaskCategory.Title : null,
-                    IsOverdue = ta.Task.DueDate.HasValue && ta.Task.DueDate < DateTime.Now
-                })
-                .ToListAsync();
+            try
+            {
+                var userTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: true);
 
-            return tasks;
+                var urgentTasks = userTasks.Where(t =>
+                    t.Priority == 2 || // فوری
+                    t.Important || // مهم
+                    (t.DueDate.HasValue && t.DueDate.Value.Date <= DateTime.Now.Date.AddDays(1)) // مهلت امروز یا فردا
+                ).OrderByDescending(t => t.Priority)
+                .ThenBy(t => t.DueDate)
+                .Take(take)
+                .Select(t => new TaskSummaryViewModel
+                {
+                    Id = t.Id,
+                    TaskCode = t.TaskCode,
+                    Title = t.Title,
+                    Priority = t.Priority,
+                    Important = t.Important,
+                    DueDate = t.DueDate,
+                    Status = t.Status,
+                    IsOverdue = t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && t.Status != 2,
+                    StatusText = GetTaskStatusText(t.Status),
+                    StatusBadgeClass = GetTaskStatusBadgeClass(t.Status),
+                    StakeholderName = GetTaskStakeholderName(t.Id)
+                    // DaysUntilDue محاسبه خودکار توسط Property انجام می‌شود
+                }).ToList();
+
+                return urgentTasks;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"خطا در دریافت تسک‌های فوری: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
         /// دریافت آخرین فعالیت‌های تسک کاربر
         /// </summary>
-        public async Task<List<RecentActivityViewModel>> GetRecentTaskActivitiesAsync(
-            string userId,
-            int take = 10)
+        public async Task<List<RecentActivityViewModel>> GetRecentTaskActivitiesAsync(string userId, int take = 10)
         {
-            var activities = new List<RecentActivityViewModel>();
-
-            // تسک‌های ایجاد شده اخیر
-            var createdTasks = await _context.Tasks_Tbl
-                .Where(t => t.CreatorUserId == userId && !t.IsDeleted)
-                .OrderByDescending(t => t.CreateDate)
-                .Take(take / 2)
-                .ToListAsync();
-
-            foreach (var task in createdTasks)
+            try
             {
-                activities.Add(new RecentActivityViewModel
-                {
-                    ActivityType = "TaskCreated",
-                    Title = "ایجاد تسک",
-                    Description = $"تسک «{task.Title}» ایجاد شد",
-                    TaskId = task.Id,
-                    TaskCode = task.TaskCode,
-                    ActivityDate = task.CreateDate,
-                    ActivityDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.CreateDate, "yyyy/MM/dd HH:mm"),
-                    Icon = "fa-plus-circle",
-                    BadgeClass = "bg-primary"
-                });
+                var recentTasks = await GetTasksByUserWithPermissionsAsync(userId, includeAssigned: true, includeCreated: true);
+
+                var activities = recentTasks
+                    .Where(t => !t.IsDeleted)
+                    .OrderByDescending(t => t.LastUpdateDate ?? t.CreateDate)
+                    .Take(take)
+                    .Select(t => new RecentActivityViewModel
+                    {
+                        Title = GetActivityTitle(t.Status),
+                        Description = $"{t.Title} - {t.TaskCode}",
+                        ActivityDate = t.LastUpdateDate ?? t.CreateDate,
+                        TimeAgo = CalculateTimeAgo(t.LastUpdateDate ?? t.CreateDate),
+                        Url = $"/AdminArea/Tasks/Details/{t.Id}"
+                    }).ToList();
+
+                return activities;
             }
-
-            // تسک‌های تکمیل شده اخیر
-            var completedAssignments = await _context.TaskAssignment_Tbl
-                .Include(ta => ta.Task)
-                .Where(ta => ta.AssignedUserId == userId &&
-                            ta.CompletionDate.HasValue)
-                .OrderByDescending(ta => ta.CompletionDate)
-                .Take(take / 2)
-                .ToListAsync();
-
-            foreach (var assignment in completedAssignments)
+            catch (Exception ex)
             {
-                activities.Add(new RecentActivityViewModel
-                {
-                    ActivityType = "TaskCompleted",
-                    Title = "تکمیل تسک",
-                    Description = $"تسک «{assignment.Task.Title}» تکمیل شد",
-                    TaskId = assignment.TaskId,
-                    TaskCode = assignment.Task.TaskCode,
-                    ActivityDate = assignment.CompletionDate.Value,
-                    ActivityDatePersian = ConvertDateTime.ConvertMiladiToShamsi(assignment.CompletionDate, "yyyy/MM/dd HH:mm"),
-                    Icon = "fa-check-circle",
-                    BadgeClass = "bg-success"
-                });
+                throw new Exception($"خطا در دریافت فعالیت‌های اخیر: {ex.Message}", ex);
             }
-
-            return activities
-                .OrderByDescending(a => a.ActivityDate)
-                .Take(take)
-                .ToList();
         }
 
         #endregion
 
-        #region Private Helper Methods
-
-        /// <summary>
-        /// دریافت شناسه تسک‌های نظارتی
-        /// </summary>
-        private async Task<List<int>> GetSupervisedTaskIdsAsync(string userId)
-        {
-            var supervisedIds = new HashSet<int>();
-
-            // 1. تسک‌های تیم‌های تحت مدیریت
-            var managedTeamIds = await _context.Team_Tbl
-                .Where(t => t.ManagerUserId == userId && t.IsActive)
-                .Select(t => t.Id)
-                .ToListAsync();
-
-            if (managedTeamIds.Any())
-            {
-                var teamTaskIds = await _context.Tasks_Tbl
-                    .Where(t => t.TeamId.HasValue &&
-                               managedTeamIds.Contains(t.TeamId.Value) &&
-                               !t.IsDeleted &&
-                               !t.IsPrivate)
-                    .Select(t => t.Id)
-                    .ToListAsync();
-
-                foreach (var id in teamTaskIds)
-                    supervisedIds.Add(id);
-            }
-
-            // 2. تسک‌های بر اساس سمت
-            var positionBasedTasks = await _taskVisibilityRepository.GetPositionBasedVisibleTasksAsync(userId);
-            foreach (var id in positionBasedTasks)
-                supervisedIds.Add(id);
-
-            // 3. تسک‌های با مجوز خاص
-            var specialPermissionTasks = await _taskVisibilityRepository.GetSpecialPermissionTasksAsync(userId);
-            foreach (var id in specialPermissionTasks)
-                supervisedIds.Add(id);
-
-            // حذف تسک‌هایی که کاربر خودش در آن‌ها عضو است
-            var userOwnTasks = await _context.TaskAssignment_Tbl
-                .Where(ta => ta.AssignedUserId == userId)
-                .Select(ta => ta.TaskId)
-                .ToListAsync();
-
-            var userCreatedTasks = await _context.Tasks_Tbl
-                .Where(t => t.CreatorUserId == userId)
-                .Select(t => t.Id)
-                .ToListAsync();
-
-            supervisedIds.ExceptWith(userOwnTasks);
-            supervisedIds.ExceptWith(userCreatedTasks);
-
-            return supervisedIds.ToList();
-        }
-
-        #endregion
+ 
     }
 }

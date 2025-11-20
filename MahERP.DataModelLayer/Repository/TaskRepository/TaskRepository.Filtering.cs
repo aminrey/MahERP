@@ -1,28 +1,17 @@
-﻿using MahERP.DataModelLayer.Entities;
+﻿using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.TaskManagement;
-using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.ViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
-using MahERP.CommonLayer.PublicClasses; // ⭐ اضافه کردن این using برای ConvertDateTime
 using Microsoft.EntityFrameworkCore;
 
-namespace MahERP.DataModelLayer.Repository.TaskRepository
+namespace MahERP.DataModelLayer.Repository.Tasking
 {
     /// <summary>
-    /// Repository مسئول فیلتر کردن تسک‌ها
+    /// بخش فیلتر کردن و جستجوی تسک‌ها
     /// </summary>
-    public class TaskFilteringRepository : ITaskFilteringRepository
+    public partial class TaskRepository
     {
-        private readonly AppDbContext _context;
-        private readonly ITaskVisibilityRepository _visibilityRepository;
-
-        public TaskFilteringRepository(
-            AppDbContext context,
-            ITaskVisibilityRepository visibilityRepository)
-        {
-            _context = context;
-            _visibilityRepository = visibilityRepository;
-        }
+        #region Task Filtering
 
         /// <summary>
         /// دریافت تسک‌های من
@@ -31,7 +20,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         {
             Console.WriteLine($"🔍 GetMyTasksAsync - User: {userId}");
 
-            var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
+            var visibleTaskIds = await GetVisibleTaskIdsAsync(userId);
 
             var myAssignmentTaskIds = await _context.TaskAssignment_Tbl
                 .Where(ta => ta.AssignedUserId == userId)
@@ -52,7 +41,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
+            return ApplyFilters(tasks, filters, userId);
         }
 
         /// <summary>
@@ -67,7 +56,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .Select(t => t.Id)
                 .ToListAsync();
 
-            var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
+            var visibleTaskIds = await GetVisibleTaskIdsAsync(userId);
             var relevantTaskIds = myCreatedTaskIds.Intersect(visibleTaskIds).ToList();
 
             var tasks = await _context.Tasks_Tbl
@@ -81,35 +70,24 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
+            return ApplyFilters(tasks, filters, userId);
         }
 
         /// <summary>
-        /// دریافت تسک‌های نظارتی - ⭐⭐⭐ اصلاح شده برای شامل شدن رونوشت‌ها
+        /// دریافت تسک‌های نظارتی
         /// </summary>
         public async Task<List<Tasks>> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters = null)
         {
+            var visibleTaskIds = await GetVisibleTaskIdsAsync(userId);
 
-            // ⭐⭐⭐ 1. تسک‌های نظارتی سیستمی (بر اساس visibility)
-            var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
-
-            // ⭐⭐⭐ DEBUG: چک کردن تسک خاص
-            var debugTaskId = await _context.Tasks_Tbl
-                .Where(t => t.Title.Contains("ثبت بانک شرکت"))
-                .Select(t => new { t.Id, t.Title, t.CreatorUserId })
-                .FirstOrDefaultAsync();
-
-         
             var systemSupervisedTaskIds = await _context.Tasks_Tbl
                 .Where(t => visibleTaskIds.Contains(t.Id) &&
-                           t.CreatorUserId != userId && // تسک‌هایی که خودم نساخته‌ام
+                           t.CreatorUserId != userId &&
                            !t.IsDeleted)
-                .Where(t => !_context.TaskAssignment_Tbl.Any(ta => ta.TaskId == t.Id && ta.AssignedUserId == userId)) // به من منتصب نشده
+                .Where(t => !_context.TaskAssignment_Tbl.Any(ta => ta.TaskId == t.Id && ta.AssignedUserId == userId))
                 .Select(t => t.Id)
                 .ToListAsync();
 
-        
-            // ⭐⭐⭐ 2. تسک‌های رونوشت شده (از TaskViewer)
             var carbonCopyTaskIds = await _context.TaskViewer_Tbl
                 .Where(tv => tv.UserId == userId &&
                             tv.IsActive &&
@@ -118,13 +96,8 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .Select(tv => tv.TaskId)
                 .ToListAsync();
 
-         
-
-            // ⭐⭐⭐ 3. ترکیب هر دو نوع
             var allSupervisedTaskIds = systemSupervisedTaskIds.Union(carbonCopyTaskIds).Distinct().ToList();
 
-
-            // ⭐⭐⭐ 4. دریافت تسک‌ها با اطلاعات نوع نظارت
             var tasks = await _context.Tasks_Tbl
                 .Where(t => allSupervisedTaskIds.Contains(t.Id))
                 .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
@@ -136,7 +109,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
+            return ApplyFilters(tasks, filters, userId);
         }
 
         /// <summary>
@@ -144,8 +117,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         public async Task<List<Tasks>> GetAllVisibleTasksAsync(string userId, TaskFilterViewModel filters = null)
         {
-
-            var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
+            var visibleTaskIds = await GetVisibleTaskIdsAsync(userId);
 
             var tasks = await _context.Tasks_Tbl
                 .Where(t => visibleTaskIds.Contains(t.Id) && !t.IsDeleted)
@@ -158,7 +130,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
+            return ApplyFilters(tasks, filters, userId);
         }
 
         /// <summary>
@@ -166,7 +138,6 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         /// </summary>
         public async Task<List<Tasks>> GetAssignedToMeTasksAsync(string userId, TaskFilterViewModel filters = null)
         {
-
             var assignedTaskIds = await _context.TaskAssignment_Tbl
                 .Where(ta => ta.AssignedUserId == userId &&
                             ta.Task.CreatorUserId != userId)
@@ -174,7 +145,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .Distinct()
                 .ToListAsync();
 
-            var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
+            var visibleTaskIds = await GetVisibleTaskIdsAsync(userId);
             var relevantTaskIds = assignedTaskIds.Intersect(visibleTaskIds).ToList();
 
             var tasks = await _context.Tasks_Tbl
@@ -188,7 +159,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
+            return ApplyFilters(tasks, filters, userId);
         }
 
         /// <summary>
@@ -211,7 +182,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .Select(t => t.Id)
                 .ToListAsync();
 
-            var visibleTaskIds = await _visibilityRepository.GetVisibleTaskIdsAsync(userId);
+            var visibleTaskIds = await GetVisibleTaskIdsAsync(userId);
             var relevantTaskIds = teamTaskIds.Intersect(visibleTaskIds).ToList();
 
             var tasks = await _context.Tasks_Tbl
@@ -225,11 +196,11 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
 
-            return ApplyFilters(tasks, filters, userId); // ⭐ اضافه کردن userId
+            return ApplyFilters(tasks, filters, userId);
         }
 
         /// <summary>
-        /// اعمال فیلترها
+        /// اعمال فیلترها روی لیست تسک‌ها
         /// </summary>
         public List<Tasks> ApplyFilters(List<Tasks> tasks, TaskFilterViewModel filters, string userId = null)
         {
@@ -422,7 +393,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         }
 
         /// <summary>
-        /// محاسبه آمار لیست
+        /// محاسبه آمار لیست تسک‌ها
         /// </summary>
         public TaskListStatsViewModel CalculateStats(List<Tasks> tasks, string userId)
         {
@@ -439,7 +410,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         }
 
         /// <summary>
-        /// ⭐⭐⭐ اعمال فیلتر سریع وضعیت (Quick Status Filter)
+        /// اعمال فیلتر سریع وضعیت
         /// </summary>
         public List<Tasks> ApplyQuickStatusFilter(List<Tasks> tasks, QuickStatusFilter filter, string userId)
         {
@@ -454,12 +425,17 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 QuickStatusFilter.Urgent => tasks.Where(t => 
                     t.Priority == 2 && 
                     !IsTaskCompletedForUser(t.Id, userId)).ToList(),
-                _ => tasks // QuickStatusFilter.All
+                _ => tasks
             };
         }
 
-        #region Helper Methods
+        #endregion
 
+        #region Filtering Helper Methods
+
+        /// <summary>
+        /// بررسی تکمیل شدن تسک برای کاربر خاص
+        /// </summary>
         private bool IsTaskCompletedForUser(int taskId, string userId)
         {
             return _context.TaskAssignment_Tbl

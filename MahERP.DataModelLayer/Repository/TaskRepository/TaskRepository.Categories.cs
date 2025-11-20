@@ -25,6 +25,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             return _context.TaskCategory_Tbl.FirstOrDefault(c => c.Id == id);
         }
 
+        /// <summary>
+        /// بروزرسانی لیست دسته‌بندی‌ها بر اساس تغییر طرف حساب
+        /// </summary>
         public async Task<List<TaskCategory>> GetTaskCategoriesForStakeholderChangeAsync(int branchId, int stakeholderId)
         {
             try
@@ -44,7 +47,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return new List<TaskCategory>();
             }
         }
-
         #endregion
     }
 }

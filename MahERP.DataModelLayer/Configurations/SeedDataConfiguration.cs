@@ -1,6 +1,5 @@
 ﻿using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Entities.Notifications;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +7,7 @@ namespace MahERP.DataModelLayer.Configurations
 {
     /// <summary>
     /// کلاس مدیریت Seed Data های پایه سیستم
+    /// ⚠️ توجه: Seed Data های سیستم اعلان به StaticNotificationSeedData منتقل شده است
     /// </summary>
     public static class SeedDataConfiguration
     {
@@ -21,7 +21,7 @@ namespace MahERP.DataModelLayer.Configurations
             SeedDefaultTaskCategories(modelBuilder);
             SeedDefaultPredefinedCopyDescriptions(modelBuilder);
             SeedDefaultRolePatterns(modelBuilder);
-            SeedNotificationData(modelBuilder);
+            // ⚠️ SeedNotificationData حذف شد - اکنون توسط SystemSeedDataBackgroundService مدیریت می‌شود
         }
 
         private static void SeedDefaultBranches(ModelBuilder modelBuilder)
@@ -191,147 +191,6 @@ namespace MahERP.DataModelLayer.Configurations
                 new RolePatternDetails { Id = 15, RolePatternId = 3, ControllerName = "Stakeholder", ActionName = "Index,Details,Create,Edit", CanRead = true, CanCreate = true, CanEdit = true, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
                 new RolePatternDetails { Id = 16, RolePatternId = 3, ControllerName = "Tasks", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true },
                 new RolePatternDetails { Id = 17, RolePatternId = 4, ControllerName = "Tasks", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true }
-            );
-        }
-
-        private static void SeedNotificationData(ModelBuilder modelBuilder)
-        {
-            // 1️⃣ ماژول تسکینگ
-            modelBuilder.Entity<NotificationModuleConfig>().HasData(
-                new NotificationModuleConfig
-                {
-                    Id = 1,
-                    ModuleCode = "TASKING",
-                    ModuleNameFa = "ماژول تسکینگ",
-                    ModuleNameEn = "Tasking Module",
-                    Description = "سیستم مدیریت تسک‌ها و پروژه‌ها",
-                    ColorCode = "#2196F3",
-                    IsActive = true,
-                    DisplayOrder = 1
-                }
-            );
-
-            // 2️⃣ انواع اعلان تسکینگ
-            modelBuilder.Entity<NotificationTypeConfig>().HasData(
-                // اعلان روزانه
-                new NotificationTypeConfig
-                {
-                    Id = 1,
-                    ModuleConfigId = 1,
-                    TypeCode = "TASK_DAILY_DIGEST",
-                    TypeNameFa = "اعلان زمانبدی شده",
-                    Description = "ارسال پیام زمان بندی شده)",
-                    CoreNotificationTypeGeneral = 0,
-                    CoreNotificationTypeSpecific = 0,
-                    IsActive = true,
-                    DefaultPriority = 0,
-                    SupportsEmail = true,
-                    SupportsSms = false,
-                    SupportsTelegram = true,
-                    AllowUserCustomization = true,
-                    DisplayOrder = 1,
-                    RelatedEventTypes = "[13]" // ⭐ فقط DailyTaskDigest
-                },
-                
-                // تخصیص تسک
-                new NotificationTypeConfig
-                {
-                    Id = 2,
-                    ModuleConfigId = 1,
-                    TypeCode = "TASK_ASSIGNED",
-                    TypeNameFa = "تخصیص تسک جدید",
-                    Description = "اعلان هنگام تخصیص تسک جدید به کاربر",
-                    CoreNotificationTypeGeneral = 9,
-                    CoreNotificationTypeSpecific = 1,
-                    IsActive = true,
-                    DefaultPriority = 1,
-                    SupportsEmail = true,
-                    SupportsSms = true,
-                    SupportsTelegram = true,
-                    AllowUserCustomization = true,
-                    DisplayOrder = 2,
-                    RelatedEventTypes = "[1,12]" // ⭐ TaskAssigned و TaskReassigned
-                },
-                
-                // تکمیل تسک
-                new NotificationTypeConfig
-                {
-                    Id = 3,
-                    ModuleConfigId = 1,
-                    TypeCode = "TASK_COMPLETED",
-                    TypeNameFa = "تکمیل تسک واگذار شده",
-                    Description = "اعلان تکمیل تسک به سازنده",
-                    CoreNotificationTypeGeneral = 8,
-                    CoreNotificationTypeSpecific = 2,
-                    IsActive = true,
-                    DefaultPriority = 1,
-                    SupportsEmail = true,
-                    SupportsSms = false,
-                    SupportsTelegram = true,
-                    AllowUserCustomization = true,
-                    DisplayOrder = 3,
-                    RelatedEventTypes = "[2,6]" // ⭐ TaskCompleted و TaskOperationCompleted
-                },
-                
-                // یادآوری
-                new NotificationTypeConfig
-                {
-                    Id = 4,
-                    ModuleConfigId = 1,
-                    TypeCode = "TASK_REMINDER",
-                    TypeNameFa = "یادآوری سررسید تسک",
-                    Description = "یادآوری تسک‌های نزدیک به سررسید",
-                    CoreNotificationTypeGeneral = 6,
-                    CoreNotificationTypeSpecific = 3,
-                    IsActive = true,
-                    DefaultPriority = 2,
-                    SupportsEmail = true,
-                    SupportsSms = true,
-                    SupportsTelegram = true,
-                    AllowUserCustomization = true,
-                    DisplayOrder = 4,
-                    RelatedEventTypes = "[3]" // ⭐ فقط TaskDeadlineReminder
-                },
-                
-                // تغییرات در تسک
-                new NotificationTypeConfig
-                {
-                    Id = 5,
-                    ModuleConfigId = 1,
-                    TypeCode = "TASK_UPDATED",
-                    TypeNameFa = "تغییرات در تسک",
-                    Description = "اعلان ثبت کامنت، WorkLog یا تغییرات",
-                    CoreNotificationTypeGeneral = 10,
-                    CoreNotificationTypeSpecific = 4,
-                    IsActive = true,
-                    DefaultPriority = 0,
-                    SupportsEmail = true,
-                    SupportsSms = false,
-                    SupportsTelegram = true,
-                    AllowUserCustomization = true,
-                    DisplayOrder = 5,
-                    RelatedEventTypes = "[4,5,8,10,11,14]" // ⭐ TaskCommentAdded, TaskUpdated, TaskStatusChanged, CommentMentioned, TaskPriorityChanged, TaskWorkLog
-                },
-                
-                // ⭐⭐⭐ یادآوری سفارشی تسک
-                new NotificationTypeConfig
-                {
-                    Id = 6,
-                    ModuleConfigId = 1,
-                    TypeCode = "TASK_CUSTOM_REMINDER",
-                    TypeNameFa = "یادآوری سفارشی تسک",
-                    Description = "یادآوری‌های سفارشی که کاربر برای تسک‌های خود یا اعضای تیم تنظیم می‌کند",
-                    CoreNotificationTypeGeneral = 6, // یادآوری
-                    CoreNotificationTypeSpecific = 15, // CustomTaskReminder
-                    IsActive = true,
-                    DefaultPriority = 1,
-                    SupportsEmail = true,
-                    SupportsSms = true,
-                    SupportsTelegram = true,
-                    AllowUserCustomization = true,
-                    DisplayOrder = 6,
-                    RelatedEventTypes = "[15]" // ⭐ فقط CustomTaskReminder
-                }
             );
         }
     }

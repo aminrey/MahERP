@@ -53,31 +53,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             };
         }
 
-        private string GetCategoryBadgeClass(int? categoryId)
-        {
-            if (!categoryId.HasValue) return "bg-secondary";
-            return "bg-info";
-        }
 
-        private string GetPriorityText(byte priority)
-        {
-            return priority switch
-            {
-                2 => "فوری",
-                1 => "مهم",
-                _ => "عادی"
-            };
-        }
-
-        private string GetPriorityBadgeClass(byte priority)
-        {
-            return priority switch
-            {
-                2 => "bg-danger",
-                1 => "bg-warning",
-                _ => "bg-primary"
-            };
-        }
 
         #endregion
 
@@ -208,7 +184,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             }
 
             // ناظران تسک
-            var supervisors = await _taskVisibilityRepository.GetTaskSupervisorsAsync(taskId, includeCreator: false);
+            var supervisors = await GetTaskSupervisorsAsync(taskId, includeCreator: false);
             foreach (var supervisorId in supervisors)
             {
                 userIds.Add(supervisorId);
@@ -234,24 +210,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         #endregion
 
-        #region Task Completion Check
-
-        private bool IsTaskCompletedForUser(int taskId, string userId)
-        {
-            try
-            {
-                return _context.TaskAssignment_Tbl
-                    .Any(a => a.TaskId == taskId &&
-                             a.AssignedUserId == userId &&
-                             a.CompletionDate.HasValue);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error in IsTaskCompletedForUser: {ex.Message}");
-                return false;
-            }
-        }
-
-        #endregion
+      
     }
 }

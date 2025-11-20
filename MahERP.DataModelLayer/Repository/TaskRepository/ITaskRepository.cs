@@ -209,7 +209,100 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         Task<bool> CanUserViewTaskAsync(string userId, int taskId);
 
+        /// <summary>
+        /// دریافت لیست شناسه تسک‌هایی که کاربر می‌تواند مشاهده کند
+        /// </summary>
+        Task<List<int>> GetVisibleTaskIdsAsync(string userId, int? branchId = null, int? teamId = null);
 
+        /// <summary>
+        /// دریافت تسک‌های قابل مشاهده بر اساس سمت
+        /// </summary>
+        Task<List<int>> GetPositionBasedVisibleTasksAsync(string userId, int? branchId = null, int? teamId = null);
+
+        /// <summary>
+        /// بررسی قابلیت مشاهده بر اساس سمت در تیم
+        /// </summary>
+        Task<bool> CanViewBasedOnPositionAsync(string userId, Tasks task);
+
+        /// <summary>
+        /// بررسی اینکه آیا کاربر مدیر تیم است
+        /// </summary>
+        Task<bool> IsUserTeamManagerAsync(string userId, int teamId);
+
+        /// <summary>
+        /// دریافت تسک‌های تیم‌های تحت مدیریت
+        /// </summary>
+        Task<List<int>> GetManagedTeamTasksAsync(string userId, int? branchId = null);
+
+        /// <summary>
+        /// دریافت تمام شناسه زیرتیم‌ها
+        /// </summary>
+        Task<List<int>> GetAllSubTeamIdsAsync(int parentTeamId);
+
+        /// <summary>
+        /// بررسی مجوزهای خاص (تبصره‌ها)
+        /// </summary>
+        Task<bool> HasSpecialPermissionAsync(string userId, Tasks task);
+
+        /// <summary>
+        /// دریافت تسک‌های با مجوز خاص
+        /// </summary>
+        Task<List<int>> GetSpecialPermissionTasksAsync(string userId);
+
+        /// <summary>
+        /// دریافت ناظران یک تسک خاص
+        /// </summary>
+        Task<List<string>> GetTaskSupervisorsAsync(int taskId, bool includeCreator = false);
+
+        /// <summary>
+        /// دریافت ناظران یک کاربر در تیم خاص
+        /// </summary>
+        Task<List<string>> GetUserSupervisorsInTeamAsync(string userId, int teamId, int branchId);
+
+        /// <summary>
+        /// دریافت ناظران یک کاربر در تمام تیم‌های او
+        /// </summary>
+        Task<List<string>> GetUserAllSupervisorsAsync(string userId, int? branchId = null);
+
+        /// <summary>
+        /// دریافت ناظران تسک با جزئیات کامل
+        /// </summary>
+        Task<List<SupervisorInfoViewModel>> GetTaskSupervisorsWithDetailsAsync(int taskId);
+
+        /// <summary>
+        /// دریافت تسک‌های زیرتیم‌ها به صورت گروه‌بندی شده
+        /// </summary>
+        Task<SubTeamTasksGroupedViewModel> GetSubTeamTasksGroupedDetailedAsync(string userId, int? branchId = null);
+
+        /// <summary>
+        /// دریافت تسک‌های زیرتیم‌ها به صورت Dictionary ساده
+        /// </summary>
+        Task<Dictionary<int, List<int>>> GetSubTeamTasksGroupedAsync(string userId, int? branchId = null);
+
+        /// <summary>
+        /// ایجاد چارت قدرت مشاهده تسک‌ها
+        /// </summary>
+        Task<TaskVisibilityChartViewModel> GenerateVisibilityChartAsync(int branchId);
+
+        /// <summary>
+        /// محاسبه آمار چارت قدرت مشاهده
+        /// </summary>
+        Task<TaskVisibilityStatsViewModel> CalculateVisibilityStatsAsync(int branchId);
+
+        /// <summary>
+        /// تشخیص منابع دسترسی کاربر
+        /// </summary>
+        Task<List<string>> GetUserAccessSourcesAsync(string userId);
+
+        /// <summary>
+        /// دریافت اطلاعات قدرت مشاهده اعضای یک سمت
+        /// </summary>
+        Task<List<MemberTaskVisibilityInfo>> GetPositionMembersAsync(int positionId);
+
+        /// <summary>
+        /// دریافت اعضای بدون سمت
+        /// </summary>
+        Task<List<MemberTaskVisibilityInfo>> GetMembersWithoutPositionAsync(int teamId);
 
         #endregion
 
@@ -328,10 +421,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         Task<TasksListViewModel> GetTasksAssignedByUserAsync(string userId, TaskFilterViewModel filters);
 
-        /// <summary>
-        /// دریافت تسک‌های تحت نظارت کاربر
-        /// </summary>
-        Task<TasksListViewModel> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters);
+
 
         /// <summary>
         /// دریافت یادآوری‌های تسک برای کاربر
@@ -708,5 +798,7 @@ Task<List<TaskCommentViewModel>> GetTaskCommentsAsync(int taskId);
         /// دریافت همه کاربران مرتبط با تسک (اعضا + سازنده)
         /// </summary>
         Task<List<string>> GetTaskRelatedUserIdsAsync(int taskId);
+        Task<List<Tasks>> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters = null);
+
     }
 }

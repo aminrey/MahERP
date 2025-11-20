@@ -49,7 +49,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         private readonly TaskCodeGenerator _taskCodeGenerator;
         protected readonly IUserManagerRepository _userRepository;
         private readonly ITaskHistoryRepository _taskHistoryRepository;
-        private readonly ITaskVisibilityRepository _TaskVisibilityRepository;
         private readonly IOrganizationRepository _organizationRepository;
         private readonly ITeamRepository _teamRepository;
         public TasksController(
@@ -66,7 +65,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
     TaskCodeGenerator taskCodeGenerator,
     IUserManagerRepository userRepository,
     IBaseRepository BaseRepository,
-    ITaskVisibilityRepository taskVisibilityRepository,
     ITaskHistoryRepository taskHistoryRepository,
     ModuleTrackingBackgroundService moduleTracking,
     IModuleAccessService moduleAccessService,
@@ -83,7 +81,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _taskCodeGenerator = taskCodeGenerator;
             _userRepository = userRepository;
             _taskHistoryRepository = taskHistoryRepository;
-            _TaskVisibilityRepository = taskVisibilityRepository;
             _organizationRepository = organizationRepository; // ⭐⭐⭐ اضافه شده
             _teamRepository = teamRepository; // ⭐⭐⭐ اضافه شده
         }
@@ -665,13 +662,13 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 bool isManager = false;
                 if (task.TeamId.HasValue)
                 {
-                    isManager = await _TaskVisibilityRepository.IsUserTeamManagerAsync(currentUserId, task.TeamId.Value);
+                    isManager = await _taskRepository.IsUserTeamManagerAsync(currentUserId, task.TeamId.Value);
                 }
 
                 bool isSupervisor = false;
                 if (task.TeamId.HasValue)
                 {
-                    isSupervisor = await _TaskVisibilityRepository.CanViewBasedOnPositionAsync(currentUserId, task);
+                    isSupervisor = await _taskRepository.CanViewBasedOnPositionAsync(currentUserId, task);
                 }
 
                 ViewBag.IsAdmin = isAdmin;

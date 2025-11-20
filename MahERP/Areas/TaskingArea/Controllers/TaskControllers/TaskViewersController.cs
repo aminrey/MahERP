@@ -26,7 +26,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
     public class TaskViewersController : BaseController
     {
         private readonly ITaskCarbonCopyRepository _carbonCopyRepository;
-        private readonly ITaskVisibilityRepository _visibilityRepository;
         private readonly ITaskRepository _taskRepository;
         private readonly IBranchRepository _branchRepository; // ⭐ اضافه شده
         private readonly UserManager<AppUsers> _userManager;
@@ -35,7 +34,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
         public TaskViewersController(
             ITaskCarbonCopyRepository carbonCopyRepository,
-            ITaskVisibilityRepository visibilityRepository,
             ITaskRepository taskRepository,
             IBranchRepository branchRepository, // ⭐ اضافه شده
             UserManager<AppUsers> userManager,
@@ -50,7 +48,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IUnitOfWork uow) : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _carbonCopyRepository = carbonCopyRepository;
-            _visibilityRepository = visibilityRepository;
             _taskRepository = taskRepository;
             _branchRepository = branchRepository; // ⭐ اضافه شده
             _userManager = userManager;
@@ -80,7 +77,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 var carbonCopyViewers = new List<object>();
 
                 // ⭐ 1. ناظران خودکار سیستمی
-                var systemSupervisorIds = await _visibilityRepository.GetTaskSupervisorsAsync(taskId, includeCreator: true);
+                var systemSupervisorIds = await _taskRepository.GetTaskSupervisorsAsync(taskId, includeCreator: true);
                 
                 foreach (var supervisorId in systemSupervisorIds)
                 {
@@ -429,7 +426,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 types.Add("منتصب");
 
             // سمت بالاتر
-            var hasPosition = await _visibilityRepository.CanViewBasedOnPositionAsync(supervisorId, task);
+            var hasPosition = await _taskRepository.CanViewBasedOnPositionAsync(supervisorId, task);
             if (hasPosition)
                 types.Add("سمت بالاتر");
 

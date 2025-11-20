@@ -34,7 +34,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         private readonly ActivityLoggerService _activityLogger;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _context;
-        private readonly ITaskVisibilityRepository _taskVisibilityRepository;
 
         public TaskOperationsController(
             ITaskOperationsRepository operationsRepository,
@@ -42,7 +41,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             UserManager<AppUsers> userManager,
             ActivityLoggerService activityLogger,
             IUnitOfWork context,
-            ITaskVisibilityRepository TaskVisibilityRepository,
             IMapper mapper)
         {
             _operationsRepository = operationsRepository;
@@ -51,7 +49,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _activityLogger = activityLogger;
             _mapper = mapper;
             _context = context;
-            _taskVisibilityRepository = TaskVisibilityRepository;
         }
 
         #region Toggle Actions (AJAX)
@@ -80,8 +77,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                     if (task.TeamId.HasValue)
                     {
-                        isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
-                        isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
+                        isManager = await _taskRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                        isSupervisor = await _taskRepository.CanViewBasedOnPositionAsync(userId, task);
                     }
 
                     var viewModel = _mapper.Map<TaskViewModel>(task);
@@ -187,8 +184,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                     if (updatedTask.TeamId.HasValue)
                     {
-                        isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, updatedTask.TeamId.Value);
-                        isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, updatedTask);
+                        isManager = await _taskRepository.IsUserTeamManagerAsync(userId, updatedTask.TeamId.Value);
+                        isSupervisor = await _taskRepository.CanViewBasedOnPositionAsync(userId, updatedTask);
                     }
 
                     var viewModel = _mapper.Map<TaskViewModel>(updatedTask);
@@ -564,8 +561,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                     if (task.TeamId.HasValue)
                     {
-                        isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
-                        isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
+                        isManager = await _taskRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                        isSupervisor = await _taskRepository.CanViewBasedOnPositionAsync(userId, task);
                     }
 
                 
@@ -846,14 +843,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 bool isManager = false;
                 if (task.TeamId.HasValue)
                 {
-                    isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                    isManager = await _taskRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
                 }
 
                 // Check if user is supervisor
                 bool isSupervisor = false;
                 if (task.TeamId.HasValue)
                 {
-                    isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
+                    isSupervisor = await _taskRepository.CanViewBasedOnPositionAsync(userId, task);
                 }
 
                 // Pass these to the ViewBag or ViewModel
@@ -970,8 +967,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 if (task.TeamId.HasValue)
                 {
-                    isManager = await _taskVisibilityRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
-                    isSupervisor = await _taskVisibilityRepository.CanViewBasedOnPositionAsync(userId, task);
+                    isManager = await _taskRepository.IsUserTeamManagerAsync(userId, task.TeamId.Value);
+                    isSupervisor = await _taskRepository.CanViewBasedOnPositionAsync(userId, task);
                 }
 
                 var viewModel = _mapper.Map<TaskViewModel>(task);

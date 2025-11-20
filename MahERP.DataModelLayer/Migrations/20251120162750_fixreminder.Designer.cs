@@ -4,6 +4,7 @@ using MahERP.DataModelLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251120162750_fixreminder")]
+    partial class fixreminder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -5295,6 +5298,25 @@ namespace MahERP.DataModelLayer.Migrations
                             SupportsTelegram = true,
                             TypeCode = "TASK_UPDATED",
                             TypeNameFa = "تغییرات در تسک"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)6,
+                            CoreNotificationTypeSpecific = (byte)15,
+                            DefaultPriority = (byte)1,
+                            Description = "یادآوری‌های سفارشی که کاربر برای تسک‌های خود یا اعضای تیم تنظیم می‌کند",
+                            DisplayOrder = 6,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            RelatedEventTypes = "[15]",
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = true,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_CUSTOM_REMINDER",
+                            TypeNameFa = "یادآوری سفارشی تسک"
                         });
                 });
 

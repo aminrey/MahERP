@@ -97,6 +97,46 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                 try
                 {
+                    // ⭐⭐⭐ FIX: بررسی و تنظیم خودکار MaxSendCount برای یادآوری‌های یکباره قدیمی
+                    if (!schedule.MaxSendCount.HasValue && IsOneTimeReminderType(schedule.ReminderType))
+                    {
+                        var scheduleToFix = await context.TaskReminderSchedule_Tbl
+                            .FirstOrDefaultAsync(s => s.Id == schedule.Id, stoppingToken);
+
+                        if (scheduleToFix != null)
+                        {
+                            scheduleToFix.MaxSendCount = 1;
+                            await context.SaveChangesAsync(stoppingToken);
+                            
+                            _logger.LogInformation($"✅ MaxSendCount برای یادآوری #{schedule.Id} (نوع {schedule.ReminderType}) به 1 تنظیم شد");
+                            
+                            // بروزرسانی schedule محلی
+                            schedule.MaxSendCount = 1;
+                        }
+                    }
+
+                    // ⭐⭐⭐ بررسی MaxSendCount قبل از محاسبه زمان
+                    if (schedule.MaxSendCount.HasValue && schedule.SentCount >= schedule.MaxSendCount.Value)
+                    {
+                        _logger.LogDebug($"⚠️ یادآوری #{schedule.Id} قبلاً {schedule.SentCount} بار ارسال شده (حداکثر: {schedule.MaxSendCount}). Skip.");
+                        
+                        // غیرفعال کردن یادآوری اگر هنوز فعال است
+                        if (schedule.IsActive)
+                        {
+                            var scheduleToDeactivate = await context.TaskReminderSchedule_Tbl
+                                .FirstOrDefaultAsync(s => s.Id == schedule.Id, stoppingToken);
+
+                            if (scheduleToDeactivate != null && scheduleToDeactivate.IsActive)
+                            {
+                                scheduleToDeactivate.IsActive = false;
+                                await context.SaveChangesAsync(stoppingToken);
+                                _logger.LogInformation($"🔒 یادآوری #{schedule.Id} به دلیل رسیدن به حداکثر ارسال غیرفعال شد");
+                            }
+                        }
+                        
+                        continue;
+                    }
+
                     // ⭐⭐⭐ محاسبه زمان بعدی برای این Schedule
                     var nextExecutionTime = CalculateNextExecutionTime(schedule, nowIran);
 
@@ -111,24 +151,6 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         (nowIran - schedule.LastExecuted.Value).TotalMinutes < 1)
                     {
                         _logger.LogDebug($"⚠️ یادآوری #{schedule.Id} در کمتر از 1 دقیقه پیش اجرا شده. Skip.");
-                        continue;
-                    }
-
-                    // ⭐⭐⭐ بررسی MaxSendCount
-                    if (schedule.MaxSendCount.HasValue && schedule.SentCount >= schedule.MaxSendCount.Value)
-                    {
-                        _logger.LogWarning($"⚠️ یادآوری #{schedule.Id} به حداکثر تعداد ارسال ({schedule.MaxSendCount}) رسیده است. غیرفعال می‌شود.");
-                        
-                        // غیرفعال کردن یادآوری
-                        var scheduleToDeactivate = await context.TaskReminderSchedule_Tbl
-                            .FirstOrDefaultAsync(s => s.Id == schedule.Id, stoppingToken);
-
-                        if (scheduleToDeactivate != null)
-                        {
-                            scheduleToDeactivate.IsActive = false;
-                            await context.SaveChangesAsync(stoppingToken);
-                        }
-
                         continue;
                     }
 
@@ -189,6 +211,22 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         }
 
         /// <summary>
+        /// ⭐⭐⭐ NEW: بررسی اینکه یادآوری از نوع یکباره است یا خیر
+        /// </summary>
+        private bool IsOneTimeReminderType(byte reminderType)
+        {
+            return reminderType switch
+            {
+                0 => true,  // یکبار در زمان مشخص
+                2 => true,  // قبل از پایان مهلت (یکبار)
+                3 => true,  // در روز شروع تسک (یکبار)
+                4 => true,  // در روز پایان مهلت (یکبار)
+                1 => false, // تکراری
+                _ => false
+            };
+        }
+
+        /// <summary>
         /// محاسبه زمان بعدی اجرای یادآوری
         /// </summary>
         private DateTime? CalculateNextExecutionTime(
@@ -205,6 +243,10 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         return null;
 
                     var oneTimeExecution = schedule.StartDate.Value.Date.Add(time);
+                    
+                    // ⭐⭐⭐ FIX: اگر قبلاً ارسال شده، دیگر زمان بعدی ندارد
+                    if (schedule.SentCount > 0)
+                        return null;
                     
                     // فقط اگر هنوز زمان نرسیده یا امروز است
                     return oneTimeExecution;
@@ -236,6 +278,10 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                     if (!schedule.DaysBeforeDeadline.HasValue || schedule.Task.DueDate == null)
                         return null;
 
+                    // ⭐⭐⭐ FIX: اگر قبلاً ارسال شده، دیگر زمان بعدی ندارد
+                    if (schedule.SentCount > 0)
+                        return null;
+
                     var deadlineReminder = schedule.Task.DueDate.Value
                         .AddDays(-schedule.DaysBeforeDeadline.Value)
                         .Date
@@ -247,10 +293,18 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                     if (schedule.Task.StartDate == null)
                         return null;
 
+                    // ⭐⭐⭐ FIX: اگر قبلاً ارسال شده، دیگر زمان بعدی ندارد
+                    if (schedule.SentCount > 0)
+                        return null;
+
                     return schedule.Task.StartDate.Value.Date.Add(time);
 
                 case 4: // در روز پایان مهلت
                     if (schedule.Task.DueDate == null)
+                        return null;
+
+                    // ⭐⭐⭐ FIX: اگر قبلاً ارسال شده، دیگر زمان بعدی ندارد
+                    if (schedule.SentCount > 0)
                         return null;
 
                     return schedule.Task.DueDate.Value.Date.Add(time);
