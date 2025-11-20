@@ -72,7 +72,7 @@
                                     class="btn btn-sm text-white"
                                     style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);"
                                     data-toggle="modal-ajax"
-                                    href="@Url.Action("AddToMyDayModal", "Tasks", new { taskId = Model.Id })"
+                                    href="@Url.Action("AddToMyDayModal", "MyDayTask", new { taskId = Model.Id, fromList = true })"
                                     data-bs-toggle="tooltip"
                                     title="افزودن به روز من">
                                 <i class="fa fa-calendar-alt"></i>

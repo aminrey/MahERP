@@ -24,8 +24,12 @@
             </div>
 
             <form id="complete-task-form" asp-action="CompleteTaskPost" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="TaskId" />
+                <input type="hidden" asp-for="TaskCode" />
+                <input type="hidden" asp-for="TaskTitle" />
                 <input type="hidden" asp-for="FromList" />
+                <input type="hidden" asp-for="rowNum" />
 
                 <div class="block block-themed block-rounded mt-1">
                     <div class="block-header bg-success-light">
@@ -74,7 +78,7 @@
                        
                             <!-- فیلد یادداشت -->
                             <div class="col-12 mb-3">
-                                <label class="form-label" for="Notes">
+                                <label class="form-label" for="CompletionReport">
                                     <i class="fa fa-sticky-note text-muted me-1"></i>
                                     یادداشت تکمیل (اختیاری)
                                 </label>
@@ -101,18 +105,3 @@
     </div>
 </div>
 
-<script>
-    $(document).ready(function() {
-        // ⭐ راه‌اندازی تاریخ شمسی
-        $('.persian-datepicker').persianDatepicker({
-            initialValue: true,
-            format: 'YYYY/MM/DD',
-            autoClose: true
-        });
-
-        // تنظیم فوکوس روی دکمه اصلی
-        $('.modal').on('shown.bs.modal', function () {
-            $('.btn-success').focus();
-        });
-    });
-</script>

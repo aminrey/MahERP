@@ -58,6 +58,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// </summary>
         public int CompletedMembers { get; set; }
         public bool FromList { get; set; }
+        public int rowNum{ get; set; }
 
     }
 }

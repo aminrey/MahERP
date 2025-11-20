@@ -65,7 +65,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         {
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var notificationService = scope.ServiceProvider.GetRequiredService<NotificationManagementService>();
+            // ⭐⭐⭐ حذف notificationService - از NotificationQueue استفاده می‌کنیم
 
             var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
             
@@ -165,18 +165,17 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                     _logger.LogInformation($"📤 ارسال یادآوری '{schedule.Title}' به {recipientUserIds.Count} کاربر");
 
+                    // ⭐⭐⭐ FIX: استفاده از NotificationQueue به جای فراخوانی مستقیم
+                    // این باعث می‌شه که NotificationProcessingBackgroundService 
+                    // متغیرها رو از اطلاعات تسک جایگزین کنه
                     foreach (var userId in recipientUserIds)
                     {
-                        // ⭐ ارسال Notification با استفاده از NotificationManagementService
-                        await notificationService.ProcessEventNotificationAsync(
-                            NotificationEventType.CustomTaskReminder, // ⭐ استفاده از نوع جدید
-                            new List<string> { userId },
+                        // ⭐ استفاده از TaskDeadlineReminder که در NotificationProcessingBackgroundService
+                        // برای همه اعضا (بدون فیلتر sender) ارسال می‌شه
+                        NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                            schedule.TaskId,
                             "SYSTEM", // سیستمی
-                            schedule.Title,
-                            BuildReminderMessage(schedule),
-                            $"/TaskingArea/Tasks/Details/{schedule.TaskId}",
-                            schedule.TaskId.ToString(),
-                            "Task",
+                            NotificationEventType.TaskDeadlineReminder,
                             priority: 2 // یادآوری‌ها اولویت بالا دارند
                         );
                     }

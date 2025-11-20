@@ -63,10 +63,10 @@ else
                     </div>
                 </div>
 
-                <div class="block-content p-4">
+                <div class="block-content p-3">
                     @if (shouldShowPending && filteredPendingTasks.Any())
                     {
-                        <!-- ⭐⭐⭐ تسک‌های در حال انجام -->
+                        <!-- ⭐⭐⭐ تسک‌های در حال انجام - نمایش نواری -->
                         <div class="mb-4">
                             <div class="d-flex align-items-center mb-3 pb-2 border-bottom"
                                  style="border-bottom: 3px solid #4285f4 !important;">
@@ -80,10 +80,12 @@ else
                                     @filteredPendingTasks.Count
                                 </span>
                             </div>
-                            <div class="row g-3">
+                            
+                            @* ⭐⭐⭐ استفاده از _TaskRowPartial به جای _TaskCardPartial *@
+                            <div class="row g-2">
                                 @foreach (var task in filteredPendingTasks)
                                 {
-                                    @await Html.PartialAsync("_TaskCardPartial", task)
+                                    @await Html.PartialAsync("_TaskRowPartial", task)
                                 }
                             </div>
                         </div>
@@ -94,7 +96,7 @@ else
                         <!-- ⭐⭐⭐ جدا کننده قوی‌تر برای تسک‌های تکمیل شده -->
                         @if (shouldShowPending && filteredPendingTasks.Any())
                         {
-                            <div class="my-5 position-relative">
+                            <div class="my-4 position-relative">
                                 <hr class="my-0" style="border-top: 3px dashed #34a853; opacity: 0.5;">
                                 <div class="position-absolute top-50 start-50 translate-middle">
                                     <span class="badge bg-success fs-5 px-4 py-2" style="box-shadow: 0 4px 12px rgba(52, 168, 83, 0.4);">
@@ -105,7 +107,7 @@ else
                             </div>
                         }
 
-                        <!-- ⭐⭐⭐ تسک‌های تکمیل شده -->
+                        <!-- ⭐⭐⭐ تسک‌های تکمیل شده - نمایش نواری -->
                         <div>
                             <div class="d-flex align-items-center mb-3 pb-2 border-bottom"
                                  style="border-bottom: 3px solid #34a853 !important;">
@@ -119,10 +121,12 @@ else
                                     @group.CompletedCount
                                 </span>
                             </div>
-                            <div class="row g-3">
+                            
+                            @* ⭐⭐⭐ استفاده از _TaskRowPartial به جای _TaskCardPartial *@
+                            <div class="row g-2">
                                 @foreach (var task in group.CompletedTasks)
                                 {
-                                    @await Html.PartialAsync("_TaskCardPartial", task)
+                                    @await Html.PartialAsync("_TaskRowPartial", task)
                                 }
                             </div>
                         </div>

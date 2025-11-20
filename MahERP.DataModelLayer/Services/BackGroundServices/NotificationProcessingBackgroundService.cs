@@ -237,6 +237,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
         /// <summary>
         /// ⭐⭐⭐ ساخت محتوای اعلان با جایگزینی پارامترها
+        /// این متد محتوا رو از قالب می‌گیره یا از محتوای پیش‌فرض استفاده می‌کنه
         /// </summary>
         private async Task<(string title, string message)> BuildNotificationContentAsync(
             AppDbContext context,
@@ -252,168 +253,219 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 .FirstOrDefaultAsync();
 
             // ⭐ دریافت اطلاعات کاربر ارسال‌کننده
-            var sender = !string.IsNullOrEmpty(senderUserId) 
+            var sender = !string.IsNullOrEmpty(senderUserId) && senderUserId != "SYSTEM"
                 ? await context.Users
                     .Where(u => u.Id == senderUserId)
                     .Select(u => new { u.FirstName, u.LastName })
                     .FirstOrDefaultAsync()
                 : null;
 
-            // ⭐ متغیرهای مشترک
-            var taskTitle = task.Title ?? "تسک";
-            var taskCode = task.TaskCode ?? "";
-            var recipientName = recipient != null ? $"{recipient.FirstName} {recipient.LastName}".Trim() : "کاربر";
-            var senderName = sender != null ? $"{sender.FirstName} {sender.LastName}".Trim() : "سیستم";
-            var currentDate = CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd");
-            var currentTime = DateTime.Now.ToString("HH:mm");
-            var dueDate = task.DueDate.HasValue 
-                ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd")
-                : "نامشخص";
+            // ⭐⭐⭐ ساخت Dictionary داده‌ها برای جایگزینی
+            var templateData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "TaskTitle", task.Title ?? "تسک" },
+                { "TaskCode", task.TaskCode ?? "" },
+                { "TaskDescription", task.Description ?? "" },
+                { "RecipientFirstName", recipient?.FirstName ?? "" },
+                { "RecipientLastName", recipient?.LastName ?? "" },
+                { "RecipientFullName", recipient != null ? $"{recipient.FirstName} {recipient.LastName}".Trim() : "کاربر" },
+                { "SenderName", sender != null ? $"{sender.FirstName} {sender.LastName}".Trim() : "سیستم" },
+                { "Date", CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd") },
+                { "Time", DateTime.Now.ToString("HH:mm") },
+                { "TaskDueDate", task.DueDate.HasValue ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") : "نامشخص" },
+                { "TaskStartDate", task.StartDate.HasValue ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.StartDate.Value, "yyyy/MM/dd") : "نامشخص" },
+                { "TaskPriority", task.Priority switch { 0 => "عادی", 1 => "متوسط", 2 => "بالا", 3 => "فوری", _ => "نامشخص" } }
+            };
 
-            // ⭐⭐⭐ ساخت عنوان و پیام بر اساس نوع رویداد
+            // ⭐⭐⭐ SPECIAL CASE: برای TaskDeadlineReminder از TaskReminderSchedule استفاده کن
+            if (eventType == NotificationEventType.TaskDeadlineReminder)
+            {
+                var reminderSchedule = await context.TaskReminderSchedule_Tbl
+                    .Where(s => s.TaskId == task.Id && s.IsActive)
+                    .OrderByDescending(s => s.LastExecuted)
+                    .FirstOrDefaultAsync();
+
+                if (reminderSchedule != null)
+                {
+                    // ⭐ استفاده از عنوان و توضیحات از Schedule
+                    string title = ReplaceVariables(reminderSchedule.Title ?? "⏰ یادآوری تسک", templateData);
+                    string message = reminderSchedule.Description ?? "";
+                    
+                    // ⭐ اگر توضیحات خالی بود، از متن پیش‌فرض استفاده کن
+                    if (string.IsNullOrWhiteSpace(message))
+                    {
+                        message = $"🔔 یادآوری برای تسک {{TaskTitle}} (کد: {{TaskCode}})\n\n" +
+                                 $"⚠️ مهلت پایان: {{TaskDueDate}}\n\n" +
+                                 $"لطفاً نسبت به انجام آن اقدام فرمایید.";
+                    }
+                    
+                    message = ReplaceVariables(message, templateData);
+                    
+                    return (title, message);
+                }
+            }
+
+            // ⭐⭐⭐ سعی کن قالب مربوط به این رویداد رو پیدا کنی
+            var template = await context.NotificationTemplate_Tbl
+                .Where(t => t.IsActive && 
+                           t.NotificationEventType == (byte)eventType &&
+                           !t.IsScheduled) // فقط قالب‌های غیر زمان‌بندی شده
+                .OrderByDescending(t => t.UsageCount) // پرکاربردترین
+                .FirstOrDefaultAsync();
+
+            if (template != null)
+            {
+                // ⭐⭐⭐ استفاده از قالب
+                string title = ReplaceVariables(template.Subject ?? GetDefaultTitle(eventType, templateData), templateData);
+                string message = ReplaceVariables(template.MessageTemplate ?? GetDefaultMessage(eventType, templateData), templateData);
+                
+                return (title, message);
+            }
+
+            // ⭐ اگر قالب یافت نشد، از محتوای پیش‌فرض استفاده کن
+            return (GetDefaultTitle(eventType, templateData), GetDefaultMessage(eventType, templateData));
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ جایگزینی متغیرها با مقادیر واقعی
+        /// </summary>
+        private string ReplaceVariables(string text, Dictionary<string, string> data)
+        {
+            if (string.IsNullOrEmpty(text) || data == null || !data.Any())
+                return text;
+
+            var result = text;
+
+            foreach (var kvp in data)
+            {
+                // جایگزینی فرمت {{Variable}}
+                result = result.Replace($"{{{{{kvp.Key}}}}}", kvp.Value, StringComparison.OrdinalIgnoreCase);
+                
+                // جایگزینی فرمت {Variable}
+                result = result.Replace($"{{{kvp.Key}}}", kvp.Value, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت عنوان پیش‌فرض بر اساس نوع رویداد
+        /// </summary>
+        private string GetDefaultTitle(NotificationEventType eventType, Dictionary<string, string> data)
+        {
             return eventType switch
             {
-                NotificationEventType.TaskAssigned => (
-                    $"تسک جدید برای {recipientName}",
+                NotificationEventType.TaskAssigned => $"تسک جدید برای {data["RecipientFullName"]}",
+                NotificationEventType.TaskCompleted => $"تسک '{data["TaskTitle"]}' تکمیل شد",
+                NotificationEventType.TaskCommentAdded => $"کامنت جدید در تسک '{data["TaskTitle"]}'",
+                NotificationEventType.TaskUpdated => $"تسک '{data["TaskTitle"]}' بروزرسانی شد",
+                NotificationEventType.TaskDeadlineReminder => $"⏰ یادآوری مهلت تسک '{data["TaskTitle"]}'",
+                NotificationEventType.TaskDeleted => $"تسک '{data["TaskTitle"]}' حذف شد",
+                NotificationEventType.TaskStatusChanged => $"تغییر وضعیت تسک '{data["TaskTitle"]}'",
+                NotificationEventType.TaskReassigned => $"تسک '{data["TaskTitle"]}' مجدداً اختصاص داده شد",
+                NotificationEventType.TaskWorkLog => $"گزارش کار جدید در تسک '{data["TaskTitle"]}'",
+                _ => $"اعلان جدید از تسک '{data["TaskTitle"]}'"
+            };
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت پیام پیش‌فرض بر اساس نوع رویداد
+        /// </summary>
+        private string GetDefaultMessage(NotificationEventType eventType, Dictionary<string, string> data)
+        {
+            var recipientName = data["RecipientFullName"];
+            var taskTitle = data["TaskTitle"];
+            var taskCode = data["TaskCode"];
+            var senderName = data["SenderName"];
+            var currentDate = data["Date"];
+            var currentTime = data["Time"];
+            var dueDate = data["TaskDueDate"];
+
+            return eventType switch
+            {
+                NotificationEventType.TaskAssigned => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} به شما اختصاص داده شد.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}\n" +
-                    $"⏰ مهلت: {dueDate}"
-                ),
+                    $"⏰ مهلت: {dueDate}",
 
-                NotificationEventType.TaskCompleted => (
-                    $"تسک '{taskTitle}' تکمیل شد",
+                NotificationEventType.TaskCompleted => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} تکمیل شده است.\n\n" +
                     $"📅 تاریخ تکمیل: {currentDate}\n" +
-                    $"🕐 ساعت: {currentTime}"
-                ),
+                    $"🕐 ساعت: {currentTime}",
 
-                NotificationEventType.TaskCommentAdded => (
-                    $"کامنت جدید در تسک '{taskTitle}'",
+                NotificationEventType.TaskCommentAdded => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"{senderName} در تسک '{taskTitle}' (کد: {taskCode}) کامنت جدیدی ثبت کرده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
-                    $"🕐 ساعت: {currentTime}"
-                ),
+                    $"🕐 ساعت: {currentTime}",
 
-                NotificationEventType.TaskUpdated => (
-                    $"تسک '{taskTitle}' بروزرسانی شد",
+                NotificationEventType.TaskUpdated => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} ویرایش شده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
-                    $"🕐 ساعت: {currentTime}"
-                ),
+                    $"🕐 ساعت: {currentTime}",
 
-                NotificationEventType.TaskDeadlineReminder => (
-                    $"⏰ یادآوری مهلت تسک '{taskTitle}' برای {recipientName}",
+                NotificationEventType.TaskDeadlineReminder => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"🔔 یادآوری جهت بررسی تسک '{taskTitle}' (کد: {taskCode})\n\n" +
                     $"⚠️ مهلت این تسک در تاریخ {dueDate} به پایان می‌رسد.\n\n" +
                     $"📅 تاریخ یادآوری: {currentDate}\n" +
                     $"🕐 ساعت یادآوری: {currentTime}\n\n" +
-                    $"لطفاً نسبت به انجام آن اقدام فرمایید."
-                ),
+                    $"لطفاً نسبت به انجام آن اقدام فرمایید.",
 
-                NotificationEventType.TaskDeleted => (
-                    $"تسک '{taskTitle}' حذف شد",
+                NotificationEventType.TaskDeleted => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} حذف شده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
-                    $"🕐 ساعت: {currentTime}"
-                ),
+                    $"🕐 ساعت: {currentTime}",
 
-                NotificationEventType.TaskStatusChanged => (
-                    $"تغییر وضعیت تسک '{taskTitle}'",
+                NotificationEventType.TaskStatusChanged => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"وضعیت تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} تغییر کرده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
-                    $"🕐 ساعت: {currentTime}"
-                ),
+                    $"🕐 ساعت: {currentTime}",
 
-                NotificationEventType.TaskReassigned => (
-                    $"تسک '{taskTitle}' مجدداً اختصاص داده شد",
+                NotificationEventType.TaskReassigned => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) مجدداً توسط {senderName} به شما تخصیص داده شد.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}\n" +
-                    $"⏰ مهلت: {dueDate}"
-                ),
+                    $"⏰ مهلت: {dueDate}",
 
-                NotificationEventType.TaskWorkLog => (
-                    $"گزارش کار جدید در تسک '{taskTitle}'",
+                NotificationEventType.TaskWorkLog => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"{senderName} گزارش کار جدیدی در تسک '{taskTitle}' (کد: {taskCode}) ثبت کرده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
-                    $"🕐 ساعت: {currentTime}"
-                ),
+                    $"🕐 ساعت: {currentTime}",
 
-                _ => (
-                    $"اعلان جدید از تسک '{taskTitle}'",
+                _ => 
                     $"سلام {recipientName} عزیز،\n\n" +
                     $"رویداد جدیدی در تسک '{taskTitle}' (کد: {taskCode}) رخ داده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}"
-                )
             };
         }
 
         /// <summary>
-        /// ساخت محتوای اعلان بر اساس نوع رویداد (متد قدیمی - حذف شود)
+        /// ⭐⭐⭐ ساخت محتوای یادآوری مهلت تسک با استفاده از TaskReminderSchedule
+        /// [DEPRECATED] - این متد دیگه استفاده نمیشه، محتوا از BuildNotificationContentAsync میاد
         /// </summary>
         [Obsolete("از BuildNotificationContentAsync استفاده کنید")]
-        private (string title, string message) BuildNotificationContent(
+        private async Task<(string title, string message)> BuildTaskDeadlineReminderAsync(
+            AppDbContext context,
             MahERP.DataModelLayer.Entities.TaskManagement.Tasks task,
-            NotificationEventType eventType)
+            string recipientName,
+            string taskTitle,
+            string taskCode,
+            string dueDate,
+            string currentDate,
+            string currentTime)
         {
-            var taskTitle = task.Title ?? "تسک";
-            var taskCode = task.TaskCode ?? "";
-
-            return eventType switch
-            {
-                NotificationEventType.TaskAssigned => (
-                    "تسک جدید اختصاص داده شد",
-                    $"تسک '{taskTitle}' ({taskCode}) به شما اختصاص داده شده است"
-                ),
-
-                NotificationEventType.TaskCompleted => (
-                    "تسک تکمیل شد",
-                    $"تسک '{taskTitle}' ({taskCode}) توسط یکی از اعضا تکمیل شد"
-                ),
-
-                NotificationEventType.TaskCommentAdded => (
-                    "کامنت جدید در تسک",
-                    $"کامنت جدیدی در تسک '{taskTitle}' ({taskCode}) ثبت شد"
-                ),
-
-                NotificationEventType.TaskUpdated => (
-                    "تسک بروزرسانی شد",
-                    $"تسک '{taskTitle}' ({taskCode}) ویرایش شده است"
-                ),
-
-                NotificationEventType.TaskDeadlineReminder => (
-                    "یادآوری مهلت تسک",
-                    $"مهلت تسک '{taskTitle}' ({taskCode}) نزدیک است"
-                ),
-
-                NotificationEventType.TaskDeleted => (
-                    "تسک حذف شد",
-                    $"تسک '{taskTitle}' ({taskCode}) حذف شده است"
-                ),
-
-                NotificationEventType.TaskStatusChanged => (
-                    "تغییر وضعیت تسک",
-                    $"وضعیت تسک '{taskTitle}' ({taskCode}) تغییر کرد"
-                ),
-
-                NotificationEventType.TaskReassigned => (
-                    "تسک مجدداً اختصاص داده شد",
-                    $"تسک '{taskTitle}' ({taskCode}) به شما تخصیص داده شد"
-                ),
-
-                _ => ("اعلان جدید", $"رویداد جدید در تسک '{taskTitle}' ({taskCode})")
-            };
+            // این متد دیگه استفاده نمیشه
+            return ("", "");
         }
 
         /// <summary>

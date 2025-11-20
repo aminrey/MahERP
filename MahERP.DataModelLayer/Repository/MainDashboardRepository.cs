@@ -98,7 +98,7 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// محاسبه آمار تسک‌ها - بازنویسی کامل با حذف تکرار
+        /// محاسبه آمار تسک‌ها - بازنویسی کامل با استفاده از Visibility Logic
         /// </summary>
         public async Task<TasksStatsViewModel> CalculateTaskStatsAsync(string userId)
         {
@@ -107,10 +107,14 @@ namespace MahERP.DataModelLayer.Repository
                 var today = DateTime.Now.Date;
                 var fiveDaysAgo = today.AddDays(-5);
 
-                // ⭐⭐⭐ 1. تسک‌های فعال کاربر (Distinct بر اساس TaskId)
+                // ⭐⭐⭐ استفاده از Visibility Logic برای دریافت تسک‌های قابل مشاهده
+                var visibleTaskIds = await _taskRepository.GetVisibleTaskIdsAsync(userId);
+
+                // دریافت تسک‌های فعال من (Distinct بر اساس TaskId)
                 var myActiveTaskIds = await _context.TaskAssignment_Tbl
                     .Where(ta => ta.AssignedUserId == userId &&
                                 !ta.Task.IsDeleted &&
+                                visibleTaskIds.Contains(ta.TaskId) &&
                                 (
                                     !ta.CompletionDate.HasValue ||
                                     (ta.CompletionDate.HasValue && ta.CompletionDate >= fiveDaysAgo)
@@ -119,25 +123,25 @@ namespace MahERP.DataModelLayer.Repository
                     .Distinct()
                     .ToListAsync();
 
-                // ⭐⭐⭐ 2. تسک‌های ساخته شده توسط من
+                // تسک‌های ساخته شده توسط من
                 var createdByMeTaskIds = await _context.Tasks_Tbl
                     .Where(t => t.CreatorUserId == userId &&
                                !t.IsDeleted &&
+                               visibleTaskIds.Contains(t.Id) &&
                                t.TaskAssignments.Any(ta => ta.AssignedUserId != userId))
                     .Select(t => t.Id)
                     .Distinct()
                     .ToListAsync();
 
-                // ⭐⭐⭐ 3. دریافت تسک‌های کامل (یکبار Query)
+                // دریافت تسک‌های کامل (یکبار Query)
                 var allMyTasks = await _context.Tasks_Tbl
                     .Where(t => myActiveTaskIds.Contains(t.Id))
                     .Include(t => t.TaskAssignments)
                     .ToListAsync();
 
-                // ⭐⭐⭐ 4. محاسبه آمار
                 var result = new TasksStatsViewModel
                 {
-                    // تعداد تسک‌های فعال من (Distinct)
+                    // تعداد تسک‌های فعال من
                     MyTasksCount = myActiveTaskIds.Count,
 
                     // تسک‌های ساخته شده توسط من
@@ -146,7 +150,7 @@ namespace MahERP.DataModelLayer.Repository
                     // تسک‌های تحت نظارت
                     SupervisedTasksCount = await GetSupervisedTasksCountAsync(userId),
 
-                    // تسک‌های امروز (از تسک‌های من)
+                    // تسک‌های امروز
                     TodayTasksCount = allMyTasks.Count(t =>
                     {
                         var myAssignment = t.TaskAssignments.FirstOrDefault(ta => ta.AssignedUserId == userId);
@@ -155,7 +159,7 @@ namespace MahERP.DataModelLayer.Repository
                                (!myAssignment?.CompletionDate.HasValue ?? false);
                     }),
 
-                    // تسک‌های عقب افتاده (از تسک‌های من)
+                    // تسک‌های عقب افتاده
                     OverdueTasksCount = allMyTasks.Count(t =>
                     {
                         var myAssignment = t.TaskAssignments.FirstOrDefault(ta => ta.AssignedUserId == userId);
@@ -164,7 +168,7 @@ namespace MahERP.DataModelLayer.Repository
                                (!myAssignment?.CompletionDate.HasValue ?? false);
                     }),
 
-                    // تسک‌های به موقع (از تسک‌های من)
+                    // تسک‌های به موقع
                     OnTimeTasksCount = allMyTasks.Count(t =>
                     {
                         var myAssignment = t.TaskAssignments.FirstOrDefault(ta => ta.AssignedUserId == userId);
@@ -402,19 +406,23 @@ namespace MahERP.DataModelLayer.Repository
         {
             try
             {
-                // ⭐⭐⭐ مرحله 1: دریافت داده‌ها با Include
+                // ⭐⭐⭐ استفاده از Visibility Logic
+                var visibleTaskIds = await _taskRepository.GetVisibleTaskIdsAsync(userId);
+
+                // مرحله 1: دریافت داده‌ها با Include
                 var assignments = await _context.TaskAssignment_Tbl
                     .Where(ta => ta.AssignedUserId == userId &&
                                 !ta.Task.IsDeleted &&
+                                visibleTaskIds.Contains(ta.TaskId) &&
                                 ta.Task.CreatorUserId != userId)
                     .Include(ta => ta.Task)
                         .ThenInclude(t => t.TaskCategory)
                     .Include(ta => ta.Task.Creator)
                     .OrderByDescending(ta => ta.AssignmentDate)
                     .Take(take)
-                    .ToListAsync(); // ⭐ ابتدا ToListAsync بگیر
+                    .ToListAsync();
 
-                // ⭐⭐⭐ مرحله 2: Projection در حافظه (بدون Expression Tree)
+                // مرحله 2: Projection در حافظه
                 var recentTasks = assignments.Select(ta => new RecentTaskViewModel
                 {
                     Id = ta.TaskId,
@@ -427,16 +435,15 @@ namespace MahERP.DataModelLayer.Repository
                     CreateDate = ta.Task.CreateDate,
                     AssignmentDate = ta.AssignmentDate,
 
-                    // ⭐ حل شده: بدون ?. در Expression Tree
                     CreatorName = ta.Task.Creator != null
                         ? $"{ta.Task.Creator.FirstName} {ta.Task.Creator.LastName}"
                         : "نامشخص",
 
-                    // ⭐ حل شده: جایگزین با ?? در LINQ to Objects
                     CategoryTitle = ta.Task.TaskCategory != null
                         ? ta.Task.TaskCategory.Title ?? "بدون دسته‌بندی"
                         : "بدون دسته‌بندی",
 
+                    // ⭐ اضافه کردن badge تکمیل
                     IsCompleted = ta.CompletionDate.HasValue,
                     CompletionDate = ta.CompletionDate,
                     DueDate = ta.Task.DueDate,
@@ -456,25 +463,29 @@ namespace MahERP.DataModelLayer.Repository
             }
         }
         /// <summary>
-        /// دریافت آخرین تسک‌های واگذار شده توسط کاربر - با استفاده از Include
+        /// دریافت آخرین تسک‌های واگذار شده توسط کاربر - با استفاده از Visibility Logic
         /// </summary>
         public async Task<List<RecentAssignedTaskViewModel>> GetRecentAssignedTasksAsync(string userId, int take = 5)
         {
             try
             {
-                // ⭐⭐⭐ مرحله 1: دریافت داده‌ها با Include
+                // ⭐⭐⭐ استفاده از Visibility Logic
+                var visibleTaskIds = await _taskRepository.GetVisibleTaskIdsAsync(userId);
+
+                // مرحله 1: دریافت داده‌ها با Include
                 var tasks = await _context.Tasks_Tbl
                     .Where(t => t.CreatorUserId == userId &&
                                !t.IsDeleted &&
+                               visibleTaskIds.Contains(t.Id) &&
                                t.TaskAssignments.Any(ta => ta.AssignedUserId != userId))
                     .Include(t => t.TaskCategory)
                     .Include(t => t.TaskAssignments)
                         .ThenInclude(ta => ta.AssignedUser)
                     .OrderByDescending(t => t.CreateDate)
                     .Take(take)
-                    .ToListAsync(); // ⭐ ابتدا ToListAsync بگیر
+                    .ToListAsync();
 
-                // ⭐⭐⭐ مرحله 2: Projection در حافظه
+                // مرحله 2: Projection در حافظه
                 var recentTasks = tasks.Select(t => new RecentAssignedTaskViewModel
                 {
                     Id = t.Id,
@@ -486,7 +497,6 @@ namespace MahERP.DataModelLayer.Repository
                     StartDate = t.StartDate,
                     CreateDate = t.CreateDate,
 
-                    // ⭐ حل شده: بدون ?. در LINQ to Objects
                     CategoryTitle = t.TaskCategory != null
                         ? t.TaskCategory.Title ?? "بدون دسته‌بندی"
                         : "بدون دسته‌بندی",
@@ -497,10 +507,7 @@ namespace MahERP.DataModelLayer.Repository
                     // اولین عضو + تعداد بقیه
                     AssignedToName = GetAssigneesDisplayName(t.TaskAssignments, userId),
 
-                    // ⭐⭐⭐ حل شده: استفاده از fully qualified name برای AssigneeInfo
-                   
-
-                    // آمار تکمیل
+                    // ⭐ آمار تکمیل با بررسی CompletionDate در Assignment
                     CompletedCount = t.TaskAssignments.Count(ta =>
                         ta.AssignedUserId != userId && ta.CompletionDate.HasValue),
                     TotalAssignees = t.TaskAssignments.Count(ta => ta.AssignedUserId != userId),

@@ -1041,7 +1041,7 @@
                                         در تاریخ پایان تسک (<strong id="due-date-display">--/--/----</strong>)، یادآوری برای تمام اعضای تیم ارسال می‌شود
                                     </p>
                                     <small class="text-muted">
-                                        زمان ارسال: ۹:۰۰ صبح | کانال: سیستم
+                                        زمان ارسال: ۹:۰۰ صبح
                                     </small>
                                 </div>
                             </div>
@@ -1820,5 +1820,858 @@
             count += $('#customRemindersList .card').length;
             $('#reminders-count').text(count);
         }
+
+
+        // بقیه توابع کمکی...
+        function addNewTask() {
+            const taskInput = $('#js-task-input');
+            const taskText = taskInput.val().trim();
+
+            if (!taskText) {
+                taskInput.focus();
+                return false;
+            }
+
+            operationsCounter++;
+            const taskId = operationsCounter;
+
+            const taskHtml = `
+                <div class="js-task border rounded p-3 mb-2 bg-light animated fadeIn" data-task-id="${taskId}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="js-task-content fw-medium">${taskText}</div>
+                        <button class="btn btn-sm btn-outline-danger" type="button" onclick="removeTask(${taskId})" title="حذف کار">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            $('#operationsList').append(taskHtml);
+            taskInput.val('').focus();
+
+            updateOperationsDisplay();
+            updateOperationsCount();
+            extractOperationsData();
+
+            return false;
+        }
+
+        function removeTask(taskId) {
+            if (confirm('آیا از حذف این کار اطمینان دارید؟')) {
+                $(`[data-task-id="${taskId}"]`).remove();
+                updateOperationsDisplay();
+                updateOperationsCount();
+                extractOperationsData();
+            }
+        }
+
+        function extractOperationsData() {
+            const currentOperations = [];
+
+            $('#operationsList .js-task').each(function(index) {
+                const title = $(this).find('.js-task-content').text().trim();
+                if (title) {
+                    currentOperations.push({
+                        Title: title,
+                        OperationOrder: index + 1,
+                        IsCompleted: false,
+                        IsStarred: false,
+                        EstimatedHours: null
+                    });
+                }
+            });
+
+            $('#taskOperationsData').val(JSON.stringify(currentOperations));
+        }
+
+        function updateOperationsDisplay() {
+            const tasksCount = $('#operationsList .js-task').length;
+            $('#emptyOperationsList').toggle(tasksCount === 0);
+            $('#operationsList').toggle(tasksCount > 0);
+        }
+
+        function updateOperationsCount() {
+            const tasksCount = $('#operationsList .js-task').length;
+            $('#operations-count, #operationsBadge').text(tasksCount);
+        }
+
+        function updateRemindersCount() {
+            let count = $('#defaultReminder').is(':checked') ? 1 : 0;
+            count += $('#customRemindersList .card').length;
+            $('#reminders-count').text(count);
+        }
+
+        function toggleTaskCodeInput() {
+            const isManual = $('#toggleManualCode').is(':checked');
+            $('#automaticCodeDiv').toggle(!isManual);
+            $('#manualCodeDiv').toggle(isManual);
+            if (isManual) $('#manualTaskCode').focus();
+        }
+
+        function validateMainInfo() {
+            let hasErrors = false;
+
+            const title = $('#Title').val().trim();
+            $('#Title').toggleClass('is-invalid', !title).toggleClass('is-valid', !!title);
+            hasErrors = hasErrors || !title;
+
+            const branchId = $('#BranchIdSelected').val();
+            $('#BranchIdSelected').toggleClass('is-invalid', !branchId).toggleClass('is-valid', !!branchId);
+            $('#BranchIdSelected').next('.select2-container').toggleClass('select2-invalid', !branchId);
+            hasErrors = hasErrors || !branchId;
+
+            $('#main-info-error').toggleClass('d-none', !hasErrors);
+            return !hasErrors;
+        }
+
+        function validateFormBeforeSubmit() {
+            let isValid = true;
+            const errors = [];
+
+            $('.is-invalid').removeClass('is-invalid');
+            $('.select2-invalid').removeClass('select2-invalid');
+
+            // بررسی عنوان
+            const title = $('#Title').val().trim();
+            if (!title) {
+                isValid = false;
+                errors.push('عنوان تسک الزامی است');
+                $('#Title').addClass('is-invalid');
+                $('#main-info-tab').tab('show');
+            }
+
+            // بررسی شعبه
+            const branchId = $('#BranchIdSelected').val();
+            if (!branchId) {
+                isValid = false;
+                errors.push('انتخاب شعبه الزامی است');
+                $('#BranchIdSelected').addClass('is-invalid').next('.select2-container').addClass('select2-invalid');
+                $('#main-info-tab').tab('show');
+            }
+
+            // بررسی تخصیص کاربران
+            const assignedUsers = JSON.parse($('#AssignmentsSelectedTaskUserArraysString').val() || '[]');
+            if (assignedUsers.length === 0) {
+                isValid = false;
+                errors.push('لطفاً حداقل یک کاربر را برای انجام تسک انتخاب کنید');
+                $('#main-info-tab').tab('show');
+            }
+
+            // بررسی تکمیل بودن تیم برای هر کاربر
+            let hasIncompleteAssignment = false;
+            $('.user-assignment-row').each(function() {
+                const userId = $(this).find('.user-select').val();
+                const teamId = $(this).find('.team-select').val();
+
+                if (userId && !teamId) {
+                    isValid = false;
+                    hasIncompleteAssignment = true;
+                    $(this).find('.team-select').addClass('is-invalid');
+                }
+            });
+
+            if (hasIncompleteAssignment) {
+                errors.push('لطفاً برای تمام کاربران منتصب، تیم مربوطه را انتخاب کنید');
+            }
+
+            // بررسی کد دستی
+            const isManualCode = $('#toggleManualCode').is(':checked');
+            if (isManualCode) {
+                const manualCode = $('#manualTaskCode').val().trim();
+                if (!manualCode) {
+                    isValid = false;
+                    errors.push('لطفاً کد تسک را وارد کنید');
+                    $('#manualTaskCode').addClass('is-invalid');
+                } else if ($('#manualTaskCode').hasClass('is-invalid')) {
+                    isValid = false;
+                    errors.push('کد تسک وارد شده تکراری یا نامعتبر است');
+                }
+            }
+
+            if (!isValid && errors.length > 0) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'خطا در اعتبارسنجی',
+                        html: '<div class="text-start"><ul class="mb-0">' +
+                              errors.map(e => `<li>${e}</li>`).join('') +
+                              '</ul></div>',
+                        icon: 'error',
+                        confirmButtonText: 'متوجه شدم'
+                    });
+                } else {
+                    alert('لطفاً خطاهای زیر را رفع کنید:\n\n' + errors.join('\n'));
+                }
+            }
+
+            return isValid;
+        }
+
+        function updateBranchDependentSelects() {
+            const branchId = $('#BranchIdSelected').val();
+            $('#StakeholderId, #TaskCategoryIdSelected').prop('disabled', !branchId);
+        }
+
+        function validateManualTaskCode() {
+            const manualCode = $('#manualTaskCode').val().trim();
+            const systemPrefix = '@(Model.TaskCodeSettings?.SystemPrefix ?? "TSK")';
+
+            if (!manualCode) {
+                $('#manualTaskCode').removeClass('is-valid is-invalid');
+                return true;
+            }
+
+            const isValid = !manualCode.startsWith(systemPrefix + '-');
+            $('#manualTaskCode').toggleClass('is-invalid', !isValid).toggleClass('is-valid', isValid);
+            return isValid;
+        }
+
+        function checkTaskCodeUniqueness() {
+            const taskCode = $('#manualTaskCode').val().trim();
+            if (!taskCode || !validateManualTaskCode()) return;
+
+            $.ajax({
+                url: '@Url.Action("CheckTaskCodeUniqueness", "Tasks")',
+                type: 'POST',
+                data: {
+                    taskCode: taskCode,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success && response.isUnique) {
+                        $('#manualTaskCode').addClass('is-valid').removeClass('is-invalid');
+                        $('#taskCodeMessages').html('<small class="text-success"><i class="fa fa-check me-1"></i>کد تسک معتبر و منحصر به فرد است</small>');
+                    } else {
+                        $('#manualTaskCode').addClass('is-invalid').removeClass('is-valid');
+                        $('#taskCodeMessages').html('<small class="text-danger"><i class="fa fa-times me-1"></i>این کد تسک قبلاً استفاده شده است</small>');
+                    }
+                }
+            });
+        }
+
+        function updateTimePreview() {
+            const startDate = $('#SuggestedStartDatePersian').val();
+            const dueDate = $('#DueDatePersian').val();
+            const estimatedHours = $('#EstimatedHours').val();
+
+            if (!startDate && !dueDate && !estimatedHours) {
+                $('#timePreview').hide();
+                return;
+            }
+
+            let previewHtml = '<div class="row">';
+            if (startDate) previewHtml += `<div class="col-sm-4"><strong>شروع:</strong> ${startDate}</div>`;
+            if (dueDate) previewHtml += `<div class="col-sm-4"><strong>مهلت:</strong> ${dueDate}</div>`;
+            if (estimatedHours) previewHtml += `<div class="col-sm-4"><strong>مدت تخمینی:</strong> ${estimatedHours} ساعت</div>`;
+            previewHtml += '</div>';
+
+            $('#timePreviewContent').html(previewHtml);
+            $('#timePreview').show();
+        }
+
+        function toggleScheduleOptions(scheduleType) {
+            $('#oneTimeOptions, #weeklyOptions, #monthlyOptions').hide();
+            $('#scheduledDaysOfWeek').val('');
+
+            switch (scheduleType) {
+                case '0': // One-Time
+                    $('#oneTimeOptions').show();
+                    break;
+                case '1': // Daily
+                    break;
+                case '2': // Weekly
+                    $('#weeklyOptions').show();
+                    break;
+                case '3': // Monthly
+                    $('#monthlyOptions').show();
+                    break;
+            }
+        }
+
+        function resetTaskScheduleFields() {
+            $('#TaskSchedule_ScheduleTitle').val('');
+            $('#TaskSchedule_ScheduleDescription').val('');
+            $('#TaskSchedule_ScheduledTime').val('');
+            $('#TaskSchedule_OneTimeExecutionDatePersian').val('');
+            $('#TaskSchedule_ScheduledDayOfMonth').val('');
+            $('#scheduledDaysOfWeek').val('');
+            $('#TaskSchedule_StartDatePersian').val('');
+            $('#TaskSchedule_EndDatePersian').val('');
+            $('#TaskSchedule_MaxOccurrences').val('');
+            $('#TaskSchedule_CreateImmediately').prop('checked', false);
+        }
+
+        function updateAllHiddenInputs() {
+            updateRemindersData();
+            extractOperationsData();
+            updateUserAssignmentsData();
+        }
+
+        function updateRemindersData() {
+            remindersList = [];
+            if ($('#defaultReminder').is(':checked')) {
+                remindersList.push({
+                    Title: 'یادآوری پیش‌فرض سیستم',
+                    ReminderType: 2,
+                    DaysBeforeDeadline: 3,
+                    NotificationTime: '09:00:00'
+                });
+            }
+
+            $('#customRemindersList .reminder-data').each(function() {
+                const data = $(this).data();
+                const reminderObj = {
+                    Title: data.title,
+                    Description: data.description,
+                    ReminderType: parseInt(data.type),
+                    NotificationTime: data.time
+                };
+
+                if (data.interval) {
+                    reminderObj.IntervalDays = parseInt(data.interval);
+                }
+                if (data.daysBefore) {
+                    reminderObj.DaysBeforeDeadline = parseInt(data.daysBefore);
+                }
+                if (data.startDate) {
+                    reminderObj.StartDatePersian = data.startDate;
+                }
+
+                remindersList.push(reminderObj);
+            });
+
+            const jsonData = JSON.stringify(remindersList);
+            $('#taskRemindersData').val(jsonData);
+        }
+
+        function removeReminder(reminderId) {
+            if (confirm('آیا از حذف این یادآوری اطمینان دارید؟')) {
+                $(`[data-reminder-id="${reminderId}"]`).remove();
+                updateRemindersCount();
+                updateRemindersData();
+            }
+        }
+
+        function updateViewersList() {
+            const selectedUsers = $('#AssignmentsSelectedTaskUserArraysString').val() || [];
+            const selectedTeams = $('#AssignmentsSelectedTeamIds').val() || [];
+
+            if (selectedUsers.length === 0 && selectedTeams.length === 0) {
+                $('#viewersWaiting').show();
+                $('#viewersContent').hide();
+                $('#viewers-count').text('0');
+                return;
+            }
+
+            let viewersCount = selectedUsers.length;
+            selectedTeams.forEach(function(teamId) {
+                viewersCount += 5;
+            });
+
+            $('#viewers-count').text(viewersCount);
+            $('#viewersWaiting').hide();
+            $('#viewersContent').show().html(`
+                <div class="alert alert-success">
+                    <i class="fa fa-users me-2"></i>
+                    <strong>تعداد ناظرین تقریبی:</strong> ${viewersCount} نفر
+                    <ul class="mt-2 mb-0">
+                        <li>کاربران منتصب مستقیم: ${selectedUsers.length} نفر</li>
+                        <li>اعضای تیم‌های انتخاب شده: ${selectedTeams.length} تیم</li>
+                    </ul>
+                </div>
+            `);
+        }
     </script>
+
+    <script>
+        $(document).ready(function() {
+            // ⭐ مدیریت تغییر شعبه: بروزرسانی Contacts و Organizations
+            $('#BranchIdSelected').on('change', function() {
+                const branchId = $(this).val();
+
+                if (!branchId) {
+                    $('#SelectedContactId, #SelectedOrganizationId')
+                        .prop('disabled', true)
+                        .empty()
+                        .append('<option value="">ابتدا شعبه را انتخاب کنید</option>');
+                    $('#OrganizationContactsDiv').hide();
+                    return;
+                }
+
+                // ⭐ نمایش loading
+                $('#ContactSelectionDiv').html('<div class="text-center py-2"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
+                $('#OrganizationSelectionDiv').html('<div class="text-center py-2"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
+
+                $.ajax({
+                    url: '@Url.Action("BranchTriggerSelectForStakeholders", "Tasks")',
+                    type: 'POST',
+                    data: {
+                        branchId: branchId,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success && response.viewList) {
+                            // ⭐ بروزرسانی Contact dropdown
+                            const contactView = response.viewList.find(v => v.elementId === 'ContactSelectionDiv');
+                            if (contactView && contactView.view && contactView.view.result) {
+                                $('#ContactSelectionDiv').html(contactView.view.result);
+                                $('#SelectedContactId').select2({
+                                    width: '100%',
+                                    placeholder: 'انتخاب فرد',
+                                    allowClear: true
+                                });
+                            }
+
+                            // ⭐ بروزرسانی Organization dropdown
+                            const orgView = response.viewList.find(v => v.elementId === 'OrganizationSelectionDiv');
+                            if (orgView && orgView.view && orgView.view.result) {
+                                $('#OrganizationSelectionDiv').html(orgView.view.result);
+                                $('#SelectedOrganizationId').select2({
+                                    width: '100%',
+                                    placeholder: 'انتخاب شرکت/سازمان',
+                                    allowClear: true
+                                });
+                            }
+
+                            // پاک کردن بخش افراد سازمان
+                            $('#OrganizationContactsDiv').hide().empty();
+
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success('لیست افراد و سازمان‌ها بروز شد', '', {timeOut: 2000});
+                            }
+                        }
+                    },
+                    error: function() {
+                        $('#ContactSelectionDiv').html('<select class="form-select" disabled><option>خطا در بارگذاری</option></select>');
+                        $('#OrganizationSelectionDiv').html('<select class="form-select" disabled><option>خطا در بارگذاری</option></select>');
+
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('خطا در بارگذاری اطلاعات');
+                        }
+                    }
+                });
+            });
+
+            // ⭐⭐⭐ مدیریت تغییر Organization: نمایش افراد مرتبط
+            $(document).on('change', '#SelectedOrganizationId', function() {
+                const organizationId = $(this).val();
+
+                if (!organizationId) {
+                    $('#OrganizationContactsDiv').hide().empty();
+                    return;
+                }
+
+                $('#OrganizationContactsDiv').html('<div class="text-center py-3"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری افراد...</div>').show();
+
+                $.ajax({
+                    url: '@Url.Action("OrganizationTriggerSelect", "Tasks")',
+                    type: 'POST',
+                    data: {
+                        organizationId: organizationId,
+                        __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(html) {
+                        $('#OrganizationContactsDiv').html(html);
+
+                        // بروزرسانی Select2 برای dropdown جدید
+                        $('#OrganizationRelatedContactId').select2({
+                            width: '100%',
+                            placeholder: 'انتخاب فرد',
+                            allowClear: true
+                        });
+                    },
+                    error: function() {
+                        $('#OrganizationContactsDiv').html('<div class="alert alert-danger">خطا در بارگذاری افراد</div>');
+                    }
+                });
+            });
+
+            // ⭐ مدیریت تغییر Tab: پاک کردن انتخاب‌های قبلی
+            $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function(e) {
+                const target = $(e.target).attr('data-bs-target');
+
+                if (target === '#contact-panel') {
+                    // پاک کردن Organization و افراد آن
+                    $('#SelectedOrganizationId').val('').trigger('change');
+                    $('#OrganizationContactsDiv').hide().empty();
+                } else if (target === '#organization-panel') {
+                    // پاک کردن Contact
+                    $('#SelectedContactId').val('').trigger('change');
+                }
+            });
+        });
+    </script>
+    <script>
+            // ⭐⭐⭐ نمایش تیک CompletionMode فقط وقتی بیش از یک نفر منتصب شود
+        function updateCompletionModeVisibility() {
+            const assignmentsCount = $('.user-assignment-row').length;
+
+            if (assignmentsCount > 1) {
+                $('#completion-mode-info').fadeIn();
+            } else {
+                $('#completion-mode-info').fadeOut();
+                // ⭐ ریست به حالت مشترک (0)
+                $('#completionModeSwitch').prop('checked', false);
+                $('#completionModeHidden').val(0);
+                updateCompletionModeDescription(false);
+            }
+        }
+
+        // ⭐⭐⭐ تابع جدید: بروزرسانی توضیحات
+        function updateCompletionModeDescription(isIndependent) {
+            const desc = isIndependent
+                ? '<strong>حالت فعلی: مستقل</strong> - هر نفر باید جداگانه تسک را تکمیل کند'
+                : '<strong>حالت فعلی: مشترک</strong> - یک نفر تکمیل کند، برای همه تکمیل می‌شود';
+
+            $('#completion-mode-desc').html(`<i class="fa fa-info-circle me-1"></i>${desc}`);
+        }
+
+        $(document).ready(function() {
+            $('#completionModeSwitch').on('change', function() {
+                const isIndependent = $(this).is(':checked');
+
+                // ⭐ بروزرسانی hidden input
+                $('#completionModeHidden').val(isIndependent ? 1 : 0);
+
+                // ⭐ بروزرسانی توضیحات
+                updateCompletionModeDescription(isIndependent);
+
+                console.log('✅ CompletionMode changed to:', isIndependent ? 'مستقل (1)' : 'مشترک (0)');
+            });
+        });
+
+
+
+        function removeUserAssignmentRow(rowId) {
+            $(`#assignment-row-${rowId}`).remove();
+            updateUserAssignmentsData();
+            updateCompletionModeVisibility(); // ⭐ اضافه شده
+            updateSystemViewersList(); // ⭐⭐⭐ بروزرسانی ناظران
+        }
+
+                // ⭐⭐⭐ فرمت سفارشی برای Select2 با تصویر
+        function formatUserWithImage(user) {
+            if (!user.id) {
+                return user.text;
+            }
+
+            const $user = $(user.element);
+            const imageUrl = $user.data('profile-image') || '/images/default-avatar.png';
+            const displayName = $user.data('display-name') || user.text;
+
+            return $(`
+                <div class="d-flex align-items-center">
+                    <img src="${imageUrl}"
+                         class="rounded-circle me-2"
+                         style="width: 24px; height: 24px; object-fit: cover;"
+                         onerror="this.src='/images/default-avatar.png'">
+                    <span>${displayName}</span>
+                </div>
+            `);
+        }
+
+        // ⭐ اعمال به User Select
+        function initializeUserSelect($select) {
+            $select.select2({
+                width: '100%',
+                placeholder: 'انتخاب کاربر...',
+                templateResult: formatUserWithImage,
+                templateSelection: formatUserWithImage,
+                escapeMarkup: function(markup) {
+                    return markup;
+                }
+            });
+        }
+
+        // ⭐⭐⭐⭐⭐ مدیریت ناظرین تسک ⭐⭐⭐⭐⭐
+
+        let carbonCopyViewers = []; // لیست ناظران رونوشتی
+
+        /**
+         * بروزرسانی لیست ناظران خودکار (سیستمی)
+         */
+        function updateSystemViewersList() {
+            const currentUserId = '@(Model.CreatorUserId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)';
+            const systemViewers = new Map(); // استفاده از Map برای جلوگیری از تکرار
+
+            // 1️⃣ سازنده تسک (کاربر جاری)
+            if (currentUserId) {
+                systemViewers.set(currentUserId, {
+                    userId: currentUserId,
+                    name: '@(User.Identity?.Name ?? "شما")',
+                    profileImage: '/images/default-avatar.png',
+                    reason: 'سازنده تسک',
+                    teamName: null
+                });
+            }
+
+            // 2️⃣ کاربران منتصب
+            $('.user-assignment-row').each(function() {
+                const userId = $(this).find('.user-select').val();
+                const userName = $(this).find('.user-select option:selected').text();
+                const teamId = $(this).find('.team-select').val();
+                const teamName = $(this).find('.team-select option:selected').text();
+
+                if (userId && !systemViewers.has(userId)) {
+                    systemViewers.set(userId, {
+                        userId: userId,
+                        name: userName,
+                        profileImage: '/images/default-avatar.png',
+                        reason: 'کاربر منتصب',
+                        teamName: teamName !== 'انتخاب تیم...' ? teamName : null
+                    });
+                }
+
+                // 3️⃣ مدیر تیم (اگر تیم انتخاب شده باشد)
+                if (teamId && teamId !== '0') {
+                    const team = availableTeams.find(t => t.id == teamId);
+                    if (team && team.managerId && !systemViewers.has(team.managerId)) {
+                        systemViewers.set(team.managerId, {
+                            userId: team.managerId,
+                            name: team.managerName || 'مدیر تیم',
+                            profileImage: '/images/default-avatar.png',
+                            reason: 'مدیر تیم',
+                            teamName: team.name
+                        });
+                    }
+                }
+            });
+
+            // 4️⃣ رندر لیست
+            renderSystemViewers(Array.from(systemViewers.values()));
+        }
+
+        /**
+         * رندر کردن لیست ناظران خودکار
+         */
+        function renderSystemViewers(viewers) {
+            const $container = $('#system-viewers-list');
+
+            if (viewers.length === 0) {
+                $container.html(`
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa fa-users-slash fa-3x mb-3 opacity-25"></i>
+                        <p class="mb-1">ناظران خودکار پس از انتخاب کاربران منتصب نمایش داده می‌شوند</p>
+                        <small>شامل: سازنده، کاربران منتصب، مدیر تیم و سرپرستان</small>
+                    </div>
+                `);
+            } else {
+                let html = '<div class="list-group">';
+
+                viewers.forEach(viewer => {
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <img src="${viewer.profileImage}"
+                                     class="rounded-circle me-3"
+                                     style="width: 40px; height: 40px; object-fit: cover;"
+                                     alt="${viewer.name}">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">${viewer.name}</h6>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span class="badge bg-primary">
+                                            <i class="fa fa-shield-alt me-1"></i>${viewer.reason}
+                                        </span>
+                                        ${viewer.teamName ? `<span class="badge bg-info"><i class="fa fa-users me-1"></i>${viewer.teamName}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                $container.html(html);
+            }
+
+            // بروزرسانی شمارنده
+            $('#system-viewers-count, #system-viewers-stat').text(viewers.length);
+            updateTotalViewersCount();
+        }
+
+        /**
+         * نمایش مودال افزودن ناظر رونوشتی با استفاده از createAndShowModal
+         */
+        function showAddCarbonCopyViewerModal() {
+            const branchId = $('#BranchIdSelected').val();
+
+            if (!branchId) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('ابتدا شعبه را انتخاب کنید');
+                }
+                return;
+            }
+
+            // ⭐ استفاده از createAndShowModal
+            createAndShowModal({
+                url: '@Url.Action("AddCarbonCopyViewerModal", "TaskViewers")?branchId=' + branchId,
+                onShown: function(modalInstance, $modal) {
+                    console.log('✅ Carbon Copy modal loaded');
+
+                    // راه‌اندازی Select2 در مودال
+                    $modal.find('#carbon-copy-user-select').select2({
+                        width: '100%',
+                        placeholder: 'یک کاربر انتخاب کنید...',
+                        dropdownParent: $modal
+                    });
+                },
+                onSubmitSuccess: function(response, modalInstance) {
+                    console.log('✅ Carbon Copy added:', response);
+
+                    if (response.status === 'success' && response.data) {
+                        // اضافه کردن به لیست
+                        carbonCopyViewers.push({
+                            userId: response.data.userId,
+                            name: response.data.userName,
+                            profileImage: response.data.profileImage || '/images/default-avatar.png',
+                            note: response.data.note,
+                            addedDate: new Date().toISOString()
+                        });
+
+                        // بروزرسانی UI
+                        renderCarbonCopyViewers();
+                        updateCarbonCopyViewersJson();
+
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('ناظر رونوشتی اضافه شد');
+                        }
+                    }
+
+                    modalInstance.hide();
+                }
+            });
+        }
+
+        /**
+         * حذف ناظر رونوشتی
+         */
+        function removeCarbonCopyViewer(userId) {
+            carbonCopyViewers = carbonCopyViewers.filter(v => v.userId !== userId);
+            renderCarbonCopyViewers();
+            updateCarbonCopyViewersJson();
+
+            if (typeof toastr !== 'undefined') {
+                toastr.info('ناظر رونوشتی حذف شد');
+            }
+        }
+
+        /**
+         * رندر کردن لیست ناظران رونوشتی
+         */
+        function renderCarbonCopyViewers() {
+            const $container = $('#carbon-copy-viewers-list');
+
+            if (carbonCopyViewers.length === 0) {
+                $container.html(`
+                    <div class="text-center py-4 text-muted" id="empty-carbon-copy-message">
+                        <i class="fa fa-user-slash fa-3x mb-3 opacity-25"></i>
+                        <p class="mb-1">هیچ ناظر رونوشتی اضافه نشده است</p>
+                        <small>از دکمه "افزودن ناظر" استفاده کنید</small>
+                    </div>
+                `);
+            } else {
+                let html = '<div class="list-group">';
+
+                carbonCopyViewers.forEach(viewer => {
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-start">
+                                <img src="${viewer.profileImage}"
+                                     class="rounded-circle me-3"
+                                     style="width: 40px; height: 40px; object-fit: cover;"
+                                     alt="${viewer.name}">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h6 class="mb-1">${viewer.name}</h6>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="removeCarbonCopyViewer('${viewer.userId}')"
+                                                title="حذف ناظر">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <span class="badge bg-success mb-2">
+                                        <i class="fa fa-copy me-1"></i>رونوشت
+                                    </span>
+                                    ${viewer.note ? `<div class="alert alert-light p-2 mb-0 mt-2"><small class="text-muted"><i class="fa fa-sticky-note me-1"></i>${viewer.note}</small></div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                $container.html(html);
+            }
+
+            // بروزرسانی شمارنده
+            $('#carbon-copy-viewers-count, #carbon-copy-viewers-stat').text(carbonCopyViewers.length);
+            updateTotalViewersCount();
+        }
+
+        /**
+         * بروزرسانی hidden input برای ارسال به سرور
+         */
+        function updateCarbonCopyViewersJson() {
+            const json = JSON.stringify(carbonCopyViewers.map(v => ({
+                UserId: v.userId,
+                Note: v.note || null
+            })));
+            $('#CarbonCopyViewersJson').val(json);
+            console.log('📤 Carbon Copy Viewers JSON:', json);
+        }
+
+        /**
+         * بروزرسانی شمارنده کل ناظران
+         */
+        function updateTotalViewersCount() {
+            const systemCount = parseInt($('#system-viewers-count').text()) || 0;
+            const carbonCopyCount = carbonCopyViewers.length;
+            const total = systemCount + carbonCopyCount;
+
+            $('#total-viewers-count').text(total);
+            $('#viewers-count').text(total); // شمارنده در تب
+        }
+
+        /**
+         * فعال‌سازی دکمه افزودن ناظر رونوشتی
+         */
+        function enableCarbonCopyButton() {
+            const branchId = $('#BranchIdSelected').val();
+
+            // ⭐ فقط به branchId چک می‌کنیم (availableUsers بعداً پر می‌شود)
+            if (branchId && branchId !== '0') {
+                $('#add-carbon-copy-viewer-btn')
+                    .prop('disabled', false)
+                    .attr('title', 'افزودن ناظر رونوشتی');
+
+                console.log('✅ Carbon Copy button enabled');
+            } else {
+                $('#add-carbon-copy-viewer-btn')
+                    .prop('disabled', true)
+                    .attr('title', 'ابتدا شعبه را انتخاب کنید');
+
+                console.log('⚠️ Carbon Copy button disabled - no branch selected');
+            }
+        }
+
+        // ⭐⭐⭐ رویدادها
+        $(document).ready(function() {
+            // دکمه افزودن ناظر رونوشتی
+            $('#add-carbon-copy-viewer-btn').on('click', showAddCarbonCopyViewerModal);
+
+            // هنگام تغییر شعبه
+            $('#BranchIdSelected').on('change', function() {
+                enableCarbonCopyButton();
+                updateSystemViewersList();
+            });
+
+            // هنگام کلیک روی تب ناظرین
+            $('#viewers-tab').on('shown.bs.tab', function() {
+                updateSystemViewersList();
+            });
+        });
+
+    </script>
+
+
 }

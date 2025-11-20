@@ -10,9 +10,11 @@ using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Threading.Tasks;
@@ -73,11 +75,29 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// مودال افزودن تسک به روز من
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> AddToMyDayModal(int taskAssignmentId)
+        public async Task<IActionResult> AddToMyDayModal(int taskId, bool fromList = false)
         {
+            // ⭐⭐⭐ دریافت taskAssignment برای کاربر فعلی
+            var currentUserId = _userManager.GetUserId(User);
+            
+            var taskAssignment =  _uow.TaskAssignmentUW.Get()
+                .Where(ta => ta.TaskId == taskId && ta.AssignedUserId == currentUserId)
+                .FirstOrDefault();
+
+            if (taskAssignment == null)
+            {
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "تخصیص تسک یافت نشد" } }
+                });
+            }
+
             var model = new AddToMyDayViewModel
             {
-                TaskAssignmentId = taskAssignmentId,
+                TaskAssignmentId = taskAssignment.Id,
+                TaskId = taskId,
+                FromList = fromList,
                 PlannedDate = DateTime.Now.Date
             };
 
@@ -96,10 +116,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return Json(new
                 {
                     status = "error",
-                    message = "داده‌های ورودی نامعتبر است"
+                    message = new[] { new { status = "error", text = "داده‌های ورودی نامعتبر است" } }
                 });
             }
-
+            model.PlannedDate = ConvertDateTime.ConvertShamsiToMiladi(model.PlannedDateString);
             var currentUserId = _userManager.GetUserId(User);
             var result = await _myDayTaskRepository.AddTaskToMyDayAsync(
                 model.TaskAssignmentId,
@@ -109,18 +129,50 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
             if (result.Success)
             {
+                // ⭐⭐⭐ اگر از لیست آمده، پارشیال ردیف را برگردان
+                if (model.FromList && model.TaskId.HasValue)
+                {
+                    // دریافت اطلاعات تسک به‌روز شده
+                    var taskCard = await _TaskRepository.GetTaskCardViewModelAsync(model.TaskId.Value, currentUserId);
+                    
+                    if (taskCard != null)
+                    {
+                        // ⭐ تنظیم IsInMyDay به true
+                        taskCard.IsInMyDay = true;
+                        
+                        // رندر پارشیال ردیف
+                        var partialView = await this.RenderViewToStringAsync("../Tasks/_TaskRowPartial", taskCard);
+
+                        return Json(new
+                        {
+                            status = "update-view",
+                            viewList = new[]
+                            {
+                                new
+                                {
+                                    elementId = $"task-row-{model.TaskId}",
+                                    view = new { result = partialView },
+                                    appendMode = false
+                                }
+                            },
+                            message = new[] { new { status = "success", text = result.Message } }
+                        });
+                    }
+                }
+
+                // ⭐ حالت پیش‌فرض: redirect
                 return Json(new
                 {
                     status = "redirect",
                     redirectUrl = Url.Action("Index", "MyDayTask"),
-                    message = result.Message
+                    message = new[] { new { status = "success", text = result.Message } }
                 });
             }
 
             return Json(new
             {
                 status = "error",
-                message = result.Message
+                message = new[] { new { status = "error", text = result.Message } }
             });
         }
 

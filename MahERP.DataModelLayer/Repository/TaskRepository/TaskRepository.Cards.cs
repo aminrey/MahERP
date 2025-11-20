@@ -154,6 +154,15 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 daysRemaining = (task.DueDate.Value.Date - DateTime.Now.Date).Days;
             }
 
+            // ⭐⭐⭐ منطق تعیین تاریخ شروع:
+            // 1. اگر StartDate مقدار دارد، از آن استفاده کن
+            // 2. اگر DueDate وجود دارد ولی StartDate خالی است، از CreateDate استفاده کن
+            DateTime? displayStartDate = task.StartDate;
+            if (!displayStartDate.HasValue && task.DueDate.HasValue)
+            {
+                displayStartDate = task.CreateDate;
+            }
+
             // تبدیل به ViewModel
             return new TaskCardViewModel
             {
@@ -172,12 +181,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                            task.DueDate.Value < DateTime.Now &&
                            !isCompleted,
 
-                // تاریخ‌ها
+                // ⭐⭐⭐ تاریخ‌ها
+                StartDate = displayStartDate,
+                CreateDate = task.CreateDate,
+                CreateDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.CreateDate, "yyyy/MM/dd"),
                 DueDate = task.DueDate,
                 DueDatePersian = task.DueDate.HasValue
                     ? ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd")
                     : null,
-                CreateDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.CreateDate, "yyyy/MM/dd"),
 
                 // افراد
                 CreatorName = task.Creator != null

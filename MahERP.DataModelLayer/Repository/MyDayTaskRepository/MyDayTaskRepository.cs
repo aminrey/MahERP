@@ -26,8 +26,8 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
 
         public async Task<MyDayTasksViewModel> GetMyDayTasksAsync(string userId, DateTime? startDate = null, DateTime? endDate = null)
         {
-            var start = startDate ?? DateTime.Now.AddDays(-30);
-            var end = endDate ?? DateTime.Now.AddDays(7);
+            var start = startDate ?? DateTime.Now.AddYears(-2);
+            var end = endDate ?? DateTime.Now.AddYears(2);
 
             var myDayTasks = await _context.TaskMyDay_Tbl
                 .Include(tmd => tmd.TaskAssignment)

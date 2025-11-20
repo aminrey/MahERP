@@ -693,7 +693,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
         }
         [HttpGet]
-        public async Task<IActionResult> CompleteTask(int id, bool fromList = false)
+        public async Task<IActionResult> CompleteTask(int id, int rowNum, bool fromList = false)
         {
             try
             {
@@ -705,8 +705,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 var model = await _taskRepository.PrepareCompleteTaskModalAsync(id, userId);
 
+                model.rowNum = rowNum;
                 model.FromList = fromList;
-
+                model.TaskId = id; // ⭐ مطمئن شویم که TaskId تنظیم شده
 
                 return PartialView("_CompleteTask", model);
             }
@@ -716,8 +717,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return BadRequest();
             }
         }
-
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CompleteTaskPost(CompleteTaskViewModel model)
@@ -768,7 +767,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     model.TaskId,
                     userId,
                     NotificationEventType.TaskCompleted,
-                    priority: 2 // اولویت بالاتر
+                    priority: 2
                 );
 
                 await _activityLogger.LogActivityAsync(
@@ -781,19 +780,36 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     recordTitle: model.TaskTitle
                 );
 
+                // ⭐⭐⭐ اگر از لیست آمده، پارشیال ردیف را برگردان
                 if (model.FromList)
                 {
                     var updatedTask = await _taskRepository.GetTaskCardViewModelAsync(model.TaskId, userId);
-
-                    return Json(new
+                    
+                    if (updatedTask != null)
                     {
-                        status = "success-from-list",
-                        message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد" } },
-                        taskId = model.TaskId,
-                        taskCard = await this.RenderViewToStringAsync("_TaskCardPartial", updatedTask)
-                    });
+
+                        updatedTask.CardNumber= model.rowNum;  // حفظ شماره ردیف
+                        // رندر پارشیال ردیف
+                        var partialView = await this.RenderViewToStringAsync("_TaskRowPartial", updatedTask);
+
+                        return Json(new
+                        {
+                            status = "update-view",
+                            viewList = new[]
+                            {
+                        new
+                        {
+                            elementId = $"task-row-{model.TaskId}",
+                            view = new { result = partialView },
+                            appendMode = false
+                        }
+                    },
+                            message = new[] { new { status = "success", text = "تسک با موفقیت تکمیل شد" } }
+                        });
+                    }
                 }
 
+                // ⭐ حالت پیش‌فرض: redirect
                 return Json(new
                 {
                     status = "redirect",
@@ -811,7 +827,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 });
             }
         }
-
 
 
 
@@ -2295,11 +2310,64 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// تنظیم فوکوس روی تسک
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> SetTaskFocus(int taskId)
+        public async Task<IActionResult> SetTaskFocus(int taskId, bool fromList = false)
         {
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
+            // ⭐⭐⭐ ابتدا شناسه تسک فوکوس قبلی را دریافت کن
+            var previousFocusedTaskId = await _taskRepository.GetUserFocusedTaskIdAsync(currentUserId);
+
             var result = await _taskRepository.SetTaskFocusAsync(taskId, currentUserId);
+
+            if (result.Success)
+            {
+                // ⭐⭐⭐ اگر از لیست آمده، پارشیال ردیف‌ها را برگردان
+                if (fromList)
+                {
+                    var viewList = new List<object>();
+
+                    // ⭐ 1. بروزرسانی ردیف تسک جدید (فوکوس شده)
+                    var newFocusedTaskCard = await _taskRepository.GetTaskCardViewModelAsync(taskId, currentUserId);
+                    if (newFocusedTaskCard != null)
+                    {
+                        newFocusedTaskCard.IsFocused = true;
+                        var newPartialView = await this.RenderViewToStringAsync("_TaskRowPartial", newFocusedTaskCard);
+
+                        viewList.Add(new
+                        {
+                            elementId = $"task-row-{taskId}",
+                            view = new { result = newPartialView },
+                            appendMode = false
+                        });
+                    }
+
+                    // ⭐ 2. بروزرسانی ردیف تسک قبلی (اگر وجود داشت)
+                    if (previousFocusedTaskId.HasValue && previousFocusedTaskId.Value != taskId)
+                    {
+                        var previousTaskCard = await _taskRepository.GetTaskCardViewModelAsync(previousFocusedTaskId.Value, currentUserId);
+                        if (previousTaskCard != null)
+                        {
+                            previousTaskCard.IsFocused = false;
+                            var previousPartialView = await this.RenderViewToStringAsync("_TaskRowPartial", previousTaskCard);
+
+                            viewList.Add(new
+                            {
+                                elementId = $"task-row-{previousFocusedTaskId.Value}",
+                                view = new { result = previousPartialView },
+                                appendMode = false
+                            });
+                        }
+                    }
+
+                    // ⭐⭐⭐ برگرداندن هر دو ردیف
+                    return Json(new
+                    {
+                        status = "update-view",
+                        viewList = viewList.ToArray(),
+                        message = new[] { new { status = "success", text = result.Message } }
+                    });
+                }
+            }
 
             return Json(new { success = result.Success, message = result.Message });
         }
@@ -2308,15 +2376,48 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// حذف فوکوس از تسک
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> RemoveTaskFocus(int taskId)
+        public async Task<IActionResult> RemoveTaskFocus(int taskId, bool fromList = false)
         {
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
             var result = await _taskRepository.RemoveTaskFocusAsync(taskId, currentUserId);
 
+            if (result.Success)
+            {
+                // ⭐⭐⭐ اگر از لیست آمده، پارشیال ردیف را برگردان
+                if (fromList)
+                {
+                    // دریافت اطلاعات تسک به‌روز شده
+                    var taskCard = await _taskRepository.GetTaskCardViewModelAsync(taskId, currentUserId);
+
+                    if (taskCard != null)
+                    {
+                        // ⭐ تنظیم IsFocused به false
+                        taskCard.IsFocused = false;
+
+                        // رندر پارشیال ردیف
+                        var partialView = await this.RenderViewToStringAsync("_TaskRowPartial", taskCard);
+
+                        return Json(new
+                        {
+                            status = "update-view",
+                            viewList = new[]
+                            {
+                        new
+                        {
+                            elementId = $"task-row-{taskId}",
+                            view = new { result = partialView },
+                            appendMode = false
+                        }
+                    },
+                            message = new[] { new { status = "success", text = result.Message } }
+                        });
+                    }
+                }
+            }
+
             return Json(new { success = result.Success, message = result.Message });
         }
-
         #endregion
 
 

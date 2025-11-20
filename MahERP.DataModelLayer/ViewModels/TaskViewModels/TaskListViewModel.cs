@@ -169,7 +169,7 @@ namespace MahERP.DataModelLayer.ViewModels
         public bool IsCardView => TaskGroups.Any();
 
         /// <summary>
-        /// ⭐⭐⭐ فیلتر سریع وضعیت فعلی
+        /// ⭐⭐⭐ فیلتر سریعstatus  فعلی
         /// </summary>
         public QuickStatusFilter CurrentStatusFilter { get; set; } = QuickStatusFilter.All;
 
@@ -300,6 +300,12 @@ namespace MahERP.DataModelLayer.ViewModels
         // زمان
         public DateTime CreateDate { get; set; }
         public string CreateDatePersian { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// ⭐⭐⭐ تاریخ شروع تسک
+        /// </summary>
+        public DateTime? StartDate { get; set; }
+        
         public DateTime? DueDate { get; set; }
         public string? DueDatePersian { get; set; }
         public int? DaysRemaining { get; set; }

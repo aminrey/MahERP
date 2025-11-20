@@ -66,14 +66,14 @@ namespace MahERP.DataModelLayer.Extensions
         {
             return new TaskCodeSettings
             {
-                SystemPrefix = _configuration.GetValue<string>("TaskCodeSettings:SystemPrefix") ?? "tsk",
-                DigitCount = _configuration.GetValue("TaskCodeSettings:DigitCount", 4),
+                SystemPrefix = _configuration.GetValue<string>("TaskCodeSettings:SystemPrefix") ?? "TSK",
+                DigitCount = _configuration.GetValue("TaskCodeSettings:DigitCount", 6),
                 AllowManualInput = _configuration.GetValue("TaskCodeSettings:AllowManualInput", true)
             };
         }
 
         /// <summary>
-        /// دریافت آخرین شماره تسک سیستمی
+        /// دریافت آخرین شماره تسک سیستمی - اصلاح شده
         /// </summary>
         /// <param name="systemPrefix">پیشوند سیستمی</param>
         /// <returns>آخرین شماره</returns>
@@ -81,23 +81,31 @@ namespace MahERP.DataModelLayer.Extensions
         {
             var prefix = systemPrefix + "-";
             
-            var lastSystemTask = _unitOfWork.TaskUW
+            // ⭐⭐⭐ دریافت تمام کدهای تسک‌های سیستمی
+            var systemTaskCodes = _unitOfWork.TaskUW
                 .Get(t => t.TaskCode != null && t.TaskCode.StartsWith(prefix))
                 .Where(t => !string.IsNullOrEmpty(t.TaskCode))
                 .Select(t => t.TaskCode)
-                .OrderByDescending(code => code)
-                .FirstOrDefault();
+                .ToList();
 
-            if (string.IsNullOrEmpty(lastSystemTask))
+            if (!systemTaskCodes.Any())
                 return 0;
 
-            // استخراج شماره از کد
-            var numberPart = lastSystemTask.Substring(prefix.Length);
+            // ⭐⭐⭐ استخراج شماره‌ها و مرتب‌سازی عددی
+            var maxNumber = 0;
             
-            if (int.TryParse(numberPart, out int number))
-                return number;
+            foreach (var code in systemTaskCodes)
+            {
+                var numberPart = code.Substring(prefix.Length);
+                
+                if (int.TryParse(numberPart, out int number))
+                {
+                    if (number > maxNumber)
+                        maxNumber = number;
+                }
+            }
 
-            return 0;
+            return maxNumber;
         }
 
         /// <summary>
@@ -123,14 +131,14 @@ namespace MahERP.DataModelLayer.Extensions
     public class TaskCodeSettings
     {
         /// <summary>
-        /// پیشوند سیستمی (پیش‌فرض: tsk)
+        /// پیشوند سیستمی (پیش‌فرض: TSK)
         /// </summary>
-        public string SystemPrefix { get; set; } = "tsk";
+        public string SystemPrefix { get; set; } = "TSK";
 
         /// <summary>
-        /// تعداد ارقام شماره (پیش‌فرض: 4)
+        /// تعداد ارقام شماره (پیش‌فرض: 6)
         /// </summary>
-        public int DigitCount { get; set; } = 4;
+        public int DigitCount { get; set; } = 6;
 
         /// <summary>
         /// امکان ورود دستی کد توسط کاربر

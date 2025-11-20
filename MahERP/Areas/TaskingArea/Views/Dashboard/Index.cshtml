@@ -395,13 +395,13 @@
             }
         }
 
-        // اصلاح تابع populateTaskTable برای اضافه کردن data attributes
+        // اصلاح تابع populateTaskTable برای اضافه کردن badge تکمیل
               function populateTaskTable(tableSelector, tasks, type) {
             const tbody = $(tableSelector + ' tbody');
             tbody.empty();
 
             if (!tasks || tasks.length === 0) {
-                tbody.html('<tr><td colspan="4" class="text-center text-muted">تسکی یافت نشد</td></tr>');
+                tbody.html('<tr><td colspan="5" class="text-center text-muted">تسکی یافت نشد</td></tr>');
                 return;
             }
 
@@ -411,9 +411,32 @@
                 const formattedDate = formatDate(startDate);
                 const shortDescription = truncateText(task.description || '', 5);
 
-                // ⭐ تشخیص تسک جدید (اگر در 10 دقیقه گذشته ایجاد شده)
-                const isNewTask = new Date(task.createDate) > new Date(Date.now() - 10 * 60 * 1000);
-                const newTaskClass = isNewTask ? 'table-warning notification-blink' : '';
+                // ⭐⭐⭐ اضافه کردن Badge تکمیل برای تسک‌های دریافتی
+                let completionBadge = '';
+                if (type === 'received' && task.isCompleted) {
+                    completionBadge = '<span class="badge bg-success ms-1" title="تکمیل شده"><i class="fa fa-check"></i> تکمیل شده</span>';
+                }
+
+                // ⭐⭐⭐ اضافه کردن Badge پیشرفت برای تسک‌های واگذار شده
+                let progressBadge = '';
+                if (type === 'assigned') {
+                    const completionPercentage = task.totalAssignees > 0 
+                        ? Math.round((task.completedCount / task.totalAssignees) * 100) 
+                        : 0;
+                    
+                    let progressClass = 'bg-secondary';
+                    if (completionPercentage === 100) {
+                        progressClass = 'bg-success';
+                    } else if (completionPercentage >= 50) {
+                        progressClass = 'bg-info';
+                    } else if (task.hasOverdueAssignees) {
+                        progressClass = 'bg-danger';
+                    } else {
+                        progressClass = 'bg-warning';
+                    }
+
+                    progressBadge = `<span class="badge ${progressClass} ms-1" title="${task.completedCount} از ${task.totalAssignees} نفر">${task.completedCount}/${task.totalAssignees}</span>`;
+                }
 
                 let userInfo, userLabel;
                 if (type === 'received') {
@@ -439,8 +462,10 @@
                                 <span class="fw-medium">${userInfo}</span>
                             </div>
                         </td>
-                        <td class="d-none d-sm-table-cell text-center" style="width: 80px;">
+                        <td class="d-none d-sm-table-cell text-center" style="width: 100px;">
                             ${priorityBadge}
+                            ${completionBadge}
+                            ${progressBadge}
                         </td>
                         <td class="d-none d-sm-table-cell text-end text-nowrap" style="width: 90px;">
                             <div class="fs-xs text-muted">${formattedDate}</div>

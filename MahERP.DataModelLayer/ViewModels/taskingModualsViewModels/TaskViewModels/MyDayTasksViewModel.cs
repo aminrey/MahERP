@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MahERP.CommonLayer.PublicClasses;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -143,6 +144,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
   
     }
+
     /// <summary>
     /// ViewModel برای نمایش آمار "روز من"
     /// </summary>
@@ -183,18 +185,36 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
             }
         }
     }
+
+    /// <summary>
+    /// ⭐⭐⭐ ViewModel برای افزودن تسک به روز من - به‌روز شده
+    /// </summary>
     public class AddToMyDayViewModel
     {
         [Required(ErrorMessage = "شناسه تسک الزامی است")]
         public int TaskAssignmentId { get; set; }
 
-        [Required(ErrorMessage = "تاریخ برنامه‌ریزی الزامی است")]
+        /// <summary>
+        /// ⭐⭐⭐ شناسه تسک (برای بازگشت به لیست)
+        /// </summary>
+        public int? TaskId { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ آیا از لیست تسک‌ها آمده؟
+        /// </summary>
+        public bool FromList { get; set; }
+
         [Display(Name = "تاریخ برنامه‌ریزی")]
         public DateTime PlannedDate { get; set; } = DateTime.Now.Date;
 
+        [Required(ErrorMessage = "تاریخ برنامه‌ریزی الزامی است")]
+        [Display(Name = "تاریخ برنامه‌ریزی")]
+
+        public string PlannedDateString { get; set; } = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now.Date,"yyyy/MM/dd");
+
         [MaxLength(500)]
         [Display(Name = "یادداشت برنامه‌ریزی")]
-        public string? PlanNote { get; set; }
+        public string? PlanNote { get; set; }   
     }
 
     /// <summary>
