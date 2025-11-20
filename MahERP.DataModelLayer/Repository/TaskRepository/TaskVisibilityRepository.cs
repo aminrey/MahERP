@@ -14,7 +14,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
     /// <summary>
     /// Repository مدیریت قدرت مشاهده تسک‌ها بر اساس ساختار سازمانی
     /// </summary>
-    public class TaskVisibilityRepository : ITaskVisibilityRepository
+    public class TaskVisibilityRepository 
     {
         private readonly AppDbContext _context;
 

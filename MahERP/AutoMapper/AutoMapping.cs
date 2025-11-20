@@ -831,7 +831,41 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.UploadDate, opt => opt.Ignore())
                 .ForMember(dest => dest.UploaderUserId, opt => opt.Ignore());
 
+            // در متد AutoMapping() در کلاس AutoMapping
+            CreateMap<TaskReminderViewModel, TaskReminderSchedule>()
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src =>
+                    !string.IsNullOrEmpty(src.StartDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.StartDatePersian)
+                        : (DateTime?)null))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
+                    !string.IsNullOrEmpty(src.EndDatePersian)
+                        ? ConvertDateTime.ConvertShamsiToMiladi(src.EndDatePersian)
+                        : (DateTime?)null))
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Task, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.GeneratedEvents, opt => opt.Ignore())
+                .ForMember(dest => dest.IsSystemDefault, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastExecuted, opt => opt.Ignore())
+                .ForMember(dest => dest.SentCount, opt => opt.Ignore());
 
+            CreateMap<TaskReminderSchedule, TaskReminderViewModel>()
+                .ForMember(dest => dest.StartDatePersian, opt => opt.MapFrom(src =>
+                    src.StartDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.StartDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.EndDatePersian, opt => opt.MapFrom(src =>
+                    src.EndDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.EndDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.TaskTitle, opt => opt.MapFrom(src => src.Task != null ? src.Task.Title : null))
+                .ForMember(dest => dest.TaskCode, opt => opt.MapFrom(src => src.Task != null ? src.Task.TaskCode : null))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
+                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "سیستم"))
+                .ForMember(dest => dest.CreatedDatePersian, opt => opt.MapFrom(src =>
+                    ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd HH:mm")));
 
             CreateMap<TaskWorkLog, TaskWorkLogViewModel>()
     .ForMember(dest => dest.UserName,

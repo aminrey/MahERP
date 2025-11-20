@@ -85,6 +85,18 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public DateTime? LastExecuted { get; set; }
 
         /// <summary>
+        /// ⭐ تعداد دفعات ارسال شده (برای کنترل حداکثر ارسال)
+        /// </summary>
+        public int SentCount { get; set; } = 0;
+
+        /// <summary>
+        /// ⭐ حداکثر تعداد ارسال (null = نامحدود)
+        /// برای یادآوری‌های یکباره = 1
+        /// برای تکراری = تعداد دفعات تکرار
+        /// </summary>
+        public int? MaxSendCount { get; set; }
+
+        /// <summary>
         /// تاریخ ایجاد
         /// </summary>
         public DateTime CreatedDate { get; set; } = DateTime.Now;

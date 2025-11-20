@@ -161,6 +161,28 @@
                         <span asp-validation-for="IntervalDays" class="text-danger"></span>
                     </div>
 
+                    <!-- ⭐⭐⭐ NEW: حداکثر تعداد تکرار (برای نوع 1) -->
+                    <div class="col-md-6 mb-4" id="maxSendCountField" style="display: none;">
+                        <label asp-for="MaxSendCount" class="form-label">
+                            <i class="fa fa-hashtag text-danger me-1"></i>
+                            <span id="maxSendCountLabel">حداکثر تعداد ارسال</span> 
+                            <small class="text-muted" id="maxSendCountOptional">(اختیاری)</small>
+                        </label>
+                        <div class="input-group">
+                            <input asp-for="MaxSendCount"
+                                   type="number"
+                                   class="form-control"
+                                   min="1"
+                                   max="100"
+                                   placeholder="بدون محدودیت" />
+                            <span class="input-group-text">بار</span>
+                        </div>
+                        <small class="form-text text-muted" id="maxSendCountHelp">
+                            اگر خالی بگذارید، یادآوری تا پایان تسک ادامه خواهد داشت
+                        </small>
+                        <span asp-validation-for="MaxSendCount" class="text-danger"></span>
+                    </div>
+
                     <!-- چند روز قبل (برای نوع 2) -->
                     <div class="col-md-6 mb-4" id="daysBeforeField">
                         <label asp-for="DaysBeforeDeadline" class="form-label">
@@ -202,8 +224,9 @@
                             تاریخ شروع <span class="text-danger">*</span>
                         </label>
                         <input asp-for="StartDatePersian"
-                               class="form-control js-flatpickr"
-                               placeholder="انتخاب تاریخ..." />
+                               class="form-control persian-datepicker"
+                               placeholder="انتخاب تاریخ..."
+                               readonly />
                         <span asp-validation-for="StartDatePersian" class="text-danger"></span>
                     </div>
                     <div class="col-md-6 mb-4">
@@ -212,8 +235,9 @@
                             تاریخ پایان <small class="text-muted">(اختیاری)</small>
                         </label>
                         <input asp-for="EndDatePersian"
-                               class="form-control js-flatpickr"
-                               placeholder="انتخاب تاریخ..." />
+                               class="form-control persian-datepicker"
+                               placeholder="انتخاب تاریخ..."
+                               readonly />
                         <span asp-validation-for="EndDatePersian" class="text-danger"></span>
                     </div>
                 </div>
@@ -240,102 +264,191 @@
 </div>
 
 <script>
-    $(document).ready(function() {
-        // راه‌اندازی تقویم شمسی
-        $('.js-flatpickr').each(function() {
-            new mds.MdsPersianDateTimePicker(this, {
-                targetTextSelector: this,
-                enableTimePicker: false,
-                textFormat: 'yyyy/MM/dd'
+    (function() {
+        // متغیرهای محلی برای تقویم‌ها
+        let startDatePicker = null;
+        let endDatePicker = null;
+
+        // ✅ راه‌اندازی تقویم شمسی در مودال
+        function initializePersianDatePickers() {
+            // پاکسازی تقویم‌های قبلی (اگر وجود دارند)
+            if (startDatePicker) {
+                try { startDatePicker.destroy(); } catch(e) {}
+            }
+            if (endDatePicker) {
+                try { endDatePicker.destroy(); } catch(e) {}
+            }
+
+            // راه‌اندازی مجدد
+            const startDateInput = document.querySelector('#StartDatePersian');
+            const endDateInput = document.querySelector('#EndDatePersian');
+
+            if (startDateInput && typeof mds !== 'undefined') {
+                startDatePicker = new mds.MdsPersianDateTimePicker(startDateInput, {
+                    targetTextSelector: startDateInput,
+                    enableTimePicker: false,
+                    textFormat: 'yyyy/MM/dd',
+                    placement: 'bottom',
+                    persianNumber: true
+                });
+            }
+
+            if (endDateInput && typeof mds !== 'undefined') {
+                endDatePicker = new mds.MdsPersianDateTimePicker(endDateInput, {
+                    targetTextSelector: endDateInput,
+                    enableTimePicker: false,
+                    textFormat: 'yyyy/MM/dd',
+                    placement: 'bottom',
+                    persianNumber: true
+                });
+            }
+        }
+
+        $(document).ready(function() {
+            // تاخیر کوچک برای اطمینان از بارگذاری کامل مودال
+            setTimeout(function() {
+                initializePersianDatePickers();
+                updateReminderFields();
+                updatePreview();
+            }, 300);
+
+            // رویدادهای تغییر
+            $('input[name="ReminderType"]').on('change', function() {
+                updateReminderFields();
+                updatePreview();
+            });
+
+            $('#IntervalDays, #DaysBeforeDeadline, #MaxSendCount, #notificationTimeInput, #StartDatePersian, #EndDatePersian').on('input change', function() {
+                updatePreview();
+            });
+
+            // ذخیره ساعت در فرم
+            $('[data-save="modal-ajax-save"]').on('click', function() {
+                const timeValue = $('#notificationTimeInput').val();
+                if (timeValue) {
+                    // حذف فیلد hidden قبلی (اگر وجود دارد)
+                    $('input[name="NotificationTime"]').remove();
+
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'NotificationTime',
+                        value: timeValue + ':00'
+                    }).appendTo('#customReminderForm');
+                }
+            });
+
+            // پاکسازی تقویم‌ها هنگام بسته شدن مودال
+            $('#ajax-modal').on('hidden.bs.modal', function() {
+                if (startDatePicker) {
+                    try { startDatePicker.destroy(); } catch(e) {}
+                }
+                if (endDatePicker) {
+                    try { endDatePicker.destroy(); } catch(e) {}
+                }
             });
         });
 
-        // تنظیم اولیه
-        updateReminderFields();
-        updatePreview();
+        // ✅ به‌روزرسانی فیلدها بر اساس نوع یادآوری
+        window.updateReminderFields = function() {
+            const reminderType = $('input[name="ReminderType"]:checked').val();
 
-        // رویدادهای تغییر
-        $('input[name="ReminderType"]').on('change', function() {
-            updateReminderFields();
-            updatePreview();
-        });
+            // پنهان کردن همه
+            $('#intervalField').hide();
+            $('#maxSendCountField').hide();
+            $('#daysBeforeField').hide();
+            $('#dateRangeFields').hide();
 
-        $('#IntervalDays, #DaysBeforeDeadline, #notificationTimeInput, #StartDatePersian, #EndDatePersian').on('input change', function() {
-            updatePreview();
-        });
-
-        // ذخیره ساعت در فرم
-        $('[data-save="modal-ajax-save"]').on('click', function() {
-            const timeValue = $('#notificationTimeInput').val();
-            if (timeValue) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'NotificationTime',
-                    value: timeValue + ':00'
-                }).appendTo('#customReminderForm');
+            // نمایش بر اساس نوع
+            if (reminderType === '0') {
+                // یکبار - MaxSendCount خودکار = 1
+                $('#dateRangeFields').slideDown(300, function() {
+                    initializePersianDatePickers();
+                });
+                // ⭐ نمایش فیلد با مقدار ثابت 1 (غیرقابل تغییر)
+                $('#MaxSendCount').val(1).prop('readonly', true);
+                $('#maxSendCountLabel').text('تعداد ارسال (ثابت)');
+                $('#maxSendCountOptional').hide();
+                $('#maxSendCountHelp').text('این یادآوری فقط یک بار ارسال می‌شود');
+                $('#maxSendCountField').slideDown();
+            } else if (reminderType === '1') {
+                // تکراری - نمایش فیلد MaxSendCount (قابل تغییر)
+                $('#intervalField').slideDown();
+                $('#MaxSendCount').val('').prop('readonly', false);
+                $('#maxSendCountLabel').text('حداکثر تعداد ارسال');
+                $('#maxSendCountOptional').show();
+                $('#maxSendCountHelp').text('اگر خالی بگذارید، یادآوری تا پایان تسک ادامه خواهد داشت');
+                $('#maxSendCountField').slideDown();
+                $('#dateRangeFields').slideDown(300, function() {
+                    initializePersianDatePickers();
+                });
+            } else if (reminderType === '2') {
+                // قبل از مهلت - MaxSendCount خودکار = 1
+                $('#daysBeforeField').slideDown();
+                // ⭐⭐⭐ نمایش فیلد با مقدار ثابت 1 (غیرقابل تغییر)
+                $('#MaxSendCount').val(1).prop('readonly', true);
+                $('#maxSendCountLabel').text('تعداد ارسال (ثابت)');
+                $('#maxSendCountOptional').hide();
+                $('#maxSendCountHelp').text('این یادآوری فقط یک بار ارسال می‌شود');
+                $('#maxSendCountField').slideDown();
+            } else if (reminderType === '3') {
+                // در روز شروع - MaxSendCount خودکار = 1
+                // ⭐⭐⭐ نمایش فیلد با مقدار ثابت 1 (غیرقابل تغییر)
+                $('#MaxSendCount').val(1).prop('readonly', true);
+                $('#maxSendCountLabel').text('تعداد ارسال (ثابت)');
+                $('#maxSendCountOptional').hide();
+                $('#maxSendCountHelp').text('این یادآوری فقط یک بار ارسال می‌شود');
+                $('#maxSendCountField').slideDown();
             }
-        });
-    });
 
-    function updateReminderFields() {
-        const reminderType = $('input[name="ReminderType"]:checked').val();
+            updatePreview();
+        };
 
-        // پنهان کردن همه
-        $('#intervalField').hide();
-        $('#daysBeforeField').hide();
-        $('#dateRangeFields').hide();
+        // ✅ پیش‌نمایش یادآوری
+        window.updatePreview = function() {
+            const reminderType = $('input[name="ReminderType"]:checked').val();
+            const time = $('#notificationTimeInput').val() || '09:00';
+            const maxSendCount = $('#MaxSendCount').val();
+            let text = '';
 
-        // نمایش بر اساس نوع
-        if (reminderType === '0') {
-            // یکبار
-            $('#dateRangeFields').slideDown();
-        } else if (reminderType === '1') {
-            // تکراری
-            $('#intervalField').slideDown();
-            $('#dateRangeFields').slideDown();
-        } else if (reminderType === '2') {
-            // قبل از مهلت
-            $('#daysBeforeField').slideDown();
-        }
+            switch(reminderType) {
+                case '0':
+                    const startDate = $('#StartDatePersian').val() || 'تاریخ مشخص';
+                    const endDate = $('#EndDatePersian').val();
+                    text = `یادآوری <strong>یکبار</strong> در تاریخ <strong>${startDate}</strong> ساعت <strong>${time}</strong> ارسال خواهد شد`;
+                    if (endDate) {
+                        text += ` (تا تاریخ ${endDate})`;
+                    }
+                    break;
+                case '1':
+                    const interval = $('#IntervalDays').val() || 'X';
+                    text = `یادآوری هر <strong>${interval} روز</strong> یکبار در ساعت <strong>${time}</strong> ارسال خواهد شد`;
+                    
+                    // ⭐⭐⭐ اضافه کردن حداکثر تعداد به پیش‌نمایش
+                    if (maxSendCount && maxSendCount > 0) {
+                        text += ` (حداکثر <strong>${maxSendCount} بار</strong>)`;
+                    } else {
+                        text += ` (<strong>نامحدود</strong>)`;
+                    }
+                    break;
+                case '2':
+                    const daysBefore = $('#DaysBeforeDeadline').val() || '3';
+                    text = `یادآوری <strong>${daysBefore} روز</strong> قبل از پایان مهلت در ساعت <strong>${time}</strong> ارسال خواهد شد (<strong>یکبار</strong>)`;
+                    break;
+                case '3':
+                    text = `یادآوری در <strong>روز شروع تسک</strong> ساعت <strong>${time}</strong> ارسال خواهد شد (<strong>یکبار</strong>)`;
+                    break;
+            }
 
-        updatePreview();
-    }
-
-    function updatePreview() {
-        const reminderType = $('input[name="ReminderType"]:checked').val();
-        const time = $('#notificationTimeInput').val() || '09:00';
-        let text = '';
-
-        switch(reminderType) {
-            case '0':
-                const startDate = $('#StartDatePersian').val() || 'تاریخ مشخص';
-                const endDate = $('#EndDatePersian').val();
-                text = `یادآوری در تاریخ <strong>${startDate}</strong> ساعت <strong>${time}</strong> ارسال خواهد شد`;
-                if (endDate) {
-                    text += ` (تا تاریخ ${endDate})`;
-                }
-                break;
-            case '1':
-                const interval = $('#IntervalDays').val() || 'X';
-                text = `یادآوری هر <strong>${interval} روز</strong> یکبار در ساعت <strong>${time}</strong> ارسال خواهد شد`;
-                break;
-            case '2':
-                const daysBefore = $('#DaysBeforeDeadline').val() || '3';
-                text = `یادآوری <strong>${daysBefore} روز</strong> قبل از پایان مهلت در ساعت <strong>${time}</strong> ارسال خواهد شد`;
-                break;
-            case '3':
-                text = `یادآوری در <strong>روز شروع تسک</strong> ساعت <strong>${time}</strong> ارسال خواهد شد`;
-                break;
-        }
-
-        $('#previewText').html(text);
-    }
+            $('#previewText').html(text);
+        };
+    })();
 </script>
 
 <style>
     .form-check-block {
         border: 2px solid transparent;
         transition: all 0.3s;
+        cursor: pointer;
     }
 
         .form-check-block:hover {
@@ -350,5 +463,23 @@
     .form-check-block:has(.form-check-input:checked) {
         border-color: #007bff;
         background: linear-gradient(to right, rgba(0,123,255,0.05), transparent);
+    }
+
+    /* ✅ استایل بهتر برای تقویم شمسی در مودال */
+    .persian-datepicker {
+        cursor: pointer;
+        background-color: white;
+    }
+
+        .persian-datepicker:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+
+    /* ⭐⭐⭐ استایل برای فیلدهای readonly */
+    input[readonly] {
+        background-color: #f8f9fa !important;
+        cursor: not-allowed;
+        opacity: 0.8;
     }
 </style>

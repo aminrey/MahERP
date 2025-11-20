@@ -77,7 +77,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 .Where(s => 
                     s.IsActive &&
                     !s.Task.IsDeleted &&
-                    s.Task.Status != 2) // ⭐ Status 2 = تکمیل شده (بر اساس ViewModel)
+                    s.Task.Status != 2) // ⭐ Status 2 = تکمیل شده
                 .AsNoTracking()
                 .ToListAsync(stoppingToken);
 
@@ -114,6 +114,24 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         continue;
                     }
 
+                    // ⭐⭐⭐ بررسی MaxSendCount
+                    if (schedule.MaxSendCount.HasValue && schedule.SentCount >= schedule.MaxSendCount.Value)
+                    {
+                        _logger.LogWarning($"⚠️ یادآوری #{schedule.Id} به حداکثر تعداد ارسال ({schedule.MaxSendCount}) رسیده است. غیرفعال می‌شود.");
+                        
+                        // غیرفعال کردن یادآوری
+                        var scheduleToDeactivate = await context.TaskReminderSchedule_Tbl
+                            .FirstOrDefaultAsync(s => s.Id == schedule.Id, stoppingToken);
+
+                        if (scheduleToDeactivate != null)
+                        {
+                            scheduleToDeactivate.IsActive = false;
+                            await context.SaveChangesAsync(stoppingToken);
+                        }
+
+                        continue;
+                    }
+
                     // ⭐⭐⭐ تولید Event برای هر کاربر مرتبط
                     var recipientUserIds = await GetReminderRecipientsAsync(schedule, context);
 
@@ -141,13 +159,18 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         );
                     }
 
-                    // ⭐⭐⭐ بروزرسانی LastExecuted
+                    // ⭐⭐⭐ بروزرسانی LastExecuted و افزایش SentCount
                     var scheduleToUpdate = await context.TaskReminderSchedule_Tbl
                         .FirstOrDefaultAsync(s => s.Id == schedule.Id, stoppingToken);
 
                     if (scheduleToUpdate != null)
                     {
                         scheduleToUpdate.LastExecuted = nowIran;
+                        scheduleToUpdate.SentCount++; // ⭐⭐⭐ افزایش تعداد ارسال
+                        
+                        _logger.LogInformation($"✅ یادآوری #{schedule.Id} ارسال شد. تعداد کل ارسال: {scheduleToUpdate.SentCount}" + 
+                            (scheduleToUpdate.MaxSendCount.HasValue ? $"/{scheduleToUpdate.MaxSendCount}" : ""));
+
                         await context.SaveChangesAsync(stoppingToken);
                     }
 

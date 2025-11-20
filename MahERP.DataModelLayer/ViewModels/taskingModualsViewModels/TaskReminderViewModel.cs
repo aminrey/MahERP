@@ -73,6 +73,14 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         public int? DaysBeforeDeadline { get; set; }
 
         /// <summary>
+        /// ⭐⭐⭐ حداکثر تعداد ارسال (null = نامحدود)
+        /// برای یادآوری‌های یکباره = 1
+        /// برای تکراری = تعداد دفعات تکرار
+        /// </summary>
+        [Display(Name = "حداکثر تعداد ارسال")]
+        public int? MaxSendCount { get; set; }
+
+        /// <summary>
         /// تاریخ شروع یادآوری (میلادی - برای ذخیره)
         /// </summary>
         [Display(Name = "تاریخ شروع")]
