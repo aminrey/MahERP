@@ -24,13 +24,13 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// عنوان تسک (فقط برای نمایش)
         /// </summary>
         [Display(Name = "عنوان تسک")]
-        public string TaskTitle { get; set; }
+        public string? TaskTitle { get; set; }
 
         /// <summary>
         /// کد تسک (فقط برای نمایش)
         /// </summary>
         [Display(Name = "کد تسک")]
-        public string TaskCode { get; set; }
+        public string? TaskCode { get; set; }
 
         /// <summary>
         /// عنوان یادآوری
@@ -45,7 +45,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// </summary>
         [MaxLength(500, ErrorMessage = "توضیحات حداکثر 500 کاراکتر می‌باشد")]
         [Display(Name = "توضیحات")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// نوع یادآوری
@@ -90,7 +90,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// تاریخ شروع یادآوری (شمسی - برای نمایش)
         /// </summary>
         [Display(Name = "تاریخ شروع")]
-        public string StartDatePersian { get; set; }
+        public string? StartDatePersian { get; set; }
 
         /// <summary>
         /// تاریخ پایان یادآوری (میلادی - برای ذخیره)
@@ -102,7 +102,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// تاریخ پایان یادآوری (شمسی - برای نمایش)
         /// </summary>
         [Display(Name = "تاریخ پایان")]
-        public string EndDatePersian { get; set; }
+        public string? EndDatePersian { get; set; }
 
         /// <summary>
         /// ساعت ارسال یادآوری
@@ -130,13 +130,13 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// <summary>
         /// تاریخ ایجاد (شمسی)
         /// </summary>
-        public string CreatedDatePersian { get; set; }
+        public string? CreatedDatePersian { get; set; }
 
         /// <summary>
         /// نام کاربر ایجادکننده
         /// </summary>
         [Display(Name = "ایجادکننده")]
-        public string CreatorName { get; set; }
+        public string? CreatorName { get; set; }
 
         /// <summary>
         /// متن نوع یادآوری برای نمایش
@@ -160,15 +160,15 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
     {
         public int Id { get; set; }
         public int TaskId { get; set; }
-        public string TaskTitle { get; set; }
-        public string TaskCode { get; set; }
-        public string Title { get; set; }
+        public string? TaskTitle { get; set; }
+        public string? TaskCode { get; set; }
+        public string? Title { get; set; }
         public byte ReminderType { get; set; }
-        public string ReminderTypeText { get; set; }
-        public string NotificationTime { get; set; }
+        public string? ReminderTypeText { get; set; }
+        public string? NotificationTime { get; set; }
         public bool IsActive { get; set; }
         public bool IsSystemDefault { get; set; }
-        public string CreatedDatePersian { get; set; }
-        public string CreatorName { get; set; }
+        public string? CreatedDatePersian { get; set; }
+        public string? CreatorName { get; set; }
     }
 }
