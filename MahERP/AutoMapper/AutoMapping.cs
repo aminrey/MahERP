@@ -263,7 +263,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.StakeholderContact, opt => opt.Ignore())
                 .ForMember(dest => dest.CRMInteraction, opt => opt.Ignore());
 
-            // BranchTaskCategory Mappings - انتصاب دسته‌بندی تسک به شعبه و طرف حساب
+            // BranchTaskCategory Mappings - انتساب دسته‌بندی تسک به شعبه و طرف حساب
             CreateMap<BranchTaskCategoryStakeholder, BranchTaskCategoryStakeholderViewModel>()
                 .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
                 .ForMember(dest => dest.TaskCategoryTitle, opt => opt.MapFrom(src => src.TaskCategory != null ? src.TaskCategory.Title : ""))
@@ -841,6 +841,8 @@ namespace MahERP.AutoMapper
                     !string.IsNullOrEmpty(src.EndDatePersian)
                         ? ConvertDateTime.ConvertShamsiToMiladi(src.EndDatePersian)
                         : (DateTime?)null))
+                // ⭐⭐⭐ FIX: اضافه کردن mapping برای NotificationTime
+                .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Task, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
@@ -860,6 +862,8 @@ namespace MahERP.AutoMapper
                     src.EndDate.HasValue
                         ? ConvertDateTime.ConvertMiladiToShamsi(src.EndDate.Value, "yyyy/MM/dd")
                         : null))
+                // ⭐⭐⭐ FIX: اضافه کردن mapping برای NotificationTime
+                .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
                 .ForMember(dest => dest.TaskTitle, opt => opt.MapFrom(src => src.Task != null ? src.Task.Title : null))
                 .ForMember(dest => dest.TaskCode, opt => opt.MapFrom(src => src.Task != null ? src.Task.TaskCode : null))
                 .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>

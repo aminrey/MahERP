@@ -4,6 +4,8 @@
     <div class="modal-content">
         <form id="customReminderForm" asp-action="SaveCustomReminder" asp-controller="Tasks" method="post">
             @Html.AntiForgeryToken()
+            @* ⭐⭐⭐ FIX: اضافه کردن hidden input برای NotificationTime *@
+            <input type="hidden" asp-for="NotificationTime" id="hiddenNotificationTime" />
 
             <div class="modal-header bg-gradient-warning">
                 <h4 class="modal-title text-white mb-0">
@@ -208,10 +210,12 @@
                             <i class="fa fa-clock text-primary me-1"></i>
                             ساعت ارسال
                         </label>
+                        @* ⭐⭐⭐ FIX: اضافه کردن onchange *@
                         <input type="time"
                                class="form-control"
                                id="notificationTimeInput"
-                               value="09:00" />
+                               value="09:00"
+                               onchange="updateHiddenTimeField()" />
                         <small class="form-text text-muted">زمان ارسال یادآوری در روز مشخص شده</small>
                     </div>
                 </div>
@@ -223,8 +227,10 @@
                             <i class="fa fa-calendar-alt text-success me-1"></i>
                             تاریخ شروع <span class="text-danger">*</span>
                         </label>
+                        @* ⭐⭐⭐ FIX: استفاده از initialValueType به جای hidden field *@
                         <input asp-for="StartDatePersian"
                                class="form-control persian-datepicker"
+                               data-initial-value-type="persian"
                                placeholder="انتخاب تاریخ..."
                                readonly />
                         <span asp-validation-for="StartDatePersian" class="text-danger"></span>
@@ -234,8 +240,10 @@
                             <i class="fa fa-calendar-times text-danger me-1"></i>
                             تاریخ پایان <small class="text-muted">(اختیاری)</small>
                         </label>
+                        @* ⭐⭐⭐ FIX: استفاده از initialValueType به جای hidden field *@
                         <input asp-for="EndDatePersian"
                                class="form-control persian-datepicker"
+                               data-initial-value-type="persian"
                                placeholder="انتخاب تاریخ..."
                                readonly />
                         <span asp-validation-for="EndDatePersian" class="text-danger"></span>
@@ -265,51 +273,33 @@
 
 <script>
     (function() {
-        // متغیرهای محلی برای تقویم‌ها
         let startDatePicker = null;
         let endDatePicker = null;
 
+        // ⭐⭐⭐ FIX: تابع جدید برای بروزرسانی فیلد hidden
+        window.updateHiddenTimeField = function() {
+            const timeValue = $('#notificationTimeInput').val();
+            if (timeValue) {
+                $('#hiddenNotificationTime').val(timeValue + ':00');
+            }
+        };
+
         // ✅ راه‌اندازی تقویم شمسی در مودال
         function initializePersianDatePickers() {
-            // پاکسازی تقویم‌های قبلی (اگر وجود دارند)
-            if (startDatePicker) {
-                try { startDatePicker.destroy(); } catch(e) {}
-            }
-            if (endDatePicker) {
-                try { endDatePicker.destroy(); } catch(e) {}
-            }
-
-            // راه‌اندازی مجدد
-            const startDateInput = document.querySelector('#StartDatePersian');
-            const endDateInput = document.querySelector('#EndDatePersian');
-
-            if (startDateInput && typeof mds !== 'undefined') {
-                startDatePicker = new mds.MdsPersianDateTimePicker(startDateInput, {
-                    targetTextSelector: startDateInput,
-                    enableTimePicker: false,
-                    textFormat: 'yyyy/MM/dd',
-                    placement: 'bottom',
-                    persianNumber: true
-                });
-            }
-
-            if (endDateInput && typeof mds !== 'undefined') {
-                endDatePicker = new mds.MdsPersianDateTimePicker(endDateInput, {
-                    targetTextSelector: endDateInput,
-                    enableTimePicker: false,
-                    textFormat: 'yyyy/MM/dd',
-                    placement: 'bottom',
-                    persianNumber: true
-                });
-            }
+            // ⭐⭐⭐ FIX: استفاده از global initPersianDatePicker
+            setTimeout(function() {
+                if (typeof window.initPersianDatePicker === 'function') {
+                    window.initPersianDatePicker($('#dateRangeFields'));
+                }
+            }, 100);
         }
 
         $(document).ready(function() {
-            // تاخیر کوچک برای اطمینان از بارگذاری کامل مودال
             setTimeout(function() {
                 initializePersianDatePickers();
                 updateReminderFields();
                 updatePreview();
+                updateHiddenTimeField();
             }, 300);
 
             // رویدادهای تغییر
@@ -318,23 +308,20 @@
                 updatePreview();
             });
 
-            $('#IntervalDays, #DaysBeforeDeadline, #MaxSendCount, #notificationTimeInput, #StartDatePersian, #EndDatePersian').on('input change', function() {
+            // ⭐⭐⭐ FIX: اضافه کردن رویداد به تغییر ساعت
+            $('#notificationTimeInput').on('input change', function() {
+                updateHiddenTimeField();
                 updatePreview();
             });
 
-            // ذخیره ساعت در فرم
-            $('[data-save="modal-ajax-save"]').on('click', function() {
-                const timeValue = $('#notificationTimeInput').val();
-                if (timeValue) {
-                    // حذف فیلد hidden قبلی (اگر وجود دارد)
-                    $('input[name="NotificationTime"]').remove();
+            $('#IntervalDays, #DaysBeforeDeadline, #MaxSendCount, #StartDatePersian, #EndDatePersian').on('input change', function() {
+                updatePreview();
+            });
 
-                    $('<input>').attr({
-                        type: 'hidden',
-                        name: 'NotificationTime',
-                        value: timeValue + ':00'
-                    }).appendTo('#customReminderForm');
-                }
+            // ⭐⭐⭐ FIX: ساده‌سازی - فقط بروزرسانی hidden field
+            $('[data-save="modal-ajax-save"]').on('click', function() {
+                // فقط اطمینان از بروزرسانی فیلد hidden قبل از submit
+                updateHiddenTimeField();
             });
 
             // پاکسازی تقویم‌ها هنگام بسته شدن مودال
@@ -422,8 +409,7 @@
                 case '1':
                     const interval = $('#IntervalDays').val() || 'X';
                     text = `یادآوری هر <strong>${interval} روز</strong> یکبار در ساعت <strong>${time}</strong> ارسال خواهد شد`;
-                    
-                    // ⭐⭐⭐ اضافه کردن حداکثر تعداد به پیش‌نمایش
+// ⭐⭐⭐ اضافه کردن حداکثر تعداد به پیش‌نمایش
                     if (maxSendCount && maxSendCount > 0) {
                         text += ` (حداکثر <strong>${maxSendCount} بار</strong>)`;
                     } else {

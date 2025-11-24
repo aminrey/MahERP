@@ -5,6 +5,7 @@
         <form id="addReminderForm" asp-action="SaveReminder" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="TaskId" />
+            <input type="hidden" asp-for="NotificationTime" id="hiddenNotificationTime" />
 
             <div class="modal-header bg-warning text-white">
                 <h4 class="modal-title text-white mb-0">
@@ -154,7 +155,7 @@
                         <span asp-validation-for="IntervalDays" class="text-danger"></span>
                     </div>
 
-                    <!-- ⭐⭐⭐ NEW: حداکثر تعداد تکرار -->
+                    <!-- حداکثر تعداد تکرار -->
                     <div class="col-md-6 mb-4" id="maxSendCountField" style="display: none;">
                         <label asp-for="MaxSendCount" class="form-label">
                             <i class="fa fa-hashtag text-danger me-1"></i>
@@ -202,29 +203,35 @@
                         <input type="time" 
                                class="form-control" 
                                id="notificationTimeInput"
-                               value="09:00" />
+                               value="09:00"
+                               onchange="updateHiddenTimeField()" />
                         <small class="form-text text-muted">زمان ارسال یادآوری در روز مشخص شده</small>
                     </div>
                 </div>
 
                 <!-- تاریخ شروع و پایان (برای نوع 0 و 1) -->
+                @* ⭐⭐⭐ استفاده از class persian-datepicker و data-initial-value-type *@
                 <div class="row" id="dateRangeFields" style="display: none;">
                     <div class="col-md-6 mb-4">
                         <label asp-for="StartDatePersian" class="form-label">
-                            <i class="fa fa-calendar-alt text-success me-1"></i>تاریخ شروع <span class="text-danger">*</span>
+                            <i class="fa fa-calendar-alt text-success me-1"></i>
+                            تاریخ شروع <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="StartDatePersian" 
-                               class="form-control persian-datepicker" 
+                        <input asp-for="StartDatePersian"
+                               class="form-control persian-datepicker"
+                               data-initial-value-type="persian"
                                placeholder="انتخاب تاریخ..."
                                readonly />
                         <span asp-validation-for="StartDatePersian" class="text-danger"></span>
                     </div>
                     <div class="col-md-6 mb-4">
                         <label asp-for="EndDatePersian" class="form-label">
-                            <i class="fa fa-calendar-times text-danger me-1"></i>تاریخ پایان <small class="text-muted">(اختیاری)</small>
+                            <i class="fa fa-calendar-times text-danger me-1"></i>
+                            تاریخ پایان <small class="text-muted">(اختیاری)</small>
                         </label>
-                        <input asp-for="EndDatePersian" 
-                               class="form-control persian-datepicker" 
+                        <input asp-for="EndDatePersian"
+                               class="form-control persian-datepicker"
+                               data-initial-value-type="persian"
                                placeholder="انتخاب تاریخ..."
                                readonly />
                         <span asp-validation-for="EndDatePersian" class="text-danger"></span>
@@ -250,81 +257,44 @@
     </div>
 </div>
 
+@* ⭐⭐⭐ حذف تمام initialization دستی - فقط استفاده از global initPersianDatePicker *@
 <script>
 (function() {
-    let startDatePicker = null;
-    let endDatePicker = null;
-
-    function initializePersianDatePickers() {
-        if (startDatePicker) {
-            try { startDatePicker.destroy(); } catch(e) {}
+    // ⭐⭐⭐ بروزرسانی فیلد hidden برای NotificationTime
+    window.updateHiddenTimeField = function() {
+        const timeValue = $('#notificationTimeInput').val();
+        if (timeValue) {
+            $('#hiddenNotificationTime').val(timeValue + ':00');
         }
-        if (endDatePicker) {
-            try { endDatePicker.destroy(); } catch(e) {}
-        }
-
-        const startDateInput = document.querySelector('#StartDatePersian');
-        const endDateInput = document.querySelector('#EndDatePersian');
-
-        if (startDateInput && typeof mds !== 'undefined') {
-            startDatePicker = new mds.MdsPersianDateTimePicker(startDateInput, {
-                targetTextSelector: startDateInput,
-                enableTimePicker: false,
-                textFormat: 'yyyy/MM/dd',
-                placement: 'bottom',
-                persianNumber: true
-            });
-        }
-
-        if (endDateInput && typeof mds !== 'undefined') {
-            endDatePicker = new mds.MdsPersianDateTimePicker(endDateInput, {
-                targetTextSelector: endDateInput,
-                enableTimePicker: false,
-                textFormat: 'yyyy/MM/dd',
-                placement: 'bottom',
-                persianNumber: true
-            });
-        }
-    }
+    };
 
     $(document).ready(function() {
-        setTimeout(function() {
-            initializePersianDatePickers();
-            toggleReminderFields();
-            updatePreview();
-        }, 300);
+        // تنظیم مقدار اولیه
+        updateHiddenTimeField();
+        toggleReminderFields();
+        updatePreview();
 
+        // رویدادها
         $('input[name="ReminderType"]').on('change', function() {
             toggleReminderFields();
             updatePreview();
         });
 
-        $('#IntervalDays, #DaysBeforeDeadline, #MaxSendCount, #notificationTimeInput, #StartDatePersian, #EndDatePersian').on('input change', function() {
+        $('#notificationTimeInput').on('input change', function() {
+            updateHiddenTimeField();
+            updatePreview();
+        });
+
+        $('#IntervalDays, #DaysBeforeDeadline, #MaxSendCount, #StartDatePersian, #EndDatePersian').on('input change', function() {
             updatePreview();
         });
 
         $('[data-save="modal-ajax-save"]').on('click', function() {
-            const timeValue = $('#notificationTimeInput').val();
-            if (timeValue) {
-                $('input[name="NotificationTime"]').remove();
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'NotificationTime',
-                    value: timeValue + ':00'
-                }).appendTo('#addReminderForm');
-            }
-        });
-
-        $('#ajax-modal').on('hidden.bs.modal', function() {
-            if (startDatePicker) {
-                try { startDatePicker.destroy(); } catch(e) {}
-            }
-            if (endDatePicker) {
-                try { endDatePicker.destroy(); } catch(e) {}
-            }
+            updateHiddenTimeField();
         });
     });
 
+    // ⭐⭐⭐ تغییر فیلدها بر اساس نوع یادآوری
     window.toggleReminderFields = function() {
         const reminderType = $('input[name="ReminderType"]:checked').val();
         
@@ -334,8 +304,12 @@
         $('#dateRangeFields').hide();
         
         if (reminderType === '0') {
+            // یکبار - نمایش تاریخ شروع/پایان
             $('#dateRangeFields').slideDown(300, function() {
-                initializePersianDatePickers();
+                // ⭐⭐⭐ فراخوانی global initPersianDatePicker
+                if (typeof window.initPersianDatePicker === 'function') {
+                    window.initPersianDatePicker($('#dateRangeFields'));
+                }
             });
             $('#MaxSendCount').val(1).prop('readonly', true);
             $('#maxSendCountLabel').text('تعداد ارسال (ثابت)');
@@ -343,6 +317,7 @@
             $('#maxSendCountHelp').text('این یادآوری فقط یک بار ارسال می‌شود');
             $('#maxSendCountField').slideDown();
         } else if (reminderType === '1') {
+            // تکراری
             $('#intervalField').slideDown();
             $('#MaxSendCount').val('').prop('readonly', false);
             $('#maxSendCountLabel').text('حداکثر تعداد ارسال');
@@ -350,9 +325,13 @@
             $('#maxSendCountHelp').text('اگر خالی بگذارید، یادآوری تا پایان تسک ادامه خواهد داشت');
             $('#maxSendCountField').slideDown();
             $('#dateRangeFields').slideDown(300, function() {
-                initializePersianDatePickers();
+                // ⭐⭐⭐ فراخوانی global initPersianDatePicker
+                if (typeof window.initPersianDatePicker === 'function') {
+                    window.initPersianDatePicker($('#dateRangeFields'));
+                }
             });
         } else if (reminderType === '2') {
+            // قبل از مهلت
             $('#daysBeforeField').slideDown();
             $('#MaxSendCount').val(1).prop('readonly', true);
             $('#maxSendCountLabel').text('تعداد ارسال (ثابت)');
@@ -360,6 +339,7 @@
             $('#maxSendCountHelp').text('این یادآوری فقط یک بار ارسال می‌شود');
             $('#maxSendCountField').slideDown();
         } else if (reminderType === '3') {
+            // در روز شروع
             $('#MaxSendCount').val(1).prop('readonly', true);
             $('#maxSendCountLabel').text('تعداد ارسال (ثابت)');
             $('#maxSendCountOptional').hide();
@@ -370,6 +350,7 @@
         updatePreview();
     };
 
+    // ⭐⭐⭐ پیش‌نمایش یادآوری
     window.updatePreview = function() {
         const reminderType = $('input[name="ReminderType"]:checked').val();
         const time = $('#notificationTimeInput').val() || '09:00';

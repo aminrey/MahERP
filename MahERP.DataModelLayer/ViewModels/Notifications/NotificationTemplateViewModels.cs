@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MahERP.DataModelLayer.Enums;
 
 namespace MahERP.DataModelLayer.ViewModels.Notifications
 {
@@ -175,6 +176,21 @@ namespace MahERP.DataModelLayer.ViewModels.Notifications
         public string VariableName { get; set; }
         public string DisplayName { get; set; }
         public string? Description { get; set; }
+        
+        /// <summary>
+        /// ⭐ دسته‌بندی‌های مرتبط با این متغیر
+        /// </summary>
+        public List<NotificationVariableCategory> Categories { get; set; } = new();
+        
+        /// <summary>
+        /// آیا این متغیر منسوخ شده؟
+        /// </summary>
+        public bool IsDeprecated { get; set; }
+        
+        /// <summary>
+        /// مثال استفاده
+        /// </summary>
+        public string? ExampleValue { get; set; }
     }
 
     /// <summary>

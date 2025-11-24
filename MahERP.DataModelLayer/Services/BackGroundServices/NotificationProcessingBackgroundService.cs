@@ -205,10 +205,17 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                     break;
 
                 case NotificationEventType.TaskDeadlineReminder:
-                    // ⭐⭐⭐ EXCEPTION: یادآوری‌های زمان‌بندی شده - همه اعضا (بدون فیلتر sender)
+                    // ⭐⭐⭐ FIX: یادآوری‌های زمان‌بندی شده - همه اعضا + سازنده (بدون فیلتر sender)
                     // این رویداد از طریق Background Service اجرا می‌شود نه توسط کاربر
                     var allAssignees = await taskRepo.GetTaskAssignedUserIdsAsync(task.Id);
                     recipients.AddRange(allAssignees);
+                    
+                    // ⭐ اضافه کردن سازنده تسک (اگر از لیست کاربران منتصب نیست)
+                    if (!string.IsNullOrEmpty(task.CreatorUserId) &&
+                        !recipients.Contains(task.CreatorUserId))
+                    {
+                        recipients.Add(task.CreatorUserId);
+                    }
                     break;
 
                 case NotificationEventType.TaskDeleted:
@@ -246,84 +253,145 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             string recipientUserId,
             string senderUserId)
         {
-            // ⭐ دریافت اطلاعات کاربر دریافت‌کننده
-            var recipient = await context.Users
-                .Where(u => u.Id == recipientUserId)
-                .Select(u => new { u.FirstName, u.LastName })
-                .FirstOrDefaultAsync();
-
-            // ⭐ دریافت اطلاعات کاربر ارسال‌کننده
-            var sender = !string.IsNullOrEmpty(senderUserId) && senderUserId != "SYSTEM"
-                ? await context.Users
-                    .Where(u => u.Id == senderUserId)
-                    .Select(u => new { u.FirstName, u.LastName })
-                    .FirstOrDefaultAsync()
-                : null;
-
             // ⭐⭐⭐ ساخت Dictionary داده‌ها برای جایگزینی
-            var templateData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "TaskTitle", task.Title ?? "تسک" },
-                { "TaskCode", task.TaskCode ?? "" },
-                { "TaskDescription", task.Description ?? "" },
-                { "RecipientFirstName", recipient?.FirstName ?? "" },
-                { "RecipientLastName", recipient?.LastName ?? "" },
-                { "RecipientFullName", recipient != null ? $"{recipient.FirstName} {recipient.LastName}".Trim() : "کاربر" },
-                { "SenderName", sender != null ? $"{sender.FirstName} {sender.LastName}".Trim() : "سیستم" },
-                { "Date", CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd") },
-                { "Time", DateTime.Now.ToString("HH:mm") },
-                { "TaskDueDate", task.DueDate.HasValue ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") : "نامشخص" },
-                { "TaskStartDate", task.StartDate.HasValue ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.StartDate.Value, "yyyy/MM/dd") : "نامشخص" },
-                { "TaskPriority", task.Priority switch { 0 => "عادی", 1 => "متوسط", 2 => "بالا", 3 => "فوری", _ => "نامشخص" } }
-            };
+            var templateData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            // ⭐⭐⭐ SPECIAL CASE: برای TaskDeadlineReminder از TaskReminderSchedule استفاده کن
-            if (eventType == NotificationEventType.TaskDeadlineReminder)
+            try
             {
-                var reminderSchedule = await context.TaskReminderSchedule_Tbl
-                    .Where(s => s.TaskId == task.Id && s.IsActive)
-                    .OrderByDescending(s => s.LastExecuted)
+                // ⭐ اطلاعات پایه
+                templateData["Date"] = CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd");
+                templateData["Time"] = DateTime.Now.ToString("HH:mm");
+
+                // ⭐ دریافت اطلاعات کاربر دریافت‌کننده
+                var recipient = await context.Users
+                    .Where(u => u.Id == recipientUserId)
+                    .Select(u => new { u.FirstName, u.LastName, u.UserName, u.Email, u.PhoneNumber })
                     .FirstOrDefaultAsync();
 
-                if (reminderSchedule != null)
+                if (recipient != null)
                 {
-                    // ⭐ استفاده از عنوان و توضیحات از Schedule
-                    string title = ReplaceVariables(reminderSchedule.Title ?? "⏰ یادآوری تسک", templateData);
-                    string message = reminderSchedule.Description ?? "";
+                    var fullName = $"{recipient.FirstName} {recipient.LastName}".Trim();
                     
-                    // ⭐ اگر توضیحات خالی بود، از متن پیش‌فرض استفاده کن
-                    if (string.IsNullOrWhiteSpace(message))
+                    templateData["RecipientFirstName"] = recipient.FirstName ?? "";
+                    templateData["RecipientLastName"] = recipient.LastName ?? "";
+                    templateData["RecipientFullName"] = fullName;
+                    templateData["RecipientUserName"] = recipient.UserName ?? "";
+                    templateData["RecipientEmail"] = recipient.Email ?? "";
+                    templateData["RecipientPhone"] = recipient.PhoneNumber ?? "";
+                    
+                    // Backward compatibility
+                    templateData["FirstName"] = recipient.FirstName ?? "";
+                    templateData["LastName"] = recipient.LastName ?? "";
+                    templateData["UserName"] = fullName;
+                    templateData["Email"] = recipient.Email ?? "";
+                    templateData["PhoneNumber"] = recipient.PhoneNumber ?? "";
+                }
+
+                // ⭐ اطلاعات تسک
+                templateData["TaskTitle"] = task.Title ?? "";
+                templateData["TaskCode"] = task.TaskCode ?? "";
+                templateData["TaskDescription"] = task.Description ?? "";
+                templateData["TaskStartDate"] = task.StartDate.HasValue 
+                    ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.StartDate.Value, "yyyy/MM/dd") 
+                    : "";
+                templateData["TaskDueDate"] = task.DueDate.HasValue 
+                    ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") 
+                    : "";
+                templateData["TaskPriority"] = task.Priority switch { 
+                    0 => "عادی", 
+                    1 => "متوسط", 
+                    2 => "بالا", 
+                    3 => "فوری", 
+                    _ => "نامشخص" 
+                };
+                
+                // Backward compatibility
+                templateData["DueDate"] = templateData["TaskDueDate"];
+
+                // ⭐ دریافت اطلاعات کاربر ارسال‌کننده
+                if (!string.IsNullOrEmpty(senderUserId) && senderUserId != "SYSTEM")
+                {
+                    var sender = await context.Users
+                        .Where(u => u.Id == senderUserId)
+                        .Select(u => new { u.FirstName, u.LastName })
+                        .FirstOrDefaultAsync();
+
+                    templateData["SenderName"] = sender != null 
+                        ? $"{sender.FirstName} {sender.LastName}".Trim() 
+                        : "سیستم";
+                }
+                else
+                {
+                    templateData["SenderName"] = "سیستم";
+                }
+
+                // ⭐⭐⭐ SPECIAL CASE: برای TaskDeadlineReminder از TaskReminderSchedule استفاده کن
+                if (eventType == NotificationEventType.TaskDeadlineReminder)
+                {
+                    var reminderSchedule = await context.TaskReminderSchedule_Tbl
+                        .Where(s => s.TaskId == task.Id && s.IsActive)
+                        .OrderByDescending(s => s.LastExecuted)
+                        .FirstOrDefaultAsync();
+
+                    if (reminderSchedule != null && !string.IsNullOrWhiteSpace(reminderSchedule.Title))
                     {
-                        message = $"🔔 یادآوری برای تسک {{TaskTitle}} (کد: {{TaskCode}})\n\n" +
-                                 $"⚠️ مهلت پایان: {{TaskDueDate}}\n\n" +
-                                 $"لطفاً نسبت به انجام آن اقدام فرمایید.";
+                        // ⭐ استفاده از عنوان و توضیحات از Schedule
+                        string title = ReplaceVariables(reminderSchedule.Title, templateData);
+                        string message = reminderSchedule.Description ?? "";
+                        
+                        if (string.IsNullOrWhiteSpace(message))
+                        {
+                            // پیام پیش‌فرض
+                            message = $"🔔 یادآوری برای تسک {{{{TaskTitle}}}} (کد: {{{{TaskCode}}}})\n\n" +
+                                     $"⚠️ مهلت پایان: {{{{TaskDueDate}}}}\n\n" +
+                                     $"لطفاً نسبت به انجام آن اقدام فرمایید.";
+                        }
+                        
+                        message = ReplaceVariables(message, templateData);
+                        templateData["Title"] = title;
+                        templateData["Message"] = message;
+                        
+                        return (title, message);
                     }
+                }
+
+                // ⭐⭐⭐ سعی کن قالب مربوط به این رویداد رو پیدا کنی
+                var template = await context.NotificationTemplate_Tbl
+                    .Where(t => t.IsActive && 
+                               t.NotificationEventType == (byte)eventType)
+                    // ⭐⭐⭐ FIX: حذف فیلتر !t.IsScheduled تا قالب‌های یادآوری تکراری هم استفاده شوند
+                    .OrderByDescending(t => t.UsageCount)
+                    .FirstOrDefaultAsync();
+
+                if (template != null)
+                {
+                    // ⭐⭐⭐ استفاده از قالب
+                    string title = ReplaceVariables(template.Subject ?? GetDefaultTitle(eventType, templateData), templateData);
+                    string message = ReplaceVariables(template.MessageTemplate ?? GetDefaultMessage(eventType, templateData), templateData);
                     
-                    message = ReplaceVariables(message, templateData);
+                    templateData["Title"] = title;
+                    templateData["Message"] = message;
                     
                     return (title, message);
                 }
-            }
 
-            // ⭐⭐⭐ سعی کن قالب مربوط به این رویداد رو پیدا کنی
-            var template = await context.NotificationTemplate_Tbl
-                .Where(t => t.IsActive && 
-                           t.NotificationEventType == (byte)eventType &&
-                           !t.IsScheduled) // فقط قالب‌های غیر زمان‌بندی شده
-                .OrderByDescending(t => t.UsageCount) // پرکاربردترین
-                .FirstOrDefaultAsync();
-
-            if (template != null)
-            {
-                // ⭐⭐⭐ استفاده از قالب
-                string title = ReplaceVariables(template.Subject ?? GetDefaultTitle(eventType, templateData), templateData);
-                string message = ReplaceVariables(template.MessageTemplate ?? GetDefaultMessage(eventType, templateData), templateData);
+                // ⭐ پیش‌فرض
+                var defaultTitle = GetDefaultTitle(eventType, templateData);
+                var defaultMessage = GetDefaultMessage(eventType, templateData);
                 
-                return (title, message);
+                templateData["Title"] = defaultTitle;
+                templateData["Message"] = defaultMessage;
+                
+                return (defaultTitle, defaultMessage);
             }
-
-            // ⭐ اگر قالب یافت نشد، از محتوای پیش‌فرض استفاده کن
-            return (GetDefaultTitle(eventType, templateData), GetDefaultMessage(eventType, templateData));
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ خطا در BuildNotificationContentAsync");
+                
+                // Fallback
+                return ($"اعلان مربوط به {task?.Title ?? "تسک"}", 
+                       $"یک رویداد جدید در تسک {task?.TaskCode ?? ""} رخ داده است.");
+            }
         }
 
         /// <summary>

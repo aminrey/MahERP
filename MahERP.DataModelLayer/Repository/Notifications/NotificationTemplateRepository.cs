@@ -1,5 +1,6 @@
 ﻿using MahERP.DataModelLayer.Entities.Notifications;
 using MahERP.DataModelLayer.ViewModels.Notifications;
+using MahERP.DataModelLayer.Enums; // ⭐ اضافه شد
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -422,57 +423,359 @@ namespace MahERP.DataModelLayer.Repository.Notifications
 
         public async Task<List<SystemVariableViewModel>> GetSystemVariablesAsync()
         {
-            // متغیرهای سیستمی عمومی
+            // متغیرهای سیستمی با دسته‌بندی
             return new List<SystemVariableViewModel>
             {
-                // ⭐ متغیرهای پایه
-                new() { VariableName = "Title", DisplayName = "عنوان", Description = "عنوان اعلان" },
-                new() { VariableName = "Message", DisplayName = "پیام", Description = "متن پیام" },
-                new() { VariableName = "ActionUrl", DisplayName = "لینک", Description = "لینک عملیات" },
-                new() { VariableName = "Date", DisplayName = "تاریخ", Description = "تاریخ جاری" },
-                new() { VariableName = "Time", DisplayName = "ساعت", Description = "ساعت جاری" },
+                // ⭐⭐⭐ متغیرهای عمومی - برای همه انواع
+                new() { 
+                    VariableName = "Date", 
+                    DisplayName = "تاریخ جاری", 
+                    Description = "تاریخ شمسی فعلی", 
+                    ExampleValue = "1403/08/15",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.General 
+                    }
+                },
+                new() { 
+                    VariableName = "Time", 
+                    DisplayName = "ساعت جاری", 
+                    Description = "ساعت فعلی", 
+                    ExampleValue = "14:30",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.General 
+                    }
+                },
                 
-                // ⭐ اطلاعات کاربر دریافت‌کننده
-                new() { VariableName = "RecipientFullName", DisplayName = "نام کامل گیرنده", Description = "نام و نام خانوادگی گیرنده" },
-                new() { VariableName = "RecipientFirstName", DisplayName = "نام گیرنده", Description = "نام کوچک گیرنده" },
-                new() { VariableName = "RecipientLastName", DisplayName = "نام خانوادگی گیرنده", Description = "نام خانوادگی گیرنده" },
-                new() { VariableName = "RecipientUserName", DisplayName = "نام کاربری", Description = "نام کاربری سیستم" },
-                new() { VariableName = "RecipientEmail", DisplayName = "ایمیل گیرنده", Description = "آدرس ایمیل گیرنده" },
-                new() { VariableName = "RecipientPhone", DisplayName = "تلفن گیرنده", Description = "شماره موبایل گیرنده" },
+                // ⭐⭐⭐ اطلاعات کاربر دریافت‌کننده - برای همه انواع
+                new() { 
+                    VariableName = "RecipientFullName", 
+                    DisplayName = "نام کامل گیرنده", 
+                    Description = "نام و نام خانوادگی کاربر دریافت‌کننده", 
+                    ExampleValue = "احمد محمدی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    }
+                },
+                new() { 
+                    VariableName = "RecipientFirstName", 
+                    DisplayName = "نام گیرنده", 
+                    Description = "نام کوچک کاربر", 
+                    ExampleValue = "احمد",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    }
+                },
+                new() { 
+                    VariableName = "RecipientLastName", 
+                    DisplayName = "نام خانوادگی گیرنده", 
+                    Description = "نام خانوادگی کاربر", 
+                    ExampleValue = "محمدی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    }
+                },
+                new() { 
+                    VariableName = "RecipientUserName", 
+                    DisplayName = "نام کاربری", 
+                    Description = "نام کاربری سیستم", 
+                    ExampleValue = "ahmad.mohammadi",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    }
+                },
+                new() { 
+                    VariableName = "RecipientEmail", 
+                    DisplayName = "ایمیل گیرنده", 
+                    Description = "آدرس ایمیل کاربر", 
+                    ExampleValue = "ahmad@example.com",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    }
+                },
+                new() { 
+                    VariableName = "RecipientPhone", 
+                    DisplayName = "تلفن گیرنده", 
+                    Description = "شماره موبایل کاربر", 
+                    ExampleValue = "09123456789",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    }
+                },
                 
-                // ⭐ اطلاعات تسک
-                new() { VariableName = "TaskTitle", DisplayName = "عنوان تسک", Description = "عنوان تسک" },
-                new() { VariableName = "TaskCode", DisplayName = "کد تسک", Description = "کد یکتای تسک" },
-                new() { VariableName = "TaskDescription", DisplayName = "توضیحات تسک", Description = "توضیحات تسک" },
-                new() { VariableName = "TaskStartDate", DisplayName = "تاریخ شروع", Description = "تاریخ شروع تسک" },
-                new() { VariableName = "TaskDueDate", DisplayName = "مهلت انجام", Description = "تاریخ سررسید تسک" },
-                new() { VariableName = "TaskPriority", DisplayName = "اولویت", Description = "اولویت تسک (عادی/متوسط/بالا/فوری)" },
-                new() { VariableName = "TaskCategory", DisplayName = "دسته‌بندی", Description = "دسته‌بندی تسک" },
-                new() { VariableName = "TaskStakeholder", DisplayName = "طرف حساب", Description = "شخص یا سازمان مرتبط" },
-                new() { VariableName = "TaskBranch", DisplayName = "شعبه", Description = "شعبه مربوط به تسک" },
-                new() { VariableName = "TaskCreatorName", DisplayName = "سازنده تسک", Description = "نام سازنده تسک" },
-                new() { VariableName = "SenderName", DisplayName = "ارسال‌کننده", Description = "نام ارسال‌کننده اعلان" },
+                // ⭐⭐⭐ اطلاعات تسک خاص - فقط برای اعلان‌های مرتبط با تسک
+                new() { 
+                    VariableName = "TaskTitle", 
+                    DisplayName = "عنوان تسک", 
+                    Description = "عنوان تسک خاص", 
+                    ExampleValue = "بررسی پیشنهاد مالی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskCode", 
+                    DisplayName = "کد تسک", 
+                    Description = "کد یکتای تسک", 
+                    ExampleValue = "T-2024-001",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskDescription", 
+                    DisplayName = "توضیحات تسک", 
+                    Description = "توضیحات کامل تسک", 
+                    ExampleValue = "بررسی دقیق پیشنهاد مالی و ارائه گزارش",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskStartDate", 
+                    DisplayName = "تاریخ شروع تسک", 
+                    Description = "تاریخ شروع تسک", 
+                    ExampleValue = "1403/08/10",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskDueDate", 
+                    DisplayName = "مهلت تسک", 
+                    Description = "تاریخ سررسید تسک", 
+                    ExampleValue = "1403/08/20",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskPriority", 
+                    DisplayName = "اولویت تسک", 
+                    Description = "سطح اولویت (عادی، متوسط، بالا، فوری)", 
+                    ExampleValue = "فوری",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskCategory", 
+                    DisplayName = "دسته‌بندی تسک", 
+                    Description = "دسته‌بندی تسک", 
+                    ExampleValue = "امور مالی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskStakeholder", 
+                    DisplayName = "طرف حساب", 
+                    Description = "شخص یا سازمان مرتبط با تسک", 
+                    ExampleValue = "شرکت ABC",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskBranch", 
+                    DisplayName = "شعبه تسک", 
+                    Description = "شعبه مرتبط با تسک", 
+                    ExampleValue = "دفتر مرکزی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
+                new() { 
+                    VariableName = "TaskCreatorName", 
+                    DisplayName = "سازنده تسک", 
+                    Description = "نام کاربری که تسک را ایجاد کرده", 
+                    ExampleValue = "علی رضایی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
                 
-                // ⭐⭐⭐ NEW: لیست تسک‌های انجام نشده
+                // ⭐⭐⭐ اطلاعات کاربر ارسال‌کننده - فقط برای اعلان‌های تسک
+                new() { 
+                    VariableName = "SenderName", 
+                    DisplayName = "ارسال‌کننده اعلان", 
+                    Description = "نام کاربری که اعلان را ارسال کرده", 
+                    ExampleValue = "محمد حسینی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Sender 
+                    }
+                },
+                
+                // ⭐⭐⭐ لیست تسک‌های انجام نشده - فقط برای اعلان‌های دوره‌ای
                 new() { 
                     VariableName = "PendingTasks", 
                     DisplayName = "لیست تسک‌های انجام نشده", 
-                    Description = "لیست کامل تسک‌های در حال انجام کاربر با جزئیات (عنوان، توضیح، تاریخ، اولویت، پیشرفت)" 
+                    Description = "لیست فرمت‌شده تمام تسک‌های در حال انجام کاربر با جزئیات کامل (عنوان، توضیح، تاریخ، اولویت، پیشرفت)", 
+                    ExampleValue = "📌 تسک‌های در حال انجام:\n1️⃣ بررسی پیشنهاد...",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.TaskList 
+                    }
                 },
                 
-                // ⭐ متغیرهای قدیمی (حفظ برای سازگاری)
-                new() { VariableName = "UserName", DisplayName = "[قدیمی] نام کاربر", Description = "استفاده از RecipientFullName پیشنهاد می‌شود" },
-                new() { VariableName = "FirstName", DisplayName = "[قدیمی] نام", Description = "استفاده از RecipientFirstName پیشنهاد می‌شود" },
-                new() { VariableName = "LastName", DisplayName = "[قدیمی] نام خانوادگی", Description = "استفاده از RecipientLastName پیشنهاد می‌شود" },
-                new() { VariableName = "Email", DisplayName = "[قدیمی] ایمیل", Description = "استفاده از RecipientEmail پیشنهاد می‌شود" },
-                new() { VariableName = "PhoneNumber", DisplayName = "[قدیمی] شماره تماس", Description = "استفاده از RecipientPhone پیشنهاد می‌شود" },
-                new() { VariableName = "SystemName", DisplayName = "نام سیستم", Description = "نام سیستم ERP" },
-                new() { VariableName = "CompanyName", DisplayName = "نام شرکت", Description = "نام شرکت" },
-                new() { VariableName = "BranchName", DisplayName = "نام شعبه", Description = "نام شعبه فعلی" },
-                new() { VariableName = "DueDate", DisplayName = "[قدیمی] مهلت", Description = "استفاده از TaskDueDate پیشنهاد می‌شود" }
+                // ⭐⭐⭐ متغیرهای یادآوری زمان‌بندی شده
+                new() { 
+                    VariableName = "Title", 
+                    DisplayName = "عنوان اعلان", 
+                    Description = "عنوان دینامیک اعلان (از قالب یادآوری یا پیش‌فرض)", 
+                    ExampleValue = "یادآوری تسک‌های امروز",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.ReminderSchedule 
+                    }
+                },
+                new() { 
+                    VariableName = "Message", 
+                    DisplayName = "متن اعلان", 
+                    Description = "متن دینامیک اعلان", 
+                    ExampleValue = "یادآوری برای بررسی تسک‌های در حال انجام",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.ReminderSchedule 
+                    }
+                },
+                new() { 
+                    VariableName = "ActionUrl", 
+                    DisplayName = "لینک عملیات", 
+                    Description = "لینک مستقیم به صفحه مربوطه", 
+                    ExampleValue = "/TaskingArea/Tasks/Details/123",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.ReminderSchedule 
+                    }
+                },
+                
+                // ⭐⭐⭐ متغیرهای منسوخ شده (Deprecated)
+                new() { 
+                    VariableName = "UserName", 
+                    DisplayName = "[منسوخ] نام کاربر", 
+                    Description = "❌ از RecipientFullName استفاده کنید", 
+                    ExampleValue = "احمد محمدی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    },
+                    IsDeprecated = true
+                },
+                new() { 
+                    VariableName = "FirstName", 
+                    DisplayName = "[منسوخ] نام", 
+                    Description = "❌ از RecipientFirstName استفاده کنید", 
+                    ExampleValue = "احمد",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    },
+                    IsDeprecated = true
+                },
+                new() { 
+                    VariableName = "LastName", 
+                    DisplayName = "[منسوخ] نام خانوادگی", 
+                    Description = "❌ از RecipientLastName استفاده کنید", 
+                    ExampleValue = "محمدی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    },
+                    IsDeprecated = true
+                },
+                new() { 
+                    VariableName = "Email", 
+                    DisplayName = "[منسوخ] ایمیل", 
+                    Description = "❌ از RecipientEmail استفاده کنید", 
+                    ExampleValue = "ahmad@example.com",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    },
+                    IsDeprecated = true
+                },
+                new() { 
+                    VariableName = "PhoneNumber", 
+                    DisplayName = "[منسوخ] شماره تماس", 
+                    Description = "❌ از RecipientPhone استفاده کنید", 
+                    ExampleValue = "09123456789",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Recipient 
+                    },
+                    IsDeprecated = true
+                },
+                new() { 
+                    VariableName = "DueDate", 
+                    DisplayName = "[منسوخ] مهلت", 
+                    Description = "❌ از TaskDueDate استفاده کنید", 
+                    ExampleValue = "1403/08/20",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    },
+                    IsDeprecated = true
+                }
             };
         }
 
+        /// <summary>
+        /// ⭐⭐⭐ دریافت متغیرهای مناسب برای یک نوع خاص اعلان
+        /// </summary>
+        public async Task<List<SystemVariableViewModel>> GetVariablesForEventTypeAsync(byte eventType)
+        {
+            var allVariables = await GetSystemVariablesAsync();
+            var requiredCategories = GetRequiredCategoriesForEventType(eventType);
+
+            // فیلتر متغیرها بر اساس دسته‌های مورد نیاز
+            return allVariables
+                .Where(v => v.Categories.Any(c => requiredCategories.Contains(c)))
+                .OrderBy(v => v.IsDeprecated) // غیرمنسوخ‌ها اول
+                .ThenBy(v => v.DisplayName)
+                .ToList();
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ تعیین دسته‌های مورد نیاز برای هر نوع اعلان
+        /// </summary>
+        private List<NotificationVariableCategory> GetRequiredCategoriesForEventType(byte eventType)
+        {
+            var categories = new List<NotificationVariableCategory>
+            {
+                // همیشه متغیرهای عمومی و گیرنده
+                NotificationVariableCategory.General,
+                NotificationVariableCategory.Recipient
+            };
+
+            // بر اساس NotificationEventType
+            switch (eventType)
+            {
+                case 13: // DailyTaskDigest - اعلان روزانه
+                    categories.Add(NotificationVariableCategory.TaskList);
+                    break;
+
+                case 1:  // TaskAssigned
+                case 2:  // TaskCompleted
+                case 3:  // TaskDeadlineReminder
+                case 4:  // TaskCommentAdded
+                case 5:  // TaskUpdated
+                case 6:  // TaskOperationCompleted
+                case 7:  // TaskDeleted
+                case 8:  // TaskStatusChanged
+                case 10: // OperationAssigned
+                case 11: // TaskPriorityChanged
+                case 12: // TaskReassigned
+                case 14: // TaskWorkLog
+                case 15: // CustomReminder
+                    // اعلان‌های مرتبط با تسک خاص
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    
+                    // اگر یادآوری است
+                    if (eventType == 3 || eventType == 15)
+                    {
+                        categories.Add(NotificationVariableCategory.ReminderSchedule);
+                    }
+                    break;
+
+                default:
+                    // پیش‌فرض: فقط عمومی و گیرنده
+                    break;
+            }
+
+            return categories;
+        }
+        
         public async Task<bool> AddVariableToTemplateAsync(NotificationTemplateVariable variable)
         {
             try
@@ -756,9 +1059,10 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                     LastExecutionDate = template.LastExecutionDate,
                     NextExecutionDate = template.NextExecutionDate,
                     
-                    SystemVariables = await GetSystemVariablesAsync(),
+                    // ⭐⭐⭐ FIX: متغیرهای فیلتر شده بر اساس نوع اعلان
+                    SystemVariables = await GetVariablesForEventTypeAsync(template.NotificationEventType),
                     AvailableUsers = await GetUsersForSelectAsync(),
-                    AvailableNotificationTypes = await GetAvailableNotificationTypesAsync() // ✅ اضافه شد
+                    AvailableNotificationTypes = await GetAvailableNotificationTypesAsync()
                 };
             }
 
@@ -767,9 +1071,9 @@ namespace MahERP.DataModelLayer.Repository.Notifications
             {
                 IsActive = true,
                 RecipientMode = 0,
-                SystemVariables = await GetSystemVariablesAsync(),
+                SystemVariables = await GetSystemVariablesAsync(), // همه متغیرها
                 AvailableUsers = await GetUsersForSelectAsync(),
-                AvailableNotificationTypes = await GetAvailableNotificationTypesAsync() // ✅ اضافه شد
+                AvailableNotificationTypes = await GetAvailableNotificationTypesAsync()
             };
         }
 

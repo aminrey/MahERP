@@ -163,7 +163,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         continue;
                     }
 
-                    _logger.LogInformation($"📤 ارسال یادآوری '{schedule.Title}' به {recipientUserIds.Count} کاربر");
+                    _logger.LogInformation($"📤 ارسال یادآوری '{schedule.Title}' به {recipientUserIds.Count} کاربر: [{string.Join(", ", recipientUserIds)}]");
 
                     // ⭐⭐⭐ FIX: استفاده از NotificationQueue به جای فراخوانی مستقیم
                     // این باعث می‌شه که NotificationProcessingBackgroundService 

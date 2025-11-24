@@ -8,12 +8,12 @@ namespace MahERP.DataModelLayer.StaticClasses
     /// </summary>
     public static class StaticNotificationSeedData
     {
-
         /// <summary>
-        /// ماژول‌های سیستم اعلان
+        /// ⭐⭐⭐ ماژول‌های اعلان
         /// </summary>
         public static List<NotificationModuleConfig> NotificationModules => new()
         {
+            // 1️⃣ ماژول تسکینگ
             new NotificationModuleConfig
             {
                 Id = 1,
@@ -25,7 +25,6 @@ namespace MahERP.DataModelLayer.StaticClasses
                 IsActive = true,
                 DisplayOrder = 1
             }
-            // می‌توانید ماژول‌های دیگر را اینجا اضافه کنید
         };
 
         /// <summary>
@@ -33,7 +32,7 @@ namespace MahERP.DataModelLayer.StaticClasses
         /// </summary>
         public static List<NotificationTypeConfig> NotificationTypes => new()
         {
-           
+
 
             // 6️⃣ یادآوری سفارشی تسک
             new NotificationTypeConfig

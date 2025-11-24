@@ -1115,19 +1115,37 @@ namespace MahERP.DataModelLayer.Services
 
                 if (recipient != null)
                 {
+                    var fullName = $"{recipient.FirstName} {recipient.LastName}".Trim();
+                    
+                    // ⭐ متغیرهای جدید
                     data["RecipientFirstName"] = recipient.FirstName ?? "";
                     data["RecipientLastName"] = recipient.LastName ?? "";
-                    data["RecipientFullName"] = $"{recipient.FirstName} {recipient.LastName}".Trim();
+                    data["RecipientFullName"] = fullName;
                     data["RecipientUserName"] = recipient.UserName ?? "";
                     data["RecipientEmail"] = recipient.Email ?? "";
                     data["RecipientPhone"] = recipient.PhoneNumber ?? "";
+                    
+                    // ⭐ متغیرهای قدیمی (backward compatibility)
+                    data["FirstName"] = recipient.FirstName ?? "";
+                    data["LastName"] = recipient.LastName ?? "";
+                    data["UserName"] = fullName;
+                    data["Email"] = recipient.Email ?? "";
+                    data["PhoneNumber"] = recipient.PhoneNumber ?? "";
                 }
 
-                // ⭐⭐⭐ NEW: دریافت لیست تسک‌های انجام نشده کاربر
-                var pendingTasksList = await BuildPendingTasksListAsync(recipientUserId);
-                data["PendingTasks"] = pendingTasksList;
+                // ⭐⭐⭐ برای اعلان‌های دوره‌ای (DailyTaskDigest): فقط لیست تسک‌ها
+                if (eventType == NotificationEventType.DailyTaskDigest)
+                {
+                    var pendingTasksList = await BuildPendingTasksListAsync(recipientUserId);
+                    data["PendingTasks"] = pendingTasksList;
+                    
+                    _logger.LogDebug($"✅ ساخت PendingTasks برای {recipientUserId}: {pendingTasksList.Length} کاراکتر");
+                    
+                    // برای اعلان دوره‌ای، اطلاعات تسک خاص نداریم
+                    return data;
+                }
 
-                // ⭐⭐⭐ دریافت اطلاعات تسک (اگر مرتبط با تسک باشد)
+                // ⭐⭐⭐ برای اعلان‌های مرتبط با تسک خاص
                 if (IsTaskRelatedEvent(eventType))
                 {
                     // استخراج TaskId از RelatedRecordId در CoreNotification
@@ -1140,79 +1158,7 @@ namespace MahERP.DataModelLayer.Services
                     {
                         if (int.TryParse(coreNotification.RelatedRecordId, out int taskId))
                         {
-                            // ⭐ دریافت اطلاعات تسک
-                            var task = await _context.Tasks_Tbl
-                                .Where(t => t.Id == taskId)
-                                .Select(t => new
-                                {
-                                    t.Title,
-                                    t.TaskCode,
-                                    t.Description,
-                                    t.StartDate,
-                                    t.DueDate,
-                                    t.Priority,
-                                    t.CreatorUserId,
-                                    CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : "",
-                                    // ⭐ حذف Stakeholder (دیگر وجود ندارد)
-                                    // استفاده از Contact یا Organization
-                                    StakeholderName = t.Contact != null 
-                                        ? $"{t.Contact.FirstName} {t.Contact.LastName}" 
-                                        : (t.Organization != null ? t.Organization.DisplayName : ""),
-                                    BranchName = t.Branch != null ? t.Branch.Name : ""
-                                })
-                                .FirstOrDefaultAsync();
-
-                            if (task != null)
-                            {
-                                data["TaskTitle"] = task.Title ?? "";
-                                data["TaskCode"] = task.TaskCode ?? "";
-                                data["TaskDescription"] = task.Description ?? "";
-                                data["TaskStartDate"] = task.StartDate.HasValue 
-                                    ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.StartDate.Value, "yyyy/MM/dd") 
-                                    : "";
-                                data["TaskDueDate"] = task.DueDate.HasValue 
-                                    ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") 
-                                    : "";
-                                data["TaskPriority"] = task.Priority switch
-                                {
-                                    0 => "عادی",
-                                    1 => "متوسط",
-                                    2 => "بالا",
-                                    3 => "فوری",
-                                    _ => "نامشخص"
-                                };
-                                data["TaskCategory"] = task.CategoryTitle;
-                                data["TaskStakeholder"] = task.StakeholderName;
-                                data["TaskBranch"] = task.BranchName;
-
-                                // ⭐ دریافت اطلاعات سازنده تسک
-                                if (!string.IsNullOrEmpty(task.CreatorUserId))
-                                {
-                                    var creator = await _context.Users
-                                        .Where(u => u.Id == task.CreatorUserId)
-                                        .Select(u => new { u.FirstName, u.LastName })
-                                        .FirstOrDefaultAsync();
-
-                                    if (creator != null)
-                                    {
-                                        data["TaskCreatorName"] = $"{creator.FirstName} {creator.LastName}".Trim();
-                                    }
-                                }
-
-                                // ⭐ دریافت اطلاعات ارسال‌کننده اعلان
-                                if (!string.IsNullOrEmpty(coreNotification.SenderUserId))
-                                {
-                                    var sender = await _context.Users
-                                        .Where(u => u.Id == coreNotification.SenderUserId)
-                                        .Select(u => new { u.FirstName, u.LastName })
-                                        .FirstOrDefaultAsync();
-
-                                    if (sender != null)
-                                    {
-                                        data["SenderName"] = $"{sender.FirstName} {sender.LastName}".Trim();
-                                    }
-                                }
-                            }
+                            await PopulateTaskDataAsync(data, taskId, coreNotification.SenderUserId);
                         }
                     }
                 }
@@ -1223,6 +1169,109 @@ namespace MahERP.DataModelLayer.Services
             }
 
             return data;
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ پر کردن اطلاعات تسک در Dictionary
+        /// </summary>
+        private async Task PopulateTaskDataAsync(
+            Dictionary<string, string> data, 
+            int taskId, 
+            string senderUserId)
+        {
+            try
+            {
+                // ⭐ دریافت اطلاعات تسک
+                var task = await _context.Tasks_Tbl
+                    .Where(t => t.Id == taskId)
+                    .Select(t => new
+                    {
+                        t.Title,
+                        t.TaskCode,
+                        t.Description,
+                        t.StartDate,
+                        t.DueDate,
+                        t.Priority,
+                        t.CreatorUserId,
+                        CategoryTitle = t.TaskCategory != null ? t.TaskCategory.Title : "",
+                        StakeholderName = t.Contact != null 
+                            ? $"{t.Contact.FirstName} {t.Contact.LastName}" 
+                            : (t.Organization != null ? t.Organization.DisplayName : ""),
+                        BranchName = t.Branch != null ? t.Branch.Name : ""
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (task == null)
+                {
+                    _logger.LogWarning($"⚠️ تسک #{taskId} یافت نشد");
+                    return;
+                }
+
+                // ⭐ پر کردن متغیرهای تسک
+                data["TaskTitle"] = task.Title ?? "";
+                data["TaskCode"] = task.TaskCode ?? "";
+                data["TaskDescription"] = task.Description ?? "";
+                data["TaskStartDate"] = task.StartDate.HasValue 
+                    ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.StartDate.Value, "yyyy/MM/dd") 
+                    : "";
+                data["TaskDueDate"] = task.DueDate.HasValue 
+                    ? CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") 
+                    : "";
+                data["TaskPriority"] = task.Priority switch
+                {
+                    0 => "عادی",
+                    1 => "متوسط",
+                    2 => "بالا",
+                    3 => "فوری",
+                    _ => "نامشخص"
+                };
+                data["TaskCategory"] = task.CategoryTitle;
+                data["TaskStakeholder"] = task.StakeholderName;
+                data["TaskBranch"] = task.BranchName;
+                
+                // ⭐ Backward compatibility
+                data["DueDate"] = data["TaskDueDate"];
+
+                // ⭐ دریافت اطلاعات سازنده تسک
+                if (!string.IsNullOrEmpty(task.CreatorUserId))
+                {
+                    var creator = await _context.Users
+                        .Where(u => u.Id == task.CreatorUserId)
+                        .Select(u => new { u.FirstName, u.LastName })
+                        .FirstOrDefaultAsync();
+
+                    if (creator != null)
+                    {
+                        data["TaskCreatorName"] = $"{creator.FirstName} {creator.LastName}".Trim();
+                    }
+                }
+
+                // ⭐ دریافت اطلاعات ارسال‌کننده اعلان
+                if (!string.IsNullOrEmpty(senderUserId) && senderUserId != "SYSTEM")
+                {
+                    var sender = await _context.Users
+                        .Where(u => u.Id == senderUserId)
+                        .Select(u => new { u.FirstName, u.LastName })
+                        .FirstOrDefaultAsync();
+
+                    if (sender != null)
+                    {
+                        data["SenderName"] = $"{sender.FirstName} {sender.LastName}".Trim();
+                    }
+                    else
+                    {
+                        data["SenderName"] = "سیستم";
+                    }
+                }
+                else
+                {
+                    data["SenderName"] = "سیستم";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"⚠️ خطا در دریافت اطلاعات تسک #{taskId}");
+            }
         }
 
         /// <summary>
@@ -1329,7 +1378,7 @@ namespace MahERP.DataModelLayer.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ خطا در ساخت لیست تسک‌های انجام نشده");
-                return "⚠️ خطا در دریافت لیست تسک‌ها";
+                return "خطا در دریافت لیست تسک‌ها";
             }
         }
 
@@ -1352,7 +1401,7 @@ namespace MahERP.DataModelLayer.Services
                 NotificationEventType.OperationAssigned => true,
                 NotificationEventType.CommentMentioned => true,
                 NotificationEventType.TaskPriorityChanged => true,
-                NotificationEventType.DailyTaskDigest => true,
+                NotificationEventType.DailyTaskDigest => false, // این یک اعلان دوره‌ای است
                 NotificationEventType.TaskWorkLog => true,
                 _ => false
             };
@@ -1378,20 +1427,6 @@ namespace MahERP.DataModelLayer.Services
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// جایگزینی متغیرهای قالب (متد قدیمی - حفظ شده برای سازگاری)
-        /// </summary>
-        [Obsolete("از ReplaceAllPlaceholders استفاده کنید")]
-        private string ReplaceTemplatePlaceholders(string template, string title, string message, string actionUrl)
-        {
-            return template
-                .Replace("{Title}", title)
-                .Replace("{Message}", message)
-                .Replace("{ActionUrl}", actionUrl)
-                .Replace("{Date}", DateTime.Now.ToString("yyyy/MM/dd"))
-                .Replace("{Time}", DateTime.Now.ToString("HH:mm"));
         }
 
         #endregion
