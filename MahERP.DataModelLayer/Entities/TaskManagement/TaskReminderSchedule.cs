@@ -39,7 +39,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// 1 - تکراری با فاصله زمانی مشخص (روزانه، هفتگی و...)
         /// 2 - قبل از پایان مهلت (X روز قبل از deadline)
         /// 3 - در روز شروع تسک
-        /// 4 - در روز پایان مهلت
+        /// 4 - ماهانه با انتخاب چند روز (مثلاً 10، 20، 25) 🆕
         /// </summary>
         public byte ReminderType { get; set; }
 
@@ -53,6 +53,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// چند روز قبل از پایان مهلت (برای ReminderType = 2)
         /// </summary>
         public int? DaysBeforeDeadline { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ روزهای ماه (برای ReminderType = 4) 🆕
+        /// فرمت: "10,20,25" (روزهای 10، 20، 25 هر ماه)
+        /// </summary>
+        [MaxLength(100)]
+        public string? ScheduledDaysOfMonth { get; set; }
 
         /// <summary>
         /// تاریخ شروع یادآوری
@@ -123,7 +130,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
             1 => $"هر {IntervalDays} روز",
             2 => $"{DaysBeforeDeadline} روز قبل از پایان مهلت",
             3 => "در روز شروع تسک",
-            4 => "در روز پایان مهلت",
+            4 => $"ماهانه - روزهای {ScheduledDaysOfMonth}", // 🆕
             _ => "نامشخص"
         };
     }

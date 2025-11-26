@@ -838,7 +838,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
 
         #region POST Actions
-
         /// <summary>
         /// ثبت تسک جدید
         /// </summary>
@@ -869,56 +868,119 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 try
                 {
-                    // ایجاد تسک
-                    var task = await _taskRepository.CreateTaskEntityAsync(model, currentUserId, _mapper);
-
-                    // ذخیره پیوست‌ها
-                    if (model.Attachments != null && model.Attachments.Count > 0)
+                    // ⭐⭐⭐ بررسی: آیا زمان‌بندی فعال است؟
+                    if (model.TaskSchedule?.IsScheduled == true)
                     {
-                        await _taskRepository.SaveTaskAttachmentsAsync(
-                            task.Id,
-                            model.Attachments,
-                            currentUserId,
-                            _webHostEnvironment.WebRootPath);
+                        // ⭐ زمان‌بندی فعال - ساخت Schedule
+                        var (scheduleId, immediateTask) = await _taskRepository.CreateScheduledTaskAsync(
+                            model,
+                            currentUserId);
+
+                        // ⭐⭐⭐ اگر CreateImmediately = true، تسک ساخته شده
+                        if (immediateTask != null)
+                        {
+                            // ذخیره پیوست‌ها، عملیات، یادآوری‌ها
+                            if (model.Attachments != null && model.Attachments.Count > 0)
+                            {
+                                await _taskRepository.SaveTaskAttachmentsAsync(
+                                    immediateTask.Id,
+                                    model.Attachments,
+                                    currentUserId,
+                                    _webHostEnvironment.WebRootPath);
+                            }
+
+                            await _taskRepository.SaveTaskOperationsAndRemindersAsync(immediateTask.Id, model);
+                            await _taskRepository.HandleTaskAssignmentsBulkAsync(immediateTask, model, currentUserId);
+
+                            // ⭐ ارسال نوتیفیکیشن برای تسک فوری
+                            NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                                immediateTask.Id,
+                                currentUserId,
+                                NotificationEventType.TaskAssigned,
+                                priority: 1);
+
+                            await _taskHistoryRepository.LogTaskCreatedAsync(
+                                immediateTask.Id,
+                                currentUserId,
+                                immediateTask.Title,
+                                immediateTask.TaskCode);
+                        }
+
+                        await _uow.CommitTransactionAsync();
+
+                        // ⭐ پیام موفقیت
+                        if (immediateTask != null)
+                        {
+                            TempData["SuccessMessage"] =
+                                "زمان‌بندی با موفقیت ایجاد شد و یک تسک فوری نیز ساخته شد";
+                        }
+                        else
+                        {
+                            TempData["SuccessMessage"] =
+                                "زمان‌بندی با موفقیت ایجاد شد. تسک‌ها در زمان مشخص شده ساخته خواهند شد";
+                        }
+
+                        await _activityLogger.LogActivityAsync(
+                            ActivityTypeEnum.Create,
+                            "Tasks",
+                            "CreateNewTask",
+                            $"ایجاد زمان‌بندی تسک: {model.TaskSchedule.ScheduleTitle ?? model.Title}",
+                            recordId: scheduleId.ToString(),
+                            entityType: "ScheduledTasks");
+
+                        // ⭐ Redirect به لیست Schedule ها
+                        return RedirectToAction("Index", "ScheduledTasks");
                     }
+                    else
+                    {
+                        // ⭐ تسک معمولی (بدون زمان‌بندی)
+                        var task = await _taskRepository.CreateTaskEntityAsync(model, currentUserId, _mapper);
+                        task.CreationMode = 0; // ⭐ دستی
 
-                    // ذخیره عملیات و یادآوری‌ها
-                    await _taskRepository.SaveTaskOperationsAndRemindersAsync(task.Id, model);
+                        _uow.TaskUW.Update(task);
+                        await _uow.SaveAsync();
 
-                    // مدیریت انتصاب‌ها
-                    await _taskRepository.HandleTaskAssignmentsBulkAsync(task, model, currentUserId);
+                        // ذخیره پیوست‌ها
+                        if (model.Attachments != null && model.Attachments.Count > 0)
+                        {
+                            await _taskRepository.SaveTaskAttachmentsAsync(
+                                task.Id,
+                                model.Attachments,
+                                currentUserId,
+                                _webHostEnvironment.WebRootPath);
+                        }
 
-                    // ⭐ تأیید تراکنش
-                    await _uow.CommitTransactionAsync();
+                        await _taskRepository.SaveTaskOperationsAndRemindersAsync(task.Id, model);
+                        await _taskRepository.HandleTaskAssignmentsBulkAsync(task, model, currentUserId);
 
-                    // ⭐⭐⭐ ارسال به صف - فوری و بدون Blocking
-                    NotificationProcessingBackgroundService.EnqueueTaskNotification(
-                        task.Id,
-                        currentUserId,
-                        NotificationEventType.TaskAssigned,
-                        priority: 1
-                    );
+                        await _uow.CommitTransactionAsync();
 
-                    // ⭐ ثبت در تاریخچه
-                    await _taskHistoryRepository.LogTaskCreatedAsync(
-                        task.Id,
-                        currentUserId,
-                        task.Title,
-                        task.TaskCode
-                    );
+                        // ارسال نوتیفیکیشن
+                        NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                            task.Id,
+                            currentUserId,
+                            NotificationEventType.TaskAssigned,
+                            priority: 1);
 
-                    await _activityLogger.LogActivityAsync(
-                        ActivityTypeEnum.Create,
-                        "Tasks",
-                        "CreateNewTask",
-                        $"ایجاد تسک جدید: {task.Title} با کد: {task.TaskCode}",
-                        recordId: task.Id.ToString(),
-                        entityType: "Tasks",
-                        recordTitle: task.Title
-                    );
+                        await _taskHistoryRepository.LogTaskCreatedAsync(
+                            task.Id,
+                            currentUserId,
+                            task.Title,
+                            task.TaskCode);
 
-                    TempData["SuccessMessage"] = "تسک با موفقیت ایجاد شد";
-                    return RedirectToAction(nameof(Index));
+                        await _activityLogger.LogActivityAsync(
+                            ActivityTypeEnum.Create,
+                            "Tasks",
+                            "CreateNewTask",
+                            $"ایجاد تسک جدید: {task.Title} با کد: {task.TaskCode}",
+                            recordId: task.Id.ToString(),
+                            entityType: "Tasks",
+                            recordTitle: task.Title
+                        );
+
+                        TempData["SuccessMessage"] = "تسک با موفقیت ایجاد شد";
+                        return RedirectToAction(nameof(Index));
+                    }
                 }
                 catch
                 {
@@ -1466,7 +1528,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// ذخیره یادآوری جدید
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveReminder(TaskReminderViewModel model)
         {
             try

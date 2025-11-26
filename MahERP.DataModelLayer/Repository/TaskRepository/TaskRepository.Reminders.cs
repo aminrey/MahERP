@@ -66,6 +66,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         ReminderType = r.ReminderType,
                         IntervalDays = r.IntervalDays,
                         DaysBeforeDeadline = r.DaysBeforeDeadline,
+                        ScheduledDaysOfMonth = r.ScheduledDaysOfMonth, // ⭐⭐⭐ NEW 🆕
                         StartDatePersian = r.StartDate.HasValue
                             ? ConvertDateTime.ConvertMiladiToShamsi(r.StartDate.Value, "yyyy/MM/dd")
                             : null,
@@ -124,6 +125,12 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 if (!string.IsNullOrEmpty(model.EndDatePersian))
                 {
                     reminder.EndDate = ConvertDateTime.ConvertShamsiToMiladi(model.EndDatePersian);
+                }
+
+                // ⭐⭐⭐ Copy ScheduledDaysOfMonth 🆕
+                if (!string.IsNullOrEmpty(model.ScheduledDaysOfMonth))
+                {
+                    reminder.ScheduledDaysOfMonth = model.ScheduledDaysOfMonth;
                 }
 
                 _context.TaskReminderSchedule_Tbl.Add(reminder);

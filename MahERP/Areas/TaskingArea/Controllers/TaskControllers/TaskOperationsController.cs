@@ -785,6 +785,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         #endregion
 
         #region Add & Delete Operation Actions
+        #region Add & Delete Operation Actions
         [HttpPost]
         public async Task<IActionResult> AddOperation(int taskId, string title)
         {
@@ -797,6 +798,47 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 var userId = _userManager.GetUserId(User);
 
+                // ⭐ بررسی: آیا Scheduled Task است؟
+                var scheduledTask = await _taskRepository.GetScheduleByIdAsync(taskId);
+
+                if (scheduledTask != null)
+                {
+                    // ⭐⭐⭐ Scheduled Task - به JSON اضافه کن
+                    var taskModel = _taskRepository.DeserializeTaskData(scheduledTask.TaskDataJson);
+                    if (taskModel.Operations == null)
+                        taskModel.Operations = new List<TaskOperationViewModel>();
+
+                    var maxOrder = taskModel.Operations.Any() ? taskModel.Operations.Max(o => o.OperationOrder) : 0;
+
+                    var newOperation = new TaskOperationViewModel
+                    {
+                        Id = DateTime.Now.Ticks.GetHashCode(), // ⭐ ID موقت برای شناسایی
+                        Title = title.Trim(),
+                        OperationOrder = maxOrder + 1,
+                        IsCompleted = false,
+                        IsStarred = false
+                    };
+
+                    taskModel.Operations.Add(newOperation);
+
+                    // ذخیره JSON - باید از ScheduledTaskRepository استفاده کنیم
+                    await _taskRepository.UpdateScheduledTaskAsync(taskId, taskModel, userId);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "TaskOperations",
+                        "AddOperation",
+                        $"افزودن عملیات به Scheduled Task: {title}",
+                        recordId: taskId.ToString());
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = "عملیات با موفقیت اضافه شد"
+                    });
+                }
+
+                // ⭐ تسک معمولی - کد قبلی
                 if (!_taskRepository.IsUserRelatedToTask(userId, taskId))
                 {
                     return Json(new { success = false, message = "شما مجاز به انجام این عملیات نیستید" });
@@ -808,22 +850,22 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     return Json(new { success = false, message = "تسک یافت نشد" });
                 }
 
-                var maxOrder = task.TaskOperations?.Any() == true
+                var maxOrderTask = task.TaskOperations?.Any() == true
                     ? task.TaskOperations.Max(o => o.OperationOrder)
                     : 0;
 
-                var newOperation = new TaskOperation
+                var newOperationEntity = new TaskOperation
                 {
                     TaskId = taskId,
                     Title = title.Trim(),
-                    OperationOrder = maxOrder + 1,
+                    OperationOrder = maxOrderTask + 1,
                     IsCompleted = false,
                     IsStarred = false,
                     CreatedDate = DateTime.Now,
                     IsDeleted = false
                 };
 
-                _operationsRepository.AddTaskOperation(newOperation);
+                _operationsRepository.AddTaskOperation(newOperationEntity);
                 await _operationsRepository.SaveChangesAsync();
 
                 await _activityLogger.LogActivityAsync(
@@ -831,7 +873,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     "TaskOperations",
                     "AddOperation",
                     $"افزودن عملیات جدید: {title}",
-                    recordId: newOperation.Id.ToString(),
+                    recordId: newOperationEntity.Id.ToString(),
                     entityType: "TaskOperation");
 
                 // ⭐ دریافت تسک بروز شده
@@ -874,13 +916,13 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 var sidebarHtml = await this.RenderViewToStringAsync("../Tasks/_TaskSidebarStats", viewModel);
 
                 // ⭐ رندر عملیات جدید
-                var operationHtml = await this.RenderViewToStringAsync("_OperationListPartialView", _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations) , viewbags);
+                var operationHtml = await this.RenderViewToStringAsync("_OperationListPartialView", _mapper.Map<List<TaskOperationViewModel>>(task.TaskOperations), viewbags);
 
                 return Json(new
                 {
                     success = true,
                     message = "عملیات با موفقیت اضافه شد",
-                    operationId = newOperation.Id,
+                    operationId = newOperationEntity.Id,
                     status = "update-view",
                     viewList = new object[]
                     {
@@ -915,6 +957,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         }
         /// <summary>
         /// حذف عملیات (AJAX)
+        /// پشتیبانی از Scheduled Tasks + Normal Tasks
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> DeleteOperation(int id)
@@ -923,6 +966,45 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             {
                 var userId = _userManager.GetUserId(User);
 
+                // ⭐ گرفتن taskId از form
+                var taskIdStr = Request.Form["taskId"].ToString();
+                if (int.TryParse(taskIdStr, out int taskId))
+                {
+                    var scheduledTask = await _taskRepository.GetScheduleByIdAsync(taskId);
+
+                    if (scheduledTask != null)
+                    {
+                        // ⭐⭐⭐ Scheduled Task - از JSON حذف کن
+                        var taskModel = _taskRepository.DeserializeTaskData(scheduledTask.TaskDataJson);
+
+                        if (taskModel?.Operations != null)
+                        {
+                            var operation = taskModel.Operations.FirstOrDefault(o => o.Id == id);
+                            if (operation != null)
+                            {
+                                taskModel.Operations.Remove(operation);
+
+                                // ذخیره JSON
+                                await _taskRepository.UpdateScheduledTaskAsync(taskId, taskModel, userId);
+
+                                await _activityLogger.LogActivityAsync(
+                                    ActivityTypeEnum.Delete,
+                                    "TaskOperations",
+                                    "DeleteOperation",
+                                    $"حذف عملیات از Scheduled Task: {operation.Title}",
+                                    recordId: id.ToString());
+
+                                return Json(new
+                                {
+                                    success = true,
+                                    message = "عملیات با موفقیت حذف شد"
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // ⭐ تسک معمولی - کد قبلی
                 // بررسی دسترسی
                 if (!await _operationsRepository.CanUserAccessOperationAsync(id, userId))
                 {
@@ -933,8 +1015,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
-                var operation = await _operationsRepository.GetOperationByIdAsync(id);
-                if (operation == null)
+                var operationEntity = await _operationsRepository.GetOperationByIdAsync(id);
+                if (operationEntity == null)
                 {
                     return Json(new
                     {
@@ -943,24 +1025,24 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
-                var taskId = operation.TaskId;
+                var operationTaskId = operationEntity.TaskId;
 
                 // Soft Delete
-                operation.IsDeleted = true;
-                operation.DeleteDate = DateTime.Now;
+                operationEntity.IsDeleted = true;
+                operationEntity.DeleteDate = DateTime.Now;
 
-                _context.TaskOperationUW.Update(operation);
+                _context.TaskOperationUW.Update(operationEntity);
                 _context.Save();
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.Delete,
                     "TaskOperations",
                     "DeleteOperation",
-                    $"حذف عملیات: {operation.Title}",
+                    $"حذف عملیات: {operationEntity.Title}",
                     recordId: id.ToString());
 
                 // ⭐ دریافت تسک بروز شده
-                var task = _taskRepository.GetTaskById(taskId, includeOperations: true, includeAssignments: true);
+                var task = _taskRepository.GetTaskById(operationTaskId, includeOperations: true, includeAssignments: true);
                 var isAdmin = User.IsInRole("Admin");
                 bool isManager = false;
                 bool isSupervisor = false;
@@ -995,21 +1077,21 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     status = "update-view",
                     viewList = new object[]
                     {
-                        new
-                        {
-                            elementId = "hero-stats-container",
-                            view = new { result = heroHtml }
-                        },
-                        new
-                        {
-                            elementId = "sidebar-stats-container",
-                            view = new { result = sidebarHtml }
-                        },
-                        new
-                        {
-                            elementId = "pending-operations-container",
-                            view = new { result = operationHtml }
-                        }
+                new
+                {
+                    elementId = "hero-stats-container",
+                    view = new { result = heroHtml }
+                },
+                new
+                {
+                    elementId = "sidebar-stats-container",
+                    view = new { result = sidebarHtml }
+                },
+                new
+                {
+                    elementId = "pending-operations-container",
+                    view = new { result = operationHtml }
+                }
                     }
                 });
             }
@@ -1095,15 +1177,32 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 });
             }
         }
-/// <summary>
-/// دریافت تمام عملیات یک تسک (برای refresh کامل)
-/// </summary>
-[HttpGet]
-public async Task<IActionResult> GetAllOperations(int taskId)
+        /// <summary>
+        /// دریافت تمام عملیات یک تسک (برای refresh کامل)
+        /// پشتیبانی از Scheduled Tasks + Normal Tasks
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetAllOperations(int taskId)
         {
             try
             {
-                var operations = await _operationsRepository.GetTaskOperationsAsync(taskId);
+                // ⭐ بررسی: آیا این تسک، Scheduled Task است؟
+                var scheduledTask = await _taskRepository.GetScheduleByIdAsync(taskId);
+
+                List<TaskOperationViewModel> operations;
+
+                if (scheduledTask != null)
+                {
+                    // ⭐⭐⭐ تسک زمان‌بندی شده - از JSON بخوان
+                    var taskModel = _taskRepository.DeserializeTaskData(scheduledTask.TaskDataJson);
+                    operations = taskModel?.Operations ?? new List<TaskOperationViewModel>();
+                }
+                else
+                {
+                    // ⭐ تسک معمولی - از دیتابیس بخوان
+                    var ops = await _operationsRepository.GetTaskOperationsAsync(taskId);
+                    operations = _mapper.Map<List<TaskOperationViewModel>>(ops);
+                }
 
                 if (!operations.Any())
                 {
@@ -1123,8 +1222,11 @@ public async Task<IActionResult> GetAllOperations(int taskId)
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error in GetAllOperations: {ex.Message}");
+                await _activityLogger.LogErrorAsync("TaskOperations", "GetAllOperations", "خطا در دریافت عملیات", ex);
                 return Content("");
             }
         }
     }
+    #endregion
+
 }

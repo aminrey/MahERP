@@ -456,6 +456,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         Task MarkReminderAsReadAsync(int reminderId, string userId);
 
+        #endregion
+
         /// <summary>
         /// علامت‌گذاری همه یادآوری‌ها به عنوان خوانده شده
         /// </summary>
@@ -481,7 +483,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         string GetUserInitials(string firstName, string lastName);
 
-        #endregion
 
         #region Missing Methods - Added from TaskRepository Implementation
 
@@ -773,18 +774,18 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <param name="branchId">شناسه شعبه</param>
         /// <returns>لیست تیم‌های شعبه با اطلاعات کامل</returns>
         Task<List<TeamViewModel>> GetBranchTeamsWithManagersAsync(int branchId);
-/// <summary>
-/// دریافت کامنت‌های یک تسک
-/// </summary>
-Task<List<TaskCommentViewModel>> GetTaskCommentsAsync(int taskId);
+        /// <summary>
+        /// دریافت کامنت‌های یک تسک
+        /// </summary>
+        Task<List<TaskCommentViewModel>> GetTaskCommentsAsync(int taskId);
         Task<TaskCommentAttachment?> GetCommentAttachmentByIdAsync(int attachmentId);
 
 
-     Task<TaskListViewModel> GetTaskListAsync(
-     string userId,
-     TaskViewType viewType,
-     TaskGroupingType grouping,
-     TaskFilterViewModel filters = null);
+        Task<TaskListViewModel> GetTaskListAsync(
+        string userId,
+        TaskViewType viewType,
+        TaskGroupingType grouping,
+        TaskFilterViewModel filters = null);
         /// <summary>
         /// دریافت ViewModel کارت تسک برای نمایش در لیست
         /// </summary>
@@ -800,5 +801,68 @@ Task<List<TaskCommentViewModel>> GetTaskCommentsAsync(int taskId);
         Task<List<string>> GetTaskRelatedUserIdsAsync(int taskId);
         Task<List<Tasks>> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters = null);
 
+        #region Scheduled Tasks Management
+
+        /// <summary>
+        /// ایجاد زمان‌بندی تسک و بررسی CreateImmediately
+        /// </summary>
+        Task<(int ScheduleId, Tasks? ImmediateTask)> CreateScheduledTaskAsync(
+            TaskViewModel model,
+            string userId);
+
+        /// <summary>
+        /// دریافت لیست زمان‌بندی‌های کاربر
+        /// </summary>
+        Task<ScheduledTaskListViewModel> GetUserScheduledTasksAsync(
+            string userId,
+            bool isAdmin = false);
+
+        /// <summary>
+        /// دریافت جزئیات یک زمان‌بندی
+        /// </summary>
+        Task<ScheduledTaskCreation?> GetScheduleByIdAsync(int scheduleId);
+
+        /// <summary>
+        /// فعال/غیرفعال کردن زمان‌بندی
+        /// </summary>
+        Task ToggleScheduleAsync(int scheduleId, bool isEnabled);
+
+        /// <summary>
+        /// حذف زمان‌بندی (نرم)
+        /// </summary>
+        Task DeleteScheduleAsync(int scheduleId);
+
+        /// <summary>
+        /// دریافت تسک زمان‌بندی شده برای ویرایش
+        /// </summary>
+        Task<TaskViewModel?> GetScheduledTaskForEditAsync(int scheduleId);
+
+        /// <summary>
+        /// بروزرسانی زمان‌بندی موجود
+        /// </summary>
+        Task<bool> UpdateScheduledTaskAsync(
+            int scheduleId,
+            TaskViewModel taskModel,
+            string userId);
+
+        /// <summary>
+        /// دریافت زمان‌بندی‌های آماده برای اجرا توسط Background Service
+        /// </summary>
+        Task<List<ScheduledTaskCreation>> GetDueScheduledTasksAsync();
+
+        /// <summary>
+        /// بروزرسانی وضعیت اجرا پس از ساخت تسک
+        /// </summary>
+        Task UpdateExecutionStatusAsync(
+            int scheduleId,
+            bool success,
+            string? notes = null);
+
+        /// <summary>
+        /// Deserialize کردن JSON به TaskViewModel
+        /// </summary>
+        TaskViewModel? DeserializeTaskData(string taskDataJson);
+
+        #endregion
     }
 }

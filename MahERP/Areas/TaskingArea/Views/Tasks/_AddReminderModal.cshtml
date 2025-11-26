@@ -131,6 +131,26 @@
                                 </label>
                             </div>
                         </div>
+                        <!-- ⭐⭐⭐ نوع جدید: ماهانه - چند روز 🆕 -->
+                        <div class="col-md-6">
+                            <div class="form-check form-check-block p-3 bg-light rounded">
+                                <input asp-for="ReminderType" 
+                                       class="form-check-input" 
+                                       type="radio" 
+                                       value="4" 
+                                       id="reminderType4"
+                                       onchange="toggleReminderFields()">
+                                <label class="form-check-label" for="reminderType4">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa fa-calendar-alt fa-2x text-purple me-3"></i>
+                                        <div>
+                                            <strong>ماهانه - چند روز</strong>
+                                            <small class="d-block text-muted">انتخاب روزهای خاص هر ماه (مثلاً 10، 20، 25)</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <span asp-validation-for="ReminderType" class="text-danger"></span>
                 </div>
@@ -195,6 +215,48 @@
                         <span asp-validation-for="DaysBeforeDeadline" class="text-danger"></span>
                     </div>
 
+                    <!-- ⭐⭐⭐ فیلد انتخاب چند روز ماهانه 🆕 -->
+                    <div class="col-md-12 mb-4" id="monthlyMultipleDaysField" style="display: none;">
+                        <label class="form-label">
+                            <i class="fa fa-calendar-day text-purple me-1"></i>
+                            روزهای ماه <span class="text-danger">*</span>
+                        </label>
+                        
+                        <div class="alert alert-info small mb-2">
+                            <i class="fa fa-info-circle me-1"></i>
+                            روزهای مورد نظر را انتخاب کنید (می‌توانید چند روز انتخاب کنید)
+                        </div>
+                        
+                        <!-- گرید 31 روز ماه -->
+                        <div class="days-grid">
+                            @for (int day = 1; day <= 31; day++)
+                            {
+                                <div class="day-item">
+                                    <input type="checkbox" 
+                                           class="btn-check" 
+                                           name="monthDay" 
+                                           value="@day" 
+                                           id="monthDay@day"
+                                           onchange="updateScheduledDaysOfMonth()">
+                                    <label class="btn btn-outline-primary btn-sm" for="monthDay@day">
+                                        @day
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- فیلد hidden برای ذخیره -->
+                        <input type="hidden" 
+                               asp-for="ScheduledDaysOfMonth" 
+                               id="scheduledDaysOfMonthHidden" />
+                        
+                        <small class="form-text text-muted mt-2 d-block">
+                            <i class="fa fa-calendar me-1"></i>
+                            روزهای انتخاب شده: 
+                            <strong id="selectedDaysPreview" class="text-muted">هیچ روزی انتخاب نشده</strong>
+                        </small>
+                    </div>
+
                     <!-- ساعت ارسال -->
                     <div class="col-md-6 mb-4">
                         <label class="form-label">
@@ -210,7 +272,7 @@
                 </div>
 
                 <!-- تاریخ شروع و پایان (برای نوع 0 و 1) -->
-                @* ⭐⭐⭐ استفاده از class persian-datepicker و data-initial-value-type *@
+                @* ⭐⭐⭐ استفاده از class js-flatpickr و data-initial-value-type *@
                 <div class="row" id="dateRangeFields" style="display: none;">
                     <div class="col-md-6 mb-4">
                         <label asp-for="StartDatePersian" class="form-label">
@@ -218,7 +280,7 @@
                             تاریخ شروع <span class="text-danger">*</span>
                         </label>
                         <input asp-for="StartDatePersian"
-                               class="form-control persian-datepicker"
+                               class="form-control js-flatpickr"
                                data-initial-value-type="persian"
                                placeholder="انتخاب تاریخ..."
                                readonly />
@@ -230,7 +292,7 @@
                             تاریخ پایان <small class="text-muted">(اختیاری)</small>
                         </label>
                         <input asp-for="EndDatePersian"
-                               class="form-control persian-datepicker"
+                               class="form-control js-flatpickr"
                                data-initial-value-type="persian"
                                placeholder="انتخاب تاریخ..."
                                readonly />
@@ -256,7 +318,9 @@
         </form>
     </div>
 </div>
-
+<script>
+    Dashmix.helpersOnLoad(['js-flatpickr']);
+</script>
 @* ⭐⭐⭐ حذف تمام initialization دستی - فقط استفاده از global initPersianDatePicker *@
 <script>
 (function() {
@@ -266,6 +330,42 @@
         if (timeValue) {
             $('#hiddenNotificationTime').val(timeValue + ':00');
         }
+    };
+
+    // ⭐⭐⭐ NEW: بروزرسانی فیلد hidden با روزهای انتخاب شده
+    window.updateScheduledDaysOfMonth = function() {
+        const selectedDays = [];
+        
+        // جمع‌آوری روزهای انتخاب شده
+        document.querySelectorAll('input[name="monthDay"]:checked').forEach(function(checkbox) {
+            selectedDays.push(parseInt(checkbox.value));
+        });
+        
+        // مرتب‌سازی
+        selectedDays.sort((a, b) => a - b);
+        
+        // بروزرسانی فیلد hidden
+        const hiddenField = document.getElementById('scheduledDaysOfMonthHidden');
+        if (hiddenField) {
+            hiddenField.value = selectedDays.join(',');
+        }
+        
+        // بروزرسانی پیش‌نمایش
+        const preview = document.getElementById('selectedDaysPreview');
+        if (preview) {
+            if (selectedDays.length === 0) {
+                preview.textContent = 'هیچ روزی انتخاب نشده';
+                preview.className = 'text-muted';
+            } else {
+                preview.textContent = selectedDays.join('، ');
+                preview.className = 'text-primary fw-bold';
+            }
+        }
+        
+        // بروزرسانی پیش‌نمایش کلی
+        updatePreview();
+        
+        console.log('Selected days:', selectedDays);
     };
 
     $(document).ready(function() {
@@ -289,8 +389,15 @@
             updatePreview();
         });
 
+        // ⭐⭐⭐ NEW: Event listener برای checkbox های روزهای ماه
+        $('input[name="monthDay"]').on('change', function() {
+            updateScheduledDaysOfMonth();
+        });
+
         $('[data-save="modal-ajax-save"]').on('click', function() {
             updateHiddenTimeField();
+            // ⭐⭐⭐ بروزرسانی فیلد روزهای ماه قبل از ارسال
+            updateScheduledDaysOfMonth();
         });
     });
 
@@ -302,6 +409,7 @@
         $('#maxSendCountField').hide();
         $('#daysBeforeField').hide();
         $('#dateRangeFields').hide();
+        $('#monthlyMultipleDaysField').hide(); // ⭐⭐⭐ NEW
         
         if (reminderType === '0') {
             // یکبار - نمایش تاریخ شروع/پایان
@@ -345,6 +453,14 @@
             $('#maxSendCountOptional').hide();
             $('#maxSendCountHelp').text('این یادآوری فقط یک بار ارسال می‌شود');
             $('#maxSendCountField').slideDown();
+        } else if (reminderType === '4') {
+            // ⭐⭐⭐ NEW: ماهانه - چند روز
+            $('#monthlyMultipleDaysField').slideDown();
+            $('#MaxSendCount').val('').prop('readonly', false);
+            $('#maxSendCountLabel').text('حداکثر تعداد ارسال');
+            $('#maxSendCountOptional').show();
+            $('#maxSendCountHelp').text('اگر خالی بگذارید، یادآوری تا پایان تسک ادامه خواهد داشت');
+            $('#maxSendCountField').slideDown();
         }
 
         updatePreview();
@@ -382,6 +498,15 @@
             case '3':
                 text = `یادآوری در <strong>روز شروع تسک</strong> ساعت <strong>${time}</strong> ارسال خواهد شد (<strong>یکبار</strong>)`;
                 break;
+            case '4': // ⭐⭐⭐ NEW: ماهانه - چند روز
+                const selectedDaysText = $('#selectedDaysPreview').text() || 'هیچ';
+                text = `یادآوری در روزهای <strong>${selectedDaysText}</strong> هر ماه، ساعت <strong>${time}</strong> ارسال خواهد شد`;
+                if (maxSendCount && maxSendCount > 0) {
+                    text += ` (حداکثر <strong>${maxSendCount} بار</strong>)`;
+                } else {
+                    text += ` (<strong>نامحدود</strong>)`;
+                }
+                break;
         }
         
         $('#previewText').html(text);
@@ -410,12 +535,12 @@
         background: linear-gradient(to right, rgba(0,123,255,0.05), transparent);
     }
 
-    .persian-datepicker {
+    .js-flatpickr {
         cursor: pointer;
         background-color: white;
     }
 
-    .persian-datepicker:focus {
+    .js-flatpickr:focus {
         border-color: #007bff;
         box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
     }
@@ -424,5 +549,52 @@
         background-color: #f8f9fa !important;
         cursor: not-allowed;
         opacity: 0.8;
+    }
+
+    /* ⭐⭐⭐ NEW: استایل گرید روزهای ماه */
+    .days-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+
+    .day-item {
+        display: flex;
+        justify-content: center;
+    }
+
+    .day-item .btn {
+        width: 100%;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        transition: all 0.2s;
+        padding: 0.5rem;
+    }
+
+    .day-item .btn-check:checked + .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: white;
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .day-item .btn:hover {
+        transform: scale(1.05);
+    }
+
+    /* رنگ purple برای آیکون */
+    .text-purple {
+        color: #764ba2 !important;
+    }
+
+    .bg-purple {
+        background-color: #764ba2 !important;
     }
 </style>

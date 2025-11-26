@@ -1,485 +1,811 @@
 ﻿@model MahERP.Areas.TaskingArea.Controllers.TaskControllers.ScheduledTaskDetailViewModel
 @{
     ViewData["Title"] = "جزئیات تسک زمان‌بندی شده";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isAdmin = ViewBag.IsAdmin ?? false;
+
+    // تعیین وضعیت Schedule
+    string statusColor = "primary";
+    string statusText = "در انتظار";
+    string statusIcon = "fa-clock";
+
+    if (!Model.Schedule.IsActive)
+    {
+        statusColor = "danger";
+        statusText = "حذف شده";
+        statusIcon = "fa-trash";
+    }
+    else if (!Model.Schedule.IsScheduleEnabled)
+    {
+        statusColor = "warning";
+        statusText = "غیرفعال";
+        statusIcon = "fa-pause-circle";
+    }
+    else if (Model.Schedule.MaxOccurrences.HasValue && Model.Schedule.ExecutionCount >= Model.Schedule.MaxOccurrences.Value)
+    {
+        statusColor = "success";
+        statusText = "تکمیل شده";
+        statusIcon = "fa-check-double";
+    }
+    else if (Model.Schedule.NextExecutionDate.HasValue)
+    {
+        statusColor = "info";
+        statusText = "فعال";
+        statusIcon = "fa-sync-alt";
+    }
+
+    var scheduleTypeText = Model.Schedule.ScheduleType switch
+    {
+        0 => "یکبار",
+        1 => "روزانه",
+        2 => "هفتگی",
+        3 => "ماهانه",
+        _ => "نامشخص"
+    };
 }
 
-@section Styles {
-    <style>
-        .detail-card {
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
+@Html.AntiForgeryToken()
 
-        .detail-section {
-            border-bottom: 1px solid #e9ecef;
-            padding: 1.5rem 0;
-        }
+<!-- Hero Section -->
+<div class="hero-section position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100">
+        <img src="~/assets/media/photos/photo21.jpg" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+        <div class="bg-black-75 position-absolute top-0 start-0 w-100 h-100"></div>
 
-        .detail-section:last-child {
-            border-bottom: none;
-        }
+        <div class="hero-pattern position-absolute top-0 start-0 w-100 h-100">
+            <svg class="w-100 h-100 opacity-10" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="hero-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <circle cx="30" cy="30" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="60" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="60" r="2" fill="currentColor" class="text-white" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hero-pattern)" />
+            </svg>
+        </div>
 
-        .detail-label {
-            font-weight: 600;
-            color: #6c757d;
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-        }
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
 
-        .detail-value {
-            font-size: 1rem;
-            color: #212529;
-        }
+    <div class="content content-full position-relative" style="z-index: 10;">
+        <div class="py-5">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-start gap-3">
+                        <!-- Status Icon -->
+                        <div class="flex-shrink-0">
+                            <div class="hero-status-icon @($"status-{statusColor}")">
+                                <div class="icon-wrapper">
+                                    <i class="fa @statusIcon fa-2x"></i>
+                                </div>
+                                <div class="status-label">@statusText</div>
+                            </div>
+                        </div>
 
-        .schedule-timeline {
-            position: relative;
-            padding-left: 30px;
-        }
+                        <!-- Task Info -->
+                        <div class="flex-grow-1">
+                            <div class="hero-title-wrapper mb-3">
+                                <h1 class="hero-title text-white mb-2">@Model.Schedule.ScheduleTitle</h1>
+                                <div class="hero-subtitle d-flex flex-wrap align-items-center gap-2">
+                                    <span class="badge badge-modern bg-white text-dark px-3 py-2 rounded-pill">
+                                        <i class="fa fa-sync-alt me-1"></i>
+                                        <span class="fw-bold">@scheduleTypeText</span>
+                                    </span>
+                                    <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                    <span class="badge badge-modern bg-white bg-opacity-20 text-dark px-3 py-2 rounded-pill">
+                                        <i class="fa fa-calendar-alt me-1"></i>
+                                        <span>@MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.CreatedDate, "yyyy/MM/dd")</span>
+                                    </span>
+                                    @if (Model.TaskModel.Important)
+                                    {
+                                        <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                        <span class="badge badge-modern bg-danger px-3 py-2 rounded-pill pulse-animation">
+                                            <i class="fa fa-star me-1"></i>
+                                            <span>مهم</span>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
 
-        .schedule-timeline::before {
-            content: '';
-            position: absolute;
-            left: 8px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: linear-gradient(180deg, #0d6efd 0%, #6c757d 100%);
-        }
+                            <!-- Schedule Stats -->
+                            <div class="row g-3 text-white">
+                                <div class="col-md-3">
+                                    <div class="hero-stat">
+                                        <div class="stat-icon">
+                                            <i class="fa fa-sync-alt"></i>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-label">تعداد اجرا</div>
+                                            <div class="stat-value">
+                                                @Model.Schedule.ExecutionCount
+                                                @if (Model.Schedule.MaxOccurrences.HasValue)
+                                                {
+                                                    <span class="opacity-75">/ @Model.Schedule.MaxOccurrences</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-        .timeline-item {
-            position: relative;
-            padding-bottom: 1.5rem;
-        }
+                                @if (Model.Schedule.NextExecutionDate.HasValue)
+                                {
+                                    <div class="col-md-5">
+                                        <div class="hero-stat">
+                                            <div class="stat-icon">
+                                                <i class="fa fa-calendar-check"></i>
+                                            </div>
+                                            <div class="stat-info">
+                                                <div class="stat-label">اجرای بعدی</div>
+                                                <div class="stat-value">
+                                                    @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.NextExecutionDate.Value, "yyyy/MM/dd HH:mm")
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
 
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -24px;
-            top: 5px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #0d6efd;
-            border: 3px solid white;
-            box-shadow: 0 0 0 2px #0d6efd;
-        }
-
-        .badge-lg {
-            font-size: 0.875rem;
-            padding: 0.5rem 1rem;
-        }
-
-        .info-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-        }
-    </style>
-}
-
-<div class="container-fluid py-4">
-    @* Header *@
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="d-flex align-items-center mb-2">
-                        <a href="@Url.Action("Index", "ScheduledTasks")" class="btn btn-sm btn-outline-secondary me-3">
-                            <i class="fas fa-arrow-right me-1"></i>
-                            بازگشت
-                        </a>
-                        <h3 class="mb-0">@Model.Schedule.ScheduleTitle</h3>
+                                <div class="col-md-4">
+                                    <div class="hero-stat">
+                                        <div class="stat-icon">
+                                            <i class="fa fa-clock"></i>
+                                        </div>
+                                        <div class="stat-info">
+                                            <div class="stat-label">ساعت اجرا</div>
+                                            <div class="stat-value">@(Model.Schedule.ScheduledTime ?? "تنظیم نشده")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-muted mb-0">
-                        <i class="fas fa-tasks me-2"></i>
-                        @Model.TaskModel.Title
-                    </p>
                 </div>
-                <div>
-                    @if (Model.CanEdit)
-                    {
-                        <a href="@Url.Action("Edit", "ScheduledTasks", new { id = Model.Schedule.Id })" class="btn btn-primary">
-                            <i class="fas fa-edit me-2"></i>
-                            ویرایش
-                        </a>
-                    }
-                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="toggleScheduleStatus(@Model.Schedule.Id)">
-                                <i class="fas fa-@(Model.Schedule.IsScheduleEnabled ? "pause" : "play")-circle me-2"></i>
-                                @(Model.Schedule.IsScheduleEnabled ? "غیرفعال کردن" : "فعال کردن")
+
+                <!-- Actions -->
+                <div class="col-lg-4">
+                    <nav class="mb-3" aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
+                            <li class="breadcrumb-item">
+                                <a asp-area="TaskingArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
+                                    <i class="fa fa-home me-1"></i>داشبورد
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a asp-area="TaskingArea" asp-controller="ScheduledTasks" asp-action="Index" class="text-white-75">
+                                    تسک‌های زمان‌بندی شده
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active text-white">جزئیات</li>
+                        </ol>
+                    </nav>
+
+                    <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
+                        @if (Model.CanEdit)
+                        {
+                            <a href="@Url.Action("Edit", "ScheduledTasks", new { id = Model.Schedule.Id })"
+                               class="btn btn-hero btn-warning btn-lg">
+                                <i class="fa fa-edit me-2"></i>
+                                <span>ویرایش</span>
                             </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="deleteSchedule(@Model.Schedule.Id)">
-                                <i class="fas fa-trash me-2"></i>
-                                حذف
-                            </a>
-                        </li>
-                    </ul>
+                        }
+
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-hero btn-light btn-lg dropdown-toggle"
+                                    data-bs-toggle="dropdown">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-modern">
+                                <li>
+                                    <a class="dropdown-item"
+                                       href="javascript:void(0)"
+                                       onclick="toggleScheduleStatus(@Model.Schedule.Id)">
+                                        <i class="fa fa-@(Model.Schedule.IsScheduleEnabled ? "pause" : "play")-circle me-2"></i>
+                                        @(Model.Schedule.IsScheduleEnabled ? "غیرفعال کردن" : "فعال کردن")
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger"
+                                       href="javascript:void(0)"
+                                       onclick="deleteSchedule(@Model.Schedule.Id)">
+                                        <i class="fa fa-trash me-2"></i>
+                                        حذف زمان‌بندی
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="row">
-        @* Main Content *@
-        <div class="col-lg-8">
-            @* Status Cards *@
-            <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <div class="card detail-card border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="info-icon bg-@(Model.Schedule.IsScheduleEnabled && Model.Schedule.IsActive ? "success" : "secondary") bg-opacity-10 me-3">
-                                    <i class="fas fa-circle text-@(Model.Schedule.IsScheduleEnabled && Model.Schedule.IsActive ? "success" : "secondary")"></i>
-                                </div>
-                                <div>
-                                    <div class="detail-label">وضعیت</div>
-                                    <div class="detail-value">
-                                        @(Model.Schedule.IsExecuted ? "اجرا شده" : Model.Schedule.IsScheduleEnabled && Model.Schedule.IsActive ? "فعال" : "غیرفعال")
+<!-- Main Content -->
+<div class="content content-full">
+    <!-- Tabs -->
+    <ul class="nav nav-tabs nav-tabs-alt nav-justified push sticky-tabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview"
+                    type="button" role="tab">
+                <i class="fa fa-info-circle d-block mb-1"></i>
+                <span class="tab-title">نگاه کلی</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-operations"
+                    type="button" role="tab">
+                <i class="fa fa-cogs d-block mb-1"></i>
+                <span class="tab-title">عملیات</span>
+                @if (Model.TaskModel.Operations?.Any() == true)
+                {
+                    <span class="badge bg-primary rounded-pill ms-1">@Model.TaskModel.Operations.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-team"
+                    type="button" role="tab">
+                <i class="fa fa-users d-block mb-1"></i>
+                <span class="tab-title">اعضا</span>
+                @if (Model.TaskModel.AssignmentsTaskUser?.Any() == true)
+                {
+                    <span class="badge bg-info rounded-pill ms-1">@Model.TaskModel.AssignmentsTaskUser.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-reminders"
+                    type="button" role="tab">
+                <i class="fa fa-bell d-block mb-1"></i>
+                <span class="tab-title">یادآوری</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-timeline"
+                    type="button" role="tab">
+                <i class="fa fa-history d-block mb-1"></i>
+                <span class="tab-title">تاریخچه</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tabs Content -->
+    <div class="tab-content">
+        <!-- Tab: نگاه کلی -->
+        <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+            <div class="row">
+                <!-- بخش اصلی -->
+                <div class="col-lg-8">
+                    <!-- بخش اطلاعات زمان‌بندی -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-calendar-alt text-primary me-2"></i>اطلاعات زمان‌بندی
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="fs-xs text-muted mb-1">نوع تکرار</div>
+                                        <div class="fw-semibold">
+                                            <i class="fa fa-sync-alt text-primary me-2"></i>
+                                            @scheduleTypeText
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="col-md-4">
-                    <div class="card detail-card border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="info-icon bg-primary bg-opacity-10 me-3">
-                                    <i class="fas fa-sync-alt text-primary"></i>
-                                </div>
-                                <div>
-                                    <div class="detail-label">تعداد اجرا</div>
-                                    <div class="detail-value">
-                                        @Model.Schedule.ExecutionCount
-                                        @if (Model.Schedule.MaxOccurrences.HasValue)
-                                        {
-                                            <span class="text-muted">/ @Model.Schedule.MaxOccurrences</span>
-                                        }
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="fs-xs text-muted mb-1">ساعت اجرا</div>
+                                        <div class="fw-semibold">
+                                            <i class="fa fa-clock text-success me-2"></i>
+                                            @(Model.Schedule.ScheduledTime ?? "تنظیم نشده")
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="col-md-4">
-                    <div class="card detail-card border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="info-icon bg-info bg-opacity-10 me-3">
-                                    <i class="fas fa-@(Model.Schedule.ScheduleType == 0 ? "clock" : Model.Schedule.ScheduleType == 1 ? "calendar-day" : Model.Schedule.ScheduleType == 2 ? "calendar-week" : "calendar-alt") text-info"></i>
-                                </div>
-                                <div>
-                                    <div class="detail-label">نوع تکرار</div>
-                                    <div class="detail-value">
-                                        @(Model.Schedule.ScheduleType == 0 ? "یکبار" : 
-                                          Model.Schedule.ScheduleType == 1 ? "روزانه" : 
-                                          Model.Schedule.ScheduleType == 2 ? "هفتگی" : "ماهانه")
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @* Schedule Details *@
-            <div class="card detail-card border-0 mb-4">
-                <div class="card-body">
-                    <h5 class="card-title mb-4">
-                        <i class="fas fa-calendar-alt text-primary me-2"></i>
-                        جزئیات زمان‌بندی
-                    </h5>
-
-                    <div class="detail-section">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="detail-label">ساعت اجرا</div>
-                                <div class="detail-value">
-                                    <i class="fas fa-clock text-primary me-2"></i>
-                                    @(Model.Schedule.ScheduledTime ?? "تنظیم نشده")
-                                </div>
-                            </div>
-
-                            @if (Model.Schedule.ScheduleType == 2 && !string.IsNullOrEmpty(Model.Schedule.ScheduledDaysOfWeek))
-                            {
-                                <div class="col-md-6 mb-3">
-                                    <div class="detail-label">روزهای هفته</div>
-                                    <div class="detail-value">
-                                        @{
-                                            var days = Model.Schedule.ScheduledDaysOfWeek.Split(',');
-                                            var dayNames = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
-                                            foreach (var day in days)
-                                            {
-                                                if (int.TryParse(day.Trim(), out int dayIndex) && dayIndex >= 0 && dayIndex < 7)
-                                                {
-                                                    <span class="badge bg-primary me-1">@dayNames[dayIndex]</span>
+                                @if (Model.Schedule.ScheduleType == 2 && !string.IsNullOrEmpty(Model.Schedule.ScheduledDaysOfWeek))
+                                {
+                                    <div class="col-12">
+                                        <div class="p-3 bg-body-light rounded-3">
+                                            <div class="fs-xs text-muted mb-2">روزهای هفته</div>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @{
+                                                    var days = Model.Schedule.ScheduledDaysOfWeek.Split(',');
+                                                    var dayNames = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
+                                                    foreach (var day in days)
+                                                    {
+                                                        if (int.TryParse(day.Trim(), out int dayIndex) && dayIndex >= 0 && dayIndex < 7)
+                                                        {
+                                                            <span class="badge bg-primary">@dayNames[dayIndex]</span>
+                                                        }
+                                                    }
                                                 }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (Model.Schedule.ScheduleType == 3 && Model.Schedule.ScheduledDayOfMonth.HasValue)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="p-3 bg-body-light rounded-3">
+                                            <div class="fs-xs text-muted mb-1">روز ماه</div>
+                                            <div class="fw-semibold">
+                                                <i class="fa fa-calendar-day text-warning me-2"></i>
+                                                روز @Model.Schedule.ScheduledDayOfMonth
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (Model.Schedule.StartDate.HasValue || Model.Schedule.EndDate.HasValue)
+                                {
+                                    @if (Model.Schedule.StartDate.HasValue)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-body-light rounded-3">
+                                                <div class="fs-xs text-muted mb-1">تاریخ شروع</div>
+                                                <div class="fw-semibold">
+                                                    @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.StartDate.Value, "yyyy/MM/dd")
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    @if (Model.Schedule.EndDate.HasValue)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-body-light rounded-3">
+                                                <div class="fs-xs text-muted mb-1">تاریخ پایان</div>
+                                                <div class="fw-semibold">
+                                                    @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.EndDate.Value, "yyyy/MM/dd")
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(Model.Schedule.ScheduleDescription))
+                            {
+                                <div class="mt-3 p-3 bg-body-light rounded-3">
+                                    <div class="fs-xs text-muted mb-1">توضیحات زمان‌بندی</div>
+                                    <div>@Model.Schedule.ScheduleDescription</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- توضیحات تسک -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-align-right text-success me-2"></i>توضیحات تسک
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            @if (string.IsNullOrEmpty(Model.TaskModel.Description))
+                            {
+                                <div class="py-5 text-center text-muted">
+                                    <i class="fa fa-file-alt fa-3x opacity-25 mb-3"></i>
+                                    <p class="mb-0">توضیحاتی برای این تسک ثبت نشده است.</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="fs-sm">
+                                    @Html.Raw(Model.TaskModel.Description.Replace("\n", "<br/>"))
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- اطلاعات جزئیات -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-info-circle text-info me-2"></i>اطلاعات تسک
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="fs-xs text-muted mb-1">عنوان تسک</div>
+                                        <div class="fw-semibold">@Model.TaskModel.Title</div>
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="fs-xs text-muted mb-1">شعبه</div>
+                                        <div class="fw-semibold">
+                                            <i class="fa fa-building text-primary me-2"></i>
+                                            @(Model.Schedule.Branch?.Name ?? "نامشخص")
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="fs-xs text-muted mb-1">اولویت</div>
+                                        <div>
+                                            @switch (Model.TaskModel.Priority)
+                                            {
+                                                case 0:
+                                                    <span class="badge bg-info-light text-info">
+                                                        <i class="fa fa-circle me-1"></i>عادی
+                                                    </span>
+                                                    break;
+                                                case 1:
+                                                    <span class="badge bg-warning-light text-warning">
+                                                        <i class="fa fa-star me-1"></i>مهم
+                                                    </span>
+                                                    break;
+                                                case 2:
+                                                    <span class="badge bg-danger-light text-danger">
+                                                        <i class="fa fa-bolt me-1"></i>فوری
+                                                    </span>
+                                                    break;
                                             }
-                                        }
+                                        </div>
                                     </div>
                                 </div>
-                            }
 
-                            @if (Model.Schedule.ScheduleType == 3 && Model.Schedule.ScheduledDayOfMonth.HasValue)
-                            {
-                                <div class="col-md-6 mb-3">
-                                    <div class="detail-label">روز ماه</div>
-                                    <div class="detail-value">
-                                        <span class="badge bg-warning">روز @Model.Schedule.ScheduledDayOfMonth ام هر ماه</span>
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-body-light rounded-3">
+                                        <div class="fs-xs text-muted mb-1">نوع تسک</div>
+                                        <div class="fw-semibold">
+                                            @(Model.TaskModel.TaskType == 0 ? "تسک" :
+                                                                                        Model.TaskModel.TaskType == 1 ? "پروژه" : "مایلستون")
+                                        </div>
                                     </div>
                                 </div>
-                            }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Timeline اجراها -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header bg-info text-white">
+                            <h3 class="block-title text-white mb-0">
+                                <i class="fa fa-history me-2"></i>زمان‌بندی اجراها
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="timeline timeline-alt py-0">
+                                @if (Model.Schedule.NextExecutionDate.HasValue)
+                                {
+                                    <div class="timeline-event">
+                                        <div class="timeline-event-icon bg-success">
+                                            <i class="fa fa-clock"></i>
+                                        </div>
+                                        <div class="timeline-event-block">
+                                            <div class="fs-xs text-muted">اجرای بعدی</div>
+                                            <div class="fw-bold">
+                                                @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.NextExecutionDate.Value, "yyyy/MM/dd HH:mm")
+                                            </div>
+                                            <small class="text-muted">
+                                                @{
+                                                    var daysUntil = (Model.Schedule.NextExecutionDate.Value.Date - DateTime.UtcNow.Date).Days;
+                                                    var daysText = daysUntil < 0 ? "گذشته" :
+                                                    daysUntil == 0 ? "امروز" :
+                                                    daysUntil == 1 ? "فردا" :
+                                                    $"{daysUntil} روز دیگر";
+                                                }
+                                                <i class="fa fa-calendar me-1"></i>@daysText
+                                            </small>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (Model.Schedule.LastExecutionDate.HasValue)
+                                {
+                                    <div class="timeline-event">
+                                        <div class="timeline-event-icon bg-primary">
+                                            <i class="fa fa-check"></i>
+                                        </div>
+                                        <div class="timeline-event-block">
+                                            <div class="fs-xs text-muted">آخرین اجرا</div>
+                                            <div class="fw-bold">
+                                                @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.LastExecutionDate.Value, "yyyy/MM/dd HH:mm")
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="timeline-event">
+                                    <div class="timeline-event-icon bg-secondary">
+                                        <i class="fa fa-calendar-plus"></i>
+                                    </div>
+                                    <div class="timeline-event-block">
+                                        <div class="fs-xs text-muted">تاریخ ایجاد</div>
+                                        <div class="fw-bold">
+                                            @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.CreatedDate, "yyyy/MM/dd HH:mm")
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="detail-section">
-                        <div class="row">
-                            @if (Model.Schedule.StartDate.HasValue)
-                            {
-                                <div class="col-md-6 mb-3">
-                                    <div class="detail-label">تاریخ شروع</div>
-                                    <div class="detail-value">
-                                        @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.StartDate.Value, "yyyy/MM/dd HH:mm")
-                                    </div>
-                                </div>
-                            }
-
-                            @if (Model.Schedule.EndDate.HasValue)
-                            {
-                                <div class="col-md-6 mb-3">
-                                    <div class="detail-label">تاریخ پایان</div>
-                                    <div class="detail-value">
-                                        @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.EndDate.Value, "yyyy/MM/dd HH:mm")
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(Model.Schedule.ScheduleDescription))
+                    <!-- پیشرفت -->
+                    @if (Model.Schedule.MaxOccurrences.HasValue && Model.Schedule.MaxOccurrences.Value > 0)
                     {
-                        <div class="detail-section">
-                            <div class="detail-label">توضیحات زمان‌بندی</div>
-                            <div class="detail-value">@Model.Schedule.ScheduleDescription</div>
+                        <div class="block block-rounded block-fx-shadow">
+                            <div class="block-header bg-warning text-white">
+                                <h3 class="block-title text-white mb-0">
+                                    <i class="fa fa-chart-line me-2"></i>پیشرفت اجراها
+                                </h3>
+                            </div>
+                            <div class="block-content">
+                                @{
+                                    var progressPercentage = (int)((Model.Schedule.ExecutionCount / (double)Model.Schedule.MaxOccurrences.Value) * 100);
+                                }
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar @(progressPercentage >= 100 ? "bg-success" : "bg-primary")"
+                                         role="progressbar"
+                                         style="width: @progressPercentage%"
+                                         aria-valuenow="@progressPercentage"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                        @progressPercentage%
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    @Model.Schedule.ExecutionCount از @Model.Schedule.MaxOccurrences اجرا انجام شده
+                                </small>
+                            </div>
                         </div>
                     }
+
+                    <!-- اطلاعات بیشتر -->
+                    <div class="block block-rounded block-fx-shadow">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-info-circle text-secondary me-2"></i>اطلاعات بیشتر
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="mb-3">
+                                <div class="fs-xs text-muted mb-1">ایجادکننده</div>
+                                <div class="fw-semibold">
+                                    <i class="fa fa-user me-2"></i>
+                                    @Model.Schedule.CreatedByUser?.FirstName @Model.Schedule.CreatedByUser?.LastName
+                                </div>
+                            </div>
+
+                            @if (Model.Schedule.Branch != null)
+                            {
+                                <div class="mb-3">
+                                    <div class="fs-xs text-muted mb-1">شعبه</div>
+                                    <div class="fw-semibold">
+                                        <i class="fa fa-building me-2"></i>
+                                        @Model.Schedule.Branch.Name
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="mb-3">
+                                <div class="fs-xs text-muted mb-1">تعداد اجرا</div>
+                                <div class="fw-semibold">
+                                    <i class="fa fa-sync-alt me-2"></i>
+                                    @Model.Schedule.ExecutionCount بار
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="fs-xs text-muted mb-1">وضعیت</div>
+                                <div>
+                                    <span class="badge bg-@statusColor">
+                                        <i class="fa @statusIcon me-1"></i>
+                                        @statusText
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            @* Task Details *@
-            <div class="card detail-card border-0 mb-4">
-                <div class="card-body">
-                    <h5 class="card-title mb-4">
-                        <i class="fas fa-tasks text-success me-2"></i>
-                        جزئیات تسک
-                    </h5>
-
-                    <div class="detail-section">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="detail-label">عنوان تسک</div>
-                                <div class="detail-value">@Model.TaskModel.Title</div>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <div class="detail-label">کد تسک</div>
-                                <div class="detail-value">
-                                    <code>@(Model.TaskModel.TaskCode ?? "خودکار")</code>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <div class="detail-label">اولویت</div>
-                                <div class="detail-value">
-                                    <span class="badge bg-@(Model.TaskModel.Priority == 0 ? "secondary" : Model.TaskModel.Priority == 1 ? "warning" : "danger")">
-                                        @(Model.TaskModel.Priority == 0 ? "عادی" : Model.TaskModel.Priority == 1 ? "مهم" : "فوری")
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <div class="detail-label">نوع تسک</div>
-                                <div class="detail-value">
-                                    @(Model.TaskModel.TaskType == 0 ? "تسک" : Model.TaskModel.TaskType == 1 ? "پروژه" : "مایلستون")
-                                </div>
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <div class="detail-label">مهم</div>
-                                <div class="detail-value">
-                                    @if (Model.TaskModel.Important)
-                                    {
-                                        <i class="fas fa-star text-warning"></i>
-                                        <span>بله</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">خیر</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
+        <!-- Tab: عملیات -->
+        <div class="tab-pane fade" id="tab-operations" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header bg-primary text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-cogs me-2"></i>مدیریت عملیات تسک
+                    </h3>
+                    <div class="block-options">
+                        @if (Model.CanEdit && Model.Schedule.IsActive && Model.Schedule.IsScheduleEnabled)
+                        {
+                            <button type="button" class="btn btn-sm btn-light"
+                                    onclick="$('#newOperationTitleInput').focus()">
+                                <i class="fa fa-plus me-1"></i>افزودن سریع
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-dark">
+                                <i class="fa fa-lock me-1"></i>قفل شده
+                            </span>
+                        }
                     </div>
+                </div>
 
-                    @if (!string.IsNullOrEmpty(Model.TaskModel.Description))
+                <div class="block-content">
+                    <div id="pending-operations-container">
+                        @{
+                            // ⭐⭐⭐ ساخت یک TaskViewModel ساده برای Partial View
+                            var taskViewModel = new MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModel
+                            {
+                                Id = Model.Schedule.Id,
+                                CompletionDate = null,
+                                IsAssignedToCurrentUser = Model.CanEdit,
+                                IsCreator = Model.CanEdit,
+                                IsManager = isAdmin,
+                                IsCompletedByMe = false
+                            };
+                            ViewBag.Task = taskViewModel;
+                        }
+                        <partial name="/Areas/TaskingArea/Views/TaskOperations/_OperationListPartialView.cshtml" model="Model.TaskModel.Operations" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: اعضا -->
+        <div class="tab-pane fade" id="tab-team" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-users text-info me-2"></i>اعضای منتصب شده
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" 
+                                class="btn btn-sm btn-info"
+                                onclick="showAssignUserModal()">
+                            <i class="fa fa-user-plus me-1"></i> اضافه کردن عضو
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content" id="team-list-container">
+                    @if (Model.TaskModel.AssignmentsTaskUser?.Any() == true)
                     {
-                        <div class="detail-section">
-                            <div class="detail-label">توضیحات تسک</div>
-                            <div class="detail-value">@Model.TaskModel.Description</div>
+                        <div class="row g-3">
+                            @foreach (var user in Model.TaskModel.AssignmentsTaskUser)
+                            {
+                                <div class="col-md-6" id="assignment-@user.Id">
+                                    <div class="card border">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="d-flex align-items-center flex-grow-1">
+                                                    <img src="@(user.AssignedUserProfileImage ?? "/images/default-avatar.png")"
+                                                         class="rounded-circle me-3"
+                                                         style="width: 48px; height: 48px; object-fit: cover;"
+                                                         onerror="this.src='/images/default-avatar.png'"
+                                                         alt="@user.AssignedUserName">
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1">@user.AssignedUserName</h6>
+                                                        @if (!string.IsNullOrEmpty(user.AssignedInTeamName))
+                                                        {
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-users me-1"></i>@user.AssignedInTeamName
+                                                            </small>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="removeAssignment(@user.Id)"
+                                                        title="حذف از تسک">
+                                                    <i class="fa fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     }
-
-                    @* Task Assignments *@
-                    @if (Model.TaskModel.AssignmentsTaskUser != null && Model.TaskModel.AssignmentsTaskUser.Any())
+                    else
                     {
-                        <div class="detail-section">
-                            <div class="detail-label mb-3">افراد منتصب شده</div>
-                            <div class="d-flex flex-wrap gap-2">
-                                @foreach (var user in Model.TaskModel.AssignmentsTaskUser)
-                                {
-                                    <span class="badge bg-light text-dark border">
-                                        <i class="fas fa-user me-1"></i>
-                                        @user.AssignedUserName
-                                    </span>
-                                }
-                            </div>
-                        </div>
-                    }
-
-                    @* Task Operations *@
-                    @if (Model.TaskModel.Operations != null && Model.TaskModel.Operations.Any())
-                    {
-                        <div class="detail-section">
-                            <div class="detail-label mb-3">عملیات‌های تسک (@Model.TaskModel.Operations.Count)</div>
-                            <ul class="list-group">
-                                @foreach (var operation in Model.TaskModel.Operations)
-                                {
-                                    <li class="list-group-item">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        @operation.Title
-                                    </li>
-                                }
-                            </ul>
+                        <div class="text-center py-5 text-muted" id="empty-team">
+                            <i class="fa fa-users-slash fa-3x opacity-25 mb-3"></i>
+                            <p class="mb-0">هیچ کاربری منتصب نشده است</p>
+                            <button type="button" 
+                                    class="btn btn-info mt-3"
+                                    onclick="showAssignUserModal()">
+                                <i class="fa fa-user-plus me-1"></i> اضافه کردن اولین عضو
+                            </button>
                         </div>
                     }
                 </div>
             </div>
         </div>
 
-        @* Sidebar *@
-        <div class="col-lg-4">
-            @* Timeline *@
-            <div class="card detail-card border-0 mb-4">
-                <div class="card-body">
-                    <h5 class="card-title mb-4">
-                        <i class="fas fa-history text-info me-2"></i>
-                        زمان‌بندی اجراها
-                    </h5>
-
-                    <div class="schedule-timeline">
-                        @if (Model.Schedule.NextExecutionDate.HasValue)
-                        {
-                            <div class="timeline-item">
-                                <div class="detail-label">اجرای بعدی</div>
-                                <div class="detail-value mb-1">
-                                    @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.NextExecutionDate.Value, "yyyy/MM/dd HH:mm")
-                                </div>
-                                <small class="text-muted">
-                                    @{
-                                        var daysUntil = (Model.Schedule.NextExecutionDate.Value.Date - DateTime.UtcNow.Date).Days;
-                                        var daysText = daysUntil < 0 ? "گذشته" :
-                                                       daysUntil == 0 ? "امروز" :
-                                                       daysUntil == 1 ? "فردا" :
-                                                       $"{daysUntil} روز دیگر";
-                                    }
-                                    <i class="fas fa-clock me-1"></i>@daysText
-                                </small>
-                            </div>
-                        }
-
-                        @if (Model.Schedule.LastExecutionDate.HasValue)
-                        {
-                            <div class="timeline-item">
-                                <div class="detail-label">آخرین اجرا</div>
-                                <div class="detail-value">
-                                    @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.LastExecutionDate.Value, "yyyy/MM/dd HH:mm")
-                                </div>
-                            </div>
-                        }
-
-                        <div class="timeline-item">
-                            <div class="detail-label">تاریخ ایجاد</div>
-                            <div class="detail-value">
-                                @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.CreatedDate, "yyyy/MM/dd HH:mm")
-                            </div>
-                        </div>
+        <!-- Tab: یادآوری -->
+        <div class="tab-pane fade" id="tab-reminders" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-bell text-warning me-2"></i>یادآوری‌های تسک
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" 
+                                class="btn btn-sm btn-warning"
+                                data-toggle="modal-ajax"
+                                data-url="@Url.Action("AddCustomReminderModal", "Tasks", new { taskId = Model.TaskModel.Id, isScheduled = true })"
+                                data-size="modal-lg">
+                            <i class="fa fa-bell-o me-1"></i> افزودن یادآوری
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content" id="reminders-list-container">
+                    <!-- محتوا از AJAX بارگذاری می‌شود -->
+                    <div class="text-center py-3">
+                        <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                        <p class="mt-2 text-muted">در حال بارگذاری یادآوری‌ها...</p>
                     </div>
                 </div>
             </div>
+        </div>
 
-            @* Progress Card *@
-            @if (Model.Schedule.MaxOccurrences.HasValue && Model.Schedule.MaxOccurrences.Value > 0)
-            {
-                <div class="card detail-card border-0 mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">
-                            <i class="fas fa-chart-line text-warning me-2"></i>
-                            پیشرفت
-                        </h5>
-                        @{
-                            var progressPercentage = (int)((Model.Schedule.ExecutionCount / (double)Model.Schedule.MaxOccurrences.Value) * 100);
-                        }
-                        <div class="progress mb-2" style="height: 20px;">
-                            <div class="progress-bar @(progressPercentage >= 100 ? "bg-success" : "bg-primary")" 
-                                 role="progressbar" 
-                                 style="width: @progressPercentage%"
-                                 aria-valuenow="@progressPercentage" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100">
-                                @progressPercentage%
+        <!-- Tab: تاریخچه -->
+        <div class="tab-pane fade" id="tab-timeline" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-history text-warning me-2"></i>تاریخچه تغییرات
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="timeline timeline-alt">
+                        <div class="timeline-event">
+                            <div class="timeline-event-icon bg-primary">
+                                <i class="fa fa-calendar-plus"></i>
+                            </div>
+                            <div class="timeline-event-block">
+                                <div class="fw-bold">ایجاد زمان‌بندی</div>
+                                <div class="text-muted small">
+                                    @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.CreatedDate, "yyyy/MM/dd HH:mm")
+                                </div>
+                                <p class="mt-2 mb-0">
+                                    توسط @Model.Schedule.CreatedByUser?.FirstName @Model.Schedule.CreatedByUser?.LastName
+                                </p>
                             </div>
                         </div>
-                        <small class="text-muted">
-                            @Model.Schedule.ExecutionCount از @Model.Schedule.MaxOccurrences اجرا انجام شده
-                        </small>
-                    </div>
-                </div>
-            }
 
-            @* Creator Info *@
-            <div class="card detail-card border-0">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">
-                        <i class="fas fa-info-circle text-secondary me-2"></i>
-                        اطلاعات بیشتر
-                    </h5>
-                    <div class="detail-label">ایجادکننده</div>
-                    <div class="detail-value mb-3">
-                        <i class="fas fa-user me-2"></i>
-                        @Model.Schedule.CreatedByUser?.FirstName @Model.Schedule.CreatedByUser?.LastName
+                        @if (Model.Schedule.LastExecutionDate.HasValue)
+                        {
+                            <div class="timeline-event">
+                                <div class="timeline-event-icon bg-success">
+                                    <i class="fa fa-check"></i>
+                                </div>
+                                <div class="timeline-event-block">
+                                    <div class="fw-bold">آخرین اجرا</div>
+                                    <div class="text-muted small">
+                                        @MahERP.CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(Model.Schedule.LastExecutionDate.Value, "yyyy/MM/dd HH:mm")
+                                    </div>
+                                    <p class="mt-2 mb-0">
+                                        تسک با موفقیت ساخته شد
+                                    </p>
+                                </div>
+                            </div>
+                        }
                     </div>
-
-                    @if (Model.Schedule.Branch != null)
-                    {
-                        <div class="detail-label">شعبه</div>
-                        <div class="detail-value">
-                            <i class="fas fa-building me-2"></i>
-                            @Model.Schedule.Branch.Name
-                        </div>
-                    }
                 </div>
             </div>
         </div>
@@ -488,8 +814,196 @@
 
 @section Scripts {
     <script>
+        // ⭐⭐⭐ متغیرهای سراسری
+        const taskId = @Model.Schedule.Id; // ⭐ استفاده از Schedule.Id برای API calls
+        const scheduleId = @Model.Schedule.Id;
+
+        // ⭐⭐⭐ تنظیم TaskDetailConfig برای سازگاری با کدهای موجود
+        window.TaskDetailConfig = {
+            taskId: @Model.Schedule.Id,
+            isTaskCompleted: false, // Scheduled tasks هیچوقت Complete نمی‌شوند
+            urls: {
+                addOperation: '@Url.Action("AddOperation", "TaskOperations")',
+                deleteOperation: '@Url.Action("DeleteOperation", "TaskOperations")',
+                toggleOperationComplete: '@Url.Action("ToggleOperationComplete", "TaskOperations")',
+                toggleOperationStar: '@Url.Action("ToggleOperationStar", "TaskOperations")',
+                getAllOperations: '@Url.Action("GetAllOperations", "TaskOperations")'
+            }
+        };
+
+        $(document).ready(function() {
+            // ⭐⭐⭐ بارگذاری عملیات هنگام باز شدن تب
+            $('button[data-bs-target="#tab-operations"]').on('shown.bs.tab', function () {
+                loadOperations();
+            });
+
+            // بارگذاری یادآوری‌ها هنگام باز شدن تب
+            $('button[data-bs-target="#tab-reminders"]').on('shown.bs.tab', function () {
+                loadReminders();
+            });
+
+            // ⭐⭐⭐ راه‌اندازی DynamicOperationsManager
+            if (typeof DynamicOperationsManager !== 'undefined') {
+                console.log('✅ DynamicOperationsManager is ready for Scheduled Tasks');
+            }
+        });
+
+        // ⭐⭐⭐ بارگذاری عملیات
+        function loadOperations() {
+            $('#pending-operations-container').html(`
+                <div class="text-center py-3">
+                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="mt-2 text-muted">در حال بارگذاری عملیات...</p>
+                </div>
+            `);
+
+            $.ajax({
+                url: '@Url.Action("GetAllOperations", "TaskOperations")',
+                type: 'GET',
+                data: { taskId: scheduleId },
+                success: function(html) {
+                    if (html && html.trim() !== '') {
+                        $('#pending-operations-container').html(html);
+                    } else {
+                        showEmptyOperationsState();
+                    }
+                },
+                error: function() {
+                    $('#pending-operations-container').html(`
+                        <div class="alert alert-danger">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            خطا در بارگذاری عملیات
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showEmptyOperationsState() {
+            $('#pending-operations-container').html(`
+                <div class="text-center py-5 text-muted">
+                    <i class="fa fa-cogs fa-3x opacity-25 mb-3"></i>
+                    <p class="mb-0">عملیاتی تعریف نشده است</p>
+                </div>
+            `);
+        }
+
+        // ⭐⭐⭐ یادآوری‌ها
+        function loadReminders() {
+            $('#reminders-list-container').html(`
+                <div class="text-center py-3">
+                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="mt-2 text-muted">در حال بارگذاری یادآوری‌ها...</p>
+                </div>
+            `);
+
+            $.ajax({
+                url: '@Url.Action("GetTaskRemindersListPartial", "ScheduledTasks")',
+                type: 'GET',
+                data: { taskId: scheduleId },
+                success: function(html) {
+                    if (html && html.trim() !== '') {
+                        $('#reminders-list-container').html(html);
+                    } else {
+                        $('#reminders-list-container').html(`
+                            <div class="text-center py-5 text-muted">
+                                <i class="fa fa-bell-slash fa-3x opacity-25 mb-3"></i>
+                                <p class="mb-0">یادآوری‌ای تعریف نشده است</p>
+                                <button type="button" 
+                                        class="btn btn-warning mt-3"
+                                        data-toggle="modal-ajax"
+                                        data-url="@Url.Action("AddCustomReminderModal", "Tasks")?taskId=${scheduleId}&isScheduled=true"
+                                        data-size="modal-lg">
+                                    <i class="fa fa-bell-o me-1"></i> افزودن اولین یادآوری
+                                </button>
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#reminders-list-container').html(`
+                        <div class="alert alert-danger">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            خطا در بارگذاری یادآوری‌ها
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function deleteReminder(reminderId) {
+            if (!confirm('آیا از حذف این یادآوری اطمینان دارید؟')) {
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("DeleteTaskReminder", "ScheduledTasks")',
+                type: 'POST',
+                data: {
+                    id: reminderId,
+                    scheduleId: scheduleId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'success' || response.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('یادآوری حذف شد');
+                        }
+                        loadReminders();
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('خطا در حذف یادآوری');
+                        }
+                    }
+                },
+                error: function() {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در حذف یادآوری');
+                    }
+                }
+            });
+        }
+
+        // ⭐⭐⭐ اعضا
+        function showAssignUserModal() {
+            location.href = '@Url.Action("Edit", "ScheduledTasks", new { id = Model.Schedule.Id })';
+        }
+
+        function removeAssignment(assignmentId) {
+            if (!confirm('آیا از حذف این کاربر از تسک اطمینان دارید؟')) {
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("RemoveTaskAssignment", "ScheduledTasks")',
+                type: 'POST',
+                data: {
+                    assignmentId: assignmentId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'success' || response.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('کاربر از تسک حذف شد');
+                        }
+                        location.reload();
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('خطا در حذف کاربر');
+                        }
+                    }
+                },
+                error: function() {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در حذف کاربر');
+                    }
+                }
+            });
+        }
+
+        // ⭐⭐⭐ توابع مدیریت Schedule
         function toggleScheduleStatus(scheduleId) {
-            if (!confirm('آیا از تغییر وضعیت این تسک اطمینان دارید؟')) {
+            if (!confirm('آیا از تغییر وضعیت این زمان‌بندی اطمینان دارید؟')) {
                 return;
             }
 
@@ -498,24 +1012,30 @@
                 type: 'POST',
                 data: {
                     id: scheduleId,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
                 },
                 success: function (response) {
                     if (response.success) {
-                        showToast('success', response.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(response.message);
+                        }
                         setTimeout(() => location.reload(), 1000);
                     } else {
-                        showToast('error', response.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(response.message);
+                        }
                     }
                 },
                 error: function () {
-                    showToast('error', 'خطا در تغییر وضعیت');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در تغییر وضعیت');
+                    }
                 }
             });
         }
 
         function deleteSchedule(scheduleId) {
-            if (!confirm('آیا از حذف این تسک زمان‌بندی شده اطمینان دارید؟')) {
+            if (!confirm('آیا از حذف این زمان‌بندی اطمینان دارید؟\nتمام تنظیمات زمان‌بندی حذف خواهد شد.')) {
                 return;
             }
 
@@ -524,37 +1044,37 @@
                 type: 'POST',
                 data: {
                     id: scheduleId,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
                 },
                 success: function (response) {
                     if (response.success) {
-                        showToast('success', response.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(response.message);
+                        }
                         setTimeout(() => {
                             window.location.href = '@Url.Action("Index", "ScheduledTasks")';
                         }, 1000);
                     } else {
-                        showToast('error', response.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(response.message);
+                        }
                     }
                 },
                 error: function () {
-                    showToast('error', 'خطا در حذف تسک');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در حذف زمان‌بندی');
+                    }
                 }
             });
         }
-
-        function showToast(type, message) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: type === 'success' ? 'success' : 'error',
-                    title: message,
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000
-                });
-            } else {
-                alert(message);
-            }
-        }
     </script>
+
+    <!-- ⭐⭐⭐ اضافه کردن اسکریپت مدیریت عملیات -->
+    <script src="~/assets/js/taskdetail.js"></script>
+}
+
+@section Styles {
+    <style>
+
+    </style>
 }

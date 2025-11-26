@@ -33,9 +33,16 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public List<MyDayTaskItemViewModel> WorkedTasks { get; set; } = new();
 
         /// <summary>
-        /// ⭐ تسک‌ها گروه‌بندی شده بر اساس تاریخ
+        /// ⭐ [قدیمی] تسک‌ها گروه‌بندی شده بر اساس تاریخ (برای سازگاری)
         /// </summary>
         public Dictionary<string, List<MyDayTaskItemViewModel>> TasksByDate { get; set; } = new();
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - تسک‌ها گروه‌بندی شده بر اساس عنوان گروه → تاریخ
+        /// Key: GroupTitle (یا "بدون گروه")
+        /// Value: Dictionary<DateString, List<Tasks>>
+        /// </summary>
+        public Dictionary<string, Dictionary<string, List<MyDayTaskItemViewModel>>> TasksByGroupAndDate { get; set; } = new();
 
         /// <summary>
         /// آمار کلی
@@ -86,6 +93,12 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// </summary>
         [Display(Name = "نام سازمان")]
         public string? OrganizationName { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - عنوان گروه برای دسته‌بندی
+        /// </summary>
+        [Display(Name = "عنوان گروه")]
+        public string? GroupTitle { get; set; }
 
         [Display(Name = "اولویت")]
         public byte TaskPriority { get; set; }
@@ -211,6 +224,13 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         [Display(Name = "تاریخ برنامه‌ریزی")]
 
         public string PlannedDateString { get; set; } = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now.Date,"yyyy/MM/dd");
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - عنوان گروه برای دسته‌بندی
+        /// </summary>
+        [MaxLength(200, ErrorMessage = "عنوان گروه نمی‌تواند بیش از 200 کاراکتر باشد")]
+        [Display(Name = "عنوان گروه")]
+        public string? GroupTitle { get; set; }
 
         [MaxLength(500)]
         [Display(Name = "یادداشت برنامه‌ریزی")]

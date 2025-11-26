@@ -53,7 +53,6 @@
     <link href="/assets/js/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <link href="/assets/js/plugins/dropzone/min/dropzone.min.css" rel="stylesheet" />
     <link href="/assets/js/plugins/flatpickr/flatpickr.min.css" rel="stylesheet" />
-	<link href="~/assets/js/plugins/persiandatepicker/persian-datepicker.min.css" rel="stylesheet" />
     <!-- Dashmix framework -->
     <link href="/assets/css/dashmix.min.css" id="css-main" rel="stylesheet" />
     <link href="~/assets/js/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
@@ -130,10 +129,9 @@
 	<script src="~/assets/js/signalr.js"></script>
     
     <!-- ⭐⭐⭐ Persian DatePicker (باید بعد از jQuery لود شود) -->
-    <script src="~/assets/js/plugins/PersianDatePicker/persian-date.min.js"></script>
-    <script src="~/assets/js/plugins/PersianDatePicker/persian-datepicker.min.js"></script>
-    <script src="~/assets/js/plugins/PersianDatePicker/persian-datepicker-init.js"></script>
+    <script src="~/assets/js/plugins/persiandatepicker/persian-date.min.js"></script>
 
+    <script src="~/assets/js/plugins/persiandatepicker/js-flatpickr.min.js"></script>
     <!-- Page JS Code -->
     <script src="/assets/js/pages/be_tables_datatables.min.js"></script>
     <script src="/assets/js/pages/be_comp_rating.min.js"></script>
@@ -171,10 +169,7 @@
                     });
                 });
 
-                // 3. ⭐⭐⭐ Re-initialize Persian DatePicker
-                if (typeof window.initPersianDatePicker !== 'undefined') {
-                    window.initPersianDatePicker(container);
-                }
+             
 
                 // 4. Re-initialize Bootstrap Tooltips
                 $container.find('[data-bs-toggle="tooltip"]').each(function() {
@@ -204,17 +199,7 @@
                     }
                 });
 
-                // 7. Re-initialize Flatpickr
-                $container.find('.js-flatpickr:not(.flatpickr-input)').each(function() {
-                    if (window.flatpickr) {
-                        flatpickr(this, {
-                            dateFormat: 'Y-m-d',
-                            locale: 'fa'
-                        });
-                    }
-                });
 
-                console.log('✅ Plugins re-initialized successfully');
             } catch (error) {
                 console.warn('⚠️ Error re-initializing plugins:', error);
             }
@@ -245,7 +230,7 @@
 
     <!-- Page JS Helpers -->
     <script>
-        Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-select2', 'dm-table-tools-sections', 'jq-slick', 'bs-tooltip', 'jq-notify']);
+        Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-select2', 'dm-table-tools-sections', 'jq-slick', 'bs-tooltip', 'jq-notify','jq-masked-inputs', 'jq-pw-strength']);
     </script>
 
     <!-- Error notifications from ModelState -->
@@ -291,7 +276,7 @@
 
     <script src="~/assets/js/methods.js"></script>
     <script src="/assets/js/notifications.js"></script>
-
+    <script src="~/assets/js/callenderconfig.js"></script>
   
     <!-- ⭐⭐⭐ Page-specific Scripts - Load LAST -->
     @RenderSection("Scripts", required: false)

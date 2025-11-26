@@ -1291,7 +1291,6 @@ namespace MahERP.DataModelLayer.Services
                     .Include(a => a.Task.Creator)
                     .OrderBy(a => a.Task.DueDate)
                     .ThenByDescending(a => a.Task.Priority)
-                    .Take(10) // ⭐ محدود به 10 تسک اول
                     .Select(a => new
                     {
                         TaskId = a.Task.Id,

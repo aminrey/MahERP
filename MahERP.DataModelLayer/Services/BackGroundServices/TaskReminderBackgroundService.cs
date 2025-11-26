@@ -219,8 +219,8 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 0 => true,  // یکبار در زمان مشخص
                 2 => true,  // قبل از پایان مهلت (یکبار)
                 3 => true,  // در روز شروع تسک (یکبار)
-                4 => true,  // در روز پایان مهلت (یکبار)
                 1 => false, // تکراری
+                4 => false, // ⭐⭐⭐ ماهانه - چند روز (تکراری) 🆕
                 _ => false
             };
         }
@@ -298,19 +298,90 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                     return schedule.Task.StartDate.Value.Date.Add(time);
 
-                case 4: // در روز پایان مهلت
-                    if (schedule.Task.DueDate == null)
+                case 4: // ⭐⭐⭐ NEW: ماهانه - چند روز 🆕
+                    if (string.IsNullOrEmpty(schedule.ScheduledDaysOfMonth))
                         return null;
 
-                    // ⭐⭐⭐ FIX: اگر قبلاً ارسال شده، دیگر زمان بعدی ندارد
-                    if (schedule.SentCount > 0)
+                    // Parse روزهای ماه
+                    var daysOfMonth = schedule.ScheduledDaysOfMonth
+                        .Split(',')
+                        .Select(d => int.TryParse(d.Trim(), out var day) ? day : (int?)null)
+                        .Where(d => d.HasValue && d.Value >= 1 && d.Value <= 31)
+                        .Select(d => d.Value)
+                        .OrderBy(d => d)
+                        .ToList();
+
+                    if (!daysOfMonth.Any())
                         return null;
 
-                    return schedule.Task.DueDate.Value.Date.Add(time);
+                    // پیدا کردن اولین روز بعدی در ماه جاری یا ماه‌های بعد
+                    var nextExecution = FindNextMonthlyExecution(nowIran, daysOfMonth, time);
+
+                    // چک کردن EndDate
+                    if (schedule.EndDate.HasValue && nextExecution > schedule.EndDate.Value.Date.Add(time))
+                        return null;
+
+                    return nextExecution;
 
                 default:
                     return null;
             }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW: پیدا کردن اولین زمان اجرای ماهانه بعدی
+        /// </summary>
+        private DateTime FindNextMonthlyExecution(DateTime now, List<int> daysOfMonth, TimeSpan time)
+        {
+            var currentDay = now.Day;
+            var currentMonth = now.Month;
+            var currentYear = now.Year;
+
+            // ⭐ مرحله 1: بررسی ماه جاری
+            var todayExecution = new DateTime(currentYear, currentMonth, Math.Min(currentDay, DateTime.DaysInMonth(currentYear, currentMonth))).Date.Add(time);
+            
+            // آیا امروز در لیست است و ساعت نگذشته؟
+            if (daysOfMonth.Contains(currentDay) && now < todayExecution)
+            {
+                return todayExecution;
+            }
+
+            // پیدا کردن اولین روز بعد از امروز در ماه جاری
+            foreach (var day in daysOfMonth.Where(d => d > currentDay))
+            {
+                var daysInCurrentMonth = DateTime.DaysInMonth(currentYear, currentMonth);
+                if (day <= daysInCurrentMonth)
+                {
+                    return new DateTime(currentYear, currentMonth, day).Date.Add(time);
+                }
+            }
+
+            // ⭐ مرحله 2: اگر در ماه جاری روزی نماند، ماه بعد
+            var nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
+            var nextYear = currentMonth == 12 ? currentYear + 1 : currentYear;
+            var daysInNextMonth = DateTime.DaysInMonth(nextYear, nextMonth);
+
+            // اولین روز موجود در ماه بعد
+            var firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextMonth);
+            if (firstAvailableDay > 0)
+            {
+                return new DateTime(nextYear, nextMonth, firstAvailableDay).Date.Add(time);
+            }
+
+            // اگر هیچ روزی در ماه بعد موجود نیست (مثلاً روز 31 در فوریه)
+            // برو 2 ماه بعد
+            var nextNextMonth = nextMonth == 12 ? 1 : nextMonth + 1;
+            var nextNextYear = nextMonth == 12 ? nextYear + 1 : nextYear;
+            var daysInNextNextMonth = DateTime.DaysInMonth(nextNextYear, nextNextMonth);
+
+            firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextNextMonth);
+            if (firstAvailableDay > 0)
+            {
+                return new DateTime(nextNextYear, nextNextMonth, firstAvailableDay).Date.Add(time);
+            }
+
+            // در صورت مشکل، ماه بعد اولین روز از لیست
+            return new DateTime(nextYear, nextMonth, daysOfMonth.First()).Date.Add(time);
         }
 
         /// <summary>
@@ -344,29 +415,5 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             return recipients.Distinct().ToList();
         }
 
-        /// <summary>
-        /// ساخت متن پیام یادآوری
-        /// </summary>
-        private string BuildReminderMessage(
-            MahERP.DataModelLayer.Entities.TaskManagement.TaskReminderSchedule schedule)
-        {
-            var message = $"یادآوری: {schedule.Title}";
-
-            if (!string.IsNullOrEmpty(schedule.Description))
-            {
-                message += $"\n\n{schedule.Description}";
-            }
-
-            message += $"\n\nتسک: {schedule.Task.Title} ({schedule.Task.TaskCode})";
-
-            if (schedule.Task.DueDate.HasValue)
-            {
-                var persianDueDate = CommonLayer.PublicClasses.ConvertDateTime
-                    .ConvertMiladiToShamsi(schedule.Task.DueDate.Value, "yyyy/MM/dd");
-                message += $"\nمهلت: {persianDueDate}";
-            }
-
-            return message;
-        }
     }
 }

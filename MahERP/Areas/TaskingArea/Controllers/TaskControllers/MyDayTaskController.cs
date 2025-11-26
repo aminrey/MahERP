@@ -121,11 +121,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
             model.PlannedDate = ConvertDateTime.ConvertShamsiToMiladi(model.PlannedDateString);
             var currentUserId = _userManager.GetUserId(User);
+            
+            // ⭐⭐⭐ پاس دادن GroupTitle به Repository
             var result = await _myDayTaskRepository.AddTaskToMyDayAsync(
                 model.TaskAssignmentId,
                 currentUserId,
                 model.PlannedDate,
-                model.PlanNote);
+                model.PlanNote,
+                model.GroupTitle); // ⭐ اضافه شد
 
             if (result.Success)
             {

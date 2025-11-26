@@ -583,7 +583,7 @@ function createAndShowModal(urlOrOptions, options = {}) {
                     // ⭐ Initialize Persian Datepicker
                     if (typeof $.fn.persianDatepicker !== 'undefined') {
                         try {
-                            $modal.find('.persian-datepicker').persianDatepicker({
+                            $modal.find('.js-flatpickr').persianDatepicker({
                                 initialValue: true,
                                 format: 'YYYY/MM/DD',
                                 autoClose: true

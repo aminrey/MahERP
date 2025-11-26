@@ -26,18 +26,20 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
         Task<List<MyDayTaskItemViewModel>> GetTasksForDateAsync(string userId, DateTime date);
 
         /// <summary>
-        /// افزودن تسک به "روز من"
+        /// ⭐⭐⭐ افزودن تسک به "روز من" - به‌روز شده با GroupTitle
         /// </summary>
         /// <param name="taskAssignmentId">شناسه TaskAssignment</param>
         /// <param name="userId">شناسه کاربر</param>
         /// <param name="plannedDate">تاریخ برنامه‌ریزی</param>
         /// <param name="planNote">یادداشت برنامه‌ریزی (اختیاری)</param>
+        /// <param name="groupTitle">عنوان گروه برای دسته‌بندی (اختیاری)</param>
         /// <returns>موفقیت عملیات</returns>
         Task<(bool Success, string Message, int? MyDayId)> AddTaskToMyDayAsync(
             int taskAssignmentId, 
             string userId, 
             DateTime plannedDate, 
-            string? planNote = null);
+            string? planNote = null,
+            string? groupTitle = null);
 
         /// <summary>
         /// حذف تسک از "روز من"

@@ -213,6 +213,21 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// </summary>
         [Display(Name = "نوع تکمیل تسک")]
         public byte CompletionMode { get; set; } = 0; // پیش‌فرض: مشترک
+
+        /// <summary>
+        /// ⭐⭐⭐ شناسه زمان‌بندی (Schedule) که این تسک از آن ساخته شده
+        /// null = تسک دستی
+        /// مقدار = تسک خودکار از Schedule
+        /// </summary>
+        [Display(Name = "شناسه زمان‌بندی")]
+        public int? ScheduleId { get; set; }
+
+        /// <summary>
+        /// Navigation Property به زمان‌بندی
+        /// </summary>
+        [ForeignKey("ScheduleId")]
+        public virtual ScheduledTaskCreation? Schedule { get; set; }
+
         /// <summary>
         /// تاریخ آخرین بروزرسانی
         /// </summary>

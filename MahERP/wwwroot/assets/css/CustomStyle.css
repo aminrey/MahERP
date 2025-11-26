@@ -1472,3 +1472,455 @@ body {
     .dark-mode .btn-quick-add-mobile:hover {
         box-shadow: 0 4px 15px rgba(25, 135, 84, 0.7);
     }
+
+
+/* Sticky Tabs */
+.sticky-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.nav-tabs .nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem 0.5rem;
+    min-height: 70px;
+    transition: all 0.3s ease;
+}
+
+    .nav-tabs .nav-link i {
+        font-size: 1.3rem;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-tabs .nav-link .tab-title {
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-top: 0.25rem;
+    }
+
+    .nav-tabs .nav-link.active {
+        background: linear-gradient(135deg, var(--bs-primary), var(--bs-primary-dark));
+        color: white !important;
+        border-radius: 0.5rem 0.5rem 0 0;
+        transform: translateY(-2px);
+    }
+
+        .nav-tabs .nav-link.active i {
+            transform: scale(1.1);
+        }
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline-event {
+    position: relative;
+    padding-left: 50px;
+    padding-bottom: 2rem;
+}
+
+    .timeline-event:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-event::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+
+.timeline-event-icon {
+    position: absolute;
+    left: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 1;
+}
+
+.timeline-event-block {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+/* Hero Stats */
+.hero-stat {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 0.5rem;
+    backdrop-filter: blur(10px);
+}
+
+    .hero-stat .stat-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.2);
+        border-radius: 0.5rem;
+        font-size: 1.5rem;
+    }
+
+    .hero-stat .stat-label {
+        font-size: 0.75rem;
+        opacity: 0.8;
+    }
+
+    .hero-stat .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+@media (max-width: 767px) {
+    .sticky-tabs {
+        top: 56px;
+    }
+
+    .nav-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+        .nav-tabs .nav-link {
+            min-height: 65px;
+            padding: 0.5rem 0.25rem;
+        }
+}
+/* Chat Message Styles */
+.message-bubble {
+    padding: 1rem;
+    border-radius: 1rem;
+    position: relative;
+    animation: messageSlideIn 0.3s ease-out;
+}
+
+.chat-message-right .message-bubble {
+    border-top-right-radius: 0.25rem;
+}
+
+.chat-message-left .message-bubble {
+    border-top-left-radius: 0.25rem;
+}
+
+.message-bubble::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+
+.chat-message-right .message-bubble::before {
+    right: -8px;
+    border-width: 0 0 12px 12px;
+    border-color: transparent transparent transparent var(--bs-primary);
+}
+
+.chat-message-left .message-bubble::before {
+    left: -8px;
+    border-width: 0 12px 12px 0;
+    border-color: transparent var(--bs-white) transparent transparent;
+}
+
+.message-text {
+    word-wrap: break-word;
+    line-height: 1.6;
+}
+
+.message-actions {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.chat-message:hover .message-actions {
+    opacity: 1;
+}
+
+/* Smooth Scroll */
+#chat-messages-container {
+    scroll-behavior: smooth;
+}
+
+    #chat-messages-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #chat-messages-container::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,.2);
+        border-radius: 4px;
+    }
+
+/* Animation */
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Auto-resize textarea */
+#chat-message-input {
+    transition: height 0.2s;
+}
+
+/* Border utilities */
+.border-white-25 {
+    border-color: rgba(255,255,255,0.25) !important;
+}
+
+.text-white-75 {
+    color: rgba(255,255,255,0.75) !important;
+}
+/* File Attachment Styles */
+.message-attachments .btn {
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+    .message-attachments .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .message-attachments .btn .fa-download {
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .message-attachments .btn:hover .fa-download {
+        opacity: 1;
+    }
+
+/* File Icons */
+.fa-file-image {
+    color: #28a745;
+}
+
+.fa-file-pdf {
+    color: #dc3545;
+}
+
+.fa-file-word {
+    color: #2b579a;
+}
+
+.fa-file-excel {
+    color: #217346;
+}
+
+.fa-file-powerpoint {
+    color: #d24726;
+}
+
+.fa-file-alt {
+    color: #17a2b8;
+}
+
+.fa-file-archive {
+    color: #6c757d;
+}
+
+</style >
+
+<style >
+/* ⭐⭐⭐ Sticky Tabs */
+.sticky-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* ⭐⭐⭐ استایل‌های پایه تب‌ها */
+.nav-tabs .nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+    min-height: 70px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: none;
+    background: transparent;
+}
+
+    .nav-tabs .nav-link i {
+        font-size: 1.3rem;
+        margin: 0;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-tabs .nav-link .tab-title {
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-top: 0.25rem;
+        white-space: nowrap;
+    }
+
+    .nav-tabs .nav-link .badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    /* ⭐ تب فعال */
+    .nav-tabs .nav-link.active {
+        background: linear-gradient(135deg, var(--bs-primary), var(--bs-primary-dark));
+        color: #626262 !important;
+        border-radius: 0.5rem 0.5rem 0 0;
+        transform: translateY(-2px);
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+    }
+
+        .nav-tabs .nav-link.active i {
+            color: #7e7e7e !important;
+            transform: scale(1.1);
+        }
+
+        .nav-tabs .nav-link.active .tab-title {
+            color: black !important;
+            font-weight: 600;
+        }
+
+    /* ⭐ Hover Effect */
+    .nav-tabs .nav-link:not(.active):hover {
+        background: rgba(0,0,0,0.03);
+        transform: translateY(-1px);
+    }
+
+        .nav-tabs .nav-link:not(.active):hover i {
+            transform: scale(1.05);
+        }
+
+/* تبلت و بزرگتر */
+@media (min-width: 768px) {
+    .nav-tabs .nav-link {
+        min-height: 80px;
+        padding: 1rem 0.75rem;
+    }
+
+        .nav-tabs .nav-link i {
+            font-size: 1.5rem;
+        }
+
+        .nav-tabs .nav-link .tab-title {
+            font-size: 0.9rem;
+        }
+}
+
+/* موبایل: دو ردیفه */
+@media (max-width: 767px) {
+    .sticky-tabs {
+        top: 56px; /* ارتفاع header */
+    }
+
+    .nav-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+        padding: 0;
+    }
+
+        .nav-tabs .nav-item {
+            width: 100%;
+        }
+
+        .nav-tabs .nav-link {
+            min-height: 65px;
+            padding: 0.5rem 0.25rem;
+            position: relative;
+            border-radius: 0;
+        }
+
+            .nav-tabs .nav-link i {
+                font-size: 1.1rem;
+            }
+
+            .nav-tabs .nav-link .tab-title {
+                font-size: 0.7rem;
+                line-height: 1.2;
+            }
+
+            .nav-tabs .nav-link.active {
+                border-radius: 0.375rem;
+                margin: 2px;
+            }
+
+            .nav-tabs .nav-link .badge {
+                top: 4px;
+                right: 4px;
+                font-size: 0.6rem;
+                padding: 0.15rem 0.3rem;
+            }
+}
+
+/* موبایل خیلی کوچک */
+@media (max-width: 375px) {
+    .nav-tabs .nav-link {
+        min-height: 60px;
+        padding: 0.4rem 0.2rem;
+    }
+
+        .nav-tabs .nav-link i {
+            font-size: 1rem;
+        }
+
+        .nav-tabs .nav-link .tab-title {
+            font-size: 0.65rem;
+        }
+
+        .nav-tabs .nav-link .badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.25rem;
+        }
+}
+
+/* ⭐ انیمیشن برای تغییر تب */
+.tab-content > .tab-pane {
+    animation: tabFadeIn 0.3s ease-in;
+}
+
+@keyframes tabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -53,7 +53,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// 1 - تکراری با فاصله زمانی مشخص (روزانه، هفتگی و...)
         /// 2 - قبل از پایان مهلت (X روز قبل از deadline)
         /// 3 - در روز شروع تسک
-        /// 4 - در روز پایان مهلت
+        /// 4 - ماهانه با انتخاب چند روز (مثلاً 10، 20، 25) 🆕
         /// </summary>
         [Required(ErrorMessage = "نوع یادآوری الزامی است")]
         [Display(Name = "نوع یادآوری")]
@@ -71,6 +71,14 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// </summary>
         [Display(Name = "چند روز قبل از مهلت")]
         public int? DaysBeforeDeadline { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ روزهای ماه (برای ReminderType = 4) 🆕
+        /// فرمت: "10,20,25" (روزهای 10، 20، 25 هر ماه)
+        /// </summary>
+        [MaxLength(100)]
+        [Display(Name = "روزهای ماه")]
+        public string? ScheduledDaysOfMonth { get; set; }
 
         /// <summary>
         /// ⭐⭐⭐ حداکثر تعداد ارسال (null = نامحدود)
@@ -148,7 +156,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
             1 => IntervalDays.HasValue ? $"هر {IntervalDays} روز" : "تکراری",
             2 => DaysBeforeDeadline.HasValue ? $"{DaysBeforeDeadline} روز قبل از پایان مهلت" : "قبل از مهلت",
             3 => "در روز شروع تسک",
-            4 => "در روز پایان مهلت",
+            4 => !string.IsNullOrEmpty(ScheduledDaysOfMonth) ? $"ماهانه - روزهای {ScheduledDaysOfMonth}" : "ماهانه", // 🆕
             _ => "نامشخص"
         };
     }

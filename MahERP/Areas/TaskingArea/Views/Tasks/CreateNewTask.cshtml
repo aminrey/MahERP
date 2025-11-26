@@ -1259,19 +1259,7 @@
                 }
             });
 
-            // راه‌اندازی تقویم شمسی
-            $('.js-flatpickr').each(function() {
-                try {
-                    new mds.MdsPersianDateTimePicker(this, {
-                        targetTextSelector: this,
-                        enableTimePicker: true,
-                        textFormat: 'yyyy/MM/dd HH:mm',
-                        targetDateFormat: 'yyyy-MM-dd HH:mm:ss'
-                    });
-                } catch (e) {
-                    console.warn('خطا در راه‌اندازی تقویم:', e);
-                }
-            });
+            
 
             $('#createTaskForm').attr('novalidate', 'novalidate');
             console.log('راه‌اندازی فرم کامل شد');

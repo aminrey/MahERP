@@ -33,6 +33,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public DateTime PlannedDate { get; set; }
 
         /// <summary>
+        /// ⭐⭐⭐ NEW - عنوان گروه برای دسته‌بندی تسک‌ها
+        /// مثال: "کارهای فوری"، "پروژه X"، "تماس‌های امروز"
+        /// </summary>
+        [MaxLength(200)]
+        public string? GroupTitle { get; set; }
+
+        /// <summary>
         /// یادداشت برنامه‌ریزی (اختیاری)
         /// مثال: "شروع از ساعت 10 صبح"
         /// </summary>

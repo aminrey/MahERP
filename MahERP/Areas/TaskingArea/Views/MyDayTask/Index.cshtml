@@ -158,221 +158,252 @@
         </div>
     </div>
 
-@foreach (var dateGroup in Model.TasksByDate.OrderByDescending(x => x.Key))
-{
-    <div class="block block-rounded mb-4">
-        <div class="block-header block-header-default bg-primary text-white">
-            <h3 class="block-title text-white">
-                <i class="fa fa-calendar-day me-2"></i>@dateGroup.Key
-                <span class="badge bg-white text-primary ms-2">@dateGroup.Value.Count تسک</span>
-            </h3>
-        </div>
-        <div class="block-content">
-            @if (dateGroup.Value.Any())
-            {
-                <div class="row">
-                    @foreach (var task in dateGroup.Value)
-                    {
-                        // ⭐ تعیین کلاس بر اساس وضعیت
-                        var cardClass = task.IsCompleted ? "border-success" : 
-                                       task.IsFocused ? "border-warning" : 
-                                       task.IsOverdue ? "border-danger" : "";
+    @* ⭐⭐⭐ گروه‌بندی دوبعدی: GroupTitle → Date → Tasks *@
+    @foreach (var groupItem in Model.TasksByGroupAndDate.OrderBy(x => x.Key == "بدون گروه" ? "zzz" : x.Key))
+    {
+        <div class="block block-rounded mb-4">
+            <!-- ⭐ هدر گروه -->
+            <div class="block-header bg-gradient-info text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h2 class="block-title text-white mb-0">
+                    <i class="fa fa-folder-open me-2"></i>
+                    @groupItem.Key
+                    <span class="badge bg-white text-primary ms-2">
+                        @groupItem.Value.Sum(x => x.Value.Count) تسک
+                    </span>
+                </h2>
+            </div>
 
-                        <div class="col-lg-6 mb-3">
-                            <div class="task-card block block-rounded @cardClass">
-                                <div class="block-content p-3">
-                                    <!-- Task Header -->
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div class="flex-grow-1">
-                                            <h5 class="mb-1">
-                                                @if (task.IsCompleted)
-                                                {
-                                                    <span class="badge bg-success me-1">
-                                                        <i class="fa fa-check-circle"></i> تکمیل شده
-                                                    </span>
-                                                }
-                                                else if (task.IsFocused)
-                                                {
-                                                    <span class="badge bg-warning badge-focused me-1">
-                                                        <i class="fa fa-bullseye"></i> متمرکز
-                                                    </span>
-                                                }
-                                                <a asp-area="TaskingArea" 
-                                                   asp-controller="Tasks" 
-                                                   asp-action="Details" 
-                                                   asp-route-id="@task.TaskId"
-                                                   class="text-decoration-none">
-                                                    @task.TaskTitle
-                                                </a>
-                                            </h5>
-                                            <small class="text-muted">
-                                                <i class="fa fa-hashtag"></i> @task.TaskCode
-                                                @if (!string.IsNullOrEmpty(task.CategoryTitle))
-                                                {
-                                                    <span class="badge bg-info ms-2">@task.CategoryTitle</span>
-                                                }
-                                            </small>
-                                        </div>
-                                        <div class="flex-shrink-0">
-                                            @if (task.TaskPriority == 2)
-                                            {
-                                                <span class="badge bg-danger">فوری</span>
-                                            }
-                                            else if (task.IsImportant)
-                                            {
-                                                <span class="badge bg-warning">مهم</span>
-                                            }
-                                        </div>
-                                    </div>
+            <div class="block-content p-0">
+                @foreach (var dateGroup in groupItem.Value.OrderByDescending(x => x.Key))
+                {
+                    <div class="p-3 border-bottom">
+                        <!-- ⭐ هدر تاریخ -->
+                        <h4 class="mb-3 text-primary">
+                            <i class="fa fa-calendar-day me-2"></i>@dateGroup.Key
+                            <span class="badge bg-primary-light text-primary ms-2">@dateGroup.Value.Count تسک</span>
+                        </h4>
 
-                                    <!-- Task Description -->
-                                    @if (!string.IsNullOrEmpty(task.TaskDescription))
-                                    {
-                                        <p class="text-muted fs-sm mb-2">
-                                            @(task.TaskDescription.Length > 100 
-                                                ? task.TaskDescription.Substring(0, 100) + "..." 
-                                                : task.TaskDescription)
-                                        </p>
-                                    }
+                        @if (dateGroup.Value.Any())
+                        {
+                            <div class="row">
+                                @foreach (var task in dateGroup.Value)
+                                {
+                                    // ⭐ تعیین کلاس بر اساس وضعیت
+                                    var cardClass = task.IsCompleted ? "border-success" : 
+                                                   task.IsFocused ? "border-warning" : 
+                                                   task.IsOverdue ? "border-danger" : "";
 
-                                    <!-- ⭐⭐⭐ Progress Bar -->
-                                    <div class="mb-2">
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <small>پیشرفت</small>
-                                            <small class="fw-bold">@task.ProgressPercentage%</small>
-                                        </div>
-                                        <div class="progress" style="height: 8px;">
-                                            <div class="progress-bar @(task.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
-                                                 style="width: @task.ProgressPercentage%"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Plan/Work Note -->
-                                    @if (!string.IsNullOrEmpty(task.PlanNote))
-                                    {
-                                        <div class="alert alert-info py-2 mb-2">
-                                            <i class="fa fa-sticky-note me-1"></i>
-                                            <small>@task.PlanNote</small>
-                                        </div>
-                                    }
-
-                                    @if (!string.IsNullOrEmpty(task.WorkNote))
-                                    {
-                                        <div class="alert alert-success py-2 mb-2">
-                                            <i class="fa fa-check-circle me-1"></i>
-                                            <small>@task.WorkNote</small>
-                                            @if (task.WorkDurationMinutes.HasValue)
-                                            {
-                                                <span class="badge bg-success ms-1">
-                                                    @task.WorkDurationMinutes دقیقه
-                                                </span>
-                                            }
-                                        </div>
-                                    }
-
-                                    <!-- Contact/Organization Info -->
-                                    @if (!string.IsNullOrEmpty(task.ContactFullName) || !string.IsNullOrEmpty(task.OrganizationName))
-                                    {
-                                        <div class="alert alert-info py-2 mb-2">
-                                            @if (!string.IsNullOrEmpty(task.ContactFullName))
-                                            {
-                                                <div>
-                                                    <i class="fa fa-user me-1"></i>
-                                                    <small><strong>فرد:</strong> @task.ContactFullName</small>
+                                    <div class="col-lg-6 mb-3">
+                                        <div class="task-card block block-rounded @cardClass">
+                                            <div class="block-content p-3">
+                                                <!-- Task Header -->
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div class="flex-grow-1">
+                                                        <h5 class="mb-1">
+                                                            @if (task.IsCompleted)
+                                                            {
+                                                                <span class="badge bg-success me-1">
+                                                                    <i class="fa fa-check-circle"></i> تکمیل شده
+                                                                </span>
+                                                            }
+                                                            else if (task.IsFocused)
+                                                            {
+                                                                <span class="badge bg-warning badge-focused me-1">
+                                                                    <i class="fa fa-bullseye"></i> متمرکز
+                                                                </span>
+                                                            }
+                                                            <a asp-area="TaskingArea" 
+                                                               asp-controller="Tasks" 
+                                                               asp-action="Details" 
+                                                               asp-route-id="@task.TaskId"
+                                                               class="text-decoration-none">
+                                                                @task.TaskTitle
+                                                            </a>
+                                                        </h5>
+                                                        <small class="text-muted">
+                                                            <i class="fa fa-hashtag"></i> @task.TaskCode
+                                                            @if (!string.IsNullOrEmpty(task.CategoryTitle))
+                                                            {
+                                                                <span class="badge bg-info ms-2">@task.CategoryTitle</span>
+                                                            }
+                                                        </small>
+                                                    </div>
+                                                    <div class="flex-shrink-0">
+                                                        @if (task.TaskPriority == 2)
+                                                        {
+                                                            <span class="badge bg-danger">فوری</span>
+                                                        }
+                                                        else if (task.IsImportant)
+                                                        {
+                                                            <span class="badge bg-warning">مهم</span>
+                                                        }
+                                                    </div>
                                                 </div>
-                                            }
-                                            @if (!string.IsNullOrEmpty(task.OrganizationName))
-                                            {
-                                                <div>
-                                                    <i class="fa fa-building me-1"></i>
-                                                    <small><strong>سازمان:</strong> @task.OrganizationName</small>
+
+                                                <!-- Task Description -->
+                                                @if (!string.IsNullOrEmpty(task.TaskDescription))
+                                                {
+                                                    <p class="text-muted fs-sm mb-2">
+                                                        @(task.TaskDescription.Length > 100 
+                                                            ? task.TaskDescription.Substring(0, 100) + "..." 
+                                                            : task.TaskDescription)
+                                                    </p>
+                                                }
+
+                                                <!-- ⭐⭐⭐ Progress Bar -->
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <small>پیشرفت</small>
+                                                        <small class="fw-bold">@task.ProgressPercentage%</small>
+                                                    </div>
+                                                    <div class="progress" style="height: 8px;">
+                                                        <div class="progress-bar @(task.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                                                             style="width: @task.ProgressPercentage%"></div>
+                                                    </div>
                                                 </div>
-                                            }
-                                        </div>
-                                    }
+
+                                                <!-- Plan/Work Note -->
+                                                @if (!string.IsNullOrEmpty(task.PlanNote))
+                                                {
+                                                    <div class="alert alert-info py-2 mb-2">
+                                                        <i class="fa fa-sticky-note me-1"></i>
+                                                        <small>@task.PlanNote</small>
+                                                    </div>
+                                                }
+
+                                                @if (!string.IsNullOrEmpty(task.WorkNote))
+                                                {
+                                                    <div class="alert alert-success py-2 mb-2">
+                                                        <i class="fa fa-check-circle me-1"></i>
+                                                        <small>@task.WorkNote</small>
+                                                        @if (task.WorkDurationMinutes.HasValue)
+                                                        {
+                                                            <span class="badge bg-success ms-1">
+                                                                @task.WorkDurationMinutes دقیقه
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                }
+
+                                                <!-- Contact/Organization Info -->
+                                                @if (!string.IsNullOrEmpty(task.ContactFullName) || !string.IsNullOrEmpty(task.OrganizationName))
+                                                {
+                                                    <div class="alert alert-info py-2 mb-2">
+                                                        @if (!string.IsNullOrEmpty(task.ContactFullName))
+                                                        {
+                                                            <div>
+                                                                <i class="fa fa-user me-1"></i>
+                                                                <small><strong>فرد:</strong> @task.ContactFullName</small>
+                                                            </div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(task.OrganizationName))
+                                                        {
+                                                            <div>
+                                                                <i class="fa fa-building me-1"></i>
+                                                                <small><strong>سازمان:</strong> @task.OrganizationName</small>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
                       
-                                    <!-- ⭐⭐⭐ Actions (با قفل برای تسک‌های تکمیل شده) -->
-                                    <div class="btn-group w-100" role="group">
-                                        @if (task.IsCompleted)
-                                        {
-                                            <!-- ⭐ تسک تکمیل شده: فقط دکمه حذف و مشاهده لاگ‌ها -->
-                                            <a href="@Url.Action("ViewWorkLogsModal", "MyDayTask", new { taskId = task.TaskId })"
-                                               data-toggle="modal-ajax"
-                                               class="btn btn-sm btn-info"
-                                               title="مشاهده گزارش کارها">
-                                                <i class="fa fa-list me-1"></i>ثبت کار انجام شده
-                                            </a>
+                                                <!-- ⭐⭐⭐ Actions (با قفل برای تسک‌های تکمیل شده) -->
+                                                <div class="btn-group w-100" role="group">
+                                                    @if (task.IsCompleted)
+                                                    {
+                                                        <!-- ⭐ تسک تکمیل شده: فقط دکمه حذف و مشاهده لاگ‌ها -->
+                                                        <a href="@Url.Action("ViewWorkLogsModal", "MyDayTask", new { taskId = task.TaskId })"
+                                                           data-toggle="modal-ajax"
+                                                           class="btn btn-sm btn-info"
+                                                           title="مشاهده گزارش کارها">
+                                                            <i class="fa fa-list me-1"></i>ثبت کار انجام شده
+                                                        </a>
 
-                                            <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
-                                               data-toggle="modal-ajax"
-                                               class="btn btn-sm btn-danger"
-                                               title="حذف از روز من">
-                                                <i class="fa fa-times me-1"></i>حذف
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <!-- ⭐ تسک در حال انجام: همه دکمه‌ها فعال -->
-                                            <a href="@Url.Action("SubmitWorkNote", "MyDayTask", new { myDayId = task.MyDayId })"
-                                               data-toggle="modal-ajax"
-                                               class="btn btn-sm btn-success"
-                                               title="ثبت کار">
-                                                <i class="fa fa-clock me-1"></i>ثبت یادداشت
-                                            </a>
+                                                        <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
+                                                           data-toggle="modal-ajax"
+                                                           class="btn btn-sm btn-danger"
+                                                           title="حذف از روز من">
+                                                            <i class="fa fa-times me-1"></i>حذف
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <!-- ⭐ تسک در حال انجام: همه دکمه‌ها فعال -->
+                                                        <a href="@Url.Action("SubmitWorkNote", "MyDayTask", new { myDayId = task.MyDayId })"
+                                                           data-toggle="modal-ajax"
+                                                           class="btn btn-sm btn-success"
+                                                           title="ثبت کار">
+                                                            <i class="fa fa-clock me-1"></i>ثبت یادداشت
+                                                        </a>
 
-                                            @if (task.IsFocused)
-                                            {
-                                                <button type="button"
-                                                        class="btn btn-sm btn-warning"
-                                                        onclick="removeFocus(@task.MyDayId)"
-                                                        title="حذف تمرکز">
-                                                    <i class="fa fa-star me-1"></i>حذف تمرکز
-                                                </button>
-                                            }
-                                            else
-                                            {
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-warning"
-                                                        onclick="setFocus(@task.MyDayId)"
-                                                        title="تنظیم به عنوان تمرکز">
-                                                    <i class="fa fa-bullseye me-1"></i>متمرکز
-                                                </button>
-                                            }
+                                                        @if (task.IsFocused)
+                                                        {
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-warning"
+                                                                    onclick="removeFocus(@task.MyDayId)"
+                                                                    title="حذف تمرکز">
+                                                                <i class="fa fa-star me-1"></i>حذف تمرکز
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-warning"
+                                                                    onclick="setFocus(@task.MyDayId)"
+                                                                    title="تنظیم به عنوان تمرکز">
+                                                                <i class="fa fa-bullseye me-1"></i>متمرکز
+                                                            </button>
+                                                        }
 
-                                            <a href="@Url.Action("SubmitAndShowTaskWorkLogs", "MyDayTask", new { taskId = task.TaskId })"
-                                               data-toggle="modal-ajax"
-                                               class="btn btn-sm btn-info"
-                                               title="مشاهده گزارش کارها">
-                                                <i class="fa fa-list me-1"></i>کارهای انجام شده
-                                            </a>
+                                                        <a href="@Url.Action("SubmitAndShowTaskWorkLogs", "MyDayTask", new { taskId = task.TaskId })"
+                                                           data-toggle="modal-ajax"
+                                                           class="btn btn-sm btn-info"
+                                                           title="مشاهده گزارش کارها">
+                                                            <i class="fa fa-list me-1"></i>کارهای انجام شده
+                                                        </a>
 
-                                            <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
-                                               data-toggle="modal-ajax"
-                                               class="btn btn-sm btn-danger"
-                                               title="حذف از روز من">
-                                                <i class="fa fa-times"></i>
-                                            </a>
-                                        }
+                                                        <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
+                                                           data-toggle="modal-ajax"
+                                                           class="btn btn-sm btn-danger"
+                                                           title="حذف از روز من">
+                                                            <i class="fa fa-times"></i>
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                }
                             </div>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="text-center py-5 text-muted">
-                    <i class="fa fa-inbox fa-3x mb-3"></i>
-                    <p>تسکی برای این روز برنامه‌ریزی نشده است</p>
-                </div>
-            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-3 text-muted">
+                                <i class="fa fa-inbox fa-2x mb-2"></i>
+                                <p>تسکی برای این روز برنامه‌ریزی نشده است</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         </div>
-    </div>
-}
+    }
 
-
+    @* ⭐ نمایش پیام اگر هیچ تسکی نیست *@
+    @if (!Model.TasksByGroupAndDate.Any())
+    {
+        <div class="block block-rounded">
+            <div class="block-content text-center py-5">
+                <i class="fa fa-calendar-times fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">هیچ تسکی برنامه‌ریزی نشده است</h4>
+                <p class="text-muted">برای افزودن تسک به "روز من"، به صفحه تسک‌ها مراجعه کنید</p>
+                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" class="btn btn-primary mt-3">
+                    <i class="fa fa-plus me-1"></i>مشاهده تسک‌ها
+                </a>
+            </div>
+        </div>
+    }
 </div>
+
 @section Scripts {
     <script src="~/assets/js/Methods.js"></script>
     

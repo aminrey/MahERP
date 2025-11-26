@@ -35,7 +35,7 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                         .ThenInclude(t => t.TaskCategory)
                 .Include(tmd => tmd.TaskAssignment.Task.Contact)
                 .Include(tmd => tmd.TaskAssignment.Task.Organization)
-                .Include(tmd => tmd.TaskAssignment.Task.TaskOperations.Where(o => !o.IsDeleted)) // ⭐ اضافه شده
+                .Include(tmd => tmd.TaskAssignment.Task.TaskOperations.Where(o => !o.IsDeleted))
                 .Where(tmd =>
                     tmd.TaskAssignment.AssignedUserId == userId &&
                     !tmd.IsRemoved &&
@@ -44,6 +44,7 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 .OrderByDescending(tmd => tmd.PlannedDate)
                 .ToListAsync();
 
+            // ⭐⭐⭐ گروه‌بندی قدیمی (برای backward compatibility)
             var grouped = myDayTasks
                 .GroupBy(tmd => tmd.PlannedDate.Date)
                 .ToDictionary(
@@ -51,11 +52,25 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                     g => g.Select(MapToMyDayTaskItem).ToList()
                 );
 
+            // ⭐⭐⭐ NEW - گروه‌بندی دوبعدی: GroupTitle → Date → Tasks
+            var groupedByTitleAndDate = myDayTasks
+                .Select(MapToMyDayTaskItem)
+                .GroupBy(t => string.IsNullOrWhiteSpace(t.GroupTitle) ? "بدون گروه" : t.GroupTitle)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.GroupBy(t => t.PlannedDatePersian)
+                          .ToDictionary(
+                              dateGroup => dateGroup.Key,
+                              dateGroup => dateGroup.ToList()
+                          )
+                );
+
             var stats = CalculateStats(myDayTasks);
 
             return new MyDayTasksViewModel
             {
-                TasksByDate = grouped,
+                TasksByDate = grouped, // قدیمی - برای سازگاری
+                TasksByGroupAndDate = groupedByTitleAndDate, // ⭐ جدید
                 Stats = stats,
                 SelectedDate = DateTime.Now.Date,
                 SelectedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now, "yyyy/MM/dd")
@@ -85,7 +100,8 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
             int taskAssignmentId,
             string userId,
             DateTime plannedDate,
-            string? planNote = null)
+            string? planNote = null,
+            string? groupTitle = null)
         {
             // بررسی وجود TaskAssignment
             var assignment = await _context.TaskAssignment_Tbl
@@ -110,6 +126,7 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 TaskAssignmentId = taskAssignmentId,
                 PlannedDate = plannedDate.Date,
                 PlanNote = planNote,
+                GroupTitle = groupTitle, // ⭐⭐⭐ اضافه شد
                 CreatedDate = DateTime.Now
             };
 
@@ -366,6 +383,7 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 TaskTitle = task.Title,
                 TaskDescription = task.Description,
                 CategoryTitle = task.TaskCategory?.Title,
+                GroupTitle = myDayTask.GroupTitle, // ⭐⭐⭐ اضافه شد
                 StakeholderName = task.Organization != null
     ? task.Organization.DisplayName
     : (task.Contact != null
@@ -381,7 +399,7 @@ namespace MahERP.DataModelLayer.Repository.MyDayTaskRepository
                 WorkStartDate = myDayTask.WorkStartDate,
                 CreatedDate = task.CreateDate,
                 TaskStatus = assignment.Status,
-                ProgressPercentage = progressPercentage, // ⭐ اضافه شده
+                ProgressPercentage = progressPercentage,
                
                 PlannedDate = myDayTask.PlannedDate,
                 PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(myDayTask.PlannedDate, "yyyy/MM/dd")

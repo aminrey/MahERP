@@ -229,8 +229,8 @@
                         </label>
                         @* ⭐⭐⭐ FIX: استفاده از initialValueType به جای hidden field *@
                         <input asp-for="StartDatePersian"
-                               class="form-control persian-datepicker"
-                               data-initial-value-type="persian"
+                               class="form-control js-flatpickr"
+                               
                                placeholder="انتخاب تاریخ..."
                                readonly />
                         <span asp-validation-for="StartDatePersian" class="text-danger"></span>
@@ -242,8 +242,8 @@
                         </label>
                         @* ⭐⭐⭐ FIX: استفاده از initialValueType به جای hidden field *@
                         <input asp-for="EndDatePersian"
-                               class="form-control persian-datepicker"
-                               data-initial-value-type="persian"
+                               class="form-control js-flatpickr"
+                             
                                placeholder="انتخاب تاریخ..."
                                readonly />
                         <span asp-validation-for="EndDatePersian" class="text-danger"></span>
@@ -270,7 +270,9 @@
         </form>
     </div>
 </div>
-
+<script>
+    Dashmix.helpersOnLoad(['js-flatpickr']);
+</script>
 <script>
     (function() {
         let startDatePicker = null;
@@ -452,12 +454,12 @@
     }
 
     /* ✅ استایل بهتر برای تقویم شمسی در مودال */
-    .persian-datepicker {
+    .js-flatpickr {
         cursor: pointer;
         background-color: white;
     }
 
-        .persian-datepicker:focus {
+        .js-flatpickr:focus {
             border-color: #007bff;
             box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
         }
