@@ -55,8 +55,9 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 var reminders = await _context.TaskReminderSchedule_Tbl
                     .Include(r => r.Creator)
-                    .Where(r => r.TaskId == taskId && r.IsActive)
-                    .OrderByDescending(r => r.CreatedDate)
+                    .Where(r => r.TaskId == taskId && r.IsActive) // ⭐⭐⭐ نمایش همه (حتی منقضی‌ها)
+                    .OrderByDescending(r => r.IsExpired) // ⭐ منقضی‌ها در انتها
+                    .ThenByDescending(r => r.CreatedDate)
                     .Select(r => new TaskReminderViewModel
                     {
                         Id = r.Id,
@@ -66,7 +67,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         ReminderType = r.ReminderType,
                         IntervalDays = r.IntervalDays,
                         DaysBeforeDeadline = r.DaysBeforeDeadline,
-                        ScheduledDaysOfMonth = r.ScheduledDaysOfMonth, // ⭐⭐⭐ NEW 🆕
+                        ScheduledDaysOfMonth = r.ScheduledDaysOfMonth,
                         StartDatePersian = r.StartDate.HasValue
                             ? ConvertDateTime.ConvertMiladiToShamsi(r.StartDate.Value, "yyyy/MM/dd")
                             : null,
@@ -76,6 +77,12 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         NotificationTime = r.NotificationTime,
                         IsSystemDefault = r.IsSystemDefault,
                         IsActive = r.IsActive,
+                        // ⭐⭐⭐ فیلدهای منقضی
+                        IsExpired = r.IsExpired,
+                        ExpiredReason = r.ExpiredReason,
+                        ExpiredDatePersian = r.ExpiredDate.HasValue
+                            ? ConvertDateTime.ConvertMiladiToShamsi(r.ExpiredDate.Value, "yyyy/MM/dd HH:mm")
+                            : null,
                         CreatedDate = r.CreatedDate,
                         CreatedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(r.CreatedDate, "yyyy/MM/dd HH:mm"),
                         CreatorName = r.Creator != null ? $"{r.Creator.FirstName} {r.Creator.LastName}" : "سیستم"
@@ -194,7 +201,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             try
             {
                 var activeReminders = await _context.TaskReminderSchedule_Tbl
-                    .Where(r => r.TaskId == taskId && r.IsActive)
+                    .Where(r => r.TaskId == taskId && r.IsActive && !r.IsExpired) // ⭐⭐⭐ فقط یادآورهای غیر منقضی
                     .ToListAsync();
 
                 if (!activeReminders.Any())
@@ -203,19 +210,22 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     return;
                 }
 
+                // ⭐⭐⭐ منقضی کردن به جای غیرفعال کردن
                 foreach (var reminder in activeReminders)
                 {
-                    reminder.IsActive = false;
+                    reminder.IsExpired = true;
+                    reminder.ExpiredReason = "تسک تکمیل شده";
+                    reminder.ExpiredDate = DateTime.Now;
                     _context.TaskReminderSchedule_Tbl.Update(reminder);
                 }
 
                 await _context.SaveChangesAsync();
 
-                Console.WriteLine($"✅ Deactivated {activeReminders.Count} reminders for task {taskId}");
+                Console.WriteLine($"✅ Expired {activeReminders.Count} reminders for task {taskId}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error deactivating reminders for task {taskId}: {ex.Message}");
+                Console.WriteLine($"❌ Error expiring reminders for task {taskId}: {ex.Message}");
             }
         }
 

@@ -38,19 +38,23 @@ else
         {
             var cardBorderClass = isTaskCompleted 
                 ? "border-secondary" 
-                : (reminder.IsSystemDefault ? "border-success" : "border-warning");
+                : reminder.IsExpired
+                    ? "border-danger"
+                    : (reminder.IsSystemDefault ? "border-success" : "border-warning");
             
             var cardHeaderClass = isTaskCompleted 
                 ? "bg-light" 
-                : (reminder.IsSystemDefault ? "bg-success-light" : "bg-warning-light");
+                : reminder.IsExpired
+                    ? "bg-danger-light"
+                    : (reminder.IsSystemDefault ? "bg-success-light" : "bg-warning-light");
 
             <div class="col-lg-6 col-md-12 mb-3">
-                <div class="card @cardBorderClass h-100 shadow-sm @(isTaskCompleted || !reminder.IsActive ? "opacity-75" : "")">
+                <div class="card @cardBorderClass h-100 shadow-sm @(isTaskCompleted || !reminder.IsActive || reminder.IsExpired ? "opacity-75" : "")">
                     <div class="card-header @cardHeaderClass">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="flex-grow-1">
                                 @* ⭐ آیکون تغییر می‌کند بر اساس وضعیت *@
-                                <i class="fa @(isTaskCompleted ? "fa-bell-slash" : reminder.IsSystemDefault ? "fa-shield-alt" : "fa-bell") me-2 @(isTaskCompleted ? "text-secondary" : "")"></i>
+                                <i class="fa @(isTaskCompleted ? "fa-bell-slash" : reminder.IsExpired ? "fa-times-circle" : reminder.IsSystemDefault ? "fa-shield-alt" : "fa-bell") me-2 @(isTaskCompleted || reminder.IsExpired ? "text-danger" : "")"></i>
                                 <strong>@reminder.Title</strong>
 
                                 @* ⭐ Badge وضعیت *@
@@ -58,6 +62,12 @@ else
                                 {
                                     <span class="badge bg-success ms-2">
                                         <i class="fa fa-check me-1"></i>تسک تکمیل شد
+                                    </span>
+                                }
+                                else if (reminder.IsExpired)
+                                {
+                                    <span class="badge bg-danger ms-2" title="@reminder.ExpiredReason">
+                                        <i class="fa fa-times-circle me-1"></i>منقضی شده
                                     </span>
                                 }
                                 else if (!reminder.IsActive)
@@ -74,8 +84,8 @@ else
                                 }
                             </div>
 
-                            @* ⭐ دکمه‌ها فقط اگر تسک تکمیل نشده باشد *@
-                            @if (!isTaskCompleted && !reminder.IsSystemDefault)
+                            @* ⭐ دکمه‌ها فقط اگر تسک تکمیل نشده باشد و یادآوری منقضی نشده *@
+                            @if (!isTaskCompleted && !reminder.IsSystemDefault && !reminder.IsExpired)
                             {
                                 <div class="btn-group btn-group-sm">
                                     <button type="button"
@@ -93,7 +103,7 @@ else
                                     </button>
                                 </div>
                             }
-                            @if (isTaskCompleted)
+                            @if (isTaskCompleted || reminder.IsExpired)
                             {
                                 <div class="text-muted">
                                     <i class="fa fa-lock" title="قفل شده"></i>
@@ -153,10 +163,34 @@ else
                                     <span class="text-muted small">
                                         <i class="fa fa-info-circle me-1"></i>وضعیت:
                                     </span>
-                                    <span class="badge @(reminder.IsActive ? "bg-success" : "bg-secondary")">
-                                        @(reminder.IsActive ? "فعال" : "غیرفعال")
+                                    <span class="badge @(reminder.IsExpired ? "bg-danger" : reminder.IsActive ? "bg-success" : "bg-secondary")">
+                                        @(reminder.IsExpired ? "منقضی شده" : reminder.IsActive ? "فعال" : "غیرفعال")
                                     </span>
                                 </div>
+                                
+                                @* ⭐⭐⭐ نمایش دلیل انقضا *@
+                                @if (reminder.IsExpired && !string.IsNullOrEmpty(reminder.ExpiredReason))
+                                {
+                                    <div class="mt-2 d-flex align-items-start">
+                                        <span class="text-muted small me-2">
+                                            <i class="fa fa-exclamation-triangle me-1"></i>دلیل:
+                                        </span>
+                                        <span class="badge bg-danger-subtle text-danger small">
+                                            @reminder.ExpiredReason
+                                        </span>
+                                    </div>
+                                }
+                                
+                                @* ⭐⭐⭐ نمایش تاریخ انقضا *@
+                                @if (reminder.IsExpired && !string.IsNullOrEmpty(reminder.ExpiredDatePersian))
+                                {
+                                    <div class="mt-2 d-flex align-items-center">
+                                        <span class="text-muted small me-2">
+                                            <i class="fa fa-calendar-times me-1"></i>تاریخ انقضا:
+                                        </span>
+                                        <small class="text-muted">@reminder.ExpiredDatePersian</small>
+                                    </div>
+                                }
                             </div>
                         }
                     </div>
@@ -199,6 +233,10 @@ else
         background-color: rgba(255, 193, 7, 0.1) !important;
     }
 
+    .bg-danger-light {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+
     .card {
         transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
     }
@@ -209,7 +247,7 @@ else
         box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
     }
 
-    /* ⭐ کارت‌های غیرفعال */
+    /* ⭐ کارت‌های غیرفعال و منقضی */
     .card.opacity-75 {
         background: repeating-linear-gradient(
             45deg,
@@ -223,5 +261,10 @@ else
     /* ⭐ Border سمت چپ برای Alert */
     .alert.border-start {
         border-left-width: 4px !important;
+    }
+    
+    /* ⭐⭐⭐ استایل badge دلیل انقضا */
+    .bg-danger-subtle {
+        background-color: rgba(220, 53, 69, 0.1) !important;
     }
 </style>

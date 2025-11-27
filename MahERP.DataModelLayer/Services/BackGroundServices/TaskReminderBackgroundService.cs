@@ -76,6 +76,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 .Include(s => s.Task)
                 .Where(s => 
                     s.IsActive &&
+                    !s.IsExpired && // ⭐⭐⭐ اضافه شده: یادآورهای منقضی نادیده گرفته شوند
                     !s.Task.IsDeleted &&
                     s.Task.Status != 2) // ⭐ Status 2 = تکمیل شده
                 .AsNoTracking()
@@ -120,17 +121,19 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                     {
                         _logger.LogDebug($"⚠️ یادآوری #{schedule.Id} قبلاً {schedule.SentCount} بار ارسال شده (حداکثر: {schedule.MaxSendCount}). Skip.");
                         
-                        // غیرفعال کردن یادآوری اگر هنوز فعال است
-                        if (schedule.IsActive)
+                        // ⭐⭐⭐ منقضی کردن یادآوری به جای غیرفعال کردن
+                        if (!schedule.IsExpired)
                         {
-                            var scheduleToDeactivate = await context.TaskReminderSchedule_Tbl
+                            var scheduleToExpire = await context.TaskReminderSchedule_Tbl
                                 .FirstOrDefaultAsync(s => s.Id == schedule.Id, stoppingToken);
 
-                            if (scheduleToDeactivate != null && scheduleToDeactivate.IsActive)
+                            if (scheduleToExpire != null && !scheduleToExpire.IsExpired)
                             {
-                                scheduleToDeactivate.IsActive = false;
+                                scheduleToExpire.IsExpired = true;
+                                scheduleToExpire.ExpiredReason = $"رسیدن به حداکثر ارسال ({scheduleToExpire.MaxSendCount} بار)";
+                                scheduleToExpire.ExpiredDate = nowIran;
                                 await context.SaveChangesAsync(stoppingToken);
-                                _logger.LogInformation($"🔒 یادآوری #{schedule.Id} به دلیل رسیدن به حداکثر ارسال غیرفعال شد");
+                                _logger.LogInformation($"🔒 یادآوری #{schedule.Id} به دلیل رسیدن به حداکثر ارسال منقضی شد");
                             }
                         }
                         
@@ -165,20 +168,15 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                     _logger.LogInformation($"📤 ارسال یادآوری '{schedule.Title}' به {recipientUserIds.Count} کاربر: [{string.Join(", ", recipientUserIds)}]");
 
-                    // ⭐⭐⭐ FIX: استفاده از NotificationQueue به جای فراخوانی مستقیم
-                    // این باعث می‌شه که NotificationProcessingBackgroundService 
-                    // متغیرها رو از اطلاعات تسک جایگزین کنه
-                    foreach (var userId in recipientUserIds)
-                    {
-                        // ⭐ استفاده از TaskDeadlineReminder که در NotificationProcessingBackgroundService
-                        // برای همه اعضا (بدون فیلتر sender) ارسال می‌شه
-                        NotificationProcessingBackgroundService.EnqueueTaskNotification(
-                            schedule.TaskId,
-                            "SYSTEM", // سیستمی
-                            NotificationEventType.TaskDeadlineReminder,
-                            priority: 2 // یادآوری‌ها اولویت بالا دارند
-                        );
-                    }
+                    // ⭐⭐⭐ FIX: فقط یکبار EnqueueTaskNotification صدا بزن (نه برای هر کاربر!)
+                    // NotificationProcessingBackgroundService خودش برای همه کاربران مرتبط ارسال می‌کنه
+                    NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                        schedule.TaskId,
+                        "SYSTEM", // سیستمی
+                        NotificationEventType.CustomTaskReminder,
+                        priority: 2
+                    );
+
 
                     // ⭐⭐⭐ بروزرسانی LastExecuted و افزایش SentCount
                     var scheduleToUpdate = await context.TaskReminderSchedule_Tbl

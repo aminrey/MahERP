@@ -82,6 +82,24 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public bool IsActive { get; set; } = true;
 
         /// <summary>
+        /// ⭐⭐⭐ آیا این یادآوری منقضی شده است؟
+        /// (برای یادآوری‌هایی که دیگر قرار نیست ارسال شوند)
+        /// </summary>
+        public bool IsExpired { get; set; } = false;
+
+        /// <summary>
+        /// ⭐⭐⭐ دلیل انقضا (اختیاری)
+        /// مثال: "تسک تکمیل شده"، "حداکثر ارسال"، "تاریخ پایان"
+        /// </summary>
+        [MaxLength(200)]
+        public string? ExpiredReason { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ تاریخ انقضا
+        /// </summary>
+        public DateTime? ExpiredDate { get; set; }
+
+        /// <summary>
         /// آیا این یادآوری پیش‌فرض سیستم است؟
         /// </summary>
         public bool IsSystemDefault { get; set; }

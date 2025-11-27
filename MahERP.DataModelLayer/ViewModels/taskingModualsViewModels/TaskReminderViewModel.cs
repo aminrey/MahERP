@@ -131,6 +131,29 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         public bool IsActive { get; set; } = true;
 
         /// <summary>
+        /// ⭐⭐⭐ آیا این یادآوری منقضی شده است؟
+        /// </summary>
+        [Display(Name = "منقضی شده")]
+        public bool IsExpired { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ دلیل انقضا
+        /// </summary>
+        [Display(Name = "دلیل انقضا")]
+        public string? ExpiredReason { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ تاریخ انقضا (میلادی)
+        /// </summary>
+        public DateTime? ExpiredDate { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ تاریخ انقضا (شمسی)
+        /// </summary>
+        [Display(Name = "تاریخ انقضا")]
+        public string? ExpiredDatePersian { get; set; }
+
+        /// <summary>
         /// تاریخ ایجاد
         /// </summary>
         public DateTime CreatedDate { get; set; }

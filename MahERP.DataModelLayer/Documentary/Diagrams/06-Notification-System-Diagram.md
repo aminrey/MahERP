@@ -8,14 +8,16 @@
 
 ## 🎯 ویژگی‌های کلیدی
 
-- ✅ **3 کانال ارسال:** Email, SMS, Telegram
-- ✅ **قالب‌های پویا** با 20+ متغیر
+- ✅ **4 کانال ارسال:** In-App (SignalR), Email, SMS, Telegram
+- ✅ **قالب‌های پویا** با 25+ متغیر
 - ✅ **زمان‌بندی خودکار** (روزانه، هفتگی، ماهانه)
 - ✅ **SignalR** برای اعلان‌های Real-time
 - ✅ **صف ارسال** با Background Services
 - ✅ **لیست سیاه** (Blacklist)
 - ✅ **ترجیحات کاربر** (User Preferences)
 - ✅ **آمار و گزارش‌گیری**
+- ✅ **یادآورهای سفارشی** (Custom Reminders) با وضعیت منقضی
+- ✅ **جلوگیری از ارسال دوباره** (Anti-Duplicate)
 
 ---
 
@@ -27,39 +29,50 @@ graph TB
         Event[Event Trigger<br/>تسک اختصاص داده شد،<br/>کامنت جدید، ...]
         Manual[Manual Trigger<br/>ارسال دستی]
         Scheduled[Scheduled Trigger<br/>زمان‌بندی شده]
+        Reminder[Custom Reminder<br/>یادآوری سفارشی]
     end
     
-    Event --> NotifService[NotificationService]
-    Manual --> NotifService
-    Scheduled --> NotifService
+    Event --> NotifQueue[NotificationQueue<br/>صف اعلان‌ها]
+    Manual --> NotifQueue
+    Scheduled --> NotifQueue
+    Reminder --> ReminderBG[TaskReminderBackgroundService<br/>⏱️ هر 1 دقیقه]
     
-    NotifService --> CheckPreference{بررسی<br/>Preference}
+    ReminderBG -->|یادآوری منقضی نشده| NotifQueue
+    ReminderBG -->|منقضی شدن| UpdateExpired[بروزرسانی IsExpired]
+    
+    NotifQueue --> NotifProcessing[NotificationProcessingService<br/>⏱️ هر 10 ثانیه]
+    
+    NotifProcessing --> CheckPreference{بررسی<br/>Preference}
     
     CheckPreference -->|غیرفعال| Skip[Skip]
     CheckPreference -->|فعال| CheckBlacklist{لیست سیاه؟}
     
     CheckBlacklist -->|بله| Skip
-    CheckBlacklist -->|خیر| CreateNotif[ایجاد CoreNotification]
+    CheckBlacklist -->|خیر| LoadTemplate{قالب وجود دارد؟}
+    
+    LoadTemplate -->|بله| ReplaceVars[جایگزینی متغیرها<br/>25+ متغیر پویا]
+    LoadTemplate -->|خیر| DefaultMsg[پیام پیش‌فرض]
+    
+    ReplaceVars --> CreateNotif[ایجاد CoreNotification]
+    DefaultMsg --> CreateNotif
     
     CreateNotif --> Database[(Database<br/>CoreNotification_Tbl)]
     
     Database --> DeliveryCheck{کانال‌های ارسال؟}
     
+    DeliveryCheck -->|In-App| SignalR[SignalR Hub<br/>فوری]
     DeliveryCheck -->|Email| EmailQueue[(EmailQueue_Tbl)]
     DeliveryCheck -->|SMS| SmsQueue[(SmsQueue_Tbl)]
-    DeliveryCheck -->|Telegram| TelegramDirect[ارسال مستقیم]
-    DeliveryCheck -->|In-App| SignalR[SignalR Hub]
+    DeliveryCheck -->|Telegram| TelegramDirect[ارسال مستقیم Telegram]
     
     subgraph "Background Services"
         EmailBG[EmailBackgroundService<br/>⏱️ هر 30 ثانیه]
         SmsBG[SmsBackgroundService<br/>⏱️ هر 20 ثانیه]
-        NotifBG[NotificationProcessingService<br/>⏱️ هر 10 ثانیه]
         ScheduledBG[ScheduledNotificationService<br/>⏱️ هر 1 دقیقه]
     end
     
     EmailQueue --> EmailBG
     SmsQueue --> SmsBG
-    Database --> NotifBG
     
     EmailBG --> SMTP[📧 SMTP Server]
     SmsBG --> SmsProvider[📱 SMS Provider<br/>SunWay]
@@ -70,9 +83,11 @@ graph TB
     SmsProvider --> UpdateDelivery
     TelegramAPI --> UpdateDelivery
     
-    style NotifService fill:#FF9800,stroke:#333,stroke-width:3px,color:#fff
+    style NotifQueue fill:#9C27B0,stroke:#333,stroke-width:3px,color:#fff
+    style NotifProcessing fill:#FF9800,stroke:#333,stroke-width:3px,color:#fff
     style CreateNotif fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
     style Database fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
+    style ReminderBG fill:#E91E63,stroke:#333,stroke-width:2px,color:#fff
 ```
 
 ---
@@ -85,20 +100,22 @@ public class CoreNotification
     public int Id { get; set; }
     
     // ⭐ سیستم و نوع
-    public byte SystemId { get; set; }  // 1-7: مالی، منابع انسانی، CRM، ...
+    public byte SystemId { get; set; }  // 1-7: مالی، منابع انسانی، CRM، تسکینگ، ...
     public byte NotificationTypeGeneral { get; set; }  // 0-10: اطلاع‌رسانی، ایجاد، ...
     
     // ⭐ گیرنده و فرستنده
     public string RecipientUserId { get; set; }
-    public string SenderUserId { get; set; }
+    public string? SenderUserId { get; set; }
     
     // ⭐ محتوا
     public string Title { get; set; }
     public string Message { get; set; }
-    public string ActionUrl { get; set; }
+    public string? ActionUrl { get; set; }
     
     // ⭐ ارتباط با رکورد
-    public int? RelatedRecordId { get; set; }
+    public string? RelatedRecordId { get; set; }  // ⚠️ تغییر از int به string
+    public string? RelatedRecordType { get; set; }  // "Task", "TaskReminder"
+    public string? RelatedRecordTitle { get; set; }
     
     // ⭐ اولویت
     public byte Priority { get; set; }  // 0=عادی, 1=مهم, 2=فوری, 3=بحرانی
@@ -114,38 +131,9 @@ public class CoreNotification
     
     // Navigation
     public AppUsers Recipient { get; set; }
-    public AppUsers Sender { get; set; }
+    public AppUsers? Sender { get; set; }
     public ICollection<CoreNotificationDetail> Details { get; set; }
     public ICollection<CoreNotificationDelivery> Deliveries { get; set; }
-}
-```
-
----
-
-## 📊 Entity: CoreNotificationDelivery
-
-```csharp
-public class CoreNotificationDelivery
-{
-    public int Id { get; set; }
-    public int CoreNotificationId { get; set; }
-    
-    // ⭐ کانال ارسال
-    public byte DeliveryMethod { get; set; }  // 1=Email, 2=SMS, 3=Telegram
-    public string DeliveryAddress { get; set; }  // ایمیل، شماره، ChatId
-    
-    // ⭐ وضعیت
-    public byte DeliveryStatus { get; set; }  // 0=Pending, 1=Sent, 2=Delivered, 3=Failed
-    
-    // ⭐ تلاش‌ها
-    public int AttemptCount { get; set; }
-    public DateTime? DeliveryDate { get; set; }
-    public string ErrorMessage { get; set; }
-    
-    public DateTime CreateDate { get; set; }
-    
-    // Navigation
-    public CoreNotification CoreNotification { get; set; }
 }
 ```
 
@@ -160,53 +148,174 @@ public class NotificationTemplate
     
     // ⭐ اطلاعات پایه
     public string TemplateName { get; set; }
-    public int NotificationEventType { get; set; }  // TaskAssigned, TaskCompleted, ...
-    public byte Channel { get; set; }  // 1=Email, 2=SMS, 3=Telegram
+    public byte NotificationEventType { get; set; }  // ⚠️ تغییر از int به byte
+    // EventTypes: 1=TaskAssigned, 2=TaskCompleted, 3=TaskDeadlineReminder, 
+    //             4=TaskCommentAdded, 5=TaskUpdated, 6=TaskOperationCompleted,
+    //             13=DailyTaskDigest, 15=CustomTaskReminder
+    
+    public byte Channel { get; set; }  // 0=System, 1=Email, 2=SMS, 3=Telegram
     
     // ⭐ محتوا
-    public string Subject { get; set; }
+    public string? Subject { get; set; }
     public string MessageTemplate { get; set; }  // با متغیرهای {{Variable}}
+    public string? BodyHtml { get; set; }  // برای Email
     
     // ⭐ دریافت‌کنندگان
     public byte RecipientMode { get; set; }  // 0=همه, 1=خاص, 2=همه به جز...
     
-    // ⭐⭐⭐ زمان‌بندی (جدید)
+    // ⭐⭐⭐ زمان‌بندی
     public bool IsScheduled { get; set; }
-    public byte? ScheduleType { get; set; }  // 0=دستی, 1=روزانه, 2=هفتگی, 3=ماهانه
-    public string ScheduledTime { get; set; }  // "07:15"
-    public string ScheduledDaysOfWeek { get; set; }  // "1,3,5"
+    public byte ScheduleType { get; set; }  // 0=دستی, 1=روزانه, 2=هفتگی, 3=ماهانه, 4=سفارشی
+    public string? ScheduledTime { get; set; }  // "07:15" (HH:mm)
+    public string? ScheduledDaysOfWeek { get; set; }  // "1,3,5" (دوشنبه، چهارشنبه، جمعه)
     public int? ScheduledDayOfMonth { get; set; }  // 15
+    public string? CronExpression { get; set; }  // برای زمان‌بندی سفارشی
     
     public DateTime? LastExecutionDate { get; set; }
-    public DateTime? NextExecutionDate { get; set; }
+    public DateTime? NextExecutionDate { get; set; }  // ⚠️ ذخیره در UTC
     public bool IsScheduleEnabled { get; set; }
     
+    // ⭐ متادیتا
+    public bool IsSystemTemplate { get; set; }
     public bool IsActive { get; set; }
+    public int Version { get; set; }
+    public int UsageCount { get; set; }
+    public DateTime? LastUsedDate { get; set; }
     
     // Navigation
     public ICollection<NotificationTemplateRecipient> Recipients { get; set; }
-    public ICollection<NotificationTemplateVariable> Variables { get; set; }
+    public ICollection<NotificationTemplateHistory> History { get; set; }
 }
+```
+
+---
+
+## 🔔 یادآورهای سفارشی (Custom Reminders)
+
+### Entity: TaskReminderSchedule
+
+```csharp
+public class TaskReminderSchedule
+{
+    public int Id { get; set; }
+    public int TaskId { get; set; }
+    
+    public string Title { get; set; }
+    public string? Description { get; set; }
+    
+    // ⭐ نوع یادآوری
+    public byte ReminderType { get; set; }
+    // 0 = یکبار در زمان مشخص
+    // 1 = تکراری با فاصله زمانی مشخص
+    // 2 = قبل از پایان مهلت (X روز قبل)
+    // 3 = در روز شروع تسک
+    // 4 = ماهانه با انتخاب چند روز
+    
+    public int? IntervalDays { get; set; }
+    public int? DaysBeforeDeadline { get; set; }
+    public string? ScheduledDaysOfMonth { get; set; }  // "10,20,25"
+    
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public TimeSpan NotificationTime { get; set; }  // ساعت ارسال
+    
+    // ⭐ وضعیت
+    public bool IsActive { get; set; }
+    
+    // ⭐⭐⭐ وضعیت منقضی (NEW!)
+    public bool IsExpired { get; set; }
+    public string? ExpiredReason { get; set; }
+    // مثال: "رسیدن به حداکثر ارسال (1 بار)"
+    //        "تسک تکمیل شده"
+    //        "پایان تاریخ EndDate"
+    public DateTime? ExpiredDate { get; set; }
+    
+    // ⭐ کنترل تعداد ارسال
+    public int SentCount { get; set; }
+    public int? MaxSendCount { get; set; }  // null = نامحدود
+    // برای یادآوری‌های یکباره: MaxSendCount = 1
+    // برای تکراری: MaxSendCount = تعداد تکرار یا null
+    
+    public DateTime? LastExecuted { get; set; }
+    
+    // Navigation
+    public Tasks Task { get; set; }
+}
+```
+
+### 🔄 چرخه حیات یادآوری
+
+```mermaid
+stateDiagram-v2
+    [*] --> فعال: ایجاد یادآوری
+    
+    فعال --> درانتظار: زمان نرسیده
+    درانتظار --> درحالارسال: زمان رسیده
+    
+    درحالارسال --> ارسالشده: موفق
+    درحالارسال --> خطا: ناموفق
+    
+    خطا --> تلاشمجدد: AttemptCount < 3
+    تلاشمجدد --> درحالارسال
+    
+    ارسالشده --> بررسیتکرار: SentCount++
+    
+    بررسیتکرار --> منقضی: SentCount >= MaxSendCount
+    بررسیتکرار --> درانتظار: ادامه دارد
+    
+    فعال --> منقضی: تسک تکمیل شد
+    فعال --> منقضی: تاریخ پایان رسید
+    
+    منقضی --> [*]: حذف منطقی
+    
+    note right of منقضی
+        IsExpired = true
+        ExpiredReason ذخیره می‌شود
+        در UI نمایش داده می‌شود
+        ولی دیگر اجرا نمی‌شود
+    end note
 ```
 
 ---
 
 ## 🔤 متغیرهای پویا (Dynamic Variables)
 
-### متغیرهای عمومی
+### دسته‌بندی متغیرها
+
+```csharp
+public enum NotificationVariableCategory : byte
+{
+    General = 0,        // Date, Time, PersianDate
+    Recipient = 1,      // RecipientFullName, RecipientEmail
+    Sender = 2,         // SenderName
+    Task = 3,           // TaskTitle, TaskCode, TaskDueDate
+    TaskList = 4,       // PendingTasks (برای Daily Digest)
+    ReminderSchedule = 5 // Title, Message, ActionUrl (برای یادآورها)
+}
+```
+
+### متغیرهای عمومی (General)
+
+| متغیر | توضیحات | مثال |
+|-------|---------|------|
+| `{{Date}}` | تاریخ میلادی | 2024-12-27 |
+| `{{Time}}` | ساعت فعلی | 09:30 |
+| `{{PersianDate}}` | تاریخ شمسی | 1403/10/07 |
+| `{{DateTime}}` | تاریخ و ساعت میلادی | 2024-12-27 09:30 |
+| `{{PersianDateTime}}` | تاریخ و ساعت شمسی | 1403/10/07 09:30 |
+
+### متغیرهای دریافت‌کننده (Recipient)
 
 | متغیر | توضیحات | مثال |
 |-------|---------|------|
 | `{{RecipientFullName}}` | نام کامل دریافت‌کننده | احمد محمدی |
 | `{{RecipientFirstName}}` | نام دریافت‌کننده | احمد |
-| `{{SenderFullName}}` | نام کامل فرستنده | علی رضایی |
-| `{{Date}}` | تاریخ میلادی | 2024-12-20 |
-| `{{PersianDate}}` | تاریخ شمسی | 1403/10/01 |
-| `{{Time}}` | ساعت فعلی | 09:30 |
-| `{{DateTime}}` | تاریخ و ساعت میلادی | 2024-12-20 09:30 |
-| `{{PersianDateTime}}` | تاریخ و ساعت شمسی | 1403/10/01 09:30 |
+| `{{RecipientLastName}}` | نام خانوادگی | محمدی |
+| `{{RecipientUserName}}` | نام کاربری | ahmad.mohammadi |
+| `{{RecipientEmail}}` | ایمیل | ahmad@example.com |
+| `{{RecipientPhone}}` | شماره موبایل | 09123456789 |
 
-### متغیرهای تسک
+### متغیرهای تسک (Task)
 
 | متغیر | توضیحات | مثال |
 |-------|---------|------|
@@ -215,44 +324,20 @@ public class NotificationTemplate
 | `{{TaskDescription}}` | توضیحات تسک | پیگیری پروژه جدید |
 | `{{TaskPriority}}` | اولویت تسک | فوری |
 | `{{TaskDueDate}}` | مهلت تسک | 1403/10/20 |
+| `{{TaskStartDate}}` | تاریخ شروع | 1403/10/10 |
 | `{{TaskStatus}}` | وضعیت تسک | در حال انجام |
-| `{{TaskProgress}}` | درصد پیشرفت | 45% |
-| `{{ActionUrl}}` | لینک تسک | https://... |
+| `{{TaskCategory}}` | دسته‌بندی | امور مالی |
+| `{{TaskStakeholder}}` | طرف حساب | شرکت ABC |
+| `{{TaskBranch}}` | شعبه | دفتر مرکزی |
+| `{{TaskCreatorName}}` | سازنده تسک | علی رضایی |
 
-### متغیرهای ویژه
+### متغیرهای لیست تسک (TaskList)
 
 | متغیر | توضیحات | استفاده |
 |-------|---------|---------|
-| `{{PendingTasks}}` | لیست تسک‌های باز | برای Daily Digest |
-| `{{TaskList}}` | لیست فرمت شده تسک‌ها | گزارش‌های هفتگی |
-| `{{TeamName}}` | نام تیم | تیم بازاریابی |
-| `{{BranchName}}` | نام شعبه | شعبه مرکزی |
+| `{{PendingTasks}}` | لیست تسک‌های باز با جزئیات کامل | برای Daily Digest |
 
----
-
-## 📧 مثال قالب: Daily Task Digest
-
-### قالب پیام
-
-```html
-<div style="direction: rtl; font-family: Tahoma;">
-    <h2>سلام {{RecipientFullName}} عزیز،</h2>
-    
-    <p>خلاصه تسک‌های امروز شما:</p>
-    
-    {{PendingTasks}}
-    
-    <hr/>
-    
-    <div style="color: #666; font-size: 12px;">
-        📅 تاریخ: {{PersianDate}}<br/>
-        🕐 ساعت: {{Time}}<br/>
-        🔗 <a href="{{ActionUrl}}">مشاهده تمام تسک‌ها</a>
-    </div>
-</div>
-```
-
-### خروجی واقعی `{{PendingTasks}}`
+**خروجی نمونه `{{PendingTasks}}`:**
 
 ```html
 <div class="task-list">
@@ -264,14 +349,7 @@ public class NotificationTemplate
         <p>📅 شروع: 1403/10/10 | 🔚 پایان: 1403/10/20</p>
         <p>👤 سازنده: احمد محمدی | 🟡 اولویت: متوسط</p>
         <p>📊 پیشرفت: 40% (2/5 عملیات)</p>
-    </div>
-    
-    <div class="task-item">
-        <h4>2️⃣ تهیه گزارش ماهانه</h4>
-        <p>📝 آماده‌سازی گزارش فروش ماه گذشته</p>
-        <p>📅 شروع: 1403/10/15 | 🔚 پایان: 1403/10/25</p>
-        <p>👤 سازنده: مدیر فروش | 🔴 اولویت: فوری</p>
-        <p>📊 پیشرفت: 60% (3/5 عملیات)</p>
+        <p>🔗 <a href="https://...">مشاهده جزئیات</a></p>
     </div>
     
     <div class="summary">
@@ -280,30 +358,122 @@ public class NotificationTemplate
 </div>
 ```
 
+### متغیرهای یادآوری (ReminderSchedule)
+
+| متغیر | توضیحات | مثال |
+|-------|---------|------|
+| `{{Title}}` | عنوان یادآوری | یادآوری قبل از مهلت |
+| `{{Message}}` | متن یادآوری | 3 روز تا پایان مهلت باقی مانده |
+| `{{ActionUrl}}` | لینک مستقیم | https://.../Tasks/Details/123 |
+| `{{SenderName}}` | فرستنده اعلان | محمد حسینی |
+
 ---
 
-## 🔄 Flowchart: ارسال اعلان
+## 🎯 انواع رویدادهای اعلان (NotificationEventType)
+
+```csharp
+public enum NotificationEventType : byte
+{
+    TaskAssigned = 1,           // تخصیص تسک جدید
+    TaskCompleted = 2,          // تکمیل تسک
+    TaskDeadlineReminder = 3,   // یادآوری سررسید
+    TaskCommentAdded = 4,       // نظر جدید
+    TaskUpdated = 5,            // ویرایش تسک
+    TaskOperationCompleted = 6, // تکمیل عملیات
+    TaskDeleted = 7,            // حذف تسک
+    TaskStatusChanged = 8,      // تغییر وضعیت
+    OperationAssigned = 9,      // تخصیص عملیات
+    CommentMentioned = 10,      // Mention در کامنت
+    TaskPriorityChanged = 11,   // تغییر اولویت
+    TaskReassigned = 12,        // تخصیص مجدد
+    DailyTaskDigest = 13,       // خلاصه روزانه
+    TaskWorkLog = 14,           // ثبت کار
+    CustomTaskReminder = 15     // یادآوری سفارشی ⭐ NEW
+}
+```
+
+### ⭐ تفاوت TaskDeadlineReminder و CustomTaskReminder
+
+| ویژگی | TaskDeadlineReminder (3) | CustomTaskReminder (15) |
+|-------|-------------------------|------------------------|
+| **منبع** | سیستمی (خودکار) | کاربر (دستی) |
+| **زمان‌بندی** | ثابت (مثلاً 3 روز قبل) | سفارشی (کاربر تعیین می‌کنه) |
+| **نوع** | فقط یکبار | یکبار، تکراری، روزانه، ماهانه |
+| **قابل حذف** | خیر | بله |
+| **قابل ویرایش** | خیر | بله |
+| **وضعیت منقضی** | ندارد | دارد (IsExpired) |
+
+---
+
+## 🔄 Flowchart: پردازش یادآوری سفارشی
 
 ```mermaid
 flowchart TD
-    Start([رویداد: TaskAssigned]) --> GetRecipients[دریافت دریافت‌کنندگان]
+    Start([TaskReminderBackgroundService<br/>هر 1 دقیقه]) --> GetTime[دریافت زمان Iran TimeZone]
     
-    GetRecipients --> CheckTemplate{قالب وجود دارد؟}
+    GetTime --> Query[Query یادآورهای فعال<br/>IsActive=true<br/>IsExpired=false<br/>!Task.IsDeleted]
     
-    CheckTemplate -->|خیر| UseDefault[استفاده از پیام پیش‌فرض]
-    CheckTemplate -->|بله| LoadTemplate[بارگذاری قالب]
+    Query --> LoopSchedules[حلقه روی Schedules]
     
-    UseDefault --> BuildMessage
-    LoadTemplate --> ReplaceVars[جایگزینی متغیرها]
+    LoopSchedules --> CheckMaxSend{SentCount >= MaxSendCount?}
     
-    ReplaceVars --> BuildMessage[ساخت پیام نهایی]
+    CheckMaxSend -->|بله| ExpireIt[IsExpired = true<br/>ExpiredReason = رسیدن به حداکثر ارسال<br/>ExpiredDate = NOW]
     
-    BuildMessage --> LoopRecipients[حلقه روی دریافت‌کنندگان]
+    ExpireIt --> NextSchedule
     
-    LoopRecipients --> CheckPreference{ترجیح کاربر؟}
+    CheckMaxSend -->|خیر| CalcNextTime[محاسبه NextExecutionTime<br/>بر اساس ReminderType]
     
-    CheckPreference -->|غیرفعال| SkipUser[Skip]
-    CheckPreference -->|فعال| CheckBlacklist{لیست سیاه؟}
+    CalcNextTime --> CheckTime{زمان رسیده؟}
+    
+    CheckTime -->|خیر| NextSchedule
+    CheckTime -->|بله| CheckDoubleExec{LastExecuted < 1 دقیقه پیش؟}
+    
+    CheckDoubleExec -->|بله| Skip[Skip<br/>جلوگیری از ارسال دوباره]
+    CheckDoubleExec -->|خیر| GetRecipients[دریافت دریافت‌کنندگان<br/>Assignments + Creator]
+    
+    GetRecipients --> EnqueueOnce[⭐ EnqueueTaskNotification<br/>فقط یکبار!<br/>EventType=CustomTaskReminder]
+    
+    EnqueueOnce --> UpdateSchedule[LastExecuted = NOW<br/>SentCount++]
+    
+    UpdateSchedule --> NextSchedule{Schedule بعدی؟}
+    
+    Skip --> NextSchedule
+    
+    NextSchedule -->|بله| LoopSchedules
+    NextSchedule -->|خیر| End([پایان])
+    
+    style Start fill:#E91E63,stroke:#333,stroke-width:3px,color:#fff
+    style ExpireIt fill:#F44336,stroke:#333,stroke-width:2px,color:#fff
+    style EnqueueOnce fill:#4CAF50,stroke:#333,stroke-width:3px,color:#fff
+    style End fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
+```
+
+---
+
+## 🔄 Flowchart: پردازش صف اعلان‌ها
+
+```mermaid
+flowchart TD
+    Start([NotificationProcessingService<br/>هر 10 ثانیه]) --> DequeueNotif[Dequeue از صف]
+    
+    DequeueNotif --> GetTemplate{قالب وجود دارد؟<br/>EventType + Channel}
+    
+    GetTemplate -->|خیر| UseDefault[پیام پیش‌فرض]
+    GetTemplate -->|بله| LoadTemplate[بارگذاری قالب]
+    
+    LoadTemplate --> GetVariables[دریافت متغیرها<br/>بر اساس EventType]
+    
+    GetVariables --> ReplaceVars[جایگزینی متغیرها<br/>مثلاً: PendingTasks برای Daily Digest]
+    
+    UseDefault --> BuildMsg[ساخت پیام نهایی]
+    ReplaceVars --> BuildMsg
+    
+    BuildMsg --> LoopRecipients[حلقه روی دریافت‌کنندگان]
+    
+    LoopRecipients --> CheckPref{Preference<br/>فعال؟}
+    
+    CheckPref -->|خیر| SkipUser[Skip این کاربر]
+    CheckPref -->|بله| CheckBlacklist{لیست سیاه؟}
     
     CheckBlacklist -->|بله| SkipUser
     CheckBlacklist -->|خیر| CreateNotif[ایجاد CoreNotification]
@@ -312,7 +482,7 @@ flowchart TD
     
     SaveDB --> GetChannels{کانال‌های فعال؟}
     
-    GetChannels -->|In-App| SendSignalR[ارسال SignalR]
+    GetChannels -->|In-App| SendSignalR[ارسال SignalR<br/>Real-time]
     GetChannels -->|Email| AddEmailQueue[افزودن به EmailQueue]
     GetChannels -->|SMS| AddSmsQueue[افزودن به SmsQueue]
     GetChannels -->|Telegram| SendTelegram[ارسال Telegram]
@@ -327,13 +497,12 @@ flowchart TD
     CreateDelivery3 --> NextUser
     CreateDelivery4 --> NextUser
     
+    SkipUser --> NextUser
+    
     NextUser -->|بله| LoopRecipients
     NextUser -->|خیر| End([پایان])
     
-    SkipUser --> NextUser
-    
-    %% Styling
-    style Start fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
+    style Start fill:#9C27B0,stroke:#333,stroke-width:3px,color:#fff
     style CreateNotif fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff
     style SaveDB fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
     style End fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff
@@ -341,9 +510,155 @@ flowchart TD
 
 ---
 
+## 📧 مثال قالب: Daily Task Digest
+
+### ⚙️ تنظیمات قالب
+
+```csharp
+var template = new NotificationTemplate
+{
+    TemplateName = "خلاصه روزانه تسک‌ها",
+    NotificationEventType = 13, // DailyTaskDigest
+    Channel = 3, // Telegram
+    
+    MessageTemplate = @"
+🌅 **سلام {{RecipientFullName}} عزیز**
+
+📋 **خلاصه تسک‌های امروز شما:**
+
+{{PendingTasks}}
+
+---
+
+📅 **تاریخ:** {{PersianDate}}
+🕐 **ساعت:** {{Time}}
+🔗 [مشاهده تمام تسک‌ها]({{ActionUrl}})
+
+_✨ این پیام به صورت خودکار ارسال شده است_
+    ",
+    
+    RecipientMode = 0, // همه کاربران
+    
+    // ⭐ زمان‌بندی
+    IsScheduled = true,
+    ScheduleType = 1, // روزانه
+    ScheduledTime = "07:15", // ساعت 7:15 صبح (Iran Time)
+    IsScheduleEnabled = true,
+    IsActive = true
+};
+```
+
+### 📱 خروجی نهایی (Telegram)
+
+```
+🌅 سلام احمد محمدی عزیز
+
+📋 خلاصه تسک‌های امروز شما:
+
+📌 تسک‌های در حال انجام شما:
+
+1️⃣ تماس با مشتری X
+📝 پیگیری پروژه جدید و دریافت بازخورد
+📅 شروع: 1403/10/10 | 🔚 پایان: 1403/10/20
+👤 سازنده: احمد محمدی | 🟡 اولویت: متوسط
+📊 پیشرفت: 40% (2/5 عملیات)
+
+2️⃣ تهیه گزارش ماهانه
+📝 آماده‌سازی گزارش فروش ماه گذشته
+📅 شروع: 1403/10/15 | 🔚 پایان: 1403/10/25
+👤 سازنده: مدیر فروش | 🔴 اولویت: فوری
+📊 پیشرفت: 60% (3/5 عملیات)
+
+📊 جمع کل: 2 تسک در حال انجام
+
+---
+
+📅 تاریخ: 1403/10/07
+🕐 ساعت: 07:15
+🔗 مشاهده تمام تسک‌ها
+
+✨ این پیام به صورت خودکار ارسال شده است
+```
+
+---
+
+## 🛡️ جلوگیری از ارسال دوباره (Anti-Duplicate)
+
+### مشکل قبلی ❌
+
+```csharp
+// ❌ اشتباه: برای هر کاربر یک EnqueueTaskNotification
+foreach (var userId in recipientUserIds)
+{
+    NotificationProcessingBackgroundService.EnqueueTaskNotification(
+        schedule.TaskId,
+        "SYSTEM",
+        NotificationEventType.CustomTaskReminder,
+        priority: 2
+    );
+}
+// نتیجه: اگر 2 کاربر باشند، 2×2 = 4 اعلان ارسال می‌شود! 🐛
+```
+
+### راه حل فعلی ✅
+
+```csharp
+// ✅ درست: فقط یکبار صدا بزن
+NotificationProcessingBackgroundService.EnqueueTaskNotification(
+    schedule.TaskId,
+    "SYSTEM",
+    NotificationEventType.CustomTaskReminder,
+    priority: 2
+);
+// نتیجه: NotificationProcessingService خودش برای همه Assignments ارسال می‌کنه
+// هر کاربر فقط 1 اعلان می‌گیره ✅
+```
+
+### مکانیزم‌های اضافی
+
+1. **بررسی LastExecuted:**
+```csharp
+if (schedule.LastExecuted.HasValue &&
+    (nowIran - schedule.LastExecuted.Value).TotalMinutes < 1)
+{
+    // Skip - جلوگیری از اجرای مکرر در کمتر از 1 دقیقه
+    continue;
+}
+```
+
+2. **محدودیت تعداد ارسال:**
+```csharp
+if (schedule.MaxSendCount.HasValue && 
+    schedule.SentCount >= schedule.MaxSendCount.Value)
+{
+    // منقضی کن
+    schedule.IsExpired = true;
+    schedule.ExpiredReason = $"رسیدن به حداکثر ارسال ({schedule.MaxSendCount} بار)";
+    schedule.ExpiredDate = DateTime.Now;
+}
+```
+
+---
+
 ## 📱 کانال‌های ارسال
 
-### 1️⃣ Email
+### 1️⃣ In-App (SignalR)
+
+```javascript
+// Client-side
+connection.on("ReceiveNotification", function(notification) {
+    showToast(notification.title, notification.message);
+    updateBadge(notification.priority);
+    playSound();
+});
+```
+
+**ویژگی‌ها:**
+- ✅ ارسال فوری (Real-time)
+- ✅ بدون صف
+- ✅ همیشه فعال
+
+### 2️⃣ Email
 
 ```csharp
 public class EmailQueue
@@ -362,13 +677,11 @@ public class EmailQueue
 ```
 
 **Background Service:**
-```csharp
-// EmailBackgroundService
-// اجرا: هر 30 ثانیه
-// وظیفه: پردازش صف EmailQueue و ارسال
-```
+- ⏱️ اجرا: هر 30 ثانیه
+- 📦 Batch: 50 ایمیل
+- 🔁 Retry: 3 بار
 
-### 2️⃣ SMS
+### 3️⃣ SMS
 
 ```csharp
 public class SmsQueue
@@ -388,7 +701,7 @@ public class SmsQueue
 - 📱 **SunWay SMS** (پیش‌فرض)
 - 🔌 قابلیت افزودن Provider های دیگر
 
-### 3️⃣ Telegram
+### 4️⃣ Telegram
 
 ```csharp
 // ارسال مستقیم (بدون صف)
@@ -396,25 +709,18 @@ await _telegramService.SendNotificationAsync(
     message: message,
     chatId: userChatId,
     botToken: settings.BotToken,
-    buttons: dynamicButtons  // دکمه‌های پویا
+    buttons: new[]
+    {
+        new { Text = "مشاهده تسک", Url = actionUrl },
+        new { Text = "تکمیل", CallbackData = $"complete_{taskId}" }
+    }
 );
 ```
 
 **ویژگی‌های خاص:**
-- ✅ دکمه‌های پویا (مثلاً: "مشاهده تسک", "تکمیل")
-- ✅ Webhook برای دریافت پاسخ
-- ✅ پشتیبانی از Markdown
-
-### 4️⃣ In-App (SignalR)
-
-```javascript
-// Client-side
-connection.on("ReceiveNotification", function(notification) {
-    showToast(notification.title, notification.message);
-    updateBadge(notification.priority);
-    playSound();
-});
-```
+- ✅ دکمه‌های پویا (Inline Keyboard)
+- ✅ Markdown formatting
+- ✅ پشتیبانی از Emoji
 
 ---
 
@@ -427,13 +733,13 @@ public class UserNotificationPreference
     public string UserId { get; set; }
     
     // ⭐ ترجیحات کلی
-    public bool EnableInApp { get; set; }
-    public bool EnableEmail { get; set; }
-    public bool EnableSms { get; set; }
-    public bool EnableTelegram { get; set; }
+    public bool EnableInApp { get; set; } = true;
+    public bool EnableEmail { get; set; } = true;
+    public bool EnableSms { get; set; } = false;
+    public bool EnableTelegram { get; set; } = true;
     
     // ⭐ ترجیحات بر اساس نوع
-    public int? NotificationEventType { get; set; }
+    public byte? NotificationEventType { get; set; }
     public bool IsEnabled { get; set; }
     
     // ⭐ زمان‌بندی
@@ -447,138 +753,22 @@ public class UserNotificationPreference
 
 ---
 
-## 🚫 لیست سیاه (Blacklist)
-
-```csharp
-public class NotificationBlacklist
-{
-    public int Id { get; set; }
-    
-    public string Email { get; set; }
-    public string PhoneNumber { get; set; }
-    public long? TelegramChatId { get; set; }
-    
-    public string Reason { get; set; }
-    public DateTime CreateDate { get; set; }
-    public bool IsActive { get; set; }
-}
-```
-
-**استفاده:**
-```csharp
-// قبل از ارسال
-if (await _blacklistService.IsBlockedAsync(email: recipientEmail))
-{
-    // Skip این دریافت‌کننده
-    return;
-}
-```
-
----
-
-## ⏰ زمان‌بندی خودکار اعلان‌ها
-
-### Background Service: ScheduledNotificationBackgroundService
-
-```csharp
-// ⏱️ اجرا: هر 1 دقیقه
-// 🌍 TimeZone: Iran Standard Time
-
-protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-{
-    while (!stoppingToken.IsCancellationRequested)
-    {
-        var nowIran = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.UtcNow, 
-            IranTimeZone
-        );
-        
-        // ⭐ Query: قالب‌های آماده
-        var dueTemplates = await _context.NotificationTemplate_Tbl
-            .Where(t =>
-                t.IsScheduled &&
-                t.IsScheduleEnabled &&
-                t.IsActive &&
-                t.NextExecutionDate.HasValue &&
-                t.NextExecutionDate.Value <= nowIran &&
-                // ⭐ جلوگیری از اجرای مکرر
-                (!t.LastExecutionDate.HasValue || 
-                 EF.Functions.DateDiffMinute(t.LastExecutionDate.Value, nowIran) >= 1))
-            .ToListAsync();
-        
-        foreach (var template in dueTemplates)
-        {
-            await ExecuteScheduledTemplateAsync(template, nowIran);
-        }
-        
-        await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
-    }
-}
-```
-
-### مثال: اعلان روزانه تسک‌ها
-
-```csharp
-var template = new NotificationTemplate
-{
-    TemplateName = "خلاصه روزانه تسک‌ها",
-    NotificationEventType = 13, // DailyTaskDigest
-    Channel = 3, // Telegram
-    
-    MessageTemplate = @"
-سلام {{RecipientFullName}} عزیز,
-
-{{PendingTasks}}
-
----
-📅 تاریخ: {{PersianDate}}
-🕐 ساعت: {{Time}}
-🔗 مشاهده تمام تسک‌ها: {{ActionUrl}}
-    ",
-    
-    RecipientMode = 0, // همه کاربران
-    
-    // ⭐ زمان‌بندی
-    IsScheduled = true,
-    ScheduleType = 1, // روزانه
-    ScheduledTime = "07:15",
-    IsScheduleEnabled = true,
-    IsActive = true
-};
-```
-
----
-
 ## 📊 آمار و گزارش‌گیری
 
-### Entity: NotificationDeliveryStats
-
-```csharp
-public class NotificationDeliveryStats
-{
-    public int Id { get; set; }
-    public DateTime StatDate { get; set; }
-    public byte DeliveryMethod { get; set; }
-    
-    public int TotalSent { get; set; }
-    public int TotalDelivered { get; set; }
-    public int TotalFailed { get; set; }
-    
-    public decimal SuccessRate { get; set; }  // درصد موفقیت
-    public decimal AverageDeliveryTime { get; set; }  // میانگین زمان ارسال
-}
-```
-
-### Query آماری
+### Query آماری روزانه
 
 ```sql
--- آمار روزانه ارسال
+-- آمار 30 روز اخیر
 SELECT 
     CAST(CreateDate AS DATE) AS Date,
     DeliveryMethod,
     COUNT(*) AS TotalSent,
     SUM(CASE WHEN DeliveryStatus = 2 THEN 1 ELSE 0 END) AS Delivered,
     SUM(CASE WHEN DeliveryStatus = 3 THEN 1 ELSE 0 END) AS Failed,
+    CAST(
+        100.0 * SUM(CASE WHEN DeliveryStatus = 2 THEN 1 ELSE 0 END) / COUNT(*)
+        AS DECIMAL(5,2)
+    ) AS SuccessRate,
     AVG(DATEDIFF(SECOND, CreateDate, DeliveryDate)) AS AvgDeliverySeconds
 FROM CoreNotificationDelivery_Tbl
 WHERE CreateDate >= DATEADD(DAY, -30, GETDATE())
@@ -586,11 +776,43 @@ GROUP BY CAST(CreateDate AS DATE), DeliveryMethod
 ORDER BY Date DESC, DeliveryMethod;
 ```
 
+### Query یادآورهای منقضی
+
+```sql
+-- بررسی یادآورهای منقضی شده
+SELECT 
+    Id,
+    TaskId,
+    Title,
+    ReminderType,
+    SentCount,
+    MaxSendCount,
+    ExpiredReason,
+    ExpiredDate,
+    LastExecuted
+FROM TaskReminderSchedule_Tbl
+WHERE IsExpired = 1
+ORDER BY ExpiredDate DESC;
+```
+
 ---
 
 ## 💡 نکات پیاده‌سازی
 
-### ✅ **1. جلوگیری از Spam**
+### ✅ **1. TimeZone Handling**
+
+```csharp
+// ⭐ همیشه از Iran TimeZone استفاده کن
+private static readonly TimeZoneInfo IranTimeZone = 
+    TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+
+var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
+
+// ⚠️ NextExecutionDate در UTC ذخیره می‌شود
+template.NextExecutionDate = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran, IranTimeZone);
+```
+
+### ✅ **2. جلوگیری از Spam**
 
 ```csharp
 // محدودیت تعداد اعلان در بازه زمانی
@@ -606,7 +828,7 @@ public async Task<bool> CanSendNotificationAsync(string userId)
 }
 ```
 
-### ✅ **2. Retry Logic**
+### ✅ **3. Retry Logic**
 
 ```csharp
 // تلاش مجدد برای ارسال‌های ناموفق
@@ -619,16 +841,18 @@ if (delivery.AttemptCount < 3)
 else
 {
     delivery.DeliveryStatus = 3; // Failed
+    delivery.ErrorMessage = "حداکثر تلاش انجام شد";
 }
 ```
 
-### ✅ **3. Batch Processing**
+### ✅ **4. Batch Processing**
 
 ```csharp
 // پردازش دسته‌جمعی برای عملکرد بهتر
 var batch = await _context.EmailQueue_Tbl
     .Where(e => e.Status == 0)
     .OrderBy(e => e.Priority)
+    .ThenBy(e => e.CreateDate)
     .Take(50)
     .ToListAsync();
 
@@ -645,23 +869,56 @@ foreach (var email in batch)
 ```mermaid
 graph LR
     Notification[Notification System] --> Task[Task Management]
-    Notification --> CRM[CRM Module]
-    Notification --> User[User Management]
-    Notification --> Schedule[Scheduled Tasks]
+    Notification --> Reminder[Custom Reminders]
+    Notification --> User[User Preferences]
+    Notification --> Template[Template Engine]
     
     Task -->|Events| Notification
-    CRM -->|Events| Notification
-    User -->|Events| Notification
-    Schedule -->|Triggers| Notification
+    Reminder -->|Scheduled Events| Notification
+    User -->|Settings| Notification
+    Template -->|Dynamic Content| Notification
     
     style Notification fill:#FF9800,stroke:#333,stroke-width:3px,color:#fff
+    style Reminder fill:#E91E63,stroke:#333,stroke-width:2px,color:#fff
 ```
 
 ---
 
-**نسخه مستند:** 3.0.0  
-**آخرین بروزرسانی:** آذر 1403  
-**وضعیت:** ✅ Active & Advanced
+## 📝 تغییرات نسخه 3.1.0
+
+### 🆕 ویژگی‌های جدید
+
+1. **یادآورهای سفارشی (Custom Reminders)**
+   - ✅ 5 نوع یادآوری (یکبار، تکراری، قبل از مهلت، روز شروع، ماهانه)
+   - ✅ وضعیت منقضی (`IsExpired`)
+   - ✅ کنترل تعداد ارسال (`MaxSendCount`)
+   - ✅ نمایش Badge منقضی در UI
+
+2. **EventType صحیح برای یادآورها**
+   - ✅ `CustomTaskReminder` (15) برای یادآورهای سفارشی
+   - ✅ جداسازی از `TaskDeadlineReminder` (3)
+
+3. **رفع باگ ارسال دوباره**
+   - ✅ حذف حلقه `foreach` روی کاربران
+   - ✅ فقط یکبار `EnqueueTaskNotification`
+   - ✅ بررسی `LastExecuted < 1 دقیقه`
+
+4. **بهبود متغیرهای پویا**
+   - ✅ 25+ متغیر دسته‌بندی شده
+   - ✅ `{{PendingTasks}}` با فرمت کامل HTML
+   - ✅ فیلتر متغیرها بر اساس `EventType`
+
+### 🐛 رفع اشکالات
+
+- ✅ رفع باگ ارسال دوباره یادآورها
+- ✅ رفع مشکل TimeZone در `NextExecutionDate`
+- ✅ جلوگیری از اجرای مکرر در کمتر از 1 دقیقه
+
+---
+
+**نسخه مستند:** 3.1.0  
+**آخرین بروزرسانی:** 7 دی 1403 (27 دسامبر 2024)  
+**وضعیت:** ✅ Active & Production-Ready
 
 ---
 

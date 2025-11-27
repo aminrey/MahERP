@@ -146,13 +146,17 @@ namespace MahERP.DataModelLayer.Repository.Notifications
 
         /// <summary>
         /// محاسبه زمان اجرای بعدی بر اساس تنظیمات زمان‌بندی
+        /// ⭐⭐⭐ FIX: تبدیل صحیح به Iran TimeZone و سپس UTC
         /// </summary>
         private DateTime? CalculateNextExecutionDate(NotificationTemplate template)
         {
             if (string.IsNullOrEmpty(template.ScheduledTime))
                 return null;
 
-            var now = DateTime.Now;
+            // ⭐⭐⭐ TimeZone ایران
+            var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+            var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, iranTimeZone);
+
             var timeParts = template.ScheduledTime.Split(':');
 
             if (timeParts.Length != 2 ||
@@ -162,15 +166,26 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                 return null;
             }
 
-            DateTime nextExecution;
+            // ⭐⭐⭐ اعتبارسنجی: ساعت باید بین 0-23 باشد
+            if (hour < 0 || hour > 23 || minute < 0 || minute > 59)
+            {
+                return null;
+            }
+
+            DateTime nextExecutionIran;
 
             switch (template.ScheduleType)
             {
                 case 1: // روزانه
-                    nextExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0);
-                    if (nextExecution <= now)
+                    // ⭐ ساخت DateTime در Iran TimeZone
+                    nextExecutionIran = new DateTime(
+                        nowIran.Year, nowIran.Month, nowIran.Day, 
+                        hour, minute, 0, DateTimeKind.Unspecified);
+                    
+                    // ⭐⭐⭐ FIX: اگر زمان امروز گذشته، حتماً یک روز اضافه کن
+                    if (nextExecutionIran <= nowIran)
                     {
-                        nextExecution = nextExecution.AddDays(1);
+                        nextExecutionIran = nextExecutionIran.AddDays(1);
                     }
                     break;
 
@@ -184,33 +199,38 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                         .OrderBy(d => d)
                         .ToList();
 
-                    nextExecution = FindNextWeeklyExecution(now, hour, minute, daysOfWeek);
+                    nextExecutionIran = FindNextWeeklyExecution(nowIran, hour, minute, daysOfWeek);
                     break;
 
                 case 3: // ماهانه
                     if (!template.ScheduledDayOfMonth.HasValue)
                         return null;
 
-                    nextExecution = FindNextMonthlyExecution(now, hour, minute, template.ScheduledDayOfMonth.Value);
+                    nextExecutionIran = FindNextMonthlyExecution(nowIran, hour, minute, template.ScheduledDayOfMonth.Value);
                     break;
 
                 default:
                     return null;
             }
 
-            return nextExecution;
+            // ⭐⭐⭐ تبدیل Iran Time به UTC برای ذخیره در دیتابیس
+            return TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran, iranTimeZone);
         }
 
         /// <summary>
         /// پیدا کردن زمان بعدی برای زمان‌بندی هفتگی
+        /// ⭐ DateTime در Iran TimeZone
         /// </summary>
-        private DateTime FindNextWeeklyExecution(DateTime now, int hour, int minute, List<int> daysOfWeek)
+        private DateTime FindNextWeeklyExecution(DateTime nowIran, int hour, int minute, List<int> daysOfWeek)
         {
-            var currentDayOfWeek = (int)now.DayOfWeek;
+            var currentDayOfWeek = (int)nowIran.DayOfWeek;
 
             // چک کردن امروز
-            var todayExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0);
-            if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > now)
+            var todayExecution = new DateTime(
+                nowIran.Year, nowIran.Month, nowIran.Day, 
+                hour, minute, 0, DateTimeKind.Unspecified);
+            
+            if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > nowIran)
             {
                 return todayExecution;
             }
@@ -218,39 +238,47 @@ namespace MahERP.DataModelLayer.Repository.Notifications
             // پیدا کردن روز بعدی
             for (int i = 1; i <= 7; i++)
             {
-                var nextDate = now.AddDays(i);
+                var nextDate = nowIran.AddDays(i);
                 var nextDayOfWeek = (int)nextDate.DayOfWeek;
 
                 if (daysOfWeek.Contains(nextDayOfWeek))
                 {
-                    return new DateTime(nextDate.Year, nextDate.Month, nextDate.Day, hour, minute, 0);
+                    return new DateTime(
+                        nextDate.Year, nextDate.Month, nextDate.Day, 
+                        hour, minute, 0, DateTimeKind.Unspecified);
                 }
             }
 
-            return now.AddDays(7);
+            return nowIran.AddDays(7);
         }
 
         /// <summary>
         /// پیدا کردن زمان بعدی برای زمان‌بندی ماهانه
+        /// ⭐ DateTime در Iran TimeZone
         /// </summary>
-        private DateTime FindNextMonthlyExecution(DateTime now, int hour, int minute, int dayOfMonth)
+        private DateTime FindNextMonthlyExecution(DateTime nowIran, int hour, int minute, int dayOfMonth)
         {
             // چک کردن این ماه
-            var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
+            var daysInMonth = DateTime.DaysInMonth(nowIran.Year, nowIran.Month);
             var targetDay = Math.Min(dayOfMonth, daysInMonth);
 
-            var thisMonthExecution = new DateTime(now.Year, now.Month, targetDay, hour, minute, 0);
-            if (thisMonthExecution > now)
+            var thisMonthExecution = new DateTime(
+                nowIran.Year, nowIran.Month, targetDay, 
+                hour, minute, 0, DateTimeKind.Unspecified);
+            
+            if (thisMonthExecution > nowIran)
             {
                 return thisMonthExecution;
             }
 
             // ماه بعد
-            var nextMonth = now.AddMonths(1);
+            var nextMonth = nowIran.AddMonths(1);
             daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
             targetDay = Math.Min(dayOfMonth, daysInMonth);
 
-            return new DateTime(nextMonth.Year, nextMonth.Month, targetDay, hour, minute, 0);
+            return new DateTime(
+                nextMonth.Year, nextMonth.Month, targetDay, 
+                hour, minute, 0, DateTimeKind.Unspecified);
         }
 
         public async Task<bool> DeleteTemplateAsync(int templateId)

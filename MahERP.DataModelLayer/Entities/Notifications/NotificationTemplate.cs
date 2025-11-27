@@ -148,6 +148,7 @@ namespace MahERP.DataModelLayer.Entities.Notifications
 
         /// <summary>
         /// زمان بعدی اجرا (محاسبه شده)
+        /// ⚠️ ذخیره در UTC - نمایش با تبدیل به Iran TimeZone
         /// </summary>
         public DateTime? NextExecutionDate { get; set; }
 
