@@ -69,10 +69,17 @@
                         else
                         {
                             <button type="button"
-                                    class="btn btn-sm text-white"
+                                    class="btn btn-sm text-white add-to-myday-btn"
                                     style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);"
                                     data-toggle="modal-ajax"
-                                    href="@Url.Action("AddToMyDayModal", "MyDayTask", new { taskId = Model.Id, fromList = true })"
+                                    data-task-id="@Model.Id"
+                                    data-source-page="TaskCard"
+                                    href="@Url.Action("AddToMyDayModal", "MyDayTask", new { 
+                                        taskId = Model.Id, 
+                                        fromList = true,
+                                        returnUrl = Context.Request.Path + Context.Request.QueryString,
+                                        sourcePage = "TaskCard"
+                                    })"
                                     data-bs-toggle="tooltip"
                                     title="افزودن به روز من">
                                 <i class="fa fa-calendar-alt"></i>

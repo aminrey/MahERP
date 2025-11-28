@@ -12,6 +12,8 @@
             <input type="hidden" asp-for="TaskAssignmentId" />
             <input type="hidden" asp-for="TaskId" />
             <input type="hidden" asp-for="FromList" />
+            <input type="hidden" asp-for="ReturnUrl" />
+            <input type="hidden" asp-for="SourcePage" />
 
             <div class="block block-rounded mb-0">
                 <div class="block-header bg-primary text-white">
@@ -24,69 +26,105 @@
                 </div>
 
                 <div class="block-content">
-                    <!-- ⭐⭐⭐ تاریخ برنامه‌ریزی با Persian DatePicker -->
-                    <div class="mb-3">
-                        <label asp-for="PlannedDateString" class="form-label"></label>
-                        <input asp-for="PlannedDateString"
-                               type="text"
-                               class="form-control  js-flatpickr"
-                               data-persian-picker="true"
-                               data-format="yyyy/MM/dd"
-                               placeholder="انتخاب تاریخ..."
-                               inputmode="none"
-                               readonly />
-                        <span asp-validation-for="PlannedDateString" class="text-danger"></span>
-                    </div>
+                    @* ⭐⭐⭐ نمایش پیام خطا در صورت وجود *@
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            <strong>خطا!</strong> @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
 
-                    <!-- ⭐⭐⭐ NEW - عنوان گروه -->
-                    <div class="mb-3">
-                        <label asp-for="GroupTitle" class="form-label">
-                            <i class="fa fa-folder me-1"></i>عنوان گروه
-                        </label>
-                        <input asp-for="GroupTitle" 
-                               type="text" 
-                               class="form-control" 
-                               placeholder="مثال: کارهای فوری، پروژه X، تماس‌های امروز" />
-                        <small class="form-text text-muted">
-                            <i class="fa fa-info-circle me-1"></i>
-                            برای دسته‌بندی تسک‌ها در صفحه "روز من" استفاده می‌شود (اختیاری)
-                        </small>
-                        <span asp-validation-for="GroupTitle" class="text-danger"></span>
-                    </div>
+                    @if (Model.TaskAssignmentId == 0)
+                    {
+                        @* ⭐⭐⭐ در صورت نبودن TaskAssignment، فرم را غیرفعال کن *@
+                        <div class="alert alert-warning">
+                            <i class="fa fa-info-circle me-2"></i>
+                            <strong>توجه:</strong> این تسک به شما تخصیص داده نشده است. برای افزودن به "روز من"، ابتدا باید تسک به شما assign شود.
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- ⭐⭐⭐ تاریخ برنامه‌ریزی با Persian DatePicker -->
+                        <div class="mb-3">
+                            <label asp-for="PlannedDateString" class="form-label"></label>
+                            <input asp-for="PlannedDateString"
+                                   type="text"
+                                   class="form-control js-flatpickr"
+                                   data-format="yyyy/MM/dd"
+                                   placeholder="انتخاب تاریخ..."
+                                   inputmode="none"
+                                   readonly />
+                            <span asp-validation-for="PlannedDateString" class="text-danger"></span>
+                        </div>
 
-                    <div class="mb-3">
-                        <label asp-for="PlanNote" class="form-label"></label>
-                        <textarea asp-for="PlanNote" class="form-control" rows="3" 
-                                  placeholder="مثال: شروع از ساعت 10 صبح"></textarea>
-                    </div>
+                        <!-- ⭐⭐⭐ عنوان گروه با HTML5 Datalist -->
+                        <div class="mb-3">
+                            <label asp-for="GroupTitle" class="form-label">
+                                <i class="fa fa-folder me-1"></i>عنوان گروه
+                                @if (ViewBag.GroupTitles != null && ((List<string>)ViewBag.GroupTitles).Count > 0)
+                                {
+                                    <span class="badge bg-info ms-2">@((List<string>)ViewBag.GroupTitles).Count() گروه موجود</span>
+                                }
+                            </label>
+                            <input asp-for="GroupTitle" 
+                                   type="text" 
+                                   class="form-control" 
+                                   list="groupTitlesList"
+                                   placeholder="مثال: کارهای فوری، پروژه X، تماس‌های امروز"
+                                   autocomplete="off" />
+                            
+                            @* ⭐⭐⭐ HTML5 Datalist - لیست پیشنهادی *@
+                            @if (ViewBag.GroupTitles != null && ((List<string>)ViewBag.GroupTitles).Count > 0)
+                            {
+                                <datalist id="groupTitlesList">
+                                    @foreach (var groupTitle in (List<string>)ViewBag.GroupTitles)
+                                    {
+                                        <option value="@groupTitle">@groupTitle</option>
+                                    }
+                                </datalist>
+                            }
+                            
+                            <small class="form-text text-muted">
+                                <i class="fa fa-info-circle me-1"></i>
+                                برای دسته‌بندی تسک‌ها در صفحه "روز من" استفاده می‌شود (اختیاری)
+                            </small>
+                            <span asp-validation-for="GroupTitle" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PlanNote" class="form-label"></label>
+                            <textarea asp-for="PlanNote" class="form-control" rows="3" 
+                                      placeholder="مثال: شروع از ساعت 10 صبح"></textarea>
+                        </div>
+                    }
                 </div>
 
                 <div class="block-content block-content-full text-end border-top">
                     <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
-                        انصراف
+                        @if (Model.TaskAssignmentId == 0)
+                        {
+                            <text>بستن</text>
+                        }
+                        else
+                        {
+                            <text>انصراف</text>
+                        }
                     </button>
-                    <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
-                        <i class="fa fa-check me-1"></i>افزودن
-                    </button>
+                    @if (Model.TaskAssignmentId != 0)
+                    {
+                        <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
+                            <i class="fa fa-check me-1"></i>افزودن
+                        </button>
+                    }
                 </div>
             </div>
         </form>
     </div>
 </div>
 
+@* ⭐⭐⭐ فقط فراخوانی Dashmix - بدون راه‌اندازی دستی DatePicker *@
 <script>
-    $(document).ready(function() {
-        console.log('📅 Modal opened - Initializing Persian DatePicker...');
-        
-        // ⭐⭐⭐ تاخیر کوتاه برای اطمینان از بارگذاری کامل مودال
-        setTimeout(function() {
-            // فراخوانی تابع سراسری initPersianDatePicker
-            if (typeof window.initPersianDatePicker === 'function') {
-                window.initPersianDatePicker();
-                console.log('✅ Persian DatePicker initialized in modal');
-            } else {
-                console.warn('⚠️ initPersianDatePicker function not found');
-            }
-        }, 300);
-    });
+    Dashmix.helpersOnLoad(['js-flatpickr']);
 </script>

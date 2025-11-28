@@ -5,12 +5,12 @@ using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.Repository;
-using MahERP.DataModelLayer.Repository.MyDayTaskRepository;
 using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.Extentions;
+using MahERP.Helpers; // ⭐⭐⭐ اضافه شد
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -26,12 +26,10 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
     [PermissionRequired("TASK.MYDAY")]
     public class MyDayTaskController : BaseController
     {
-        private readonly IMyDayTaskRepository _myDayTaskRepository;
         private readonly ITaskRepository _TaskRepository;
         private new readonly UserManager<AppUsers> _userManager;
 
         public MyDayTaskController(
-            IMyDayTaskRepository myDayTaskRepository,
             IUnitOfWork Context,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
@@ -43,7 +41,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
  : base(Context, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
-            _myDayTaskRepository = myDayTaskRepository;
             _userManager = userManager;
             _TaskRepository = taskRepository;
         }
@@ -66,7 +63,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 endDate = parsedDate;
             }
 
-            var model = await _myDayTaskRepository.GetMyDayTasksAsync(currentUserId, startDate, endDate);
+            var model = await _TaskRepository.GetMyDayTasksAsync(currentUserId, startDate, endDate);
 
             return View(model);
         }
@@ -75,33 +72,68 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// مودال افزودن تسک به روز من
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> AddToMyDayModal(int taskId, bool fromList = false)
+        public async Task<IActionResult> AddToMyDayModal(
+            int taskId, 
+            bool fromList = false,
+            string? returnUrl = null,
+            string? sourcePage = null)
         {
-            // ⭐⭐⭐ دریافت taskAssignment برای کاربر فعلی
-            var currentUserId = _userManager.GetUserId(User);
-            
-            var taskAssignment =  _uow.TaskAssignmentUW.Get()
-                .Where(ta => ta.TaskId == taskId && ta.AssignedUserId == currentUserId)
-                .FirstOrDefault();
-
-            if (taskAssignment == null)
+            try
             {
-                return Json(new
+                var currentUserId = _userManager.GetUserId(User);
+                
+                // ✅ دریافت لیست گروه‌های موجود برای Autocomplete
+                var groupTitles = await _TaskRepository.GetMyDayGroupTitlesAsync(currentUserId);
+                ViewBag.GroupTitles = groupTitles;
+                
+                // ✅ استفاده از TaskRepository به جای UnitOfWork
+                var taskAssignment = await _TaskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, taskId);
+
+                if (taskAssignment == null)
                 {
-                    status = "error",
-                    message = new[] { new { status = "error", text = "تخصیص تسک یافت نشد" } }
-                });
+                    TempData["ErrorMessage"] = "این تسک به شما تخصیص داده نشده است یا دسترسی ندارید";
+                    
+                    var errorModel = new AddToMyDayViewModel
+                    {
+                        TaskId = taskId,
+                        FromList = fromList,
+                        PlannedDate = DateTime.Now.Date,
+                        ReturnUrl = returnUrl,
+                        SourcePage = sourcePage
+                    };
+                    
+                    return PartialView("_AddToMyDayModal", errorModel);
+                }
+
+                var model = new AddToMyDayViewModel
+                {
+                    TaskAssignmentId = taskAssignment.Id,
+                    TaskId = taskId,
+                    FromList = fromList,
+                    PlannedDate = DateTime.Now.Date,
+                    PlannedDateString = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now.Date, "yyyy/MM/dd"),
+                    ReturnUrl = returnUrl,
+                    SourcePage = sourcePage
+                };
+
+                return PartialView("_AddToMyDayModal", model);
             }
-
-            var model = new AddToMyDayViewModel
+            catch (Exception ex)
             {
-                TaskAssignmentId = taskAssignment.Id,
-                TaskId = taskId,
-                FromList = fromList,
-                PlannedDate = DateTime.Now.Date
-            };
-
-            return PartialView("_AddToMyDayModal", model);
+                Console.WriteLine($"❌ Error in AddToMyDayModal: {ex.Message}");
+                TempData["ErrorMessage"] = "خطا در بارگذاری مودال: " + ex.Message;
+                
+                var errorModel = new AddToMyDayViewModel
+                {
+                    TaskId = taskId,
+                    FromList = fromList,
+                    PlannedDate = DateTime.Now.Date,
+                    ReturnUrl = returnUrl,
+                    SourcePage = sourcePage
+                };
+                
+                return PartialView("_AddToMyDayModal", errorModel);
+            }
         }
 
         /// <summary>
@@ -119,24 +151,25 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     message = new[] { new { status = "error", text = "داده‌های ورودی نامعتبر است" } }
                 });
             }
+            
             model.PlannedDate = ConvertDateTime.ConvertShamsiToMiladi(model.PlannedDateString);
             var currentUserId = _userManager.GetUserId(User);
             
             // ⭐⭐⭐ پاس دادن GroupTitle به Repository
-            var result = await _myDayTaskRepository.AddTaskToMyDayAsync(
-                model.TaskAssignmentId,
+            var result = await _TaskRepository.AddTaskToMyDayAsync(
+                model.TaskId,
                 currentUserId,
                 model.PlannedDate,
                 model.PlanNote,
-                model.GroupTitle); // ⭐ اضافه شد
+                model.GroupTitle);
 
             if (result.Success)
             {
                 // ⭐⭐⭐ اگر از لیست آمده، پارشیال ردیف را برگردان
-                if (model.FromList && model.TaskId.HasValue)
+                if (model.FromList && model.TaskId != 0)
                 {
                     // دریافت اطلاعات تسک به‌روز شده
-                    var taskCard = await _TaskRepository.GetTaskCardViewModelAsync(model.TaskId.Value, currentUserId);
+                    var taskCard = await _TaskRepository.GetTaskCardViewModelAsync(model.TaskId, currentUserId);
                     
                     if (taskCard != null)
                     {
@@ -163,11 +196,21 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     }
                 }
 
-                // ⭐ حالت پیش‌فرض: redirect
+                // ⭐⭐⭐ NEW: استفاده از ReturnUrlHelper برای تعیین URL بازگشت
+                var returnUrl = this.GetSafeReturnUrl(
+                    model.ReturnUrl,
+                    defaultAction: "Index",
+                    defaultController: "MyDayTask",
+                    defaultArea: "TaskingArea"
+                );
+
+                // ⭐⭐⭐ لاگ برای Debug
+                Console.WriteLine($"✅ AddToMyDay Success - SourcePage: {model.SourcePage}, ReturnUrl: {returnUrl}");
+
                 return Json(new
                 {
                     status = "redirect",
-                    redirectUrl = Url.Action("Index", "MyDayTask"),
+                    redirectUrl = returnUrl,
                     message = new[] { new { status = "success", text = result.Message } }
                 });
             }
@@ -184,25 +227,45 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveFromMyDay(int myDayId)
+        public async Task<IActionResult> RemoveFromMyDay(RemoveFromMyDayViewModel model)
         {
-            var currentUserId = _userManager.GetUserId(User);
-            var result = await _myDayTaskRepository.RemoveTaskFromMyDayAsync(myDayId, currentUserId);
-
-            if (result.Success)
+            if (!ModelState.IsValid)
             {
                 return Json(new
                 {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "داده‌های ورودی نامعتبر است" } }
+                });
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+            var result = await _TaskRepository.RemoveTaskFromMyDayAsync(model.MyDayId, currentUserId);
+
+            if (result.Success)
+            {
+                // ⭐⭐⭐ استفاده از ReturnUrlHelper برای تعیین URL بازگشت
+                var returnUrl = this.GetSafeReturnUrl(
+                    model.ReturnUrl,
+                    defaultAction: "Index",
+                    defaultController: "MyDayTask",
+                    defaultArea: "TaskingArea"
+                );
+
+                // ⭐⭐⭐ لاگ برای Debug
+                Console.WriteLine($"✅ RemoveFromMyDay Success - SourcePage: {model.SourcePage}, ReturnUrl: {returnUrl}");
+
+                return Json(new
+                {
                     status = "redirect",
-                    redirectUrl = Url.Action("Index", "MyDayTask"),
-                    message = result.Message
+                    redirectUrl = returnUrl,
+                    message = new[] { new { status = "success", text = result.Message } }
                 });
             }
 
             return Json(new
             {
                 status = "error",
-                message = result.Message
+                message = new[] { new { status = "error", text = result.Message } }
             });
         }
 
@@ -237,7 +300,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
 
             var currentUserId = _userManager.GetUserId(User);
-            var result = await _myDayTaskRepository.LogWorkAsync(
+            var result = await _TaskRepository.LogWorkAsync(
                 model.MyDayId,
                 currentUserId,
                 model.WorkNote,
@@ -267,7 +330,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         public async Task<IActionResult> SetFocused(int myDayId)
         {
             var currentUserId = _userManager.GetUserId(User);
-            var result = await _myDayTaskRepository.SetTaskAsFocusedAsync(myDayId, currentUserId);
+            var result = await _TaskRepository.SetTaskAsFocusedAsync(myDayId, currentUserId);
 
             return Json(new
             {
@@ -283,7 +346,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         public async Task<IActionResult> RemoveFocused(int myDayId)
         {
             var currentUserId = _userManager.GetUserId(User);
-            var result = await _myDayTaskRepository.RemoveFocusFromTaskAsync(myDayId, currentUserId);
+            var result = await _TaskRepository.RemoveFocusFromTaskAsync(myDayId, currentUserId);
 
             return Json(new
             {
@@ -299,7 +362,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         public async Task<IActionResult> GetFocusedTask()
         {
             var currentUserId = _userManager.GetUserId(User);
-            var task = await _myDayTaskRepository.GetFocusedTaskAsync(currentUserId);
+            var task = await _TaskRepository.GetFocusedTaskAsync(currentUserId);
 
             return Json(new
             {
@@ -317,7 +380,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             try
             {
                 // ✅ استفاده از Repository به جای دسترسی مستقیم به دیتابیس
-                var workLogs = await _myDayTaskRepository.GetTaskWorkLogsAsync(taskId);
+                var workLogs = await _TaskRepository.GetTaskWorkLogsAsync(taskId);
                 ViewBag.WorkLogs = workLogs;
                 return  PartialView("_SubmitAndShowTaskWorkLogs", new TaskWorkLogViewModel());
             }
@@ -386,24 +449,44 @@ return BadRequest(ex.Message);
         }
 
         /// <summary>
-        /// ⭐⭐⭐ مودال تایید حذف از روز من - استفاده از Repository
+        /// ⭐⭐⭐ مودال تایید حذف از روز من - استفاده از taskId
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> RemoveFromMyDayModal(int myDayId)
+        public async Task<IActionResult> RemoveFromMyDayModal(
+            int taskId,
+            string? returnUrl = null,
+            string? sourcePage = null)
         {
             try
             {
-                // ✅ استفاده از Repository به جای دسترسی مستقیم به دیتابیس
-                var taskInfo = await _myDayTaskRepository.GetMyDayTaskInfoForRemovalAsync(myDayId);
+                var currentUserId = _userManager.GetUserId(User);
+
+                // ✅ استفاده از Repository - دریافت MyDayTask بر اساس taskId و userId
+                var myDayTask = await _TaskRepository.GetMyDayTaskByTaskIdAsync(taskId, currentUserId);
+
+                if (myDayTask == null)
+                {
+                    TempData["ErrorMessage"] = "این تسک در روز شما قرار ندارد";
+                    return NotFound();
+                }
+
+                // ✅ دریافت اطلاعات تسک برای نمایش
+                var taskInfo = await _TaskRepository.GetMyDayTaskInfoForRemovalAsync(myDayTask.Id);
 
                 if (taskInfo == null)
-                    return NotFound();
-
-                var model = new
                 {
-                    MyDayId = myDayId,
+                    TempData["ErrorMessage"] = "تسک یافت نشد";
+                    return NotFound();
+                }
+
+                var model = new RemoveFromMyDayViewModel
+                {
+                    MyDayId = myDayTask.Id,
+                    TaskId = taskId,
                     TaskTitle = taskInfo.Value.TaskTitle,
-                    TaskCode = taskInfo.Value.TaskCode
+                    TaskCode = taskInfo.Value.TaskCode,
+                    ReturnUrl = returnUrl,
+                    SourcePage = sourcePage
                 };
 
                 return PartialView("_RemoveFromMyDayModal", model);
@@ -411,6 +494,7 @@ return BadRequest(ex.Message);
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error in RemoveFromMyDayModal: {ex.Message}");
+                TempData["ErrorMessage"] = "خطا در بارگذاری مودال: " + ex.Message;
                 return NotFound();
             }
         }

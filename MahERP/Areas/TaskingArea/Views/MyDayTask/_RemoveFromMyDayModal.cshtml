@@ -1,10 +1,13 @@
-﻿@model dynamic
+﻿@model RemoveFromMyDayViewModel
 
 <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
         <form asp-action="RemoveFromMyDay" asp-controller="MyDayTask" method="post">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="myDayId" value="@Model.MyDayId" />
+            <input type="hidden" asp-for="MyDayId" />
+            <input type="hidden" asp-for="TaskId" />
+            <input type="hidden" asp-for="ReturnUrl" />
+            <input type="hidden" asp-for="SourcePage" />
 
             <div class="block block-rounded mb-0">
                 <div class="block-header bg-danger text-white">
@@ -27,6 +30,14 @@
                         <br />
                         <strong>کد:</strong> @Model.TaskCode
                     </div>
+
+                    @if (!string.IsNullOrEmpty(Model.SourcePage))
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-2"></i>
+                            بعد از حذف، به صفحه @Model.SourcePage بازمی‌گردید
+                        </div>
+                    }
                 </div>
 
                 <div class="block-content block-content-full text-end border-top">

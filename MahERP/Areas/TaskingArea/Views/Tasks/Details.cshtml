@@ -220,25 +220,36 @@
                 @if (!isCompletedByMe)
                 {
                     <li>
-                        @if (isInMyDay)
-                        {
-                            <button type="button"
-                                    class="dropdown-item disabled"
-                                    style="cursor: not-allowed; opacity: 0.6;">
-                                <i class="fa fa-check-circle text-success me-2"></i>
-                                <span class="text-success fw-bold">در روز من قرار دارد</span>
-                            </button>
-                        }
-                        else
-                        {
-                            <button type="button"
-                                    class="dropdown-item"
-                                    data-toggle="modal-ajax"
-                                    href="@Url.Action("AddToMyDayModal", "Tasks", new { taskId = Model.Id })">
-                                <i class="fa fa-calendar-alt me-2"></i>
-                                افزودن به روز من
-                            </button>
-                        }
+                  @if (isInMyDay)
+{
+    <button type="button"
+            class="dropdown-item text-warning"
+            data-toggle="modal-ajax"
+            href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { 
+                taskId = Model.Id,
+                returnUrl = Context.Request.Path,
+                sourcePage = "TaskDetails"
+            })"
+            data-bs-toggle="tooltip"
+            title="حذف از روز من">
+        <i class="fa fa-calendar-times text-warning me-2"></i>
+        <span class="fw-bold">حذف از روز من</span>
+    </button>
+}
+                       else
+{
+    <button type="button"
+            class="dropdown-item"
+            data-toggle="modal-ajax"
+            href="@Url.Action("AddToMyDayModal", "MyDayTask", new { 
+                taskId = Model.Id,
+                returnUrl = Context.Request.Path,
+                sourcePage = "TaskDetails"
+            })">
+        <i class="fa fa-calendar-alt me-2"></i>
+        افزودن به روز من
+    </button>
+}
                     </li>
                                     <li>
                                         <a class="dropdown-item"

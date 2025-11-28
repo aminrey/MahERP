@@ -501,7 +501,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         #region Personal Dates Management Methods
 
         /// <summary>
-        /// دریافت انتصاب تسک برای تنظیم تاریخ‌های شخصی
+        /// دریافت انتساب تسک برای تنظیم تاریخ‌های شخصی
         /// </summary>
         Task<TaskAssignment> GetTaskAssignmentForPersonalDatesAsync(int taskId, string userId);
 
@@ -520,34 +520,93 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         #region TaskMyDay Methods
 
         /// <summary>
-        /// اضافه کردن تسک به "روز من"
+        /// ⭐⭐⭐ دریافت تسک‌های "روز من" با گروه‌بندی پیشرفته
         /// </summary>
-        Task<bool> AddTaskToMyDayAsync(int taskId, string userId, DateTime plannedDate, string? planNote = null);
+        Task<MyDayTasksViewModel> GetMyDayTasksAsync(string userId, DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
-        /// ثبت کار انجام شده روی تسک
+        /// ⭐⭐⭐ دریافت تسک‌های یک روز خاص
         /// </summary>
-        Task<bool> LogTaskWorkAsync(int taskId, string userId, string? workNote = null, int? workDurationMinutes = null);
+        Task<List<MyDayTaskItemViewModel>> GetTasksForDateAsync(string userId, DateTime date);
 
         /// <summary>
-        /// دریافت تسک‌های "روز من" برای کاربر
+        /// ⭐⭐⭐ افزودن تسک به "روز من" با پشتیبانی از GroupTitle
         /// </summary>
-        Task<MyDayTasksViewModel> GetMyDayTasksAsync(string userId, DateTime? selectedDate = null);
+        Task<(bool Success, string Message, int? MyDayId)> AddTaskToMyDayAsync(
+            int taskId,
+            string userId,
+            DateTime plannedDate,
+            string? planNote = null,
+            string? groupTitle = null);
 
         /// <summary>
-        /// بررسی اینکه آیا تسک در "روز من" وجود دارد
+        /// ⭐⭐⭐ شروع کار روی تسک
+        /// </summary>
+        Task<(bool Success, string Message)> StartWorkOnTaskAsync(int myDayId, string userId);
+
+        /// <summary>
+        /// ⭐⭐⭐ ثبت گزارش کار انجام شده
+        /// </summary>
+        Task<(bool Success, string Message)> LogWorkAsync(
+            int myDayId,
+            string userId,
+            string workNote,
+            int? durationMinutes = null);
+
+        /// <summary>
+        /// ⭐⭐⭐ تنظیم تسک به عنوان متمرکز
+        /// </summary>
+        Task<(bool Success, string Message)> SetTaskAsFocusedAsync(int myDayId, string userId);
+
+        /// <summary>
+        /// ⭐⭐⭐ حذف تمرکز از تسک
+        /// </summary>
+        Task<(bool Success, string Message)> RemoveFocusFromTaskAsync(int myDayId, string userId);
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت تسک متمرکز فعلی
+        /// </summary>
+        Task<MyDayTaskItemViewModel?> GetFocusedTaskAsync(string userId);
+
+        /// <summary>
+        /// بررسی وجود تسک در "روز من"
         /// </summary>
         Task<bool> IsTaskInMyDayAsync(int taskId, string userId, DateTime? targetDate = null);
 
         /// <summary>
-        /// حذف تسک از "روز من"
+        /// ⭐⭐⭐ حذف تسک از "روز من"
         /// </summary>
-        Task<bool> RemoveTaskFromMyDayAsync(int taskId, string userId, DateTime? targetDate = null);
+        Task<(bool Success, string Message)> RemoveTaskFromMyDayAsync(int myDayId, string userId);
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت آمار "روز من"
+        /// </summary>
+        Task<MyDayStatsViewModel> GetMyDayStatsAsync(string userId, DateTime? date = null);
 
         /// <summary>
         /// دریافت تعداد تسک‌های "روز من" برای کاربر
         /// </summary>
         Task<int> GetMyDayTasksCountAsync(string userId, DateTime? targetDate = null);
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت لیست گزارش کارها
+        /// </summary>
+        Task<List<TaskWorkLogViewModel>> GetTaskWorkLogsAsync(int taskId);
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت اطلاعات تسک برای مودال حذف
+        /// </summary>
+        Task<(string TaskTitle, string TaskCode)?> GetMyDayTaskInfoForRemovalAsync(int myDayId);
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت MyDayTask بر اساس taskId
+        /// </summary>
+        Task<TaskMyDay?> GetMyDayTaskByTaskIdAsync(int taskId, string userId);
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت لیست عناوین گروه‌های موجود برای یک کاربر
+        /// </summary>
+        Task<List<string>> GetMyDayGroupTitlesAsync(string userId);
 
         #endregion
 
@@ -593,7 +652,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         Task HandleTaskAssignmentsAsync(Tasks task, TaskViewModel model, string currentUserId);
 
         /// <summary>
-        /// مدیریت انتصاب‌های تسک با Bulk Insert
+        /// مدیریت انتساب‌های تسک با Bulk Insert
         /// </summary>
         Task HandleTaskAssignmentsBulkAsync(Tasks task, TaskViewModel model, string currentUserId);
 

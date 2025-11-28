@@ -327,10 +327,15 @@
                                     @if (!Model.IsInMyDay)
                                     {
                                         <li>
-                                            <a class="dropdown-item" 
-                                               asp-controller="MyDayTask" asp-action="AddToMyDayModal" asp-route-taskId="@Model.Id" asp-route-fromList="true"
-                                               data-toggle="modal-ajax">
-
+                                            <a class="dropdown-item add-to-myday-from-row" 
+                                               href="@Url.Action("AddToMyDayModal", "MyDayTask", new { 
+                                                   taskId = Model.Id, 
+                                                   fromList = true,
+                                                   returnUrl = Context.Request.Path + Context.Request.QueryString,
+                                                   sourcePage = "TaskRow"
+                                               })"
+                                               data-toggle="modal-ajax"
+                                               data-task-id="@Model.Id">
                                                 <i class="fa fa-calendar-plus me-2"></i>افزودن به روز من
                                             </a>
                                         </li>

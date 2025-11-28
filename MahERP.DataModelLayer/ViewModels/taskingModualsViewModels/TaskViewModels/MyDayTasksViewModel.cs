@@ -1,4 +1,5 @@
 ﻿using MahERP.CommonLayer.PublicClasses;
+using MahERP.DataModelLayer.ViewModels.Common;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -202,7 +203,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
     /// <summary>
     /// ⭐⭐⭐ ViewModel برای افزودن تسک به روز من - به‌روز شده
     /// </summary>
-    public class AddToMyDayViewModel
+    public class AddToMyDayViewModel : IHasReturnValue
     {
         [Required(ErrorMessage = "شناسه تسک الزامی است")]
         public int TaskAssignmentId { get; set; }
@@ -210,7 +211,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// <summary>
         /// ⭐⭐⭐ شناسه تسک (برای بازگشت به لیست)
         /// </summary>
-        public int? TaskId { get; set; }
+        public int TaskId { get; set; }
 
         /// <summary>
         /// ⭐⭐⭐ آیا از لیست تسک‌ها آمده؟
@@ -222,8 +223,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
         [Required(ErrorMessage = "تاریخ برنامه‌ریزی الزامی است")]
         [Display(Name = "تاریخ برنامه‌ریزی")]
-
-        public string PlannedDateString { get; set; } = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now.Date,"yyyy/MM/dd");
+        public string PlannedDateString { get; set; } = ConvertDateTime.ConvertMiladiToShamsi(DateTime.Now.Date, "yyyy/MM/dd");
 
         /// <summary>
         /// ⭐⭐⭐ NEW - عنوان گروه برای دسته‌بندی
@@ -234,7 +234,20 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
 
         [MaxLength(500)]
         [Display(Name = "یادداشت برنامه‌ریزی")]
-        public string? PlanNote { get; set; }   
+        public string? PlanNote { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - URL بازگشت بعد از عملیات موفق
+        /// </summary>
+        [MaxLength(500)]
+        public string? ReturnUrl { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - نام صفحه مبدا
+        /// مثال: "TaskList", "TaskDetails", "TaskCard"
+        /// </summary>
+        [MaxLength(50)]
+        public string? SourcePage { get; set; }
     }
 
     /// <summary>
@@ -253,5 +266,42 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         [Display(Name = "مدت زمان (دقیقه)")]
         [Range(0, 1440, ErrorMessage = "مدت زمان باید بین 0 تا 1440 دقیقه باشد")]
         public int? DurationMinutes { get; set; }
+    }
+
+    /// <summary>
+    /// ⭐⭐⭐ ViewModel برای حذف تسک از روز من - به‌روز شده
+    /// </summary>
+    public class RemoveFromMyDayViewModel : IHasReturnValue
+    {
+        [Required(ErrorMessage = "شناسه روز من الزامی است")]
+        public int MyDayId { get; set; }
+
+        /// <summary>
+        /// شناسه تسک (برای بازگشت به لیست)
+        /// </summary>
+        public int TaskId { get; set; }
+
+        /// <summary>
+        /// عنوان تسک (برای نمایش در مودال)
+        /// </summary>
+        public string TaskTitle { get; set; } = string.Empty;
+
+        /// <summary>
+        /// کد تسک (برای نمایش در مودال)
+        /// </summary>
+        public string TaskCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// ⭐⭐⭐ URL بازگشت بعد از عملیات موفق
+        /// </summary>
+        [MaxLength(500)]
+        public string? ReturnUrl { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ نام صفحه مبدا
+        /// مثال: "TaskList", "TaskDetails", "TaskCard", "MyDay"
+        /// </summary>
+        [MaxLength(50)]
+        public string? SourcePage { get; set; }
     }
 }

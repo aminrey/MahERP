@@ -6,7 +6,6 @@ using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.ContactGroupRepository;
 using MahERP.DataModelLayer.Repository.ContactRepository;
-using MahERP.DataModelLayer.Repository.MyDayTaskRepository;
 using MahERP.DataModelLayer.Repository.Notifications;
 using MahERP.DataModelLayer.Repository.OrganizationGroupRepository;
 using MahERP.DataModelLayer.Repository.OrganizationRepository;
@@ -54,7 +53,6 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
 builder.Services.AddScoped<ITaskOperationsRepository, TaskOperationsRepository>(); // ⭐ جدید
 builder.Services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
-builder.Services.AddScoped<IMyDayTaskRepository, MyDayTaskRepository>();
 builder.Services.AddScoped<ITaskCarbonCopyRepository, TaskCarbonCopyRepository>(); // ⭐⭐⭐ جدید
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
