@@ -382,7 +382,7 @@
                                                             <i class="fa fa-list me-1"></i>ثبت کار انجام شده
                                                         </a>
 
-                                                        <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
+                                                        <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { taskId = task.TaskId, returnUrl = Context.Request.Path + Context.Request.QueryString, sourcePage = "MyDay" })"
                                                            data-toggle="modal-ajax"
                                                            class="btn btn-sm btn-danger"
                                                            title="حذف از روز من">
@@ -425,7 +425,7 @@
                                                             <i class="fa fa-list me-1"></i>کارهای انجام شده
                                                         </a>
 
-                                                        <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { myDayId = task.MyDayId })"
+                                                        <a href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { taskId = task.TaskId, returnUrl = Context.Request.Path + Context.Request.QueryString, sourcePage = "MyDay" })"
                                                            data-toggle="modal-ajax"
                                                            class="btn btn-sm btn-danger"
                                                            title="حذف از روز من">

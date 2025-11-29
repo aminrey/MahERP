@@ -6,7 +6,7 @@
     {
         <a href="@Url.Action("Click", "Notification", new { id = notification.Id, area = "TaskingArea" })"
            class="dropdown-item notification-item d-flex align-items-start py-3 border-bottom">
-            <div class="notification-icon me-3">
+            <div class="notification-icon me-3 flex-shrink-0">
                 <i class="fa fa-fw @notification.Icon fa-2x text-primary"></i>
             </div>
             <div class="flex-grow-1 notification-content">
@@ -17,7 +17,7 @@
                         <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">جدید</span>
                     }
                 </div>
-                <div class="fs-sm text-muted mb-1">
+                <div class="fs-sm text-muted mb-1 notification-message">
                     @notification.Message
                 </div>
                 <div class="fs-xs text-muted">

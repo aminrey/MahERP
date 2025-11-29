@@ -53,24 +53,52 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                     groups = GroupByPriority(tasks);
                     break;
 
-                case TaskGroupingType.Stakeholder:  // ⭐⭐⭐ جدید
+                case TaskGroupingType.Stakeholder:
                     groups = GroupByStakeholder(tasks);
                     break;
+
+                case TaskGroupingType.AssignedUser:
+                    groups = GroupByAssignedUser(tasks);
+                    break;
             }
+
+            // ⭐⭐⭐ Pre-load MyDay و Focus data یک‌بار برای همه تسک‌ها
+            var taskIds = tasks.Select(t => t.Id).ToList();
+            var today = DateTime.Now.Date;
+            var test = await _context.TaskMyDay_Tbl.Include(t => t.TaskAssignment).ToListAsync();
+            // دریافت تسک‌های "روز من"
+            var myDayTaskIds = (await _context.TaskMyDay_Tbl.Include(t => t.TaskAssignment)
+                .Where(tmd =>
+                    taskIds.Contains(tmd.TaskAssignment.TaskId) &&
+                    tmd.TaskAssignment.AssignedUserId == currentUserId &&
+                    !tmd.IsRemoved)
+                .Select(tmd => tmd.TaskAssignment.TaskId)
+                .ToListAsync())
+                .ToHashSet();
+
+            // دریافت تسک‌های فوکوس
+            var focusedTaskIds = (await _context.TaskAssignment_Tbl
+                .Where(ta =>
+                    taskIds.Contains(ta.TaskId) &&
+                    ta.AssignedUserId == currentUserId &&
+                    ta.IsFocused)
+                .Select(ta => ta.TaskId)
+                .ToListAsync())
+                .ToHashSet();
 
             // ⭐ تبدیل به کارت برای هر گروه
             foreach (var group in groups)
             {
-                var groupTasks = tasks.Where(t => IsTaskInGroup(t, group.GroupKey, grouping, currentUserId)).ToList();  // ⭐ پاس دادن currentUserId
+                var groupTasks = tasks.Where(t => IsTaskInGroup(t, group.GroupKey, grouping, currentUserId)).ToList();
 
                 group.PendingTasks = groupTasks
                     .Where(t => !IsTaskCompletedForUser(t.Id, currentUserId))
-                    .Select((t, index) => MapToTaskCard(t, index + 1, currentUserId, viewType))  // ⭐ پاس دادن viewType
+                    .Select((t, index) => MapToTaskCard(t, index + 1, currentUserId, viewType, myDayTaskIds, focusedTaskIds))
                     .ToList();
 
                 group.CompletedTasks = groupTasks
                     .Where(t => IsTaskCompletedForUser(t.Id, currentUserId))
-                    .Select((t, index) => MapToTaskCard(t, index + 1, currentUserId, viewType))  // ⭐ پاس دادن viewType
+                    .Select((t, index) => MapToTaskCard(t, index + 1, currentUserId, viewType, myDayTaskIds, focusedTaskIds))
                     .ToList();
             }
 
@@ -132,7 +160,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         }
 
         /// <summary>
-        /// گروه‌بندی بر اساس زمان ساخت
+        /// grupo بندی بر اساس تاریخ ساخت
         /// </summary>
         public List<TaskGroupViewModel> GroupByCreateDate(List<Tasks> tasks)
         {
@@ -146,7 +174,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         }
 
         /// <summary>
-        /// گروه‌بندی بر اساس زمان پایان
+        /// گروه‌بندی بر اساس تاریخ پایان
         /// </summary>
         public List<TaskGroupViewModel> GroupByDueDate(List<Tasks> tasks)
         {
@@ -225,6 +253,48 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
 
             groups.AddRange(contactGroups);
             groups.AddRange(organizationGroups);
+
+            return groups.OrderBy(g => g.GroupTitle).ToList();
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ گروه‌بندی بر اساس اعضای منتصب شده (Assigned Users)
+        /// </summary>
+        public List<TaskGroupViewModel> GroupByAssignedUser(List<Tasks> tasks)
+        {
+            var groups = new List<TaskGroupViewModel>
+            {
+                new TaskGroupViewModel
+                {
+                    GroupKey = "unassigned",
+                    GroupTitle = "بدون عضو",
+                    GroupIcon = "fa-user-slash",
+                    GroupBadgeClass = "bg-secondary"
+                }
+            };
+
+            // دریافت تمام اعضای یکتا از TaskAssignments
+            var assignedUsers = tasks
+                .Where(t => t.TaskAssignments != null && t.TaskAssignments.Any())
+                .SelectMany(t => t.TaskAssignments)
+                .Select(a => new { a.AssignedUserId, a.AssignedUser })
+                .Distinct()
+                .ToList();
+
+            // ایجاد گروه برای هر عضو
+            foreach (var assignment in assignedUsers)
+            {
+                if (assignment.AssignedUser != null)
+                {
+                    groups.Add(new TaskGroupViewModel
+                    {
+                        GroupKey = $"user-{assignment.AssignedUserId}",
+                        GroupTitle = $"{assignment.AssignedUser.FirstName} {assignment.AssignedUser.LastName}",
+                        GroupIcon = "fa-user",
+                        GroupBadgeClass = "bg-primary"
+                    });
+                }
+            }
 
             return groups.OrderBy(g => g.GroupTitle).ToList();
         }
@@ -314,6 +384,21 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
 
                     return false;
 
+                case TaskGroupingType.AssignedUser:  // ⭐⭐⭐ جدید
+                    // بدون عضو
+                    if (groupKey == "unassigned")
+                        return task.TaskAssignments == null || !task.TaskAssignments.Any();
+
+                    // عضو خاص
+                    if (groupKey.StartsWith("user-"))
+                    {
+                        var userId = groupKey.Replace("user-", "");
+                        return task.TaskAssignments != null &&
+                               task.TaskAssignments.Any(a => a.AssignedUserId == userId);
+                    }
+
+                    return false;
+
                 default:
                     return false;
             }
@@ -354,6 +439,10 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
 
                 CreateDate = task.CreateDate,
                 CreateDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.CreateDate, "yyyy/MM/dd"),
+
+                // ⭐⭐⭐ اضافه کردن StartDate
+                StartDate = task.StartDate,
+
                 DueDate = task.DueDate,
                 DueDatePersian = task.DueDate.HasValue
                     ? ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd")
@@ -370,9 +459,102 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
                 CanDelete = task.CreatorUserId == currentUserId,
                 CanComplete = task.TaskAssignments?.Any(a => a.AssignedUserId == currentUserId) ?? false,
 
-                // ⭐⭐⭐ دریافت اطلاعات IsInMyDay و IsFocused
+                // ⭐⭐⭐ CRITICAL: حتماً این دو را تنظیم کن
                 IsInMyDay = IsTaskInMyDay(task.Id, currentUserId),
                 IsFocused = IsTaskFocused(task.Id, currentUserId)
+            };
+
+            // ⭐⭐⭐ تشخیص نوع نظارت برای تسک‌های نظارتی
+            if (viewType == TaskViewType.Supervised)
+            {
+                var (supervisionType, supervisionReason) = GetSupervisionTypeAndReason(task.Id, currentUserId);
+                card.SupervisionType = supervisionType;
+                card.SupervisionReason = supervisionReason;
+            }
+
+            // ⭐ اعضای تسک
+            if (task.TaskAssignments != null)
+            {
+                card.TotalMembers = task.TaskAssignments.Count;
+                card.Members = task.TaskAssignments
+                    .Take(4)
+                    .Select(a => new TaskMemberAvatarViewModel
+                    {
+                        UserId = a.AssignedUserId,
+                        FullName = GetUserFullName(a.AssignedUserId),
+                        Initials = GetUserInitials(a.AssignedUser?.FirstName, a.AssignedUser?.LastName),
+                        ProfileImagePath = GetUserAvatar(a.AssignedUserId),
+                        TooltipText = GetUserFullName(a.AssignedUserId)
+                    })
+                    .ToList();
+            }
+
+            return card;
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ Overload جدید: با استفاده از pre-loaded data
+        /// </summary>
+        public TaskCardViewModel MapToTaskCard(
+            Tasks task,
+            int cardNumber,
+            string currentUserId,
+            TaskViewType? viewType,
+            HashSet<int> myDayTaskIds,
+            HashSet<int> focusedTaskIds)
+        {
+            var card = new TaskCardViewModel
+            {
+                Id = task.Id,
+                CardNumber = cardNumber,
+                TaskCode = task.TaskCode,
+                Title = task.Title,
+                ShortDescription = task.Description?.Length > 100
+                    ? task.Description.Substring(0, 100) + "..."
+                    : task.Description,
+
+                CategoryTitle = task.TaskCategory?.Title ?? "عمومی",
+                CategoryBadgeClass = "bg-info",
+
+                StakeholderName = GetStakeholderName(task),
+                CreatorName = GetUserFullName(task.CreatorUserId),
+                CreatorAvatar = GetUserAvatar(task.CreatorUserId),
+
+                Status = task.Status,
+                StatusText = GetTaskStatusText(task.Status),
+                StatusBadgeClass = GetTaskStatusBadgeClass(task.Status),
+                IsCompleted = IsTaskCompletedForUser(task.Id, currentUserId),
+                IsOverdue = task.DueDate.HasValue && task.DueDate.Value < DateTime.Now && !IsTaskCompletedForUser(task.Id, currentUserId),
+
+                Priority = task.Priority,
+                Important = task.Important,
+                PriorityText = GetTaskTypeText(task.TaskType),
+                PriorityBadgeClass = GetTaskTypeBadgeClass(task.TaskType),
+
+                CreateDate = task.CreateDate,
+                CreateDatePersian = ConvertDateTime.ConvertMiladiToShamsi(task.CreateDate, "yyyy/MM/dd"),
+
+                StartDate = task.StartDate,
+
+                DueDate = task.DueDate,
+                DueDatePersian = task.DueDate.HasValue
+                    ? ConvertDateTime.ConvertMiladiToShamsi(task.DueDate, "yyyy/MM/dd")
+                    : null,
+                DaysRemaining = task.DueDate.HasValue
+                    ? (int)(task.DueDate.Value.Date - DateTime.Now.Date).TotalDays
+                    : null,
+
+                TotalOperations = task.TaskOperations?.Count ?? 0,
+                CompletedOperations = task.TaskOperations?.Count(o => o.IsCompleted) ?? 0,
+                ProgressPercentage = CalculateProgress(task),
+
+                CanEdit = task.CreatorUserId == currentUserId,
+                CanDelete = task.CreatorUserId == currentUserId,
+                CanComplete = task.TaskAssignments?.Any(a => a.AssignedUserId == currentUserId) ?? false,
+
+                // ⭐⭐⭐ استفاده از pre-loaded data به جای Query
+                IsInMyDay = myDayTaskIds.Contains(task.Id),
+                IsFocused = focusedTaskIds.Contains(task.Id)
             };
 
             // ⭐⭐⭐ تشخیص نوع نظارت برای تسک‌های نظارتی
@@ -683,7 +865,7 @@ namespace MahERP.DataModelLayer.Repository.TaskRepository
         {
             var today = DateTime.Now.Date;
             
-            return _context.TaskMyDay_Tbl
+            return _context.TaskMyDay_Tbl.Include(t=> t.TaskAssignment)
                 .Any(tmd => tmd.TaskAssignment.TaskId == taskId &&
                            tmd.TaskAssignment.AssignedUserId == userId &&
                            !tmd.IsRemoved &&

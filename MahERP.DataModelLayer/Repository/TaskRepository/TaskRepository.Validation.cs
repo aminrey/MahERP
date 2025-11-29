@@ -39,6 +39,26 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         errors.Add("BranchIdSelected", "شما به شعبه انتخاب شده دسترسی ندارید");
                         isValid = false;
                     }
+
+                    // ⭐⭐⭐ بررسی تعلق Contact به Branch
+                    if (model.SelectedContactId.HasValue && model.SelectedContactId.Value > 0)
+                    {
+                        if (!_BranchRipository.IsContactAssignedToBranch(model.BranchIdSelected, model.SelectedContactId.Value))
+                        {
+                            errors.Add("SelectedContactId", "فرد انتخابی به شعبه انتخاب شده تعلق ندارد");
+                            isValid = false;
+                        }
+                    }
+
+                    // ⭐⭐⭐ بررسی تعلق Organization به Branch
+                    if (model.SelectedOrganizationId.HasValue && model.SelectedOrganizationId.Value > 0)
+                    {
+                        if (!_BranchRipository.IsOrganizationAssignedToBranch(model.BranchIdSelected, model.SelectedOrganizationId.Value))
+                        {
+                            errors.Add("SelectedOrganizationId", "سازمان انتخابی به شعبه انتخاب شده تعلق ندارد");
+                            isValid = false;
+                        }
+                    }
                 }
 
                 // بررسی کد دستی

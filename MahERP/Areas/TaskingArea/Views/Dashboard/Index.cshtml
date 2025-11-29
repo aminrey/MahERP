@@ -19,12 +19,10 @@
                     <div class="block block-rounded block-link-shadow block-transparent bg-black-50 text-center mb-0 mx-auto">
                         <div class="block-content block-content-full px-4 py-3">
                             <div class="d-grid gap-2">
-                                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="MyDayTasks" class="btn btn-primary">
-                                    <i class="fa fa-calendar-day me-1"></i> تسک‌های امروز من
+                                <a asp-area="TaskingArea" asp-controller="MyDayTask" asp-action="Index" class="btn btn-primary">
+                                    <i class="fa fa-calendar-day me-1"></i> تسک‌های روز من
                                 </a>
-                                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskCalendar" class="btn btn-alt-secondary">
-                                    <i class="fa fa-calendar me-1"></i> تقویم تسک‌ها
-                                </a>
+                             
                             </div>
                         </div>
                     </div>
@@ -94,22 +92,13 @@
                         </button>
                     </div>
                 </div>
-                <div class="block-content">
-                    <div class="table-responsive">
-
-                    <table class="table table-borderless table-striped table-vcenter fs-sm" id="receivedTasksTable">
-                        <tbody>
-                            <!-- داده‌ها از طریق AJAX بارگذاری می‌شوند -->
-                            <tr>
-                                <td class="text-center">
-                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                        <span class="visually-hidden">در حال بارگذاری...</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="block-content" id="receivedTasksContainer">
+                    <!-- ⭐⭐⭐ کارت‌های تسک از طریق AJAX بارگذاری می‌شوند -->
+                    <div class="text-center p-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!-- END تسک‌های دریافتی -->
@@ -125,19 +114,13 @@
                         </button>
                     </div>
                 </div>
-                <div class="block-content">
-                    <table class="table table-borderless table-striped table-vcenter fs-sm" id="assignedTasksTable">
-                        <tbody>
-                            <!-- داده‌ها از طریق AJAX بارگذاری می‌شوند -->
-                            <tr>
-                                <td class="text-center">
-                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                        <span class="visually-hidden">در حال بارگذاری...</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="block-content" id="assignedTasksContainer">
+                    <!-- ⭐⭐⭐ کارت‌های تسک از طریق AJAX بارگذاری می‌شوند -->
+                    <div class="text-center p-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!-- END تسک‌های واگذار شده -->
@@ -251,22 +234,22 @@
             $.get('@Url.Action("GetRecentReceivedTasks", "Dashboard", new { area = "TaskingArea" })')
                 .done(function(response) {
                     if (response.success && response.tasks) {
-                        populateTaskTable('#receivedTasksTable', response.tasks, 'received');
+                        populateTaskTable('#receivedTasksContainer', response.tasks, 'received');
                     }
                 })
                 .fail(function() {
-                    $('#receivedTasksTable tbody').html('<tr><td colspan="4" class="text-center text-muted">خطا در بارگذاری</td></tr>');
+                    $('#receivedTasksContainer').html('<div class="text-center text-muted p-3"><i class="fa fa-exclamation-triangle me-2"></i>خطا در بارگذاری</div>');
                 });
 
             // بارگذاری تسک‌های واگذار شده
             $.get('@Url.Action("GetRecentAssignedTasks", "Dashboard", new { area = "TaskingArea" })')
                 .done(function(response) {
                     if (response.success && response.tasks) {
-                        populateTaskTable('#assignedTasksTable', response.tasks, 'assigned');
+                        populateTaskTable('#assignedTasksContainer', response.tasks, 'assigned');
                     }
                 })
                 .fail(function() {
-                    $('#assignedTasksTable tbody').html('<tr><td colspan="4" class="text-center text-muted">خطا در بارگذاری</td></tr>');
+                    $('#assignedTasksContainer').html('<div class="text-center text-muted p-3"><i class="fa fa-exclamation-triangle me-2"></i>خطا در بارگذاری</div>');
                 });
         }
 
@@ -284,7 +267,7 @@
         }
 
         // ⭐ تابع پر کردن جدول یادآوری‌ها
-                function populateRemindersTable(reminders) {
+        function populateRemindersTable(reminders) {
             const tbody = $('#remindersTable tbody');
             tbody.empty();
 
@@ -395,94 +378,136 @@
             }
         }
 
-        // اصلاح تابع populateTaskTable برای اضافه کردن badge تکمیل
-              function populateTaskTable(tableSelector, tasks, type) {
-            const tbody = $(tableSelector + ' tbody');
-            tbody.empty();
+        // ⭐⭐⭐ تابع اصلی برای نمایش تسک‌ها به صورت کارتی
+        function populateTaskTable(tableSelector, tasks, type) {
+            const container = $(tableSelector).closest('.block-content');
+            container.empty();
 
             if (!tasks || tasks.length === 0) {
-                tbody.html('<tr><td colspan="5" class="text-center text-muted">تسکی یافت نشد</td></tr>');
+                container.html('<div class="text-center text-muted p-3"><i class="fa fa-inbox me-2"></i>تسکی یافت نشد</div>');
                 return;
             }
 
+            // ایجاد container برای کارت‌ها
+            const cardsContainer = $('<div class="row g-2"></div>');
+            
             tasks.forEach(function(task) {
-                const priorityBadge = getPriorityBadge(task.priority, task.important);
-                const startDate = task.startDate || task.createDate;
-                const formattedDate = formatDate(startDate);
-                const shortDescription = truncateText(task.description || '', 5);
-
-                // ⭐⭐⭐ اضافه کردن Badge تکمیل برای تسک‌های دریافتی
-                let completionBadge = '';
-                if (type === 'received' && task.isCompleted) {
-                    completionBadge = '<span class="badge bg-success ms-1" title="تکمیل شده"><i class="fa fa-check"></i> تکمیل شده</span>';
-                }
-
-                // ⭐⭐⭐ اضافه کردن Badge پیشرفت برای تسک‌های واگذار شده
-                let progressBadge = '';
-                if (type === 'assigned') {
-                    const completionPercentage = task.totalAssignees > 0 
-                        ? Math.round((task.completedCount / task.totalAssignees) * 100) 
-                        : 0;
-                    
-                    let progressClass = 'bg-secondary';
-                    if (completionPercentage === 100) {
-                        progressClass = 'bg-success';
-                    } else if (completionPercentage >= 50) {
-                        progressClass = 'bg-info';
-                    } else if (task.hasOverdueAssignees) {
-                        progressClass = 'bg-danger';
-                    } else {
-                        progressClass = 'bg-warning';
-                    }
-
-                    progressBadge = `<span class="badge ${progressClass} ms-1" title="${task.completedCount} از ${task.totalAssignees} نفر">${task.completedCount}/${task.totalAssignees}</span>`;
-                }
-
-                let userInfo, userLabel;
-                if (type === 'received') {
-                    userInfo = task.creatorName || 'نامشخص';
-                    userLabel = 'از:';
-                } else {
-                    userInfo = task.assignedToName || 'نامشخص';
-                    userLabel = 'به:';
-                }
-
-                const row = `
-                    <tr>
-                        <td class="text-center" style="width: 80px;">
-                            <a class="fw-semibold" href="/TaskingArea/Tasks/Details/${task.id}">${task.taskCode || 'بدون کد'}</a>
-                        </td>
-                        <td style="max-width: 300px;">
-                            <div class="fw-medium mb-1 text-truncate">
-                                <a href="/TaskingArea/Tasks/Details/${task.id}">${task.title}</a>
-                            </div>
-                            <div class="fs-xs text-muted mb-1 text-truncate">${shortDescription}</div>
-                            <div class="fs-xs text-truncate">
-                                <span class="text-muted">${userLabel}</span>
-                                <span class="fw-medium">${userInfo}</span>
-                            </div>
-                        </td>
-                        <td class="d-none d-sm-table-cell text-center" style="width: 100px;">
-                            ${priorityBadge}
-                            ${completionBadge}
-                            ${progressBadge}
-                        </td>
-                        <td class="d-none d-sm-table-cell text-end text-nowrap" style="width: 90px;">
-                            <div class="fs-xs text-muted">${formattedDate}</div>
-                        </td>
-                    </tr>
-                `;
-                tbody.append(row);
+                const card = createDashboardTaskCard(task, type);
+                cardsContainer.append(card);
             });
+
+            container.append(cardsContainer);
         }
-        function getPriorityBadge(priority, important) {
-            if (important || priority === 2) {
-                return '<span class="badge bg-danger">فوری</span>';
-            } else if (priority === 1) {
-                return '<span class="badge bg-warning">مهم</span>';
-            } else {
-                return '<span class="badge bg-secondary">عادی</span>';
+
+        // ⭐⭐⭐ تابع ایجاد کارت تسک برای داشبورد
+        function createDashboardTaskCard(task, type) {
+            const isCompleted = task.isCompleted || false;
+            const borderColor = isCompleted ? '#34a853' : '#4285f4';
+            
+            // تشخیص اولویت
+            let priorityBadge = 'bg-secondary';
+            let priorityText = 'عادی';
+            if (task.important || task.priority === 2) {
+                priorityBadge = 'bg-danger';
+                priorityText = 'فوری';
+            } else if (task.priority === 1) {
+                priorityBadge = 'bg-warning';
+                priorityText = 'مهم';
             }
+
+            // توضیحات کوتاه
+            const shortDesc = task.description && task.description.length > 50 
+                ? task.description.substring(0, 50) + '...' 
+                : (task.description || '');
+
+            // تاریخ
+            const taskDate = task.startDate || task.createDate;
+            const formattedDate = formatDate(taskDate);
+
+            // کاربر
+            let userBadge = '';
+            if (type === 'received') {
+                userBadge = `<span class="badge bg-secondary" style="font-size: 0.6rem;"><i class="fa fa-user me-1"></i>از: ${task.creatorName || 'نامشخص'}</span>`;
+            } else {
+                userBadge = `<span class="badge bg-info" style="font-size: 0.6rem;"><i class="fa fa-user me-1"></i>به: ${task.assignedToName || 'نامشخص'}</span>`;
+            }
+
+            // Badge تکمیل یا پیشرفت
+            let statusBadge = '';
+            if (type === 'received' && isCompleted) {
+                statusBadge = '<span class="badge bg-success" style="font-size: 0.6rem;"><i class="fa fa-check me-1"></i>تکمیل</span>';
+            } else if (type === 'assigned') {
+                const completionPercentage = task.totalAssignees > 0 
+                    ? Math.round((task.completedCount / task.totalAssignees) * 100) 
+                    : 0;
+                
+                let progressBadge = 'bg-secondary';
+                if (completionPercentage === 100) progressBadge = 'bg-success';
+                else if (completionPercentage >= 50) progressBadge = 'bg-info';
+                else if (task.hasOverdueAssignees) progressBadge = 'bg-danger';
+                else progressBadge = 'bg-warning';
+
+                statusBadge = `<span class="badge ${progressBadge}" style="font-size: 0.6rem;">${task.completedCount}/${task.totalAssignees}</span>`;
+            }
+
+            return `
+                <div class="col-12 mb-2">
+                    <div class="block block-rounded mb-0 position-relative task-dashboard-card"
+                         style="border-right: 4px solid ${borderColor}; 
+                                box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+                                transition: all 0.2s ease;">
+                        
+                        <div class="block-content p-2">
+                            <div class="row align-items-center g-2">
+                                
+                                <div class="col-auto">
+                                    <div class="text-center" style="min-width: 50px;">
+                                        <a href="/TaskingArea/Tasks/Details/${task.id}" class="fw-bold text-primary" style="font-size: 0.85rem;">
+                                            ${task.taskCode || '---'}
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="col">
+                                    <div class="d-flex flex-column">
+                                        <a href="/TaskingArea/Tasks/Details/${task.id}" 
+                                           class="fw-semibold text-dark text-decoration-none mb-1"
+                                           style="font-size: 0.85rem;">
+                                            ${task.title}
+                                        </a>
+                                        
+                                        ${shortDesc ? `<small class="text-muted d-none d-md-block mb-1">${shortDesc}</small>` : ''}
+
+                                        <div class="d-flex flex-wrap gap-1 align-items-center">
+                                            ${userBadge}
+                                            <span class="badge ${priorityBadge}" style="font-size: 0.6rem;">${priorityText}</span>
+                                            ${statusBadge}
+                                            <span class="badge bg-light text-dark d-md-none" style="font-size: 0.6rem;">
+                                                <i class="fa fa-calendar me-1"></i>${formattedDate}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-auto d-none d-md-block text-end" style="min-width: 90px;">
+                                    <div class="fs-xs text-muted">
+                                        <i class="fa fa-calendar me-1"></i>${formattedDate}
+                                    </div>
+                                </div>
+
+                                <div class="col-auto">
+                                    <a href="/TaskingArea/Tasks/Details/${task.id}" 
+                                       class="btn btn-sm btn-alt-primary"
+                                       data-bs-toggle="tooltip"
+                                       title="جزئیات">
+                                        <i class="fa fa-arrow-left"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         function formatDate(dateString) {
@@ -495,17 +520,48 @@
             });
         }
 
-        function truncateText(text, wordLimit) {
-            if (!text) return '';
-            const words = text.split(' ');
-            if (words.length <= wordLimit) return text;
-            return words.slice(0, wordLimit).join(' ') + '...';
-        }
-
         function updateSidebarBadges(stats) {
             if (typeof window.updateTaskBadges === 'function') {
                 window.updateTaskBadges(stats);
             }
         }
     </script>
+
+    <style>
+        /* ⭐⭐⭐ استایل کارت‌های تسک در داشبورد */
+        .task-dashboard-card {
+            transition: all 0.2s ease !important;
+            position: relative;
+            z-index: 1;
+        }
+
+        .task-dashboard-card:hover {
+            transform: translateX(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15) !important;
+            z-index: 10;
+        }
+
+        .task-dashboard-card a {
+            text-decoration: none;
+        }
+
+        .task-dashboard-card a:hover {
+            color: #4285f4 !important;
+        }
+
+        /* ⭐ Responsive adjustments */
+        @@media (max-width: 768px) {
+            .task-dashboard-card .block-content {
+                padding: 0.5rem !important;
+            }
+            
+            .task-dashboard-card .col-auto:first-child {
+                min-width: 45px !important;
+            }
+
+            .task-dashboard-card .fw-semibold {
+                font-size: 0.8rem !important;
+            }
+        }
+    </style>
 }

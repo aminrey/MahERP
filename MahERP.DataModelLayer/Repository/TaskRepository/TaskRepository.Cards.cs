@@ -163,6 +163,16 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 displayStartDate = task.CreateDate;
             }
 
+            // ⭐⭐⭐ بررسی وجود در "روز من" و فوکوس
+            var today = DateTime.Now.Date;
+            var isInMyDay = await _context.TaskMyDay_Tbl.Include(t=> t.TaskAssignment)
+                .AnyAsync(tmd =>
+                    tmd.TaskAssignment.TaskId == taskId &&
+                    tmd.TaskAssignment.AssignedUserId == userId &&
+                    !tmd.IsRemoved);
+
+            var isFocused = userAssignment?.IsFocused ?? false;
+
             // تبدیل به ViewModel
             return new TaskCardViewModel
             {
@@ -215,6 +225,10 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
                 // زمان باقیمانده
                 DaysRemaining = daysRemaining,
+
+                // ⭐⭐⭐ NEW: IsInMyDay و IsFocused
+                IsInMyDay = isInMyDay,
+                IsFocused = isFocused,
 
                 // دسترسی‌ها
                 CanEdit = task.CreatorUserId == userId,

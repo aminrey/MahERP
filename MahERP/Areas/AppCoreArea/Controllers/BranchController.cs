@@ -72,33 +72,19 @@ namespace MahERP.Areas.AppCoreArea.Controllers
         {
             try
             {
-                // ⭐ دریافت شعبه از Repository
-                var branch = _branchRepository.GetBranchById(id);
-                if (branch == null)
+                var currentUserId = _userManager.GetUserId(User);
+
+                // ⭐⭐⭐ استفاده از GetBranchDetailsById که همه چیز رو کامل می‌کنه
+                var model = _branchRepository.GetBranchDetailsById(
+                    branchId: id,
+                    userId: currentUserId,
+                    includeInactiveUsers: false,
+                    includeInactiveStakeholders: false,
+                    includeInactiveChildBranches: false
+                );
+
+                if (model == null)
                     return RedirectToAction("ErrorView", "Home");
-
-                // ⭐ دریافت اطلاعات کامل از Repository
-                var model = new BranchDetailsViewModel
-                {
-                    Id = branch.Id,
-                    Name = branch.Name,
-                    Description = branch.Description,
-                    Address = branch.Address,
-                    Phone = branch.Phone,
-                    Email = branch.Email,
-                    IsActive = branch.IsActive,
-                    IsMainBranch = branch.IsMainBranch,
-                    ParentId = branch.ParentId,
-                    ParentBranchName = branch.ParentBranch?.Name,
-                    CreateDate = branch.CreateDate,
-                    LastUpdateDate = branch.LastUpdateDate,
-
-                    // ⭐ دریافت BranchContacts از Repository
-                    BranchContacts = _branchRepository.GetBranchContacts(id),
-
-                    // ⭐ دریافت BranchOrganizations از Repository
-                    BranchOrganizations = _branchRepository.GetBranchOrganizations(id)
-                };
 
                 // ⭐ دریافت گروه‌های شعبه برای فیلتر
                 var branchGroups = _groupRepository.GetBranchGroups(id, includeInactive: false);
@@ -119,7 +105,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                     ActivityTypeEnum.View,
                     "Branch",
                     "Details",
-                    $"مشاهده جزئیات شعبه: {branch.Name}",
+                    $"مشاهده جزئیات شعبه: {model.Name}",
                     recordId: id.ToString()
                 );
 
@@ -294,18 +280,66 @@ namespace MahERP.Areas.AppCoreArea.Controllers
         // فعال/غیرفعال کردن شعبه - پردازش درخواست
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ToggleActivationPost(int id)
+        public async Task<IActionResult> ToggleActivationPost(int id)
         {
-            var branch = _uow.BranchUW.GetById(id);
-            if (branch == null)
-                return RedirectToAction("ErrorView", "Home");
+            try
+            {
+                var branch = _uow.BranchUW.GetById(id);
+                if (branch == null)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شعبه یافت نشد" } }
+                    });
+                }
 
-            branch.IsActive = !branch.IsActive;
-            branch.LastUpdateDate = DateTime.Now;
-            _uow.BranchUW.Update(branch);
-            _uow.Save();
+                var previousStatus = branch.IsActive;
+                branch.IsActive = !branch.IsActive;
+                branch.LastUpdateDate = DateTime.Now;
+                _uow.BranchUW.Update(branch);
+                _uow.Save();
 
-            return RedirectToAction(nameof(Index));
+                // ⭐ لاگ فعالیت
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.Edit,
+                    "Branch",
+                    "ToggleActivation",
+                    $"{(branch.IsActive ? "فعال" : "غیرفعال")} کردن شعبه: {branch.Name}",
+                    recordId: id.ToString()
+                );
+
+                // ⭐⭐⭐ بازگشت JSON برای modal-ajax-save
+                return Json(new
+                {
+                    status = "redirect",
+                    redirectUrl = Url.Action("Index", "Branch"),
+                    message = new[] 
+                    { 
+                        new 
+                        { 
+                            status = "success", 
+                            text = $"شعبه با موفقیت {(branch.IsActive ? "فعال" : "غیرفعال")} شد" 
+                        } 
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "Branch",
+                    "ToggleActivation",
+                    "خطا در تغییر وضعیت شعبه",
+                    ex,
+                    recordId: id.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در انجام عملیات" } }
+                });
+            }
         }
 
         // افزودن کاربر به شعبه - نمایش فرم

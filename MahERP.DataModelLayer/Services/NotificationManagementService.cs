@@ -587,78 +587,79 @@ namespace MahERP.DataModelLayer.Services
                     return;
                 }
 
-                // ⭐⭐⭐ فقط اگر systemNotificationId مشخص شده، CoreNotificationDelivery ثبت کن
-                CoreNotificationDelivery delivery = null;
-                if (coreNotificationId > 0)
-                {
-                    // ✅ ایجاد رکورد Delivery
-                    delivery = new CoreNotificationDelivery
-                    {
-                        CoreNotificationId = coreNotificationId,
-                        DeliveryMethod = 3, // Telegram
-                        DeliveryAddress = user.TelegramChatId.Value.ToString(),
-                        DeliveryStatus = 0,
-                        AttemptCount = 0,
-                        CreateDate = DateTime.Now,
-                        IsActive = true
-                    };
-
-                    _context.CoreNotificationDelivery_Tbl.Add(delivery);
-                    await _context.SaveChangesAsync();
-                }
-
                 // ✅ ارسال مستقیم تلگرام
                 var botToken = GetTelegramBotToken();
 
                 if (string.IsNullOrEmpty(botToken) || botToken == "YOUR_DEFAULT_BOT_TOKEN")
                 {
                     _logger.LogWarning("⚠️ توکن تلگرام معتبر یافت نشد");
-                    if (delivery != null)
-                    {
-                        delivery.DeliveryStatus = 3; // خطا
-                        delivery.ErrorMessage = "توکن تلگرام تنظیم نشده است";
-                        await _context.SaveChangesAsync();
-                    }
                     return;
                 }
 
                 // ⭐⭐⭐ ساخت NotificationContext برای دکمه‌های پویا
-                var notificationContext = await BuildNotificationContextAsync(coreNotificationId, userId);
+                var notificationContext = coreNotificationId > 0 
+                    ? await BuildNotificationContextAsync(coreNotificationId, userId)
+                    : null; // ⭐ برای اعلان‌های زمان‌بندی شده (بدون CoreNotification)
 
                 try
                 {
-                    // ⭐ ارسال با Context
+                    // ⭐ ارسال تلگرام
                     await _telegramService.SendNotificationAsync(
                         message,
                         user.TelegramChatId.Value,
                         botToken,
-                        notificationContext // ⭐ پارامتر جدید
+                        notificationContext
                     );
 
-                    // ✅ بروزرسانی وضعیت موفق
-                    if (delivery != null)
-                    {
-                        delivery.DeliveryStatus = 1; // ارسال شده
-                        delivery.DeliveryDate = DateTime.Now;
-                    }
+                    _logger.LogInformation($"✈️ پیام تلگرام برای {user.UserName} (ChatId: {user.TelegramChatId.Value}) ارسال شد");
 
-                    _logger.LogInformation($"✈️ پیام تلگرام با دکمه‌های پویا برای {user.UserName} (ChatId: {user.TelegramChatId.Value}) ارسال شد");
+                    // ⭐⭐⭐ فقط اگر coreNotificationId معتبر است، CoreNotificationDelivery ثبت کن
+                    if (coreNotificationId > 0)
+                    {
+                        var delivery = new CoreNotificationDelivery
+                        {
+                            CoreNotificationId = coreNotificationId,
+                            DeliveryMethod = 3, // Telegram
+                            DeliveryAddress = user.TelegramChatId.Value.ToString(),
+                            DeliveryStatus = 1, // ارسال شده
+                            AttemptCount = 1,
+                            CreateDate = DateTime.Now,
+                            DeliveryDate = DateTime.Now,
+                            IsActive = true
+                        };
+
+                        _context.CoreNotificationDelivery_Tbl.Add(delivery);
+                        await _context.SaveChangesAsync();
+
+                        _logger.LogDebug($"✅ CoreNotificationDelivery برای اعلان #{coreNotificationId} ثبت شد");
+                    }
+                    else
+                    {
+                        _logger.LogDebug($"ℹ️ اعلان زمان‌بندی شده - بدون ثبت CoreNotificationDelivery");
+                    }
                 }
                 catch (Exception sendEx)
                 {
-                    // ✅ ثبت خطای ارسال
-                    if (delivery != null)
-                    {
-                        delivery.DeliveryStatus = 3; // خطا
-                        delivery.ErrorMessage = $"خطا در ارسال: {sendEx.Message}";
-                    }
-
                     _logger.LogError(sendEx, $"❌ خطا در ارسال تلگرام به ChatId: {user.TelegramChatId.Value}");
-                }
 
-                if (delivery != null)
-                {
-                    await _context.SaveChangesAsync();
+                    // ⭐ ثبت خطا فقط اگر CoreNotification معتبر باشد
+                    if (coreNotificationId > 0)
+                    {
+                        var delivery = new CoreNotificationDelivery
+                        {
+                            CoreNotificationId = coreNotificationId,
+                            DeliveryMethod = 3,
+                            DeliveryAddress = user.TelegramChatId.Value.ToString(),
+                            DeliveryStatus = 3, // خطا
+                            ErrorMessage = $"خطا در ارسال: {sendEx.Message}",
+                            AttemptCount = 1,
+                            CreateDate = DateTime.Now,
+                            IsActive = true
+                        };
+
+                        _context.CoreNotificationDelivery_Tbl.Add(delivery);
+                        await _context.SaveChangesAsync();
+                    }
                 }
             }
             catch (Exception ex)

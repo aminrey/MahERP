@@ -104,35 +104,47 @@
                         onclick="changeGrouping(@((int)TaskGroupingType.Team))">
                     <i class="fa fa-users me-1"></i>تیم
                 </button>
-                   <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Stakeholder ? "btn-primary" : "btn-alt-secondary")"
-                        data-grouping="@((int)TaskGroupingType.Stakeholder)"
-                        onclick="changeGrouping(@((int)TaskGroupingType.Stakeholder))">
-                    <i class="fa fa-address-book me-1"></i>طرف حساب
-                </button>
-
+                
                 <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Creator ? "btn-primary" : "btn-alt-secondary")"
                         data-grouping="@((int)TaskGroupingType.Creator)"
                         onclick="changeGrouping(@((int)TaskGroupingType.Creator))">
                     <i class="fa fa-user-tie me-1"></i>سازنده
                 </button>
-                    <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Priority ? "btn-primary" : "btn-alt-secondary")"
+                
+                <!-- ⭐⭐⭐ دکمه جدید: اعضا -->
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.AssignedUser ? "btn-primary" : "btn-alt-secondary")"
+                        data-grouping="@((int)TaskGroupingType.AssignedUser)"
+                        onclick="changeGrouping(@((int)TaskGroupingType.AssignedUser))">
+                    <i class="fa fa-user-friends me-1"></i>اعضا
+                </button>
+                
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Stakeholder ? "btn-primary" : "btn-alt-secondary")"
+                        data-grouping="@((int)TaskGroupingType.Stakeholder)"
+                        onclick="changeGrouping(@((int)TaskGroupingType.Stakeholder))">
+                    <i class="fa fa-address-book me-1"></i>طرف حساب
+                </button>
+
+                <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.Priority ? "btn-primary" : "btn-alt-secondary")"
                         data-grouping="@((int)TaskGroupingType.Priority)"
                         onclick="changeGrouping(@((int)TaskGroupingType.Priority))">
                     <i class="fa fa-flag me-1"></i>اولویت
                 </button>
+                
                 <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.CreateDate ? "btn-primary" : "btn-alt-secondary")"
                         data-grouping="@((int)TaskGroupingType.CreateDate)"
                         onclick="changeGrouping(@((int)TaskGroupingType.CreateDate))">
                     <i class="fa fa-calendar-plus me-1"></i>زمان ساخت
                 </button>
+                
                 <button class="btn btn-sm btn-grouping @(Model.CurrentGrouping == TaskGroupingType.DueDate ? "btn-primary" : "btn-alt-secondary")"
                         data-grouping="@((int)TaskGroupingType.DueDate)"
                         onclick="changeGrouping(@((int)TaskGroupingType.DueDate))">
                     <i class="fa fa-calendar-check me-1"></i>زمان پایان
                 </button>
             
-                <!-- ⭐⭐⭐ دکمه جدید طرف حساب -->
-             
+              
+
+
                 <!-- ⭐⭐⭐ دکمه جستجوی پیشرفته -->
                 <button type="button" 
                         class="btn btn-sm btn-alt-success" 

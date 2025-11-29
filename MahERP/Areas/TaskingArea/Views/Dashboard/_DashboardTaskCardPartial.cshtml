@@ -1,0 +1,147 @@
+﻿@* ⭐⭐⭐ کارت کوچک تسک برای داشبورد - نسخه موبایل و دسکتاپ *@
+@{
+    var task = ViewBag.Task;
+    var type = ViewBag.Type ?? "received"; // received یا assigned
+}
+
+<div class="col-12 mb-2">
+    <div class="block block-rounded mb-0 position-relative task-dashboard-card"
+         style="border-right: 4px solid @(task.IsCompleted ? "#34a853" : "#4285f4"); 
+                box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+                transition: all 0.2s ease;">
+        
+        <div class="block-content p-2">
+            <div class="row align-items-center g-2">
+                
+                @* ⭐ کد تسک *@
+                <div class="col-auto">
+                    <div class="text-center" style="min-width: 50px;">
+                        <a href="/TaskingArea/Tasks/Details/@task.Id" class="fw-bold text-primary" style="font-size: 0.85rem;">
+                            @(task.TaskCode ?? "---")
+                        </a>
+                    </div>
+                </div>
+
+                @* ⭐ عنوان و اطلاعات *@
+                <div class="col">
+                    <div class="d-flex flex-column">
+                        <a href="/TaskingArea/Tasks/Details/@task.Id" 
+                           class="fw-semibold text-dark text-decoration-none mb-1"
+                           style="font-size: 0.85rem;">
+                            @task.Title
+                        </a>
+                        
+                        @* توضیحات کوتاه (فقط دسکتاپ) *@
+                        @if (!string.IsNullOrEmpty(task.Description))
+                        {
+                            var shortDesc = task.Description.Length > 50 ? task.Description.Substring(0, 50) + "..." : task.Description;
+                            <small class="text-muted d-none d-md-block mb-1">@shortDesc</small>
+                        }
+
+                        @* اطلاعات اضافی *@
+                        <div class="d-flex flex-wrap gap-1 align-items-center">
+                            @* کاربر *@
+                            @if (type == "received")
+                            {
+                                <span class="badge bg-secondary" style="font-size: 0.6rem;">
+                                    <i class="fa fa-user me-1"></i>از: @(task.CreatorName ?? "نامشخص")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info" style="font-size: 0.6rem;">
+                                    <i class="fa fa-user me-1"></i>به: @(task.AssignedToName ?? "نامشخص")
+                                </span>
+                            }
+
+                            @* اولویت *@
+                            @{
+                                string priorityBadge = "bg-secondary";
+                                string priorityText = "عادی";
+                                if (task.Important || task.Priority == 2)
+                                {
+                                    priorityBadge = "bg-danger";
+                                    priorityText = "فوری";
+                                }
+                                else if (task.Priority == 1)
+                                {
+                                    priorityBadge = "bg-warning";
+                                    priorityText = "مهم";
+                                }
+                            }
+                            <span class="badge @priorityBadge" style="font-size: 0.6rem;">@priorityText</span>
+
+                            @* تکمیل (برای دریافتی) *@
+                            @if (type == "received" && task.IsCompleted)
+                            {
+                                <span class="badge bg-success" style="font-size: 0.6rem;">
+                                    <i class="fa fa-check me-1"></i>تکمیل
+                                </span>
+                            }
+
+                            @* پیشرفت (برای واگذاری) *@
+                            @if (type == "assigned")
+                            {
+                                var completionPercentage = task.TotalAssignees > 0 
+                                    ? Math.Round((decimal)task.CompletedCount / task.TotalAssignees * 100) 
+                                    : 0;
+                                
+                                string progressBadge = "bg-secondary";
+                                if (completionPercentage == 100) progressBadge = "bg-success";
+                                else if (completionPercentage >= 50) progressBadge = "bg-info";
+                                else if (task.HasOverdueAssignees) progressBadge = "bg-danger";
+                                else progressBadge = "bg-warning";
+
+                                <span class="badge @progressBadge" style="font-size: 0.6rem;">
+                                    @task.CompletedCount/@task.TotalAssignees
+                                </span>
+                            }
+
+                            @* تاریخ (فقط موبایل) *@
+                            <span class="badge bg-light text-dark d-md-none" style="font-size: 0.6rem;">
+                                <i class="fa fa-calendar me-1"></i>
+                                @{
+                                    var taskDate = task.StartDate ?? task.CreateDate;
+                                    var persianDate = taskDate.ToString("yyyy/MM/dd");
+                                }
+                                @persianDate
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                @* ⭐ تاریخ (فقط دسکتاپ) *@
+                <div class="col-auto d-none d-md-block text-end" style="min-width: 90px;">
+                    @{
+                        var displayDate = task.StartDate ?? task.CreateDate;
+                        var displayPersianDate = displayDate.ToString("yyyy/MM/dd");
+                    }
+                    <div class="fs-xs text-muted">
+                        <i class="fa fa-calendar me-1"></i>@displayPersianDate
+                    </div>
+                </div>
+
+                @* ⭐ دکمه جزئیات *@
+                <div class="col-auto">
+                    <a href="/TaskingArea/Tasks/Details/@task.Id" 
+                       class="btn btn-sm btn-alt-primary"
+                       data-bs-toggle="tooltip"
+                       title="جزئیات">
+                        <i class="fa fa-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .task-dashboard-card {
+        transition: all 0.2s ease !important;
+    }
+
+    .task-dashboard-card:hover {
+        transform: translateX(-2px);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.15) !important;
+    }
+</style>

@@ -141,15 +141,12 @@
                                     <a href="@Url.Action("EditBranchUser", "Branch", new { id = branch.Id })" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="ویرایش">
                                         <i class="fa fa-fw fa-pencil-alt"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-alt-secondary me-1" data-bs-toggle="tooltip" title="@(branch.IsActive ? "غیرفعال کردن" : "فعال کردن")"
-                                            href="@Url.Action("ToggleActivation", "Branch", new { id = branch.Id })" data-toggle="modal-ajax">
+                                    <a href="@Url.Action("ToggleActivation", "Branch", new { id = branch.Id })" 
+                                       class="btn btn-sm btn-alt-secondary me-1" 
+                                       data-bs-toggle="tooltip" 
+                                       title="@(branch.IsActive ? "غیرفعال کردن" : "فعال کردن")"
+                                       data-toggle="modal-ajax">
                                         <i class="fa fa-fw @(branch.IsActive ? "fa-ban" : "fa-check")"></i>
-                                    </button>
-
-
-
-                                    <a href="@Url.Action("UsersIndex", "Branch", new { branchId = branch.Id })" class="btn btn-sm btn-alt-secondary" data-bs-toggle="tooltip" title="مدیریت کاربران شعبه">
-                                        <i class="fa fa-fw fa-users"></i>
                                     </a>
                                 </td>
                             </tr>
@@ -239,4 +236,4 @@
             $('[data-bs-toggle="tooltip"]').tooltip();
         });
     </script>
-}
+}}

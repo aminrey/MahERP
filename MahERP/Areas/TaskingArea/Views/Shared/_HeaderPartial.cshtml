@@ -21,7 +21,6 @@
             </button>
             <!-- END Toggle Sidebar -->
             <!-- Open Search Section -->
-           
             <!-- END Open Search Section -->
             <!-- ============== 🎨 MODULE SELECTOR ============== -->
             @{
@@ -178,7 +177,7 @@
 
 
         <div class="space-x-1">
-            
+
             <!-- ============== ⚡ QUICK ADD TASK BUTTON ============== -->
             @if (currentArea == "TaskingArea" && Html.CanAccessAny("TASK", "TASK.OPERATIONS.CREATE"))
             {
@@ -297,7 +296,7 @@
 
                         <div class="dropdown-divider"></div>
 
-                      
+
 
                         <a class="dropdown-item d-flex align-items-center @(IsMenuItemActive(currentController, currentAction, "Tasks", "TaskReminders") ? "active" : "")"
                            asp-area="TaskingArea" asp-controller="Tasks" asp-action="TaskReminders">
@@ -318,180 +317,59 @@
                 </div>
             </div>
             <!-- END User Dropdown -->
-
             <!-- ⭐ Notifications Dropdown -->
             <div class="dropdown d-inline-block">
-    <button aria-expanded="false" aria-haspopup="true"
-            class="btn btn-alt-secondary position-relative @(IsNotificationMenuActive(currentController, currentAction) ? "active" : "")"
-            data-bs-toggle="dropdown" id="page-header-notifications-dropdown" type="button">
-        <i class="fa fa-fw fa-bell notification-bell"></i>
-      
-    </button>
+                <button aria-expanded="false" aria-haspopup="true"
+                        class="btn btn-alt-secondary position-relative @(IsNotificationMenuActive(currentController, currentAction) ? "active" : "")"
+                        data-bs-toggle="dropdown" id="page-header-notifications-dropdown" type="button">
+                    <i class="fa fa-fw fa-bell notification-bell"></i>
+
+                </button>
                 <span class="position-absolute  top-0 end-0 translate-middle badge rounded-pill bg-danger notification-badge"
                       id="headerNotificationBadge"
                       style="display: none;">
                     0
                 </span>
-    <div aria-labelledby="page-header-notifications-dropdown" class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0" style="width: 380px; max-height: 500px;">
-        <!-- Notification Header -->
-        <div class="bg-primary-dark rounded-top fw-semibold text-white text-center p-3 d-flex justify-content-between align-items-center">
-            <span>نوتیفیکیشن‌ها</span>
-            <div>
-                <button class="btn btn-sm btn-outline-light me-1" onclick="markAllHeaderNotificationsAsRead()" title="همه را خوانده شده علامت‌گذاری کن">
-                    <i class="fa fa-check-double fa-xs"></i>
-                </button>
-                <a href="@Url.Action("Index", "Notification", new { area = "TaskingArea" })" class="btn btn-sm btn-outline-light" title="مشاهده همه">
-                    <i class="fa fa-external-link-alt fa-xs"></i>
-                </a>
-            </div>
-        </div>
+                <div aria-labelledby="page-header-notifications-dropdown" class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0" style="width: 380px; max-height: 500px;">
+                    <!-- Notification Header -->
+                    <div class="bg-primary-dark rounded-top fw-semibold text-white text-center p-3 d-flex justify-content-between align-items-center">
+                        <span>نوتیفیکیشن‌ها</span>
+                        <div>
+                            <button class="btn btn-sm btn-outline-light me-1" onclick="markAllHeaderNotificationsAsRead()" title="همه را خوانده شده علامت‌گذاری کن">
+                                <i class="fa fa-check-double fa-xs"></i>
+                            </button>
+                            <a href="@Url.Action("Index", "Notification", new { area = "TaskingArea" })" class="btn btn-sm btn-outline-light" title="مشاهده همه">
+                                <i class="fa fa-external-link-alt fa-xs"></i>
+                            </a>
+                        </div>
+                    </div>
 
-        <!-- Notification List -->
-        <div id="headerNotificationsList" style="max-height: 350px; overflow-y: auto;">
-            <div class="text-center p-3">
-                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                    <span class="visually-hidden">در حال بارگذاری...</span>
+                    <!-- Notification List -->
+                    <div id="headerNotificationsList" style="max-height: 350px; overflow-y: auto;">
+                        <div class="text-center p-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">در حال بارگذاری...</span>
+                            </div>
+                            <div class="mt-2 text-muted small">در حال بارگذاری...</div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="p-2 border-top">
+                        <a class="btn btn-alt-primary w-100 text-center" href="@Url.Action("Index", "Notification", new { area = "TaskingArea" })">
+                            <i class="fa fa-fw fa-eye opacity-50 me-1"></i> مشاهده همه
+                        </a>
+                    </div>
                 </div>
-                <div class="mt-2 text-muted small">در حال بارگذاری...</div>
             </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="p-2 border-top">
-            <a class="btn btn-alt-primary w-100 text-center" href="@Url.Action("Index", "Notification", new { area = "TaskingArea" })">
-                <i class="fa fa-fw fa-eye opacity-50 me-1"></i> مشاهده همه
-            </a>
-        </div>
-    </div>
-</div>
-<!-- END Notifications Dropdown -->
-
-<style>
-    /* ⭐⭐⭐ اصلاح CSS Badge */
-    .notification-badge {
-        font-size: 0.65em !important;
-        min-width: 18px;
-        height: 18px;
-        display: flex !important; /* ⭐ حذف display: none */
-        align-items: center;
-        justify-content: center;
-        animation: badgePulse 2s ease-in-out infinite, badgeGlow 2s ease-in-out infinite;
-        box-shadow: 0 0 12px rgba(220, 53, 69, 0.6);
-        font-weight: 600;
-        /* ⭐ اضافه کردن visibility برای مخفی کردن */
-        visibility: visible;
-        opacity: 1;
-        transition: opacity 0.3s ease, visibility 0.3s ease;
-    }
-    
-    /* ⭐ کلاس برای مخفی کردن badge */
-    .notification-badge.hidden {
-        opacity: 0;
-        visibility: hidden;
-    }
-    
-    .notification-badge.new-notification {
-        animation: badgeBounce 0.6s ease-out, badgePulse 2s ease-in-out infinite 0.6s, badgeGlow 2s ease-in-out infinite 0.6s;
-    }
-    
-    /* ⭐ انیمیشن Pulse برای Badge */
-    @@keyframes badgePulse {
-        0%, 100% {
-            transform: scale(1) translate(-50%, -50%);
-        }
-        50% {
-            transform: scale(1.15) translate(-50%, -50%);
-        }
-    }
-    
-    /* ⭐ انیمیشن Glow برای Badge */
-    @@keyframes badgeGlow {
-        0%, 100% {
-            box-shadow: 0 0 12px rgba(220, 53, 69, 0.6);
-        }
-        50% {
-            box-shadow: 0 0 20px rgba(220, 53, 69, 0.9), 0 0 30px rgba(220, 53, 69, 0.6);
-        }
-    }
-    
-    /* ⭐ انیمیشن Bounce برای نوتیفیکیشن جدید */
-    @@keyframes badgeBounce {
-        0% {
-            transform: scale(0) translate(-50%, -50%);
-            opacity: 0;
-        }
-        50% {
-            transform: scale(1.3) translate(-50%, -50%);
-        }
-        70% {
-            transform: scale(0.9) translate(-50%, -50%);
-        }
-        100% {
-            transform: scale(1) translate(-50%, -50%);
-            opacity: 1;
-        }
-    }
-    
-    /* ⭐⭐⭐ انیمیشن زنگ نوتیفیکیشن */
-    .notification-bell {
-        position: relative;
-        transition: all 0.3s ease;
-    }
-    
-    .notification-bell.shake {
-        animation: bellShake 0.5s ease-in-out;
-    }
-    
-    @@keyframes bellShake {
-        0%, 100% { transform: rotate(0deg); }
-        10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
-        20%, 40%, 60%, 80% { transform: rotate(10deg); }
-    }
-    
-    /* ⭐ حالت hover روی دکمه */
-    #page-header-notifications-dropdown:hover .notification-bell {
-        transform: scale(1.1);
-        color: var(--bs-primary);
-    }
-    
-    /* ⭐ Ring Effect برای نوتیفیکیشن جدید */
-    @@keyframes ringEffect {
-        0% {
-            transform: scale(1);
-            opacity: 1;
-        }
-        100% {
-            transform: scale(1.5);
-            opacity: 0;
-        }
-    }
-    
-    .notification-bell::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        border: 2px solid var(--bs-danger);
-        opacity: 0;
-    }
-    
-    .notification-bell.has-new::after {
-        animation: ringEffect 1.5s ease-out infinite;
-    }
-</style>
-<!-- END Notifications Dropdown -->
+            <!-- END Notifications Dropdown -->
+            <!-- END Notifications Dropdown -->
             <!-- Toggle Side Overlay -->
-           
             <!-- END Toggle Side Overlay -->
         </div>
         <!-- END Right Section -->
     </div>
     <!-- END Header Content -->
-
     <!-- Header Search -->
     <div class="overlay-header bg-header-dark" id="page-header-search">
         <div class="bg-white-10">
@@ -559,19 +437,19 @@
     // ⭐⭐⭐ اطمینان از لود شدن کامل صفحه
     $(document).ready(function() {
         console.log('🔔 Initializing notification badge...');
-        
+
         // بارگذاری فوری تعداد نوتیفیکیشن‌ها
         loadNotificationCount();
-        
+
         // بارگذاری لیست نوتیفیکیشن‌ها
         loadNotificationList();
-        
+
         // بروزرسانی دوره‌ای هر 30 ثانیه
         setInterval(function() {
             loadNotificationCount();
         }, 30000);
     });
-    
+
     // ⭐ تابع بارگذاری تعداد نوتیفیکیشن‌ها
     function loadNotificationCount() {
         $.ajax({
@@ -580,7 +458,7 @@
             dataType: 'json',
             success: function(response) {
                 console.log('📊 Notification count response:', response);
-                
+
                 if (response && response.success) {
                     updateNotificationBadgeUI(response.count || 0);
                 } else {
@@ -596,7 +474,7 @@
             }
         });
     }
-    
+
     // ⭐ تابع بارگذاری لیست نوتیفیکیشن‌ها
     function loadNotificationList() {
         $.ajax({
@@ -615,37 +493,37 @@
             }
         });
     }
-    
+
     // ⭐⭐⭐ تابع بروزرسانی UI Badge
     function updateNotificationBadgeUI(count) {
         const badge = $('#headerNotificationBadge');
         const bell = $('.notification-bell');
         const oldCount = parseInt(badge.text()) || 0;
-        
+
         console.log('🔄 Updating badge: old=' + oldCount + ', new=' + count);
-        
+
         if (count > 0) {
             badge.text(count > 99 ? '99+' : count).show();
-            
+
             // اگر تعداد افزایش یافته (نوتیفیکیشن جدید)
             if (count > oldCount && oldCount !== 0) {
                 console.log('✨ New notification detected!');
-                
+
                 // اضافه کردن کلاس برای انیمیشن
                 badge.removeClass('new-notification').addClass('new-notification');
                 bell.removeClass('shake has-new').addClass('shake has-new');
-                
+
                 // حذف کلاس بعد از اتمام انیمیشن
                 setTimeout(() => {
                     badge.removeClass('new-notification');
                     bell.removeClass('shake');
                 }, 600);
-                
+
                 // حذف ring effect بعد از 3 ثانیه
                 setTimeout(() => {
                     bell.removeClass('has-new');
                 }, 3000);
-                
+
                 // پخش صدای نوتیفیکیشن
                 playNotificationSoundUI();
             }
@@ -655,7 +533,7 @@
             bell.removeClass('has-new');
         }
     }
-    
+
     // ⭐ پخش صدای نوتیفیکیشن
     function playNotificationSoundUI() {
         const audio = document.getElementById('notificationSound');
@@ -666,7 +544,7 @@
             });
         }
     }
-    
+
     // ⭐ تابع global برای استفاده از سایر قسمت‌ها
     window.refreshNotificationBadge = function() {
         loadNotificationCount();
@@ -674,292 +552,3 @@
     };
 </script>
 
-<!-- ⭐ Enhanced Styles for Active States -->
-<style>
-    /* ============== USER DROPDOWN ENHANCEMENTS ============== */
-    .img-avatar-thumb {
-        object-fit: cover;
-        transition: all 0.3s ease;
-    }
-
-        .img-avatar-thumb:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-    /* ============== ACTIVE BUTTON STATES ============== */
-    .btn-alt-secondary.active,
-    .btn-alt-secondary.menu-active {
-        background-color: rgba(13, 110, 253, 0.2);
-        border-color: #0d6efd;
-        color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-
-    .btn-alt-secondary.dropdown-active {
-        background-color: rgba(13, 110, 253, 0.15);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
-    }
-
-    /* ============== DROPDOWN ITEM ENHANCEMENTS ============== */
-    .dropdown-item {
-        transition: all 0.2s ease;
-        border-radius: 0.375rem;
-        margin: 0.125rem 0.25rem;
-        position: relative;
-    }
-
-        .dropdown-item:hover {
-            background-color: rgba(0,123,255,0.1);
-            transform: translateX(-2px);
-        }
-
-        .dropdown-item.active,
-        .dropdown-item.current-page {
-            background: linear-gradient(135deg, rgba(13, 110, 253, 0.15), rgba(13, 110, 253, 0.25));
-            border-left: 3px solid #0d6efd;
-            font-weight: 600;
-        }
-
-            .dropdown-item.active::before,
-            .dropdown-item.current-page::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 4px;
-                height: 60%;
-                background: linear-gradient(135deg, #0d6efd, #6610f2);
-                border-radius: 0 2px 2px 0;
-            }
-
-        .dropdown-item.clicked {
-            transform: scale(0.98);
-            background-color: rgba(13, 110, 253, 0.2);
-        }
-
-    /* ============== STATS NUMBERS ANIMATION ============== */
-    #userStatsMyTasks, #userStatsReminders, #userStatsNotifications {
-        transition: all 0.3s ease;
-    }
-
-        #userStatsMyTasks:hover, #userStatsReminders:hover, #userStatsNotifications:hover {
-            transform: scale(1.1);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-    /* ============== USER PROFILE SECTION ============== */
-    .bg-primary-dark {
-        background: linear-gradient(135deg, #0d6efd, #6610f2);
-        position: relative;
-        overflow: hidden;
-    }
-
-        .bg-primary-dark::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: rotate(45deg);
-            animation: shimmer 3s infinite;
-        }
-
-    @@keyframes shimmer {
-        0% {
-            transform: translateX(-100%) translateY(-100%) rotate(45deg);
-        }
-        100% {
-            transform: translateX(100%) translateY(100%) rotate(45deg);
-        }
-    }
-
-    /* ============== NOTIFICATION BADGE ENHANCEMENTS ============== */
-    #headerNotificationBadge {
-        animation: badgePulse 2s infinite;
-        box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
-    }
-
-    @@keyframes badgePulse {
-        0% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.1);
-        }
-        100% {
-            transform: scale(1);
-        }
-    }
-
-    /* ============== MOBILE RESPONSIVE ============== */
-    @@media (max-width: 576px) {
-        /* ⭐ Dropdown Menu Responsive Fix */
-        .dropdown-menu-lg {
-            width: 100vw !important;
-            max-width: none !important;
-            left: 0 !important;
-            right: 0 !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-        }
-
-        /* ⭐ Fix for dropdown-menu-end on mobile */
-        .dropdown-menu-end {
-            left: 0 !important;
-            right: auto !important;
-            transform: none !important;
-        }
-
-        /* ⭐ Notifications dropdown mobile fix */
-        #page-header-notifications-dropdown + .dropdown-menu {
-            position: fixed !important;
-            top: auto !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            max-height: 70vh !important;
-            margin: 0 !important;
-            border-radius: 1rem 1rem 0 0 !important;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.2) !important;
-        }
-
-        /* ⭐ User dropdown mobile fix */
-        #page-header-user-dropdown + .dropdown-menu {
-            position: fixed !important;
-            top: auto !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            max-height: 80vh !important;
-            margin: 0 !important;
-            border-radius: 1rem 1rem 0 0 !important;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.2) !important;
-        }
-
-        /* ⭐ Module selector dropdown mobile fix */
-        #module-selector-dropdown + .dropdown-menu {
-            position: fixed !important;
-            top: auto !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            max-height: 70vh !important;
-            margin: 0 !important;
-            border-radius: 1rem 1rem 0 0 !important;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.2) !important;
-        }
-
-        /* ⭐ Scrollable content in mobile dropdowns */
-        #headerNotificationsList {
-            max-height: calc(70vh - 150px) !important;
-        }
-
-        .dropdown-menu .p-2,
-        .dropdown-menu .p-3 {
-            padding: 0.75rem !important;
-        }
-
-        .dropdown-item {
-            padding: 1rem 0.75rem;
-        }
-
-        .dropdown-item.active::before,
-        .dropdown-item.current-page::before {
-            width: 6px;
-        }
-
-        /* ⭐ Module items mobile spacing */
-        .module-item {
-            padding: 1rem !important;
-        }
-
-        .module-icon {
-            margin-left: 0.75rem !important;
-        }
-
-        /* ⭐ Better touch targets for mobile */
-        .dropdown-item {
-            min-height: 48px;
-            display: flex;
-            align-items: center;
-        }
-
-        /* ⭐ User profile section mobile optimization */
-        .img-avatar48 {
-            width: 60px !important;
-            height: 60px !important;
-        }
-
-        /* ⭐ Backdrop for mobile dropdowns */
-        .dropdown.show::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @@keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* ⭐ Ensure dropdown is above backdrop */
-        .dropdown-menu {
-            z-index: 1050 !important;
-        }
-    }
-
-    /* ============== TABLET RESPONSIVE (576px - 768px) ============== */
-    @@media (min-width: 577px) and (max-width: 768px) {
-        .dropdown-menu-lg {
-            width: 400px !important;
-            max-width: 90vw !important;
-        }
-
-        /* ⭐ Better positioning for tablets */
-        .dropdown-menu-end {
-            right: 0 !important;
-            left: auto !important;
-        }
-    }
-
-    /* ============== HOVER EFFECTS ============== */
-    .content-header .btn {
-        transition: all 0.3s ease;
-    }
-
-        .content-header .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
-    /* ============== DROPDOWN ANIMATIONS ============== */
-    .dropdown-menu {
-        animation: dropdownFadeIn 0.3s ease;
-        transform-origin: top;
-    }
-
-    @@keyframes dropdownFadeIn {
-        0% {
-            opacity: 0;
-            transform: scaleY(0.8) translateY(-10px);
-        }
-        100% {
-            opacity: 1;
-            transform: scaleY(1) translateY(0);
-        }
-    }
-</style>
