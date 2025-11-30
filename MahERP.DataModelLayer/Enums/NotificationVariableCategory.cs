@@ -33,6 +33,31 @@
         /// <summary>
         /// اطلاعات یادآوری زمان‌بندی شده
         /// </summary>
-        ReminderSchedule = 5
+        ReminderSchedule = 5,
+
+        /// <summary>
+        /// ⭐ اطلاعات کامنت (متن، نویسنده، تاریخ)
+        /// </summary>
+        Comment = 6,
+
+        /// <summary>
+        /// ⭐ اطلاعات گزارش کار (متن، ساعات، تاریخ)
+        /// </summary>
+        WorkLog = 7,
+
+        /// <summary>
+        /// ⭐ اطلاعات تکمیل تسک (متن گزارش نهایی، تاریخ تکمیل)
+        /// </summary>
+        Completion = 8,
+
+        /// <summary>
+        /// ⭐ اطلاعات تغییر اولویت
+        /// </summary>
+        Priority = 9,
+
+        /// <summary>
+        /// ⭐ اطلاعات تغییر وضعیت
+        /// </summary>
+        Status = 10
     }
 }

@@ -65,7 +65,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         {
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            // ⭐⭐⭐ حذف notificationService - از NotificationQueue استفاده می‌کنیم
+            var notificationService = scope.ServiceProvider.GetRequiredService<NotificationManagementService>(); // ⭐⭐⭐ اضافه شده
 
             var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
             
@@ -168,15 +168,23 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                     _logger.LogInformation($"📤 ارسال یادآوری '{schedule.Title}' به {recipientUserIds.Count} کاربر: [{string.Join(", ", recipientUserIds)}]");
 
-                    // ⭐⭐⭐ FIX: فقط یکبار EnqueueTaskNotification صدا بزن (نه برای هر کاربر!)
-                    // NotificationProcessingBackgroundService خودش برای همه کاربران مرتبط ارسال می‌کنه
-                    NotificationProcessingBackgroundService.EnqueueTaskNotification(
-                        schedule.TaskId,
-                        "SYSTEM", // سیستمی
-                        NotificationEventType.CustomTaskReminder,
-                        priority: 2
-                    );
-
+                    // ⭐⭐⭐ FIX: ارسال مستقیم به هر کاربر (به جای Enqueue)
+                    // این باعث می‌شه قالب‌های خارجی هم ارسال بشن
+                    foreach (var recipientUserId in recipientUserIds)
+                    {
+                        // ⭐ ثبت اعلان سیستمی + ارسال از طریق قالب‌های خارجی
+                        await notificationService.ProcessEventNotificationAsync(
+                            NotificationEventType.CustomTaskReminder,
+                            new List<string> { recipientUserId },
+                            "SYSTEM",
+                            schedule.Title,
+                            schedule.Description ?? schedule.Title,
+                            $"/TaskingArea/Tasks/Details/{schedule.TaskId}",
+                            schedule.TaskId.ToString(),
+                            "Task",
+                            priority: 2
+                        );
+                    }
 
                     // ⭐⭐⭐ بروزرسانی LastExecuted و افزایش SentCount
                     var scheduleToUpdate = await context.TaskReminderSchedule_Tbl

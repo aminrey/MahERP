@@ -89,7 +89,11 @@ namespace MahERP.Areas.AppCoreArea.Controllers
         {
             try
             {
-                var viewModel = await _templateRepo.GetTemplateFormViewModelAsync();
+                // ⭐⭐⭐ اصلاح: ارسال notificationTypeId به GetTemplateFormViewModelAsync
+                var viewModel = await _templateRepo.GetTemplateFormViewModelAsync(
+                    templateId: null, 
+                    eventType: notificationTypeId.HasValue ? (byte)notificationTypeId.Value : (byte?)null
+                );
 
                 // ✅ اصلاح: NotificationEventType به جای NotificationTypeConfigId
                 if (notificationTypeId.HasValue)
@@ -623,6 +627,42 @@ namespace MahERP.Areas.AppCoreArea.Controllers
 
                 TempData["ErrorMessage"] = "خطا در نمایش تاریخچه";
                 return RedirectToAction("Index");
+            }
+        }
+
+        #endregion
+
+        #region ⭐⭐⭐ API: دریافت متغیرها بر اساس EventType
+
+        /// <summary>
+        /// API: دریافت متغیرهای فیلتر شده بر اساس EventType
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetVariablesForEventType(byte eventType)
+        {
+            try
+            {
+                var variables = await _templateRepo.GetVariablesForEventTypeAsync(eventType);
+
+                return Json(new
+                {
+                    success = true,
+                    variables = variables
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "NotificationTemplates",
+                    "GetVariablesForEventType",
+                    "خطا در دریافت متغیرها",
+                    ex);
+
+                return Json(new
+                {
+                    success = false,
+                    message = $"خطا: {ex.Message}"
+                });
             }
         }
 

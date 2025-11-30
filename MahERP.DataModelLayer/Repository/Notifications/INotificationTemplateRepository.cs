@@ -74,6 +74,11 @@ namespace MahERP.DataModelLayer.Repository.Notifications
         Task<List<SystemVariableViewModel>> GetSystemVariablesAsync();
 
         /// <summary>
+        /// ⭐⭐⭐ دریافت متغیرهای فیلتر شده بر اساس نوع اعلان
+        /// </summary>
+        Task<List<SystemVariableViewModel>> GetVariablesForEventTypeAsync(byte eventType);
+
+        /// <summary>
         /// افزودن متغیر به الگو
         /// </summary>
         Task<bool> AddVariableToTemplateAsync(NotificationTemplateVariable variable);
@@ -119,7 +124,9 @@ namespace MahERP.DataModelLayer.Repository.Notifications
         /// <summary>
         /// دریافت ViewModel ایجاد/ویرایش الگو
         /// </summary>
-        Task<NotificationTemplateFormViewModel> GetTemplateFormViewModelAsync(int? templateId = null);
+        /// <param name="templateId">شناسه الگو (برای ویرایش)</param>
+        /// <param name="eventType">نوع رویداد (برای فیلتر متغیرها)</param>
+        Task<NotificationTemplateFormViewModel> GetTemplateFormViewModelAsync(int? templateId = null, byte? eventType = null);
         Task<bool> AddRecipientAsync(
            int templateId,
            byte recipientType,

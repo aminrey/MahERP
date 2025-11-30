@@ -76,28 +76,15 @@
                                     <option value="">انتخاب کنید...</option>
                                     @foreach (var item in Model.AvailableNotificationTypes)
                                     {
-                                        var isSelected = Model.NotificationEventType == item.Id;
-                                        
-                                        if (isSelected)
-                                        {
-                                            <option selected value="@item.Id" data-schedulable="@item.IsSchedulable.ToString().ToLower()">
-                                                @item.DisplayName
-                                                @if (item.IsSchedulable)
-                                                {
-                                                    <text> ⏰</text>
-                                                }
-                                            </option>
-                                        }
-                                        else
-                                        {
-                                            <option value="@item.Id" data-schedulable="@item.IsSchedulable.ToString().ToLower()">
-                                                @item.DisplayName
-                                                @if (item.IsSchedulable)
-                                                {
-                                                    <text> ⏰</text>
-                                                }
-                                            </option>
-                                        }
+                                        <option value="@item.Id" 
+                                                data-schedulable="@item.IsSchedulable.ToString().ToLower()"
+                                                selected="@(Model.NotificationEventType == item.Id)">
+                                            @item.Name
+                                            @if (item.IsSchedulable)
+                                            {
+                                                <text> ⏰</text>
+                                            }
+                                        </option>
                                     }
                                 </select>
                                 <span asp-validation-for="NotificationEventType" class="text-danger"></span>
@@ -114,10 +101,10 @@
                                 </label>
                                 <select class="form-select" asp-for="Channel" id="ChannelSelect">
                                     <option value="">انتخاب کنید...</option>
-                                    <option value="0">سیستمی (درون برنامه)</option>
-                                    <option value="1">ایمیل</option>
-                                    <option value="2">پیامک</option>
-                                    <option value="3">تلگرام</option>
+                                    <option value="0">📱 سیستمی (درون برنامه)</option>
+                                    <option value="1">📧 ایمیل</option>
+                                    <option value="2">💬 پیامک</option>
+                                    <option value="3">✈️ تلگرام</option>
                                 </select>
                                 <span asp-validation-for="Channel" class="text-danger"></span>
                             </div>
@@ -173,15 +160,15 @@
                         </div>
                     </div>
                     <div class="block-content">
-                        <!-- محتوای متنی (برای همه) -->
+                        <!-- ⭐⭐⭐ محتوای متنی (تغییر از Body به MessageTemplate) -->
                         <div class="mb-3">
-                            <label class="form-label" asp-for="Body">
+                            <label class="form-label" asp-for="MessageTemplate">
                                 محتوای متنی <span class="text-danger">*</span>
                             </label>
-                            <textarea class="form-control" asp-for="Body" rows="6" 
+                            <textarea class="form-control" asp-for="MessageTemplate" rows="6" 
                                       id="bodyTextarea"
                                       placeholder="محتوای متنی الگو... می‌توانید از متغیرها استفاده کنید: {{VariableName}}"></textarea>
-                            <span asp-validation-for="Body" class="text-danger"></span>
+                            <span asp-validation-for="MessageTemplate" class="text-danger"></span>
                             <small class="form-text text-muted">
                                 <i class="fa fa-info-circle me-1"></i>
                                 برای درج متغیر از فرمت {{نام_متغیر}} استفاده کنید
@@ -388,26 +375,217 @@
                     <div class="block-content">
                         <div class="alert alert-info">
                             <i class="fa fa-lightbulb me-1"></i>
-                            برای استفاده از متغیر، روی آن کلیک کنید
+                            <strong>راهنما:</strong> ابتدا نوع اعلان را انتخاب کنید تا متغیرهای مرتبط نمایش داده شوند
                         </div>
 
-                        <div class="list-group list-group-flush" id="variablesList">
-                            @foreach (var variable in Model.SystemVariables.OrderBy(v => v.DisplayName))
-                            {
-                                <button type="button" 
-                                        class="list-group-item list-group-item-action variable-item"
-                                        data-variable-name="@variable.VariableName"
-                                        title="@variable.Description">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong>{{@variable.VariableName}}</strong>
-                                            <div class="fs-xs text-muted">@variable.DisplayName</div>
+                        <!-- ⭐⭐⭐ متغیرها با دسته‌بندی -->
+                        <div id="variablesContainer">
+                            <!-- پیام اولیه -->
+                            <div id="noEventTypeSelected" class="text-center text-muted py-4">
+                                <i class="fa fa-info-circle fa-2x mb-2"></i>
+                                <p>لطفاً ابتدا نوع اعلان را انتخاب کنید</p>
+                            </div>
+
+                            <!-- لیست متغیرها (پویا بر اساس EventType) -->
+                            <div id="variablesList" style="display: none;">
+                                <!-- ⭐ دسته‌بندی‌ها به صورت Accordion -->
+                                <div class="accordion" id="variablesAccordion">
+                                    <!-- متغیرهای عمومی -->
+                                    <div class="accordion-item category-General" style="display: none;">
+                                        <h2 class="accordion-header" id="headingGeneral">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseGeneral">
+                                                <i class="fa fa-calendar-alt me-2 text-primary"></i>
+                                                متغیرهای عمومی
+                                            </button>
+                                        </h2>
+                                        <div id="collapseGeneral" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="General"></div>
+                                            </div>
                                         </div>
-                                        <i class="fa fa-copy text-primary"></i>
                                     </div>
-                                </button>
-                            }
+
+                                    <!-- متغیرهای کاربر دریافت‌کننده -->
+                                    <div class="accordion-item category-Recipient" style="display: none;">
+                                        <h2 class="accordion-header" id="headingRecipient">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseRecipient">
+                                                <i class="fa fa-user me-2 text-info"></i>
+                                                اطلاعات گیرنده
+                                            </button>
+                                        </h2>
+                                        <div id="collapseRecipient" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="Recipient"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- متغیرهای تسک -->
+                                    <div class="accordion-item category-Task" style="display: none;">
+                                        <h2 class="accordion-header" id="headingTask">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseTask">
+                                                <i class="fa fa-tasks me-2 text-success"></i>
+                                                اطلاعات تسک
+                                            </button>
+                                        </h2>
+                                        <div id="collapseTask" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="Task"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- متغیرهای ارسال‌کننده -->
+                                    <div class="accordion-item category-Sender" style="display: none;">
+                                        <h2 class="accordion-header" id="headingSender">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseSender">
+                                                <i class="fa fa-paper-plane me-2 text-warning"></i>
+                                                اطلاعات ارسال‌کننده
+                                            </button>
+                                        </h2>
+                                        <div id="collapseSender" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="Sender"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- لیست تسک‌ها -->
+                                    <div class="accordion-item category-TaskList" style="display: none;">
+                                        <h2 class="accordion-header" id="headingTaskList">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseTaskList">
+                                                <i class="fa fa-list me-2 text-purple"></i>
+                                                لیست تسک‌ها
+                                            </button>
+                                        </h2>
+                                        <div id="collapseTaskList" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="TaskList"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- متغیرهای کامنت -->
+                                    <div class="accordion-item category-Comment" style="display: none;">
+                                        <h2 class="accordion-header" id="headingComment">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseComment">
+                                                <i class="fa fa-comment me-2 text-primary"></i>
+                                                متغیرهای کامنت
+                                            </button>
+                                        </h2>
+                                        <div id="collapseComment" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="Comment"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- متغیرهای گزارش کار -->
+                                    <div class="accordion-item category-WorkLog" style="display: none;">
+                                        <h2 class="accordion-header" id="headingWorkLog">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseWorkLog">
+                                                <i class="fa fa-clock me-2 text-info"></i>
+                                                متغیرهای گزارش کار
+                                            </button>
+                                        </h2>
+                                        <div id="collapseWorkLog" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="WorkLog"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- متغیرهای تکمیل -->
+                                    <div class="accordion-item category-Completion" style="display: none;">
+                                        <h2 class="accordion-header" id="headingCompletion">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseCompletion">
+                                                <i class="fa fa-check-circle me-2 text-success"></i>
+                                                متغیرهای تکمیل
+                                            </button>
+                                        </h2>
+                                        <div id="collapseCompletion" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="Completion"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- متغیرهای اولویت -->
+                                    <div class="accordion-item category-Priority" style="display: none;">
+                                        <h2 class="accordion-header" id="headingPriority">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapsePriority">
+                                                <i class="fa fa-exclamation-triangle me-2 text-warning"></i>
+                                                متغیرهای اولویت
+                                            </button>
+                                        </h2>
+                                        <div id="collapsePriority" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="Priority"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- متغیرهای وضعیت -->
+                                    <div class="accordion-item category-Status" style="display: none;">
+                                        <h2 class="accordion-header" id="headingStatus">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseStatus">
+                                                <i class="fa fa-flag me-2 text-danger"></i>
+                                                متغیرهای وضعیت
+                                            </button>
+                                        </h2>
+                                        <div id="collapseStatus" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="Status"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- متغیرهای یادآوری -->
+                                    <div class="accordion-item category-ReminderSchedule" style="display: none;">
+                                        <h2 class="accordion-header" id="headingReminder">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseReminder">
+                                                <i class="fa fa-bell me-2 text-warning"></i>
+                                                متغیرهای یادآوری
+                                            </button>
+                                        </h2>
+                                        <div id="collapseReminder" class="accordion-collapse collapse" 
+                                             data-bs-parent="#variablesAccordion">
+                                            <div class="accordion-body p-0">
+                                                <div class="list-group list-group-flush" data-category="ReminderSchedule"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                               
+                            </div>
                         </div>
+
+                        <!-- ⭐⭐⭐ داده‌های JSON متغیرها برای جاوا اسکریپت -->
+                        <script id="allVariablesData" type="application/json">
+                            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SystemVariables))
+                        </script>
                     </div>
                 </div>
 
@@ -444,11 +622,149 @@
     <script>
         $(document).ready(function() {
             initializeTemplateForm(true);
-            // ⭐ نمایش فیلدهای شرطی بر اساس Channel
+
+            let allVariablesData = [];
+
+            const categoryNames = {
+                0: 'General',
+                1: 'Recipient',
+                2: 'Task',
+                3: 'TaskList',
+                4: 'Sender',
+                5: 'ReminderSchedule',
+                6: 'Comment',
+                7: 'WorkLog',
+                8: 'Completion',
+                9: 'Priority',
+                10: 'Status'
+            };
+
+            window.filterAndDisplayVariables = async function(eventType) {
+                console.log('🔍 Filtering variables for EventType:', eventType);
+
+                if (!eventType) {
+                    $('#noEventTypeSelected').show();
+                    $('#variablesList').hide();
+                    return;
+                }
+
+                // ⭐ همیشه متغیرها را از API دوباره بگیر
+                try {
+                    const response = await $.ajax({
+                        url: `/AppCoreArea/NotificationTemplates/GetVariablesForEventType?eventType=${eventType}`,
+                        type: 'GET'
+                    });
+
+                    if (response.success) {
+                        allVariablesData = response.variables;
+                        console.log('📡 Variables loaded from API for EventType', eventType, ':', allVariablesData);
+
+                        if (allVariablesData.length > 0) {
+                            console.log('🔍 First Variable:', allVariablesData[0]);
+                        }
+                    } else {
+                        console.error('❌ Failed to load variables:', response.message);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading variables:', error);
+                    return;
+                }
+
+                $('#noEventTypeSelected').hide();
+                $('#variablesList').show();
+
+                $('.list-group[data-category]').empty();
+                $('.accordion-item').hide();
+
+                const categorizedVariables = {};
+
+                allVariablesData.forEach(variable => {
+                    if (variable.categories || variable.Categories) {
+                        const categories = variable.categories || variable.Categories || [];
+                        categories.forEach(catId => {
+                            const catName = categoryNames[catId];
+                            if (catName) {
+                                if (!categorizedVariables[catName]) {
+                                    categorizedVariables[catName] = [];
+                                }
+                                categorizedVariables[catName].push(variable);
+                            }
+                        });
+                    } else {
+                        console.warn('⚠️ Variable missing Categories:', variable);
+                    }
+                });
+
+                console.log('📂 Categorized Variables:', categorizedVariables);
+
+                Object.keys(categorizedVariables).forEach(category => {
+                    const variables = categorizedVariables[category];
+                    const $container = $(`.list-group[data-category="${category}"]`);
+
+                    if (variables.length > 0) {
+                        $(`.category-${category}`).show();
+
+                        variables.forEach(variable => {
+                            const varName = variable.variableName || variable.VariableName;
+                            const displayName = variable.displayName || variable.DisplayName;
+                            const description = variable.description || variable.Description || '';
+                            const exampleValue = variable.exampleValue || variable.ExampleValue;
+
+                            const $item = $(`
+                                <button type="button"
+                                        class="list-group-item list-group-item-action variable-item"
+                                        data-variable-name="${varName}"
+                                        title="${description}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <strong class="text-primary">{{${varName}}}</strong>
+                                            <div class="fs-xs text-muted">${displayName}</div>
+                                            ${exampleValue ? `<div class="fs-xs text-secondary"><em>مثال: ${exampleValue}</em></div>` : ''}
+                                        </div>
+                                        <i class="fa fa-copy text-primary ms-2"></i>
+                                    </div>
+                                </button>
+                            `);
+
+                            $container.append($item);
+                        });
+                    }
+                });
+
+                $('.variable-item').off('click').on('click', function() {
+                    const varName = $(this).data('variable-name');
+                    insertVariableToTextarea(varName);
+                });
+            };
+
+            function insertVariableToTextarea(variableName) {
+                const $textarea = $('#bodyTextarea');
+                const cursorPos = $textarea[0].selectionStart;
+                const textBefore = $textarea.val().substring(0, cursorPos);
+                const textAfter = $textarea.val().substring(cursorPos);
+
+                const variableText = `{{${variableName}}}`;
+                $textarea.val(textBefore + variableText + textAfter);
+
+                const newPos = cursorPos + variableText.length;
+                $textarea[0].setSelectionRange(newPos, newPos);
+                $textarea.focus();
+
+                if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.success(`متغیر {{${variableName}}} درج شد`);
+                } else {
+                    console.log(`✅ Variable {{${variableName}}} inserted`);
+                }
+            }
+
+            $('#insertVariableBtn').on('click', function() {
+                $('#variablesAccordion .accordion-collapse:first').collapse('show');
+            });
+
             function updateConditionalFields() {
                 const Channel = parseInt($('#ChannelSelect').val());
-                
-                // Subject و HTML Editor فقط برای ایمیل (Channel = 1)
+
                 if (Channel === 1) {
                     $('#subjectField').slideDown();
                     $('#htmlEditorField').slideDown();
@@ -458,10 +774,9 @@
                 }
             }
 
-            // ⭐ نمایش لیست کاربران بر اساس RecipientMode
             function updateRecipientFields() {
                 const mode = parseInt($('#recipientModeSelect').val());
-                
+
                 if (mode === 1 || mode === 2) {
                     $('#recipientUsersField').slideDown();
                 } else {
@@ -469,33 +784,19 @@
                 }
             }
 
-            // ⭐⭐⭐ نمایش بخش زمان‌بندی فقط برای اعلان‌های زمان‌بندی شده
-            function updateSchedulingVisibility() {
-                const selectedOption = $('#notificationTypeSelect').find('option:selected');
-                const isSchedulable = selectedOption.data('schedulable') === true;
-
-                if (isSchedulable) {
-                    // نمایش بخش زمان‌بندی
-                    $('#schedulingBlock').slideDown();
-                } else {
-                    // مخفی کردن بخش زمان‌بندی
-                    $('#schedulingBlock').slideUp();
-                    $('#isScheduledSwitch').prop('checked', false);
-                    $('#scheduleSettingsFields').hide();
-                }
-            }
-
-            // Event handlers
             $('#ChannelSelect').on('change', updateConditionalFields);
             $('#recipientModeSelect').on('change', updateRecipientFields);
-            $('#notificationTypeSelect').on('change', updateSchedulingVisibility);
 
-            // Trigger initial state
             updateConditionalFields();
             updateRecipientFields();
-            updateSchedulingVisibility(); // ⭐ چک اولیه
 
-            // ⭐⭐⭐ مدیریت زمان‌بندی
+            // ⭐ Trigger اولیه برای نمایش متغیرها
+            const initialEventType = parseInt($('#notificationTypeSelect').val());
+            if (initialEventType) {
+                console.log('🔄 Initial trigger for notificationTypeSelect:', initialEventType);
+                filterAndDisplayVariables(initialEventType);
+            }
+
             $('#isScheduledSwitch').on('change', function() {
                 if ($(this).is(':checked')) {
                     $('#scheduleSettingsFields').slideDown();
@@ -506,54 +807,52 @@
 
             $('#scheduleTypeSelect').on('change', function() {
                 const scheduleType = parseInt($(this).val());
-                
+
                 $('#daysOfWeekField').hide();
                 $('#dayOfMonthField').hide();
 
-                if (scheduleType === 2) { // هفتگی
+                if (scheduleType === 2) {
                     $('#daysOfWeekField').slideDown();
-                } else if (scheduleType === 3) { // ماهانه
+                } else if (scheduleType === 3) {
                     $('#dayOfMonthField').slideDown();
                 }
 
                 updateSchedulePreview();
             });
 
-            // ⭐ بروزرسانی پیش‌نمایش
             function updateSchedulePreview() {
                 const scheduleType = parseInt($('#scheduleTypeSelect').val());
                 const time = $('#ScheduledTime').val() || '08:00';
-                
+
                 let preview = '';
-                
+
                 switch(scheduleType) {
-                    case 1: // روزانه
+                    case 1:
                         preview = `هر روز ساعت ${time}`;
                         break;
-                    case 2: // هفتگی
+                    case 2:
                         const selectedDays = [];
                         $('input[name="ScheduledDays"]:checked').each(function() {
                             const dayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
                             selectedDays.push(dayNames[parseInt($(this).val())]);
                         });
-                        preview = selectedDays.length > 0 
+                        preview = selectedDays.length > 0
                             ? `هر ${selectedDays.join('، ')} ساعت ${time}`
                             : 'لطفاً روزهای هفته را انتخاب کنید';
                         break;
-                    case 3: // ماهانه
+                    case 3:
                         const dayOfMonth = $('#ScheduledDayOfMonth').val();
-                        preview = dayOfMonth 
+                        preview = dayOfMonth
                             ? `هر ماه روز ${dayOfMonth} ساعت ${time}`
                             : 'لطفاً روز ماه را وارد کنید';
                         break;
                     default:
                         preview = 'دستی (بدون زمان‌بندی)';
                 }
-                
+
                 $('#schedulePreview').text(preview);
             }
 
-            // ⭐ به‌روزرسانی مقدار hidden field برای روزهای هفته
             $('input[name="ScheduledDays"]').on('change', function() {
                 const selectedDays = [];
                 $('input[name="ScheduledDays"]:checked').each(function() {
@@ -565,7 +864,6 @@
 
             $('#ScheduledTime, #ScheduledDayOfMonth').on('change', updateSchedulePreview);
 
-            // Trigger initial state for schedule
             if ($('#isScheduledSwitch').is(':checked')) {
                 $('#scheduleSettingsFields').show();
             }

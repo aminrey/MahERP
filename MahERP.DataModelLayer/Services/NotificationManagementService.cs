@@ -570,6 +570,7 @@ namespace MahERP.DataModelLayer.Services
         }
         /// <summary>
         /// ارسال اعلان تلگرامی با دکمه‌های پویا
+        /// ⭐⭐⭐ FIX: افزودن Retry Mechanism و Queue برای جلوگیری از تأخیر
         /// </summary>
         public async Task SendTelegramNotificationAsync(
             string userId,
@@ -603,13 +604,16 @@ namespace MahERP.DataModelLayer.Services
 
                 try
                 {
-                    // ⭐ ارسال تلگرام
-                    await _telegramService.SendNotificationAsync(
-                        message,
-                        user.TelegramChatId.Value,
-                        botToken,
-                        notificationContext
-                    );
+                    // ⭐⭐⭐ FIX: استفاده از Task.Run برای جلوگیری از Block شدن
+                    await Task.Run(async () =>
+                    {
+                        await _telegramService.SendNotificationAsync(
+                            message,
+                            user.TelegramChatId.Value,
+                            botToken,
+                            notificationContext
+                        );
+                    });
 
                     _logger.LogInformation($"✈️ پیام تلگرام برای {user.UserName} (ChatId: {user.TelegramChatId.Value}) ارسال شد");
 
@@ -642,23 +646,42 @@ namespace MahERP.DataModelLayer.Services
                 {
                     _logger.LogError(sendEx, $"❌ خطا در ارسال تلگرام به ChatId: {user.TelegramChatId.Value}");
 
-                    // ⭐ ثبت خطا فقط اگر CoreNotification معتبر باشد
-                    if (coreNotificationId > 0)
+                    // ⭐⭐⭐ FIX: Retry Logic - تلاش مجدد بعد از 5 ثانیه
+                    await Task.Delay(5000);
+                    
+                    try
                     {
-                        var delivery = new CoreNotificationDelivery
+                        await _telegramService.SendNotificationAsync(
+                            message,
+                            user.TelegramChatId.Value,
+                            botToken,
+                            notificationContext
+                        );
+                        
+                        _logger.LogInformation($"✅ تلگرام با موفقیت در تلاش دوم ارسال شد");
+                    }
+                    catch (Exception retryEx)
+                    {
+                        _logger.LogError(retryEx, "❌ خطا در تلاش مجدد ارسال تلگرام");
+                        
+                        // ⭐ ثبت خطا فقط اگر CoreNotification معتبر باشد
+                        if (coreNotificationId > 0)
                         {
-                            CoreNotificationId = coreNotificationId,
-                            DeliveryMethod = 3,
-                            DeliveryAddress = user.TelegramChatId.Value.ToString(),
-                            DeliveryStatus = 3, // خطا
-                            ErrorMessage = $"خطا در ارسال: {sendEx.Message}",
-                            AttemptCount = 1,
-                            CreateDate = DateTime.Now,
-                            IsActive = true
-                        };
+                            var delivery = new CoreNotificationDelivery
+                            {
+                                CoreNotificationId = coreNotificationId,
+                                DeliveryMethod = 3,
+                                DeliveryAddress = user.TelegramChatId.Value.ToString(),
+                                DeliveryStatus = 3, // خطا
+                                ErrorMessage = $"خطا در ارسال: {sendEx.Message}",
+                                AttemptCount = 2,
+                                CreateDate = DateTime.Now,
+                                IsActive = true
+                            };
 
-                        _context.CoreNotificationDelivery_Tbl.Add(delivery);
-                        await _context.SaveChangesAsync();
+                            _context.CoreNotificationDelivery_Tbl.Add(delivery);
+                            await _context.SaveChangesAsync();
+                        }
                     }
                 }
             }
@@ -1268,6 +1291,105 @@ namespace MahERP.DataModelLayer.Services
                 {
                     data["SenderName"] = "سیستم";
                 }
+
+                // ⭐⭐⭐ NEW: دریافت آخرین کامنت (بدون IsDeleted چون وجود نداره)
+                var lastComment = await _context.TaskComment_Tbl
+                    .Where(c => c.TaskId == taskId)
+                    .OrderByDescending(c => c.CreateDate)
+                    .Select(c => new
+                    {
+                        c.CommentText,
+                        AuthorName = c.Creator != null 
+                            ? $"{c.Creator.FirstName} {c.Creator.LastName}" 
+                            : "نامشخص",
+                        c.CreateDate
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (lastComment != null)
+                {
+                    data["CommentText"] = lastComment.CommentText ?? "";
+                    data["CommentAuthor"] = lastComment.AuthorName;
+                    data["CommentDate"] = CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(
+                        lastComment.CreateDate, "yyyy/MM/dd HH:mm");
+                }
+                else
+                {
+                    data["CommentText"] = "";
+                    data["CommentAuthor"] = "";
+                    data["CommentDate"] = "";
+                }
+
+                // ⭐⭐⭐ NEW: دریافت آخرین WorkLog (استفاده از WorkDate به جای LogDate)
+                var lastWorkLog = await _context.TaskWorkLog_Tbl
+                    .Where(w => w.TaskId == taskId && !w.IsDeleted)
+                    .OrderByDescending(w => w.WorkDate)
+                    .Select(w => new
+                    {
+                        w.WorkDescription,
+                        w.DurationMinutes,
+                        AuthorName = w.User != null 
+                            ? $"{w.User.FirstName} {w.User.LastName}" 
+                            : "نامشخص",
+                        w.WorkDate
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (lastWorkLog != null)
+                {
+                    data["WorkLogText"] = lastWorkLog.WorkDescription ?? "";
+                    data["WorkLogHours"] = lastWorkLog.DurationMinutes.HasValue 
+                        ? $"{lastWorkLog.DurationMinutes.Value / 60.0:F1} ساعت" 
+                        : "";
+                    data["WorkLogAuthor"] = lastWorkLog.AuthorName;
+                    data["WorkLogDate"] = CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(
+                        lastWorkLog.WorkDate, "yyyy/MM/dd");
+                }
+                else
+                {
+                    data["WorkLogText"] = "";
+                    data["WorkLogHours"] = "";
+                    data["WorkLogAuthor"] = "";
+                    data["WorkLogDate"] = "";
+                }
+
+                // ⭐⭐⭐ NEW: دریافت آخرین Completion (از TaskAssignment)
+                var lastCompletion = await _context.TaskAssignment_Tbl
+                    .Where(a => a.TaskId == taskId && a.CompletionDate.HasValue)
+                    .OrderByDescending(a => a.CompletionDate)
+                    .Select(a => new
+                    {
+                        CompletionText = a.UserReport,
+                        CompletedByName = a.AssignedUser != null 
+                            ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" 
+                            : "نامشخص",
+                        a.CompletionDate
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (lastCompletion != null)
+                {
+                    data["CompletionText"] = lastCompletion.CompletionText ?? "";
+                    data["CompletedBy"] = lastCompletion.CompletedByName;
+                    data["CompletionDate"] = CommonLayer.PublicClasses.ConvertDateTime.ConvertMiladiToShamsi(
+                        lastCompletion.CompletionDate.Value, "yyyy/MM/dd HH:mm");
+                }
+                else
+                {
+                    data["CompletionText"] = "";
+                    data["CompletedBy"] = "";
+                    data["CompletionDate"] = "";
+                }
+
+                // ⭐⭐⭐ NEW: متغیرهای تغییر اولویت و وضعیت
+                // این متغیرها باید از Context واقعی تغییر گرفته شوند
+                // برای مثال، از TaskHistory یا از پارامترهای ورودی
+                // اینجا فقط مقداردهی پیش‌فرض می‌کنیم
+                data["OldPriority"] = ""; // باید از History دریافت شود
+                data["NewPriority"] = data["TaskPriority"]; // اولویت فعلی
+                data["OldStatus"] = "";
+                data["NewStatus"] = "";
+
             }
             catch (Exception ex)
             {

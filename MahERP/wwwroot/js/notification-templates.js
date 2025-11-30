@@ -53,7 +53,10 @@ function toggleTemplateStatus(templateId, isActive, $toggle) {
         },
         success: function (response) {
             if (response.success) {
-                NotificationHelper.success(response.message);
+                // ⭐⭐⭐ FIX: استفاده امن
+                if (typeof NotificationHelper !== 'undefined' && NotificationHelper.success) {
+                    NotificationHelper.success(response.message);
+                }
                 
                 // بروزرسانی UI
                 const $card = $(`.template-card[data-template-id="${templateId}"]`);
@@ -63,13 +66,19 @@ function toggleTemplateStatus(templateId, isActive, $toggle) {
                     $card.addClass('opacity-50');
                 }
             } else {
-                NotificationHelper.error(response.message);
+                // ⭐⭐⭐ FIX: استفاده امن
+                if (typeof NotificationHelper !== 'undefined' && NotificationHelper.error) {
+                    NotificationHelper.error(response.message);
+                }
                 // برگرداندن به حالت قبل
                 $toggle.prop('checked', !isActive);
             }
         },
         error: function () {
-            NotificationHelper.error('خطا در تغییر وضعیت');
+            // ⭐⭐⭐ FIX: استفاده امن
+            if (typeof NotificationHelper !== 'undefined' && NotificationHelper.error) {
+                NotificationHelper.error('خطا در تغییر وضعیت');
+            }
             $toggle.prop('checked', !isActive);
         }
     });
@@ -105,7 +114,10 @@ function deleteTemplate(templateId) {
             }
         },
         error: function () {
-            NotificationHelper.error('خطا در حذف الگو');
+            // ⭐⭐⭐ FIX: استفاده امن
+            if (typeof NotificationHelper !== 'undefined' && NotificationHelper.error) {
+                NotificationHelper.error('خطا در حذف الگو');
+            }
         }
     });
 }
@@ -117,15 +129,42 @@ function deleteTemplate(templateId) {
  */
 
 function initializeTemplateForm(isEditMode = false) {
-    // تغییر نوع الگو
-    $('#templateTypeSelect').on('change', function () {
-        handleTemplateTypeChange($(this).val());
+    console.log('🔧 initializeTemplateForm called. EditMode:', isEditMode);
+
+    // ⭐⭐⭐ تغییر کانال ارسال (Channel)
+    $('#channelTypeSelect, #ChannelSelect').on('change', function () {
+        handleChannelTypeChange($(this).val());
     });
 
     // اگر مقدار اولیه دارد
-    if ($('#templateTypeSelect').val()) {
-        handleTemplateTypeChange($('#templateTypeSelect').val());
+    const initialChannel = $('#channelTypeSelect').val() || $('#ChannelSelect').val();
+    if (initialChannel) {
+        handleChannelTypeChange(initialChannel);
     }
+
+    // ⭐⭐⭐ Event Listener برای تغییر نوع اعلان (NotificationEventType)
+    $('#notificationTypeSelect').off('change').on('change', function () {
+        const eventType = parseInt($(this).val());
+        const selectedOption = $(this).find('option:selected');
+        const isSchedulable = selectedOption.data('schedulable') === true;
+
+        console.log('🎯 NotificationEventType changed:', eventType, 'Schedulable:', isSchedulable);
+        
+        // ⭐ فیلتر متغیرها بر اساس EventType
+        if (typeof window.filterAndDisplayVariables === 'function') {
+            window.filterAndDisplayVariables(eventType);
+        } else {
+            console.warn('⚠️ filterAndDisplayVariables function not found!');
+        }
+
+        // نمایش/مخفی کردن بخش زمان‌بندی
+        if (isSchedulable) {
+            $('#schedulingBlock').slideDown();
+        } else {
+            $('#schedulingBlock').slideUp();
+            $('#isScheduledSwitch').prop('checked', false).trigger('change');
+        }
+    });
 
     // درج متغیر
     $('.variable-item').on('click', function () {
@@ -141,13 +180,16 @@ function initializeTemplateForm(isEditMode = false) {
 }
 
 /**
- * مدیریت تغییر نوع الگو
+ * ⭐⭐⭐ RENAME: تغییر نام از handleTemplateTypeChange به handleChannelTypeChange
+ * مدیریت تغییر کانال ارسال (Email/SMS/Telegram)
  */
-function handleTemplateTypeChange(templateType) {
+function handleChannelTypeChange(channelType) {
+    console.log('📡 Channel Type Changed:', channelType);
+    
     const $subjectField = $('#subjectField');
     const $htmlEditorField = $('#htmlEditorField');
     
-    if (templateType === '1') { // Email
+    if (channelType === '1') { // Email
         $subjectField.slideDown();
         $htmlEditorField.slideDown();
         
@@ -185,7 +227,16 @@ function insertVariable(variableName) {
     $textarea[0].setSelectionRange(newPos, newPos);
     $textarea.focus();
     
-    NotificationHelper.success(`متغیر {{${variableName}}} درج شد`);
+    // ⭐⭐⭐ FIX: استفاده امن از NotificationHelper
+    try {
+        if (typeof NotificationHelper !== 'undefined' && NotificationHelper.success) {
+            NotificationHelper.success(`متغیر {{${variableName}}} درج شد`);
+        } else {
+            console.log(`✅ Variable {{${variableName}}} inserted`);
+        }
+    } catch (e) {
+        console.log(`✅ Variable {{${variableName}}} inserted`);
+    }
 }
 
 /**
@@ -222,7 +273,10 @@ function saveTemplate(isEditMode) {
             }
         },
         error: function (xhr) {
-            NotificationHelper.error('خطا در ذخیره الگو');
+            // ⭐⭐⭐ FIX: استفاده امن
+            if (typeof NotificationHelper !== 'undefined' && NotificationHelper.error) {
+                NotificationHelper.error('خطا در ذخیره الگو');
+            }
         },
         complete: function () {
             $btn.prop('disabled', false).html(originalText);

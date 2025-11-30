@@ -621,6 +621,15 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                         NotificationVariableCategory.Task 
                     }
                 },
+                new() { 
+                    VariableName = "TaskActionUrl", 
+                    DisplayName = "لینک تسک", 
+                    Description = "لینک مستقیم به صفحه جزئیات تسک", 
+                    ExampleValue = "/TaskingArea/Tasks/Details/123",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Task 
+                    }
+                },
                 
                 // ⭐⭐⭐ اطلاعات کاربر ارسال‌کننده - فقط برای اعلان‌های تسک
                 new() { 
@@ -665,75 +674,151 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                 },
                 new() { 
                     VariableName = "ActionUrl", 
-                    DisplayName = "لینک عملیات", 
-                    Description = "لینک مستقیم به صفحه مربوطه", 
-                    ExampleValue = "/TaskingArea/Tasks/Details/123",
+                    DisplayName = "لینک عملیات عمومی", 
+                    Description = "لینک مستقیم به صفحه مربوطه (عمومی)", 
+                    ExampleValue = "/TaskingArea/Tasks",
                     Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.ReminderSchedule 
+                        NotificationVariableCategory.ReminderSchedule,
+                        NotificationVariableCategory.General 
                     }
                 },
                 
-                // ⭐⭐⭐ متغیرهای منسوخ شده (Deprecated)
+                // ⭐⭐⭐ NEW: متغیرهای کامنت
                 new() { 
-                    VariableName = "UserName", 
-                    DisplayName = "[منسوخ] نام کاربر", 
-                    Description = "❌ از RecipientFullName استفاده کنید", 
+                    VariableName = "CommentText", 
+                    DisplayName = "متن کامنت", 
+                    Description = "متن کامنت جدید", 
+                    ExampleValue = "این یک کامنت نمونه است",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Comment 
+                    }
+                },
+                new() { 
+                    VariableName = "CommentAuthor", 
+                    DisplayName = "نویسنده کامنت", 
+                    Description = "نام کاربری که کامنت را ثبت کرده", 
+                    ExampleValue = "محمد حسینی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Comment 
+                    }
+                },
+                new() { 
+                    VariableName = "CommentDate", 
+                    DisplayName = "تاریخ کامنت", 
+                    Description = "تاریخ ثبت کامنت", 
+                    ExampleValue = "1403/08/15 14:30",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Comment 
+                    }
+                },
+                
+                // ⭐⭐⭐ NEW: متغیرهای گزارش کار (WorkLog)
+                new() { 
+                    VariableName = "WorkLogText", 
+                    DisplayName = "متن گزارش کار", 
+                    Description = "متن گزارش کار ثبت شده", 
+                    ExampleValue = "امروز 3 ساعت روی بخش مالی کار کردم",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.WorkLog 
+                    }
+                },
+                new() { 
+                    VariableName = "WorkLogHours", 
+                    DisplayName = "ساعات کار", 
+                    Description = "تعداد ساعات ثبت شده", 
+                    ExampleValue = "3.5 ساعت",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.WorkLog 
+                    }
+                },
+                new() { 
+                    VariableName = "WorkLogDate", 
+                    DisplayName = "تاریخ گزارش کار", 
+                    Description = "تاریخ ثبت گزارش کار", 
+                    ExampleValue = "1403/08/15",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.WorkLog 
+                    }
+                },
+                new() { 
+                    VariableName = "WorkLogAuthor", 
+                    DisplayName = "ثبت‌کننده گزارش", 
+                    Description = "نام کاربری که گزارش کار را ثبت کرده", 
+                    ExampleValue = "علی رضایی",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.WorkLog 
+                    }
+                },
+                
+                // ⭐⭐⭐ NEW: متغیرهای تکمیل تسک (Completion)
+                new() { 
+                    VariableName = "CompletionText", 
+                    DisplayName = "گزارش تکمیل", 
+                    Description = "متن گزارش نهایی تکمیل تسک", 
+                    ExampleValue = "تسک با موفقیت تکمیل شد و تحویل داده شد",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Completion 
+                    }
+                },
+                new() { 
+                    VariableName = "CompletionDate", 
+                    DisplayName = "تاریخ تکمیل", 
+                    Description = "تاریخ و ساعت تکمیل تسک", 
+                    ExampleValue = "1403/08/15 16:45",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Completion 
+                    }
+                },
+                new() { 
+                    VariableName = "CompletedBy", 
+                    DisplayName = "تکمیل‌کننده", 
+                    Description = "نام کاربری که تسک را تکمیل کرده", 
                     ExampleValue = "احمد محمدی",
                     Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.Recipient 
-                    },
-                    IsDeprecated = true
+                        NotificationVariableCategory.Completion 
+                    }
+                },
+                
+                // ⭐⭐⭐ NEW: متغیرهای تغییر اولویت (Priority)
+                new() { 
+                    VariableName = "OldPriority", 
+                    DisplayName = "اولویت قبلی", 
+                    Description = "اولویت قبل از تغییر", 
+                    ExampleValue = "متوسط",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Priority 
+                    }
                 },
                 new() { 
-                    VariableName = "FirstName", 
-                    DisplayName = "[منسوخ] نام", 
-                    Description = "❌ از RecipientFirstName استفاده کنید", 
-                    ExampleValue = "احمد",
+                    VariableName = "NewPriority", 
+                    DisplayName = "اولویت جدید", 
+                    Description = "اولویت بعد از تغییر", 
+                    ExampleValue = "فوری",
                     Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.Recipient 
-                    },
-                    IsDeprecated = true
+                        NotificationVariableCategory.Priority 
+                    }
+                },
+                
+                // ⭐⭐⭐ NEW: متغیرهای تغییر وضعیت (Status)
+                new() { 
+                    VariableName = "OldStatus", 
+                    DisplayName = "وضعیت قبلی", 
+                    Description = "وضعیت قبل از تغییر", 
+                    ExampleValue = "در حال انجام",
+                    Categories = new List<NotificationVariableCategory> { 
+                        NotificationVariableCategory.Status 
+                    }
                 },
                 new() { 
-                    VariableName = "LastName", 
-                    DisplayName = "[منسوخ] نام خانوادگی", 
-                    Description = "❌ از RecipientLastName استفاده کنید", 
-                    ExampleValue = "محمدی",
+                    VariableName = "NewStatus", 
+                    DisplayName = "وضعیت جدید", 
+                    Description = "وضعیت بعد از تغییر", 
+                    ExampleValue = "تکمیل شده",
                     Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.Recipient 
-                    },
-                    IsDeprecated = true
+                        NotificationVariableCategory.Status 
+                    }
                 },
-                new() { 
-                    VariableName = "Email", 
-                    DisplayName = "[منسوخ] ایمیل", 
-                    Description = "❌ از RecipientEmail استفاده کنید", 
-                    ExampleValue = "ahmad@example.com",
-                    Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.Recipient 
-                    },
-                    IsDeprecated = true
-                },
-                new() { 
-                    VariableName = "PhoneNumber", 
-                    DisplayName = "[منسوخ] شماره تماس", 
-                    Description = "❌ از RecipientPhone استفاده کنید", 
-                    ExampleValue = "09123456789",
-                    Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.Recipient 
-                    },
-                    IsDeprecated = true
-                },
-                new() { 
-                    VariableName = "DueDate", 
-                    DisplayName = "[منسوخ] مهلت", 
-                    Description = "❌ از TaskDueDate استفاده کنید", 
-                    ExampleValue = "1403/08/20",
-                    Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.Task 
-                    },
-                    IsDeprecated = true
-                }
+              
             };
         }
 
@@ -754,7 +839,7 @@ namespace MahERP.DataModelLayer.Repository.Notifications
         }
 
         /// <summary>
-        /// ⭐⭐⭐ تعیین دسته‌های مورد نیاز برای هر نوع اعلان
+        /// ⭐⭐⭐ تعیین دسته‌های مورد نیاز برای هر نوع اعلان - FIX: دقیق‌تر شد
         /// </summary>
         private List<NotificationVariableCategory> GetRequiredCategoriesForEventType(byte eventType)
         {
@@ -765,35 +850,89 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                 NotificationVariableCategory.Recipient
             };
 
-            // بر اساس NotificationEventType
+            // ⭐⭐⭐ بر اساس NotificationEventType - هر case فقط متغیرهای مرتبط خودش
             switch (eventType)
             {
-                case 13: // DailyTaskDigest - اعلان روزانه
-                    categories.Add(NotificationVariableCategory.TaskList);
-                    break;
-
-                case 1:  // TaskAssigned
-                case 2:  // TaskCompleted
-                case 3:  // TaskDeadlineReminder
-                case 4:  // TaskCommentAdded
-                case 5:  // TaskUpdated
-                case 6:  // TaskOperationCompleted
-                case 7:  // TaskDeleted
-                case 8:  // TaskStatusChanged
-                case 10: // OperationAssigned
-                case 11: // TaskPriorityChanged
-                case 12: // TaskReassigned
-                case 14: // TaskWorkLog
-                case 15: // CustomReminder
-                    // اعلان‌های مرتبط با تسک خاص
+                case 1: // TaskAssigned - تخصیص تسک جدید
                     categories.Add(NotificationVariableCategory.Task);
                     categories.Add(NotificationVariableCategory.Sender);
-                    
-                    // اگر یادآوری است
-                    if (eventType == 3 || eventType == 15)
-                    {
-                        categories.Add(NotificationVariableCategory.ReminderSchedule);
-                    }
+                    break;
+
+                case 2: // TaskCompleted - تکمیل تسک
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    categories.Add(NotificationVariableCategory.Completion); // ⭐ فقط Completion
+                    break;
+
+                case 3: // TaskDeadlineReminder - یادآوری سررسید
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.ReminderSchedule);
+                    // ⚠️ بدون Sender - چون از طریق Background Service اجرا می‌شود
+                    break;
+
+                case 4: // TaskCommentAdded - کامنت جدید
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    categories.Add(NotificationVariableCategory.Comment); // ⭐ فقط Comment
+                    break;
+
+                case 5: // TaskUpdated - ویرایش تسک
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    // ⚠️ بدون متغیرهای اضافی - فقط اطلاعات پایه تسک
+                    break;
+
+                case 6: // TaskOperationCompleted - تکمیل عملیات
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    categories.Add(NotificationVariableCategory.Completion); // ⭐ مشابه TaskCompleted
+                    break;
+
+                case 7: // TaskDeleted - حذف تسک
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    // ⚠️ بدون متغیرهای اضافی
+                    break;
+
+                case 8: // TaskStatusChanged - تغییر وضعیت
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    categories.Add(NotificationVariableCategory.Status); // ⭐ فقط Status
+                    break;
+
+                case 10: // OperationAssigned - تخصیص عملیات
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    // ⚠️ بدون متغیرهای اضافی - مشابه TaskAssigned
+                    break;
+
+                case 11: // TaskPriorityChanged - تغییر اولویت
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    categories.Add(NotificationVariableCategory.Priority); // ⭐ فقط Priority
+                    break;
+
+                case 12: // TaskReassigned - تخصیص مجدد
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    // ⚠️ بدون متغیرهای اضافی - مشابه TaskAssigned
+                    break;
+
+                case 13: // DailyTaskDigest - اعلان روزانه
+                    categories.Add(NotificationVariableCategory.TaskList); // ⭐ فقط لیست تسک‌ها
+                    // ⚠️ بدون Task یا Sender - چون اعلان دوره‌ای است
+                    break;
+
+                case 14: // TaskWorkLog - گزارش کار
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.Sender);
+                    categories.Add(NotificationVariableCategory.WorkLog); // ⭐ فقط WorkLog
+                    break;
+
+                case 15: // CustomTaskReminder - یادآوری سفارشی
+                    categories.Add(NotificationVariableCategory.Task);
+                    categories.Add(NotificationVariableCategory.ReminderSchedule);
+                    // ⚠️ بدون Sender - چون از طریق Background Service اجرا می‌شود
                     break;
 
                 default:
@@ -1021,27 +1160,24 @@ namespace MahERP.DataModelLayer.Repository.Notifications
         // در کلاس NotificationTemplateRepository
 
         // ⭐ متد جدید برای دریافت لیست انواع اعلان
-        private async Task<List<NotificationTypeSelectItem>> GetAvailableNotificationTypesAsync()
+        private List<NotificationTypeSelectItem> GetAvailableNotificationTypesAsync()
         {
-            var configs = await _context.NotificationTypeConfig_Tbl
-                .Where(t => t.IsActive)
-                .OrderBy(t => t.ModuleConfigId)
-                .ThenBy(t => t.TypeNameFa).Include(t=> t.ModuleConfig)
-                .ToListAsync();
+            // ⭐⭐⭐ استفاده از StaticNotificationSeedData به جای Database
+            var configs = StaticClasses.StaticNotificationSeedData.NotificationTypes;
 
             return configs.Select(t => new NotificationTypeSelectItem
             {
                 // ⭐⭐⭐ استفاده از اولین EventType به جای Id
                 Id = t.EventTypesList.Any() ? t.EventTypesList.First() : 0,
                 Name = t.TypeNameFa,
-                ModuleName = t.ModuleConfig.ModuleNameFa,
+                ModuleName = "تسکینگ", // فعلاً فقط یک ماژول داریم
                 // ⭐⭐⭐ فقط اعلان‌های دوره‌ای قابل زمان‌بندی هستند
                 IsSchedulable = t.EventTypesList.Contains(13) // DailyTaskDigest
             }).ToList();
         }
 
         // ⭐ اصلاح متد GetTemplateFormViewModelAsync
-        public async Task<NotificationTemplateFormViewModel> GetTemplateFormViewModelAsync(int? templateId = null)
+        public async Task<NotificationTemplateFormViewModel> GetTemplateFormViewModelAsync(int? templateId = null, byte? eventType = null)
         {
             if (templateId.HasValue)
             {
@@ -1054,14 +1190,6 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                     .Where(r => r.IsActive && r.RecipientType == 2)
                     .Select(r => r.UserId)
                     .ToList();
-
-                // ⭐⭐⭐ Debug: لاگ مقادیر زمان‌بندی
-                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] Template ID: {template.Id}");
-                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] IsScheduled: {template.IsScheduled}");
-                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] ScheduleType: {template.ScheduleType}");
-                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] ScheduledTime: {template.ScheduledTime}");
-                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] ScheduledDaysOfWeek: {template.ScheduledDaysOfWeek}");
-                System.Diagnostics.Debug.WriteLine($"[GetTemplateFormViewModelAsync] ScheduledDayOfMonth: {template.ScheduledDayOfMonth}");
 
                 return new NotificationTemplateFormViewModel
                 {
@@ -1090,18 +1218,40 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                     // ⭐⭐⭐ FIX: متغیرهای فیلتر شده بر اساس نوع اعلان
                     SystemVariables = await GetVariablesForEventTypeAsync(template.NotificationEventType),
                     AvailableUsers = await GetUsersForSelectAsync(),
-                    AvailableNotificationTypes = await GetAvailableNotificationTypesAsync()
+                    AvailableNotificationTypes = GetAvailableNotificationTypesAsync() // ⭐ حذف await
                 };
             }
 
-            // الگوی جدید
+            // ⭐⭐⭐ الگوی جدید - بررسی eventType
+            if (eventType.HasValue)
+            {
+                // ⭐⭐⭐ اگر eventType مشخص شده، متغیرهای فیلتر شده برای همان نوع
+                return new NotificationTemplateFormViewModel
+                {
+                    IsActive = true,
+                    RecipientMode = 0,
+                    NotificationEventType = eventType.Value, // ⭐ تنظیم مقدار اولیه
+                    SystemVariables = await GetVariablesForEventTypeAsync(eventType.Value),
+                    AvailableUsers = await GetUsersForSelectAsync(),
+                    AvailableNotificationTypes = GetAvailableNotificationTypesAsync() // ⭐ حذف await
+                };
+            }
+
+            // ⭐⭐⭐ حالت پیش‌فرض - فقط متغیرهای پایه (General + Recipient)
             return new NotificationTemplateFormViewModel
             {
                 IsActive = true,
                 RecipientMode = 0,
-                SystemVariables = await GetSystemVariablesAsync(), // همه متغیرها
+                // ⭐⭐⭐ فقط متغیرهای پایه برای صفحه Create
+                SystemVariables = (await GetSystemVariablesAsync())
+                    .Where(v => v.Categories.Any(c => 
+                        c == NotificationVariableCategory.General || 
+                        c == NotificationVariableCategory.Recipient))
+                    .OrderBy(v => v.IsDeprecated)
+                    .ThenBy(v => v.DisplayName)
+                    .ToList(),
                 AvailableUsers = await GetUsersForSelectAsync(),
-                AvailableNotificationTypes = await GetAvailableNotificationTypesAsync()
+                AvailableNotificationTypes = GetAvailableNotificationTypesAsync() // ⭐ حذف await
             };
         }
 
