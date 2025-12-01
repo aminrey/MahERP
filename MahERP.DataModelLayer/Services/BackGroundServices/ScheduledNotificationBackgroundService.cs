@@ -268,7 +268,8 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 return null;
 
             // ⭐⭐⭐ استفاده از زمان ایران
-            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
+            var nowUtc = DateTime.UtcNow;
+            var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, IranTimeZone);
             
             var timeParts = template.ScheduledTime.Split(':');
 
@@ -280,20 +281,21 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 return null;
             }
 
-            DateTime nextExecution;
+            DateTime? nextExecutionIran = null;
 
             switch (template.ScheduleType)
             {
                 case 1: // روزانه
-                    nextExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0, DateTimeKind.Unspecified);
+                    // ⭐⭐⭐ ساخت DateTime با Iran TimeZone
+                    nextExecutionIran = new DateTime(nowIran.Year, nowIran.Month, nowIran.Day, hour, minute, 0, DateTimeKind.Unspecified);
                     
                     // ⭐⭐⭐ FIX: اگر زمان امروز گذشته، حتماً یک روز اضافه کن
-                    if (nextExecution <= now)
+                    if (nextExecutionIran <= nowIran)
                     {
-                        nextExecution = nextExecution.AddDays(1);
+                        nextExecutionIran = nextExecutionIran.Value.AddDays(1);
                     }
                     
-                    _logger.LogInformation($"📅 روزانه: NextExecution = {nextExecution:yyyy-MM-dd HH:mm}");
+                    _logger.LogInformation($"📅 روزانه: NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
                     break;
 
                 case 2: // هفتگی
@@ -306,40 +308,74 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         .OrderBy(d => d)
                         .ToList();
 
-                    nextExecution = FindNextWeeklyExecution(now, hour, minute, daysOfWeek);
-                    _logger.LogInformation($"📅 هفتگی: NextExecution = {nextExecution:yyyy-MM-dd HH:mm}");
+                    nextExecutionIran = FindNextWeeklyExecution(nowIran, hour, minute, daysOfWeek);
+                    _logger.LogInformation($"📅 هفتگی: NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
                     break;
 
-                case 3: // ماهانه
+                case 3: // ماهانه (یک روز)
                     if (!template.ScheduledDayOfMonth.HasValue)
                         return null;
 
-                    nextExecution = FindNextMonthlyExecution(now, hour, minute, template.ScheduledDayOfMonth.Value);
-                    _logger.LogInformation($"📅 ماهانه: NextExecution = {nextExecution:yyyy-MM-dd HH:mm}");
+                    nextExecutionIran = FindNextMonthlyExecution(nowIran, hour, minute, template.ScheduledDayOfMonth.Value);
+                    _logger.LogInformation($"📅 ماهانه (یک روز): NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
                     break;
 
-                case 4: // Cron Expression
-                    // ⭐ TODO: پیاده‌سازی Cron Parser (نیاز به کتابخانه NCrontab)
-                    _logger.LogWarning("⚠️ Cron Expression هنوز پیاده‌سازی نشده است");
-                    return null;
+                case 4: // ⭐⭐⭐ ماهانه (چند روز) 🆕
+                    if (string.IsNullOrEmpty(template.ScheduledDaysOfMonth))
+                        return null;
+
+                    var daysOfMonth = template.ScheduledDaysOfMonth
+                        .Split(',')
+                        .Select(d => int.TryParse(d.Trim(), out var day) ? day : (int?)null)
+                        .Where(d => d.HasValue && d.Value >= 1 && d.Value <= 31)
+                        .Select(d => d.Value)
+                        .OrderBy(d => d)
+                        .ToList();
+
+                    if (!daysOfMonth.Any())
+                        return null;
+
+                    nextExecutionIran = FindNextMonthlyMultipleDaysExecution(nowIran, daysOfMonth, hour, minute);
+                    _logger.LogInformation($"📅 ماهانه (چند روز): NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
+                    break;
 
                 default:
+                    // ⭐⭐⭐ نوع زمان‌بندی نامعتبر
+                    _logger.LogWarning($"⚠️ نوع زمان‌بندی نامعتبر برای قالب {template.TemplateName}: {template.ScheduleType}");
                     return null;
             }
 
-            return nextExecution;
+            // ⭐⭐⭐ اگر nextExecutionIran هنوز null است
+            if (!nextExecutionIran.HasValue)
+            {
+                _logger.LogWarning($"⚠️ محاسبه زمان بعدی برای قالب {template.TemplateName} ناموفق بود");
+                return null;
+            }
+
+            // ⭐⭐⭐ تبدیل Iran Time به UTC
+            try
+            {
+                var nextExecutionUtc = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran.Value, IranTimeZone);
+                _logger.LogInformation($"✅ Converted to UTC: {nextExecutionUtc:yyyy-MM-dd HH:mm:ss}");
+                return nextExecutionUtc;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ خطا در تبدیل به UTC: {nextExecutionIran}");
+                return null;
+            }
         }
 
         /// <summary>
         /// پیدا کردن زمان بعدی برای زمان‌بندی هفتگی
         /// </summary>
-        private DateTime FindNextWeeklyExecution(DateTime now, int hour, int minute, List<int> daysOfWeek)
+        private DateTime FindNextWeeklyExecution(DateTime nowIran, int hour, int minute, List<int> daysOfWeek)
         {
-            var currentDayOfWeek = (int)now.DayOfWeek;
+            var currentDayOfWeek = (int)nowIran.DayOfWeek;
 
             // ⭐ چک کردن امروز
-            var todayExecution = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0, DateTimeKind.Unspecified);
-            if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > now)
+            var todayExecution = new DateTime(nowIran.Year, nowIran.Month, nowIran.Day, hour, minute, 0, DateTimeKind.Unspecified);
+            if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > nowIran)
             {
                 return todayExecution;
             }
@@ -347,7 +383,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             // ⭐ پیدا کردن روز بعدی
             for (int i = 1; i <= 7; i++)
             {
-                var nextDate = now.AddDays(i);
+                var nextDate = nowIran.AddDays(i);
                 var nextDayOfWeek = (int)nextDate.DayOfWeek;
 
                 if (daysOfWeek.Contains(nextDayOfWeek))
@@ -357,30 +393,86 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             }
 
             // پیش‌فرض (نباید به اینجا برسد)
-            return now.AddDays(7);
+            return nowIran.AddDays(7);
         }
 
         /// <summary>
         /// پیدا کردن زمان بعدی برای زمان‌بندی ماهانه
         /// </summary>
-        private DateTime FindNextMonthlyExecution(DateTime now, int hour, int minute, int dayOfMonth)
+        private DateTime FindNextMonthlyExecution(DateTime nowIran, int hour, int minute, int dayOfMonth)
         {
             // ⭐ چک کردن این ماه
-            var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
+            var daysInMonth = DateTime.DaysInMonth(nowIran.Year, nowIran.Month);
             var targetDay = Math.Min(dayOfMonth, daysInMonth);
 
-            var thisMonthExecution = new DateTime(now.Year, now.Month, targetDay, hour, minute, 0, DateTimeKind.Unspecified);
-            if (thisMonthExecution > now)
+            var thisMonthExecution = new DateTime(nowIran.Year, nowIran.Month, targetDay, hour, minute, 0, DateTimeKind.Unspecified);
+            if (thisMonthExecution > nowIran)
             {
                 return thisMonthExecution;
             }
 
             // ⭐ ماه بعد
-            var nextMonth = now.AddMonths(1);
+            var nextMonth = nowIran.AddMonths(1);
             daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
             targetDay = Math.Min(dayOfMonth, daysInMonth);
 
             return new DateTime(nextMonth.Year, nextMonth.Month, targetDay, hour, minute, 0, DateTimeKind.Unspecified);
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW: پیدا کردن اولین زمان اجرای ماهانه بعدی (با چند روز انتخابی)
+        /// </summary>
+        private DateTime FindNextMonthlyMultipleDaysExecution(DateTime now, List<int> daysOfMonth, int hour, int minute)
+        {
+            var currentDay = now.Day;
+            var currentMonth = now.Month;
+            var currentYear = now.Year;
+
+            // ⭐ مرحله 1: بررسی ماه جاری
+            var todayExecution = new DateTime(currentYear, currentMonth, Math.Min(currentDay, DateTime.DaysInMonth(currentYear, currentMonth)), hour, minute, 0, DateTimeKind.Unspecified);
+            
+            // آیا امروز در لیست است و ساعت نگذشته؟
+            if (daysOfMonth.Contains(currentDay) && now < todayExecution)
+            {
+                return todayExecution;
+            }
+
+            // پیدا کردن اولین روز بعد از امروز در ماه جاری
+            foreach (var day in daysOfMonth.Where(d => d > currentDay))
+            {
+                var daysInCurrentMonth = DateTime.DaysInMonth(currentYear, currentMonth);
+                if (day <= daysInCurrentMonth)
+                {
+                    return new DateTime(currentYear, currentMonth, day, hour, minute, 0, DateTimeKind.Unspecified);
+                }
+            }
+
+            // ⭐ مرحله 2: اگر در ماه جاری روزی نماند، ماه بعد
+            var nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
+            var nextYear = currentMonth == 12 ? currentYear + 1 : currentYear;
+            var daysInNextMonth = DateTime.DaysInMonth(nextYear, nextMonth);
+
+            // اولین روز موجود در ماه بعد
+            var firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextMonth);
+            if (firstAvailableDay > 0)
+            {
+                return new DateTime(nextYear, nextMonth, firstAvailableDay, hour, minute, 0, DateTimeKind.Unspecified);
+            }
+
+            // اگر هیچ روزی در ماه بعد موجود نیست (مثلاً روز 31 در فوریه)
+            // برو 2 ماه بعد
+            var nextNextMonth = nextMonth == 12 ? 1 : nextMonth + 1;
+            var nextNextYear = nextMonth == 12 ? nextYear + 1 : nextYear;
+            var daysInNextNextMonth = DateTime.DaysInMonth(nextNextYear, nextNextMonth);
+
+            firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextNextMonth);
+            if (firstAvailableDay > 0)
+            {
+                return new DateTime(nextNextYear, nextNextMonth, firstAvailableDay, hour, minute, 0, DateTimeKind.Unspecified);
+            }
+
+            // در صورت مشکل، ماه بعد اولین روز از لیست
+            return new DateTime(nextYear, nextMonth, daysOfMonth.First(), hour, minute, 0, DateTimeKind.Unspecified);
         }
     }
 }

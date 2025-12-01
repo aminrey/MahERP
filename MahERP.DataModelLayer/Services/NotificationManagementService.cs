@@ -324,6 +324,32 @@ namespace MahERP.DataModelLayer.Services
                     ? null 
                     : senderUserId;
 
+                // ⭐⭐⭐ NEW: جایگزینی متغیرها در Title و Message برای اعلان سیستمی
+                var processedTitle = title;
+                var processedMessage = message;
+                
+                // فقط برای رویدادهای مرتبط با تسک
+                if (IsTaskRelatedEvent(eventType) && !string.IsNullOrEmpty(relatedRecordId) && int.TryParse(relatedRecordId, out int taskId))
+                {
+                    // دریافت اطلاعات تسک برای جایگزینی
+                    var task = await _context.Tasks_Tbl
+                        .Where(t => t.Id == taskId)
+                        .Select(t => new { t.Title, t.TaskCode })
+                        .FirstOrDefaultAsync();
+
+                    if (task != null)
+                    {
+                        // جایگزینی متغیرهای پایه
+                        processedTitle = processedTitle
+                            .Replace("{{TaskTitle}}", task.Title, StringComparison.OrdinalIgnoreCase)
+                            .Replace("{{TaskCode}}", task.TaskCode, StringComparison.OrdinalIgnoreCase);
+                        
+                        processedMessage = processedMessage
+                            .Replace("{{TaskTitle}}", task.Title, StringComparison.OrdinalIgnoreCase)
+                            .Replace("{{TaskCode}}", task.TaskCode, StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+
                 var notification = new CoreNotification
                 {
                     SystemId = 7, // Tasking
@@ -331,8 +357,8 @@ namespace MahERP.DataModelLayer.Services
                     RecipientUserId = recipientUserId,
                     SenderUserId = actualSenderId, // ⭐ می‌تواند null باشد
                     NotificationTypeGeneral = MapEventTypeToGeneralType(eventType),
-                    Title = title,
-                    Message = message,
+                    Title = processedTitle, // ⭐⭐⭐ با متغیرهای جایگزین شده
+                    Message = processedMessage, // ⭐⭐⭐ با متغیرهای جایگزین شده
                     ActionUrl = actionUrl,
                     RelatedRecordId = relatedRecordId,
                     RelatedRecordType = relatedRecordType,
@@ -1045,6 +1071,7 @@ namespace MahERP.DataModelLayer.Services
                 NotificationEventType.TaskCommentAdded => 0,    // اطلاع‌رسانی عمومی
                 NotificationEventType.TaskStatusChanged => 10,  // تغییر وضعیت
                 NotificationEventType.TaskDeadlineReminder => 6,// یادآوری
+                NotificationEventType.CustomTaskReminder => 6,  // ⭐⭐⭐ FIX: یادآوری سفارشی
                 NotificationEventType.CommentMentioned => 0,    // اطلاع‌رسانی عمومی
                 NotificationEventType.DailyTaskDigest => 0,     // اطلاع‌رسانی عمومی
                 _ => 0 // پیش‌فرض
@@ -1117,6 +1144,7 @@ namespace MahERP.DataModelLayer.Services
                 // ⭐ متغیرهای پایه
                 { "Title", title },
                 { "Message", message },
+                { "Description", message }, // ⭐⭐⭐ FIX: اضافه کردن Description (معادل Message)
                 { "ActionUrl", actionUrl },
                 { "Date", DateTime.Now.ToString("yyyy/MM/dd") },
                 { "Time", DateTime.Now.ToString("HH:mm") }
@@ -1523,6 +1551,7 @@ namespace MahERP.DataModelLayer.Services
                 NotificationEventType.OperationAssigned => true,
                 NotificationEventType.CommentMentioned => true,
                 NotificationEventType.TaskPriorityChanged => true,
+                NotificationEventType.CustomTaskReminder => true, // ⭐⭐⭐ FIX: اضافه شد
                 NotificationEventType.DailyTaskDigest => false, // این یک اعلان دوره‌ای است
                 NotificationEventType.TaskWorkLog => true,
                 _ => false

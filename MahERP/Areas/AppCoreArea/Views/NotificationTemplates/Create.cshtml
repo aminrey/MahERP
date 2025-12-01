@@ -220,7 +220,8 @@
                                     <option value="0">دستی (بدون زمان‌بندی)</option>
                                     <option value="1">روزانه</option>
                                     <option value="2">هفتگی</option>
-                                    <option value="3">ماهانه</option>
+                                    <option value="3">ماهانه (یک روز)</option>
+                                    <option value="4">ماهانه (چند روز)</option>
                                 </select>
                             </div>
 
@@ -268,6 +269,25 @@
                                 <small class="form-text text-muted">
                                     <i class="fa fa-info-circle me-1"></i>
                                     روز ماه برای اجرا (1 تا 31)
+                                </small>
+                            </div>
+
+                            <!-- ⭐⭐⭐ NEW: انتخاب چند روز ماه -->
+                            <div class="mb-3" id="daysOfMonthField" style="display: none;">
+                                <label class="form-label">روزهای ماه</label>
+                                <div class="row g-2">
+                                    @for (int i = 1; i <= 31; i++)
+                                    {
+                                        <div class="col-3">
+                                            <input type="checkbox" class="btn-check" id="monthDay@(i)" name="MonthDays" value="@i">
+                                            <label class="btn btn-outline-primary btn-sm w-100" for="monthDay@(i)">@i</label>
+                                        </div>
+                                    }
+                                </div>
+                                <input type="hidden" asp-for="ScheduledDaysOfMonth" id="scheduledDaysOfMonthHidden">
+                                <small class="form-text text-muted mt-2 d-block">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    مثلاً برای 10، 15، 25 هر ماه این روزها را انتخاب کنید
                                 </small>
                             </div>
 
@@ -737,10 +757,13 @@
                 const scheduleType = parseInt($(this).val());
                 $('#daysOfWeekField').hide();
                 $('#dayOfMonthField').hide();
+                $('#daysOfMonthField').hide(); // ⭐⭐⭐ NEW
                 if (scheduleType === 2) {
                     $('#daysOfWeekField').slideDown();
                 } else if (scheduleType === 3) {
                     $('#dayOfMonthField').slideDown();
+                } else if (scheduleType === 4) { // ⭐⭐⭐ NEW: چند روز ماه
+                    $('#daysOfMonthField').slideDown();
                 }
                 updateSchedulePreview();
             });
@@ -770,6 +793,15 @@
                             ? `هر ماه روز ${dayOfMonth} ساعت ${time}`
                             : 'لطفاً روز ماه را وارد کنید';
                         break;
+                    case 4: // ⭐⭐⭐ NEW: چند روز ماه
+                        const selectedMonthDays = [];
+                        $('input[name="MonthDays"]:checked').each(function() {
+                            selectedMonthDays.push(parseInt($(this).val()));
+                        });
+                        preview = selectedMonthDays.length > 0
+                            ? `هر ماه روزهای ${selectedMonthDays.sort((a, b) => a - b).join('، ')} ساعت ${time}`
+                            : 'لطفاً روزهای ماه را انتخاب کنید';
+                        break;
                     default:
                         preview = 'دستی (بدون زمان‌بندی)';
                 }
@@ -783,6 +815,16 @@
                     selectedDays.push($(this).val());
                 });
                 $('#scheduledDaysOfWeekHidden').val(selectedDays.join(','));
+                updateSchedulePreview();
+            });
+
+            // ⭐⭐⭐ NEW: مدیریت انتخاب روزهای ماه
+            $('input[name="MonthDays"]').on('change', function() {
+                const selectedMonthDays = [];
+                $('input[name="MonthDays"]:checked').each(function() {
+                    selectedMonthDays.push($(this).val());
+                });
+                $('#scheduledDaysOfMonthHidden').val(selectedMonthDays.join(','));
                 updateSchedulePreview();
             });
 

@@ -172,13 +172,16 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                     // این باعث می‌شه قالب‌های خارجی هم ارسال بشن
                     foreach (var recipientUserId in recipientUserIds)
                     {
+                        // ⭐⭐⭐ FIX: ساخت عنوان دینامیک برای اعلان سیستمی
+                        var systemNotificationTitle = $"یادآوری در تسک: {schedule.Task.Title}";
+                        
                         // ⭐ ثبت اعلان سیستمی + ارسال از طریق قالب‌های خارجی
                         await notificationService.ProcessEventNotificationAsync(
                             NotificationEventType.CustomTaskReminder,
                             new List<string> { recipientUserId },
                             "SYSTEM",
-                            schedule.Title,
-                            schedule.Description ?? schedule.Title,
+                            systemNotificationTitle, // ⭐⭐⭐ عنوان دینامیک: "یادآوری در تسک: [نام تسک]"
+                            schedule.Description ?? schedule.Title, // ⭐ متن یادآوری
                             $"/TaskingArea/Tasks/Details/{schedule.TaskId}",
                             schedule.TaskId.ToString(),
                             "Task",
