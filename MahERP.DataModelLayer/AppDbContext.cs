@@ -197,6 +197,9 @@ namespace MahERP.DataModelLayer
         // ⭐⭐⭐ Background Jobs System
         public DbSet<BackgroundJob> BackgroundJob_Tbl { get; set; }
 
+        // ⭐⭐⭐ Telegram Queue System
+        public DbSet<TelegramNotificationQueue> TelegramNotificationQueue_Tbl { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

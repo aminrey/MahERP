@@ -482,6 +482,7 @@
             type: 'GET',
             success: function(html) {
                 $('#headerNotificationsList').html(html);
+                console.log('✅ Notification list loaded');
             },
             error: function() {
                 $('#headerNotificationsList').html(`
@@ -509,6 +510,9 @@
             if (count > oldCount && oldCount !== 0) {
                 console.log('✨ New notification detected!');
 
+                // ⭐⭐⭐ بروزرسانی لیست نوتیفیکیشن‌ها
+                loadNotificationList();
+
                 // اضافه کردن کلاس برای انیمیشن
                 badge.removeClass('new-notification').addClass('new-notification');
                 bell.removeClass('shake has-new').addClass('shake has-new');
@@ -534,7 +538,7 @@
         }
     }
 
-    // ⭐ پخش صدای نوتیفیکیشن
+    // ⭐ پخش صدای نوتیفیکشن
     function playNotificationSoundUI() {
         const audio = document.getElementById('notificationSound');
         if (audio) {

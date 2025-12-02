@@ -129,10 +129,18 @@ namespace MahERP.DataModelLayer.Entities.Notifications
         public string? ScheduledDaysOfWeek { get; set; }
 
         /// <summary>
-        /// روز ماه برای اجرا (برای Monthly)
+        /// روز ماه برای اجرا (برای Monthly - یک روز)
         /// مثال: 1, 15, 30
+        /// ⚠️ برای انتخاب چند روز از ScheduledDaysOfMonth استفاده کنید
         /// </summary>
         public int? ScheduledDayOfMonth { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ روزهای ماه برای اجرا (برای Monthly - چند روز)
+        /// مثال: "10,15,25" = روزهای 10، 15، 25 هر ماه
+        /// </summary>
+        [MaxLength(100)]
+        public string? ScheduledDaysOfMonth { get; set; }
 
         /// <summary>
         /// Cron Expression برای زمان‌بندی پیشرفته

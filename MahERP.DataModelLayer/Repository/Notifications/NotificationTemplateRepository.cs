@@ -118,6 +118,7 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                 existing.ScheduledTime = template.ScheduledTime;
                 existing.ScheduledDaysOfWeek = template.ScheduledDaysOfWeek;
                 existing.ScheduledDayOfMonth = template.ScheduledDayOfMonth;
+                existing.ScheduledDaysOfMonth = template.ScheduledDaysOfMonth; // ⭐⭐⭐ جدید
                 existing.IsScheduleEnabled = template.IsScheduleEnabled;
                 
                 // ⭐ محاسبه زمان اجرای بعدی اگر زمان‌بندی فعال شد
@@ -203,6 +204,25 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                     break;
 
                 case 3: // ماهانه
+                    // ⭐⭐⭐ اگر چند روز انتخاب شده باشد (ScheduledDaysOfMonth)
+                    if (!string.IsNullOrEmpty(template.ScheduledDaysOfMonth))
+                    {
+                        var daysOfMonth = template.ScheduledDaysOfMonth
+                            .Split(',')
+                            .Select(d => int.TryParse(d.Trim(), out var day) ? day : (int?)null)
+                            .Where(d => d.HasValue && d.Value >= 1 && d.Value <= 31)
+                            .Select(d => d.Value)
+                            .OrderBy(d => d)
+                            .ToList();
+
+                        if (daysOfMonth.Any())
+                        {
+                            nextExecutionIran = FindNextMonthlyMultipleDaysExecution(nowIran, hour, minute, daysOfMonth);
+                            break;
+                        }
+                    }
+
+                    // ⭐ در غیر این صورت از ScheduledDayOfMonth استفاده کن
                     if (!template.ScheduledDayOfMonth.HasValue)
                         return null;
 
@@ -279,6 +299,63 @@ namespace MahERP.DataModelLayer.Repository.Notifications
             return new DateTime(
                 nextMonth.Year, nextMonth.Month, targetDay, 
                 hour, minute, 0, DateTimeKind.Unspecified);
+        }
+
+        /// <summary>
+        /// پیدا کردن زمان بعدی برای زمان‌بندی ماهانه با چند روز انتخابی
+        /// ⭐ DateTime در Iran TimeZone
+        /// </summary>
+        private DateTime FindNextMonthlyMultipleDaysExecution(DateTime nowIran, int hour, int minute, List<int> daysOfMonth)
+        {
+            var currentDay = nowIran.Day;
+            var currentMonth = nowIran.Month;
+            var currentYear = nowIran.Year;
+
+            // ⭐ مرحله 1: بررسی ماه جاری
+            var todayExecution = new DateTime(currentYear, currentMonth, Math.Min(currentDay, DateTime.DaysInMonth(currentYear, currentMonth))).Date.Add(new TimeSpan(hour, minute, 0));
+            
+            // آیا امروز در لیست است و ساعت نگذشته؟
+            if (daysOfMonth.Contains(currentDay) && nowIran < todayExecution)
+            {
+                return todayExecution;
+            }
+
+            // پیدا کردن اولین روز بعد از امروز در ماه جاری
+            foreach (var day in daysOfMonth.Where(d => d > currentDay))
+            {
+                var daysInCurrentMonth = DateTime.DaysInMonth(currentYear, currentMonth);
+                if (day <= daysInCurrentMonth)
+                {
+                    return new DateTime(currentYear, currentMonth, day).Date.Add(new TimeSpan(hour, minute, 0));
+                }
+            }
+
+            // ⭐ مرحله 2: اگر در ماه جاری روزی نماند، ماه بعد
+            var nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
+            var nextYear = currentMonth == 12 ? currentYear + 1 : currentYear;
+            var daysInNextMonth = DateTime.DaysInMonth(nextYear, nextMonth);
+
+            // اولین روز موجود در ماه بعد
+            var firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextMonth);
+            if (firstAvailableDay > 0)
+            {
+                return new DateTime(nextYear, nextMonth, firstAvailableDay).Date.Add(new TimeSpan(hour, minute, 0));
+            }
+
+            // اگر هیچ روزی در ماه بعد موجود نیست (مثلاً روز 31 در فوریه)
+            // برو 2 ماه بعد
+            var nextNextMonth = nextMonth == 12 ? 1 : nextMonth + 1;
+            var nextNextYear = nextMonth == 12 ? nextYear + 1 : nextYear;
+            var daysInNextNextMonth = DateTime.DaysInMonth(nextNextYear, nextNextMonth);
+
+            firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextNextMonth);
+            if (firstAvailableDay > 0)
+            {
+                return new DateTime(nextNextYear, nextNextMonth, firstAvailableDay).Date.Add(new TimeSpan(hour, minute, 0));
+            }
+
+            // در صورت مشکل، ماه بعد اولین روز از لیست
+            return new DateTime(nextYear, nextMonth, daysOfMonth.First()).Date.Add(new TimeSpan(hour, minute, 0));
         }
 
         public async Task<bool> DeleteTemplateAsync(int templateId)
@@ -654,34 +731,17 @@ namespace MahERP.DataModelLayer.Repository.Notifications
                 },
                 
                 // ⭐⭐⭐ متغیرهای یادآوری زمان‌بندی شده
+                
                 new() { 
-                    VariableName = "Title", 
-                    DisplayName = "عنوان اعلان", 
-                    Description = "عنوان دینامیک اعلان (از قالب یادآوری یا پیش‌فرض)", 
-                    ExampleValue = "یادآوری تسک‌های امروز",
+                    VariableName = "Description", 
+                    DisplayName = "توضیحات یادآوری", 
+                    Description = "متن توضیحات یادآوری سفارشی که کاربر ثبت کرده", 
+                    ExampleValue = "لطفاً این تسک را تا پایان امروز بررسی کنید",
                     Categories = new List<NotificationVariableCategory> { 
                         NotificationVariableCategory.ReminderSchedule 
                     }
                 },
-                new() { 
-                    VariableName = "Message", 
-                    DisplayName = "متن اعلان", 
-                    Description = "متن دینامیک اعلان", 
-                    ExampleValue = "یادآوری برای بررسی تسک‌های در حال انجام",
-                    Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.ReminderSchedule 
-                    }
-                },
-                new() { 
-                    VariableName = "ActionUrl", 
-                    DisplayName = "لینک عملیات عمومی", 
-                    Description = "لینک مستقیم به صفحه مربوطه (عمومی)", 
-                    ExampleValue = "/TaskingArea/Tasks",
-                    Categories = new List<NotificationVariableCategory> { 
-                        NotificationVariableCategory.ReminderSchedule,
-                        NotificationVariableCategory.General 
-                    }
-                },
+             
                 
                 // ⭐⭐⭐ NEW: متغیرهای کامنت
                 new() { 

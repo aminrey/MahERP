@@ -129,6 +129,14 @@ namespace MahERP.DataModelLayer.ViewModels.Notifications
         [Display(Name = "روز ماه")]
         public int? ScheduledDayOfMonth { get; set; }
 
+        /// <summary>
+        /// ⭐⭐⭐ روزهای ماه برای اجرا (برای Monthly - چند روز)
+        /// مثال: "10,15,25" = روزهای 10، 15، 25 هر ماه
+        /// </summary>
+        [Display(Name = "روزهای ماه")]
+        [MaxLength(100)]
+        public string? ScheduledDaysOfMonth { get; set; }
+
         [Display(Name = "آخرین اجرا")]
         public DateTime? LastExecutionDate { get; set; }
 
@@ -178,7 +186,7 @@ namespace MahERP.DataModelLayer.ViewModels.Notifications
         public string? Description { get; set; }
         
         /// <summary>
-        /// ⭐ دسته‌بندی‌های مرتبط با این متغیر
+        /// ⭐ دسته‌بندی‌های مربوط به این متغیر
         /// </summary>
         public List<NotificationVariableCategory> Categories { get; set; } = new();
         

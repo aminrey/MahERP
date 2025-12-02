@@ -324,6 +324,32 @@ namespace MahERP.DataModelLayer.Services
                     ? null 
                     : senderUserId;
 
+                // ⭐⭐⭐ NEW: جایگزینی متغیرها در Title و Message برای اعلان سیستمی
+                var processedTitle = title;
+                var processedMessage = message;
+                
+                // فقط برای رویدادهای مرتبط با تسک
+                if (IsTaskRelatedEvent(eventType) && !string.IsNullOrEmpty(relatedRecordId) && int.TryParse(relatedRecordId, out int taskId))
+                {
+                    // دریافت اطلاعات تسک برای جایگزینی
+                    var task = await _context.Tasks_Tbl
+                        .Where(t => t.Id == taskId)
+                        .Select(t => new { t.Title, t.TaskCode })
+                        .FirstOrDefaultAsync();
+
+                    if (task != null)
+                    {
+                        // جایگزینی متغیرهای پایه
+                        processedTitle = processedTitle
+                            .Replace("{{TaskTitle}}", task.Title, StringComparison.OrdinalIgnoreCase)
+                            .Replace("{{TaskCode}}", task.TaskCode, StringComparison.OrdinalIgnoreCase);
+                        
+                        processedMessage = processedMessage
+                            .Replace("{{TaskTitle}}", task.Title, StringComparison.OrdinalIgnoreCase)
+                            .Replace("{{TaskCode}}", task.TaskCode, StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+
                 var notification = new CoreNotification
                 {
                     SystemId = 7, // Tasking
@@ -331,8 +357,8 @@ namespace MahERP.DataModelLayer.Services
                     RecipientUserId = recipientUserId,
                     SenderUserId = actualSenderId, // ⭐ می‌تواند null باشد
                     NotificationTypeGeneral = MapEventTypeToGeneralType(eventType),
-                    Title = title,
-                    Message = message,
+                    Title = processedTitle, // ⭐⭐⭐ با متغیرهای جایگزین شده
+                    Message = processedMessage, // ⭐⭐⭐ با متغیرهای جایگزین شده
                     ActionUrl = actionUrl,
                     RelatedRecordId = relatedRecordId,
                     RelatedRecordType = relatedRecordType,
@@ -569,8 +595,8 @@ namespace MahERP.DataModelLayer.Services
             }
         }
         /// <summary>
-        /// ارسال اعلان تلگرامی با دکمه‌های پویا
-        /// ⭐⭐⭐ FIX: افزودن Retry Mechanism و Queue برای جلوگیری از تأخیر
+        /// ارسال اعلان تلگرامی با استفاده از Queue
+        /// ⭐⭐⭐ FIX: استفاده از Queue بجای ارسال مستقیم برای جلوگیری از Timeout
         /// </summary>
         public async Task SendTelegramNotificationAsync(
             string userId,
@@ -581,14 +607,12 @@ namespace MahERP.DataModelLayer.Services
             {
                 var user = await _context.Users.FindAsync(userId);
 
-                // ✅ اصلاح: بررسی long? به جای string
                 if (user == null || !user.TelegramChatId.HasValue)
                 {
                     _logger.LogDebug($"ℹ️ Chat ID تلگرام کاربر {userId} یافت نشد");
                     return;
                 }
 
-                // ✅ ارسال مستقیم تلگرام
                 var botToken = GetTelegramBotToken();
 
                 if (string.IsNullOrEmpty(botToken) || botToken == "YOUR_DEFAULT_BOT_TOKEN")
@@ -600,94 +624,55 @@ namespace MahERP.DataModelLayer.Services
                 // ⭐⭐⭐ ساخت NotificationContext برای دکمه‌های پویا
                 var notificationContext = coreNotificationId > 0 
                     ? await BuildNotificationContextAsync(coreNotificationId, userId)
-                    : null; // ⭐ برای اعلان‌های زمان‌بندی شده (بدون CoreNotification)
+                    : null;
 
-                try
+                // ⭐⭐⭐ NEW: افزودن به صف Telegram به جای ارسال مستقیم
+                var telegramQueue = new TelegramNotificationQueue
                 {
-                    // ⭐⭐⭐ FIX: استفاده از Task.Run برای جلوگیری از Block شدن
-                    await Task.Run(async () =>
-                    {
-                        await _telegramService.SendNotificationAsync(
-                            message,
-                            user.TelegramChatId.Value,
-                            botToken,
-                            notificationContext
-                        );
-                    });
+                    ChatId = user.TelegramChatId.Value,
+                    Message = message,
+                    BotToken = botToken,
+                    ContextJson = notificationContext != null 
+                        ? System.Text.Json.JsonSerializer.Serialize(notificationContext) 
+                        : null,
+                    CoreNotificationId = coreNotificationId > 0 ? coreNotificationId : null,
+                    UserId = userId,
+                    Priority = 1,
+                    Status = 0, // Pending
+                    RetryCount = 0,
+                    MaxRetries = 3,
+                    CreatedDate = DateTime.Now,
+                    IsActive = true
+                };
 
-                    _logger.LogInformation($"✈️ پیام تلگرام برای {user.UserName} (ChatId: {user.TelegramChatId.Value}) ارسال شد");
+                _context.TelegramNotificationQueue_Tbl.Add(telegramQueue);
+                await _context.SaveChangesAsync();
 
-                    // ⭐⭐⭐ فقط اگر coreNotificationId معتبر است، CoreNotificationDelivery ثبت کن
-                    if (coreNotificationId > 0)
-                    {
-                        var delivery = new CoreNotificationDelivery
-                        {
-                            CoreNotificationId = coreNotificationId,
-                            DeliveryMethod = 3, // Telegram
-                            DeliveryAddress = user.TelegramChatId.Value.ToString(),
-                            DeliveryStatus = 1, // ارسال شده
-                            AttemptCount = 1,
-                            CreateDate = DateTime.Now,
-                            DeliveryDate = DateTime.Now,
-                            IsActive = true
-                        };
+                _logger.LogInformation($"✅ پیام تلگرام برای {user.UserName} به صف اضافه شد (QueueId: {telegramQueue.Id})");
 
-                        _context.CoreNotificationDelivery_Tbl.Add(delivery);
-                        await _context.SaveChangesAsync();
-
-                        _logger.LogDebug($"✅ CoreNotificationDelivery برای اعلان #{coreNotificationId} ثبت شد");
-                    }
-                    else
-                    {
-                        _logger.LogDebug($"ℹ️ اعلان زمان‌بندی شده - بدون ثبت CoreNotificationDelivery");
-                    }
-                }
-                catch (Exception sendEx)
+                // ⭐ ثبت CoreNotificationDelivery با وضعیت Pending
+                if (coreNotificationId > 0)
                 {
-                    _logger.LogError(sendEx, $"❌ خطا در ارسال تلگرام به ChatId: {user.TelegramChatId.Value}");
-
-                    // ⭐⭐⭐ FIX: Retry Logic - تلاش مجدد بعد از 5 ثانیه
-                    await Task.Delay(5000);
-                    
-                    try
+                    var delivery = new CoreNotificationDelivery
                     {
-                        await _telegramService.SendNotificationAsync(
-                            message,
-                            user.TelegramChatId.Value,
-                            botToken,
-                            notificationContext
-                        );
-                        
-                        _logger.LogInformation($"✅ تلگرام با موفقیت در تلاش دوم ارسال شد");
-                    }
-                    catch (Exception retryEx)
-                    {
-                        _logger.LogError(retryEx, "❌ خطا در تلاش مجدد ارسال تلگرام");
-                        
-                        // ⭐ ثبت خطا فقط اگر CoreNotification معتبر باشد
-                        if (coreNotificationId > 0)
-                        {
-                            var delivery = new CoreNotificationDelivery
-                            {
-                                CoreNotificationId = coreNotificationId,
-                                DeliveryMethod = 3,
-                                DeliveryAddress = user.TelegramChatId.Value.ToString(),
-                                DeliveryStatus = 3, // خطا
-                                ErrorMessage = $"خطا در ارسال: {sendEx.Message}",
-                                AttemptCount = 2,
-                                CreateDate = DateTime.Now,
-                                IsActive = true
-                            };
+                        CoreNotificationId = coreNotificationId,
+                        DeliveryMethod = 3, // Telegram
+                        DeliveryAddress = user.TelegramChatId.Value.ToString(),
+                        DeliveryStatus = 0, // Pending
+                        AttemptCount = 0,
+                        CreateDate = DateTime.Now,
+                        IsActive = true
+                    };
 
-                            _context.CoreNotificationDelivery_Tbl.Add(delivery);
-                            await _context.SaveChangesAsync();
-                        }
-                    }
+                    _context.CoreNotificationDelivery_Tbl.Add(delivery);
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogDebug($"✅ CoreNotificationDelivery (Pending) برای اعلان #{coreNotificationId} ثبت شد");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ خطا در SendTelegramNotificationAsync");
+                _logger.LogError(ex, "❌ خطا در افزودن به صف تلگرام");
             }
         }
         /// <summary>
@@ -1045,6 +1030,7 @@ namespace MahERP.DataModelLayer.Services
                 NotificationEventType.TaskCommentAdded => 0,    // اطلاع‌رسانی عمومی
                 NotificationEventType.TaskStatusChanged => 10,  // تغییر وضعیت
                 NotificationEventType.TaskDeadlineReminder => 6,// یادآوری
+                NotificationEventType.CustomTaskReminder => 6,  // ⭐⭐⭐ FIX: یادآوری سفارشی
                 NotificationEventType.CommentMentioned => 0,    // اطلاع‌رسانی عمومی
                 NotificationEventType.DailyTaskDigest => 0,     // اطلاع‌رسانی عمومی
                 _ => 0 // پیش‌فرض
@@ -1117,6 +1103,7 @@ namespace MahERP.DataModelLayer.Services
                 // ⭐ متغیرهای پایه
                 { "Title", title },
                 { "Message", message },
+                { "Description", message }, // ⭐⭐⭐ FIX: اضافه کردن Description (معادل Message)
                 { "ActionUrl", actionUrl },
                 { "Date", DateTime.Now.ToString("yyyy/MM/dd") },
                 { "Time", DateTime.Now.ToString("HH:mm") }
@@ -1523,6 +1510,7 @@ namespace MahERP.DataModelLayer.Services
                 NotificationEventType.OperationAssigned => true,
                 NotificationEventType.CommentMentioned => true,
                 NotificationEventType.TaskPriorityChanged => true,
+                NotificationEventType.CustomTaskReminder => true, // ⭐⭐⭐ FIX: اضافه شد
                 NotificationEventType.DailyTaskDigest => false, // این یک اعلان دوره‌ای است
                 NotificationEventType.TaskWorkLog => true,
                 _ => false

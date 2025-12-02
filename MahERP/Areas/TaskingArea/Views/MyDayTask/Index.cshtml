@@ -487,27 +487,29 @@
         }
 
         @* ⭐⭐⭐ دکمه ذخیره ترتیب (مخفی به صورت پیش‌فرض) *@
-        <div class="position-fixed bottom-0 end-0 p-4" style="z-index: 1000;">
+        <div id="save-group-order-container" class="d-none">
             <button type="button" 
                     id="save-group-order-btn" 
-                    class="btn btn-success btn-lg shadow-lg d-none"
-                    style="border-radius: 50px; padding: 1rem 2rem;">
+                    class="btn btn-success btn-lg shadow-lg">
                 <i class="fa fa-save me-2"></i>
                 ذخیره ترتیب گروه‌ها
             </button>
         </div>
     </div>
 
-    @section Scripts {
+    @Html.AntiForgeryToken()
+</div>
+
+@section Scripts {
     <!-- ⭐⭐⭐ SortableJS برای Drag & Drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     
-    <!-- ⭐⭐⭐ Animate.css برای انیمیشن -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    
     <script src="~/assets/js/Methods.js"></script>
     
-    <!-- ⭐⭐⭐ فایل Drag & Drop -->
+    <!-- ⭐⭐⭐ فایل CSS اختصاصی Drag & Drop -->
+    <link rel="stylesheet" href="~/assets/css/MyDayDragDrop.css" />
+    
+    <!-- ⭐⭐⭐ فایل JS اختصاصی Drag & Drop -->
     <script src="~/assets/js/MyDayDragDrop.js"></script>
     
     <script>
@@ -525,13 +527,6 @@
 
             // ⭐ Initialize tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
-
-            // ⭐⭐⭐ راه‌اندازی Drag & Drop
-            if (typeof MyDayDragDrop !== 'undefined') {
-                MyDayDragDrop.init();
-            } else {
-                console.warn('⚠️ MyDayDragDrop.js not loaded');
-            }
 
             // ⭐⭐⭐ راه‌اندازی Autocomplete برای فیلد GroupTitle در مودال‌ها
             $(document).on('shown.bs.modal', '#ajax-modal', function() {
@@ -714,87 +709,3 @@
 }
 
 @Html.AntiForgeryToken()
-
-<style>
-        /* ⭐ افکت hover برای آمار کلیک‌پذیر */
-        .hover-lift {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
-        }
-        
-        .quick-status-filter:hover .hover-lift {
-            background-color: #f0f0f0 !important;
-        }
-        
-        /* انیمیشن برای border فعال */
-        .quick-status-filter .p-3 {
-            transition: all 0.3s ease;
-        }
-
-        /* ⭐⭐⭐ Drag & Drop Styles */
-        .my-day-group {
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .my-day-group.is-dragging {
-            opacity: 0.5;
-            transform: scale(1.02);
-        }
-
-        .sortable-ghost {
-            opacity: 0.4;
-            background: #f0f0f0;
-        }
-
-        .sortable-chosen {
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2) !important;
-        }
-
-        .sortable-drag {
-            opacity: 1;
-        }
-
-        .group-drag-handle {
-            opacity: 0.5;
-            transition: opacity 0.2s ease;
-        }
-
-        .my-day-group:hover .group-drag-handle {
-            opacity: 1;
-        }
-
-        .group-drag-handle:active {
-            cursor: grabbing !important;
-        }
-
-        .group-order-indicator {
-            display: inline-block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @@keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* ⭐ دکمه ذخیره */
-        #save-group-order-btn {
-            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4) !important;
-        }
-
-        #save-group-order-btn:hover {
-            transform: scale(1.05);
-        }
-    </style>

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MahERP.DataModelLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251202062927_mytaskpriority")]
+    [Migration("20251202081721_mytaskpriority")]
     partial class mytaskpriority
     {
         /// <inheritdoc />
@@ -4704,6 +4704,19 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasDatabaseName("IX_NotificationModuleConfig_ModuleCode");
 
                     b.ToTable("NotificationModuleConfig_Tbl");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ColorCode = "#2196F3",
+                            Description = "سیستم مدیریت تسک‌ها و پروژه‌ها",
+                            DisplayOrder = 1,
+                            IsActive = true,
+                            ModuleCode = "TASKING",
+                            ModuleNameEn = "Tasking Module",
+                            ModuleNameFa = "ماژول تسکینگ"
+                        });
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.NotificationRecipient", b =>
@@ -4928,6 +4941,10 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.Property<int?>("ScheduledDayOfMonth")
                         .HasColumnType("int");
+
+                    b.Property<string>("ScheduledDaysOfMonth")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ScheduledDaysOfWeek")
                         .HasMaxLength(50)
@@ -5189,6 +5206,103 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasDatabaseName("IX_NotificationTypeConfig_Module_TypeCode");
 
                     b.ToTable("NotificationTypeConfig_Tbl");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)0,
+                            CoreNotificationTypeSpecific = (byte)0,
+                            DefaultPriority = (byte)0,
+                            Description = "ارسال پیام زمان بندی شده)",
+                            DisplayOrder = 1,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            RelatedEventTypes = "[13]",
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = false,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_DAILY_DIGEST",
+                            TypeNameFa = "اعلان زمانبدی شده"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)9,
+                            CoreNotificationTypeSpecific = (byte)1,
+                            DefaultPriority = (byte)1,
+                            Description = "اعلان هنگام تخصیص تسک جدید به کاربر",
+                            DisplayOrder = 2,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            RelatedEventTypes = "[1,12]",
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = true,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_ASSIGNED",
+                            TypeNameFa = "تخصیص تسک جدید"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)8,
+                            CoreNotificationTypeSpecific = (byte)2,
+                            DefaultPriority = (byte)1,
+                            Description = "اعلان تکمیل تسک به سازنده",
+                            DisplayOrder = 3,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            RelatedEventTypes = "[2,6]",
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = false,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_COMPLETED",
+                            TypeNameFa = "تکمیل تسک واگذار شده"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)6,
+                            CoreNotificationTypeSpecific = (byte)3,
+                            DefaultPriority = (byte)2,
+                            Description = "یادآوری تسک‌های نزدیک به سررسید",
+                            DisplayOrder = 4,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            RelatedEventTypes = "[3]",
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = true,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_REMINDER",
+                            TypeNameFa = "یادآوری سررسید تسک"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            AllowUserCustomization = true,
+                            CoreNotificationTypeGeneral = (byte)10,
+                            CoreNotificationTypeSpecific = (byte)4,
+                            DefaultPriority = (byte)0,
+                            Description = "اعلان ثبت کامنت، WorkLog یا تغییرات",
+                            DisplayOrder = 5,
+                            IsActive = true,
+                            ModuleConfigId = 1,
+                            RelatedEventTypes = "[4,5,8,10,11,14]",
+                            SendMode = (byte)0,
+                            SupportsEmail = true,
+                            SupportsSms = false,
+                            SupportsTelegram = true,
+                            TypeCode = "TASK_UPDATED",
+                            TypeNameFa = "تغییرات در تسک"
+                        });
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Notifications.UserNotificationPreference", b =>

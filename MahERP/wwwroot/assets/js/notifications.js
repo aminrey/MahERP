@@ -72,11 +72,13 @@ class NotificationManager {
 
     // ⭐ مدیریت اعلان جدید
     handleNewNotification(notification) {
+        console.log('🆕 Handling new notification:', notification);
+        
         this.updateBadge();
+        this.loadInitialNotifications(); // ⭐⭐⭐ بروزرسانی لیست نوتیفیکیشن‌ها
         this.showBrowserNotification(notification);
         this.playNotificationSound();
         this.highlightRelatedRows(notification);
-        this.loadInitialNotifications();
     }
 
     // ⭐ پخش صدا
@@ -264,4 +266,4 @@ function markAllHeaderNotificationsAsRead() {
     if (notificationManager) {
         notificationManager.markAllAsRead();
     }
-} 
+}
