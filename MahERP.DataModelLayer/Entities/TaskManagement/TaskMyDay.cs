@@ -40,6 +40,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public string? GroupTitle { get; set; }
 
         /// <summary>
+        /// ⭐⭐⭐ NEW - اولویت نمایش گروه (برای Drag & Drop)
+        /// null = اولویت تنظیم نشده (نمایش در آخر)
+        /// عدد کمتر = اولویت بالاتر (نمایش در بالای صفحه)
+        /// </summary>
+        public int? DisplayPriority { get; set; }
+
+        /// <summary>
         /// یادداشت برنامه‌ریزی (اختیاری)
         /// مثال: "شروع از ساعت 10 صبح"
         /// </summary>

@@ -608,6 +608,16 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         Task<List<string>> GetMyDayGroupTitlesAsync(string userId);
 
+        /// <summary>
+        /// ⭐⭐⭐ NEW - بروزرسانی اولویت نمایش گروه‌های "روز من"
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="groupPriorities">لیست گروه‌ها با اولویت‌های جدید</param>
+        /// <returns>موفقیت و پیام</returns>
+        Task<(bool Success, string Message)> UpdateMyDayGroupPrioritiesAsync(
+            string userId,
+            List<GroupPriorityItem> groupPriorities);
+
         #endregion
 
         #region Comprehensive User Tasks

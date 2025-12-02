@@ -304,4 +304,32 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         [MaxLength(50)]
         public string? SourcePage { get; set; }
     }
+
+    /// <summary>
+    /// ⭐⭐⭐ NEW - ViewModel برای بروزرسانی اولویت گروه‌ها
+    /// </summary>
+    public class UpdateGroupPrioritiesViewModel
+    {
+        /// <summary>
+        /// لیست گروه‌ها با اولویت‌های جدید
+        /// </summary>
+        [Required]
+        public List<GroupPriorityItem> GroupPriorities { get; set; } = new();
+    }
+
+    /// <summary>
+    /// ⭐⭐⭐ آیتم اولویت گروه
+    /// </summary>
+    public class GroupPriorityItem
+    {
+        /// <summary>
+        /// عنوان گروه
+        /// </summary>
+        public string? GroupTitle { get; set; }
+
+        /// <summary>
+        /// اولویت نمایش (عدد کمتر = بالاتر)
+        /// </summary>
+        public int Priority { get; set; }
+    }
 }

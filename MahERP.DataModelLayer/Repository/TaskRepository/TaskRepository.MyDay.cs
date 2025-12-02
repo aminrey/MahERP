@@ -47,12 +47,29 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 );
 
             // ⭐⭐⭐ NEW - گروه‌بندی دوبعدی: GroupTitle → Date → Tasks
+            // با مرتب‌سازی بر اساس DisplayPriority
             var groupedByTitleAndDate = myDayTasks
                 .Select(MapToMyDayTaskItem)
                 .GroupBy(t => string.IsNullOrWhiteSpace(t.GroupTitle) ? "بدون گروه" : t.GroupTitle)
+                .Select(g => new
+                {
+                    GroupTitle = g.Key,
+                    // ⭐ اولویت نمایش: از اولین تسک گروه گرفته می‌شود
+                    DisplayPriority = myDayTasks
+                        .FirstOrDefault(tmd => 
+                            (string.IsNullOrWhiteSpace(tmd.GroupTitle) && g.Key == "بدون گروه") ||
+                            tmd.GroupTitle == g.Key
+                        )?.DisplayPriority,
+                    Tasks = g
+                })
+                // ⭐⭐⭐ مرتب‌سازی: اولویت‌های null در آخر، سپس بر اساس عدد
+                .OrderBy(g => g.DisplayPriority.HasValue ? 0 : 1)
+                .ThenBy(g => g.DisplayPriority ?? int.MaxValue)
+                .ThenBy(g => g.GroupTitle)
                 .ToDictionary(
-                    g => g.Key,
-                    g => g.GroupBy(t => t.PlannedDatePersian)
+                    g => g.GroupTitle,
+                    g => g.Tasks.GroupBy(t => t.PlannedDatePersian)
+                          .OrderByDescending(dateGroup => dateGroup.Key)
                           .ToDictionary(
                               dateGroup => dateGroup.Key,
                               dateGroup => dateGroup.ToList()
@@ -489,6 +506,66 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 Console.WriteLine($"❌ Error in GetMyDayGroupTitlesAsync: {ex.Message}");
                 return new List<string>();
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW - بروزرسانی اولویت نمایش گروه‌های "روز من"
+        /// </summary>
+        public async Task<(bool Success, string Message)> UpdateMyDayGroupPrioritiesAsync(
+            string userId,
+            List<GroupPriorityItem> groupPriorities)
+        {
+            try
+            {
+                // اعتبارسنجی
+                if (groupPriorities == null || !groupPriorities.Any())
+                {
+                    return (false, "لیست گروه‌ها خالی است");
+                }
+
+                // دریافت تمام تسک‌های روز من کاربر
+                var myDayTasks = await _context.TaskMyDay_Tbl
+                    .Include(tmd => tmd.TaskAssignment)
+                    .Where(tmd =>
+                        tmd.TaskAssignment.AssignedUserId == userId &&
+                        !tmd.IsRemoved)
+                    .ToListAsync();
+
+                if (!myDayTasks.Any())
+                {
+                    return (false, "هیچ تسکی در روز شما یافت نشد");
+                }
+
+                // بروزرسانی اولویت برای هر گروه
+                foreach (var groupPriority in groupPriorities)
+                {
+                    var groupTitle = groupPriority.GroupTitle ?? "بدون گروه";
+                    var priority = groupPriority.Priority;
+
+                    // پیدا کردن همه تسک‌های این گروه
+                    var tasksInGroup = myDayTasks.Where(t =>
+                        (string.IsNullOrWhiteSpace(t.GroupTitle) && groupTitle == "بدون گروه") ||
+                        t.GroupTitle == groupTitle
+                    ).ToList();
+
+                    // تنظیم اولویت برای همه تسک‌های گروه
+                    foreach (var task in tasksInGroup)
+                    {
+                        task.DisplayPriority = priority;
+                        task.UpdatedDate = DateTime.Now;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Updated priorities for {groupPriorities.Count} groups");
+                return (true, "اولویت گروه‌ها با موفقیت ذخیره شد");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in UpdateMyDayGroupPrioritiesAsync: {ex.Message}");
+                return (false, $"خطا در ذخیره‌سازی: {ex.Message}");
             }
         }
 

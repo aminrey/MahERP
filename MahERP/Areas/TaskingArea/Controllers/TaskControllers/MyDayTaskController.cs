@@ -372,6 +372,38 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         }
 
         /// <summary>
+        /// ⭐⭐⭐ NEW - ذخیره اولویت نمایش گروه‌ها
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateGroupPriorities([FromBody] UpdateGroupPrioritiesViewModel model)
+        {
+            try
+            {
+                var currentUserId = _userManager.GetUserId(User);
+                
+                // اعتبارسنجی
+                if (model == null || model.GroupPriorities == null || !model.GroupPriorities.Any())
+                {
+                    return Json(new { success = false, message = "داده‌های ورودی نامعتبر است" });
+                }
+
+                // ⭐⭐⭐ استفاده از Repository
+                var result = await _TaskRepository.UpdateMyDayGroupPrioritiesAsync(
+                    currentUserId,
+                    model.GroupPriorities
+                );
+
+                return Json(new { success = result.Success, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in UpdateGroupPriorities: {ex.Message}");
+                return Json(new { success = false, message = "خطا در ذخیره‌سازی: " + ex.Message });
+            }
+        }
+
+        /// <summary>
         /// ⭐⭐⭐ مودال نمایش لیست کارهای انجام شده - استفاده از Repository
         /// </summary>
         [HttpGet]
