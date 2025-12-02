@@ -434,6 +434,7 @@
                                             <input asp-for="IsIndependentCompletion"
                                                    class="form-check-input"
                                                    type="checkbox"
+                                                   checked
                                                    id="completionModeSwitch">
                                             <label asp-for="IsIndependentCompletion" class="form-check-label">
                                                 <strong>تکمیل مستقل (هر نفر جداگانه باید تسک را تکمیل کند)</strong>
@@ -830,42 +831,49 @@
 
                                                     <!-- روز ماه (فقط برای Monthly) -->
                                                     <div class="col-md-6" id="monthlyOptions" style="display: none;">
-                                                        <label class="form-label">روز ماه <span class="text-danger">*</span></label>
-                                                        <input asp-for="TaskSchedule.ScheduledDayOfMonth" 
-                                                               type="number" 
-                                                               min="1" 
-                                                               max="31" 
-                                                               class="form-control" 
-                                                               placeholder="روز ماه (1-31)">
-                                                    </div>
-                                                </div>
+                                                        <label class="form-label">
+                                                            انتخاب روزهای ماه <span class="text-danger">*</span>
+                                                            <small class="text-muted">(می‌توانید چند روز انتخاب کنید)</small>
+                                                        </label>
+                                                        
+                                                        <!-- ⭐⭐⭐ دکمه‌های انتخاب چند روز -->
+                                                        <div class="btn-group-vertical w-100 mb-2" role="group">
+                                                            <!-- سطر 1: روزهای 1-10 -->
+                                                            <div class="btn-group mb-1" role="group">
+                                                                @for (int day = 1; day <= 10; day++)
+                                                                {
+                                                                    <input type="checkbox" class="btn-check" name="dayOfMonth" value="@day" id="scheduleDay@day">
+                                                                    <label class="btn btn-sm btn-outline-primary" for="scheduleDay@day">@day</label>
+                                                                }
+                                                            </div>
+                                                            
+                                                            <!-- سطر 2: روزهای 11-20 -->
+                                                            <div class="btn-group mb-1" role="group">
+                                                                @for (int day = 11; day <= 20; day++)
+                                                                {
+                                                                    <input type="checkbox" class="btn-check" name="dayOfMonth" value="@day" id="scheduleDay@day">
+                                                                    <label class="btn btn-sm btn-outline-primary" for="scheduleDay@day">@day</label>
+                                                                }
+                                                            </div>
+                                                            
+                                                            <!-- سطر 3: روزهای 21-31 -->
+                                                            <div class="btn-group" role="group">
+                                                                @for (int day = 21; day <= 31; day++)
+                                                                {
+                                                                    <input type="checkbox" class="btn-check" name="dayOfMonth" value="@day" id="scheduleDay@day">
+                                                                    <label class="btn btn-sm btn-outline-primary" for="scheduleDay@day">@day</label>
+                                                                }
+                                                            </div>
+                                                        </div>
 
-                                                <!-- روزهای هفته (فقط برای Weekly) -->
-                                                <div class="mb-3" id="weeklyOptions" style="display: none;">
-                                                    <label class="form-label">روزهای هفته <span class="text-danger">*</span></label>
-                                                    <div class="btn-group w-100" role="group">
-                                                        <input type="checkbox" class="btn-check" name="dayOfWeek" value="0" id="scheduleDaySun">
-                                                        <label class="btn btn-outline-primary" for="scheduleDaySun">یکشنبه</label>
-                                                        
-                                                        <input type="checkbox" class="btn-check" name="dayOfWeek" value="1" id="scheduleDayMon">
-                                                        <label class="btn btn-outline-primary" for="scheduleDayMon">دوشنبه</label>
-                                                        
-                                                        <input type="checkbox" class="btn-check" name="dayOfWeek" value="2" id="scheduleDayTue">
-                                                        <label class="btn btn-outline-primary" for="scheduleDayTue">سه‌شنبه</label>
-                                                        
-                                                        <input type="checkbox" class="btn-check" name="dayOfWeek" value="3" id="scheduleDayWed">
-                                                        <label class="btn btn-outline-primary" for="scheduleDayWed">چهارشنبه</label>
-                                                        
-                                                        <input type="checkbox" class="btn-check" name="dayOfWeek" value="4" id="scheduleDayThu">
-                                                        <label class="btn btn-outline-primary" for="scheduleDayThu">پنج‌شنبه</label>
-                                                        
-                                                        <input type="checkbox" class="btn-check" name="dayOfWeek" value="5" id="scheduleDayFri">
-                                                        <label class="btn btn-outline-primary" for="scheduleDayFri">جمعه</label>
-                                                        
-                                                        <input type="checkbox" class="btn-check" name="dayOfWeek" value="6" id="scheduleDaySat">
-                                                        <label class="btn btn-outline-primary" for="scheduleDaySat">شنبه</label>
+                                                        <!-- Hidden input برای ذخیره روزهای انتخاب شده -->
+                                                        <input type="hidden" asp-for="TaskSchedule.ScheduledDaysOfMonth" id="scheduledDaysOfMonth">
+                                                    
+                                                        <small class="form-text text-muted d-block mt-2">
+                                                            <i class="fa fa-info-circle me-1"></i>
+                                                            مثال: انتخاب روزهای 10، 20، 25 هر ماه
+                                                        </small>
                                                     </div>
-                                                    <input type="hidden" asp-for="TaskSchedule.ScheduledDaysOfWeek" id="scheduledDaysOfWeek">
                                                 </div>
 
                                                 <!-- تنظیمات بازه زمانی -->
@@ -1218,7 +1226,8 @@
     </form>
 </div>
 
-@section Scripts {
+@section Scripts 
+{
     <script>
         Dashmix.helpersOnLoad(['js-flatpickr', 'jq-datepicker', 'jq-maxlength', 'jq-select2', 'jq-rangeslider', 'jq-masked-inputs', 'jq-pw-strength']);
     </script>
@@ -1760,6 +1769,28 @@
             $('#scheduleType').on('change', function() {
                 const selectedType = $(this).val();
                 toggleScheduleOptions(selectedType);
+            });
+
+            // ⭐⭐⭐ مدیریت انتخاب روزهای هفته
+            $('input[name="dayOfWeek"]').on('change', function() {
+                const selectedDays = [];
+                $('input[name="dayOfWeek"]:checked').each(function() {
+                    selectedDays.push($(this).val());
+                });
+                $('#scheduledDaysOfWeek').val(selectedDays.join(','));
+                console.log('✅ Selected week days:', selectedDays.join(','));
+            });
+
+            // ⭐⭐⭐ مدیریت انتخاب روزهای ماه (جدید)
+            $('input[name="dayOfMonth"]').on('change', function() {
+                const selectedDays = [];
+                $('input[name="dayOfMonth"]:checked').each(function() {
+                    selectedDays.push($(this).val());
+                });
+                // ⭐ مرتب‌سازی عددی
+                selectedDays.sort((a, b) => parseInt(a) - parseInt(b));
+                $('#scheduledDaysOfMonth').val(selectedDays.join(','));
+                console.log('✅ Selected month days:', selectedDays.join(','));
             });
 
             // ابتدای بارگذاری فرم
@@ -2660,6 +2691,4 @@
         });
 
     </script>
-
-
-}
+    }

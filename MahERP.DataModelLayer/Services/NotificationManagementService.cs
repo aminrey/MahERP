@@ -396,6 +396,8 @@ namespace MahERP.DataModelLayer.Services
         {
             try
             {
+                _logger.LogInformation($"🔍 شروع ProcessExternalNotificationsAsync - EventType: {eventType}, RecipientUserId: {recipientUserId}");
+
                 var templates = await _context.NotificationTemplate_Tbl
                     .Where(t => t.IsActive &&
                                t.NotificationEventType == (byte)eventType &&
@@ -411,9 +413,31 @@ namespace MahERP.DataModelLayer.Services
                                ))
                     .ToListAsync();
 
+                _logger.LogInformation($"🔍 یافت شد: {templates.Count} قالب برای EventType={eventType} و RecipientUserId={recipientUserId}");
+
                 if (!templates.Any())
                 {
-                    _logger.LogDebug($"ℹ️ قالب خارجی برای {recipientUserId} و {eventType} یافت نشد");
+                    _logger.LogWarning($"⚠️ هیچ قالب خارجی برای {recipientUserId} و {eventType} یافت نشد");
+                    
+                    // ⭐⭐⭐ بررسی دقیق‌تر - آیا قالب اصلاً وجود دارد؟
+                    var allTemplatesForEvent = await _context.NotificationTemplate_Tbl
+                        .Where(t => t.NotificationEventType == (byte)eventType)
+                        .Select(t => new { t.Id, t.TemplateName, t.IsActive, t.RecipientMode, t.Channel })
+                        .ToListAsync();
+
+                    if (allTemplatesForEvent.Any())
+                    {
+                        _logger.LogWarning($"⚠️ قالب‌های موجود برای {eventType}:");
+                        foreach (var tmpl in allTemplatesForEvent)
+                        {
+                            _logger.LogWarning($"   - Id: {tmpl.Id}, Name: {tmpl.TemplateName}, Active: {tmpl.IsActive}, RecipientMode: {tmpl.RecipientMode}, Channel: {tmpl.Channel}");
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"⚠️ هیچ قالبی برای {eventType} در دیتابیس وجود ندارد!");
+                    }
+
                     return;
                 }
 
@@ -425,6 +449,8 @@ namespace MahERP.DataModelLayer.Services
                 // 🔄 ارسال از طریق هر کانال
                 foreach (var template in templates)
                 {
+                    _logger.LogInformation($"📤 پردازش قالب '{template.TemplateName}' (Id: {template.Id}, Channel: {template.Channel})");
+
                     // ⭐⭐⭐ جایگزینی کامل متغیرها
                     var finalMessage = ReplaceAllPlaceholders(template.MessageTemplate, templateData);
 
@@ -438,6 +464,7 @@ namespace MahERP.DataModelLayer.Services
                                 finalMessage,
                                 systemNotificationId
                             );
+                            _logger.LogInformation($"📧 ایمیل برای قالب '{template.TemplateName}' به صف اضافه شد");
                             break;
 
                         case NotificationChannel.Sms:
@@ -446,6 +473,7 @@ namespace MahERP.DataModelLayer.Services
                                 finalMessage,
                                 systemNotificationId
                             );
+                            _logger.LogInformation($"📱 پیامک برای قالب '{template.TemplateName}' به صف اضافه شد");
                             break;
 
                         case NotificationChannel.Telegram:
@@ -454,6 +482,11 @@ namespace MahERP.DataModelLayer.Services
                                 finalMessage,
                                 systemNotificationId
                             );
+                            _logger.LogInformation($"✈️ تلگرام برای قالب '{template.TemplateName}' به صف اضافه شد");
+                            break;
+
+                        default:
+                            _logger.LogWarning($"⚠️ کانال نامعتبر: {template.Channel} برای قالب '{template.TemplateName}'");
                             break;
                     }
 
@@ -463,6 +496,7 @@ namespace MahERP.DataModelLayer.Services
                 }
 
                 await _context.SaveChangesAsync();
+                _logger.LogInformation($"✅ پایان ProcessExternalNotificationsAsync - {templates.Count} قالب پردازش شد");
             }
             catch (Exception ex)
             {

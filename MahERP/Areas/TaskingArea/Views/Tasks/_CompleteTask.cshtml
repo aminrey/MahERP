@@ -30,6 +30,9 @@
                 <input type="hidden" asp-for="TaskTitle" />
                 <input type="hidden" asp-for="FromList" />
                 <input type="hidden" asp-for="rowNum" />
+                <input type="hidden" asp-for="IsIndependentCompletion" />
+                <input type="hidden" asp-for="TotalMembers" />
+                <input type="hidden" asp-for="CompletedMembers" />
 
                 <div class="block block-themed block-rounded mt-1">
                     <div class="block-header bg-success-light">
@@ -75,17 +78,109 @@
                                 </div>
                             </div>
 
-                       
+                            <!-- ⭐⭐⭐ بخش جدید: انتخاب نوع تکمیل (فقط برای تسک‌های چند نفره) -->
+                            @if (Model.TotalMembers > 1)
+                            {
+                                <div class="col-12 mb-4">
+                                    <div class="alert alert-warning">
+                                        <h6 class="alert-heading">
+                                            <i class="fa fa-users me-1"></i>
+                                            نوع تکمیل تسک
+                                            <span class="badge bg-secondary ms-2">
+                                                @Model.CompletedMembers / @Model.TotalMembers نفر تکمیل کرده‌اند
+                                            </span>
+                                        </h6>
+                                        <hr class="my-2">
+                                        
+                                        <!-- تنظیم اولیه تسک -->
+                                        <div class="mb-3">
+                                            <small class="text-muted">
+                                                <strong>تنظیم اولیه سازنده تسک:</strong>
+                                                @if (Model.IsIndependentCompletion)
+                                                {
+                                                    <span class="badge bg-primary ms-1">
+                                                        <i class="fa fa-user-check me-1"></i>تکمیل مستقل
+                                                    </span>
+                                                    <span class="ms-1">(هر نفر جداگانه تکمیل کند)</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-info ms-1">
+                                                        <i class="fa fa-users me-1"></i>تکمیل مشترک
+                                                    </span>
+                                                    <span class="ms-1">(یک نفر تکمیل کند، برای همه)</span>
+                                                }
+                                            </small>
+                                        </div>
+
+                                        <!-- انتخاب کاربر -->
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   asp-for="ApplyCompletionToAll" 
+                                                   id="applyCompletionSwitch"
+                                                   checked="@(!Model.IsIndependentCompletion)">
+                                            <label class="form-check-label" for="applyCompletionSwitch">
+                                                <strong id="completion-mode-label">
+                                                    @if (Model.IsIndependentCompletion)
+                                                    {
+                                                        <span>تکمیل برای همه اعضا (تغییر از حالت اولیه)</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>تکمیل برای همه اعضا</span>
+                                                    }
+                                                </strong>
+                                            </label>
+                                        </div>
+
+                                        <small class="text-muted d-block mt-2" id="completion-description">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            <span id="completion-desc-text">
+                                                @if (Model.IsIndependentCompletion)
+                                                {
+                                                    if (Model.CompletedMembers > 0)
+                                                    {
+                                                        <text>
+                                                            ✅ فعال: تکمیل شما برای <strong>همه @Model.TotalMembers نفر</strong> اعمال می‌شود
+                                                            <br>
+                                                            ❌ غیرفعال: فقط برای <strong>شما</strong> تکمیل می‌شود (سایرین باید خودشان تکمیل کنند)
+                                                        </text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <text>
+                                                            ✅ فعال: تسک برای همه تکمیل می‌شود و قفل می‌شود
+                                                            <br>
+                                                            ❌ غیرفعال: فقط برای شما تکمیل می‌شود
+                                                        </text>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <text>
+                                                        ✅ فعال: تسک برای همه تکمیل و قفل می‌شود (پیش‌فرض)
+                                                        <br>
+                                                        ❌ غیرفعال: فقط برای شما تکمیل می‌شود، سایرین باید خودشان تکمیل کنند
+                                                    </text>
+                                                }
+                                            </span>
+                                        </small>
+                                    </div>
+                                </div>
+                            }
+
                             <!-- فیلد یادداشت -->
                             <div class="col-12 mb-3">
                                 <label class="form-label" for="CompletionReport">
                                     <i class="fa fa-sticky-note text-muted me-1"></i>
-                                    یادداشت تکمیل (اختیاری)
+                                    گزارش تکمیل <span class="text-danger">*</span>
                                 </label>
                                 <textarea class="form-control"
                                           asp-for="CompletionReport"
                                           rows="4"
-                                          placeholder="یادداشت خود را در مورد تکمیل این تسک بنویسید..."></textarea>
+                                          placeholder="گزارش خود را در مورد تکمیل این تسک بنویسید..."
+                                          required></textarea>
                                 <span asp-validation-for="CompletionReport" class="text-danger"></span>
                             </div>
                         </div>
@@ -104,4 +199,36 @@
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        // ⭐⭐⭐ به‌روزرسانی پویای توضیحات
+        $('#applyCompletionSwitch').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            const isIndependent = @(Model.IsIndependentCompletion ? "true" : "false");
+            const totalMembers = @Model.TotalMembers;
+            const completedMembers = @Model.CompletedMembers;
+
+            let descText = '';
+            
+            if (isIndependent) {
+                // تسک مستقل
+                if (isChecked) {
+                    descText = `✅ تکمیل برای <strong>همه ${totalMembers} نفر</strong> اعمال می‌شود و تسک قفل می‌شود`;
+                } else {
+                    descText = `❌ فقط برای <strong>شما</strong> تکمیل می‌شود، سایرین باید خودشان تکمیل کنند`;
+                }
+            } else {
+                // تسک مشترک
+                if (isChecked) {
+                    descText = `✅ تسک برای <strong>همه ${totalMembers} نفر</strong> تکمیل و قفل می‌شود (پیش‌فرض)`;
+                } else {
+                    descText = `❌ فقط برای <strong>شما</strong> تکمیل می‌شود، سایرین باید خودشان تکمیل کنند`;
+                }
+            }
+
+            $('#completion-desc-text').html('<i class="fa fa-info-circle me-1"></i>' + descText);
+        });
+    });
+</script>
 

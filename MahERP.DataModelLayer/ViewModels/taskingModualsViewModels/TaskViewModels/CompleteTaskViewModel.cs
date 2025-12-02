@@ -44,7 +44,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public bool IsAlreadyCompleted { get; set; }
 
         /// <summary>
-        /// ⭐⭐⭐ نوع تکمیل تسک
+        /// ⭐⭐⭐ نوع تکمیل تسک (مستقل یا مشترک)
         /// </summary>
         public bool IsIndependentCompletion { get; set; }
 
@@ -57,8 +57,15 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// ⭐⭐⭐ تعداد اعضای تکمیل کرده
         /// </summary>
         public int CompletedMembers { get; set; }
-        public bool FromList { get; set; }
-        public int rowNum{ get; set; }
 
+        /// <summary>
+        /// ⭐⭐⭐ جدید: آیا تکمیل برای همه اعمال شود؟
+        /// true = تکمیل برای همه | false = فقط برای من
+        /// </summary>
+        [Display(Name = "تکمیل برای همه اعضا")]
+        public bool ApplyCompletionToAll { get; set; }
+
+        public bool FromList { get; set; }
+        public int rowNum { get; set; }
     }
 }

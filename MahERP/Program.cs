@@ -187,6 +187,9 @@ builder.Services.AddHostedService<ScheduledNotificationBackgroundService>();
 // ⭐⭐⭐ NEW: سرویس پردازش یادآوری‌های تسک
 builder.Services.AddHostedService<TaskReminderBackgroundService>();
 
+// ⭐⭐⭐ NEW: سرویس پردازش صف تلگرام
+builder.Services.AddHostedService<TelegramQueueProcessingBackgroundService>();
+
 builder.Services.AddHostedService<TelegramPollingBackgroundService>();
 var app = builder.Build();
 

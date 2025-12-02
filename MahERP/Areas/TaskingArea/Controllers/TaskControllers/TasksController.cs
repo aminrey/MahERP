@@ -2666,11 +2666,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             });
         }
         #region Task Comments Management
-
         /// <summary>
-        /// افزودن کامنت/پیام جدید به تسک
+        /// افزودن کامنت/پیام جدید به تسک - نسخه بهینه شده ⚡
         /// </summary>
-       
         [HttpPost]
         public async Task<IActionResult> AddTaskComment(TaskCommentViewModel model, List<IFormFile> Attachments)
         {
@@ -2692,8 +2690,17 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 var currentUserId = _userManager.GetUserId(User);
 
-                // بررسی دسترسی به تسک
-                var hasAccess = await _taskRepository.CanUserViewTaskAsync(currentUserId, model.TaskId);
+                // ⭐⭐⭐ بررسی‌های موازی برای کاهش زمان
+                var accessTask = _taskRepository.CanUserViewTaskAsync(currentUserId, model.TaskId);
+                var taskTask = _taskRepository.GetTaskByIdAsync(model.TaskId);
+                var assignmentTask = _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, model.TaskId);
+
+                await Task.WhenAll(accessTask, taskTask, assignmentTask);
+
+                var hasAccess = await accessTask;
+                var task = await taskTask;
+                var currentUserAssignment = await assignmentTask;
+
                 if (!hasAccess)
                 {
                     return Json(new
@@ -2703,9 +2710,6 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
-                // بررسی اینکه آیا تسک تکمیل شده؟
-                var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
-                var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, model.TaskId);
                 var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
 
                 if (isTaskCompletedForCurrentUser)
@@ -2717,7 +2721,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
-                // ایجاد کامنت
+                // ⭐⭐⭐ ایجاد کامنت (فقط یکبار Save)
                 var comment = new TaskComment
                 {
                     TaskId = model.TaskId,
@@ -2731,73 +2735,72 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 };
 
                 _uow.TaskCommentUW.Create(comment);
-                _uow.Save();
+                await _uow.SaveAsync();
 
-                // ⭐⭐⭐ مدیریت فایل‌های پیوست
+                // ⭐⭐⭐ پردازش موازی فایل‌ها (اگر وجود دارند)
                 if (Attachments != null && Attachments.Any())
                 {
-                    foreach (var file in Attachments)
+                    var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "task-comments", model.TaskId.ToString());
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var attachmentTasks = Attachments
+                        .Where(f => f.Length > 0)
+                        .Select(file => SaveAttachmentAsync(file, comment.Id, uploadsFolder, currentUserId, model.TaskId))
+                        .ToList();
+
+                    if (attachmentTasks.Any())
                     {
-                        if (file.Length > 0)
+                        var attachments = await Task.WhenAll(attachmentTasks);
+
+                        foreach (var attachment in attachments)
                         {
-                            // ذخیره فایل
-                            var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "task-comments", model.TaskId.ToString());
-                            Directory.CreateDirectory(uploadsFolder);
-
-                            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
-                            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                            using (var fileStream = new FileStream(filePath, FileMode.Create))
-                            {
-                                await file.CopyToAsync(fileStream);
-                            }
-
-                            // ایجاد رکورد پیوست
-                            var attachment = new TaskCommentAttachment
-                            {
-                                TaskCommentId = comment.Id,
-                                FileName = file.FileName,
-                                FilePath = $"/uploads/task-comments/{model.TaskId}/{uniqueFileName}",
-                                FileExtension = Path.GetExtension(file.FileName),
-                                FileSize = file.Length.ToString(),
-                                FileUUID = uniqueFileName,
-                                UploadDate = DateTime.Now,
-                                UploaderUserId = currentUserId
-                            };
-
                             _uow.TaskCommentAttachmentUW.Create(attachment);
                         }
-                    }
 
-                    _uow.Save();
+                        await _uow.SaveAsync();
+                    }
                 }
 
-                // ⭐ ثبت در تاریخچه
-                await _taskHistoryRepository.LogCommentAddedAsync(
-                    model.TaskId,
-                    currentUserId,
-                    comment.Id,
-                    model.CommentText.Substring(0, Math.Min(50, model.CommentText.Length))
-                );
+                // ⭐⭐⭐ کارهای بعدی را Fire-and-Forget کن (بدون await)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        // ثبت در تاریخچه
+                        await _taskHistoryRepository.LogCommentAddedAsync(
+                            model.TaskId,
+                            currentUserId,
+                            comment.Id,
+                            model.CommentText.Substring(0, Math.Min(50, model.CommentText.Length))
+                        );
 
-                // ⭐⭐⭐ ارسال اعلان به صف - فوری و بدون Blocking
-                NotificationProcessingBackgroundService.EnqueueTaskNotification(
-                    model.TaskId,
-                    currentUserId,
-                    NotificationEventType.TaskUpdated,
-                    priority: 1
-                );
+                        // ارسال نوتیفیکیشن (خودش async است)
+                        NotificationProcessingBackgroundService.EnqueueTaskNotification(
+                            model.TaskId,
+                            currentUserId,
+                            NotificationEventType.TaskCommentAdded,
+                            priority: 1
+                        );
 
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Create,
-                    "Tasks",
-                    "AddTaskComment",
-                    $"افزودن کامنت به تسک {task.TaskCode}",
-                    recordId: model.TaskId.ToString(),
-                    entityType: "Tasks",
-                    recordTitle: task.Title
-                );
+                        // لاگ فعالیت
+                        await _activityLogger.LogActivityAsync(
+                            ActivityTypeEnum.Create,
+                            "Tasks",
+                            "AddTaskComment",
+                            $"افزودن کامنت به تسک {task.TaskCode}",
+                            recordId: model.TaskId.ToString(),
+                            entityType: "Tasks",
+                            recordTitle: task.Title
+                        );
+                    }
+                    catch (Exception bgEx)
+                    {
+                        // لاگ خطا در Background (بدون متوقف کردن response)
+                        await _activityLogger.LogErrorAsync("Tasks", "AddTaskComment_Background", "خطا در عملیات پس‌زمینه", bgEx);
+                    }
+                });
 
+                // ⭐⭐⭐ فوراً response برگردان
                 return Json(new
                 {
                     success = true,
@@ -2813,6 +2816,37 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     message = "خطا در ارسال پیام: " + ex.Message
                 });
             }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ متد کمکی برای ذخیره موازی فایل‌ها
+        /// </summary>
+        private async Task<TaskCommentAttachment> SaveAttachmentAsync(
+            IFormFile file,
+            int commentId,
+            string uploadsFolder,
+            string currentUserId,
+            int taskId)
+        {
+            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
+
+            return new TaskCommentAttachment
+            {
+                TaskCommentId = commentId,
+                FileName = file.FileName,
+                FilePath = $"/uploads/task-comments/{taskId}/{uniqueFileName}",
+                FileExtension = Path.GetExtension(file.FileName),
+                FileSize = file.Length.ToString(),
+                FileUUID = uniqueFileName,
+                UploadDate = DateTime.Now,
+                UploaderUserId = currentUserId
+            };
         }
 
         /// <summary>

@@ -243,6 +243,27 @@
                                     </div>
                                 </div>
                             }
+
+                            @* ⭐⭐⭐ نمایش چند روز در ماه *@
+                            @if (Model.Schedule.ScheduleType == 3 && !string.IsNullOrEmpty(Model.Schedule.ScheduledDaysOfMonth))
+                            {
+                                <div class="col-md-12 mb-3">
+                                    <div class="detail-label">روزهای ماه</div>
+                                    <div class="detail-value">
+                                        @{
+                                            var monthDays = Model.Schedule.ScheduledDaysOfMonth.Split(',');
+                                            foreach (var day in monthDays)
+                                            {
+                                                <span class="badge bg-warning me-1">روز @day</span>
+                                            }
+                                        }
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="fas fa-calendar-check me-1"></i>
+                                            تسک در روزهای @Model.Schedule.ScheduledDaysOfMonth هر ماه ایجاد می‌شود
+                                        </small>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     </div>
 

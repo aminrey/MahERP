@@ -58,7 +58,10 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     // ⭐⭐⭐ اطلاعات جدید
                     IsIndependentCompletion = task.IsIndependentCompletion,
                     TotalMembers = totalMembers,
-                    CompletedMembers = completedMembers
+                    CompletedMembers = completedMembers,
+
+                    // ⭐⭐⭐ مقدار پیش‌فرض بر اساس تنظیم اولیه تسک
+                    ApplyCompletionToAll = !task.IsIndependentCompletion
                 };
 
                 return model;
@@ -71,7 +74,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         }
 
         /// <summary>
-        /// ثبت تکمیل تسک - با پشتیبانی از دو نوع تکمیل (مستقل و مشترک)
+        /// ثبت تکمیل تسک - با پشتیبانی از تصمیم‌گیری کاربر
         /// </summary>
         public async Task<(bool IsSuccess, string ErrorMessage, bool IsFullyCompleted)> CompleteTaskAsync(
             CompleteTaskViewModel model,
@@ -82,6 +85,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 // ⭐ بارگذاری تسک با اطلاعات کامل
                 var task = await _context.Tasks_Tbl
                     .Include(t => t.TaskAssignments)
+                        .ThenInclude(a => a.AssignedUser)
                     .Include(t => t.TaskOperations)
                     .FirstOrDefaultAsync(t => t.Id == model.TaskId && t.IsActive);
 
@@ -109,24 +113,54 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 }
 
                 var completionDate = DateTime.Now;
+                bool isFullyCompleted = false;
 
-                // ⭐ 1. بروزرسانی Assignment کاربر فعلی
+                // ⭐⭐⭐ 1. بروزرسانی Assignment کاربر فعلی
                 assignment.CompletionDate = completionDate;
                 assignment.UserReport = model.CompletionReport;
                 assignment.ReportDate = completionDate;
                 assignment.Status = 2; // تکمیل شده
                 _context.TaskAssignment_Tbl.Update(assignment);
 
-                // ⭐ 2. بررسی نوع تکمیل تسک
-                bool isFullyCompleted = false;
-
-                if (task.IsIndependentCompletion)
+                // ⭐⭐⭐ 2. تصمیم‌گیری بر اساس انتخاب کاربر
+                if (model.ApplyCompletionToAll)
                 {
                     // ========================================
-                    // ⭐⭐⭐ حالت مستقل (Independent)
+                    // ⭐⭐⭐ تکمیل برای همه (Shared)
                     // ========================================
 
-                    Console.WriteLine($"✅ تکمیل مستقل: فقط برای کاربر {userId}");
+                    Console.WriteLine($"✅ تکمیل مشترک: کاربر تصمیم گرفت برای همه تکمیل شود");
+
+                    // ⭐ تکمیل برای همه Assignments
+                    foreach (var otherAssignment in task.TaskAssignments)
+                    {
+                        if (otherAssignment.Id != assignment.Id && !otherAssignment.CompletionDate.HasValue)
+                        {
+                            otherAssignment.CompletionDate = completionDate;
+                            otherAssignment.Status = 2;
+                            otherAssignment.UserReport = $"تکمیل شده توسط {assignment.AssignedUser?.FirstName ?? "همکار"}";
+                            _context.TaskAssignment_Tbl.Update(otherAssignment);
+                        }
+                    }
+
+                    // ⭐ تکمیل کل تسک
+                    task.Status = 2;
+                    task.LastUpdateDate = completionDate;
+                    isFullyCompleted = true;
+
+                    // ⭐ تکمیل همه عملیات باقیمانده
+                    await CompleteRemainingOperationsAsync(task, userId, completionDate);
+
+                    // ⭐ غیرفعال کردن یادآوری‌ها
+                    await DeactivateTaskRemindersAsync(task.Id);
+                }
+                else
+                {
+                    // ========================================
+                    // ⭐⭐⭐ تکمیل فقط برای من (Independent)
+                    // ========================================
+
+                    Console.WriteLine($"✅ تکمیل مستقل: کاربر تصمیم گرفت فقط برای خودش تکمیل شود");
 
                     // بررسی آیا همه کاربران تکمیل کردند
                     var totalAssignments = task.TaskAssignments.Count;
@@ -156,56 +190,17 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         Console.WriteLine($"⏳ {completedAssignments}/{totalAssignments} نفر تکمیل کردند");
                     }
                 }
-                else
-                {
-                    // ========================================
-                    // ⭐⭐⭐ حالت مشترک (Shared)
-                    // ========================================
-
-                    Console.WriteLine($"✅ تکمیل مشترک: یک نفر تکمیل کرد، همه تکمیل می‌شوند");
-
-                    // ⭐ تکمیل برای همه Assignments
-                    foreach (var otherAssignment in task.TaskAssignments)
-                    {
-                        if (otherAssignment.Id != assignment.Id && !otherAssignment.CompletionDate.HasValue)
-                        {
-                            otherAssignment.CompletionDate = completionDate;
-                            otherAssignment.Status = 2;
-                            otherAssignment.UserReport = $"تکمیل شده توسط {assignment.AssignedUser?.FirstName ?? "همکار"}";
-                            _context.TaskAssignment_Tbl.Update(otherAssignment);
-                        }
-                    }
-
-                    // ⭐ تکمیل کل تسک
-                    task.Status = 2;
-                    task.LastUpdateDate = completionDate;
-                    isFullyCompleted = true;
-
-                    // ⭐ تکمیل همه عملیات باقیمانده
-                    await CompleteRemainingOperationsAsync(task, userId, completionDate);
-
-                    // ⭐ غیرفعال کردن یادآوری‌ها
-                    await DeactivateTaskRemindersAsync(task.Id);
-                }
 
                 // ⭐ ذخیره تغییرات
                 _context.Tasks_Tbl.Update(task);
                 await _context.SaveChangesAsync();
 
-                // ⭐ ثبت در تاریخچه
-                await _taskHistoryRepository.LogTaskCompletedAsync(
-                    task.Id,
-                    userId,
-                    task.Title,
-                    task.TaskCode,
-                    isFullyCompleted);
-
                 // ⭐ پیام مناسب
-                string message = task.IsIndependentCompletion
-                    ? (isFullyCompleted
+                string message = model.ApplyCompletionToAll
+                    ? "✅ تسک با موفقیت تکمیل و برای همه قفل شد"
+                    : (isFullyCompleted
                         ? "✅ تسک با موفقیت تکمیل شد - همه افراد تکمیل کردند"
-                        : "✅ تسک برای شما تکمیل شد - منتظر تکمیل سایر افراد")
-                    : "✅ تسک با موفقیت تکمیل و برای همه قفل شد";
+                        : "✅ تسک برای شما تکمیل شد - منتظر تکمیل سایر افراد");
 
                 return (true, message, isFullyCompleted);
             }
@@ -215,8 +210,6 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return (false, $"خطا در ثبت تکمیل: {ex.Message}", false);
             }
         }
-
-       
 
         #endregion
     }

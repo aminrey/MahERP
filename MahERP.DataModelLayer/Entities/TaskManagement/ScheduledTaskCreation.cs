@@ -61,10 +61,18 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public string? ScheduledDaysOfWeek { get; set; }
 
         /// <summary>
-        /// روز ماه (برای Monthly)
-        /// مقدار بین 1 تا 31
+        /// روز ماه (برای Monthly) - یک روز
+        /// ⚠️ DEPRECATED: از ScheduledDaysOfMonth استفاده کنید
         /// </summary>
+        [Obsolete("از ScheduledDaysOfMonth استفاده کنید")]
         public int? ScheduledDayOfMonth { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ روزهای ماه (برای Monthly) - چند روز
+        /// مثال: "10,15,25" = روزهای 10، 15، 25 هر ماه
+        /// </summary>
+        [MaxLength(100)]
+        public string? ScheduledDaysOfMonth { get; set; }
 
         /// <summary>
         /// تاریخ شروع زمان‌بندی (میلادی UTC)

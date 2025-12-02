@@ -35,11 +35,12 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             {
                 ScheduleTitle = model.TaskSchedule?.ScheduleTitle ?? model.Title,
                 ScheduleDescription = model.TaskSchedule?.ScheduleDescription,
-                TaskDataJson = taskTemplateJson, // ⭐ تصحیح: TaskDataJson
+                TaskDataJson = taskTemplateJson,
                 ScheduleType = model.TaskSchedule?.ScheduleType ?? 0,
                 ScheduledTime = model.TaskSchedule?.ScheduledTime,
                 ScheduledDaysOfWeek = model.TaskSchedule?.ScheduledDaysOfWeek,
-                ScheduledDayOfMonth = model.TaskSchedule?.ScheduledDayOfMonth,
+                ScheduledDaysOfMonth = model.TaskSchedule?.ScheduledDaysOfMonth, // ⭐⭐⭐ جدید
+                ScheduledDayOfMonth = model.TaskSchedule?.ScheduledDayOfMonth, // Backward compatibility
                 StartDate = CommonLayer.PublicClasses.ConvertDateTime.ConvertShamsiToMiladi(model.TaskSchedule?.StartDatePersian),
                 EndDate = CommonLayer.PublicClasses.ConvertDateTime.ConvertShamsiToMiladi(model.TaskSchedule?.EndDatePersian),
                 MaxOccurrences = model.TaskSchedule?.MaxOccurrences,
@@ -143,26 +144,63 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     break;
 
                 case 3: // Monthly
-                    if (!schedule.ScheduledDayOfMonth.HasValue)
+                    // ⭐⭐⭐ پشتیبانی از چند روز در ماه
+                    var daysOfMonth = new List<int>();
+                    
+                    // ⭐ اولویت: ScheduledDaysOfMonth (چند روز)
+                    if (!string.IsNullOrEmpty(schedule.ScheduledDaysOfMonth))
+                    {
+                        daysOfMonth = schedule.ScheduledDaysOfMonth.Split(',')
+                            .Select(d => int.TryParse(d.Trim(), out var day) ? day : -1)
+                            .Where(d => d >= 1 && d <= 31)
+                            .OrderBy(d => d)
+                            .ToList();
+                    }
+                    // ⭐ Fallback: ScheduledDayOfMonth (یک روز - برای backward compatibility)
+#pragma warning disable CS0618 // Type or member is obsolete
+                    else if (schedule.ScheduledDayOfMonth.HasValue)
+                    {
+                        daysOfMonth.Add(schedule.ScheduledDayOfMonth.Value);
+                    }
+#pragma warning restore CS0618
+
+                    if (!daysOfMonth.Any())
                         return null;
 
-                    var dayOfMonth = schedule.ScheduledDayOfMonth.Value;
-                    var daysInMonth = DateTime.DaysInMonth(baseTime.Year, baseTime.Month);
-                    var actualDay = Math.Min(dayOfMonth, daysInMonth);
-
-                    nextExecution = new DateTime(
-                        baseTime.Year, baseTime.Month, actualDay,
-                        timeOfDay.Hours, timeOfDay.Minutes, 0);
-
-                    if (nextExecution <= baseTime)
+                    // ⭐ پیدا کردن نزدیک‌ترین روز بعدی
+                    nextExecution = DateTime.MaxValue;
+                    
+                    foreach (var dayOfMonth in daysOfMonth)
                     {
-                        var nextMonth = baseTime.AddMonths(1);
-                        daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
-                        actualDay = Math.Min(dayOfMonth, daysInMonth);
-                        nextExecution = new DateTime(
-                            nextMonth.Year, nextMonth.Month, actualDay,
+                        var currentMonth = baseTime.Year + "-" + baseTime.Month.ToString("D2");
+                        var daysInMonth = DateTime.DaysInMonth(baseTime.Year, baseTime.Month);
+                        var actualDay = Math.Min(dayOfMonth, daysInMonth);
+
+                        var candidateDate = new DateTime(
+                            baseTime.Year, baseTime.Month, actualDay,
                             timeOfDay.Hours, timeOfDay.Minutes, 0);
+
+                        // اگر در این ماه گذشته باشد، ماه بعدی را بررسی کن
+                        if (candidateDate <= baseTime)
+                        {
+                            var nextMonth = baseTime.AddMonths(1);
+                            daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
+                            actualDay = Math.Min(dayOfMonth, daysInMonth);
+                            candidateDate = new DateTime(
+                                nextMonth.Year, nextMonth.Month, actualDay,
+                                timeOfDay.Hours, timeOfDay.Minutes, 0);
+                        }
+
+                        // نزدیک‌ترین تاریخ را انتخاب کن
+                        if (candidateDate < nextExecution)
+                        {
+                            nextExecution = candidateDate;
+                        }
                     }
+
+                    if (nextExecution == DateTime.MaxValue)
+                        return null;
+
                     break;
 
                 default:
@@ -429,11 +467,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
             schedule.ScheduleTitle = taskModel.TaskSchedule?.ScheduleTitle ?? taskModel.Title;
             schedule.ScheduleDescription = taskModel.TaskSchedule?.ScheduleDescription;
-            schedule.TaskDataJson = taskDataJson; // ⭐ تصحیح
+            schedule.TaskDataJson = taskDataJson;
             schedule.ScheduleType = taskModel.TaskSchedule?.ScheduleType ?? 0;
             schedule.ScheduledTime = taskModel.TaskSchedule?.ScheduledTime;
             schedule.ScheduledDaysOfWeek = taskModel.TaskSchedule?.ScheduledDaysOfWeek;
-            schedule.ScheduledDayOfMonth = taskModel.TaskSchedule?.ScheduledDayOfMonth;
+            schedule.ScheduledDaysOfMonth = taskModel.TaskSchedule?.ScheduledDaysOfMonth; // ⭐⭐⭐ جدید
+#pragma warning disable CS0618
+            schedule.ScheduledDayOfMonth = taskModel.TaskSchedule?.ScheduledDayOfMonth; // Backward compatibility
+#pragma warning restore CS0618
             schedule.StartDate = CommonLayer.PublicClasses.ConvertDateTime.ConvertShamsiToMiladi(
                 taskModel.TaskSchedule?.StartDatePersian);
             schedule.EndDate = CommonLayer.PublicClasses.ConvertDateTime.ConvertShamsiToMiladi(
