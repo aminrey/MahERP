@@ -1,0 +1,275 @@
+﻿@model TaskViewModel
+@{
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isAssignedToCurrentUser = Model.IsAssignedToCurrentUser;
+    var isCreator = Model.IsCreator;
+    var isManager = Model.IsManager;
+    var isCompletedByMe = Model.IsCompletedByMe;
+    var isFocused = Model.IsFocused ?? false;
+    var isInMyDay = ViewBag.IsInMyDay ?? false;
+    var isAdmin = ViewBag.IsAdmin ?? false;
+
+    // تعیین رنگ و وضعیت
+    string statusColor = "primary";
+    string statusText = "در حال انجام";
+    string statusIcon = "fa-clock";
+
+    if (Model.IsDeleted) {
+        statusColor = "danger"; statusText = "حذف شده"; statusIcon = "fa-trash";
+    } else if (!Model.IsActive) {
+        statusColor = "warning"; statusText = "غیرفعال"; statusIcon = "fa-pause-circle";
+    } else if (Model.CompletionDate.HasValue && Model.ManagerApprovedDate.HasValue) {
+        statusColor = "success"; statusText = "تایید نهایی"; statusIcon = "fa-check-double";
+    } else if (Model.CompletionDate.HasValue && Model.SupervisorApprovedDate.HasValue) {
+        statusColor = "info"; statusText = "تایید سرپرست"; statusIcon = "fa-user-check";
+    } else if (Model.CompletionDate.HasValue) {
+        statusColor = "success"; statusText = "تکمیل شده"; statusIcon = "fa-check-circle";
+    } else if (Model.DueDate.HasValue && DateTime.Now > Model.DueDate.Value) {
+        statusColor = "danger"; statusText = "تاخیر دارد"; statusIcon = "fa-exclamation-triangle";
+    }
+}
+
+<!-- Hero Section -->
+<div class="hero-section position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100">
+        <img src="~/assets/media/photos/photo21.jpg" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+        <div class="bg-black-75 position-absolute top-0 start-0 w-100 h-100"></div>
+        
+        <div class="hero-pattern position-absolute top-0 start-0 w-100 h-100">
+            <svg class="w-100 h-100 opacity-10" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="hero-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <circle cx="30" cy="30" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="0" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="0" cy="60" r="2" fill="currentColor" class="text-white" />
+                        <circle cx="60" cy="60" r="2" fill="currentColor" class="text-white" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hero-pattern)" />
+            </svg>
+        </div>
+
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+
+    <div class="content content-full position-relative" style="z-index: 10;">
+        <div class="py-5">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="hero-status-icon @($"status-{statusColor}")">
+                                <div class="icon-wrapper">
+                                    <i class="fa @statusIcon fa-2x"></i>
+                                </div>
+                                <div class="status-label">@statusText</div>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow-1">
+                            <div class="hero-title-wrapper mb-3">
+                                <h1 class="hero-title text-white mb-2">@Model.Title</h1>
+                                <div class="hero-subtitle d-flex flex-wrap align-items-center gap-2">
+                                    <span class="badge badge-modern bg-white text-dark px-3 py-2 rounded-pill">
+                                        <i class="fa fa-hashtag me-1"></i>
+                                        <span class="fw-bold">@Model.TaskCode</span>
+                                    </span>
+                                    <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                    <span class="badge badge-modern bg-white bg-opacity-20 text-dark px-3 py-2 rounded-pill">
+                                        <i class="fa fa-calendar-alt me-1"></i>
+                                        <span>@ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd")</span>
+                                    </span>
+                                    
+                                    @if (Model.Important)
+                                    {
+                                        <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                        <span class="badge badge-modern bg-danger px-3 py-2 rounded-pill pulse-animation">
+                                            <i class="fa fa-star me-1"></i>
+                                            <span>مهم</span>
+                                        </span>
+                                    }
+                                    
+                                    @if (Model.Priority == 2)
+                                    {
+                                        <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                        <span class="badge badge-modern bg-warning px-3 py-2 rounded-pill pulse-animation">
+                                            <i class="fa fa-bolt me-1"></i>
+                                            <span>فوری</span>
+                                        </span>
+                                    }
+
+                                    @if (isFocused)
+                                    {
+                                        <span class="text-white opacity-75 d-none d-md-inline">•</span>
+                                        <span class="badge badge-modern bg-warning px-3 py-2 rounded-pill pulse-animation">
+                                            <i class="fa fa-star me-1"></i>
+                                            <span>متمرکز</span>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div id="hero-stats-container">
+                                @await Html.PartialAsync("_TaskHeroStats", Model)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <nav class="mb-3" aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
+                            <li class="breadcrumb-item">
+                                <a asp-area="TaskingArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
+                                    <i class="fa fa-home me-1"></i>داشبورد
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
+                                    تسک‌ها
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active text-white">جزئیات تسک</li>
+                        </ol>
+                    </nav>
+
+                    <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
+                        @if (isCompletedByMe && !Model.IsIndependentCompletion)
+                        {
+                            <div class="alert alert-success d-flex align-items-center mb-0">
+                                <i class="fa fa-lock fa-2x me-3"></i>
+                                <div>
+                                    <div class="fw-bold">تسک قفل شده</div>
+                                    <small>این تسک تکمیل شده و برای همه قفل است</small>
+                                </div>
+                            </div>
+                        }
+                        else if (isCompletedByMe && Model.IsIndependentCompletion)
+                        {
+                            <div class="alert alert-info d-flex align-items-center mb-0">
+                                <i class="fa fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <div class="fw-bold">شما این تسک را تکمیل کرده‌اید</div>
+                                    <small>سایر اعضا هنوز در حال انجام هستند</small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @if (isCreator || isManager)
+                            {
+                                <a href="#" onclick="showComingSoonNotification(event, 'ویرایش تسک')" 
+                                   class="btn btn-hero btn-warning btn-lg">
+                                    <i class="fa fa-pencil-alt me-2"></i>
+                                    <span>ویرایش</span>
+                                </a>
+                            }
+
+                            @if (isAssignedToCurrentUser)
+                            {
+                                <a href="@Url.Action("CompleteTask", new { id = Model.Id })" 
+                                   data-toggle="modal-ajax" 
+                                   class="btn btn-hero btn-success btn-lg">
+                                    <i class="fa fa-check me-2"></i>
+                                    <span>تکمیل تسک</span>
+                                </a>
+                            }
+                        }
+
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-hero btn-light btn-lg dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                    @(Model.CompletionDate.HasValue ? "disabled" : "")>
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-modern">
+                                @if (!isCompletedByMe)
+                                {
+                                    <li>
+                                        @if (isInMyDay)
+                                        {
+                                            <button type="button" class="dropdown-item text-warning"
+                                                    data-toggle="modal-ajax"
+                                                    href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { 
+                                                        taskId = Model.Id,
+                                                        returnUrl = Context.Request.Path,
+                                                        sourcePage = "TaskDetails"
+                                                    })">
+                                                <i class="fa fa-calendar-times text-warning me-2"></i>
+                                                <span class="fw-bold">حذف از روز من</span>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="dropdown-item"
+                                                    data-toggle="modal-ajax"
+                                                    href="@Url.Action("AddToMyDayModal", "MyDayTask", new { 
+                                                        taskId = Model.Id,
+                                                        returnUrl = Context.Request.Path,
+                                                        sourcePage = "TaskDetails"
+                                                    })">
+                                                <i class="fa fa-calendar-alt me-2"></i>
+                                                افزودن به روز من
+                                            </button>
+                                        }
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="@Url.Action("LogTaskWorkModal", new { taskId = Model.Id })"
+                                           data-toggle="modal-ajax">
+                                            <i class="fa fa-clock text-success me-2"></i>
+                                            <span>ثبت کار انجام شده</span>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        @if (isFocused)
+                                        {
+                                            <a class="dropdown-item text-warning" href="javascript:void(0)"
+                                               onclick="removeTaskFocus(@Model.Id)">
+                                                <i class="fa fa-star text-warning me-2"></i>
+                                                <span class="fw-bold">حذف از فوکوس</span>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a class="dropdown-item" href="javascript:void(0)"
+                                               onclick="setTaskFocus(@Model.Id)">
+                                                <i class="fa fa-bullseye text-info me-2"></i>
+                                                <span>تنظیم به عنوان فوکوس</span>
+                                            </a>
+                                        }
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                }
+
+                                @if (isAdmin || isManager)
+                                {
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#"
+                                           onclick="showComingSoonNotification(event, '@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")')">
+                                            <i class="fa @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-2"></i>
+                                            <span>@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#"
+                                           onclick="showComingSoonNotification(event, 'حذف تسک')">
+                                            <i class="fa fa-trash-alt me-2"></i>
+                                            <span>حذف تسک</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

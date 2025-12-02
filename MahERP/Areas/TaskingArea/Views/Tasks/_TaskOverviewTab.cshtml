@@ -1,0 +1,364 @@
+﻿@model TaskViewModel
+
+<div class="row">
+    <!-- بخش اصلی -->
+    <div class="col-lg-8">
+        <!-- توضیحات -->
+        <div class="block block-rounded block-fx-shadow">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-align-right text-primary me-2"></i>توضیحات تسک
+                </h3>
+            </div>
+            <div class="block-content">
+                @if (string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="py-5 text-center text-muted">
+                        <i class="fa fa-file-alt fa-3x opacity-25 mb-3"></i>
+                        <p class="mb-0">توضیحاتی برای این تسک ثبت نشده است.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3 fs-sm">
+                        @Html.Raw(Model.Description.Replace("\n", "<br/>"))
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ⭐⭐⭐ زمان‌بندی کامل تسک -->
+        @if (Model.SuggestedStartDate.HasValue || Model.DueDate.HasValue || Model.EstimatedHours.HasValue || Model.IsHardDeadline || !string.IsNullOrEmpty(Model.TimeNote))
+        {
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-calendar-alt text-warning me-2"></i>زمان‌بندی تسک
+                    </h3>
+                    @if (Model.IsHardDeadline)
+                    {
+                        <div class="block-options">
+                            <span class="badge bg-danger">
+                                <i class="fa fa-lock me-1"></i>مهلت سخت
+                            </span>
+                        </div>
+                    }
+                </div>
+                <div class="block-content">
+                    <div class="row g-3 mb-3">
+                        <!-- تاریخ شروع پیشنهادی -->
+                        @if (Model.SuggestedStartDate.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-play-circle fa-2x text-info"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <div class="fs-xs text-muted">تاریخ شروع پیشنهادی</div>
+                                            <div class="fw-semibold">
+                                                @ConvertDateTime.ConvertMiladiToShamsi(Model.SuggestedStartDate.Value, "yyyy/MM/dd")
+                                            </div>
+                                            <small class="text-muted">
+                                                @ConvertDateTime.ConvertMiladiToShamsi(Model.SuggestedStartDate.Value, "HH:mm")
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- مهلت انجام -->
+                        @if (Model.DueDate.HasValue)
+                        {
+                            var isOverdue = DateTime.Now > Model.DueDate.Value && !Model.CompletionDate.HasValue;
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded-3 @(isOverdue ? "border border-danger" : "")">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-flag-checkered fa-2x @(isOverdue ? "text-danger" : "text-success")"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <div class="fs-xs text-muted">
+                                                مهلت انجام
+                                                @if (Model.IsHardDeadline)
+                                                {
+                                                    <span class="badge bg-danger badge-sm ms-1">سخت</span>
+                                                }
+                                            </div>
+                                            <div class="fw-semibold @(isOverdue ? "text-danger" : "")">
+                                                @ConvertDateTime.ConvertMiladiToShamsi(Model.DueDate.Value, "yyyy/MM/dd")
+                                            </div>
+                                            <small class="@(isOverdue ? "text-danger" : "text-muted")">
+                                                @ConvertDateTime.ConvertMiladiToShamsi(Model.DueDate.Value, "HH:mm")
+                                            </small>
+                                            @if (isOverdue)
+                                            {
+                                                var delay = DateTime.Now - Model.DueDate.Value;
+                                                <div class="badge bg-danger mt-1">
+                                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                                    @delay.Days روز تاخیر
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- مدت زمان تخمینی -->
+                        @if (Model.EstimatedHours.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-hourglass-half fa-2x text-primary"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <div class="fs-xs text-muted">مدت زمان تخمینی</div>
+                                            <div class="fw-semibold">
+                                                @Model.EstimatedHours ساعت
+                                            </div>
+                                            @if (Model.EstimatedHours >= 8)
+                                            {
+                                                <small class="text-muted">
+                                                    (~@Math.Round(Model.EstimatedHours.Value / 8, 1) روز کاری)
+                                                </small>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- بازه زمانی کامل (اگر هر دو تاریخ وجود داشته باشند) -->
+                        @if (Model.SuggestedStartDate.HasValue && Model.DueDate.HasValue)
+                        {
+                            var duration = Model.DueDate.Value - Model.SuggestedStartDate.Value;
+                            <div class="col-md-6">
+                                <div class="p-3 bg-primary-light rounded-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-clock fa-2x text-primary"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <div class="fs-xs text-muted">بازه زمانی کل</div>
+                                            <div class="fw-semibold text-primary">
+                                                @if (duration.Days > 0)
+                                                {
+                                                    <text>@duration.Days روز</text>
+                                                }
+                                                else if (duration.Hours > 0)
+                                                {
+                                                    <text>@duration.Hours ساعت</text>
+                                                }
+                                                else
+                                                {
+                                                    <text>@duration.Minutes دقیقه</text>
+                                                }
+                                            </div>
+                                            <small class="text-muted">
+                                                از شروع تا مهلت
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- یادداشت زمان‌بندی -->
+                    @if (!string.IsNullOrEmpty(Model.TimeNote))
+                    {
+                        <div class="alert alert-info mb-0">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-sticky-note me-1"></i>
+                                یادداشت زمان‌بندی:
+                            </h6>
+                            <p class="mb-0">@Html.Raw(Model.TimeNote.Replace("\n", "<br/>"))</p>
+                        </div>
+                    }
+
+                    <!-- نوار پیشرفت زمانی (اگر تسک شروع شده باشد) -->
+                    @if (Model.SuggestedStartDate.HasValue && Model.DueDate.HasValue)
+                    {
+                        var now = DateTime.Now;
+                        if (now >= Model.SuggestedStartDate.Value)
+                        {
+                            var totalDuration = (Model.DueDate.Value - Model.SuggestedStartDate.Value).TotalMinutes;
+                            var elapsed = (now - Model.SuggestedStartDate.Value).TotalMinutes;
+                            var timeProgress = Math.Min(100, Math.Max(0, (elapsed / totalDuration) * 100));
+
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <small class="text-muted">پیشرفت زمانی</small>
+                                    <small class="fw-semibold">@Math.Round(timeProgress, 1)%</small>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar @(timeProgress > 100 ? "bg-danger" : timeProgress > 75 ? "bg-warning" : "bg-info")"
+                                         role="progressbar"
+                                         style="width: @Math.Min(100, timeProgress)%"
+                                         aria-valuenow="@timeProgress"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                @if (Model.CompletionDate.HasValue)
+                                {
+                                    <small class="text-success mt-1 d-block">
+                                        <i class="fa fa-check-circle me-1"></i>
+                                        تسک در @ConvertDateTime.ConvertMiladiToShamsi(Model.CompletionDate.Value, "yyyy/MM/dd HH:mm") تکمیل شد
+                                    </small>
+                                }
+                                else if (timeProgress > 100)
+                                {
+                                    <small class="text-danger mt-1 d-block">
+                                        <i class="fa fa-exclamation-triangle me-1"></i>
+                                        زمان تسک به پایان رسیده است
+                                    </small>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+        <!-- اطلاعات جزئیات -->
+        <div class="block block-rounded block-fx-shadow">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-info-circle text-info me-2"></i>اطلاعات جزئیات
+                </h3>
+            </div>
+            <div class="block-content">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-body-light rounded-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="flex-shrink-0">
+                                    <i class="fa fa-folder fa-2x text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fs-xs text-muted">دسته‌بندی</div>
+                                    <div class="fw-semibold">
+                                        @(string.IsNullOrEmpty(Model.CategoryTitle) ? "بدون دسته‌بندی" : Model.CategoryTitle)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-body-light rounded-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="flex-shrink-0">
+                                    @if (Model.SelectedContactId.HasValue || Model.SelectedOrganizationId.HasValue)
+                                    {
+                                        <i class="fa fa-handshake fa-2x text-success"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa fa-ban fa-2x text-muted"></i>
+                                    }
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fs-xs text-muted">طرف حساب</div>
+                                    <div class="fw-semibold">
+                                        @if (Model.SelectedContactId.HasValue)
+                                        {
+                                            <div>
+                                                <i class="fa fa-user me-1 text-primary"></i>
+                                                <strong>@Model.ContactFullName</strong>
+                                                @if (Model.SelectedOrganizationId.HasValue)
+                                                {
+                                                    <div class="mt-1 ms-3">
+                                                        <i class="fa fa-building me-1 text-info"></i>
+                                                        <small class="text-muted">@Model.OrganizationName</small>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else if (Model.SelectedOrganizationId.HasValue)
+                                        {
+                                            <div>
+                                                <i class="fa fa-building me-1 text-info"></i>
+                                                <strong>@Model.OrganizationName</strong>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">ندارد</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-body-light rounded-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="flex-shrink-0">
+                                    <i class="fa fa-user-circle fa-2x text-info"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fs-xs text-muted">ایجاد کننده</div>
+                                    <div class="fw-semibold">
+                                        @(string.IsNullOrEmpty(Model.CreatorName) ? "نامشخص" : Model.CreatorName)
+                                    </div>
+                                    <div class="fs-xs text-muted">
+                                        @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd HH:mm")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-body-light rounded-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="flex-shrink-0">
+                                    <i class="fa fa-flag fa-2x text-warning"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fs-xs text-muted">اولویت</div>
+                                    <div>
+                                        @switch (Model.Priority)
+                                        {
+                                            case 0:
+                                                <span class="badge bg-info-light text-info">
+                                                    <i class="fa fa-circle me-1"></i>عادی
+                                                </span>
+                                                break;
+                                            case 1:
+                                                <span class="badge bg-warning-light text-warning">
+                                                    <i class="fa fa-star me-1"></i>مهم
+                                                </span>
+                                                break;
+                                            case 2:
+                                                <span class="badge bg-danger-light text-danger">
+                                                    <i class="fa fa-bolt me-1"></i>فوری
+                                                </span>
+                                                break;
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- گزارش تکمیل -->
+        @await Html.PartialAsync("_TaskCompletionReport", Model)
+
+       
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar-stats-container" class="col-lg-4">
+        @await Html.PartialAsync("_TaskSidebarStats", Model)
+    </div>
+</div>

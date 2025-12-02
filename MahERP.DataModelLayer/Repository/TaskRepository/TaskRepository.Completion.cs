@@ -60,7 +60,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     TotalMembers = totalMembers,
                     CompletedMembers = completedMembers,
 
-                    // ⭐⭐⭐ مقدار پیش‌فرض بر اساس تنظیم اولیه تسک
+                    // ⭐⭐⭐ مقدار پیش‌فرض بر اساس تنظیم اولیه
                     ApplyCompletionToAll = !task.IsIndependentCompletion
                 };
 
@@ -115,7 +115,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 var completionDate = DateTime.Now;
                 bool isFullyCompleted = false;
 
-                // ⭐⭐⭐ 1. بروزرسانی Assignment کاربر فعلی
+                // ⭐ 1. بروزرسانی Assignment کاربر فعلی
                 assignment.CompletionDate = completionDate;
                 assignment.UserReport = model.CompletionReport;
                 assignment.ReportDate = completionDate;
@@ -126,10 +126,10 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 if (model.ApplyCompletionToAll)
                 {
                     // ========================================
-                    // ⭐⭐⭐ تکمیل برای همه (Shared)
+                    // ⭐⭐⭐ کاربر گفت: برای همه تکمیل شود
                     // ========================================
 
-                    Console.WriteLine($"✅ تکمیل مشترک: کاربر تصمیم گرفت برای همه تکمیل شود");
+                    Console.WriteLine($"✅ تکمیل برای همه: کاربر تصمیم گرفت برای همه اعضا تکمیل شود");
 
                     // ⭐ تکمیل برای همه Assignments
                     foreach (var otherAssignment in task.TaskAssignments)
@@ -153,11 +153,13 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
                     // ⭐ غیرفعال کردن یادآوری‌ها
                     await DeactivateTaskRemindersAsync(task.Id);
+
+                    Console.WriteLine($"✅ تسک کامل شد - همه اعضا تکمیل شدند");
                 }
                 else
                 {
                     // ========================================
-                    // ⭐⭐⭐ تکمیل فقط برای من (Independent)
+                    // ⭐⭐⭐ کاربر گفت: فقط برای من تکمیل شود
                     // ========================================
 
                     Console.WriteLine($"✅ تکمیل مستقل: کاربر تصمیم گرفت فقط برای خودش تکمیل شود");
@@ -173,7 +175,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         task.LastUpdateDate = completionDate;
                         isFullyCompleted = true;
 
-                        // ⭐ تکمیل عملیات باقیمانده (اگر وجود دارد)
+                        // ⭐ تکمیل عملیات باقیمانده
                         await CompleteRemainingOperationsAsync(task, userId, completionDate);
 
                         // ⭐ غیرفعال کردن یادآوری‌ها
@@ -211,6 +213,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             }
         }
 
+      
         #endregion
     }
 }

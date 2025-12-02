@@ -19,853 +19,116 @@
     string statusIcon = "fa-clock";
     var isInMyDay = ViewBag.IsInMyDay ?? false;
 
-    if (Model.IsDeleted) {
+    if (Model.IsDeleted)
+    {
         statusColor = "danger"; statusText = "حذف شده"; statusIcon = "fa-trash";
-    } else if (!Model.IsActive) {
+    }
+    else if (!Model.IsActive)
+    {
         statusColor = "warning"; statusText = "غیرفعال"; statusIcon = "fa-pause-circle";
-    } else if (Model.CompletionDate.HasValue && Model.ManagerApprovedDate.HasValue) {
+    }
+    else if (Model.CompletionDate.HasValue && Model.ManagerApprovedDate.HasValue)
+    {
         statusColor = "success"; statusText = "تایید نهایی"; statusIcon = "fa-check-double";
-    } else if (Model.CompletionDate.HasValue && Model.SupervisorApprovedDate.HasValue) {
+    }
+    else if (Model.CompletionDate.HasValue && Model.SupervisorApprovedDate.HasValue)
+    {
         statusColor = "info"; statusText = "تایید سرپرست"; statusIcon = "fa-user-check";
-    } else if (Model.CompletionDate.HasValue) {
+    }
+    else if (Model.CompletionDate.HasValue)
+    {
         statusColor = "success"; statusText = "تکمیل شده"; statusIcon = "fa-check-circle";
-    } else if (Model.DueDate.HasValue && DateTime.Now > Model.DueDate.Value) {
+    }
+    else if (Model.DueDate.HasValue && DateTime.Now > Model.DueDate.Value)
+    {
         statusColor = "danger"; statusText = "تاخیر دارد"; statusIcon = "fa-exclamation-triangle";
     }
 }
 @Html.AntiForgeryToken()
 
-<!-- Hero Section - بنر بهبود یافته -->
-<div class="hero-section position-relative overflow-hidden">
-    <!-- Background Image با Overlay -->
-    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100">
-        <img src="~/assets/media/photos/photo21.jpg" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
-
-        <!-- Gradient Overlay -->
-        <div class="bg-black-75 position-absolute top-0 start-0 w-100 h-100"></div>
-
-        <!-- Animated Pattern -->
-        <div class="hero-pattern position-absolute top-0 start-0 w-100 h-100">
-            <svg class="w-100 h-100 opacity-10" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <pattern id="hero-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                        <circle cx="30" cy="30" r="2" fill="currentColor" class="text-white" />
-                        <circle cx="0" cy="0" r="2" fill="currentColor" class="text-white" />
-                        <circle cx="60" cy="0" r="2" fill="currentColor" class="text-white" />
-                        <circle cx="0" cy="60" r="2" fill="currentColor" class="text-white" />
-                        <circle cx="60" cy="60" r="2" fill="currentColor" class="text-white" />
-                    </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#hero-pattern)" />
-            </svg>
-        </div>
-
-        <!-- Floating Shapes -->
-        <div class="hero-shapes">
-            <div class="shape shape-1"></div>
-            <div class="shape shape-2"></div>
-            <div class="shape shape-3"></div>
-        </div>
-    </div>
-
-    <div class="content content-full position-relative" style="z-index: 10;">
-        <div class="py-5">
-            <!-- Task Header -->
-            <div class="row align-items-center g-4">
-                <div class="col-lg-8">
-                    <div class="d-flex align-items-start gap-3">
-                        <!-- Status Icon -->
-                        <div class="flex-shrink-0">
-                            <div class="hero-status-icon @($"status-{statusColor}")">
-                                <div class="icon-wrapper">
-                                    <i class="fa @statusIcon fa-2x"></i>
-                                </div>
-                                <div class="status-label">@statusText</div>
-                            </div>
-                        </div>
-
-                        <!-- Task Info -->
-                        <div class="flex-grow-1">
-                            <!-- Task Title -->
-                            <div class="hero-title-wrapper mb-3">
-                                <h1 class="hero-title text-white mb-2">@Model.Title</h1>
-                                <div class="hero-subtitle d-flex flex-wrap align-items-center gap-2">
-                                    <span class="badge badge-modern bg-white text-dark px-3 py-2 rounded-pill">
-                                        <i class="fa fa-hashtag me-1"></i>
-                                        <span class="fw-bold">@Model.TaskCode</span>
-                                    </span>
-                                    <span class="text-white opacity-75 d-none d-md-inline">•</span>
-                                    <span class="badge badge-modern bg-white bg-opacity-20 text-dark px-3 py-2 rounded-pill">
-                                        <i class="fa fa-calendar-alt me-1"></i>
-                                        <span>@ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd")</span>
-                                    </span>
-                                    @if (Model.Important)
-                                    {
-                                                        
-                                        <span class="text-white opacity-75 d-none d-md-inline">•</span>
-
-                                        <span class="badge badge-modern bg-danger px-3 py-2 rounded-pill pulse-animation">
-                                            <i class="fa fa-star me-1"></i>
-                                            <span>مهم</span>
-                                        </span>
-
-                                    }
-                                    @if (Model.Priority == 2)
-                                    {
-                                                                
-                                        <span class="text-white opacity-75 d-none d-md-inline">•</span>
-
-                                        <span class="badge badge-modern bg-warning px-3 py-2 rounded-pill pulse-animation">
-                                            <i class="fa fa-bolt me-1"></i>
-                                            <span>فوری</span>
-                                        </span>
-                                    }
-
-                                    @if (isFocused)
-                                    {
-                                        <span class="text-white opacity-75 d-none d-md-inline">•</span>
-
-                                        <span class="badge badge-modern bg-warning px-3 py-2 rounded-pill pulse-animation">
-                                            <i class="fa fa-star me-1"></i>
-                                            <span>متمرکز</span>
-                                        </span>
-                                    }
-                               
-
-
-                                </div>
-                            </div>
-<!--  Stats  -->
-<div id="hero-stats-container">
-    @await Html.PartialAsync("_TaskHeroStats", Model)
-</div>
-
-                        </div>
-                    </div>
-                </div>
-
-              @* در بخش Action Buttons *@
-<div class="col-lg-4">
-                    <!-- Breadcrumb -->
-                    <nav class="mb-3" aria-label="breadcrumb">
-                        <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
-                            <li class="breadcrumb-item">
-                                <a asp-area="TaskingArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
-                                    <i class="fa fa-home me-1"></i>داشبورد
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item">
-                                <a asp-area="TaskingArea" asp-controller="Tasks" asp-action="Index" class="text-white-75">
-                                    تسک‌ها
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item active text-white">جزئیات تسک</li>
-                        </ol>
-                    </nav>
-
-    <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
-                        @if (isCompletedByMe && !Model.IsIndependentCompletion)
-                        {
-                            <!-- ⭐ حالت مشترک: کل تسک قفل -->
-                            <div class="alert alert-success d-flex align-items-center mb-0">
-                                <i class="fa fa-lock fa-2x me-3"></i>
-                                <div>
-                                    <div class="fw-bold">تسک قفل شده</div>
-                                    <small>این تسک تکمیل شده و برای همه قفل است</small>
-                                </div>
-                            </div>
-                        }
-                        else if (isCompletedByMe && Model.IsIndependentCompletion)
-                        {
-                            <!-- ⭐⭐⭐ حالت مستقل: فقط برای من تکمیل شده -->
-                            <div class="alert alert-info d-flex align-items-center mb-0">
-                                <i class="fa fa-check-circle fa-2x me-3"></i>
-                                <div>
-                                    <div class="fw-bold">شما این تسک را تکمیل کرده‌اید</div>
-                                    <small>سایر اعضا هنوز در حال انجام هستند</small>
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <!-- ⭐ دکمه‌های عملیات -->
-                            @if (isCreator || isManager)
-                            {
-                                <a href="#"
-                                   onclick="showComingSoonNotification(event, 'ویرایش تسک')"
-                                   class="btn btn-hero btn-warning btn-lg">
-                                    <i class="fa fa-pencil-alt me-2"></i>
-                                    <span>ویرایش</span>
-                                </a>
-                            }
-
-                            @if (isAssignedToCurrentUser)
-                            {
-                                <a href="@Url.Action("CompleteTask", new { id = Model.Id })"
-                                   data-toggle="modal-ajax"
-                                   class="btn btn-hero btn-success btn-lg">
-                                    <i class="fa fa-check me-2"></i>
-                                    <span>تکمیل تسک</span>
-                                </a>
-                            }
-        }
-
-        <div class="dropdown">
-            <button type="button" class="btn btn-hero btn-light btn-lg dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                    @(Model.CompletionDate.HasValue ? "disabled" : "")>
-                <i class="fa fa-ellipsis-h"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-modern">
-                @if (!isCompletedByMe)
-                {
-                    <li>
-                  @if (isInMyDay)
-{
-    <button type="button"
-            class="dropdown-item text-warning"
-            data-toggle="modal-ajax"
-            href="@Url.Action("RemoveFromMyDayModal", "MyDayTask", new { 
-                taskId = Model.Id,
-                returnUrl = Context.Request.Path,
-                sourcePage = "TaskDetails"
-            })"
-            data-bs-toggle="tooltip"
-            title="حذف از روز من">
-        <i class="fa fa-calendar-times text-warning me-2"></i>
-        <span class="fw-bold">حذف از روز من</span>
-    </button>
-}
-                       else
-{
-    <button type="button"
-            class="dropdown-item"
-            data-toggle="modal-ajax"
-            href="@Url.Action("AddToMyDayModal", "MyDayTask", new { 
-                taskId = Model.Id,
-                returnUrl = Context.Request.Path,
-                sourcePage = "TaskDetails"
-            })">
-        <i class="fa fa-calendar-alt me-2"></i>
-        افزودن به روز من
-    </button>
-}
-                    </li>
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="@Url.Action("LogTaskWorkModal", new { taskId = Model.Id })"
-                                           data-toggle="modal-ajax">
-                                            <i class="fa fa-clock text-success me-2"></i>
-                                            <span>ثبت کار انجام شده</span>
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        @if (isFocused )
-                                        {
-                                            <a class="dropdown-item text-warning"
-                                               href="javascript:void(0)"
-                                               onclick="removeTaskFocus(@Model.Id)">
-                                                <i class="fa fa-star text-warning me-2"></i>
-                                                <span class="fw-bold">حذف از فوکوس</span>
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <a class="dropdown-item"
-                                               href="javascript:void(0)"
-                                               onclick="setTaskFocus(@Model.Id)">
-                                                <i class="fa fa-bullseye text-info me-2"></i>
-                                                <span>تنظیم به عنوان فوکوس</span>
-                                            </a>
-                                        }
-                                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                }
-
-           
-
-                @if (isAdmin || isManager)
-                {
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item"
-                           href="#"
-                           onclick="showComingSoonNotification(event, '@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")')">
-                            <i class="fa @(Model.IsActive ? "fa-ban text-warning" : "fa-check text-success") me-2"></i>
-                            <span>@(Model.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item text-danger"
-                           href="#"
-                           onclick="showComingSoonNotification(event, 'حذف تسک')">
-                            <i class="fa fa-trash-alt me-2"></i>
-                            <span>حذف تسک</span>
-                        </a>
-                    </li>
-                }
-            </ul>
-        </div>
-    </div>
-</div>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- ⭐⭐⭐ Hero Section - از Partial استفاده می‌کنیم -->
+@await Html.PartialAsync("_TaskHeroSection", Model)
 
 <!-- Main Content با Tabs -->
 <div class="content content-full">
-
     <ul class="nav nav-tabs nav-tabs-alt nav-justified push sticky-tabs" role="tablist">
-    <li class="nav-item">
-        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview" 
-                type="button" role="tab">
-            <i class="fa fa-info-circle d-block mb-1"></i>
-            <span class="tab-title">نگاه کلی</span>
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="work-logs-tab" data-bs-toggle="tab" data-bs-target="#tab-work-logs" type="button" role="tab">
-            <i class="fa fa-clipboard-list d-block mb-1"></i>
-            <span class="tab-title">گزارش‌ها</span>
-            @if (Model.WorkLogs?.Any() == true)
-            {
-                <span class="badge bg-info rounded-pill ms-1">@Model.WorkLogs.Count</span>
-            }
-        </button>
-    </li>
-
-    <li class="nav-item">
-        <button class="nav-link" id="operations-tab" data-bs-toggle="tab" data-bs-target="#tab-operations"
-                type="button" role="tab">
-            <i class="fa fa-cogs d-block mb-1"></i>
-            <span class="tab-title">عملیات</span>
-            @if (Model.Operations?.Any() == true)
-            {
-                <span class="badge bg-primary rounded-pill ms-1" id="operations-badge-count">@Model.Operations.Count</span>
-            }
-            else
-            {
-                <span class="badge bg-primary rounded-pill ms-1" id="operations-badge-count" style="display: none;">0</span>
-            }
-        </button>
-    </li>
-    <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-team" 
-                type="button" role="tab">
-            <i class="fa fa-users d-block mb-1"></i>
-            <span class="tab-title">اعضا</span>
-            @if (Model.AssignmentsTaskUser?.Any() == true) {
-                <span class="badge bg-info rounded-pill ms-1">@Model.AssignmentsTaskUser.Count</span>
-            }
-        </button>
-    </li>
-
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="chat-tab" data-bs-toggle="tab" data-bs-target="#tab-chat" type="button" role="tab">
-            <i class="fa fa-comments d-block mb-1"></i>
-            <span class="tab-title">گفتگو</span>
-            <span class="badge bg-primary rounded-pill ms-1" id="chat-badge-count">
-                @(Model.Comments?.Count ?? 0)
-            </span>
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="reminders-tab" data-bs-toggle="tab" data-bs-target="#tab-reminders" type="button" role="tab">
-            <i class="fa fa-bell d-block mb-1"></i>
-            <span class="tab-title">یادآوری</span>
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="viewers-tab" data-bs-toggle="tab" data-bs-target="#tab-viewers" type="button" role="tab">
-            <i class="fa fa-eye d-block mb-1"></i>
-            <span class="tab-title">ناظرین</span>
-            <span class="badge bg-info rounded-pill ms-1" id="viewers-badge-count">0</span>
-        </button>
-    </li>
-    <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-timeline" 
-                type="button" role="tab">
-            <i class="fa fa-history d-block mb-1"></i>
-            <span class="tab-title">تاریخچه</span>
-        </button>
-    </li>
-</ul>
-
-    
-    <!-- Tabs Content -->
-    <div class="tab-content">
-        <!-- Tab 1: نگاه کلی -->
-        <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
-            <div class="row">
-                <!-- بخش اصلی -->
-                <div class="col-lg-8">
-                    <!-- توضیحات -->
-                    <div class="block block-rounded block-fx-shadow">
-                        <div class="block-header block-header-default">
-                            <h3 class="block-title">
-                                <i class="fa fa-align-right text-primary me-2"></i>توضیحات تسک
-                            </h3>
-                        </div>
-                        <div class="block-content">
-                            @if (string.IsNullOrEmpty(Model.Description)) {
-                                <div class="py-5 text-center text-muted">
-                                    <i class="fa fa-file-alt fa-3x opacity-25 mb-3"></i>
-                                    <p class="mb-0">توضیحاتی برای این تسک ثبت نشده است.</p>
-                                </div>
-                            } else {
-                                <div class="fs-sm">
-                                    @Html.Raw(Model.Description.Replace("\n", "<br/>"))
-                                </div>
-                            }
-                        </div>
-                    </div>
-                
-
-
-
-
-
-
-                    <!-- در تب اول (tab-overview) بعد از بخش "توضیحات تسک" -->
-                    @{
-                        // ⭐⭐⭐ شرط صحیح: بررسی وجود گزارش تکمیل در assignments
-                        var hasCompletionReport = Model.AssignmentsTaskUser?.Any(a => a.CompletionDate.HasValue) ?? false;
-                    }
-
-                    @if (hasCompletionReport)
-                    {
-                        <!-- ⭐⭐⭐ گزارش تکمیل تسک -->
-                        <div class="block block-rounded block-fx-shadow">
-                            <div class="block-header bg-success text-white">
-                                <h3 class="block-title text-white mb-0">
-                                    <i class="fa fa-check-circle me-2"></i>گزارش تکمیل تسک
-                                    @if (Model.IsIndependentCompletion)
-                                    {
-                                        <span class="badge bg-warning text-dark ms-2">
-                                            <i class="fa fa-users me-1"></i>تکمیل مستقل
-                                        </span>
-                                    }
-                                </h3>
-                                <div class="block-options">
-                                    @{
-                                        // ⭐ نمایش تاریخ اولین تکمیل
-                                        var firstCompletion = Model.AssignmentsTaskUser
-                                        .Where(a => a.CompletionDate.HasValue)
-                                        .OrderBy(a => a.CompletionDate)
-                                        .FirstOrDefault();
-                                    }
-                                    @if (firstCompletion != null)
-                                    {
-                                        <span class="badge bg-light text-success">
-                                            @ConvertDateTime.ConvertMiladiToShamsi(firstCompletion.CompletionDate.Value, "yyyy/MM/dd HH:mm")
-                                        </span>
-                                    }
-                                </div>
-                            </div>
-                            <div class="block-content">
-                                @{
-                                    // ⭐⭐⭐ دریافت تمام گزارش‌های تکمیل
-                                    var completedAssignments = Model.AssignmentsTaskUser
-                                    .Where(a => a.CompletionDate.HasValue)
-                                    .OrderBy(a => a.CompletionDate)
-                                    .ToList();
-
-                                    var totalAssignedUsers = Model.AssignmentsTaskUser?.Count ?? 0;
-                                    var completedCount = completedAssignments.Count;
-                                }
-
-                                @if (Model.IsIndependentCompletion)
-                                {
-                                    <!-- ⭐⭐⭐ حالت تکمیل مستقل: نمایش گزارش همه افراد -->
-                                    <div class="alert alert-info mb-3">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-8">
-                                                <i class="fa fa-info-circle me-2"></i>
-                                                <strong>نوع تکمیل: مستقل</strong>
-                                                <p class="mb-0 mt-1">هر کاربر باید جداگانه این تسک را تکمیل کند</p>
-                                            </div>
-                                            <div class="col-md-4 text-center">
-                                                <div class="fs-3 fw-bold text-primary">
-                                                    @completedCount / @totalAssignedUsers
-                                                </div>
-                                                <small class="text-muted">تعداد تکمیل شده</small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- ⭐ نمایش همه گزارش‌ها به صورت Timeline -->
-                                    <div class="timeline timeline-alt py-0">
-                                        @foreach (var assignment in completedAssignments)
-                                        {
-                                            <div class="timeline-event">
-                                                <div class="timeline-event-icon bg-success">
-                                                    <i class="fa fa-check-circle"></i>
-                                                </div>
-                                                <div class="timeline-event-block block block-rounded">
-                                                    <div class="block-header bg-body-light">
-                                                        <div class="d-flex align-items-center w-100">
-                                                            <!-- عکس کاربر -->
-                                                            <div class="flex-shrink-0 me-3">
-                                                                <img src="@(assignment.AssignedUserProfileImage ?? "/images/default-avatar.png")"
-                                                                     class="rounded-circle"
-                                                                     style="width: 60px; height: 60px; object-fit: cover;"
-                                                                     alt="@assignment.AssignedUserName">
-                                                            </div>
-                                                            <div class="flex-grow-1">
-                                                                <h6 class="mb-0">@assignment.AssignedUserName</h6>
-                                                                <small class="text-muted">
-                                                                    <i class="fa fa-calendar me-1"></i>
-                                                                    @ConvertDateTime.ConvertMiladiToShamsi(assignment.CompletionDate.Value, "yyyy/MM/dd HH:mm")
-                                                                </small>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="block-content">
-                                                        <!-- گزارش تکمیل -->
-                                                        <div class="mb-3">
-                                                            <h6 class="mb-2">
-                                                                <i class="fa fa-file-alt text-success me-1"></i>
-                                                                گزارش تکمیل:
-                                                            </h6>
-                                                            @if (!string.IsNullOrEmpty(assignment.CompletionNote))
-                                                            {
-                                                                <p class="mb-0">@Html.Raw(assignment.CompletionNote.Replace("\n", "<br/>"))</p>
-                                                            }
-                                                            else
-                                                            {
-                                                                <p class="text-muted mb-0">
-                                                                    <i class="fa fa-info-circle me-1"></i>
-                                                                    بدون توضیحات
-                                                                </p>
-                                                            }
-                                                    </div>
-
-                                                    <!-- اطلاعات زمانی -->
-                                                    <div class="row g-2">
-                                                        <div class="col-md-6">
-                                                            <div class="p-2 bg-body-light rounded">
-                                                                <small class="text-muted d-block">تاریخ شروع</small>
-                                                                <strong>
-                                                                    @(assignment.PersonalStartDate.HasValue
-                                                                                                                                ? ConvertDateTime.ConvertMiladiToShamsi(assignment.PersonalStartDate.Value, "yyyy/MM/dd HH:mm")
-                                                                                                                                : "ثبت نشده")
-                                                                    </strong>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <div class="p-2 bg-body-light rounded">
-                                                                    <small class="text-muted d-block">مدت زمان</small>
-                                                                    <strong>
-                                                                        @if (assignment.PersonalStartDate.HasValue)
-                                                                        {
-                                                                            var duration = assignment.CompletionDate.Value - assignment.PersonalStartDate.Value;
-                                                                            <text>@duration.Days روز، @duration.Hours ساعت</text>
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            <text>نامشخص</text>
-                                                                        }
-                                                                    </strong>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
-
-                                    <!-- ⭐ نمایش افراد باقیمانده (اگر همه تکمیل نکرده‌اند) -->
-                                    @if (completedCount < totalAssignedUsers)
-                                    {
-                                        var pendingUsers = Model.AssignmentsTaskUser
-                                        .Where(a => !a.CompletionDate.HasValue)
-                                        .ToList();
-
-                                        <div class="alert alert-warning mt-3">
-                                            <h6 class="mb-2">
-                                                <i class="fa fa-clock me-1"></i>
-                                                در انتظار تکمیل توسط:
-                                            </h6>
-                                            <div class="d-flex flex-wrap gap-2">
-                                                @foreach (var pending in pendingUsers)
-                                                {
-                                                    <span class="badge bg-warning text-dark">
-                                                        <img src="@(pending.AssignedUserProfileImage ?? "/images/default-avatar.png")"
-                                                             class="rounded-circle me-1"
-                                                             style="width: 20px; height: 20px; object-fit: cover;"
-                                                             alt="@pending.AssignedUserName">
-                                                        @pending.AssignedUserName
-                                                    </span>
-                                                }
-                                            </div>
-                                        </div>
-                                    }
-                                }
-                                else
-                                {
-                                    <!-- ⭐⭐⭐ حالت تکمیل مشترک: نمایش گزارش یک نفر -->
-                                    var completionAssignment = completedAssignments.First();
-
-                                    <div class="alert alert-success mb-3">
-                                        <i class="fa fa-info-circle me-2"></i>
-                                        <strong>نوع تکمیل: مشترک</strong>
-                                        <p class="mb-0 mt-1">تکمیل یک نفر برای همه اعتبار دارد</p>
-                                    </div>
-
-                                    <div class="row g-3">
-                                        <!-- عکس و اطلاعات تکمیل کننده -->
-                                        <div class="col-md-4">
-                                            <div class="p-3 bg-body-light rounded-3 text-center">
-                                                <div class="mb-3">
-                                                    <img src="@(completionAssignment.AssignedUserProfileImage ?? "/images/default-avatar.png")"
-                                                         class="rounded-circle"
-                                                         style="width: 80px; height: 80px; object-fit: cover;"
-                                                         alt="@completionAssignment.AssignedUserName">
-                                                </div>
-                                                <h6 class="mb-1">@completionAssignment.AssignedUserName</h6>
-                                                <small class="text-muted">تکمیل کننده تسک</small>
-                                            </div>
-                                        </div>
-
-                                        <!-- گزارش تکمیل -->
-                                        <div class="col-md-8">
-                                            <div class="p-3 bg-body-light rounded-3">
-                                                <h6 class="mb-2">
-                                                    <i class="fa fa-file-alt text-success me-1"></i>
-                                                    گزارش تکمیل:
-                                                </h6>
-                                                @if (!string.IsNullOrEmpty(completionAssignment.CompletionNote))
-                                                {
-                                                    <p class="mb-2">@Html.Raw(completionAssignment.CompletionNote.Replace("\n", "<br/>"))</p>
-                                                }
-                                                else
-                                                {
-                                                    <p class="text-muted mb-2">
-                                                        <i class="fa fa-info-circle me-1"></i>
-                                                        بدون توضیحات
-                                                    </p>
-                                                }
-
-                                        <!-- آمار عملیات -->
-                                        <div class="row g-2 mt-3">
-                                            <div class="col-6">
-                                                <div class="p-2 bg-white rounded text-center">
-                                                    <div class="fs-3 fw-bold text-success">
-                                                        @(Model.Operations?.Count(o => o.IsCompleted) ?? 0)/@(Model.Operations?.Count ?? 0)
-                                                    </div>
-                                                    <small class="text-muted">عملیات تکمیل شده</small>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="p-2 bg-white rounded text-center">
-                                                    <div class="fs-3 fw-bold text-primary">
-                                                        @Model.ProgressPercentage%
-                                                    </div>
-                                                    <small class="text-muted">درصد پیشرفت</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- اطلاعات بیشتر -->
-                            <div class="row g-2 mt-3">
-                                <div class="col-md-4">
-                                    <div class="p-2 bg-body-light rounded">
-                                        <small class="text-muted d-block">تاریخ شروع</small>
-                                        <strong>
-                                            @(completionAssignment.PersonalStartDate.HasValue
-                                                                                        ? ConvertDateTime.ConvertMiladiToShamsi(completionAssignment.PersonalStartDate.Value, "yyyy/MM/dd HH:mm")
-                                                                                        : "ثبت نشده")
-                                                </strong>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="p-2 bg-body-light rounded">
-                                                <small class="text-muted d-block">تاریخ تکمیل</small>
-                                                <strong>
-                                                    @ConvertDateTime.ConvertMiladiToShamsi(completionAssignment.CompletionDate.Value, "yyyy/MM/dd HH:mm")
-                                                </strong>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="p-2 bg-body-light rounded">
-                                                <small class="text-muted d-block">مدت زمان</small>
-                                                <strong>
-                                                    @if (completionAssignment.PersonalStartDate.HasValue)
-                                                    {
-                                                        var duration = completionAssignment.CompletionDate.Value - completionAssignment.PersonalStartDate.Value;
-                                                        <text>@duration.Days روز، @duration.Hours ساعت</text>
-                                                    }
-                                                    else
-                                                    {
-                                                        <text>نامشخص</text>
-                                                    }
-                                                </strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
-
-
-
-
-
-
-
-
-
-
-
-
-                    <!-- اطلاعات جزئیات -->
-                    <div class="block block-rounded block-fx-shadow">
-                        <div class="block-header block-header-default">
-                            <h3 class="block-title">
-                                <i class="fa fa-info-circle text-info me-2"></i>اطلاعات جزئیات
-                            </h3>
-                        </div>
-                        <div class="block-content">
-                            <div class="row g-3">
-                                <!-- دسته‌بندی -->
-                                <div class="col-sm-6">
-                                    <div class="p-3 bg-body-light rounded-3">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="flex-shrink-0">
-                                                <i class="fa fa-folder fa-2x text-primary"></i>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <div class="fs-xs text-muted">دسته‌بندی</div>
-                                                <div class="fw-semibold">
-                                                    @(string.IsNullOrEmpty(Model.CategoryTitle) ? "بدون دسته‌بندی" : Model.CategoryTitle)
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                            <!-- در بخش نمایش اطلاعات تسک، جایگزین بخش Stakeholder قدیمی: -->
-
-<div class="col-sm-6">
-    <div class="p-3 bg-body-light rounded-3">
-        <div class="d-flex align-items-center mb-2">
-            <div class="flex-shrink-0">
-                @if (Model.SelectedContactId.HasValue || Model.SelectedOrganizationId.HasValue)
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button" role="tab">
+                <i class="fa fa-info-circle d-block mb-1"></i>
+                <span class="tab-title">نگاه کلی</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="work-logs-tab" data-bs-toggle="tab" data-bs-target="#tab-work-logs" type="button" role="tab">
+                <i class="fa fa-clipboard-list d-block mb-1"></i>
+                <span class="tab-title">گزارش‌ها</span>
+                @if (Model.WorkLogs?.Any() == true)
                 {
-                    <i class="fa fa-handshake fa-2x text-success"></i>
+                    <span class="badge bg-info rounded-pill ms-1">@Model.WorkLogs.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="operations-tab" data-bs-toggle="tab" data-bs-target="#tab-operations" type="button" role="tab">
+                <i class="fa fa-cogs d-block mb-1"></i>
+                <span class="tab-title">عملیات</span>
+                @if (Model.Operations?.Any() == true)
+                {
+                    <span class="badge bg-primary rounded-pill ms-1" id="operations-badge-count">@Model.Operations.Count</span>
                 }
                 else
                 {
-                    <i class="fa fa-ban fa-2x text-muted"></i>
+                    <span class="badge bg-primary rounded-pill ms-1" id="operations-badge-count" style="display: none;">0</span>
                 }
-            </div>
-            <div class="flex-grow-1 ms-3">
-                <div class="fs-xs text-muted">طرف حساب</div>
-                <div class="fw-semibold">
-                    @if (Model.SelectedContactId.HasValue)
-                    {
-                        <div>
-                            <i class="fa fa-user me-1 text-primary"></i>
-                            <strong>@Model.ContactFullName</strong>
-                            @if (Model.SelectedOrganizationId.HasValue)
-                            {
-                                <div class="mt-1 ms-3">
-                                    <i class="fa fa-building me-1 text-info"></i>
-                                    <small class="text-muted">@Model.OrganizationName</small>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else if (Model.SelectedOrganizationId.HasValue)
-                    {
-                        <div>
-                            <i class="fa fa-building me-1 text-info"></i>
-                            <strong>@Model.OrganizationName</strong>
-                        </div>
-                    }
-                   
-                    else
-                    {
-                        <span class="text-muted">ندارد</span>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-                                
-                                <!-- ایجاد کننده -->
-                                <div class="col-sm-6">
-                                    <div class="p-3 bg-body-light rounded-3">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="flex-shrink-0">
-                                                <i class="fa fa-user-circle fa-2x text-info"></i>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <div class="fs-xs text-muted">ایجاد کننده</div>
-                                                <div class="fw-semibold">
-                                                    @(string.IsNullOrEmpty(Model.CreatorName) ? "نامشخص" : Model.CreatorName)
-                                                </div>
-                                                <div class="fs-xs text-muted">
-                                                    @ConvertDateTime.ConvertMiladiToShamsi(Model.CreateDate, "yyyy/MM/dd HH:mm")
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- اولویت -->
-                                <div class="col-sm-6">
-                                    <div class="p-3 bg-body-light rounded-3">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="flex-shrink-0">
-                                                <i class="fa fa-flag fa-2x text-warning"></i>
-                                            </div>
-                                            <div class="flex-grow-1 ms-3">
-                                                <div class="fs-xs text-muted">اولویت</div>
-                                                <div>
-                                                    @switch (Model.Priority) {
-                                                        case 0:
-                                                            <span class="badge bg-info-light text-info">
-                                                                <i class="fa fa-circle me-1"></i>عادی
-                                                            </span>
-                                                            break;
-                                                        case 1:
-                                                            <span class="badge bg-warning-light text-warning">
-                                                                <i class="fa fa-star me-1"></i>مهم
-                                                            </span>
-                                                            break;
-                                                        case 2:
-                                                            <span class="badge bg-danger-light text-danger">
-                                                                <i class="fa fa-bolt me-1"></i>فوری
-                                                            </span>
-                                                            break;
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Sidebar -->
-                <div  id="sidebar-stats-container" class="col-lg-4">
-                    @await Html.PartialAsync("_TaskSidebarStats", Model)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-team" type="button" role="tab">
+                <i class="fa fa-users d-block mb-1"></i>
+                <span class="tab-title">اعضا</span>
+                @if (Model.AssignmentsTaskUser?.Any() == true)
+                {
+                    <span class="badge bg-info rounded-pill ms-1">@Model.AssignmentsTaskUser.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="chat-tab" data-bs-toggle="tab" data-bs-target="#tab-chat" type="button" role="tab">
+                <i class="fa fa-comments d-block mb-1"></i>
+                <span class="tab-title">گفتگو</span>
+                <span class="badge bg-primary rounded-pill ms-1" id="chat-badge-count">
+                    @(Model.Comments?.Count ?? 0)
+                </span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="reminders-tab" data-bs-toggle="tab" data-bs-target="#tab-reminders" type="button" role="tab">
+                <i class="fa fa-bell d-block mb-1"></i>
+                <span class="tab-title">یادآوری</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="viewers-tab" data-bs-toggle="tab" data-bs-target="#tab-viewers" type="button" role="tab">
+                <i class="fa fa-eye d-block mb-1"></i>
+                <span class="tab-title">ناظرین</span>
+                <span class="badge bg-info rounded-pill ms-1" id="viewers-badge-count">0</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-timeline" type="button" role="tab">
+                <i class="fa fa-history d-block mb-1"></i>
+                <span class="tab-title">تاریخچه</span>
+            </button>
+        </li>
+    </ul>
 
-                </div>
-            </div>
+    <!-- Tabs Content -->
+    <div class="tab-content">
+        <!-- ⭐⭐⭐ Overview Tab - از Partial استفاده می‌کنیم -->
+        <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+            @await Html.PartialAsync("_TaskOverviewTab", Model)
         </div>
+
         <!-- Tab 2: گزارش های کاری-->
 <div class="tab-pane fade" id="tab-work-logs" role="tabpanel">
     <div class="block block-rounded block-fx-shadow">
@@ -1509,273 +772,35 @@
 </div>
 
 @section Scripts {
-        <script>
-        window.TaskDetailConfig = {
-             taskId: @Model.Id,
-             isTaskCompleted: @(Model.CompletionDate.HasValue ? "true" : "false"),
-             urls: {
-                 getTaskComments: '@Url.Action("GetTaskComments", "Tasks")',
-                 addTaskComment: '@Url.Action("AddTaskComment", "Tasks")',
-                 deleteTaskComment: '@Url.Action("DeleteTaskComment", "Tasks")',
-                 getTaskHeroStats: '@Url.Action("GetTaskHeroStats", "Tasks")',
-                 getTaskProgress: '@Url.Action("GetTaskProgress", "Tasks")',
-                 getTaskSidebarStats: '@Url.Action("GetTaskSidebarStats", "Tasks")',
-                 getTaskReminders: '@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })',
-                 getTaskHistory: '@Url.Action("GetTaskHistory", "Tasks", new { area = "TaskingArea" })',
-                 approveTaskByManager: '@Url.Action("ApproveTaskByManager", "Tasks")',
-                 getOperationsGroup: '@Url.Action("GetOperationsGroup", "TaskOperations", new { area = "TaskingArea" })',
-                 toggleOperationComplete: '@Url.Action("ToggleOperationComplete", "TaskOperations", new { area = "TaskingArea" })',
-                 toggleOperationStar: '@Url.Action("ToggleOperationStar", "TaskOperations", new { area = "TaskingArea" })',
-                 deleteOperation: '@Url.Action("DeleteOperation", "TaskOperations", new { area = "TaskingArea" })',
-                 addOperation: '@Url.Action("AddOperation", "TaskOperations", new { area = "TaskingArea" })',
-                 getAllOperations: '@Url.Action("GetAllOperations", "TaskOperations", new { area = "TaskingArea" })',
-                 refreshAllTaskStats: '@Url.Action("RefreshAllTaskStats", "Tasks", new { area = "TaskingArea" })',
-                 getTaskViewers: '@Url.Action("GetTaskViewers", "TaskViewers", new { area = "TaskingArea" })',
-                 removeCarbonCopy: '@Url.Action("RemoveCarbonCopy", "TaskViewers", new { area = "TaskingArea" })'
-             }
-         };
-
-    </script>
-
     <script>
-        // ⭐⭐⭐ بارگذاری ناظران تسک
-        $(document).ready(function() {
-            // بارگذاری ناظران هنگام کلیک روی تب
-            $('#viewers-tab').on('shown.bs.tab', function() {
-                loadTaskViewers();
-            });
-
-            // ⭐⭐⭐ بروزرسانی لیست بعد از افزودن ناظر رونوشتی موفق
-            $(document).on('modal-ajax-success', function(event, response) {
-                // بررسی که آیا این response مربوط به افزودن ناظر است
-                if (response && response.status === 'success' && 
-                    response.message && response.message[0] && 
-                    response.message[0].text && 
-                    response.message[0].text.includes('ناظر')) {
-                    
-                    console.log('✅ Carbon copy added successfully, refreshing viewers list...');
-                    
-                    // بارگذاری مجدد لیست ناظران
-                    setTimeout(function() {
-                        loadTaskViewers();
-                    }, 300);
-                }
-            });
-        });
-
-        function loadTaskViewers() {
-            console.log('🔄 Loading task viewers...');
-
-            // نمایش loading
-            $('#system-viewers-list').html(`
-                <div class="text-center py-4">
-                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
-                    <p class="text-muted mt-2">در حال بارگذاری...</p>
-                </div>
-            `);
-
-            $('#carbon-copy-viewers-list').html(`
-                <div class="text-center py-4">
-                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
-                    <p class="text-muted mt-2">در حال بارگذاری...</p>
-                </div>
-            `);
-
-            $.ajax({
-                url: window.TaskDetailConfig.urls.getTaskViewers,
-                type: 'GET',
-                data: { taskId: window.TaskDetailConfig.taskId },
-                success: function(response) {
-                    console.log('✅ Task viewers loaded:', response);
-
-                    if (response.systemViewers) {
-                        renderSystemViewers(response.systemViewers);
-                    }
-
-                    if (response.carbonCopyViewers) {
-                        renderCarbonCopyViewers(response.carbonCopyViewers);
-                    }
-
-                    updateViewersStats(response);
-                },
-                error: function(xhr, status, error) {
-                    console.error('❌ Error loading viewers:', error);
-
-                    $('#system-viewers-list').html(`
-                        <div class="alert alert-danger">
-                            <i class="fa fa-exclamation-triangle me-2"></i>
-                            خطا در بارگذاری ناظران خودکار
-                        </div>
-                    `);
-
-                    $('#carbon-copy-viewers-list').html(`
-                        <div class="alert alert-danger">
-                            <i class="fa fa-exclamation-triangle me-2"></i>
-                            خطا در بارگذاری ناظران رونوشت
-                        </div>
-                    `);
-
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error('خطا در بارگذاری ناظران تسک');
-                    }
-                }
-            });
-        }
-
-        function renderSystemViewers(viewers) {
-            const $container = $('#system-viewers-list');
-
-            if (!viewers || viewers.length === 0) {
-                $container.html(`
-                    <div class="text-center py-4 text-muted">
-                        <i class="fa fa-users-slash fa-3x mb-3 opacity-25"></i>
-                        <p class="mb-1">هیچ ناظر سیستمی یافت نشد</p>
-                        <small>ناظران خودکار پس از تخصیص کاربران نمایش داده می‌شوند</small>
-                    </div>
-                `);
-                return;
+        window.TaskDetailConfig = {
+            taskId: @Model.Id,
+            isTaskCompleted: @(Model.CompletionDate.HasValue ? "true" : "false"),
+            urls: {
+                getTaskComments: '@Url.Action("GetTaskComments", "Tasks")',
+                addTaskComment: '@Url.Action("AddTaskComment", "Tasks")',
+                deleteTaskComment: '@Url.Action("DeleteTaskComment", "Tasks")',
+                getTaskHeroStats: '@Url.Action("GetTaskHeroStats", "Tasks")',
+                getTaskProgress: '@Url.Action("GetTaskProgress", "Tasks")',
+                getTaskSidebarStats: '@Url.Action("GetTaskSidebarStats", "Tasks")',
+                getTaskReminders: '@Url.Action("GetTaskReminders", "Tasks", new { taskId = Model.Id })',
+                getTaskHistory: '@Url.Action("GetTaskHistory", "Tasks", new { area = "TaskingArea" })',
+                getOperationsGroup: '@Url.Action("GetOperationsGroup", "TaskOperations", new { area = "TaskingArea" })',
+                toggleOperationComplete: '@Url.Action("ToggleOperationComplete", "TaskOperations", new { area = "TaskingArea" })',
+                toggleOperationStar: '@Url.Action("ToggleOperationStar", "TaskOperations", new { area = "TaskingArea" })',
+                deleteOperation: '@Url.Action("DeleteOperation", "TaskOperations", new { area = "TaskingArea" })',
+                addOperation: '@Url.Action("AddOperation", "TaskOperations", new { area = "TaskingArea" })',
+                getAllOperations: '@Url.Action("GetAllOperations", "TaskOperations", new { area = "TaskingArea" })',
+                refreshAllTaskStats: '@Url.Action("RefreshAllTaskStats", "Tasks", new { area = "TaskingArea" })',
+                getTaskViewers: '@Url.Action("GetTaskViewers", "TaskViewers", new { area = "TaskingArea" })',
+                removeCarbonCopy: '@Url.Action("RemoveCarbonCopy", "TaskViewers", new { area = "TaskingArea" })'
             }
-
-            let html = '<div class="list-group">';
-
-            viewers.forEach(viewer => {
-                html += `
-                    <div class="list-group-item">
-                        <div class="d-flex align-items-center">
-                            <img src="${viewer.profileImage || '/images/default-avatar.png'}"
-                                 class="rounded-circle me-3"
-                                 style="width: 48px; height: 48px; object-fit: cover;"
-                                 alt="${viewer.fullName}">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">${viewer.fullName}</h6>
-                                <div class="d-flex flex-wrap gap-1">
-                                    <span class="badge bg-primary">
-                                        <i class="fa fa-shield-alt me-1"></i>${viewer.viewerReason}
-                                    </span>
-                                    ${viewer.teamName ? `<span class="badge bg-info"><i class="fa fa-users me-1"></i>${viewer.teamName}</span>` : ''}
-                                </div>
-                                ${viewer.email ? `<small class="text-muted"><i class="fa fa-envelope me-1"></i>${viewer.email}</small>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-            $container.html(html);
-        }
-
-        function renderCarbonCopyViewers(viewers) {
-            const $container = $('#carbon-copy-viewers-list');
-
-            if (!viewers || viewers.length === 0) {
-                $container.html(`
-                    <div class="text-center py-4 text-muted">
-                        <i class="fa fa-user-slash fa-3x mb-3 opacity-25"></i>
-                        <p class="mb-1">هیچ ناظر رونوشتی اضافه نشده است</p>
-                        <small>فقط سازنده یا مدیر می‌تواند ناظر رونوشتی اضافه کند</small>
-                    </div>
-                `);
-                return;
-            }
-
-            let html = '<div class="list-group">';
-
-            viewers.forEach(viewer => {
-                html += `
-                    <div class="list-group-item">
-                        <div class="d-flex align-items-start">
-                            <img src="${viewer.profileImage || '/images/default-avatar.png'}"
-                                 class="rounded-circle me-3"
-                                 style="width: 48px; height: 48px; object-fit: cover;"
-                                 alt="${viewer.fullName}">
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1">${viewer.fullName}</h6>
-                                        <span class="badge bg-success mb-2">
-                                            <i class="fa fa-copy me-1"></i>رونوشت
-                                        </span>
-                                    </div>
-                                    ${viewer.canRemove && !window.TaskDetailConfig.isTaskCompleted ? 
-                                        `<button type="button" 
-                                                class="btn btn-sm btn-outline-danger"
-                                                onclick="removeCarbonCopyViewer(${viewer.id})"
-                                                title="حذف ناظر">
-                                            <i class="fa fa-trash"></i>
-                                        </button>` 
-                                        : ''}
-                                </div>
-                                ${viewer.email ? `<small class="text-muted d-block"><i class="fa fa-envelope me-1"></i>${viewer.email}</small>` : ''}
-                                ${viewer.note ? `<div class="alert alert-light p-2 mb-0 mt-2"><small class="text-muted"><i class="fa fa-sticky-note me-1"></i>${viewer.note}</small></div>` : ''}
-                                <small class="text-muted d-block mt-1">
-                                    <i class="fa fa-user me-1"></i>اضافه شده توسط: ${viewer.addedByUserName}
-                                    <i class="fa fa-calendar me-1 ms-2"></i>${viewer.addedDatePersian}
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-            $container.html(html);
-        }
-
-        function updateViewersStats(response) {
-            const systemCount = response.systemViewers?.length || 0;
-            const carbonCopyCount = response.carbonCopyViewers?.length || 0;
-            const totalCount = systemCount + carbonCopyCount;
-
-            $('#system-viewers-count, #system-viewers-stat').text(systemCount);
-            $('#carbon-copy-viewers-count, #carbon-copy-viewers-stat').text(carbonCopyCount);
-            $('#total-viewers-count').text(totalCount);
-            $('#viewers-badge-count').text(totalCount);
-
-            console.log(`📊 Viewers stats updated: Total=${totalCount}, System=${systemCount}, CarbonCopy=${carbonCopyCount}`);
-        }
-
-        function removeCarbonCopyViewer(carbonCopyId) {
-            if (!confirm('آیا از حذف این ناظر رونوشتی اطمینان دارید؟')) {
-                return;
-            }
-
-            console.log('🗑️ Removing carbon copy viewer:', carbonCopyId);
-
-            $.ajax({
-                url: window.TaskDetailConfig.urls.removeCarbonCopy,
-                type: 'POST',
-                data: {
-                    carbonCopyId: carbonCopyId,
-                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
-                },
-                success: function(response) {
-                    console.log('✅ Carbon copy removed:', response);
-
-                    if (response.status === 'success') {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.success('ناظر رونوشتی با موفقیت حذف شد');
-                        }
-
-                        // بارگذاری مجدد لیست
-                        loadTaskViewers();
-                    } else {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(response.message?.[0]?.text || 'خطا در حذف ناظر');
-                        }
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('❌ Error removing carbon copy:', error);
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error('خطا در حذف ناظر رونوشتی');
-                    }
-                }
-            });
-        }
+        };
     </script>
+    <script src="~/assets/js/taskdetail.js"></script>
 
-<script src="~/assets/js/taskdetail.js"></script>
+    <!-- ⭐⭐⭐ اسکریپت Viewers -->
+    @await Html.PartialAsync("_TaskViewersScript")
 }
 
 <!-- ⭐⭐⭐ اضافه کردن CSS سفارشی -->

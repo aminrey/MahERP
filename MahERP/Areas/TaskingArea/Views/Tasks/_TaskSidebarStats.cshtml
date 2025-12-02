@@ -35,8 +35,18 @@
             </div>
             <div class="col-6">
                 <div class="p-3 bg-primary-light rounded-3">
+                    <!-- ⭐⭐⭐ محاسبه صحیح درصد پیشرفت -->
+                    @{
+                        int progressPercentage = 0;
+                        if (Model.Operations != null && Model.Operations.Any())
+                        {
+                            var totalOps = Model.Operations.Count;
+                            var completedOps = Model.Operations.Count(o => o.IsCompleted);
+                            progressPercentage = (completedOps * 100) / totalOps;
+                        }
+                    }
                     <div class="fs-2 fw-bold text-primary" id="sidebar-progress">
-                        @Model.ProgressPercentage%
+                        @progressPercentage%
                     </div>
                     <div class="fs-xs text-muted">پیشرفت</div>
                 </div>
@@ -56,16 +66,17 @@
         <div class="mb-3">
             <div class="d-flex justify-content-between mb-2">
                 <span class="fw-semibold">درصد تکمیل</span>
-                <span class="fw-bold text-primary">@Model.ProgressPercentage%</span>
+                <span class="fw-bold text-primary">@progressPercentage%</span>
             </div>
+            <!-- ⭐⭐⭐ Progress Bar با محاسبه صحیح -->
             <div class="progress" style="height: 20px;">
-                <div class="progress-bar progress-bar-striped progress-bar-animated @(Model.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                <div class="progress-bar progress-bar-striped progress-bar-animated @(progressPercentage == 100 ? "bg-success" : "bg-primary")" 
                      role="progressbar" 
-                     style="width: @Model.ProgressPercentage%" 
-                     aria-valuenow="@Model.ProgressPercentage" 
+                     style="width: @progressPercentage%" 
+                     aria-valuenow="@progressPercentage" 
                      aria-valuemin="0" 
                      aria-valuemax="100">
-                    @Model.ProgressPercentage%
+                    @progressPercentage%
                 </div>
             </div>
         </div>
