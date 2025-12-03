@@ -104,6 +104,56 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                                 }
                             }
                             break;
+
+                        case 4: // ⭐⭐⭐ NEW: ماهانه (چند روز)
+                            if (!string.IsNullOrEmpty(reminder.ScheduledDaysOfMonth))
+                            {
+                                var daysOfMonth = reminder.ScheduledDaysOfMonth
+                                    .Split(',')
+                                    .Select(d => int.TryParse(d.Trim(), out var day) ? day : (int?)null)
+                                    .Where(d => d.HasValue && d.Value >= 1 && d.Value <= 31)
+                                    .Select(d => d.Value)
+                                    .OrderBy(d => d)
+                                    .ToList();
+
+                                if (daysOfMonth.Any())
+                                {
+                                    // پیدا کردن اولین روز آینده
+                                    var currentDay = now.Day;
+                                    var currentMonth = now.Month;
+                                    var currentYear = now.Year;
+
+                                    // بررسی ماه جاری
+                                    var daysInCurrentMonth = DateTime.DaysInMonth(currentYear, currentMonth);
+                                    var upcomingDaysThisMonth = daysOfMonth
+                                        .Where(d => d >= currentDay && d <= daysInCurrentMonth)
+                                        .ToList();
+
+                                    if (upcomingDaysThisMonth.Any())
+                                    {
+                                        // اولین روز در ماه جاری
+                                        var nextDay = upcomingDaysThisMonth.First();
+                                        nextEventDate = new DateTime(currentYear, currentMonth, nextDay);
+                                    }
+                                    else
+                                    {
+                                        // ماه بعد
+                                        var nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
+                                        var nextYear = currentMonth == 12 ? currentYear + 1 : currentYear;
+                                        var daysInNextMonth = DateTime.DaysInMonth(nextYear, nextMonth);
+
+                                        // اولین روز موجود در ماه بعد
+                                        var firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextMonth);
+                                        if (firstAvailableDay > 0)
+                                        {
+                                            nextEventDate = new DateTime(nextYear, nextMonth, firstAvailableDay);
+                                        }
+                                    }
+
+                                    Console.WriteLine($"📅 Monthly reminder (days: {reminder.ScheduledDaysOfMonth}) - Next: {nextEventDate:yyyy-MM-dd}");
+                                }
+                            }
+                            break;
                     }
 
                     // ⭐ اگر تاریخ محاسبه شد، Event ایجاد کن

@@ -347,17 +347,27 @@
 
                             @if (Model.LastExecutionDate.HasValue)
                             {
+                               
+                                    var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+                                    var lastExecIran = TimeZoneInfo.ConvertTimeFromUtc(Model.LastExecutionDate.Value, iranTimeZone);
+                                
                                 <div class="alert alert-success">
                                     <i class="fa fa-check-circle me-1"></i>
-                                    <strong>آخرین اجرا:</strong> @Model.LastExecutionDate.Value.ToString("yyyy/MM/dd HH:mm")
+                                    <strong>آخرین اجرا:</strong> @lastExecIran.ToString("yyyy/MM/dd HH:mm")
+                                    <small class="text-muted">(Iran Time)</small>
                                 </div>
                             }
 
                             @if (Model.NextExecutionDate.HasValue)
                             {
+                               
+                                    var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+                                    var nextExecIran = TimeZoneInfo.ConvertTimeFromUtc(Model.NextExecutionDate.Value, iranTimeZone);
+                                
                                 <div class="alert alert-info">
                                     <i class="fa fa-calendar me-1"></i>
-                                    <strong>اجرای بعدی:</strong> @Model.NextExecutionDate.Value.ToString("yyyy/MM/dd HH:mm")
+                                    <strong>اجرای بعدی:</strong> @nextExecIran.ToString("yyyy/MM/dd HH:mm")
+                                    <small class="text-muted">(Iran Time)</small>
                                 </div>
                             }
 

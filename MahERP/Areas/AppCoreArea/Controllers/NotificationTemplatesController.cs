@@ -165,6 +165,21 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                     }
                 }
 
+                // ⭐⭐⭐ FIX: محاسبه NextExecutionDate
+                DateTime? nextExecutionUtc = null;
+                if (model.IsScheduled && !string.IsNullOrEmpty(model.ScheduledTime))
+                {
+                    var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+                    var nowUtc = DateTime.UtcNow;
+                    var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, iranTimeZone);
+
+                    var nextExecutionIran = CalculateNextExecutionIranTime(model, nowIran);
+                    if (nextExecutionIran.HasValue)
+                    {
+                        nextExecutionUtc = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran.Value, iranTimeZone);
+                    }
+                }
+
                 // ✅ اصلاح: تطابق کامل با Entity جدید
                 var template = new NotificationTemplate
                 {
@@ -189,8 +204,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                     ScheduleType = model.ScheduleType,
                     ScheduledTime = model.ScheduledTime,
                     ScheduledDaysOfWeek = model.ScheduledDaysOfWeek,
+                    ScheduledDaysOfMonth = model.ScheduledDaysOfMonth, // ⭐⭐⭐ NEW
                     ScheduledDayOfMonth = model.ScheduledDayOfMonth,
                     IsScheduleEnabled = model.IsScheduled,
+                    NextExecutionDate = nextExecutionUtc, // ⭐⭐⭐ FIX: محاسبه شده
                     
                     CreatedByUserId = currentUserId,
                     CreatedDate = DateTime.Now
@@ -321,6 +338,21 @@ namespace MahERP.Areas.AppCoreArea.Controllers
 
                 var currentUserId = GetUserId();
 
+                // ⭐⭐⭐ FIX: محاسبه NextExecutionDate
+                DateTime? nextExecutionUtc = null;
+                if (model.IsScheduled && !string.IsNullOrEmpty(model.ScheduledTime))
+                {
+                    var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+                    var nowUtc = DateTime.UtcNow;
+                    var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, iranTimeZone);
+
+                    var nextExecutionIran = CalculateNextExecutionIranTime(model, nowIran);
+                    if (nextExecutionIran.HasValue)
+                    {
+                        nextExecutionUtc = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran.Value, iranTimeZone);
+                    }
+                }
+
                 // ✅ اصلاح: model.Id از نوع int است (nullable نیست)
                 var template = new NotificationTemplate
                 {
@@ -345,8 +377,10 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                     ScheduleType = model.ScheduleType,
                     ScheduledTime = model.ScheduledTime,
                     ScheduledDaysOfWeek = model.ScheduledDaysOfWeek,
+                    ScheduledDaysOfMonth = model.ScheduledDaysOfMonth, // ⭐⭐⭐ NEW
                     ScheduledDayOfMonth = model.ScheduledDayOfMonth,
                     IsScheduleEnabled = model.IsScheduled, // وقتی IsScheduled فعال است، IsScheduleEnabled هم فعال است
+                    NextExecutionDate = nextExecutionUtc, // ⭐⭐⭐ FIX: محاسبه شده
                     
                     LastModifiedDate = DateTime.Now,
                     LastModifiedByUserId = currentUserId
@@ -944,6 +978,186 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                 default:
                     return null;
             }
+        }
+
+        #endregion
+
+        #region ⭐⭐⭐ Helper Methods
+
+        /// <summary>
+        /// محاسبه NextExecutionDate در Iran Time (خروجی در Iran Time)
+        /// </summary>
+        private DateTime? CalculateNextExecutionIranTime(
+            NotificationTemplateFormViewModel model,
+            DateTime nowIran)
+        {
+            if (string.IsNullOrEmpty(model.ScheduledTime))
+                return null;
+
+            var timeParts = model.ScheduledTime.Split(':');
+            if (timeParts.Length != 2 ||
+                !int.TryParse(timeParts[0], out int hour) ||
+                !int.TryParse(timeParts[1], out int minute))
+            {
+                return null;
+            }
+
+            DateTime? nextExecutionIran = null;
+
+            switch (model.ScheduleType)
+            {
+                case 1: // روزانه
+                    nextExecutionIran = new DateTime(nowIran.Year, nowIran.Month, nowIran.Day, hour, minute, 0, DateTimeKind.Unspecified);
+                    
+                    // اگر زمان امروز گذشته، حتماً یک روز اضافه کن
+                    if (nextExecutionIran.Value <= nowIran)
+                    {
+                        nextExecutionIran = nextExecutionIran.Value.AddDays(1);
+                    }
+                    break;
+
+                case 2: // هفتگی
+                    if (string.IsNullOrEmpty(model.ScheduledDaysOfWeek))
+                        return null;
+
+                    var daysOfWeek = model.ScheduledDaysOfWeek
+                        .Split(',')
+                        .Select(d => int.TryParse(d.Trim(), out var day) ? day : -1)
+                        .Where(d => d >= 0 && d <= 6)
+                        .OrderBy(d => d)
+                        .ToList();
+
+                    if (!daysOfWeek.Any())
+                        return null;
+
+                    nextExecutionIran = FindNextWeeklyExecution(nowIran, hour, minute, daysOfWeek);
+                    break;
+
+                case 3: // ماهانه (یک روز)
+                    if (!model.ScheduledDayOfMonth.HasValue)
+                        return null;
+
+                    nextExecutionIran = FindNextMonthlyExecution(nowIran, hour, minute, model.ScheduledDayOfMonth.Value);
+                    break;
+
+                case 4: // ماهانه (چند روز)
+                    if (string.IsNullOrEmpty(model.ScheduledDaysOfMonth))
+                        return null;
+
+                    var daysOfMonth = model.ScheduledDaysOfMonth
+                        .Split(',')
+                        .Select(d => int.TryParse(d.Trim(), out var day) ? day : (int?)null)
+                        .Where(d => d.HasValue && d.Value >= 1 && d.Value <= 31)
+                        .Select(d => d.Value)
+                        .OrderBy(d => d)
+                        .ToList();
+
+                    if (!daysOfMonth.Any())
+                        return null;
+
+                    nextExecutionIran = FindNextMonthlyMultipleDaysExecution(nowIran, daysOfMonth, hour, minute);
+                    break;
+
+                default:
+                    return null;
+            }
+
+            return nextExecutionIran;
+        }
+
+        private DateTime FindNextWeeklyExecution(DateTime nowIran, int hour, int minute, List<int> daysOfWeek)
+        {
+            var currentDayOfWeek = (int)nowIran.DayOfWeek;
+
+            // چک کردن امروز
+            var todayExecution = new DateTime(nowIran.Year, nowIran.Month, nowIran.Day, hour, minute, 0, DateTimeKind.Unspecified);
+            if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > nowIran)
+            {
+                return todayExecution;
+            }
+
+            // پیدا کردن روز بعدی
+            for (int i = 1; i <= 7; i++)
+            {
+                var nextDate = nowIran.AddDays(i);
+                var nextDayOfWeek = (int)nextDate.DayOfWeek;
+
+                if (daysOfWeek.Contains(nextDayOfWeek))
+                {
+                    return new DateTime(nextDate.Year, nextDate.Month, nextDate.Day, hour, minute, 0, DateTimeKind.Unspecified);
+                }
+            }
+
+            return nowIran.AddDays(7);
+        }
+
+        private DateTime FindNextMonthlyExecution(DateTime nowIran, int hour, int minute, int dayOfMonth)
+        {
+            // چک کردن این ماه
+            var daysInMonth = DateTime.DaysInMonth(nowIran.Year, nowIran.Month);
+            var targetDay = Math.Min(dayOfMonth, daysInMonth);
+
+            var thisMonthExecution = new DateTime(nowIran.Year, nowIran.Month, targetDay, hour, minute, 0, DateTimeKind.Unspecified);
+            if (thisMonthExecution > nowIran)
+            {
+                return thisMonthExecution;
+            }
+
+            // ماه بعد
+            var nextMonth = nowIran.AddMonths(1);
+            daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
+            targetDay = Math.Min(dayOfMonth, daysInMonth);
+
+            return new DateTime(nextMonth.Year, nextMonth.Month, targetDay, hour, minute, 0, DateTimeKind.Unspecified);
+        }
+
+        private DateTime FindNextMonthlyMultipleDaysExecution(DateTime now, List<int> daysOfMonth, int hour, int minute)
+        {
+            var currentDay = now.Day;
+            var currentMonth = now.Month;
+            var currentYear = now.Year;
+
+            // بررسی ماه جاری
+            var todayExecution = new DateTime(currentYear, currentMonth, Math.Min(currentDay, DateTime.DaysInMonth(currentYear, currentMonth)), hour, minute, 0, DateTimeKind.Unspecified);
+            
+            if (daysOfMonth.Contains(currentDay) && now < todayExecution)
+            {
+                return todayExecution;
+            }
+
+            // پیدا کردن اولین روز بعد از امروز در ماه جاری
+            foreach (var day in daysOfMonth.Where(d => d > currentDay))
+            {
+                var daysInCurrentMonth = DateTime.DaysInMonth(currentYear, currentMonth);
+                if (day <= daysInCurrentMonth)
+                {
+                    return new DateTime(currentYear, currentMonth, day, hour, minute, 0, DateTimeKind.Unspecified);
+                }
+            }
+
+            // ماه بعد
+            var nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
+            var nextYear = currentMonth == 12 ? currentYear + 1 : currentYear;
+            var daysInNextMonth = DateTime.DaysInMonth(nextYear, nextMonth);
+
+            var firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextMonth);
+            if (firstAvailableDay > 0)
+            {
+                return new DateTime(nextYear, nextMonth, firstAvailableDay, hour, minute, 0, DateTimeKind.Unspecified);
+            }
+
+            // 2 ماه بعد
+            var nextNextMonth = nextMonth == 12 ? 1 : nextMonth + 1;
+            var nextNextYear = nextMonth == 12 ? nextYear + 1 : nextYear;
+            var daysInNextNextMonth = DateTime.DaysInMonth(nextNextYear, nextNextMonth);
+
+            firstAvailableDay = daysOfMonth.FirstOrDefault(d => d <= daysInNextNextMonth);
+            if (firstAvailableDay > 0)
+            {
+                return new DateTime(nextNextYear, nextNextMonth, firstAvailableDay, hour, minute, 0, DateTimeKind.Unspecified);
+            }
+
+            return new DateTime(nextYear, nextMonth, daysOfMonth.First(), hour, minute, 0, DateTimeKind.Unspecified);
         }
 
         #endregion

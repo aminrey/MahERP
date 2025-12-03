@@ -354,6 +354,9 @@
         <!-- گزارش تکمیل -->
         @await Html.PartialAsync("_TaskCompletionReport", Model)
 
+        <!-- ⭐⭐⭐ فایل‌های پیوست تسک -->
+        @await Html.PartialAsync("_TaskAttachments", Model)
+
        
     </div>
 

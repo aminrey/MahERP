@@ -66,22 +66,26 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            // ⭐⭐⭐ استفاده از زمان ایران به جای UTC
-            var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
+            // ⭐⭐⭐ FIX: استفاده از UTC برای مقایسه یکپارچه
+            var nowUtc = DateTime.UtcNow;
+            var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, IranTimeZone);
 
+            _logger.LogInformation($"🕐 زمان فعلی UTC: {nowUtc:yyyy-MM-dd HH:mm:ss}");
             _logger.LogInformation($"🕐 زمان فعلی ایران: {nowIran:yyyy-MM-dd HH:mm:ss}");
 
-            // ⭐⭐⭐ FIX: اضافه کردن شرط‌های جدید برای جلوگیری از اجرای مکرر
+            // ⭐⭐⭐ FIX: Query با UTC برای مقایسه صحیح
             var dueTemplates = await context.NotificationTemplate_Tbl
+                .AsNoTracking() // ⭐⭐⭐ FIX: عدم Track کردن
                 .Where(t =>
                     t.IsScheduled &&
                     t.IsScheduleEnabled &&
                     t.IsActive &&
                     t.NextExecutionDate.HasValue &&
-                    t.NextExecutionDate.Value <= nowIran &&
-                    // ⭐⭐⭐ شرط اصلی: اگر قبلاً اجرا شده، حداقل یک دقیقه فاصله باشد
+                    // ⭐⭐⭐ FIX: مقایسه با UTC
+                    t.NextExecutionDate.Value <= nowUtc &&
+                    // ⭐⭐⭐ FIX: حداقل 2 دقیقه فاصله از آخرین اجرا (برای اطمینان بیشتر)
                     (!t.LastExecutionDate.HasValue || 
-                     EF.Functions.DateDiffMinute(t.LastExecutionDate.Value, nowIran) >= 1))
+                     EF.Functions.DateDiffMinute(t.LastExecutionDate.Value, nowUtc) >= 2))
                 .ToListAsync(stoppingToken);
 
             if (!dueTemplates.Any())
@@ -98,16 +102,23 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
                 try
                 {
-                    // ⭐⭐⭐ FIX: چک مجدد در حافظه (Double-check)
+                    // ⭐⭐⭐ FIX: Double-check در حافظه (UTC)
                     if (template.LastExecutionDate.HasValue &&
-                        (nowIran - template.LastExecutionDate.Value).TotalMinutes < 1)
+                        (nowUtc - template.LastExecutionDate.Value).TotalMinutes < 2)
                     {
-                        _logger.LogWarning($"⚠️ قالب {template.TemplateName} در کمتر از 1 دقیقه پیش اجرا شده است. Skip.");
+                        _logger.LogWarning($"⚠️ قالب {template.TemplateName} در کمتر از 2 دقیقه پیش اجرا شده است. Skip.");
                         continue;
                     }
 
-                    _logger.LogInformation($"📤 اجرای قالب: {template.TemplateName} (NextExecution: {template.NextExecutionDate:yyyy-MM-dd HH:mm})");
-                    await ExecuteScheduledTemplateAsync(template, scope.ServiceProvider);
+                    var nextExecIran = template.NextExecutionDate.HasValue 
+                        ? TimeZoneInfo.ConvertTimeFromUtc(template.NextExecutionDate.Value, IranTimeZone)
+                        : (DateTime?)null;
+
+                    _logger.LogInformation($"📤 اجرای قالب: {template.TemplateName}");
+                    _logger.LogInformation($"   - NextExecution (UTC): {template.NextExecutionDate:yyyy-MM-dd HH:mm:ss}");
+                    _logger.LogInformation($"   - NextExecution (Iran): {nextExecIran:yyyy-MM-dd HH:mm:ss}");
+
+                    await ExecuteScheduledTemplateAsync(template, scope.ServiceProvider, nowUtc);
                 }
                 catch (Exception ex)
                 {
@@ -121,7 +132,8 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         /// </summary>
         private async Task ExecuteScheduledTemplateAsync(
             MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate template,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            DateTime nowUtc)
         {
             var notificationService = serviceProvider.GetRequiredService<NotificationManagementService>();
             var context = serviceProvider.GetRequiredService<AppDbContext>();
@@ -135,10 +147,12 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             {
                 _logger.LogWarning($"⚠️ دریافت‌کننده‌ای برای قالب {template.TemplateName} یافت نشد");
                 
-                // ⭐ بروزرسانی زمان بعدی
-                await UpdateNextExecutionDateAsync(template, context);
+                // ⭐ بروزرسانی زمان بعدی (بدون ارسال)
+                await UpdateNextExecutionDateAsync(template, context, nowUtc);
                 return;
             }
+
+            _logger.LogInformation($"📬 {recipients.Count} دریافت‌کننده یافت شد");
 
             // ⭐⭐⭐ استفاده از متد جدید که مستقیماً با قالب کار می‌کند
             var count = await notificationService.ProcessScheduledNotificationAsync(
@@ -148,31 +162,44 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
             _logger.LogInformation($"✅ قالب {template.TemplateName} به {count} کاربر ارسال شد");
 
-            // ⭐⭐⭐ بروزرسانی اطلاعات اجرا با زمان ایران (بدون Include)
-            var nowIran = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, IranTimeZone);
-
-            // ⭐⭐⭐ FIX: بارگذاری مجدد از دیتابیس برای اطمینان از آخرین وضعیت
+            // ⭐⭐⭐ FIX: بروزرسانی اطلاعات اجرا با UTC (بارگذاری مجدد از DB)
             var templateToUpdate = await context.NotificationTemplate_Tbl
                 .FirstOrDefaultAsync(t => t.Id == template.Id);
 
             if (templateToUpdate != null)
             {
-                templateToUpdate.LastExecutionDate = nowIran;
+                templateToUpdate.LastExecutionDate = nowUtc; // ⭐⭐⭐ UTC
                 templateToUpdate.UsageCount++;
-                templateToUpdate.LastUsedDate = nowIran;
+                templateToUpdate.LastUsedDate = nowUtc; // ⭐⭐⭐ UTC
 
-                // ⭐⭐⭐ محاسبه زمان بعدی (حتماً بعد از زمان فعلی باشد)
-                var nextExecution = CalculateNextExecutionDate(templateToUpdate);
-                templateToUpdate.NextExecutionDate = nextExecution;
+                // ⭐⭐⭐ FIX: محاسبه زمان بعدی با Iran Time و تبدیل به UTC
+                var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, IranTimeZone);
+                var nextExecutionIran = CalculateNextExecutionIranTime(templateToUpdate, nowIran);
+                
+                if (nextExecutionIran.HasValue)
+                {
+                    templateToUpdate.NextExecutionDate = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran.Value, IranTimeZone);
+                }
+                else
+                {
+                    templateToUpdate.NextExecutionDate = null;
+                    _logger.LogWarning($"⚠️ نتوانستیم NextExecutionDate محاسبه کنیم برای {template.TemplateName}");
+                }
 
-                // ⭐⭐⭐ لاگ برای دیباگ
+                // ⭐⭐⭐ FIX: لاگ برای دیباگ (با Iran Time برای خوانایی)
+                var lastExecIran = TimeZoneInfo.ConvertTimeFromUtc(templateToUpdate.LastExecutionDate.Value, IranTimeZone);
+                var nextExecIran = templateToUpdate.NextExecutionDate.HasValue
+                    ? TimeZoneInfo.ConvertTimeFromUtc(templateToUpdate.NextExecutionDate.Value, IranTimeZone)
+                    : (DateTime?)null;
+
                 _logger.LogInformation($"📅 بروزرسانی زمان‌ها:");
-                _logger.LogInformation($"   LastExecutionDate: {templateToUpdate.LastExecutionDate:yyyy-MM-dd HH:mm:ss}");
-                _logger.LogInformation($"   NextExecutionDate: {templateToUpdate.NextExecutionDate:yyyy-MM-dd HH:mm:ss}");
+                _logger.LogInformation($"   LastExecutionDate (UTC): {templateToUpdate.LastExecutionDate:yyyy-MM-dd HH:mm:ss}");
+                _logger.LogInformation($"   LastExecutionDate (Iran): {lastExecIran:yyyy-MM-dd HH:mm:ss}");
+                _logger.LogInformation($"   NextExecutionDate (UTC): {templateToUpdate.NextExecutionDate:yyyy-MM-dd HH:mm:ss}");
+                _logger.LogInformation($"   NextExecutionDate (Iran): {nextExecIran:yyyy-MM-dd HH:mm:ss}");
 
-                // ⭐⭐⭐ FIX: استفاده از Update به جای Attach
-                // چون AsNoTracking استفاده کردیم، باید با Update کل entity رو بروزرسانی کنیم
-                 context.NotificationTemplate_Tbl.Update(templateToUpdate);
+                // ⭐⭐⭐ FIX: ذخیره با Update
+                context.NotificationTemplate_Tbl.Update(templateToUpdate);
                 await context.SaveChangesAsync();
                 
                 _logger.LogInformation($"✅ اطلاعات زمان‌بندی برای {template.TemplateName} بروزرسانی شد");
@@ -186,70 +213,90 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate template,
             AppDbContext context)
         {
-            // ⭐ بر اساس RecipientMode
-            switch (template.RecipientMode)
+            try
             {
-                case 0: // همه کاربران
-                    return await context.Users
-                        .Where(u => u.IsActive && !u.IsRemoveUser)
-                        .Select(u => u.Id)
-                        .ToListAsync();
+                _logger.LogDebug($"🔍 RecipientMode: {template.RecipientMode}");
 
-                case 1: // فقط کاربران مشخص
-                    return await context.NotificationTemplateRecipient_Tbl
-                        .Where(r => r.NotificationTemplateId == template.Id &&
-                                   r.IsActive &&
-                                   r.RecipientType == 2) // User
-                        .Select(r => r.UserId)
-                        .ToListAsync();
+                // ⭐⭐⭐ FIX: بر اساس RecipientMode
+                switch (template.RecipientMode)
+                {
+                    case 0: // همه کاربران فعال
+                        var allUsers = await context.Users
+                            .Where(u => u.IsActive && !u.IsRemoveUser)
+                            .Select(u => u.Id)
+                            .ToListAsync();
+                        _logger.LogInformation($"✅ RecipientMode=0: {allUsers.Count} کاربر فعال یافت شد");
+                        return allUsers;
 
-                case 2: // همه به جز کاربران مشخص
-                    var excludedUsers = await context.NotificationTemplateRecipient_Tbl
-                        .Where(r => r.NotificationTemplateId == template.Id &&
-                                   r.IsActive &&
-                                   r.RecipientType == 2)
-                        .Select(r => r.UserId)
-                        .ToListAsync();
+                    case 1: // فقط کاربران مشخص
+                        var specificUsers = await context.NotificationTemplateRecipient_Tbl
+                            .Where(r => r.NotificationTemplateId == template.Id &&
+                                       r.IsActive &&
+                                       r.RecipientType == 2) // User
+                            .Select(r => r.UserId)
+                            .Distinct()
+                            .ToListAsync();
+                        _logger.LogInformation($"✅ RecipientMode=1: {specificUsers.Count} کاربر خاص یافت شد");
+                        return specificUsers;
 
-                    return await context.Users
-                        .Where(u => u.IsActive &&
-                                   !u.IsRemoveUser &&
-                                   !excludedUsers.Contains(u.Id))
-                        .Select(u => u.Id)
-                        .ToListAsync();
+                    case 2: // همه به جز کاربران مشخص
+                        var excludedUsers = await context.NotificationTemplateRecipient_Tbl
+                            .Where(r => r.NotificationTemplateId == template.Id &&
+                                       r.IsActive &&
+                                       r.RecipientType == 2)
+                            .Select(r => r.UserId)
+                            .Distinct()
+                            .ToListAsync();
 
-                default:
-                    return new List<string>();
+                        var usersExceptExcluded = await context.Users
+                            .Where(u => u.IsActive &&
+                                       !u.IsRemoveUser &&
+                                       !excludedUsers.Contains(u.Id))
+                            .Select(u => u.Id)
+                            .ToListAsync();
+                        _logger.LogInformation($"✅ RecipientMode=2: {usersExceptExcluded.Count} کاربر (همه به جز {excludedUsers.Count})");
+                        return usersExceptExcluded;
+
+                    default:
+                        _logger.LogWarning($"⚠️ RecipientMode نامعتبر: {template.RecipientMode}");
+                        return new List<string>();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ خطا در GetScheduledTemplateRecipientsAsync");
+                return new List<string>();
             }
         }
 
         /// <summary>
-        /// محاسبه و بروزرسانی زمان اجرای بعدی
+        /// محاسبه و بروزرسانی زمان اجرای بعدی (بدون ارسال)
         /// </summary>
         private async Task UpdateNextExecutionDateAsync(
             MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate template,
-            AppDbContext context)
+            AppDbContext context,
+            DateTime nowUtc)
         {
             try
             {
-                var nextExecution = CalculateNextExecutionDate(template);
+                var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, IranTimeZone);
+                var nextExecutionIran = CalculateNextExecutionIranTime(template, nowIran);
 
-                // ⭐⭐⭐ FIX: فقط فیلد NextExecutionDate را بروزرسانی کن (بدون Include)
+                // ⭐⭐⭐ FIX: بارگذاری مجدد و بروزرسانی
                 var templateToUpdate = await context.NotificationTemplate_Tbl
-                    .AsNoTracking() // ⭐ عدم Track کردن Entity
                     .FirstOrDefaultAsync(t => t.Id == template.Id);
 
-                if (templateToUpdate != null)
+                if (templateToUpdate != null && nextExecutionIran.HasValue)
                 {
-                    templateToUpdate.NextExecutionDate = nextExecution;
+                    templateToUpdate.NextExecutionDate = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran.Value, IranTimeZone);
 
-                    // ⭐ Attach کردن و فقط NextExecutionDate را Modified کن
-                    context.NotificationTemplate_Tbl.Attach(templateToUpdate);
-                    context.Entry(templateToUpdate).Property(t => t.NextExecutionDate).IsModified = true;
-
+                    context.NotificationTemplate_Tbl.Update(templateToUpdate);
                     await context.SaveChangesAsync();
 
-                    _logger.LogInformation($"📅 زمان بعدی اجرا برای {template.TemplateName}: {nextExecution:yyyy-MM-dd HH:mm}");
+                    var nextExecIran = TimeZoneInfo.ConvertTimeFromUtc(templateToUpdate.NextExecutionDate.Value, IranTimeZone);
+                    _logger.LogInformation($"📅 زمان بعدی اجرا برای {template.TemplateName}:");
+                    _logger.LogInformation($"   UTC: {templateToUpdate.NextExecutionDate:yyyy-MM-dd HH:mm:ss}");
+                    _logger.LogInformation($"   Iran: {nextExecIran:yyyy-MM-dd HH:mm:ss}");
                 }
             }
             catch (Exception ex)
@@ -259,18 +306,18 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         }
 
         /// <summary>
-        /// محاسبه زمان اجرای بعدی بر اساس نوع زمان‌بندی - با استفاده از TimeZone ایران
+        /// ⭐⭐⭐ FIX: محاسبه NextExecutionDate در Iran Time (خروجی در Iran Time)
         /// </summary>
-        private DateTime? CalculateNextExecutionDate(
-            MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate template)
+        private DateTime? CalculateNextExecutionIranTime(
+            MahERP.DataModelLayer.Entities.Notifications.NotificationTemplate template,
+            DateTime nowIran)
         {
             if (string.IsNullOrEmpty(template.ScheduledTime))
+            {
+                _logger.LogWarning($"⚠️ ScheduledTime خالی است برای قالب {template.TemplateName}");
                 return null;
+            }
 
-            // ⭐⭐⭐ استفاده از زمان ایران
-            var nowUtc = DateTime.UtcNow;
-            var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, IranTimeZone);
-            
             var timeParts = template.ScheduledTime.Split(':');
 
             if (timeParts.Length != 2 ||
@@ -286,43 +333,59 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             switch (template.ScheduleType)
             {
                 case 1: // روزانه
-                    // ⭐⭐⭐ ساخت DateTime با Iran TimeZone
+                    // ⭐⭐⭐ FIX: ساخت DateTime در Iran TimeZone
                     nextExecutionIran = new DateTime(nowIran.Year, nowIran.Month, nowIran.Day, hour, minute, 0, DateTimeKind.Unspecified);
                     
                     // ⭐⭐⭐ FIX: اگر زمان امروز گذشته، حتماً یک روز اضافه کن
-                    if (nextExecutionIran <= nowIran)
+                    if (nextExecutionIran.Value <= nowIran)
                     {
                         nextExecutionIran = nextExecutionIran.Value.AddDays(1);
                     }
                     
-                    _logger.LogInformation($"📅 روزانه: NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
+                    _logger.LogDebug($"📅 روزانه: NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
                     break;
 
                 case 2: // هفتگی
                     if (string.IsNullOrEmpty(template.ScheduledDaysOfWeek))
+                    {
+                        _logger.LogWarning($"⚠️ ScheduledDaysOfWeek خالی است");
                         return null;
+                    }
 
                     var daysOfWeek = template.ScheduledDaysOfWeek
                         .Split(',')
-                        .Select(d => int.Parse(d.Trim()))
+                        .Select(d => int.TryParse(d.Trim(), out var day) ? day : -1)
+                        .Where(d => d >= 0 && d <= 6)
                         .OrderBy(d => d)
                         .ToList();
 
+                    if (!daysOfWeek.Any())
+                    {
+                        _logger.LogWarning($"⚠️ هیچ روز معتبری در ScheduledDaysOfWeek نیست");
+                        return null;
+                    }
+
                     nextExecutionIran = FindNextWeeklyExecution(nowIran, hour, minute, daysOfWeek);
-                    _logger.LogInformation($"📅 هفتگی: NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
+                    _logger.LogDebug($"📅 هفتگی: NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
                     break;
 
                 case 3: // ماهانه (یک روز)
                     if (!template.ScheduledDayOfMonth.HasValue)
+                    {
+                        _logger.LogWarning($"⚠️ ScheduledDayOfMonth خالی است");
                         return null;
+                    }
 
                     nextExecutionIran = FindNextMonthlyExecution(nowIran, hour, minute, template.ScheduledDayOfMonth.Value);
-                    _logger.LogInformation($"📅 ماهانه (یک روز): NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
+                    _logger.LogDebug($"📅 ماهانه (یک روز): NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
                     break;
 
                 case 4: // ⭐⭐⭐ ماهانه (چند روز) 🆕
                     if (string.IsNullOrEmpty(template.ScheduledDaysOfMonth))
+                    {
+                        _logger.LogWarning($"⚠️ ScheduledDaysOfMonth خالی است");
                         return null;
+                    }
 
                     var daysOfMonth = template.ScheduledDaysOfMonth
                         .Split(',')
@@ -333,10 +396,13 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         .ToList();
 
                     if (!daysOfMonth.Any())
+                    {
+                        _logger.LogWarning($"⚠️ هیچ روز معتبری در ScheduledDaysOfMonth نیست");
                         return null;
+                    }
 
                     nextExecutionIran = FindNextMonthlyMultipleDaysExecution(nowIran, daysOfMonth, hour, minute);
-                    _logger.LogInformation($"📅 ماهانه (چند روز): NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
+                    _logger.LogDebug($"📅 ماهانه (چند روز): NextExecution (Iran) = {nextExecutionIran:yyyy-MM-dd HH:mm}");
                     break;
 
                 default:
@@ -352,18 +418,8 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 return null;
             }
 
-            // ⭐⭐⭐ تبدیل Iran Time به UTC
-            try
-            {
-                var nextExecutionUtc = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran.Value, IranTimeZone);
-                _logger.LogInformation($"✅ Converted to UTC: {nextExecutionUtc:yyyy-MM-dd HH:mm:ss}");
-                return nextExecutionUtc;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"❌ خطا در تبدیل به UTC: {nextExecutionIran}");
-                return null;
-            }
+            // ⭐⭐⭐ خروجی در Iran Time (تبدیل به UTC در متد فراخوان‌کننده انجام می‌شود)
+            return nextExecutionIran;
         }
 
         /// <summary>
