@@ -41,7 +41,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.UserControllers
             ActivityLoggerService activityLogger, 
             IWebHostEnvironment webHostEnvironment, 
             IBaseRepository BaseRepository, 
-            ModuleTrackingBackgroundService moduleTracking, 
+            IModuleTrackingService moduleTracking, 
             IModuleAccessService moduleAccessService,
             AppDbContext dbContext) // ⭐ اضافه کردن AppDbContext به constructor
 
