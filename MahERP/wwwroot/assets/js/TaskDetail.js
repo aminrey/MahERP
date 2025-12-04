@@ -1,5 +1,4 @@
-﻿
-// ⭐⭐⭐ دریافت توکن با روش بهتر
+﻿// ⭐⭐⭐ دریافت توکن با روش بهتر
 
 
 
@@ -241,7 +240,6 @@ function showValidationErrors(errors) {
     });
 }
 
-
 // ========================================
 // ⭐⭐⭐ Chat Manager - نسخه اصلاح شده
 // ========================================
@@ -370,7 +368,7 @@ const TaskChatManager = {
 
                 if (response.success) {
                     if (typeof NotificationHelper !== 'undefined') {
-                        NotificationHelper.success('پیام با موفقیت ارسال شد');
+                        NotificationHelper.success(response.message || 'پیام با موفقیت ارسال شد');
                     }
 
                     // پاک کردن فرم
@@ -380,10 +378,25 @@ const TaskChatManager = {
                     self.selectedFiles = [];
                     $('#chat-selected-files').hide().empty();
 
-                    // بارگذاری پیام‌های جدید
-                    setTimeout(() => {
-                        self.loadNewMessages();
-                    }, 500);
+                    // ⭐⭐⭐ بروزرسانی مستقیم HTML کامنت‌ها
+                    if (response.html) {
+                        $('#chat-messages-container').html(response.html);
+                        self.scrollToBottom();
+                        console.log('✅ Comments HTML updated directly');
+                    }
+
+                    // ⭐⭐⭐ بروزرسانی تعداد کامنت‌ها
+                    if (response.commentCount !== undefined) {
+                        const $badge = $('#chat-badge-count');
+                        $badge.text(response.commentCount);
+                        if (response.commentCount > 0) {
+                            $badge.show();
+                        }
+                        console.log(`✅ Comment badge updated: ${response.commentCount}`);
+                    } else {
+                        // fallback: شمارش از DOM
+                        self.updateCommentCount();
+                    }
                 } else {
                     console.error('❌ Server error:', response.message);
                     if (typeof NotificationHelper !== 'undefined') {
@@ -654,17 +667,12 @@ function deleteComment(commentId) {
         }
     }
 }
-function handleChatKeyPress(event) {
-    if (event.ctrlKey && event.keyCode === 13) {
-        sendChatMessage(event);
-    }
-}
+
 function editComment(commentId) {
     if (typeof NotificationHelper !== 'undefined') {
         NotificationHelper.info('قابلیت ویرایش به‌زودی اضافه می‌شود');
     }
 }
-
 function loadTaskReminders(config) {
     const container = $('#reminders-list-container');
 
@@ -1416,5 +1424,3 @@ const DynamicOperationsManager = {
 * بروزرسانی چندین view به صورت همزمان
 * @param {Array} viewList - آرایه‌ای از اشیاء {elementId, view}
 */
-
-    

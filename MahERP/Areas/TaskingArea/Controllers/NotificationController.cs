@@ -28,7 +28,7 @@ namespace MahERP.Areas.TaskingArea.Controllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
-            ModuleTrackingBackgroundService moduleTracking,
+            IModuleTrackingService moduleTracking,
             NotificationManagementService notificationService,
             ILogger<NotificationController> logger,
             IModuleAccessService moduleAccessService)

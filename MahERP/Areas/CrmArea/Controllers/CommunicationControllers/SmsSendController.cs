@@ -48,7 +48,7 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
             IUserManagerRepository userRepository, 
             IBaseRepository BaseRepository,
             ILogger<SmsSendController> logger, 
-            ModuleTrackingBackgroundService moduleTracking, 
+            IModuleTrackingService moduleTracking, 
             IModuleAccessService moduleAccessService)
             : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {

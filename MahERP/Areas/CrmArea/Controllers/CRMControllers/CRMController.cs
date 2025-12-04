@@ -40,7 +40,7 @@ namespace MahERP.Areas.CrmArea.Controllers.CRMControllers
             IMemoryCache memoryCache,
             IWebHostEnvironment webHostEnvironment,
             ActivityLoggerService activityLogger, IBaseRepository BaseRepository,
-            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
+            IUserManagerRepository userRepository, IModuleTrackingService moduleTracking, IModuleAccessService moduleAccessService)
 
 
  : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)

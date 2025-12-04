@@ -63,7 +63,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IUserManagerRepository userRepository,
             IBaseRepository BaseRepository,
             ITaskHistoryRepository taskHistoryRepository,
-            ModuleTrackingBackgroundService moduleTracking,
+            IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService,
             IOrganizationRepository organizationRepository,
             ITeamRepository teamRepository,

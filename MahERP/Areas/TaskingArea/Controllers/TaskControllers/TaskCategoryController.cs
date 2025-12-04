@@ -39,7 +39,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger, IBaseRepository BaseRepository,
-            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking,
+            IUserManagerRepository userRepository, IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService)
 
 

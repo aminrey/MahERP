@@ -37,7 +37,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
             ITeamRepository teamRepository,
-            IBranchRepository branchRepository, ModuleTrackingBackgroundService moduleTracking,
+            IBranchRepository branchRepository, IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService)
 
 

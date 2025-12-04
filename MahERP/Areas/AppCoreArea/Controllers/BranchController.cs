@@ -42,7 +42,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger, IContactGroupRepository groupRepository, IBaseRepository BaseRepository,
-            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
+            IUserManagerRepository userRepository, IModuleTrackingService moduleTracking, IModuleAccessService moduleAccessService)
 
 
  : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)

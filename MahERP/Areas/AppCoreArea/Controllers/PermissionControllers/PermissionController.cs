@@ -35,7 +35,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.PermissionControllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IPermissionService permissionService,
-            IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
+            IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository, IModuleTrackingService moduleTracking, IModuleAccessService moduleAccessService)
 
 
  : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)

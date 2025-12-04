@@ -35,7 +35,7 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
             IMemoryCache memoryCache,
             IMapper Mapper,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
+            IUserManagerRepository userRepository, IBaseRepository BaseRepository, IModuleTrackingService moduleTracking, IModuleAccessService moduleAccessService)
 
 
  : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)

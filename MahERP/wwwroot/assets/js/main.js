@@ -1600,7 +1600,7 @@ window.showConfirmationWithInput = showConfirmationWithInput;
 // ========================================
 // ⭐ Notification Helper
 // ========================================
-const NotificationHelper = {
+window.NotificationHelper = {
     success: function (message) {
         Dashmix.helpers('jq-notify', {
             type: 'success',

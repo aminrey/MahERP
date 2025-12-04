@@ -158,7 +158,17 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     }
                 }, TaskScheduler.Default);
 
-                return Json(new { success = true, message = "پیام با موفقیت ارسال شد" });
+                // ⭐⭐⭐ دریافت کامنت‌های جدید و برگرداندن HTML
+                var comments = await _taskRepository.GetTaskCommentsAsync(taskId);
+                var commentsHtml = await this.RenderViewToStringAsync("_TaskCommentsPartial", comments);
+
+                return Json(new 
+                { 
+                    success = true, 
+                    message = "پیام با موفقیت ارسال شد",
+                    html = commentsHtml,
+                    commentCount = comments?.Count ?? 0
+                });
             }
             catch (Exception ex)
             {

@@ -42,7 +42,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
-            ModuleTrackingBackgroundService moduleTracking,
+            IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService,
             IWebHostEnvironment webHostEnvironment,
             AppDbContext context) // ⭐⭐⭐ اضافه شده
