@@ -14,6 +14,9 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         /// </summary>
         public static IServiceCollection AddBackgroundServices(this IServiceCollection services)
         {
+            // ⭐⭐⭐ Module Tracking Service (باید قبل از HostedService ثبت شود)
+            services.AddSingleton<IModuleTrackingService, ModuleTrackingBackgroundService>();
+
             // ⭐ Notifications
             services.AddHostedService<NotificationProcessingBackgroundService>();
             services.AddHostedService<ScheduledNotificationBackgroundService>();
@@ -31,8 +34,10 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
             // ⭐ System
             services.AddHostedService<ExpiredRoleCleanupService>();
-            services.AddHostedService<ModuleTrackingBackgroundService>();
             services.AddHostedService<SystemSeedDataBackgroundService>();
+
+            // ⭐⭐⭐ Module Tracking به عنوان HostedService
+            services.AddHostedService(sp => (ModuleTrackingBackgroundService)sp.GetRequiredService<IModuleTrackingService>());
 
             // ⭐⭐⭐ مانیتور
             services.AddHostedService<BackgroundServicesMonitor>();
@@ -79,7 +84,6 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
         public static IServiceCollection AddSystemBackgroundServices(this IServiceCollection services)
         {
             services.AddHostedService<ExpiredRoleCleanupService>();
-            services.AddHostedService<ModuleTrackingBackgroundService>();
             services.AddHostedService<SystemSeedDataBackgroundService>();
             return services;
         }
