@@ -598,6 +598,27 @@
                 10: 'Status'
             };
 
+            // ⭐⭐⭐ NEW: مدیریت نمایش schedulingBlock بر اساس NotificationEventType
+            $('#notificationTypeSelect').on('change', function() {
+                const eventType = parseInt($(this).val());
+                const selectedOption = $(this).find('option:selected');
+                const isSchedulable = selectedOption.data('schedulable') === true || selectedOption.data('schedulable') === 'true';
+
+                console.log('🔍 EventType changed:', eventType, 'IsSchedulable:', isSchedulable);
+
+                if (isSchedulable) {
+                    $('#schedulingBlock').slideDown();
+                } else {
+                    $('#schedulingBlock').slideUp();
+                    $('#isScheduledSwitch').prop('checked', false).trigger('change');
+                }
+
+                // ⭐ لود متغیرها
+                if (eventType) {
+                    filterAndDisplayVariables(eventType);
+                }
+            });
+
             window.filterAndDisplayVariables = async function(eventType) {
                 console.log('🔍 Filtering variables for EventType:', eventType);
 
@@ -751,6 +772,7 @@
                 } else {
                     $('#scheduleSettingsFields').slideUp();
                 }
+                updateSchedulePreview();
             });
 
             $('#scheduleTypeSelect').on('change', function() {
@@ -769,6 +791,13 @@
             });
 
             function updateSchedulePreview() {
+                const isScheduled = $('#isScheduledSwitch').is(':checked');
+                
+                if (!isScheduled) {
+                    $('#schedulePreview').text('زمان‌بندی غیرفعال است');
+                    return;
+                }
+
                 const scheduleType = parseInt($('#scheduleTypeSelect').val());
                 const time = $('#ScheduledTime').val() || '08:00';
                 let preview = '';
@@ -838,8 +867,7 @@
                 $('#notificationTypeSelect').trigger('change');
             }
 
-            $('#isScheduledSwitch').trigger('change');
-            $('#scheduleTypeSelect').trigger('change');
+            updateSchedulePreview();
         });
     </script>
 }

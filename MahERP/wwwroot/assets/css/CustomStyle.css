@@ -2515,3 +2515,7 @@ body {
         }
     }
 }
+
+.task-detail-tabs li{
+    position:relative;
+}

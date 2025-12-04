@@ -326,7 +326,8 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 }
 
                 // ⭐⭐⭐ SPECIAL CASE: برای TaskDeadlineReminder از TaskReminderSchedule استفاده کن
-                if (eventType == NotificationEventType.TaskDeadlineReminder)
+                if (eventType == NotificationEventType.TaskDeadlineReminder || 
+                    eventType == NotificationEventType.CustomTaskReminder) // ⭐⭐⭐ اضافه شد
                 {
                     var reminderSchedule = await context.TaskReminderSchedule_Tbl
                         .Where(s => s.TaskId == task.Id && s.IsActive)
@@ -355,11 +356,11 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                     }
                 }
 
-                // ⭐⭐⭐ سعی کن قالب مربوط به این رویداد رو پیدا کنی
+                // ⭐⭐⭐ سعی کن قالب مربوط به این رویداد رو پیدا کنی (فقط غیرزمان‌بندی)
                 var template = await context.NotificationTemplate_Tbl
                     .Where(t => t.IsActive && 
-                               t.NotificationEventType == (byte)eventType)
-                    // ⭐⭐⭐ FIX: حذف فیلتر !t.IsScheduled تا قالب‌های یادآوری تکراری هم استفاده شوند
+                               t.NotificationEventType == (byte)eventType &&
+                               !t.IsScheduled) // ⭐⭐⭐ FIX: فقط قالب‌های غیرزمان‌بندی
                     .OrderByDescending(t => t.UsageCount)
                     .FirstOrDefaultAsync();
 

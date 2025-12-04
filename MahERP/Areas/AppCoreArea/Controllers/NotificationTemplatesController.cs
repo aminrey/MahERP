@@ -165,18 +165,27 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                     }
                 }
 
-                // ⭐⭐⭐ FIX: محاسبه NextExecutionDate
+                // ⭐⭐⭐ FIX: محاسبه NextExecutionDate با تبدیل صحیح
                 DateTime? nextExecutionUtc = null;
                 if (model.IsScheduled && !string.IsNullOrEmpty(model.ScheduledTime))
                 {
-                    var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
                     var nowUtc = DateTime.UtcNow;
-                    var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, iranTimeZone);
+                    var nowIran = ConvertUtcToIranTime(nowUtc);
 
                     var nextExecutionIran = CalculateNextExecutionIranTime(model, nowIran);
                     if (nextExecutionIran.HasValue)
                     {
-                        nextExecutionUtc = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran.Value, iranTimeZone);
+                        // ⭐⭐⭐ استفاده از Helper Method برای تبدیل صحیح
+                        nextExecutionUtc = ConvertIranTimeToUtc(nextExecutionIran.Value);
+
+                        // ⭐ Debug Log
+                        await _activityLogger.LogActivityAsync(
+                            ActivityTypeEnum.View,
+                            "NotificationTemplates",
+                            "Create",
+                            $"📅 Scheduled Time: {model.ScheduledTime} | " +
+                            $"Iran: {nextExecutionIran:yyyy-MM-dd HH:mm:ss} | " +
+                            $"UTC: {nextExecutionUtc:yyyy-MM-dd HH:mm:ss}");
                     }
                 }
 
@@ -207,7 +216,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                     ScheduledDaysOfMonth = model.ScheduledDaysOfMonth, // ⭐⭐⭐ NEW
                     ScheduledDayOfMonth = model.ScheduledDayOfMonth,
                     IsScheduleEnabled = model.IsScheduled,
-                    NextExecutionDate = nextExecutionUtc, // ⭐⭐⭐ FIX: محاسبه شده
+                    NextExecutionDate = nextExecutionUtc, // ⭐⭐⭐ FIX: محاسبه شده با تبدیل صحیح
                     
                     CreatedByUserId = currentUserId,
                     CreatedDate = DateTime.Now
@@ -338,18 +347,27 @@ namespace MahERP.Areas.AppCoreArea.Controllers
 
                 var currentUserId = GetUserId();
 
-                // ⭐⭐⭐ FIX: محاسبه NextExecutionDate
+                // ⭐⭐⭐ FIX: محاسبه NextExecutionDate با تبدیل صحیح
                 DateTime? nextExecutionUtc = null;
                 if (model.IsScheduled && !string.IsNullOrEmpty(model.ScheduledTime))
                 {
-                    var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
                     var nowUtc = DateTime.UtcNow;
-                    var nowIran = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, iranTimeZone);
+                    var nowIran = ConvertUtcToIranTime(nowUtc);
 
                     var nextExecutionIran = CalculateNextExecutionIranTime(model, nowIran);
                     if (nextExecutionIran.HasValue)
                     {
-                        nextExecutionUtc = TimeZoneInfo.ConvertTimeToUtc(nextExecutionIran.Value, iranTimeZone);
+                        // ⭐⭐⭐ استفاده از Helper Method برای تبدیل صحیح
+                        nextExecutionUtc = ConvertIranTimeToUtc(nextExecutionIran.Value);
+
+                        // ⭐ Debug Log
+                        await _activityLogger.LogActivityAsync(
+                            ActivityTypeEnum.View,
+                            "NotificationTemplates",
+                            "Edit",
+                            $"📅 Scheduled Time: {model.ScheduledTime} | " +
+                            $"Iran: {nextExecutionIran:yyyy-MM-dd HH:mm:ss} | " +
+                            $"UTC: {nextExecutionUtc:yyyy-MM-dd HH:mm:ss}");
                     }
                 }
 
@@ -380,7 +398,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
                     ScheduledDaysOfMonth = model.ScheduledDaysOfMonth, // ⭐⭐⭐ NEW
                     ScheduledDayOfMonth = model.ScheduledDayOfMonth,
                     IsScheduleEnabled = model.IsScheduled, // وقتی IsScheduled فعال است، IsScheduleEnabled هم فعال است
-                    NextExecutionDate = nextExecutionUtc, // ⭐⭐⭐ FIX: محاسبه شده
+                    NextExecutionDate = nextExecutionUtc, // ⭐⭐⭐ FIX: محاسبه شده با تبدیل صحیح
                     
                     LastModifiedDate = DateTime.Now,
                     LastModifiedByUserId = currentUserId
@@ -985,6 +1003,33 @@ namespace MahERP.Areas.AppCoreArea.Controllers
         #region ⭐⭐⭐ Helper Methods
 
         /// <summary>
+        /// تبدیل Iran DateTime به UTC با مدیریت صحیح TimeZone
+        /// </summary>
+        private DateTime ConvertIranTimeToUtc(DateTime iranTime)
+        {
+            var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+            
+            // ⭐ مشخص کردن Kind به Unspecified برای جلوگیری از تفسیر اشتباه
+            var unspecifiedTime = DateTime.SpecifyKind(iranTime, DateTimeKind.Unspecified);
+            
+            // ⭐ تبدیل با ConvertTimeToUtc و مشخص کردن TimeZone مبدأ
+            return TimeZoneInfo.ConvertTimeToUtc(unspecifiedTime, iranTimeZone);
+        }
+
+        /// <summary>
+        /// تبدیل UTC DateTime به Iran Time
+        /// </summary>
+        private DateTime ConvertUtcToIranTime(DateTime utcTime)
+        {
+            var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+            
+            // ⭐ مطمئن شویم که Kind = Utc است
+            var utc = DateTime.SpecifyKind(utcTime, DateTimeKind.Utc);
+            
+            return TimeZoneInfo.ConvertTimeFromUtc(utc, iranTimeZone);
+        }
+
+        /// <summary>
         /// محاسبه NextExecutionDate در Iran Time (خروجی در Iran Time)
         /// </summary>
         private DateTime? CalculateNextExecutionIranTime(
@@ -1007,10 +1052,18 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             switch (model.ScheduleType)
             {
                 case 1: // روزانه
-                    nextExecutionIran = new DateTime(nowIran.Year, nowIran.Month, nowIran.Day, hour, minute, 0, DateTimeKind.Unspecified);
+                    nextExecutionIran = new DateTime(
+                        nowIran.Year, 
+                        nowIran.Month, 
+                        nowIran.Day, 
+                        hour, 
+                        minute, 
+                        0, 
+                        DateTimeKind.Unspecified
+                    );
                     
-                    // اگر زمان امروز گذشته، حتماً یک روز اضافه کن
-                    if (nextExecutionIran.Value <= nowIran)
+                    // ⭐⭐⭐ FIX: مقایسه دقیق‌تر با حداقل 1 دقیقه تفاوت
+                    if (nextExecutionIran.Value <= nowIran.AddMinutes(1))
                     {
                         nextExecutionIran = nextExecutionIran.Value.AddDays(1);
                     }
@@ -1071,7 +1124,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
 
             // چک کردن امروز
             var todayExecution = new DateTime(nowIran.Year, nowIran.Month, nowIran.Day, hour, minute, 0, DateTimeKind.Unspecified);
-            if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > nowIran)
+            if (daysOfWeek.Contains(currentDayOfWeek) && todayExecution > nowIran.AddMinutes(1))
             {
                 return todayExecution;
             }
@@ -1098,7 +1151,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             var targetDay = Math.Min(dayOfMonth, daysInMonth);
 
             var thisMonthExecution = new DateTime(nowIran.Year, nowIran.Month, targetDay, hour, minute, 0, DateTimeKind.Unspecified);
-            if (thisMonthExecution > nowIran)
+            if (thisMonthExecution > nowIran.AddMinutes(1))
             {
                 return thisMonthExecution;
             }
@@ -1120,7 +1173,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             // بررسی ماه جاری
             var todayExecution = new DateTime(currentYear, currentMonth, Math.Min(currentDay, DateTime.DaysInMonth(currentYear, currentMonth)), hour, minute, 0, DateTimeKind.Unspecified);
             
-            if (daysOfMonth.Contains(currentDay) && now < todayExecution)
+            if (daysOfMonth.Contains(currentDay) && now.AddMinutes(1) < todayExecution)
             {
                 return todayExecution;
             }
