@@ -1,0 +1,272 @@
+﻿@model BranchDefaultSettingsViewModel
+
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+            <h5 class="modal-title text-white mb-0">
+                <i class="fa fa-building me-2"></i>تنظیمات پیش‌فرض تسک شعبه: @Model.BranchName
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="SaveBranchTaskSettings" asp-controller="Branch" method="post" id="branch-settings-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="branchId" value="@Model.BranchId" />
+
+            <div class="modal-body">
+                <!-- توضیحات -->
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="fa fa-info-circle fa-2x me-3 mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2">تنظیمات پیش‌فرض شعبه</h6>
+                            <p class="mb-2">
+                                این تنظیمات برای تمام تسک‌های <strong>جدیدی</strong> که در این شعبه ایجاد می‌شوند، 
+                                به صورت پیش‌فرض اعمال خواهد شد.
+                            </p>
+                            <small class="text-muted">
+                                <i class="fa fa-lightbulb me-1"></i>
+                                تسک‌هایی که قبلاً ایجاد شده‌اند تحت تأثیر این تغییرات قرار نمی‌گیرند، 
+                                مگر اینکه دکمه "اعمال به همه تسک‌ها" را بزنید.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.HasSettings)
+                {
+                    <div class="alert alert-success mb-4">
+                        <i class="fa fa-check-circle me-2"></i>
+                        این شعبه تنظیمات سفارشی دارد
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning mb-4">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        این شعبه تنظیمات سفارشی ندارد و از تنظیمات سیستم استفاده می‌کند
+                    </div>
+                }
+
+                <!-- الگوهای آماده -->
+                <div class="preset-templates mb-4">
+                    <h6 class="text-muted mb-3">
+                        <i class="fa fa-magic me-2"></i>الگوهای آماده:
+                    </h6>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-success" onclick="applyBranchPreset('open')">
+                            <i class="fa fa-globe me-1"></i>باز
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" onclick="applyBranchPreset('controlled')">
+                            <i class="fa fa-lock-open me-1"></i>کنترل‌شده
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="applyBranchPreset('strict')">
+                            <i class="fa fa-lock me-1"></i>محدود
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- تنظیمات 5 گانه -->
+                <div id="branch-settings-container">
+                    <!-- تنظیم 1: کامنت -->
+                    @await Html.PartialAsync("_BranchSettingItem", Model.CommentSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 2: افزودن عضو -->
+                    @await Html.PartialAsync("_BranchSettingItem", Model.AddMembersSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 3: حذف عضو -->
+                    @await Html.PartialAsync("_BranchSettingItem", Model.RemoveMembersSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 4: ویرایش پس از اتمام -->
+                    @await Html.PartialAsync("_BranchSettingItem", Model.EditAfterCompletionSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 5: حذف/ویرایش سازنده -->
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <h6 class="mb-2">
+                                <i class="fa fa-shield-alt text-danger me-2"></i>
+                                @Model.CreatorEditDeleteSetting.Title
+                            </h6>
+                            <p class="text-muted small mb-3">@Model.CreatorEditDeleteSetting.Description</p>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="creatorCanEditDelete" 
+                                   name="creatorCanEditDelete"
+                                   @(Model.CreatorEditDeleteSetting.IsEnabled ? "checked" : "") />
+                            <label class="form-check-label" for="creatorCanEditDelete">
+                                سازنده می‌تواند تسک را ویرایش/حذف کند
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- آمار -->
+                @if (Model.Statistics != null)
+                {
+                    <hr class="my-4" />
+                    <div class="card bg-light">
+                        <div class="card-header">
+                            <i class="fa fa-chart-bar me-2"></i>آمار استفاده از تنظیمات
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="stat-box">
+                                        <h3 class="text-primary mb-2">@Model.Statistics.TotalTasks</h3>
+                                        <p class="text-muted mb-0">تعداد کل تسک‌ها</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stat-box">
+                                        <h3 class="text-success mb-2">@Model.Statistics.TasksWithCustomSettings</h3>
+                                        <p class="text-muted mb-0">تنظیمات سفارشی</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stat-box">
+                                        <h3 class="text-info mb-2">@Model.Statistics.TasksWithInheritedSettings</h3>
+                                        <p class="text-muted mb-0">تنظیمات ارثی</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress mt-3" style="height: 25px;">
+                                <div class="progress-bar bg-success" 
+                                     style="width: @(Model.Statistics.CustomSettingsPercentage)%"
+                                     role="progressbar">
+                                    @Model.Statistics.CustomSettingsPercentage.ToString("F1")%
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2 text-center">
+                                درصد تسک‌هایی که تنظیمات سفارشی دارند
+                            </small>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>بستن
+                </button>
+                <button type="button" class="btn btn-warning" onclick="applyToAllTasks(@Model.BranchId)">
+                    <i class="fa fa-sync me-1"></i>اعمال به همه تسک‌ها
+                </button>
+                <button type="submit" class="btn btn-primary" data-save="modal-ajax-save">
+                    <i class="fa fa-save me-1"></i>ذخیره تنظیمات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function applyBranchPreset(type) {
+        // پاک کردن همه
+        $('input[type="checkbox"][name*="Roles"]').prop('checked', false);
+
+        switch(type) {
+            case 'open':
+                setBranchRoles('canCommentRoles', ['a','b','c','d','e']);
+                setBranchRoles('canAddMembersRoles', ['a','b','c']);
+                setBranchRoles('canRemoveMembersRoles', ['a','b']);
+                setBranchRoles('canEditAfterCompletionRoles', ['a','b','c']);
+                $('#creatorCanEditDelete').prop('checked', false);
+                NotificationHelper.success('الگوی "باز" اعمال شد');
+                break;
+
+            case 'controlled':
+                setBranchRoles('canCommentRoles', ['a','b','c','d','e']);
+                setBranchRoles('canAddMembersRoles', ['a','b']);
+                setBranchRoles('canRemoveMembersRoles', ['a','b']);
+                setBranchRoles('canEditAfterCompletionRoles', ['a','b']);
+                $('#creatorCanEditDelete').prop('checked', false);
+                NotificationHelper.success('الگوی "کنترل‌شده" اعمال شد');
+                break;
+
+            case 'strict':
+                setBranchRoles('canCommentRoles', ['a','b','c']);
+                setBranchRoles('canAddMembersRoles', ['a']);
+                setBranchRoles('canRemoveMembersRoles', ['a']);
+                setBranchRoles('canEditAfterCompletionRoles', ['a']);
+                $('#creatorCanEditDelete').prop('checked', false);
+                NotificationHelper.warning('الگوی "محدود" اعمال شد');
+                break;
+        }
+    }
+
+    function setBranchRoles(fieldName, roleCodes) {
+        roleCodes.forEach(function(code) {
+            $(`input[name="${fieldName}"][value="${code}"]`).prop('checked', true);
+        });
+    }
+
+    async function applyToAllTasks(branchId) {
+        const confirmed = await showConfirmationSwal({
+            title: 'اعمال به همه تسک‌ها',
+            text: 'آیا از اعمال این تنظیمات به تمام تسک‌های موجود شعبه اطمینان دارید؟',
+            icon: 'question',
+            confirmButtonText: 'بله، اعمال شود',
+            cancelButtonText: 'انصراف'
+        });
+
+        if (confirmed) {
+            try {
+                const token = getAntiForgeryToken();
+                const response = await $.ajax({
+                    url: '@Url.Action("ApplyBranchSettingsToAllTasks", "Branch")',
+                    type: 'POST',
+                    data: {
+                        branchId: branchId,
+                        __RequestVerificationToken: token
+                    }
+                });
+
+                if (response.success) {
+                    SendResposeMessage(response.message);
+                } else {
+                    NotificationHelper.error('خطا در اعمال تنظیمات');
+                }
+            } catch (error) {
+                NotificationHelper.error('خطا در ارتباط با سرور');
+            }
+        }
+    }
+</script>
+
+<style>
+    .stat-box {
+        padding: 15px;
+        border-radius: 8px;
+        background: white;
+        margin-bottom: 15px;
+    }
+
+    .stat-box h3 {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .setting-item {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    .preset-templates .btn-group {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+</style>

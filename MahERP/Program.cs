@@ -54,12 +54,14 @@ builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
 builder.Services.AddScoped<ITaskOperationsRepository, TaskOperationsRepository>();
 builder.Services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
 builder.Services.AddScoped<ITaskCarbonCopyRepository, TaskCarbonCopyRepository>();
+builder.Services.AddScoped<IBranchTaskVisibilitySettingsRepository, BranchTaskVisibilitySettingsRepository>();  // ⭐⭐⭐ جدید
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IOrganizationGroupRepository, OrganizationGroupRepository>();
 builder.Services.AddScoped<IBaseRepository, BaseRepository>();
 builder.Services.AddScoped<ITaskGroupingRepository, TaskGroupingRepository>();
 builder.Services.AddScoped<IModuleAccessService, ModuleAccessService>();
+
 
 // ⭐⭐⭐ Notification System Repositories & Services
 builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepository>();

@@ -1,0 +1,288 @@
+﻿@model TaskSettingsViewModel
+
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title text-white mb-0">
+                <i class="fa fa-cog me-2"></i>تنظیمات تسک: @Model.TaskTitle
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="SaveTaskSettingsSubmit" method="post" id="task-settings-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="TaskId" value="@Model.TaskId" />
+
+            <div class="modal-body">
+                <!-- نقش فعلی کاربر -->
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-user-shield fa-2x me-3"></i>
+                        <div class="flex-grow-1">
+                            <strong>نقش شما در این تسک:</strong> @Model.CurrentUserRoleText
+                            @if (!Model.CanEdit)
+                            {
+                                <span class="badge bg-warning ms-2">فقط مشاهده</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- وضعیت وراثت -->
+                @if (Model.IsInherited)
+                {
+                    <div class="alert alert-secondary mb-4">
+                        <i class="fa fa-link me-2"></i>
+                        این تسک از <strong>@Model.InheritedFromText</strong> استفاده می‌کند
+                        @if (Model.CanEdit)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" 
+                                    onclick="toggleInheritance(false)">
+                                <i class="fa fa-edit me-1"></i>سفارشی‌سازی
+                            </button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning mb-4">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        این تسک تنظیمات سفارشی دارد
+                        @if (Model.CanEdit)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-warning ms-2" 
+                                    onclick="toggleInheritance(true)">
+                                <i class="fa fa-undo me-1"></i>بازگشت به پیش‌فرض
+                            </button>
+                        }
+                    </div>
+                }
+
+                <!-- الگوهای آماده (Quick Presets) -->
+                @if (Model.CanEdit)
+                {
+                    @await Html.PartialAsync("_TaskSettingsPresets")
+                }
+
+                <hr class="my-4" />
+
+                <!-- تنظیمات 5 گانه -->
+                <div id="settings-container">
+                    <!-- تنظیم 1: کامنت -->
+                    @await Html.PartialAsync("_SettingItem", Model.CommentSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 2: افزودن عضو -->
+                    @await Html.PartialAsync("_SettingItem", Model.AddMembersSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 3: حذف عضو -->
+                    @await Html.PartialAsync("_SettingItem", Model.RemoveMembersSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 4: ویرایش پس از اتمام -->
+                    @await Html.PartialAsync("_SettingItem", Model.EditAfterCompletionSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 5: حذف/ویرایش سازنده (فقط برای مدیر) -->
+                    @if (Model.CurrentUserRole == MahERP.DataModelLayer.Entities.TaskManagement.TaskRole.Manager)
+                    {
+                        <div class="setting-item">
+                            <div class="setting-header">
+                                <h6 class="mb-2">
+                                    <i class="fa fa-shield-alt text-danger me-2"></i>
+                                    @Model.CreatorEditDeleteSetting.Title
+                                </h6>
+                                <p class="text-muted small mb-3">@Model.CreatorEditDeleteSetting.Description</p>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="CreatorCanEditDelete" 
+                                       name="CreatorCanEditDelete"
+                                       @(Model.CreatorEditDeleteSetting.IsEnabled ? "checked" : "")
+                                       @(Model.CreatorEditDeleteSetting.IsReadOnly ? "disabled" : "") />
+                                <label class="form-check-label" for="CreatorCanEditDelete">
+                                    سازنده می‌تواند تسک را ویرایش/حذف کند
+                                </label>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.CreatorEditDeleteSetting.DisabledReason))
+                            {
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fa fa-info-circle me-1"></i>@Model.CreatorEditDeleteSetting.DisabledReason
+                                </small>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- Live Preview -->
+                @await Html.PartialAsync("_TaskSettingsLivePreview")
+
+                <!-- هشدارهای تغییر -->
+                <div id="impact-warnings"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>بستن
+                </button>
+                @if (Model.CanEdit)
+                {
+                    <button type="button" class="btn btn-warning" onclick="resetSettings()">
+                        <i class="fa fa-undo me-1"></i>بازنشانی
+                    </button>
+                    <button type="submit" class="btn btn-primary" data-save="modal-ajax-save">
+                        <i class="fa fa-save me-1"></i>ذخیره تنظیمات
+                    </button>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/assets/js/task-settings.js"></script>
+    
+    <script>
+        // تنظیمات خاص این مودال
+        const taskSettingsConfig = {
+            taskId: @Model.TaskId,
+            currentUserRole: '@Model.CurrentUserRole',
+            canEdit: @Model.CanEdit.ToString().ToLower(),
+            isInherited: @Model.IsInherited.ToString().ToLower()
+        };
+
+        $(document).ready(function() {
+            // راه‌اندازی سیستم تنظیمات
+            if (typeof TaskSettingsManager !== 'undefined') {
+                TaskSettingsManager.init(taskSettingsConfig);
+            }
+
+            // بررسی تغییرات و نمایش هشدار
+            $('input[type="checkbox"]').on('change', function() {
+                checkImpact();
+                updateLivePreview();
+            });
+        });
+
+        // تغییر وضعیت وراثت
+        function toggleInheritance(useInherited) {
+            if (useInherited) {
+                if (confirm('آیا از بازگشت به تنظیمات پیش‌فرض اطمینان دارید؟')) {
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'UseInheritedSettings',
+                        value: 'true'
+                    }).appendTo('#task-settings-form');
+                    
+                    $('#task-settings-form').submit();
+                }
+            } else {
+                $('.alert-secondary').fadeOut();
+                $('#settings-container input').prop('disabled', false);
+            }
+        }
+
+        // بازنشانی تنظیمات
+        function resetSettings() {
+            if (confirm('آیا از بازنشانی تنظیمات به حالت اولیه اطمینان دارید؟')) {
+                location.reload();
+            }
+        }
+
+        // بررسی تأثیرات تغییر
+        function checkImpact() {
+            const warnings = [];
+            
+            // بررسی اینکه آیا کسی نمی‌تواند کامنت بزند
+            if ($('input[name="CanCommentRoles[]"]:checked').length === 0) {
+                warnings.push('⚠️ هیچ کسی نمی‌تواند کامنت بزند!');
+            }
+
+            // بررسی اینکه فقط مدیر می‌تواند عضو اضافه کند
+            const addMembersChecked = $('input[name="CanAddMembersRoles[]"]:checked');
+            if (addMembersChecked.length === 1 && addMembersChecked.val() === 'a') {
+                warnings.push('⚠️ فقط مدیر می‌تواند عضو اضافه کند. سازنده نمی‌تواند!');
+            }
+
+            // نمایش هشدارها
+            if (warnings.length > 0) {
+                $('#impact-warnings').html(
+                    '<div class="alert alert-warning mt-3">' +
+                    '<strong>توجه:</strong><ul class="mb-0">' +
+                    warnings.map(w => `<li>${w}</li>`).join('') +
+                    '</ul></div>'
+                );
+            } else {
+                $('#impact-warnings').empty();
+            }
+        }
+
+        // بروزرسانی پیش‌نمایش زنده
+        function updateLivePreview() {
+            // این تابع در _TaskSettingsLivePreview.cshtml پیاده‌سازی می‌شود
+            if (typeof updatePreviewDisplay === 'function') {
+                updatePreviewDisplay();
+            }
+        }
+    </script>
+}
+
+<style>
+    .setting-item {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    .setting-header h6 {
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .setting-roles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .form-check-inline {
+        position: relative;
+    }
+
+    .form-check-input:disabled + label {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .role-checkbox-disabled {
+        position: relative;
+    }
+
+    .role-checkbox-disabled::after {
+        content: '🔒';
+        position: absolute;
+        right: -20px;
+        top: 0;
+    }
+
+    @@media (max-width: 768px) {
+        .modal-dialog {
+            max-width: 95%;
+        }
+
+        .setting-roles {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+</style>

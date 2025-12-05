@@ -23,13 +23,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
     [Area("TaskingArea")]
     [Authorize]
     [PermissionRequired("CORE.TASKCATEGORY")]
-    public class TaskCategoryController : BaseController
+    public partial class TaskCategoryController : BaseController
     {
         private readonly IUnitOfWork _uow;
         private readonly ITaskRepository _taskRepository;
         private new readonly UserManager<AppUsers> _userManager;
         private readonly IMapper _mapper;
         protected readonly IUserManagerRepository _userRepository;
+        private readonly IBranchRepository _branchRepository;
 
         public TaskCategoryController(
             IUnitOfWork uow,
@@ -38,11 +39,12 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger, IBaseRepository BaseRepository,
-            IUserManagerRepository userRepository, IModuleTrackingService moduleTracking,
-            IModuleAccessService moduleAccessService)
-
-
+            ActivityLoggerService activityLogger, 
+            IBaseRepository BaseRepository,
+            IUserManagerRepository userRepository, 
+            IModuleTrackingService moduleTracking,
+            IModuleAccessService moduleAccessService,
+            IBranchRepository branchRepository)
  : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _uow = uow;
@@ -50,6 +52,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _userManager = userManager;
             _mapper = mapper;
             _userRepository = userRepository;
+            _branchRepository = branchRepository;
         }
 
         // لیست دسته‌بندی‌ها

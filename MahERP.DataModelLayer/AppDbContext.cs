@@ -103,6 +103,27 @@ namespace MahERP.DataModelLayer
         /// </summary>
         public DbSet<ScheduledTaskCreation> ScheduledTaskCreation_Tbl { get; set; }
 
+        // ⭐⭐⭐ NEW: Task Settings System
+        /// <summary>
+        /// تنظیمات دسترسی تسک‌ها
+        /// </summary>
+        public DbSet<TaskSettings> TaskSettings_Tbl { get; set; }
+
+        /// <summary>
+        /// تنظیمات پیش‌فرض دسته‌بندی
+        /// </summary>
+        public DbSet<TaskCategoryDefaultSettings> TaskCategoryDefaultSettings_Tbl { get; set; }
+
+        /// <summary>
+        /// تنظیمات پیش‌فرض شعبه
+        /// </summary>
+        public DbSet<BranchDefaultTaskSettings> BranchDefaultTaskSettings_Tbl { get; set; }
+
+        /// <summary>
+        /// لاگ تغییرات تنظیمات
+        /// </summary>
+        public DbSet<TaskSettingsChangeLog> TaskSettingsChangeLog_Tbl { get; set; }
+
         // CRM
         public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
         public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }
@@ -199,6 +220,9 @@ namespace MahERP.DataModelLayer
 
         // ⭐⭐⭐ Telegram Queue System
         public DbSet<TelegramNotificationQueue> TelegramNotificationQueue_Tbl { get; set; }
+
+        // ⭐⭐⭐ NEW: تنظیمات نمایش تسک برای مدیران بالاسری
+        public DbSet<BranchTaskVisibilitySettings> BranchTaskVisibilitySettings_Tbl { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

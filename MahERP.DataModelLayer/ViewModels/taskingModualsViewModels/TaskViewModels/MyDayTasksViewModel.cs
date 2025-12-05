@@ -141,9 +141,34 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         public string PlannedDatePersian { get; set; }
 
         /// <summary>
+        /// ⭐⭐⭐ تاریخ شروع مهلت تسک (از تسک اصلی)
+        /// </summary>
+        [Display(Name = "تاریخ شروع مهلت")]
+        public DateTime? TaskStartDate { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ تاریخ شروع مهلت (شمسی)
+        /// </summary>
+        [Display(Name = "تاریخ شروع مهلت")]
+        public string? TaskStartDatePersian { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ تاریخ پایان مهلت تسک (از تسک اصلی)
+        /// </summary>
+        [Display(Name = "تاریخ پایان مهلت")]
+        public DateTime? TaskDueDate { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ تاریخ پایان مهلت (شمسی)
+        /// </summary>
+        [Display(Name = "تاریخ پایان مهلت")]
+        public string? TaskDueDatePersian { get; set; }
+
+        /// <summary>
         /// ⭐ بررسی تکمیل شدن تسک
         /// </summary>
         public bool IsCompleted => TaskStatus >= 2;
+        
         /// <summary>
         /// آیا این تسک برای امروز است؟
         /// </summary>
@@ -155,8 +180,6 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// </summary>
         [NotMapped]
         public bool IsOverdue => PlannedDate.Date < DateTime.Now.Date && !IsCompleted;
-
-  
     }
 
     /// <summary>

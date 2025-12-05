@@ -1,4 +1,5 @@
 ﻿using MahERP.WebApp.Services;
+using MahERP.WebApp.Services.BackgroundServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -35,6 +36,9 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             // ⭐ System
             services.AddHostedService<ExpiredRoleCleanupService>();
             services.AddHostedService<SystemSeedDataBackgroundService>();
+
+            // ⭐⭐⭐ Task Settings - REMOVED (متدها به TaskRepository منتقل شدند)
+            // services.AddHostedService<TaskSettingsBackgroundService>();
 
             // ⭐⭐⭐ Module Tracking به عنوان HostedService
             services.AddHostedService(sp => (ModuleTrackingBackgroundService)sp.GetRequiredService<IModuleTrackingService>());

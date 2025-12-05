@@ -5,6 +5,7 @@ using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MahERP.DataModelLayer.Entities.Contacts;
 
 namespace MahERP.DataModelLayer.Services
@@ -104,10 +105,10 @@ namespace MahERP.DataModelLayer.Services
         public List<BranchTaskCategoryStakeholder> GetTaskCategoriesByBranchAndStakeholder(int branchId, int? stakeholderId = null, bool activeOnly = true);
 
         /// <summary>
-        /// دریافت اطلاعات کامل انتصاب دسته‌بندی به شعبه و طرف حساب
+        /// دریافت اطلاعات کامل انتساب دسته‌بندی به شعبه و طرف حساب
         /// </summary>
-        /// <param name="id">شناسه انتصاب</param>
-        /// <returns>اطلاعات انتصاب</returns>
+        /// <param name="id">شناسه انتساب</param>
+        /// <returns>اطلاعات انتساب</returns>
         public BranchTaskCategoryStakeholder GetBranchTaskCategoryStakeholderById(int id);
 
         /// <summary>
@@ -219,6 +220,18 @@ namespace MahERP.DataModelLayer.Services
         /// دریافت آمار افراد و سازمان‌های شعبه
         /// </summary>
         (int TotalContacts, int TotalOrganizations, int TotalVisibleMembers) GetBranchContactStatistics(int branchId);
+
+        /// <summary>
+        /// دریافت لیست شناسه شعبه‌های کاربر (Async)
+        /// </summary>
+        Task<List<int>> GetUserBranchIdsAsync(string userId);
+
+        /// <summary>
+        /// دریافت لیست شناسه شعبه‌هایی که دسته‌بندی در آن‌ها تعریف شده است
+        /// </summary>
+        /// <param name="categoryId">شناسه دسته‌بندی</param>
+        /// <returns>لیست شناسه شعبه‌ها</returns>
+        Task<List<int>> GetCategoryBranchIdsAsync(int categoryId);
 
     }
 }

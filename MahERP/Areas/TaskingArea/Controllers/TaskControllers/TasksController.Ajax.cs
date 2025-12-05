@@ -143,6 +143,50 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
         }
 
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BranchTriggerSelect(int branchId)
+        {
+            try
+            {
+                var branchData = await _taskRepository.GetBranchTriggeredDataAsync(branchId);
+
+                // ⭐⭐⭐ استفاده از Repository به جای متد محلی
+                var teamsWithManagers = await _taskRepository.GetBranchTeamsWithManagersAsync(branchId);
+
+                var viewList = new List<object>
+        {
+            new {
+                elementId = "UsersDiv",
+                view = new { result = await this.RenderViewToStringAsync("_BranchUsersSelect", branchData.Users) }
+            },
+            new {
+                elementId = "TeamsDiv",
+                view = new { result = await this.RenderViewToStringAsync("_BranchTeamsSelect", teamsWithManagers) }
+            },
+            new {
+                elementId = "StakeholdersDiv",
+                view = new { result = await this.RenderViewToStringAsync("_BranchStakeholdersSelect", branchData.Stakeholders) }
+            },
+            new {
+                elementId = "TaskCategoriesDiv",
+                view = new { result = "" }
+            }
+        };
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View, "Tasks", "BranchTriggerSelect",
+                    $"بارگذاری داده‌های شعبه {branchId}");
+
+                return Json(new { status = "update-view", viewList = viewList });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Tasks", "BranchTriggerSelect", "خطا در بارگذاری داده‌های شعبه", ex);
+                return Json(new { status = "error", message = "خطا در بارگذاری داده‌های شعبه" });
+            }
+        }
         /// <summary>
         /// بروزرسانی لیست‌های Contact و Organization بر اساس شعبه
         /// </summary>

@@ -26,6 +26,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         }
 
         /// <summary>
+        /// دریافت دسته‌بندی بر اساس شناسه (Async)
+        /// </summary>
+        public async Task<TaskCategory> GetCategoryByIdAsync(int id)
+        {
+            return await _context.TaskCategory_Tbl.FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        /// <summary>
         /// بروزرسانی لیست دسته‌بندی‌ها بر اساس تغییر طرف حساب
         /// </summary>
         public async Task<List<TaskCategory>> GetTaskCategoriesForStakeholderChangeAsync(int branchId, int stakeholderId)

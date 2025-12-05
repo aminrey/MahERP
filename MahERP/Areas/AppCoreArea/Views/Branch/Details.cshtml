@@ -160,7 +160,16 @@
                 </button>
             </li>
 
-          
+            <!-- ⭐⭐⭐ تب تنظیمات نمایش تسک -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-task-visibility" data-bs-toggle="tab"
+                        data-bs-target="#task-visibility-panel" type="button" role="tab">
+                    <i class="fa fa-eye-slash text-purple me-1"></i>
+                    تنظیمات نمایش تسک
+                    <span class="badge bg-purple ms-1">جدید</span>
+                </button>
+            </li>
+
         </ul>
 
         <div class="block-content tab-content">
@@ -200,6 +209,11 @@
             <!-- بخش آمار -->
             <div class="tab-pane" id="stats-panel" role="tabpanel">
                 @await Html.PartialAsync("_BranchStats", Model)
+            </div>
+
+            <!-- ⭐⭐⭐ بخش تنظیمات نمایش تسک -->
+            <div class="tab-pane" id="task-visibility-panel" role="tabpanel">
+                @await Html.PartialAsync("_BranchTaskVisibilitySettings", Model.Id)
             </div>
 
           
