@@ -98,14 +98,14 @@ namespace MahERP.CommonLayer.Repository
             if (context.EventType == 13 || context.HasPendingTasksList)
             {
                 // ⭐ دکمه لیست تمام تسک‌های در حال انجام
-                var myTasksUrl = $"{context.BaseUrl}/TaskingArea/Tasks/MyTasks";
+                var myTasksUrl = $"{context.BaseUrl}/TaskingArea/Tasks";
                 buttons.Add(new List<InlineKeyboardButton>
                 {
                     InlineKeyboardButton.WithUrl("📋 مشاهده لیست تسک‌ها", myTasksUrl)
                 });
 
                 // ⭐ دکمه تسک‌های امروز
-                var todayTasksUrl = $"{context.BaseUrl}/TaskingArea/Tasks/MyTasks?filter=today";
+                var todayTasksUrl = $"{context.BaseUrl}/TaskingArea/Tasks/MyDayTask";
                 buttons.Add(new List<InlineKeyboardButton>
                 {
                     InlineKeyboardButton.WithUrl("📅 تسک‌های امروز", todayTasksUrl)

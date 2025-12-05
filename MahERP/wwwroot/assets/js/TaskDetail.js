@@ -675,15 +675,25 @@ function editComment(commentId) {
 }
 function loadTaskReminders(config) {
     const container = $('#reminders-list-container');
+    
+    // ⭐⭐⭐ اگه قبلا load شده، دوباره load نکن
+    if (container.data('loaded')) {
+        console.log('ℹ️ Reminders already loaded');
+        return;
+    }
 
+    // ⭐⭐⭐ لودینگ کوچک به جای صفحه سفید
     container.html(`
-        <div class="text-center py-4">
-            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
-            <p class="text-muted mt-2">در حال بارگذاری...</p>
+        <div class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">در حال بارگذاری...</span>
+            </div>
         </div>
     `);
 
     container.load(config.urls.getTaskReminders, function () {
+        container.data('loaded', true); // ⭐ علامت‌گذاری به عنوان load شده
+        
         if (config.isTaskCompleted) {
             console.log('🔒 Disabling reminder actions after load');
             disableReminders();
@@ -693,15 +703,39 @@ function loadTaskReminders(config) {
 
 function loadTaskHistory() {
     const config = window.TaskDetailConfig;
+    const container = $('#task-timeline-container');
+    
+    // ⭐⭐⭐ اگه قبلا load شده، دوباره load نکن
+    if (container.data('loaded')) {
+        console.log('ℹ️ Task history already loaded');
+        return;
+    }
+
+    // ⭐⭐⭐ لودینگ کوچک به جای صفحه سفید
+    container.html(`
+        <div class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">در حال بارگذاری...</span>
+            </div>
+        </div>
+    `);
 
     $.ajax({
         url: config.urls.getTaskHistory,
         type: 'GET',
         data: { taskId: config.taskId },
         success: function (result) {
-            $('#task-timeline-container').html(result);
+            container.html(result);
+            container.data('loaded', true); // ⭐ علامت‌گذاری به عنوان load شده
         },
         error: function () {
+            container.html(`
+                <div class="alert alert-danger">
+                    <i class="fa fa-times me-1"></i>
+                    خطا در بارگذاری تاریخچه
+                </div>
+            `);
+            
             if (typeof Dashmix !== 'undefined' && Dashmix.helpers) {
                 Dashmix.helpers('jq-notify', {
                     type: 'danger',
@@ -715,7 +749,7 @@ function loadTaskHistory() {
 
 function disableTaskEditing() {
     console.log('🔒 Task is locked - disabling edit features');
-
+    
 
 
     $('.progress-bar').removeClass('bg-primary').addClass('bg-success');
@@ -822,10 +856,19 @@ function initializeTaskDetails() {
         }
     });
 
-    // Reminders tab click handler
-    $('#reminders-tab').on('click', function () {
+    // ⭐⭐⭐ Reminders tab - از shown.bs.tab استفاده می‌کنیم
+    $('#reminders-tab').one('shown.bs.tab', function () {
+        console.log('🔔 Reminders tab shown - loading reminders');
         if (window.TaskDetailConfig) {
             loadTaskReminders(config);
+        }
+    });
+    
+    // ⭐⭐⭐ Timeline/History tab
+    $('button[data-bs-target="#tab-timeline"]').one('shown.bs.tab', function () {
+        console.log('📜 Timeline tab shown - loading history');
+        if (window.TaskDetailConfig) {
+            loadTaskHistory();
         }
     });
 
@@ -1419,8 +1462,3 @@ const DynamicOperationsManager = {
         });
     }
 };
-
-/**
-* بروزرسانی چندین view به صورت همزمان
-* @param {Array} viewList - آرایه‌ای از اشیاء {elementId, view}
-*/

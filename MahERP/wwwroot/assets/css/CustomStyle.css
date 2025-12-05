@@ -2516,6 +2516,51 @@ body {
     }
 }
 
-.task-detail-tabs li{
-    position:relative;
+/* ⭐⭐⭐ جلوگیری از فلش سفید موقع تغییر تب */
+.tab-content {
+    background: transparent !important;
+    min-height: 400px;
 }
+
+.tab-pane {
+    background: transparent !important;
+}
+
+/* ⭐⭐⭐ لودینگ اسپینر به جای صفحه سفید */
+.spinner-border-sm {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-width: 0.15em;
+}
+
+/* ⭐⭐⭐ حذف هرگونه overlay سفید */
+.block-content {
+    background: transparent !important;
+}
+
+.block {
+    transition: none !important;
+}
+
+/* ⭐⭐⭐ Smooth transition برای تب‌ها */
+.tab-pane.fade {
+    transition: opacity 0.2s ease-in-out;
+    opacity: 0;
+}
+
+.tab-pane.fade.show {
+    opacity: 1;
+}
+
+/* ⭐⭐⭐ جلوگیری از white flash */
+.tab-content > .tab-pane {
+    display: none;
+}
+
+.tab-content > .active {
+    display: block;
+}
+.task-detail-tabs li {
+    position: relative;
+}
+/* ============== MOBILE RESPONSIVE ============== */

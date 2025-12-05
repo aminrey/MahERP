@@ -180,8 +180,9 @@
                                 </a>
                             }
                         }
-
-                        <div class="dropdown">
+                        @if (!isCompletedByMe)
+                        {
+                                        <div class="dropdown">
                             <button type="button" class="btn btn-hero btn-light btn-lg dropdown-toggle"
                                     data-bs-toggle="dropdown"
                                     @(Model.CompletionDate.HasValue ? "disabled" : "")>
@@ -267,6 +268,8 @@
                                 }
                             </ul>
                         </div>
+                        }
+            
                     </div>
                 </div>
             </div>
