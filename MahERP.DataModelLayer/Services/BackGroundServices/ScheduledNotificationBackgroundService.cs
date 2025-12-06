@@ -154,9 +154,7 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
 
             _logger.LogInformation($"📤 شروع ارسال قالب زمان‌بندی شده: {template.TemplateName}");
 
-            // ⭐⭐⭐ FIX: FIRST - بروزرسانی NextExecutionDate قبل از ارسال
-            // تا اگر process طولانی شد، دوباره اجرا نشه
-            await UpdateTemplateExecutionInfoAsync(template, context, nowUtc, sendCount: 0);
+
 
             // ⭐⭐⭐ دریافت لیست دریافت‌کنندگان
             var recipients = await GetScheduledTemplateRecipientsAsync(template, context);
@@ -192,6 +190,8 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         templateToUpdate.LastUsedDate = nowUtc;
                         await context.SaveChangesAsync();
                         _logger.LogInformation($"✅ UsageCount بروزرسانی شد: {templateToUpdate.UsageCount}");
+                        await UpdateTemplateExecutionInfoAsync(template, context, nowUtc, sendCount: 0);
+
                     }
                 }
             }
