@@ -10,9 +10,20 @@ using System.Threading.Tasks;
 namespace MahERP.DataModelLayer.Services.BackgroundServices
 {
     /// <summary>
+    /// 🎯 Interface برای ردیابی ماژول‌های استفاده شده توسط کاربران
+    /// </summary>
+    public interface IModuleTrackingService
+    {
+        /// <summary>
+        /// اضافه کردن درخواست ردیابی ماژول به صف (Non-blocking)
+        /// </summary>
+        void EnqueueModuleTracking(string userId, ModuleType moduleType);
+    }
+
+    /// <summary>
     /// Background Service برای ذخیره آخرین ماژول استفاده شده کاربران
     /// </summary>
-    public class ModuleTrackingBackgroundService : BackgroundService
+    public class ModuleTrackingBackgroundService : BackgroundService, IModuleTrackingService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ModuleTrackingBackgroundService> _logger;

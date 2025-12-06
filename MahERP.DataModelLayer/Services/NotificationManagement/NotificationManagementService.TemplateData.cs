@@ -376,6 +376,7 @@ namespace MahERP.DataModelLayer.Services
 
         /// <summary>
         /// ⭐⭐⭐ NEW: تبدیل شماره به ایموجی (با پشتیبانی از 1-99)
+        /// ⚠️ FIX: ترتیب درست برای نمایش فارسی (راست به چپ)
         /// </summary>
         private string GetNumberEmoji(int number)
         {
@@ -396,10 +397,11 @@ namespace MahERP.DataModelLayer.Services
             }
             else
             {
-                // ⭐ اعداد دو رقمی (مثلاً 11 → 1️⃣1️⃣)
+                // ⭐⭐⭐ FIX: اعداد دو رقمی - ترتیب درست برای فارسی
+                // مثال: 21 → 1️⃣2️⃣ (یکان + دهگان)
                 int tens = number / 10;
                 int ones = number % 10;
-                return emojiMap[tens] + emojiMap[ones];
+                return emojiMap[ones] + emojiMap[tens]; // ⚠️ ترتیب عوض شد: یکان + دهگان
             }
         }
 

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Caching.Memory;
 using System;
+using MahERP.Helpers; // ⭐⭐⭐ اضافه شد
 
 namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
 {
@@ -24,7 +25,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
         protected readonly ActivityLoggerService _activityLogger;
         protected readonly IUserManagerRepository _userRepository;
         protected readonly IBaseRepository _baseRepository;
-        protected readonly ModuleTrackingBackgroundService _moduleTracking;
+        protected readonly IModuleTrackingService _moduleTracking;
         protected readonly IModuleAccessService _moduleAccessService;
 
         public BaseController(
@@ -35,7 +36,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
-            ModuleTrackingBackgroundService moduleTracking,
+            IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService)
         {
             _uow = uow;
@@ -279,6 +280,59 @@ namespace MahERP.Areas.TaskingArea.Controllers.BaseControllers
                 ViewBag.HasCrmAccess = true;
                 System.Diagnostics.Debug.WriteLine($"⚠️ SetUserModuleAccessInViewBag failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ محاسبه URL بازگشت برای صفحات
+        /// </summary>
+        /// <param name="defaultAction">Action پیش‌فرض در صورت نبود Return URL</param>
+        /// <param name="defaultController">Controller پیش‌فرض</param>
+        /// <param name="defaultArea">Area پیش‌فرض</param>
+        /// <returns>URL بازگشت امن</returns>
+        protected string GetBackUrl(
+            string defaultAction = "Index",
+            string? defaultController = null,
+            string? defaultArea = null)
+        {
+            try
+            {
+                // ⭐ ابتدا از Query String بخوان
+                var returnUrl = Request.Query["returnUrl"].ToString();
+
+                // ⭐ تشخیص Area فعلی اگر مشخص نشده
+                if (string.IsNullOrEmpty(defaultArea))
+                {
+                    defaultArea = RouteData.Values["area"]?.ToString() ?? "TaskingArea";
+                }
+
+                // ⭐ استفاده از Helper برای ساخت URL امن
+                return this.GetSafeReturnUrl(
+                    returnUrl,
+                    defaultAction,
+                    defaultController ?? ControllerContext.ActionDescriptor.ControllerName,
+                    defaultArea);
+            }
+            catch
+            {
+                // در صورت خطا، به صفحه پیش‌فرض برو
+                var area = defaultArea ?? RouteData.Values["area"]?.ToString() ?? "TaskingArea";
+                return Url.Action(
+                    defaultAction,
+                    defaultController ?? ControllerContext.ActionDescriptor.ControllerName,
+                    new { area = area }) ?? "/";
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ ذخیره اطلاعات Return URL در ViewBag
+        /// </summary>
+        protected void SetBackUrlInViewBag(
+            string defaultAction = "Index",
+            string? defaultController = null,
+            string? defaultArea = null)
+        {
+            ViewBag.BackUrl = GetBackUrl(defaultAction, defaultController, defaultArea);
+            ViewBag.CurrentUrl = Request.Path + Request.QueryString;
         }
     }
 }

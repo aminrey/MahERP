@@ -1,0 +1,291 @@
+﻿@model MahERP.DataModelLayer.ViewModels.BranchTaskVisibilitySettingsViewModel
+
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <form id="form-visibility-settings" asp-action="SaveTaskVisibilitySettings" asp-controller="Branch" asp-area="AppCoreArea" method="post">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.Id)
+            @Html.HiddenFor(m => m.BranchId)
+            @Html.HiddenFor(m => m.ManagerUserId)
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fa fa-eye-slash me-2"></i>
+                    تنظیمات نمایش تسک - @Model.BranchName
+                    @if (Model.IsPersonalSettings)
+                    {
+                        <br>
+                        <small class="fs-6">
+                            <i class="fa fa-user-tie me-1"></i>
+                            تنظیمات شخصی: @Model.ManagerFullName
+                        </small>
+                    }
+                    else
+                    {
+                        <br>
+                        <small class="fs-6">
+                            <i class="fa fa-building me-1"></i>
+                            تنظیمات پیش‌فرض شعبه
+                        </small>
+                    }
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- راهنمای استفاده -->
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fa fa-info-circle me-1"></i>
+                        راهنمای استفاده
+                    </h6>
+                    <ul class="mb-0">
+                        <li>با فعال کردن <strong>"نمایش همه زیرتیم‌ها"</strong>، تمام تسک‌های زیرتیم‌ها نمایش داده می‌شود</li>
+                        <li>در غیر این صورت، فقط تیم‌هایی که انتخاب کرده‌اید در لیست نظارتی ظاهر می‌شوند</li>
+                        <li>با تنظیم <strong>"حداکثر تعداد"</strong> می‌توانید تعداد تسک‌های قابل نمایش را محدود کنید</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <!-- ستون چپ -->
+                    <div class="col-md-6">
+                        <!-- نمایش همه زیرتیم‌ها -->
+                        <div class="mb-4">
+                            <div class="block block-rounded">
+                                <div class="block-content">
+                                    <div class="form-check form-switch form-check-inline">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               asp-for="ShowAllSubTeamsByDefault" 
+                                               id="showAllSubTeams">
+                                        <label class="form-check-label fw-bold" for="showAllSubTeams">
+                                            <i class="fa fa-sitemap text-success me-1"></i>
+                                            نمایش همه زیرتیم‌ها به صورت پیش‌فرض
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        ⚠️ فعال‌سازی این گزینه ممکن است تعداد زیادی تسک را نمایش دهد
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- حداکثر تعداد -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold" for="maxTasks">
+                                <i class="fa fa-sort-numeric-up text-warning me-1"></i>
+                                حداکثر تعداد تسک قابل نمایش
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   asp-for="MaxTasksToShow" 
+                                   id="maxTasks" 
+                                   min="0" 
+                                   placeholder="0 = نامحدود">
+                            <small class="text-muted">
+                                برای جلوگیری از بارگذاری بیش از حد، محدودیت تعداد تعیین کنید (0 = نامحدود)
+                            </small>
+                        </div>
+
+                        <!-- وضعیت -->
+                        <div class="mb-4">
+                            <div class="block block-rounded">
+                                <div class="block-content">
+                                    <div class="form-check form-switch form-check-inline">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               asp-for="IsActive" 
+                                               id="isActive">
+                                        <label class="form-check-label fw-bold" for="isActive">
+                                            <i class="fa fa-toggle-on text-success me-1"></i>
+                                            فعال
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        در صورت غیرفعال بودن، تنظیمات اعمال نمی‌شود
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ستون راست -->
+                    <div class="col-md-6">
+                        <!-- انتخاب تیم‌ها -->
+                        <div class="mb-4" id="teams-selection-container">
+                            <label class="form-label fw-bold">
+                                <i class="fa fa-users text-info me-1"></i>
+                                تیم‌های قابل نمایش (در صورت عدم فعال‌سازی "همه زیرتیم‌ها")
+                            </label>
+                            
+                            <div class="block block-rounded" style="max-height: 400px; overflow-y: auto;">
+                                <div class="block-content">
+                                    @if (Model.AvailableTeams.Any())
+                                    {
+                                        <div class="mb-2">
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="selectAllTeams()">
+                                                <i class="fa fa-check-double me-1"></i>
+                                                انتخاب همه
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="deselectAllTeams()">
+                                                <i class="fa fa-times me-1"></i>
+                                                لغو انتخاب همه
+                                            </button>
+                                        </div>
+                                        
+                                        @foreach (var team in Model.AvailableTeams)
+                                        {
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input team-checkbox" 
+                                                       type="checkbox" 
+                                                       name="SelectedTeamIds" 
+                                                       value="@team.Id" 
+                                                       id="team_@team.Id"
+                                                       @(team.IsSelected ? "checked" : "")>
+                                                <label class="form-check-label" for="team_@team.Id">
+                                                    @Html.Raw(team.Title)
+                                                    @if (!string.IsNullOrEmpty(team.ManagerName))
+                                                    {
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            <i class="fa fa-user-tie me-1"></i>
+                                                            @team.ManagerName
+                                                        </small>
+                                                    }
+                                                </label>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center text-muted py-3">
+                                            <i class="fa fa-inbox fa-2x mb-2"></i>
+                                            <p>هیچ تیمی در این شعبه وجود ندارد</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نمایش خلاصه -->
+                <div class="alert alert-light border mt-3">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <i class="fa fa-users fa-2x text-info mb-2"></i>
+                            <div class="fw-bold" id="selected-teams-count">0</div>
+                            <div class="small text-muted">تیم انتخابی</div>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fa fa-tasks fa-2x text-primary mb-2"></i>
+                            <div class="fw-bold" id="max-tasks-display">نامحدود</div>
+                            <div class="small text-muted">حداکثر تسک</div>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fa fa-toggle-on fa-2x text-success mb-2"></i>
+                            <div class="fw-bold" id="status-display">فعال</div>
+                            <div class="small text-muted">وضعیت</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-save me-1"></i>
+                    ذخیره تنظیمات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        updateSummary();
+
+        // تغییر "نمایش همه"
+        $('#showAllSubTeams').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#teams-selection-container').fadeTo(200, 0.3);
+                $('.team-checkbox').prop('disabled', true);
+            } else {
+                $('#teams-selection-container').fadeTo(200, 1);
+                $('.team-checkbox').prop('disabled', false);
+            }
+            updateSummary();
+        });
+
+        // تغییر تیم‌ها
+        $('.team-checkbox').on('change', updateSummary);
+
+        // تغییر حداکثر
+        $('#maxTasks').on('input', updateSummary);
+
+        // تغییر وضعیت
+        $('#isActive').on('change', updateSummary);
+
+        // انتخاب همه
+        window.selectAllTeams = function() {
+            $('.team-checkbox').prop('checked', true);
+            updateSummary();
+        };
+
+        // لغو انتخاب همه
+        window.deselectAllTeams = function() {
+            $('.team-checkbox').prop('checked', false);
+            updateSummary();
+        };
+
+        // بروزرسانی خلاصه
+        function updateSummary() {
+            const selectedCount = $('.team-checkbox:checked').length;
+            const maxTasks = parseInt($('#maxTasks').val()) || 0;
+            const isActive = $('#isActive').is(':checked');
+
+            $('#selected-teams-count').text(selectedCount);
+            $('#max-tasks-display').text(maxTasks > 0 ? maxTasks : 'نامحدود');
+            $('#status-display').text(isActive ? 'فعال' : 'غیرفعال');
+        }
+
+        // ارسال فرم
+        $('#form-visibility-settings').on('submit', function(e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.status === 'success') {
+                        Swal.fire('موفق', response.message, 'success');
+                        $('#modal-branch').modal('hide');
+                        $(document).trigger('settingsSaved');
+                    } else {
+                        Swal.fire('خطا', response.message, 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('خطا', 'خطا در ارتباط با سرور', 'error');
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .form-check-label {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .team-checkbox:disabled ~ label {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>

@@ -1,0 +1,92 @@
+﻿@model SettingItemViewModel
+
+<div class="setting-item" data-setting-id="@Model.SettingId">
+    <div class="setting-header">
+        <h6 class="mb-2">
+            @switch (Model.SettingId)
+            {
+                case 1:
+                    <i class="fa fa-comments text-primary me-2"></i>
+                    break;
+                case 2:
+                    <i class="fa fa-user-plus text-success me-2"></i>
+                    break;
+                case 3:
+                    <i class="fa fa-user-minus text-danger me-2"></i>
+                    break;
+                case 4:
+                    <i class="fa fa-edit text-warning me-2"></i>
+                    break;
+            }
+            @Model.Title
+        </h6>
+        <p class="text-muted small mb-3">@Model.Description</p>
+    </div>
+
+    <div class="setting-roles">
+        @foreach (var role in Model.AvailableRoles)
+        {
+            <div class="form-check form-check-inline @(role.IsDisabled ? "role-checkbox-disabled" : "")">
+                <input class="form-check-input" 
+                       type="checkbox" 
+                       id="@($"setting_{Model.SettingId}_role_{role.RoleCode}")" 
+                       name="@GetRoleFieldName(Model.SettingId)"
+                       value="@role.RoleCode"
+                       @(role.IsChecked ? "checked" : "")
+                       @(role.IsDisabled || Model.IsReadOnly ? "disabled" : "")
+                       data-authority="@role.AuthorityLevel"
+                       data-role-code="@role.RoleCode" />
+                <label class="form-check-label" for="@($"setting_{Model.SettingId}_role_{role.RoleCode}")">
+                    @role.RoleText
+                    @if (role.IsDisabled && !string.IsNullOrEmpty(role.DisabledReason))
+                    {
+                        <i class="fa fa-lock text-muted ms-1" 
+                           data-bs-toggle="tooltip" 
+                           title="@role.DisabledReason"></i>
+                    }
+                </label>
+            </div>
+        }
+    </div>
+
+    @if (Model.IsReadOnly)
+    {
+        <div class="alert alert-info mt-3 mb-0">
+            <i class="fa fa-info-circle me-2"></i>
+            شما فقط می‌توانید این تنظیمات را مشاهده کنید
+        </div>
+    }
+</div>
+
+@functions {
+    private string GetRoleFieldName(int settingId)
+    {
+        return settingId switch
+        {
+            1 => "CanCommentRoles",
+            2 => "CanAddMembersRoles",
+            3 => "CanRemoveMembersRoles",
+            4 => "CanEditAfterCompletionRoles",
+            _ => "UnknownRoles"
+        };
+    }
+}
+
+<script>
+    $(document).ready(function() {
+        // فعال‌سازی tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+
+        // بررسی Authority Level هنگام تغییر
+        $('input[data-authority]').on('change', function() {
+            const userAuthority = parseInt(taskSettingsConfig?.currentUserRole) || 5;
+            const targetAuthority = parseInt($(this).data('authority'));
+            
+            if (targetAuthority < userAuthority) {
+                $(this).prop('checked', true);
+                alert('شما نمی‌توانید دسترسی افراد با سطح بالاتر را تغییر دهید.');
+                return false;
+            }
+        });
+    });
+</script>

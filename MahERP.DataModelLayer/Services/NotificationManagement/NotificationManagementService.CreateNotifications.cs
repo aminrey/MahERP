@@ -263,6 +263,28 @@ namespace MahERP.DataModelLayer.Services
                         processedMessage = processedMessage
                             .Replace("{{TaskTitle}}", task.Title, StringComparison.OrdinalIgnoreCase)
                             .Replace("{{TaskCode}}", task.TaskCode, StringComparison.OrdinalIgnoreCase);
+                        
+                        // ⭐⭐⭐ FIX: برای TaskCommentAdded، متن کامنت را نمایش نده (حریم خصوصی)
+                        if (eventType == NotificationEventType.TaskCommentAdded)
+                        {
+                            // دریافت اطلاعات فرستنده برای پیام استاتیک
+                            string senderName = "کاربر";
+                            if (!string.IsNullOrEmpty(senderUserId) && senderUserId != "SYSTEM")
+                            {
+                                var sender = await _context.Users
+                                    .Where(u => u.Id == senderUserId)
+                                    .Select(u => new { u.FirstName, u.LastName })
+                                    .FirstOrDefaultAsync();
+                                
+                                if (sender != null)
+                                {
+                                    senderName = $"{sender.FirstName} {sender.LastName}".Trim();
+                                }
+                            }
+                            
+                            // متن استاتیک برای کانال سیستم
+                            processedMessage = $"در تسک '{task.Title}' (کد: {task.TaskCode}) توسط {senderName} یک نظر در گفتگو ثبت شده است.";
+                        }
                     }
                 }
 

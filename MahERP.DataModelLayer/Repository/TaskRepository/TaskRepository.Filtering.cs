@@ -1,5 +1,6 @@
 ﻿using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Entities.Core;  // ⭐⭐⭐ اضافه شد
 using MahERP.DataModelLayer.ViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using Microsoft.EntityFrameworkCore;
@@ -78,26 +79,65 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         public async Task<List<Tasks>> GetSupervisedTasksAsync(string userId, TaskFilterViewModel filters = null)
         {
-            var visibleTaskIds = await GetVisibleTaskIdsAsync(userId);
+            Console.WriteLine($"🔍 GetSupervisedTasksAsync - User: {userId}");
 
-            var systemSupervisedTaskIds = await _context.Tasks_Tbl
-                .Where(t => visibleTaskIds.Contains(t.Id) &&
-                           t.CreatorUserId != userId &&
-                           !t.IsDeleted)
-                .Where(t => !_context.TaskAssignment_Tbl.Any(ta => ta.TaskId == t.Id && ta.AssignedUserId == userId))
+            // ⭐⭐⭐ دریافت شعبه‌های کاربر
+            var userBranchIds = await _context.BranchUser_Tbl
+                .Where(bu => bu.UserId == userId && bu.IsActive)
+                .Select(bu => bu.BranchId)
+                .ToListAsync();
+
+            Console.WriteLine($"   User branches: {string.Join(", ", userBranchIds)}");
+
+            var allSupervisedTaskIds = new HashSet<int>();
+
+            // ⭐⭐⭐ برای هر شعبه، از تنظیمات استفاده کن
+            foreach (var branchId in userBranchIds)
+            {
+                Console.WriteLine($"   📊 Processing branch {branchId}...");
+                
+                var branchTasks = await GetSupervisedTasksUsingSettingsAsync(userId, branchId);
+                
+                Console.WriteLine($"   ✅ Branch {branchId} tasks: {branchTasks.Count}");
+                
+                allSupervisedTaskIds.UnionWith(branchTasks);
+            }
+
+            Console.WriteLine($"   Total supervised tasks (before carbon copy): {allSupervisedTaskIds.Count}");
+
+            // ⭐ تسک‌های رونوشت (CarbonCopy)
+            var carbonCopyTaskIds = await _context.TaskCarbonCopy_Tbl
+                .Where(cc => cc.UserId == userId && cc.IsActive)
+                .Select(cc => cc.TaskId)
+                .ToListAsync();
+            
+            Console.WriteLine($"   CarbonCopy tasks: {carbonCopyTaskIds.Count}");
+            
+            allSupervisedTaskIds.UnionWith(carbonCopyTaskIds);
+
+            // حذف تسک‌هایی که خودش سازنده است
+            var createdTaskIds = await _context.Tasks_Tbl
+                .Where(t => t.CreatorUserId == userId)
                 .Select(t => t.Id)
                 .ToListAsync();
+            
+            Console.WriteLine($"   Created tasks (to exclude): {createdTaskIds.Count}");
+            
+            allSupervisedTaskIds.ExceptWith(createdTaskIds);
 
-            var carbonCopyTaskIds = await _context.TaskViewer_Tbl
-                .Where(tv => tv.UserId == userId &&
-                            tv.IsActive &&
-                            (tv.StartDate == null || tv.StartDate <= DateTime.Now) &&
-                            (tv.EndDate == null || tv.EndDate > DateTime.Now))
-                .Select(tv => tv.TaskId)
+            // حذف تسک‌هایی که به او منتصب شده
+            var assignedTaskIds = await _context.TaskAssignment_Tbl
+                .Where(ta => ta.AssignedUserId == userId)
+                .Select(ta => ta.TaskId)
                 .ToListAsync();
+            
+            Console.WriteLine($"   Assigned tasks (to exclude): {assignedTaskIds.Count}");
+            
+            allSupervisedTaskIds.ExceptWith(assignedTaskIds);
 
-            var allSupervisedTaskIds = systemSupervisedTaskIds.Union(carbonCopyTaskIds).Distinct().ToList();
+            Console.WriteLine($"   📊 Final supervised tasks count: {allSupervisedTaskIds.Count}");
 
+            // بارگذاری تسک‌ها
             var tasks = await _context.Tasks_Tbl
                 .Where(t => allSupervisedTaskIds.Contains(t.Id))
                 .Include(t => t.TaskAssignments).ThenInclude(ta => ta.AssignedUser)
@@ -108,6 +148,8 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 .Include(t => t.TaskOperations)
                 .OrderByDescending(t => t.CreateDate)
                 .ToListAsync();
+
+            Console.WriteLine($"   ✅ Loaded tasks from DB: {tasks.Count}");
 
             return ApplyFilters(tasks, filters, userId);
         }
@@ -427,6 +469,145 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     !IsTaskCompletedForUser(t.Id, userId)).ToList(),
                 _ => tasks
             };
+        }
+
+        #endregion
+
+        #region Branch Visibility Settings Helper Methods
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت تنظیمات پیش‌فرض نمایش تسک برای مدیر در شعبه
+        /// </summary>
+        private async Task<BranchTaskVisibilitySettings> GetManagerVisibilitySettingsAsync(string userId, int branchId)
+        {
+            // 1. جستجوی تنظیمات شخصی
+            var personalSettings = await _context.BranchTaskVisibilitySettings_Tbl
+                .FirstOrDefaultAsync(s => s.ManagerUserId == userId && 
+                                         s.BranchId == branchId && 
+                                         s.IsActive);
+            
+            if (personalSettings != null)
+                return personalSettings;
+
+            // 2. جستجوی تنظیمات پیش‌فرض شعبه (ManagerUserId = null)
+            var defaultSettings = await _context.BranchTaskVisibilitySettings_Tbl
+                .FirstOrDefaultAsync(s => s.ManagerUserId == null && 
+                                         s.BranchId == branchId && 
+                                         s.IsActive);
+            
+            return defaultSettings;
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ دریافت تسک‌های نظارتی با استفاده از تنظیمات شعبه
+        /// </summary>
+        private async Task<List<int>> GetSupervisedTasksUsingSettingsAsync(string userId, int branchId)
+        {
+            var supervisedTaskIds = new HashSet<int>();
+
+            // دریافت تنظیمات
+            var settings = await GetManagerVisibilitySettingsAsync(userId, branchId);
+
+            if (settings == null)
+            {
+                // اگر تنظیماتی وجود نداشت، فقط تسک‌های تیم مستقیم را نمایش بده
+                return await GetManagedTeamTasksAsync(userId, branchId);
+            }
+
+            // اگر ShowAllSubTeamsByDefault = true
+            if (settings.ShowAllSubTeamsByDefault)
+            {
+                var allTeamTasks = await GetAllHierarchyTasksAsync(userId, branchId);
+                
+                // محدودیت تعداد
+                if (settings.MaxTasksToShow > 0 && allTeamTasks.Count > settings.MaxTasksToShow)
+                {
+                    return allTeamTasks.Take(settings.MaxTasksToShow).ToList();
+                }
+                
+                return allTeamTasks;
+            }
+
+            // اگر لیست تیم‌های خاص تعریف شده
+            if (!string.IsNullOrEmpty(settings.DefaultVisibleTeamIds))
+            {
+                var teamIds = settings.GetVisibleTeamIds();
+                
+                if (teamIds.Any())
+                {
+                    var teamTasks = await _context.Tasks_Tbl
+                        .Where(t => t.TeamId.HasValue && 
+                                   teamIds.Contains(t.TeamId.Value) &&
+                                   t.BranchId == branchId &&
+                                   !t.IsDeleted &&
+                                   !t.IsPrivate)
+                        .Select(t => t.Id)
+                        .ToListAsync();
+                    
+                    supervisedTaskIds.UnionWith(teamTasks);
+                }
+            }
+
+            // تسک‌های تیم مستقیم
+            var directTasks = await GetManagedTeamTasksAsync(userId, branchId);
+            supervisedTaskIds.UnionWith(directTasks);
+
+            var result = supervisedTaskIds.ToList();
+            
+            // محدودیت تعداد
+            if (settings.MaxTasksToShow > 0 && result.Count > settings.MaxTasksToShow)
+            {
+                return result.Take(settings.MaxTasksToShow).ToList();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// ⭐ دریافت تمام تسک‌های سلسله‌مراتب (شامل زیرتیم‌ها)
+        /// </summary>
+        private async Task<List<int>> GetAllHierarchyTasksAsync(string userId, int branchId)
+        {
+            var allTaskIds = new HashSet<int>();
+
+            // دریافت تیم‌های مدیریت شده
+            var managedTeamIds = await _context.Team_Tbl
+                .Where(t => t.ManagerUserId == userId && 
+                           t.BranchId == branchId && 
+                           t.IsActive)
+                .Select(t => t.Id)
+                .ToListAsync();
+
+            foreach (var teamId in managedTeamIds)
+            {
+                // تسک‌های تیم مستقیم
+                var directTasks = await _context.Tasks_Tbl
+                    .Where(t => t.TeamId == teamId && 
+                               !t.IsDeleted && 
+                               !t.IsPrivate)
+                    .Select(t => t.Id)
+                    .ToListAsync();
+                
+                allTaskIds.UnionWith(directTasks);
+
+                // تسک‌های زیرتیم‌ها (بازگشتی)
+                var subTeamIds = await GetAllSubTeamIdsAsync(teamId);
+                
+                if (subTeamIds.Any())
+                {
+                    var subTeamTasks = await _context.Tasks_Tbl
+                        .Where(t => t.TeamId.HasValue && 
+                                   subTeamIds.Contains(t.TeamId.Value) &&
+                                   !t.IsDeleted &&
+                                   !t.IsPrivate)
+                        .Select(t => t.Id)
+                        .ToListAsync();
+                    
+                    allTaskIds.UnionWith(subTeamTasks);
+                }
+            }
+
+            return allTaskIds.ToList();
         }
 
         #endregion

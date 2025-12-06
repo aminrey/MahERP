@@ -36,7 +36,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.UserControllers
             IUserManagerRepository userrepository, // تصحیح نوع پارامتر
             PersianDateHelper persianDateHelper, 
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger, IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
+            ActivityLoggerService activityLogger, IWebHostEnvironment webHostEnvironment, IBaseRepository BaseRepository, IModuleTrackingService moduleTracking, IModuleAccessService moduleAccessService)
 
 
  : base(context, userManager, persianDateHelper, memoryCache, activityLogger, userrepository, BaseRepository, moduleTracking, moduleAccessService)

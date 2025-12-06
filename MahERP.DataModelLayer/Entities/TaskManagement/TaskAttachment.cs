@@ -15,27 +15,27 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public virtual Tasks Task { get; set; }
 
         [Required]
-        public string FileName { get; set; }
+        public string? FileName { get; set; }
 
-        public string FilePath { get; set; }
+        public string? FilePath { get; set; }
 
-        public string FileType { get; set; }
+        public string? FileType { get; set; }
 
-        public string FileExtension { get; set; }
+        public string? FileExtension { get; set; }
 
         public long FileSize { get; set; }
 
-        public string FileUUID { get; set; }
+        public string? FileUUID { get; set; }
 
         public DateTime UploadDate { get; set; }
 
-        public string UploaderUserId { get; set; }
+        public string? UploaderUserId { get; set; }
         [ForeignKey("UploaderUserId")]
-        public virtual AppUsers Uploader { get; set; }
+        public virtual AppUsers? Uploader { get; set; }
         
         /// <summary>
         /// توضیحات فایل
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
     }
 }

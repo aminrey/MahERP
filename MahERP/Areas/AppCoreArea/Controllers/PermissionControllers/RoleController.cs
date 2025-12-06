@@ -34,7 +34,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.PermissionControllers
             IUserManagerRepository userRepository,
             IUserRoleRepository roleService,
             IPermissionService permissionService,
-            IMapper mapper, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
+            IMapper mapper, IBaseRepository BaseRepository, IModuleTrackingService moduleTracking, IModuleAccessService moduleAccessService)
 
 
  : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)

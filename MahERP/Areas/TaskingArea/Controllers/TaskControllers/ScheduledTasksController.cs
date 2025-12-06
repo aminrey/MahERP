@@ -42,7 +42,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
-            ModuleTrackingBackgroundService moduleTracking,
+            IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService,
             IWebHostEnvironment webHostEnvironment,
             AppDbContext context) // ⭐⭐⭐ اضافه شده
@@ -71,6 +71,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 ViewBag.Title = "تسک‌های زمان‌بندی شده";
                 ViewBag.IsAdmin = isAdmin;
+
+                // ⭐⭐⭐ تنظیم URL بازگشت
+                SetBackUrlInViewBag("Index", "Tasks", "TaskingArea");
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
@@ -126,6 +129,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 // ⭐⭐⭐ تنظیم فلگ برای نمایش به عنوان Scheduled Task
                 ViewBag.IsScheduledTaskDetails = true;
                 ViewBag.ScheduleId = id;
+
+                // ⭐⭐⭐ تنظیم URL بازگشت
+                SetBackUrlInViewBag("Index", "ScheduledTasks", "TaskingArea");
 
                 // ساخت ViewModel
                 var model = new ScheduledTaskDetailViewModel

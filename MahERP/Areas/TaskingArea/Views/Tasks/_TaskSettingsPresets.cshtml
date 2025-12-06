@@ -1,0 +1,113 @@
+﻿<div class="preset-templates mb-4">
+    <h6 class="text-muted mb-3">
+        <i class="fa fa-magic me-2"></i>الگوهای آماده:
+    </h6>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-success" onclick="applyPreset('open')" 
+                data-bs-toggle="tooltip" title="همه نقش‌ها دسترسی دارند">
+            <i class="fa fa-globe me-1"></i>باز
+        </button>
+        <button type="button" class="btn btn-outline-warning" onclick="applyPreset('controlled')" 
+                data-bs-toggle="tooltip" title="فقط مدیر و سازنده کنترل دارند">
+            <i class="fa fa-lock-open me-1"></i>کنترل‌شده
+        </button>
+        <button type="button" class="btn btn-outline-danger" onclick="applyPreset('strict')" 
+                data-bs-toggle="tooltip" title="فقط مدیر کنترل کامل دارد">
+            <i class="fa fa-lock me-1"></i>محدود
+        </button>
+        <button type="button" class="btn btn-outline-primary" onclick="applyPreset('collaborative')" 
+                data-bs-toggle="tooltip" title="همکاری تیمی - اعضا هم می‌توانند عضو اضافه کنند">
+            <i class="fa fa-users me-1"></i>همکاری تیمی
+        </button>
+    </div>
+</div>
+
+<script>
+    function applyPreset(type) {
+        // ابتدا همه checkbox ها را uncheck کن
+        $('input[type="checkbox"][name*="Roles"]').prop('checked', false);
+
+        switch(type) {
+            case 'open':
+                // همه دسترسی دارند
+                setRoles('CanCommentRoles', ['a','b','c','d','e']);
+                setRoles('CanAddMembersRoles', ['a','b','c']);
+                setRoles('CanRemoveMembersRoles', ['a','b']);
+                setRoles('CanEditAfterCompletionRoles', ['a','b','c']);
+                $('#CreatorCanEditDelete').prop('checked', false);
+                
+                NotificationHelper.success('الگوی "باز" اعمال شد');
+                break;
+
+            case 'controlled':
+                // فقط مدیر و سازنده
+                setRoles('CanCommentRoles', ['a','b','c','d','e']);
+                setRoles('CanAddMembersRoles', ['a','b']);
+                setRoles('CanRemoveMembersRoles', ['a','b']);
+                setRoles('CanEditAfterCompletionRoles', ['a','b']);
+                $('#CreatorCanEditDelete').prop('checked', false);
+                
+                NotificationHelper.success('الگوی "کنترل‌شده" اعمال شد');
+                break;
+
+            case 'strict':
+                // فقط مدیر
+                setRoles('CanCommentRoles', ['a','b','c']);
+                setRoles('CanAddMembersRoles', ['a']);
+                setRoles('CanRemoveMembersRoles', ['a']);
+                setRoles('CanEditAfterCompletionRoles', ['a']);
+                $('#CreatorCanEditDelete').prop('checked', false);
+                
+                NotificationHelper.warning('الگوی "محدود" اعمال شد - فقط مدیر کنترل دارد');
+                break;
+
+            case 'collaborative':
+                // همکاری تیمی
+                setRoles('CanCommentRoles', ['a','b','c','d']);
+                setRoles('CanAddMembersRoles', ['a','b','c']);
+                setRoles('CanRemoveMembersRoles', ['a','b']);
+                setRoles('CanEditAfterCompletionRoles', ['a','b']);
+                $('#CreatorCanEditDelete').prop('checked', true);
+                
+                NotificationHelper.info('الگوی "همکاری تیمی" اعمال شد');
+                break;
+        }
+
+        // بروزرسانی preview
+        checkImpact();
+        updateLivePreview();
+    }
+
+    function setRoles(fieldName, roleCodes) {
+        roleCodes.forEach(function(code) {
+            $(`input[name="${fieldName}"][value="${code}"]`).prop('checked', true);
+        });
+    }
+
+    $(document).ready(function() {
+        // فعال‌سازی tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
+</script>
+
+<style>
+    .preset-templates .btn-group {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .preset-templates .btn {
+        border-width: 2px;
+        font-weight: 500;
+    }
+
+    @@media (max-width: 768px) {
+        .preset-templates .btn-group {
+            width: 100%;
+        }
+
+        .preset-templates .btn {
+            flex: 1 0 45%;
+        }
+    }
+</style>

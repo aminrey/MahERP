@@ -10,6 +10,7 @@ using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MahERP.DataModelLayer.Repository
 {
@@ -792,6 +793,33 @@ namespace MahERP.DataModelLayer.Repository
             var totalVisibleMembers = GetAllVisibleContactsInBranch(branchId).Count;
 
             return (totalContacts, totalOrganizations, totalVisibleMembers);
+        }
+
+        /// <summary>
+        /// دریافت لیست شناسه شعبه‌های کاربر (Async)
+        /// </summary>
+        public async Task<List<int>> GetUserBranchIdsAsync(string userId)
+        {
+            return await _context.BranchUser_Tbl
+                .Where(bu => bu.UserId == userId && bu.IsActive)
+                .Select(bu => bu.BranchId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// دریافت لیست شناسه شعبه‌هایی که دسته‌بندی در آن‌ها تعریف شده است
+        /// </summary>
+        /// <param name="categoryId">شناسه دسته‌بندی</param>
+        /// <returns>لیست شناسه شعبه‌ها</returns>
+        public async Task<List<int>> GetCategoryBranchIdsAsync(int categoryId)
+        {
+            // دریافت شعبه‌هایی که این دسته‌بندی در آن‌ها استفاده شده
+            return await _context.BranchTaskCategoryStakeholder_Tbl
+                .Where(btcs => btcs.TaskCategoryId == categoryId && btcs.IsActive)
+                .Select(btcs => btcs.BranchId)
+                .Distinct()
+                .ToListAsync();
         }
 
         #endregion

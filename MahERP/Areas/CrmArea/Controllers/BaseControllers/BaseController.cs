@@ -24,7 +24,7 @@ namespace MahERP.Areas.CrmArea.Controllers.BaseControllers
         protected readonly ActivityLoggerService _activityLogger;
         protected readonly IUserManagerRepository _userRepository;
         protected readonly IBaseRepository _baseRepository;
-        protected readonly ModuleTrackingBackgroundService _moduleTracking;
+        protected readonly IModuleTrackingService _moduleTracking;
         protected readonly IModuleAccessService _moduleAccessService;
 
         public BaseController(
@@ -35,7 +35,7 @@ namespace MahERP.Areas.CrmArea.Controllers.BaseControllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
-            ModuleTrackingBackgroundService moduleTracking,
+            IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService)
         {
             _uow = uow;

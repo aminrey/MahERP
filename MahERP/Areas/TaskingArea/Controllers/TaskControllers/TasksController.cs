@@ -42,7 +42,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         private readonly ITaskHistoryRepository _taskHistoryRepository;
         private readonly IOrganizationRepository _organizationRepository;
         private readonly ITeamRepository _teamRepository;
-        private readonly IServiceScopeFactory _serviceScopeFactory; // ⭐⭐⭐ اضافه شده
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         #endregion
 
@@ -63,11 +63,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IUserManagerRepository userRepository,
             IBaseRepository BaseRepository,
             ITaskHistoryRepository taskHistoryRepository,
-            ModuleTrackingBackgroundService moduleTracking,
+            IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService,
             IOrganizationRepository organizationRepository,
             ITeamRepository teamRepository,
-            IServiceScopeFactory serviceScopeFactory) // ⭐⭐⭐ اضافه شده
+            IServiceScopeFactory serviceScopeFactory)
             : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, 
                    userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
@@ -82,7 +82,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _taskHistoryRepository = taskHistoryRepository;
             _organizationRepository = organizationRepository;
             _teamRepository = teamRepository;
-            _serviceScopeFactory = serviceScopeFactory; // ⭐⭐⭐ اضافه شده
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         #endregion

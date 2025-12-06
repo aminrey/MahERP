@@ -173,7 +173,7 @@
                         <ol class="breadcrumb breadcrumb-modern justify-content-lg-end mb-0">
                             <li class="breadcrumb-item">
                                 <a asp-area="TaskingArea" asp-controller="Home" asp-action="Dashboard" class="text-white-75">
-                                    <i class="fa fa-home me-1"></i>داشبورد
+                                    <i class="fa fa-home me-1"></i>داشقورد
                                 </a>
                             </li>
                             <li class="breadcrumb-item">
@@ -186,6 +186,12 @@
                     </nav>
 
                     <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
+                        @* ⭐⭐⭐ دکمه بازگشت *@
+                        <a href="@ViewBag.BackUrl" class="btn btn-hero btn-secondary btn-lg">
+                            <i class="fa fa-arrow-right me-2"></i>
+                            <span>بازگشت</span>
+                        </a>
+                        
                         @if (Model.CanEdit)
                         {
                             <a href="@Url.Action("Edit", "ScheduledTasks", new { id = Model.Schedule.Id })"

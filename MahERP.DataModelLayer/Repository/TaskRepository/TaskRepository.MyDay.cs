@@ -643,9 +643,13 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 TaskDescription = task.Description,
                 CategoryTitle = task.TaskCategory?.Title,
                 GroupTitle = myDayTask.GroupTitle,
+                // ⭐⭐⭐ نسخه قدیمی (backward compatibility)
                 StakeholderName = task.Organization != null
                     ? task.Organization.DisplayName
                     : (task.Contact != null ? task.Contact.FullName : "نامشخص"),
+                // ⭐⭐⭐ نسخه جدید
+                ContactFullName = task.Contact?.FullName,
+                OrganizationName = task.Organization?.DisplayName,
                 TaskPriority = task.Priority,
                 IsImportant = task.Important,
                 IsFocused = assignment.IsFocused,
@@ -658,7 +662,16 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 TaskStatus = assignment.Status,
                 ProgressPercentage = progressPercentage,
                 PlannedDate = myDayTask.PlannedDate,
-                PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(myDayTask.PlannedDate, "yyyy/MM/dd")
+                PlannedDatePersian = ConvertDateTime.ConvertMiladiToShamsi(myDayTask.PlannedDate, "yyyy/MM/dd"),
+                // ⭐⭐⭐ افزودن تاریخ شروع و پایان تسک
+                TaskStartDate = task.StartDate,
+                TaskStartDatePersian = task.StartDate.HasValue 
+                    ? ConvertDateTime.ConvertMiladiToShamsi(task.StartDate.Value, "yyyy/MM/dd") 
+                    : null,
+                TaskDueDate = task.DueDate,
+                TaskDueDatePersian = task.DueDate.HasValue 
+                    ? ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") 
+                    : null
             };
         }
 

@@ -37,17 +37,18 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
         public CommunicationController(
             IEmailRepository emailRepository,
             ISmsService smsService,
-            IContactGroupRepository groupRepository, // ⭐ اضافه شده
+            IContactGroupRepository groupRepository,
             IUnitOfWork uow,
             UserManager<AppUsers> userManager,
-            AppDbContext context, // ⭐ اضافه شده
+            AppDbContext context,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
-            IUserManagerRepository userRepository, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
-
-
- : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
+            IUserManagerRepository userRepository, 
+            IBaseRepository BaseRepository, 
+            IModuleTrackingService moduleTracking, 
+            IModuleAccessService moduleAccessService)
+            : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _emailRepository = emailRepository;
             _smsService = smsService;
@@ -640,7 +641,7 @@ namespace MahERP.Areas.CrmArea.Controllers.CommunicationControllers
                     ActivityTypeEnum.Create,
                     "Communication",
                     "SendEmailToOrganizationGroup",
-                    $"ارسال ایمیل به 그룹 سازمان '{result.GroupTitle}' - حالت: {GetSendModeText(sendMode)} - {result.SuccessCount}/{result.TotalSent} موفق",
+                    $"ارسال ایمیل به گروه سازمان '{result.GroupTitle}' - حالت: {GetSendModeText(sendMode)} - {result.SuccessCount}/{result.TotalSent} موفق",
                     recordId: organizationGroupId.ToString()
                 );
 

@@ -5,6 +5,7 @@ using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.ContactGroupRepository;
+using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
@@ -24,7 +25,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
     [Authorize]
     [PermissionRequired("CORE.BRANCH.DEFINITIONS")]
 
-    public class BranchController : BaseController
+    public partial class BranchController : BaseController
     {
         private readonly IUnitOfWork _uow;
         private readonly IBranchRepository _branchRepository;
@@ -32,6 +33,8 @@ namespace MahERP.Areas.AppCoreArea.Controllers
         private readonly IMapper _mapper;
         protected readonly IUserManagerRepository _userRepository;
         private readonly IContactGroupRepository _groupRepository;
+        private readonly ITaskRepository _taskRepository;
+        private readonly IBranchTaskVisibilitySettingsRepository _visibilitySettingsRepo;  // ⭐⭐⭐ اضافه شد
 
 
         public BranchController(
@@ -41,10 +44,14 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             IMapper mapper,
             PersianDateHelper persianDateHelper,
             IMemoryCache memoryCache,
-            ActivityLoggerService activityLogger, IContactGroupRepository groupRepository, IBaseRepository BaseRepository,
-            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking, IModuleAccessService moduleAccessService)
-
-
+            ActivityLoggerService activityLogger, 
+            IContactGroupRepository groupRepository, 
+            IBaseRepository BaseRepository,
+            IUserManagerRepository userRepository, 
+            IModuleTrackingService moduleTracking, 
+            IModuleAccessService moduleAccessService,
+            ITaskRepository taskRepository,
+            IBranchTaskVisibilitySettingsRepository visibilitySettingsRepo)  // ⭐⭐⭐ اضافه شد
  : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _uow = uow;
@@ -52,8 +59,9 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             _userManager = userManager;
             _mapper = mapper;
             _userRepository = userRepository;
-            _groupRepository = groupRepository; 
-
+            _groupRepository = groupRepository;
+            _taskRepository = taskRepository;
+            _visibilitySettingsRepo = visibilitySettingsRepo;  // ⭐⭐⭐ اضافه شد
         }
 
         // لیست شعبه‌ها
@@ -942,7 +950,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
 
                 // غیرفعال کردن ارتباط (soft delete)
                 stakeholderBranch.IsActive = false;
-             
+            
 
                 _uow.StakeholderBranchUW.Update(stakeholderBranch);
                 _uow.Save();

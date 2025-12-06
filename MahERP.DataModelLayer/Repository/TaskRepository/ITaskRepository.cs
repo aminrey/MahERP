@@ -7,6 +7,7 @@ using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.StakeholderViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.DataModelLayer.ViewModels.TaskViewModels;
 using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Http;
 using System;
@@ -151,6 +152,11 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// دریافت دسته‌بندی بر اساس شناسه
         /// </summary>
         TaskCategory GetCategoryById(int id);
+
+        /// <summary>
+        /// دریافت دسته‌بندی بر اساس شناسه (Async)
+        /// </summary>
+        Task<TaskCategory> GetCategoryByIdAsync(int id);
 
         #endregion
 
@@ -933,5 +939,169 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         TaskViewModel? DeserializeTaskData(string taskDataJson);
 
         #endregion
+
+
+
+        #region Task Settings CRUD
+
+        /// <summary>
+        /// دریافت تنظیمات یک تسک (با وراثت از Branch/Category در صورت عدم وجود)
+        /// </summary>
+        Task<TaskSettings> GetTaskSettingsAsync(int taskId);
+
+        /// <summary>
+        /// دریافت تنظیمات خام تسک (بدون وراثت)
+        /// </summary>
+        Task<TaskSettings?> GetTaskSettingsRawAsync(int taskId);
+
+        /// <summary>
+        /// ایجاد یا بروزرسانی تنظیمات تسک
+        /// </summary>
+        Task<TaskSettings> SaveTaskSettingsAsync(TaskSettings settings, string userId);
+
+        /// <summary>
+        /// حذف تنظیمات تسک (بازگشت به حالت پیش‌فرض)
+        /// </summary>
+        Task<bool> ResetTaskSettingsAsync(int taskId);
+
+        /// <summary>
+        /// آیا تسک تنظیمات سفارشی دارد؟
+        /// </summary>
+        Task<bool> HasCustomSettingsAsync(int taskId);
+
+        #endregion
+
+        #region Branch Default Settings
+
+        /// <summary>
+        /// دریافت تنظیمات پیش‌فرض شعبه
+        /// </summary>
+        Task<BranchDefaultTaskSettings?> GetBranchDefaultSettingsAsync(int branchId);
+
+        /// <summary>
+        /// ایجاد یا بروزرسانی تنظیمات پیش‌فرض شعبه
+        /// </summary>
+        Task<BranchDefaultTaskSettings> SaveBranchDefaultSettingsAsync(BranchDefaultTaskSettings settings, string userId);
+
+        /// <summary>
+        /// آیا شعبه تنظیمات پیش‌فرض دارد؟
+        /// </summary>
+        Task<bool> BranchHasDefaultSettingsAsync(int branchId);
+
+        #endregion
+
+        #region Category Default Settings
+
+        /// <summary>
+        /// دریافت تنظیمات پیش‌فرض دسته‌بندی
+        /// </summary>
+        Task<TaskCategoryDefaultSettings?> GetCategoryDefaultSettingsAsync(int categoryId);
+
+        /// <summary>
+        /// ایجاد یا بروزرسانی تنظیمات پیش‌فرض دسته‌بندی
+        /// </summary>
+        Task<TaskCategoryDefaultSettings> SaveCategoryDefaultSettingsAsync(TaskCategoryDefaultSettings settings, string userId);
+
+        /// <summary>
+        /// آیا دسته‌بندی تنظیمات پیش‌فرض دارد؟
+        /// </summary>
+        Task<bool> CategoryHasDefaultSettingsAsync(int categoryId);
+
+        #endregion
+
+        #region Permission Checks
+
+        /// <summary>
+        /// بررسی اینکه آیا کاربر می‌تواند عمل خاصی را انجام دهد
+        /// </summary>
+        Task<bool> CanUserPerformActionAsync(int taskId, string userId, TaskAction action);
+
+        /// <summary>
+        /// دریافت نقش کاربر در تسک
+        /// </summary>
+        Task<TaskRole?> GetUserRoleInTaskAsync(int taskId, string userId);
+
+        /// <summary>
+        /// دریافت تمام نقش‌های کاربر در تسک (ممکن است چند نقش داشته باشد)
+        /// </summary>
+        Task<List<TaskRole>> GetUserRolesInTaskAsync(int taskId, string userId);
+
+        /// <summary>
+        /// بررسی اینکه آیا کاربر می‌تواند تنظیمات تسک را ویرایش کند
+        /// </summary>
+        Task<bool> CanUserEditSettingsAsync(int taskId, string userId);
+
+        #endregion
+
+        #region Settings Change Log
+
+        /// <summary>
+        /// ثبت تغییر در لاگ
+        /// </summary>
+        Task LogSettingChangeAsync(TaskSettingsChangeLog log);
+
+        /// <summary>
+        /// دریافت تاریخچه تغییرات تنظیمات تسک
+        /// </summary>
+        Task<List<TaskSettingsChangeLog>> GetSettingsChangeHistoryAsync(int taskId);
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// دریافت تنظیمات پیش‌فرض سیستم (Global)
+        /// </summary>
+        TaskSettings GetGlobalDefaultSettings();
+
+        /// <summary>
+        /// بررسی Authority Level - آیا کاربر می‌تواند نقش مشخص شده را مدیریت کند؟
+        /// </summary>
+        bool CanManageRole(TaskRole userRole, TaskRole targetRole);
+
+        /// <summary>
+        /// تبدیل ViewModel به Entity
+        /// </summary>
+        TaskSettings MapViewModelToEntity(TaskSettingsViewModel viewModel, int taskId, string userId);
+
+        /// <summary>
+        /// تبدیل Entity به ViewModel
+        /// </summary>
+        Task<TaskSettingsViewModel> MapEntityToViewModelAsync(TaskSettings settings, string currentUserId);
+
+        #endregion
+
+        #region Bulk Operations
+
+        /// <summary>
+        /// اعمال تنظیمات شعبه به تمام تسک‌های آن شعبه
+        /// </summary>
+        Task<int> ApplyBranchSettingsToAllTasksAsync(int branchId, string userId);
+
+        /// <summary>
+        /// اعمال تنظیمات دسته‌بندی به تمام تسک‌های آن دسته
+        /// </summary>
+        Task<int> ApplyCategorySettingsToAllTasksAsync(int categoryId, string userId);
+
+        #endregion
+
+        #region Statistics
+
+        /// <summary>
+        /// دریافت آمار استفاده از تنظیمات (چند درصد تسک‌ها تنظیمات سفارشی دارند)
+        /// </summary>
+        Task<TaskSettingsStatisticsViewModel> GetSettingsStatisticsAsync(int? branchId = null, int? categoryId = null);
+
+        #endregion
+
+
+
+
+
+
+
+
+
+
     }
 }

@@ -35,7 +35,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
-            UserManager<AppUsers> userManager, IBaseRepository BaseRepository, ModuleTrackingBackgroundService moduleTracking,
+            UserManager<AppUsers> userManager, IBaseRepository BaseRepository, IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService , ITaskRepository taskRepository)
 
 
@@ -64,6 +64,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             }
 
             var model = await _TaskRepository.GetMyDayTasksAsync(currentUserId, startDate, endDate);
+
+            // ⭐⭐⭐ تنظیم URL بازگشت
+            SetBackUrlInViewBag("Index", "Tasks", "TaskingArea");
 
             return View(model);
         }

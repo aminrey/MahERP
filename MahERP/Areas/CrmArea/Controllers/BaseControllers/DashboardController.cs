@@ -44,13 +44,13 @@ namespace MahERP.Areas.CrmArea.Controllers.BaseControllers
             IMemoryCache memoryCache,
             ITaskRepository taskRepository,
             INotificationService notify,
-            ActivityLoggerService activityLogger, IBaseRepository BaseRepository,
+            ActivityLoggerService activityLogger, 
+            IBaseRepository BaseRepository,
             IMainDashboardRepository mainDashboardRepository,
-                    IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking,
+            IUserManagerRepository userRepository, 
+            IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService)
-
-
- : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
+            : base(Context, UserManager, persianDateHelper, memoryCache, activityLogger, userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
             _Context = Context;
             _UserManager = UserManager;

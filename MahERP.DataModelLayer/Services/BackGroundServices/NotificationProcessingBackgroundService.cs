@@ -453,32 +453,27 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             return eventType switch
             {
                 NotificationEventType.TaskAssigned => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} به شما اختصاص داده شد.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}\n" +
                     $"⏰ مهلت: {dueDate}",
 
                 NotificationEventType.TaskCompleted => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} تکمیل شده است.\n\n" +
                     $"📅 تاریخ تکمیل: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}",
 
                 NotificationEventType.TaskCommentAdded => 
-                    $"سلام {recipientName} عزیز،\n\n" +
-                    $"{senderName} در تسک '{taskTitle}' (کد: {taskCode}) کامنت جدیدی ثبت کرده است.\n\n" +
+                    $"در تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} یک نظر در گفتگو ثبت شده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}",
 
                 NotificationEventType.TaskUpdated => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} ویرایش شده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}",
 
                 NotificationEventType.TaskDeadlineReminder => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"🔔 یادآوری جهت بررسی تسک '{taskTitle}' (کد: {taskCode})\n\n" +
                     $"⚠️ مهلت این تسک در تاریخ {dueDate} به پایان می‌رسد.\n\n" +
                     $"📅 تاریخ یادآوری: {currentDate}\n" +
@@ -486,32 +481,27 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                     $"لطفاً نسبت به انجام آن اقدام فرمایید.",
 
                 NotificationEventType.TaskDeleted => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} حذف شده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}",
 
                 NotificationEventType.TaskStatusChanged => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"وضعیت تسک '{taskTitle}' (کد: {taskCode}) توسط {senderName} تغییر کرده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}",
 
                 NotificationEventType.TaskReassigned => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"تسک '{taskTitle}' (کد: {taskCode}) مجدداً توسط {senderName} به شما تخصیص داده شد.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}\n" +
                     $"⏰ مهلت: {dueDate}",
 
                 NotificationEventType.TaskWorkLog => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"{senderName} گزارش کار جدیدی در تسک '{taskTitle}' (کد: {taskCode}) ثبت کرده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}",
 
                 _ => 
-                    $"سلام {recipientName} عزیز،\n\n" +
                     $"رویداد جدیدی در تسک '{taskTitle}' (کد: {taskCode}) رخ داده است.\n\n" +
                     $"📅 تاریخ: {currentDate}\n" +
                     $"🕐 ساعت: {currentTime}"

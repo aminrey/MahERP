@@ -139,6 +139,12 @@
                     </nav>
 
                     <div class="hero-actions d-flex flex-wrap gap-2 justify-content-lg-end">
+                        @* ⭐⭐⭐ دکمه بازگشت *@
+                        <a href="@ViewBag.BackUrl" class="btn btn-hero btn-secondary btn-lg">
+                            <i class="fa fa-arrow-right me-2"></i>
+                            <span>بازگشت</span>
+                        </a>
+                        
                         @if (isCompletedByMe && !Model.IsIndependentCompletion)
                         {
                             <div class="alert alert-success d-flex align-items-center mb-0">
@@ -180,8 +186,9 @@
                                 </a>
                             }
                         }
-
-                        <div class="dropdown">
+                        @if (!isCompletedByMe)
+                        {
+                                        <div class="dropdown">
                             <button type="button" class="btn btn-hero btn-light btn-lg dropdown-toggle"
                                     data-bs-toggle="dropdown"
                                     @(Model.CompletionDate.HasValue ? "disabled" : "")>
@@ -267,6 +274,8 @@
                                 }
                             </ul>
                         </div>
+                        }
+            
                     </div>
                 </div>
             </div>

@@ -294,6 +294,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 var isInMyDay = await _taskRepository.IsTaskInMyDayAsync(id, currentUserId);
                 ViewBag.IsInMyDay = isInMyDay;
 
+                // ⭐⭐⭐ تنظیم URL بازگشت
+                SetBackUrlInViewBag("Index", "Tasks", "TaskingArea");
+
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "Details",
                     $"مشاهده جزئیات تسک: {task.Title}",

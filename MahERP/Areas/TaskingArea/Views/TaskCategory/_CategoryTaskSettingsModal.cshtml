@@ -1,0 +1,284 @@
+﻿@model CategoryDefaultSettingsViewModel
+
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+            <h5 class="modal-title text-white mb-0">
+                <i class="fa fa-tag me-2"></i>تنظیمات پیش‌فرض تسک دسته‌بندی: @Model.CategoryName
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form asp-action="SaveCategoryTaskSettings" asp-controller="TaskCategory" method="post" id="category-settings-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+
+            <div class="modal-body">
+                <!-- توضیحات -->
+                <div class="alert alert-success mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="fa fa-info-circle fa-2x me-3 mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2">تنظیمات پیش‌فرض دسته‌بندی</h6>
+                            <p class="mb-2">
+                                این تنظیمات برای تمام تسک‌های <strong>جدیدی</strong> که در این دسته‌بندی ایجاد می‌شوند، 
+                                به صورت پیش‌فرض اعمال خواهد شد.
+                            </p>
+                            <small class="text-muted">
+                                <i class="fa fa-lightbulb me-1"></i>
+                                اولویت وراثت: <strong>تسک → دسته‌بندی → شعبه → سیستم</strong>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.HasSettings)
+                {
+                    <div class="alert alert-info mb-4">
+                        <i class="fa fa-check-circle me-2"></i>
+                        این دسته‌بندی تنظیمات سفارشی دارد
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning mb-4">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        این دسته‌بندی تنظیمات سفارشی ندارد و از تنظیمات شعبه یا سیستم استفاده می‌کند
+                    </div>
+                }
+
+                <!-- الگوهای آماده -->
+                <div class="preset-templates mb-4">
+                    <h6 class="text-muted mb-3">
+                        <i class="fa fa-magic me-2"></i>الگوهای آماده:
+                    </h6>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-success" onclick="applyCategoryPreset('open')">
+                            <i class="fa fa-globe me-1"></i>باز
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" onclick="applyCategoryPreset('controlled')">
+                            <i class="fa fa-lock-open me-1"></i>کنترل‌شده
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="applyCategoryPreset('strict')">
+                            <i class="fa fa-lock me-1"></i>محدود
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="applyCategoryPreset('project')">
+                            <i class="fa fa-project-diagram me-1"></i>پروژه‌ای
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- تنظیمات 5 گانه -->
+                <div id="category-settings-container">
+                    <!-- تنظیم 1: کامنت -->
+                    @await Html.PartialAsync("_CategorySettingItem", Model.CommentSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 2: افزودن عضو -->
+                    @await Html.PartialAsync("_CategorySettingItem", Model.AddMembersSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 3: حذف عضو -->
+                    @await Html.PartialAsync("_CategorySettingItem", Model.RemoveMembersSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 4: ویرایش پس از اتمام -->
+                    @await Html.PartialAsync("_CategorySettingItem", Model.EditAfterCompletionSetting)
+
+                    <hr class="my-3" />
+
+                    <!-- تنظیم 5: حذف/ویرایش سازنده -->
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <h6 class="mb-2">
+                                <i class="fa fa-shield-alt text-danger me-2"></i>
+                                @Model.CreatorEditDeleteSetting.Title
+                            </h6>
+                            <p class="text-muted small mb-3">@Model.CreatorEditDeleteSetting.Description</p>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="creatorCanEditDelete" 
+                                   name="creatorCanEditDelete"
+                                   @(Model.CreatorEditDeleteSetting.IsEnabled ? "checked" : "") />
+                            <label class="form-check-label" for="creatorCanEditDelete">
+                                سازنده می‌تواند تسک را ویرایش/حذف کند
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- آمار -->
+                @if (Model.Statistics != null)
+                {
+                    <hr class="my-4" />
+                    <div class="card bg-light">
+                        <div class="card-header">
+                            <i class="fa fa-chart-pie me-2"></i>آمار استفاده از تنظیمات
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="stat-box">
+                                        <h3 class="text-success mb-2">@Model.Statistics.TotalTasks</h3>
+                                        <p class="text-muted mb-0">تعداد کل تسک‌ها</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stat-box">
+                                        <h3 class="text-warning mb-2">@Model.Statistics.TasksWithCustomSettings</h3>
+                                        <p class="text-muted mb-0">تنظیمات سفارشی</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stat-box">
+                                        <h3 class="text-info mb-2">@Model.Statistics.TasksWithInheritedSettings</h3>
+                                        <p class="text-muted mb-0">تنظیمات ارثی</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress mt-3" style="height: 25px;">
+                                <div class="progress-bar bg-warning" 
+                                     style="width: @(Model.Statistics.CustomSettingsPercentage)%"
+                                     role="progressbar">
+                                    @Model.Statistics.CustomSettingsPercentage.ToString("F1")%
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2 text-center">
+                                درصد تسک‌هایی که تنظیمات سفارشی دارند
+                            </small>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>بستن
+                </button>
+                <button type="button" class="btn btn-warning" onclick="applyToAllCategoryTasks(@Model.CategoryId)">
+                    <i class="fa fa-sync me-1"></i>اعمال به همه تسک‌ها
+                </button>
+                <button type="submit" class="btn btn-success" data-save="modal-ajax-save">
+                    <i class="fa fa-save me-1"></i>ذخیره تنظیمات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function applyCategoryPreset(type) {
+        // پاک کردن همه
+        $('input[type="checkbox"][name*="Roles"]').prop('checked', false);
+
+        switch(type) {
+            case 'open':
+                setCategoryRoles('canCommentRoles', ['a','b','c','d','e']);
+                setCategoryRoles('canAddMembersRoles', ['a','b','c']);
+                setCategoryRoles('canRemoveMembersRoles', ['a','b']);
+                setCategoryRoles('canEditAfterCompletionRoles', ['a','b','c']);
+                $('#creatorCanEditDelete').prop('checked', false);
+                NotificationHelper.success('الگوی "باز" اعمال شد');
+                break;
+
+            case 'controlled':
+                setCategoryRoles('canCommentRoles', ['a','b','c','d','e']);
+                setCategoryRoles('canAddMembersRoles', ['a','b']);
+                setCategoryRoles('canRemoveMembersRoles', ['a','b']);
+                setCategoryRoles('canEditAfterCompletionRoles', ['a','b']);
+                $('#creatorCanEditDelete').prop('checked', false);
+                NotificationHelper.success('الگوی "کنترل‌شده" اعمال شد');
+                break;
+
+            case 'strict':
+                setCategoryRoles('canCommentRoles', ['a','b','c']);
+                setCategoryRoles('canAddMembersRoles', ['a']);
+                setCategoryRoles('canRemoveMembersRoles', ['a']);
+                setCategoryRoles('canEditAfterCompletionRoles', ['a']);
+                $('#creatorCanEditDelete').prop('checked', false);
+                NotificationHelper.warning('الگوی "محدود" اعمال شد');
+                break;
+
+            case 'project':
+                // الگوی پروژه‌ای - همکاری بیشتر
+                setCategoryRoles('canCommentRoles', ['a','b','c','d']);
+                setCategoryRoles('canAddMembersRoles', ['a','b','c']);
+                setCategoryRoles('canRemoveMembersRoles', ['a','b']);
+                setCategoryRoles('canEditAfterCompletionRoles', ['a','b','c']);
+                $('#creatorCanEditDelete').prop('checked', true);
+                NotificationHelper.info('الگوی "پروژه‌ای" اعمال شد');
+                break;
+        }
+    }
+
+    function setCategoryRoles(fieldName, roleCodes) {
+        roleCodes.forEach(function(code) {
+            $(`input[name="${fieldName}"][value="${code}"]`).prop('checked', true);
+        });
+    }
+
+    async function applyToAllCategoryTasks(categoryId) {
+        const confirmed = await showConfirmationSwal({
+            title: 'اعمال به همه تسک‌ها',
+            text: 'آیا از اعمال این تنظیمات به تمام تسک‌های موجود این دسته‌بندی اطمینان دارید؟',
+            icon: 'question',
+            confirmButtonText: 'بله، اعمال شود',
+            cancelButtonText: 'انصراف'
+        });
+
+        if (confirmed) {
+            try {
+                const token = getAntiForgeryToken();
+                const response = await $.ajax({
+                    url: '@Url.Action("ApplyCategorySettingsToAllTasks", "TaskCategory")',
+                    type: 'POST',
+                    data: {
+                        categoryId: categoryId,
+                        __RequestVerificationToken: token
+                    }
+                });
+
+                if (response.success) {
+                    SendResposeMessage(response.message);
+                } else {
+                    NotificationHelper.error('خطا در اعمال تنظیمات');
+                }
+            } catch (error) {
+                NotificationHelper.error('خطا در ارتباط با سرور');
+            }
+        }
+    }
+</script>
+
+<style>
+    .stat-box {
+        padding: 15px;
+        border-radius: 8px;
+        background: white;
+        margin-bottom: 15px;
+    }
+
+    .stat-box h3 {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .setting-item {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    .preset-templates .btn-group {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+</style>

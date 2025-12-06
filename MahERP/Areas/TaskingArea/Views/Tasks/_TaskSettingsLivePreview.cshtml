@@ -1,0 +1,151 @@
+﻿<div class="permissions-preview card bg-light">
+    <div class="card-header bg-info text-white">
+        <i class="fa fa-eye me-2"></i>پیش‌نمایش دسترسی‌ها
+    </div>
+    <div class="card-body">
+        <div class="row" id="preview-container">
+            <!-- مدیر -->
+            <div class="col-md-2 col-6 text-center mb-3">
+                <div class="role-icon bg-danger text-white rounded-circle p-3 mb-2 mx-auto" style="width: 70px; height: 70px;">
+                    <i class="fa fa-user-tie fa-2x"></i>
+                </div>
+                <strong class="d-block mb-2">مدیر</strong>
+                <ul class="list-unstyled small" id="preview-manager">
+                    <!-- دینامیک شود -->
+                </ul>
+            </div>
+
+            <!-- سازنده -->
+            <div class="col-md-2 col-6 text-center mb-3">
+                <div class="role-icon bg-primary text-white rounded-circle p-3 mb-2 mx-auto" style="width: 70px; height: 70px;">
+                    <i class="fa fa-user-edit fa-2x"></i>
+                </div>
+                <strong class="d-block mb-2">سازنده</strong>
+                <ul class="list-unstyled small" id="preview-creator">
+                    <!-- ... -->
+                </ul>
+            </div>
+
+            <!-- عضو -->
+            <div class="col-md-2 col-6 text-center mb-3">
+                <div class="role-icon bg-success text-white rounded-circle p-3 mb-2 mx-auto" style="width: 70px; height: 70px;">
+                    <i class="fa fa-user fa-2x"></i>
+                </div>
+                <strong class="d-block mb-2">عضو</strong>
+                <ul class="list-unstyled small" id="preview-member">
+                    <!-- ... -->
+                </ul>
+            </div>
+
+            <!-- ناظر -->
+            <div class="col-md-2 col-6 text-center mb-3">
+                <div class="role-icon bg-warning text-white rounded-circle p-3 mb-2 mx-auto" style="width: 70px; height: 70px;">
+                    <i class="fa fa-eye fa-2x"></i>
+                </div>
+                <strong class="d-block mb-2">ناظر</strong>
+                <ul class="list-unstyled small" id="preview-supervisor">
+                    <!-- ... -->
+                </ul>
+            </div>
+
+            <!-- رونوشت -->
+            <div class="col-md-2 col-6 text-center mb-3">
+                <div class="role-icon bg-secondary text-white rounded-circle p-3 mb-2 mx-auto" style="width: 70px; height: 70px;">
+                    <i class="fa fa-copy fa-2x"></i>
+                </div>
+                <strong class="d-block mb-2">رونوشت</strong>
+                <ul class="list-unstyled small" id="preview-carboncopy">
+                    <!-- ... -->
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updatePreviewDisplay() {
+        const roles = {
+            'a': { id: 'manager', name: 'مدیر' },
+            'b': { id: 'creator', name: 'سازنده' },
+            'c': { id: 'member', name: 'عضو' },
+            'd': { id: 'supervisor', name: 'ناظر' },
+            'e': { id: 'carboncopy', name: 'رونوشت' }
+        };
+
+        Object.keys(roles).forEach(function(roleCode) {
+            const role = roles[roleCode];
+            const permissions = [];
+
+            // بررسی کامنت
+            if ($(`input[name="CanCommentRoles"][value="${roleCode}"]`).is(':checked')) {
+                permissions.push('<li class="text-success"><i class="fa fa-check me-1"></i>💬 کامنت</li>');
+            }
+
+            // بررسی افزودن عضو
+            if ($(`input[name="CanAddMembersRoles"][value="${roleCode}"]`).is(':checked')) {
+                permissions.push('<li class="text-success"><i class="fa fa-check me-1"></i>➕ افزودن عضو</li>');
+            }
+
+            // بررسی حذف عضو
+            if ($(`input[name="CanRemoveMembersRoles"][value="${roleCode}"]`).is(':checked')) {
+                permissions.push('<li class="text-success"><i class="fa fa-check me-1"></i>➖ حذف عضو</li>');
+            }
+
+            // بررسی ویرایش پس از اتمام
+            if ($(`input[name="CanEditAfterCompletionRoles"][value="${roleCode}"]`).is(':checked')) {
+                permissions.push('<li class="text-success"><i class="fa fa-check me-1"></i>✏️ ویرایش بعد اتمام</li>');
+            }
+
+            // بررسی حذف/ویرایش (فقط سازنده)
+            if (roleCode === 'b' && $('#CreatorCanEditDelete').is(':checked')) {
+                permissions.push('<li class="text-warning"><i class="fa fa-check me-1"></i>🗑️ حذف/ویرایش</li>');
+            }
+
+            // نمایش
+            $(`#preview-${role.id}`).html(
+                permissions.length > 0 
+                    ? permissions.join('') 
+                    : '<li class="text-muted"><i class="fa fa-times me-1"></i>هیچ دسترسی</li>'
+            );
+        });
+    }
+
+    // بروزرسانی اولیه
+    $(document).ready(function() {
+        updatePreviewDisplay();
+    });
+</script>
+
+<style>
+    .permissions-preview {
+        margin-top: 20px;
+    }
+
+    .role-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #preview-container ul {
+        min-height: 80px;
+        text-align: right;
+    }
+
+    #preview-container li {
+        font-size: 0.85rem;
+        line-height: 1.8;
+    }
+
+    @@media (max-width: 768px) {
+        .role-icon {
+            width: 60px !important;
+            height: 60px !important;
+            padding: 10px !important;
+        }
+
+        .role-icon i {
+            font-size: 1.5rem !important;
+        }
+    }
+</style>

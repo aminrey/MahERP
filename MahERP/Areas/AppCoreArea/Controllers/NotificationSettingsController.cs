@@ -33,7 +33,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers
             ActivityLoggerService activityLogger,
             IUserManagerRepository userRepository,
             IBaseRepository baseRepository,
-            ModuleTrackingBackgroundService moduleTracking,
+            IModuleTrackingService moduleTracking,
             INotificationSettingsRepository notificationRepo,
             IModuleAccessService moduleAccessService)
             : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, userRepository, baseRepository, moduleTracking, moduleAccessService)

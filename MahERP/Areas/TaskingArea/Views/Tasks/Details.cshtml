@@ -120,6 +120,12 @@
                 <span class="tab-title">تاریخچه</span>
             </button>
         </li>
+        <li class="nav-item">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab">
+                <i class="fa fa-cog d-block mb-1"></i>
+                <span class="tab-title">تنظیمات</span>
+            </button>
+        </li>
     </ul>
 
     <!-- Tabs Content -->
@@ -350,7 +356,7 @@
 
                                 @if (Model.Comments?.Any() == true)
                                 {
-                                    @foreach (var comment in Model.Comments.OrderBy(c => c.CreateDate))
+                                    foreach (var comment in Model.Comments.OrderBy(c => c.CreateDate))
                                     {
                                         var isMyMessage = comment.CreatorUserId == currentUserId;
                                         var messageClass = isMyMessage ? "chat-message-right " : "chat-message-left";
@@ -360,7 +366,8 @@
                                              
 
                                                 <!-- Message Content -->
-                                                <div class="flex-grow-1 @(isMyMessage ? "me-3" : "ms-3")" style="max-width: 75%;">
+
+                                                <div  class=" flex-grow-1 @(isMyMessage ? "me-3" : "ms-3")" style="max-width: 75%;">
                                                     <!-- Message Bubble -->
                                                     <div class="message-bubble @(isMyMessage ? "bg-primary text-white" : "bg-white") shadow-sm">
                                                         <!-- Header -->
@@ -476,6 +483,8 @@
                                                             </button>
                                                         </div>
                                                     }
+                                     
+                                                
                                                 </div>
 
                                                 <!-- Avatar -->
@@ -488,6 +497,8 @@
 
                                             </div>
                                         </div>
+
+
                                     }
                                 }
                                 else
@@ -768,10 +779,23 @@
             </div>
         </div>
       
+        <!-- ⭐⭐⭐ Tab 6: تنظیمات تسک -->
+        <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+            <div id="task-settings-container">
+                <!-- محتوا از AJAX بارگذاری می‌شود -->
+                <div class="block block-rounded block-fx-shadow">
+                    <div class="block-content text-center py-5">
+                        <i class="fa fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">در حال بارگذاری تنظیمات...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
+
     <script>
         window.TaskDetailConfig = {
             taskId: @Model.Id,
@@ -793,20 +817,150 @@
                 getAllOperations: '@Url.Action("GetAllOperations", "TaskOperations", new { area = "TaskingArea" })',
                 refreshAllTaskStats: '@Url.Action("RefreshAllTaskStats", "Tasks", new { area = "TaskingArea" })',
                 getTaskViewers: '@Url.Action("GetTaskViewers", "TaskViewers", new { area = "TaskingArea" })',
-                removeCarbonCopy: '@Url.Action("RemoveCarbonCopy", "TaskViewers", new { area = "TaskingArea" })'
+                removeCarbonCopy: '@Url.Action("RemoveCarbonCopy", "TaskViewers", new { area = "TaskingArea" })',
+                getTaskSettings: '@Url.Action("GetTaskSettingsModal", "Tasks", new { area = "TaskingArea" })' // ⭐⭐⭐ جدید
             }
         };
+
+        $(document).ready(function() {
+            // ⭐⭐⭐ بارگذاری تنظیمات هنگام کلیک روی تب
+            $('#settings-tab').on('shown.bs.tab', function() {
+                loadTaskSettings();
+            });
+        });
+
+        // ⭐⭐⭐ بارگذاری مودال تنظیمات
+        function loadTaskSettings() {
+            const $container = $('#task-settings-container');
+
+            // نمایش loading
+            $container.html(`
+                <div class="block block-rounded block-fx-shadow">
+                    <div class="block-content text-center py-5">
+                        <i class="fa fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">در حال بارگذاری تنظیمات...</p>
+                    </div>
+                </div>
+            `);
+
+            $.ajax({
+                url: TaskDetailConfig.urls.getTaskSettings,
+                type: 'GET',
+                data: { 
+                    taskId: @Model.Id,
+                    __RequestVerificationToken: getAntiForgeryToken()
+                },
+                dataType: 'json', // ⭐⭐⭐ تغییر به json
+                success: function(response) {
+                    console.log('✅ Task Settings Response:', response);
+
+                    // ⭐⭐⭐ بررسی پاسخ با فرمت update-view
+                    if (response.status === "update-view" && response.viewList) {
+                        // استفاده از updateMultipleViews از main.js
+                        updateMultipleViews(response.viewList);
+
+                        // ⭐ راه‌اندازی کامپوننت‌های داخل
+                        initializeTaskSettingsComponents();
+
+                        console.log('✅ Task settings loaded successfully');
+                    } 
+                    else if (response.success === false || response.status === "error") {
+                        // نمایش خطا
+                        const errorMessage = response.message?.[0]?.text || 'خطا در بارگذاری تنظیمات';
+                        
+                        $container.html(`
+                            <div class="block block-rounded block-fx-shadow">
+                                <div class="block-content">
+                                    <div class="alert alert-danger">
+                                        <i class="fa fa-exclamation-circle me-2"></i>
+                                        <strong>خطا</strong>
+                                        <p class="mb-0 mt-2">${errorMessage}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                        
+                        if (response.message) {
+                            SendResposeMessage(response.message);
+                        }
+                    }
+                    else {
+                        console.error('❌ Unexpected response format:', response);
+                        $container.html(`
+                            <div class="block block-rounded block-fx-shadow">
+                                <div class="block-content text-center py-5">
+                                    <i class="fa fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                                    <p class="text-muted">فرمت پاسخ نامعتبر است</p>
+                                    <button type="button" class="btn btn-primary mt-3" onclick="loadTaskSettings()">
+                                        <i class="fa fa-sync me-1"></i>تلاش مجدد
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Error loading task settings:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        responseText: xhr.responseText
+                    });
+                    
+                    let errorMessage = 'خطای ناشناخته';
+                    
+                    // استخراج پیام خطا از response
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message[0]?.text || errorMessage;
+                    } else if (xhr.responseText) {
+                        try {
+                            const errorJson = JSON.parse(xhr.responseText);
+                            if (errorJson.message) {
+                                errorMessage = errorJson.message[0]?.text || errorMessage;
+                            }
+                        } catch (e) {
+                            errorMessage = xhr.responseText.substring(0, 200);
+                        }
+                    }
+
+                    $container.html(`
+                        <div class="block block-rounded block-fx-shadow">
+                            <div class="block-content">
+                                <div class="alert alert-danger">
+                                    <i class="fa fa-exclamation-circle me-2"></i>
+                                    <strong>خطا در بارگذاری تنظیمات</strong>
+                                    <p class="mb-0 mt-2">${errorMessage}</p>
+                                    <button type="button" class="btn btn-sm btn-danger mt-3" onclick="loadTaskSettings()">
+                                        <i class="fa fa-sync me-1"></i>تلاش مجدد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        // ⭐⭐⭐ راه‌اندازی کامپوننت‌ها
+        function initializeTaskSettingsComponents() {
+            const $container = $('#task-settings-container');
+
+            // راه‌اندازی tooltips
+            $container.find('[data-bs-toggle="tooltip"]').tooltip();
+
+            // راه‌اندازی Select2 (اگر وجود داشته باشد)
+            if (typeof DynamicSelect2Manager !== 'undefined') {
+                DynamicSelect2Manager.reinitializeSelect2InDiv($container);
+            }
+
+            // Process URLs
+            if (typeof ModalUtils !== 'undefined') {
+                ModalUtils.processUrlsInContainer($container);
+            }
+
+            console.log('✅ Task Settings Components initialized');
+        }
     </script>
 
-    <!-- ⭐⭐⭐ اسکریپت Viewers -->
-    @await Html.PartialAsync("_TaskViewersScript")
     <script src="~/assets/js/taskdetail.js"></script>
-
-}
-
-<!-- ⭐⭐⭐ اضافه کردن CSS سفارشی -->
-@section Styles {
-    <style>
-     
-</style>
 }

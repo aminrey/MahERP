@@ -41,7 +41,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IMemoryCache memoryCache,
             ActivityLoggerService activityLogger, IBaseRepository BaseRepository,
 
-            IUserManagerRepository userRepository, ModuleTrackingBackgroundService moduleTracking,
+            IUserManagerRepository userRepository, IModuleTrackingService moduleTracking,
             IModuleAccessService moduleAccessService)
 
 

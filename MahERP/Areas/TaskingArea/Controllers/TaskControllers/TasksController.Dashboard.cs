@@ -79,6 +79,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 ViewBag.UserId = userId;
                 ViewBag.HasAdvancedFilters = advancedFilters != null;
 
+                // ⭐⭐⭐ تنظیم URL بازگشت به Dashboard کنترلر
+                SetBackUrlInViewBag("Index", "Dashboard", "TaskingArea");
+
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View, "Tasks", "Index",
                     $"مشاهده لیست تسک‌ها - نمایش: {viewType}, گروه‌بندی: {grouping}, فیلتر: {statusFilter}");

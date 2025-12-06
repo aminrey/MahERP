@@ -11,27 +11,18 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
     public class BackgroundServicesMonitor : IHostedService
     {
         private readonly ILogger<BackgroundServicesMonitor> _logger;
-        private readonly IEnumerable<IHostedService> _services;
 
         public BackgroundServicesMonitor(
-            ILogger<BackgroundServicesMonitor> logger,
-            IEnumerable<IHostedService> services)
+            ILogger<BackgroundServicesMonitor> logger)
         {
             _logger = logger;
-            _services = services;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("🚀 Background Services Monitor شروع شد");
-            _logger.LogInformation($"📊 تعداد سرویس‌های ثبت شده: {_services.Count()}");
+            _logger.LogInformation("📊 تمام Background Services در حال اجرا هستند");
             
-            foreach (var service in _services)
-            {
-                var serviceName = service.GetType().Name;
-                _logger.LogInformation($"   ✅ {serviceName}");
-            }
-
             await Task.CompletedTask;
         }
 
