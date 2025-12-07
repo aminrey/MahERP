@@ -114,6 +114,10 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         [Display(Name = "افراد مرتبط")]
         public List<OrganizationContact>? Contacts { get; set; }
 
+        /// ✅ اضافه شده - برای مدیریت شماره‌ها
+        [Display(Name = "شماره‌های تماس")]
+        public List<OrganizationPhoneViewModel>? Phones { get; set; }
+
         // Computed Properties
 
         public string OrganizationTypeText => OrganizationType switch

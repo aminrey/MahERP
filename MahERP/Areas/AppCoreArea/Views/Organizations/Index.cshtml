@@ -99,84 +99,138 @@
         <div class="block-content">
             @if (Model != null && Model.Any())
             {
-                <div class="table-responsive">
-                    <table class="table table-striped table-vcenter">
-                        <thead>
-                            <tr>
-                                <th>نام سازمان</th>
-                                <th>نوع</th>
-                                <th>شماره ثبت</th>
-                                <th>تلفن</th>
-                                <th>ایمیل</th>
-                                <th class="text-center">گروه‌ها</th>
-                                <th class="text-center">وضعیت</th>
-                                <th class="text-center">عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var org in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <a href="@Url.Action("Details", "Organizations", new { id = org.Id })">
-                                            <i class="fa fa-building me-1"></i>
-                                            @org.DisplayName
+                var groupedOrganizations = ViewBag.GroupedOrganizations as Dictionary<string, List<OrganizationViewModel>>;
+                var alphabeticalIndex = ViewBag.AlphabeticalIndex as List<string>;
+
+                <div class="row">
+                    <!-- ⭐⭐⭐ Alphabetical Quick Index (Sidebar) -->
+                    <div class="col-lg-2 d-none d-lg-block">
+                        <div class="sticky-top" style="top: 80px;">
+                            <div class="text-center mb-3">
+                                <small class="text-muted fw-bold">دسترسی سریع</small>
+                            </div>
+                            <div class="d-flex flex-column gap-1 alphabet-index">
+                                @if (alphabeticalIndex != null)
+                                {
+                                    @foreach (var letter in alphabeticalIndex)
+                                    {
+                                        <a href="#letter-@letter" 
+                                           class="btn btn-sm btn-outline-primary alphabet-btn"
+                                           data-letter="@letter">
+                                            @letter
                                         </a>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info">@org.OrganizationTypeText</span>
-                                    </td>
-                                    <td>@(org.RegistrationNumber ?? "-")</td>
-                                    <td>@(org.PrimaryPhone ?? "-")</td>
-                                    <td>@(org.Email ?? "-")</td>
-                                    <td class="text-center">
-                                        @* نمایش گروه‌های سازمان *@
-                                        @if (ViewBag.OrganizationGroupsDict != null)
-                                        {
-                                            var orgGroups = (ViewBag.OrganizationGroupsDict as Dictionary<int, List<OrganizationGroup>>)?[org.Id];
-                                            if (orgGroups != null && orgGroups.Any())
-                                            {
-                                                @foreach (var group in orgGroups)
-                                                {
-                                                    <span class="badge me-1"
-                                                          style="background-color: @group.DisplayColorHex">
-                                                        <i class="fa @group.DisplayIconClass me-1"></i>
-                                                        @group.Title
-                                                    </span>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">-</span>
-                                            }
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        @if (org.IsActive)
-                                        {
-                                            <span class="badge bg-success">فعال</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">غیرفعال</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="@Url.Action("Details", "Organizations", new { id = org.Id })"
-                                               class="btn btn-sm btn-info" title="جزئیات">
-                                                <i class="fa fa-eye"></i>
-                                            </a>
-                                            <a href="@Url.Action("Edit", "Organizations", new { id = org.Id })"
-                                               class="btn btn-sm btn-warning" title="ویرایش">
-                                                <i class="fa fa-pencil-alt"></i>
-                                            </a>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⭐⭐⭐ Main Content Area -->
+                    <div class="col-lg-10">
+                        @if (groupedOrganizations != null && groupedOrganizations.Any())
+                        {
+                            @foreach (var group in groupedOrganizations)
+                            {
+                                <div class="mb-4" id="letter-@group.Key">
+                                    <!-- Letter Header -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="letter-header bg-success text-white">
+                                            @group.Key
                                         </div>
-                                    </td>
-                                </tr>
+                                        <div class="flex-grow-1 border-bottom ms-3"></div>
+                                        <span class="badge bg-secondary">@group.Value.Count سازمان</span>
+                                    </div>
+
+                                    <!-- Organizations Cards -->
+                                    <div class="row g-3">
+                                        @foreach (var org in group.Value)
+                                        {
+                                            <div class="col-md-6 col-xl-4">
+                                                <div class="organization-card">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="organization-avatar bg-success text-white">
+                                                            <i class="fa fa-building"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1 ms-3">
+                                                            <a href="@Url.Action("Details", "Organizations", new { id = org.Id })" 
+                                                               class="organization-name">
+                                                                @org.DisplayName
+                                                            </a>
+                                                            <div class="text-muted small">
+                                                                <span class="badge bg-info">@org.OrganizationTypeText</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="btn-group-vertical btn-group-sm">
+                                                            <a href="@Url.Action("Details", "Organizations", new { id = org.Id })" 
+                                                               class="btn btn-sm btn-info" title="جزئیات">
+                                                                <i class="fa fa-eye"></i>
+                                                            </a>
+                                                            <a href="@Url.Action("Edit", "Organizations", new { id = org.Id })" 
+                                                               class="btn btn-sm btn-warning" title="ویرایش">
+                                                                <i class="fa fa-pencil-alt"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Organization Details -->
+                                                    <div class="organization-details mt-2">
+                                                        @if (!string.IsNullOrEmpty(org.PrimaryPhone))
+                                                        {
+                                                            <div class="small text-muted mb-1">
+                                                                <i class="fa fa-phone fa-fw"></i>
+                                                                @org.PrimaryPhone
+                                                            </div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(org.Email))
+                                                        {
+                                                            <div class="small text-muted mb-1">
+                                                                <i class="fa fa-envelope fa-fw"></i>
+                                                                @org.Email
+                                                            </div>
+                                                        }
+
+                                                        @* ⭐ توضیحات (فقط یک خط) *@
+                                                        @if (!string.IsNullOrEmpty(org.Description))
+                                                        {
+                                                            <div class="small text-muted mb-1 text-truncate" title="@org.Description">
+                                                                <i class="fa fa-sticky-note fa-fw"></i>
+                                                                @org.Description
+                                                            </div>
+                                                        }
+
+                                                        <!-- Groups -->
+                                                        @if (ViewBag.OrganizationGroupsDict != null)
+                                                        {
+                                                            var orgGroups = (ViewBag.OrganizationGroupsDict as Dictionary<int, List<OrganizationGroup>>)?[org.Id];
+                                                            if (orgGroups != null && orgGroups.Any())
+                                                            {
+                                                                <div class="mt-2">
+                                                                    @foreach (var ogroup in orgGroups.Take(2))
+                                                                    {
+                                                                        <span class="badge me-1" 
+                                                                              style="background-color: @ogroup.DisplayColorHex; font-size: 0.7rem;">
+                                                                            <i class="fa @ogroup.DisplayIconClass me-1"></i>
+                                                                            @ogroup.Title
+                                                                        </span>
+                                                                    }
+                                                                    @if (orgGroups.Count > 2)
+                                                                    {
+                                                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">
+                                                                            +@(orgGroups.Count - 2)
+                                                                        </span>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
                             }
-                        </tbody>
-                    </table>
+                        }
+                    </div>
                 </div>
             }
             else
@@ -210,5 +264,130 @@
         .btn-group-filter .badge {
             font-size: 0.75rem;
         }
+
+        /* ⭐⭐⭐ Alphabetical Index Styles */
+        .alphabet-index {
+            max-height: 70vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+        }
+
+        .alphabet-btn {
+            font-weight: bold;
+            font-size: 0.9rem;
+            padding: 0.4rem 0.6rem;
+            transition: all 0.2s ease;
+        }
+
+        .alphabet-btn:hover,
+        .alphabet-btn.active {
+            transform: scale(1.1);
+            background-color: var(--bs-success);
+            color: white !important;
+            border-color: var(--bs-success);
+        }
+
+        /* Letter Header */
+        .letter-header {
+            font-size: 2rem;
+            font-weight: bold;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+        }
+
+        /* Organization Card Styles */
+        .organization-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .organization-card:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            border-color: var(--bs-success);
+        }
+
+        .organization-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .organization-name {
+            font-weight: 600;
+            color: #333;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .organization-name:hover {
+            color: var(--bs-success);
+        }
+
+        .organization-details {
+            border-top: 1px solid #f0f0f0;
+            padding-top: 0.75rem;
+        }
+
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Sticky Index */
+        @@media (max-width: 991px) {
+            .alphabet-index {
+                display: none;
+            }
+        }
     </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // ⭐ Highlight active letter on scroll
+            $(window).on('scroll', function() {
+                let scrollPos = $(window).scrollTop() + 100;
+                
+                $('.alphabet-btn').removeClass('active');
+                
+                $('[id^="letter-"]').each(function() {
+                    let top = $(this).offset().top;
+                    let bottom = top + $(this).outerHeight();
+                    
+                    if (scrollPos >= top && scrollPos <= bottom) {
+                        let letter = $(this).attr('id').replace('letter-', '');
+                        $(`.alphabet-btn[data-letter="${letter}"]`).addClass('active');
+                        return false;
+                    }
+                });
+            });
+
+            // ⭐ Smooth scroll to letter
+            $('.alphabet-btn').on('click', function(e) {
+                e.preventDefault();
+                let target = $(this).attr('href');
+                $('html, body').animate({
+                    scrollTop: $(target).offset().top - 80
+                }, 500);
+            });
+        });
+    </script>
 }

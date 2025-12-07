@@ -42,6 +42,7 @@ namespace MahERP.DataModelLayer
         public DbSet<Contact> Contact_Tbl { get; set; }
         public DbSet<ContactPhone> ContactPhone_Tbl { get; set; }
         public DbSet<Organization> Organization_Tbl { get; set; }
+        public DbSet<OrganizationPhone> OrganizationPhone_Tbl { get; set; } // ⭐ NEW
         public DbSet<OrganizationDepartment> OrganizationDepartment_Tbl { get; set; }
         public DbSet<DepartmentPosition> DepartmentPosition_Tbl { get; set; }
         public DbSet<DepartmentMember> DepartmentMember_Tbl { get; set; }

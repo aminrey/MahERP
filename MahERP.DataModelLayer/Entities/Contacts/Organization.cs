@@ -157,6 +157,11 @@ namespace MahERP.DataModelLayer.Entities.Contacts
         [InverseProperty(nameof(OrganizationContact.Organization))]
         public virtual ICollection<OrganizationContact> Contacts { get; set; } = new HashSet<OrganizationContact>();
 
+        /// <summary>
+        /// شماره‌های تماس سازمان
+        /// </summary>
+        public virtual ICollection<OrganizationPhone> Phones { get; set; } = new HashSet<OrganizationPhone>();
+
         // ========== Computed Properties ==========
         
         [NotMapped]
@@ -176,5 +181,18 @@ namespace MahERP.DataModelLayer.Entities.Contacts
         public IEnumerable<OrganizationDepartment> RootDepartments => 
             Departments?.Where(d => d.ParentDepartmentId == null && d.IsActive).OrderBy(d => d.DisplayOrder) 
             ?? Enumerable.Empty<OrganizationDepartment>();
+
+        /// <summary>
+        /// شماره تماس پیش‌فرض
+        /// </summary>
+        [NotMapped]
+        public OrganizationPhone? DefaultPhone => Phones?.FirstOrDefault(p => p.IsDefault && p.IsActive);
+
+        /// <summary>
+        /// تمام شماره‌های فعال به ترتیب نمایش
+        /// </summary>
+        [NotMapped]
+        public IEnumerable<OrganizationPhone> ActivePhones => 
+            Phones?.Where(p => p.IsActive).OrderBy(p => p.DisplayOrder) ?? Enumerable.Empty<OrganizationPhone>();
     }
 }

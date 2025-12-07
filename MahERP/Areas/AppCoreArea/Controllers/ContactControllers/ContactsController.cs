@@ -88,7 +88,29 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
                         contacts = contacts.Where(c => c.Gender == gender.Value).ToList();
                 }
 
+                // ⭐⭐⭐ مرتب‌سازی بر اساس نام خانوادگی و نام
+                contacts = contacts
+                    .OrderBy(c => c.LastName)
+                    .ThenBy(c => c.FirstName)
+                    .ToList();
+
                 var viewModels = _mapper.Map<List<ContactViewModel>>(contacts);
+
+                // ⭐⭐⭐ گروه‌بندی بر اساس حرف اول نام خانوادگی
+                var groupedContacts = viewModels
+                    .GroupBy(c => 
+                    {
+                        if (string.IsNullOrEmpty(c.LastName)) return "#";
+                        var firstChar = c.LastName[0];
+                        if (char.IsLetter(firstChar))
+                            return char.ToUpper(firstChar).ToString();
+                        return "#";
+                    })
+                    .OrderBy(g => g.Key == "#" ? "ي" : g.Key) // "#" در انتها
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                ViewBag.GroupedContacts = groupedContacts;
+                ViewBag.AlphabeticalIndex = groupedContacts.Keys.ToList();
 
                 // ⭐ دریافت لیست گروه‌ها برای فیلتر
                 var allGroups = _groupRepository.GetAllGroups(includeInactive: false);
@@ -206,7 +228,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ContactViewModel model)
+        public async Task<IActionResult> Create(ContactViewModel model, List<ContactPhoneInputViewModel> Phones)
         {
             // ⭐ اصلاح شده: فقط نام خانوادگی الزامی است
             if (string.IsNullOrEmpty(model.LastName))
@@ -232,17 +254,24 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
                 }
             }
 
-            // ⭐⭐⭐ اصلاح شده: نرمال‌سازی و اعتبارسنجی شماره تلفن
-            if (!string.IsNullOrEmpty(model.PrimaryPhone))
+            // ⭐⭐⭐ اعتبارسنجی شماره‌های تماس (اگر وارد شده باشند)
+            if (Phones != null && Phones.Any())
             {
-                if (!PhoneNumberHelper.ValidateIranianPhoneNumber(model.PrimaryPhone, out string phoneError))
+                for (int i = 0; i < Phones.Count; i++)
                 {
-                    ModelState.AddModelError("PrimaryPhone", phoneError);
-                }
-                else
-                {
-                    // نرمال‌سازی شماره
-                    model.PrimaryPhone = PhoneNumberHelper.NormalizePhoneNumber(model.PrimaryPhone);
+                    var phone = Phones[i];
+                    if (!string.IsNullOrWhiteSpace(phone.PhoneNumber))
+                    {
+                        if (!PhoneNumberHelper.ValidateIranianPhoneNumber(phone.PhoneNumber, out string phoneError))
+                        {
+                            ModelState.AddModelError($"Phones[{i}].PhoneNumber", phoneError);
+                        }
+                        else
+                        {
+                            // نرمال‌سازی شماره
+                            phone.PhoneNumber = PhoneNumberHelper.NormalizePhoneNumber(phone.PhoneNumber);
+                        }
+                    }
                 }
             }
 
@@ -257,30 +286,53 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
                     _uow.ContactUW.Create(contact);
                     _uow.Save();
 
-                    // ⭐⭐⭐ اگر شماره تلفن وارد شده، به جدول ContactPhone اضافه کن
-                    if (!string.IsNullOrEmpty(model.PrimaryPhone))
+                    // ⭐⭐⭐ افزودن شماره‌های تماس (اگر وارد شده باشند)
+                    if (Phones != null && Phones.Any())
                     {
-                        var phone = new ContactPhone
+                        var validPhones = Phones.Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber)).ToList();
+                        
+                        if (validPhones.Any())
                         {
-                            ContactId = contact.Id,
-                            PhoneNumber = model.PrimaryPhone, // شماره نرمال شده
-                            PhoneType = PhoneNumberHelper.DetectPhoneType(model.PrimaryPhone),
-                            IsDefault = true,
-                            IsActive = true,
-                            DisplayOrder = 1,
-                            CreatedDate = DateTime.Now,
-                            CreatorUserId = GetUserId()
-                        };
+                            // اگر هیچ شماره‌ای IsDefault نشده، اولین شماره را پیش‌فرض کن
+                            if (!validPhones.Any(p => p.IsDefault))
+                            {
+                                validPhones[0].IsDefault = true;
+                            }
 
-                        _uow.ContactPhoneUW.Create(phone);
-                        _uow.Save();
+                            // اگر هیچ شماره‌ای IsSmsDefault نشده، اولین شماره را پیش‌فرض کن
+                            if (!validPhones.Any(p => p.IsSmsDefault))
+                            {
+                                validPhones[0].IsSmsDefault = true;
+                            }
+
+                            int displayOrder = 1;
+                            foreach (var phoneInput in validPhones)
+                            {
+                                var phone = new ContactPhone
+                                {
+                                    ContactId = contact.Id,
+                                    PhoneNumber = phoneInput.PhoneNumber, // شماره نرمال شده
+                                    PhoneType = phoneInput.PhoneType,
+                                    IsDefault = phoneInput.IsDefault,
+                                    IsSmsDefault = phoneInput.IsSmsDefault,
+                                    IsActive = true,
+                                    DisplayOrder = displayOrder++,
+                                    CreatedDate = DateTime.Now,
+                                    CreatorUserId = GetUserId()
+                                };
+
+                                _uow.ContactPhoneUW.Create(phone);
+                            }
+
+                            _uow.Save();
+                        }
                     }
 
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Create,
                         "Contacts",
                         "Create",
-                        $"ایجاد فرد جدید: {contact.FullName}",
+                        $"ایجاد فرد جدید: {contact.FullName}" + (Phones?.Any(p => !string.IsNullOrWhiteSpace(p.PhoneNumber)) == true ? $" با {Phones.Count(p => !string.IsNullOrWhiteSpace(p.PhoneNumber))} شماره تماس" : " بدون شماره تماس"),
                         recordId: contact.Id.ToString(),
                         entityType: "Contact",
                         recordTitle: contact.FullName
@@ -309,12 +361,24 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
         {
             try
             {
-                var contact = await _contactRepository.GetContactByIdAsync(id);
+                // ⭐⭐⭐ اصلاح شده: دریافت با شماره‌ها
+                var contact = await _contactRepository.GetContactByIdAsync(id, 
+                    includePhones: true, 
+                    includeDepartments: false, 
+                    includeOrganizations: false);
 
                 if (contact == null)
                     return RedirectToAction("ErrorView", "Home");
 
                 var viewModel = _mapper.Map<ContactViewModel>(contact);
+
+                // ⭐⭐⭐ Map کردن شماره‌ها
+                if (contact.Phones != null && contact.Phones.Any())
+                {
+                    viewModel.Phones = _mapper.Map<List<ContactPhoneViewModel>>(
+                        contact.Phones.Where(p => p.IsActive).OrderByDescending(p => p.IsDefault).ThenBy(p => p.DisplayOrder)
+                    );
+                }
 
                 await _activityLogger.LogActivityAsync(
                     ActivityTypeEnum.View,
@@ -339,7 +403,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(ContactViewModel model)
+        public async Task<IActionResult> Edit(ContactViewModel model, List<ContactPhoneInputViewModel> Phones)
         {
             // ⭐ اصلاح شده: بررسی نام خانوادگی
             if (string.IsNullOrEmpty(model.LastName))
@@ -365,17 +429,24 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
                 }
             }
 
-            // ⭐⭐⭐ اضافه شده: نرمال‌سازی و اعتبارسنجی شماره تلفن
-            if (!string.IsNullOrEmpty(model.PrimaryPhone))
+            // ⭐⭐⭐ اعتبارسنجی شماره‌های تماس
+            if (Phones != null && Phones.Any())
             {
-                if (!PhoneNumberHelper.ValidateIranianPhoneNumber(model.PrimaryPhone, out string phoneError))
+                for (int i = 0; i < Phones.Count; i++)
                 {
-                    ModelState.AddModelError("PrimaryPhone", phoneError);
-                }
-                else
-                {
-                    // نرمال‌سازی شماره
-                    model.PrimaryPhone = PhoneNumberHelper.NormalizePhoneNumber(model.PrimaryPhone);
+                    var phone = Phones[i];
+                    if (!string.IsNullOrWhiteSpace(phone.PhoneNumber))
+                    {
+                        if (!PhoneNumberHelper.ValidateIranianPhoneNumber(phone.PhoneNumber, out string phoneError))
+                        {
+                            ModelState.AddModelError($"Phones[{i}].PhoneNumber", phoneError);
+                        }
+                        else
+                        {
+                            // نرمال‌سازی شماره
+                            phone.PhoneNumber = PhoneNumberHelper.NormalizePhoneNumber(phone.PhoneNumber);
+                        }
+                    }
                 }
             }
 
@@ -399,9 +470,6 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
                     var originalCreated = contact.CreatedDate;
                     var originalCreatorId = contact.CreatorUserId;
 
-                    // ⭐⭐⭐ ذخیره شماره تلفن قدیمی قبل از Map
-                    var oldPrimaryPhone = contact.DefaultPhone;
-
                     _mapper.Map(model, contact);
 
                     contact.CreatedDate = originalCreated;
@@ -412,47 +480,52 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
                     _uow.ContactUW.Update(contact);
                     _uow.Save();
 
-                    // ⭐⭐⭐ مدیریت شماره تلفن در جدول ContactPhone
-                    if (!string.IsNullOrEmpty(model.PrimaryPhone))
+                    // ⭐⭐⭐ مدیریت شماره‌های تماس
+                    if (Phones != null && Phones.Any())
                     {
-                        // پیدا کردن شماره پیش‌فرض قبلی
-                        var existingPhone = _contactRepository.GetDefaultPhone(model.Id);
-
-                        if (existingPhone != null && existingPhone.PhoneNumber != model.PrimaryPhone)
+                        var validPhones = Phones.Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber)).ToList();
+                        
+                        // حذف شماره‌های قدیمی
+                        var existingPhones = _contactRepository.GetContactPhones(model.Id);
+                        foreach (var oldPhone in existingPhones)
                         {
-                            // اگر شماره تغییر کرده، شماره قدیمی را به‌روز کن
-                            existingPhone.PhoneNumber = model.PrimaryPhone;
-                            existingPhone.PhoneType = PhoneNumberHelper.DetectPhoneType(model.PrimaryPhone);
-                            _uow.ContactPhoneUW.Update(existingPhone);
-                            _uow.Save();
+                            _uow.ContactPhoneUW.Delete(oldPhone);
                         }
-                        else if (existingPhone == null)
+                        _uow.Save();
+
+                        if (validPhones.Any())
                         {
-                            // اگر شماره پیش‌فرض وجود نداشت، ایجاد کن
-                            var newPhone = new ContactPhone
+                            // اگر هیچ شماره‌ای IsDefault نشده، اولین شماره را پیش‌فرض کن
+                            if (!validPhones.Any(p => p.IsDefault))
                             {
-                                ContactId = contact.Id,
-                                PhoneNumber = model.PrimaryPhone,
-                                PhoneType = PhoneNumberHelper.DetectPhoneType(model.PrimaryPhone),
-                                IsDefault = true,
-                                IsActive = true,
-                                DisplayOrder = 1,
-                                CreatedDate = DateTime.Now,
-                                CreatorUserId = GetUserId()
-                            };
+                                validPhones[0].IsDefault = true;
+                            }
 
-                            _uow.ContactPhoneUW.Create(newPhone);
-                            _uow.Save();
-                        }
-                    }
-                    else if (string.IsNullOrEmpty(model.PrimaryPhone) && !string.IsNullOrEmpty(oldPrimaryPhone?.PhoneNumber))
-                    {
-                        // ⭐ اگر شماره حذف شده، شماره پیش‌فرض را غیرفعال کن (اختیاری)
-                        var existingPhone = _contactRepository.GetDefaultPhone(model.Id);
-                        if (existingPhone != null)
-                        {
-                            existingPhone.IsDefault = false;
-                            _uow.ContactPhoneUW.Update(existingPhone);
+                            // اگر هیچ شماره‌ای IsSmsDefault نشده، اولین شماره را پیش‌فرض کن
+                            if (!validPhones.Any(p => p.IsSmsDefault))
+                            {
+                                validPhones[0].IsSmsDefault = true;
+                            }
+
+                            int displayOrder = 1;
+                            foreach (var phoneInput in validPhones)
+                            {
+                                var phone = new ContactPhone
+                                {
+                                    ContactId = contact.Id,
+                                    PhoneNumber = phoneInput.PhoneNumber, // شماره نرمال شده
+                                    PhoneType = phoneInput.PhoneType,
+                                    IsDefault = phoneInput.IsDefault,
+                                    IsSmsDefault = phoneInput.IsSmsDefault,
+                                    IsActive = true,
+                                    DisplayOrder = displayOrder++,
+                                    CreatedDate = DateTime.Now,
+                                    CreatorUserId = GetUserId()
+                                };
+
+                                _uow.ContactPhoneUW.Create(phone);
+                            }
+
                             _uow.Save();
                         }
                     }
@@ -486,6 +559,18 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
                     await _activityLogger.LogErrorAsync("Contacts", "Edit", "خطا در ویرایش", ex, recordId: model.Id.ToString());
                     ModelState.AddModelError("", "خطا در ذخیره: " + ex.Message);
                 }
+            }
+
+            // اگر validation ناموفق بود، شماره‌ها رو دوباره بارگذاری کن
+            if (Phones != null)
+            {
+                model.Phones = Phones.Select(p => new ContactPhoneViewModel
+                {
+                    PhoneNumber = p.PhoneNumber,
+                    PhoneType = p.PhoneType,
+                    IsDefault = p.IsDefault,
+                    IsSmsDefault = p.IsSmsDefault
+                }).ToList();
             }
 
             return View(model);

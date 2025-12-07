@@ -171,13 +171,15 @@ namespace MahERP.DataModelLayer.Repository.OrganizationGroupRepository
         public List<Organization> GetGroupOrganizations(int groupId, bool includeInactive = false)
         {
             var query = _context.OrganizationGroupMember_Tbl
-                .Where(m => m.GroupId == groupId)
-                .Select(m => m.Organization);
+                .Where(m => m.GroupId == groupId);
 
             if (!includeInactive)
-                query = query.Where(o => o.IsActive);
+                query = query.Where(m => m.Organization.IsActive); // ⭐ فیلتر روی Member
 
-            return query.ToList();
+            return query
+                .Select(m => m.Organization)
+                .Include(o => o.Phones.Where(p => p.IsActive))
+                .ToList();
         }
 
         public List<OrganizationGroup> GetOrganizationGroups(int organizationId)

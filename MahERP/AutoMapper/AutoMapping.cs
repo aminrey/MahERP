@@ -522,7 +522,11 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.RegistrationDate, opt => opt.MapFrom(src => src.RegistrationDate)) // ✅ اضافه شده
                 .ForMember(dest => dest.LegalRepresentative, opt => opt.MapFrom(src => src.LegalRepresentative))
                 .ForMember(dest => dest.Website, opt => opt.MapFrom(src => src.Website))
-                .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => src.PrimaryPhone))
+                // ⭐⭐⭐ اصلاح شده: گرفتن شماره از DefaultPhone
+                .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => 
+                    src.Phones.Where(p => p.IsDefault && p.IsActive)
+                        .Select(p => p.FormattedNumber)
+                        .FirstOrDefault() ?? src.PrimaryPhone)) // fallback به فیلد قدیمی
                 .ForMember(dest => dest.SecondaryPhone, opt => opt.MapFrom(src => src.SecondaryPhone))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Address))
@@ -544,7 +548,8 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
                     src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
                 .ForMember(dest => dest.Departments, opt => opt.MapFrom(src => src.Departments)) // ✅ اضافه شده
-                .ForMember(dest => dest.Contacts, opt => opt.MapFrom(src => src.Contacts)); // ✅ اضافه شده
+                .ForMember(dest => dest.Contacts, opt => opt.MapFrom(src => src.Contacts)) // ✅ اضافه شده
+                .ForMember(dest => dest.Phones, opt => opt.MapFrom(src => src.Phones.Where(p => p.IsActive))); // ⭐ NEW
 
             CreateMap<OrganizationViewModel, Organization>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
@@ -575,7 +580,23 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.LastUpdaterUserId, opt => opt.Ignore())
                 .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
                 .ForMember(dest => dest.Departments, opt => opt.Ignore())
-                .ForMember(dest => dest.Contacts, opt => opt.Ignore());
+                .ForMember(dest => dest.Contacts, opt => opt.Ignore())
+                .ForMember(dest => dest.Phones, opt => opt.Ignore()); // ⭐ NEW
+
+            // ==================== ORGANIZATION PHONE MAPPINGS ========== ⭐ NEW
+
+            // OrganizationPhone -> OrganizationPhoneViewModel
+            CreateMap<OrganizationPhone, OrganizationPhoneViewModel>()
+                .ForMember(dest => dest.PhoneTypeText, opt => opt.MapFrom(src => src.PhoneTypeText))
+                .ForMember(dest => dest.FormattedNumber, opt => opt.MapFrom(src => src.FormattedNumber));
+
+            // OrganizationPhoneViewModel -> OrganizationPhone
+            CreateMap<OrganizationPhoneViewModel, OrganizationPhone>()
+                .ForMember(dest => dest.Organization, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
+
             // ==================== ORGANIZATION DEPARTMENT MAPPINGS ====================
 
             // OrganizationDepartment -> OrganizationDepartmentViewModel

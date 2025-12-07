@@ -21,7 +21,9 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
 
         public List<Contact> GetAllContacts(bool includeInactive = false)
         {
-            var query = _context.Contact_Tbl.AsQueryable();
+            var query = _context.Contact_Tbl
+                .Include(c => c.Phones.Where(p => p.IsDefault)) // ⭐ اضافه شده
+                .AsQueryable();
 
             if (!includeInactive)
                 query = query.Where(c => c.IsActive);

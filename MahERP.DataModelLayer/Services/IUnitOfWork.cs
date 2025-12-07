@@ -50,6 +50,7 @@ namespace MahERP.DataModelLayer.Services
         GenereicClass<Contact> ContactUW { get; }
         GenereicClass<ContactPhone> ContactPhoneUW { get; }
         GenereicClass<Organization> OrganizationUW { get; }
+        GenereicClass<OrganizationPhone> OrganizationPhoneUW { get; } // ⭐ NEW
         GenereicClass<OrganizationDepartment> OrganizationDepartmentUW { get; }
         GenereicClass<DepartmentPosition> DepartmentPositionUW { get; }
         GenereicClass<DepartmentMember> DepartmentMemberUW { get; }

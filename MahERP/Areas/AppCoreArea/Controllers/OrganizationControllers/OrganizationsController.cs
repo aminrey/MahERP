@@ -91,7 +91,28 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
                     organizations = _organizationRepository.GetAllOrganizations(true, organizationType);
                 }
 
+                // ⭐⭐⭐ مرتب‌سازی بر اساس نام
+                organizations = organizations
+                    .OrderBy(o => o.Name)
+                    .ToList();
+
                 var viewModels = _mapper.Map<List<OrganizationViewModel>>(organizations);
+
+                // ⭐⭐⭐ گروه‌بندی بر اساس حرف اول نام
+                var groupedOrganizations = viewModels
+                    .GroupBy(o => 
+                    {
+                        if (string.IsNullOrEmpty(o.Name)) return "#";
+                        var firstChar = o.Name[0];
+                        if (char.IsLetter(firstChar))
+                            return char.ToUpper(firstChar).ToString();
+                        return "#";
+                    })
+                    .OrderBy(g => g.Key == "#" ? "ي" : g.Key) // "#" در انتها
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                ViewBag.GroupedOrganizations = groupedOrganizations;
+                ViewBag.AlphabeticalIndex = groupedOrganizations.Keys.ToList();
 
                 // ⭐ دریافت لیست گروه‌ها برای فیلتر
                 var allGroups = _organizationGroupRepository.GetAllGroups(includeInactive: false);
@@ -236,6 +257,8 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
                 }
             }
 
+            // ⭐⭐⭐ TODO: مدیریت شماره‌های تماس (بعد از ایجاد OrganizationPhone Entity)
+
             if (ModelState.IsValid)
             {
                 try
@@ -332,6 +355,8 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
                     ModelState.AddModelError("EconomicCode", "این کد اقتصادی قبلاً استفاده شده است");
                 }
             }
+
+            // ⭐⭐⭐ TODO: مدیریت شماره‌های تماس (بعد از ایجاد OrganizationPhone Entity)
 
             if (ModelState.IsValid)
             {

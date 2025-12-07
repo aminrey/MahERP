@@ -4,263 +4,351 @@
 }
 
 <!-- Hero -->
-<div class="bg-body-light">
-    <div class="content content-full">
-        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
-            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
-                <i class="fa fa-user-plus text-success me-2"></i>
-                افزودن فرد جدید
-            </h1>
-            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">مدیریت</li>
-                    <li class="breadcrumb-item">
-                        <a asp-action="Index">افراد</a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">افزودن فرد</li>
-                </ol>
-            </nav>
+<div class="bg-image" style="background-image: url('/assets/media/photos/photo12@2x.jpg');">
+    <div class="bg-primary-dark-op">
+        <div class="content content-full text-center">
+            <div class="my-3">
+                <i class="fa fa-user-plus fa-3x text-white-75"></i>
+            </div>
+            <h1 class="h2 text-white mb-2">افزودن فرد جدید</h1>
+            <h2 class="h5 fw-normal text-white-75">
+                ثبت اطلاعات فرد در سیستم
+            </h2>
         </div>
     </div>
 </div>
 <!-- END Hero -->
+
 <!-- Page Content -->
-<div class="content content-full content-boxed">
-    <form asp-action="Create" method="post" enctype="multipart/form-data">
+<div class="content content-full">
+    <form asp-action="Create" method="post" id="contactCreateForm">
         @Html.AntiForgeryToken()
 
-        <div class="block block-rounded">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">
-                    <i class="fa fa-id-card me-2"></i>
-                    اطلاعات شخصی
-                </h3>
+        <!-- نمایش خطاها -->
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <h5 class="alert-heading">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    خطاهای اعتبارسنجی
+                </h5>
+                <ul class="mb-0">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+        }
 
-            <div class="block-content">
-                <!-- نمایش خطاها -->
-                @if (!ViewData.ModelState.IsValid)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <h5 class="alert-heading">
-                            <i class="fa fa-exclamation-triangle me-2"></i>
-                            خطاهای اعتبارسنجی
-                        </h5>
-                        <ul class="mb-0">
-                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                            {
-                                <li>@error.ErrorMessage</li>
-                            }
-                        </ul>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <!-- دکمه‌های بالای فرم -->
+        <div class="block block-rounded mb-2">
+            <div class="block-content bg-body-light p-3">
+                <div class="row">
+                    <div class="col-md-6 mb-2 mb-md-0">
+                        <a asp-action="Index" class="btn btn-alt-secondary w-100">
+                            <i class="fa fa-times me-1"></i>
+                            انصراف و بازگشت
+                        </a>
                     </div>
-                }
-
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-
-                        <!-- ========== نام و نام خانوادگی ========== -->
-                        <div class="row">
-                            <!-- نام (غیر اجباری) -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="FirstName">
-                                    نام
-                                    <small class="text-muted">(اختیاری)</small>
-                                </label>
-                                <input asp-for="FirstName"
-                                       class="form-control form-control-lg"
-                                       placeholder="نام کوچک" />
-                                <span asp-validation-for="FirstName" class="text-danger"></span>
-                            </div>
-
-                            <!-- نام خانوادگی (اجباری) -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="LastName">
-                                    نام خانوادگی
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <input asp-for="LastName"
-                                       class="form-control form-control-lg"
-                                       placeholder="نام خانوادگی"
-                                       required />
-                                <span asp-validation-for="LastName" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <!-- ========== اطلاعات تماس ========== -->
-                        <div class="row">
-                            <!-- ⭐ شماره تلفن اصلی (جدید) -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="PrimaryPhone">
-                                    <i class="fa fa-phone me-1"></i>
-                                    شماره تلفن
-                                    <small class="text-muted">(اختیاری)</small>
-                                </label>
-                                <input asp-for="PrimaryPhone"
-                                       type="tel"
-                                       class="form-control form-control-lg"
-                                       placeholder="09123456789 یا 02112345678"
-                                       dir="ltr" />
-                                <span asp-validation-for="PrimaryPhone" class="text-danger"></span>
-                                <small class="form-text text-muted">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    می‌توانید بعداً شماره‌های بیشتری اضافه کنید
-                                </small>
-                            </div>
-
-                            <!-- ایمیل اصلی -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="PrimaryEmail">
-                                    <i class="fa fa-envelope me-1"></i>
-                                    ایمیل
-                                    <small class="text-muted">(اختیاری)</small>
-                                </label>
-                                <input asp-for="PrimaryEmail"
-                                       type="email"
-                                       class="form-control form-control-lg"
-                                       placeholder="email@example.com"
-                                       dir="ltr" />
-                                <span asp-validation-for="PrimaryEmail" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <!-- ========== اطلاعات هویتی ========== -->
-                        <div class="row">
-                            <!-- کد ملی -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="NationalCode">
-                                    <i class="fa fa-id-card me-1"></i>
-                                    کد ملی
-                                    <small class="text-muted">(اختیاری - 10 رقم)</small>
-                                </label>
-                                <input asp-for="NationalCode"
-                                       type="text"
-                                       maxlength="10"
-                                       class="form-control"
-                                       placeholder="0000000000"
-                                       dir="ltr" />
-                                <span asp-validation-for="NationalCode" class="text-danger"></span>
-                            </div>
-
-                            <!-- جنسیت -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="Gender">
-                                    <i class="fa fa-venus-mars me-1"></i>
-                                    جنسیت
-                                </label>
-                                <select asp-for="Gender" class="form-select">
-                                    <option value="">-- انتخاب کنید --</option>
-                                    <option value="0">مرد</option>
-                                    <option value="1">زن</option>
-                                    <option value="2">سایر</option>
-                                </select>
-                                <span asp-validation-for="Gender" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <!-- ========== تاریخ تولد ========== -->
-                        <div class="mb-4">
-                            <label class="form-label" asp-for="BirthDatePersian">
-                                <i class="fa fa-birthday-cake me-1"></i>
-                                تاریخ تولد (شمسی)
-                                <small class="text-muted">(اختیاری)</small>
-                            </label>
-                            <input asp-for="BirthDatePersian"
-                                   type="text"
-                                   class="form-control date-picker-shamsi"
-                                   placeholder="1370/01/01"
-                                   autocomplete="off" />
-                            <span asp-validation-for="BirthDatePersian" class="text-danger"></span>
-                        </div>
-
-                        <!-- ========== آدرس‌ها ========== -->
-                        <div class="mb-4">
-                            <label class="form-label" asp-for="PrimaryAddress">
-                                <i class="fa fa-map-marker-alt me-1"></i>
-                                آدرس اصلی
-                            </label>
-                            <textarea asp-for="PrimaryAddress"
-                                      class="form-control"
-                                      rows="3"
-                                      placeholder="آدرس کامل..."></textarea>
-                            <span asp-validation-for="PrimaryAddress" class="text-danger"></span>
-                        </div>
-
-                        <div class="row">
-                            <!-- کد پستی -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="PrimaryPostalCode">
-                                    کد پستی
-                                </label>
-                                <input asp-for="PrimaryPostalCode"
-                                       type="text"
-                                       class="form-control"
-                                       placeholder="0000000000"
-                                       maxlength="10"
-                                       dir="ltr" />
-                                <span asp-validation-for="PrimaryPostalCode" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <!-- ========== یادداشت‌ها ========== -->
-                        <div class="mb-4">
-                            <label class="form-label" asp-for="Notes">
-                                <i class="fa fa-sticky-note me-1"></i>
-                                یادداشت‌ها
-                            </label>
-                            <textarea asp-for="Notes"
-                                      class="form-control"
-                                      rows="4"
-                                      placeholder="یادداشت‌های اضافی..."></textarea>
-                            <span asp-validation-for="Notes" class="text-danger"></span>
-                        </div>
-
-                        <!-- ========== وضعیت فعال ========== -->
-                        <div class="mb-4">
-                            <div class="form-check form-switch form-check-lg">
-                                <input asp-for="IsActive"
-                                       type="checkbox"
-                                       class="form-check-input"
-                                       checked />
-                                <label class="form-check-label" asp-for="IsActive">
-                                    <strong>فعال</strong>
-                                    <small class="d-block text-muted">فرد بلافاصله پس از ایجاد فعال باشد</small>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- ========== راهنما ========== -->
-                        <div class="alert alert-info">
-                            <h6 class="alert-heading">
-                                <i class="fa fa-info-circle me-2"></i>
-                                نکات مهم
-                            </h6>
-                            <ul class="mb-0 small">
-                                <li><strong>نام خانوادگی</strong> تنها فیلد الزامی است</li>
-                                <li>می‌توانید بعداً شماره‌های تماس بیشتری اضافه کنید</li>
-                                <li>کد ملی و ایمیل باید یکتا باشند</li>
-                                <li>تصویر پروفایل را می‌توانید در صفحه ویرایش آپلود کنید</li>
-                            </ul>
-                        </div>
-
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-success w-100 btn-lg">
+                            <i class="fa fa-check me-1"></i>
+                            ذخیره فرد
+                        </button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Footer -->
-            <div class="block-content block-content-full block-content-sm bg-body-light">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="Index" class="btn btn-alt-secondary">
-                                <i class="fa fa-arrow-right me-1"></i>
-                                انصراف
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fa fa-check me-1"></i>
-                                ذخیره فرد
+        <div class="row">
+            <!-- ستون راست: اطلاعات اصلی -->
+            <div class="col-lg-8">
+                
+                <!-- ========== اطلاعات شخصی ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-user me-2 text-primary"></i>
+                            اطلاعات شخصی
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <!-- نام (اختیاری) -->
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="FirstName">
+                                        نام
+                                        <span class="text-muted small">(اختیاری)</span>
+                                    </label>
+                                    <input asp-for="FirstName"
+                                           class="form-control form-control-lg"
+                                           placeholder="نام" />
+                                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- نام خانوادگی (الزامی) -->
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="LastName">
+                                        نام خانوادگی
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="LastName"
+                                           class="form-control form-control-lg"
+                                           placeholder="نام خانوادگی"
+                                           required />
+                                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- کد ملی -->
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="NationalCode">
+                                        <i class="fa fa-id-card me-1"></i>
+                                        کد ملی
+                                        <span class="text-muted small">(10 رقم)</span>
+                                    </label>
+                                    <input asp-for="NationalCode"
+                                           type="text"
+                                           maxlength="10"
+                                           class="form-control"
+                                           placeholder="0000000000"
+                                           dir="ltr" />
+                                    <span asp-validation-for="NationalCode" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- جنسیت -->
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Gender">
+                                        <i class="fa fa-venus-mars me-1"></i>
+                                        جنسیت
+                                    </label>
+                                    <select asp-for="Gender" class="form-select">
+                                        <option value="">-- انتخاب کنید --</option>
+                                        <option value="0">مرد</option>
+                                        <option value="1">زن</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- تاریخ تولد -->
+                        <div class="mb-4">
+                            <label class="form-label" for="BirthDatePersian">
+                                <i class="fa fa-birthday-cake me-1"></i>
+                                تاریخ تولد (شمسی)
+                            </label>
+                            <input asp-for="BirthDatePersian"
+                                   type="text"
+                                   class="form-control js-flatpickr"
+                                   placeholder="1370/01/01"
+                                   readonly />
+                        </div>
+
+                        <!-- ایمیل -->
+                        <div class="mb-4">
+                            <label class="form-label" for="PrimaryEmail">
+                                <i class="fa fa-envelope me-1"></i>
+                                ایمیل
+                            </label>
+                            <input asp-for="PrimaryEmail"
+                                   type="email"
+                                   class="form-control"
+                                   placeholder="email@example.com"
+                                   dir="ltr" />
+                            <span asp-validation-for="PrimaryEmail" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== شماره‌های تماس ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-phone me-2 text-success"></i>
+                            شماره‌های تماس
+                            <span class="text-muted small">(اختیاری)</span>
+                        </h3>
+                        <div class="block-options">
+                            <button type="button" class="btn btn-sm btn-alt-success" onclick="addPhoneRow()">
+                                <i class="fa fa-plus me-1"></i>
+                                افزودن شماره
                             </button>
                         </div>
+                    </div>
+                    <div class="block-content">
+                        <div id="phonesContainer">
+                            <!-- ⭐ شماره اول (اختیاری) -->
+                            <div class="phone-row mb-3 p-3 border rounded" data-index="0">
+                                <div class="row align-items-center">
+                                    <div class="col-md-5">
+                                        <label class="form-label small">شماره تماس</label>
+                                        <input name="Phones[0].PhoneNumber"
+                                               type="tel"
+                                               class="form-control"
+                                               placeholder="09123456789"
+                                               dir="ltr" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small">نوع</label>
+                                        <select name="Phones[0].PhoneType" class="form-select">
+                                            <option value="0" selected>موبایل</option>
+                                            <option value="1">ثابت</option>
+                                            <option value="2">کاری</option>
+                                            <option value="3">منزل</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small d-block">تنظیمات</label>
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox"
+                                                   name="Phones[0].IsDefault"
+                                                   class="form-check-input default-check"
+                                                   checked />
+                                            <label class="form-check-label small">پیش‌فرض</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox"
+                                                   name="Phones[0].IsSmsDefault"
+                                                   class="form-check-input sms-check"
+                                                   checked />
+                                            <label class="form-check-label small">SMS</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <!-- اولین شماره حذف نمی‌شود -->
+                                        <button type="button" class="btn btn-sm btn-alt-secondary" disabled>
+                                            <i class="fa fa-lock"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fa fa-info-circle fa-2x me-3"></i>
+                            <div>
+                                <strong>نکته:</strong>
+                                شماره تماس اختیاری است. می‌توانید چندین شماره اضافه کنید.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== آدرس ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-map-marker-alt me-2 text-info"></i>
+                            آدرس
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="mb-4">
+                            <label class="form-label" for="PrimaryAddress">آدرس کامل</label>
+                            <textarea asp-for="PrimaryAddress"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="استان، شهر، خیابان، پلاک..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ستون چپ: یادداشت‌ها و تنظیمات -->
+            <div class="col-lg-4">
+                
+                <!-- ========== یادداشت‌ها ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-sticky-note me-2 text-warning"></i>
+                            یادداشت‌ها
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <textarea asp-for="Notes"
+                                  class="form-control"
+                                  rows="5"
+                                  placeholder="یادداشت‌های مربوط به این فرد..."></textarea>
+                    </div>
+                </div>
+
+                <!-- ========== وضعیت ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-cog me-2"></i>
+                            تنظیمات
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="IsActive"
+                                   type="checkbox"
+                                   class="form-check-input"
+                                   id="IsActive"
+                                   checked />
+                            <label class="form-check-label" for="IsActive">
+                                <strong>فعال</strong>
+                                <small class="d-block text-muted">فرد بلافاصله در سیستم فعال شود</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== راهنما ========== -->
+                <div class="block block-rounded block-bordered">
+                    <div class="block-header bg-info">
+                        <h3 class="block-title text-white">
+                            <i class="fa fa-lightbulb me-2"></i>
+                            راهنما
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <ul class="list-unstyled small">
+                            <li class="mb-2">
+                                <i class="fa fa-check-circle text-success me-1"></i>
+                                <strong>نام خانوادگی</strong> الزامی است
+                            </li>
+                           
+                            <li class="mb-2">
+                                <i class="fa fa-info-circle text-info me-1"></i>
+                                کد ملی باید <strong>10 رقم</strong> باشد
+                            </li>
+                     
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- دکمه‌های پایین فرم -->
+        <div class="block block-rounded">
+            <div class="block-content bg-body-light p-3">
+                <div class="row">
+                    <div class="col-md-6 mb-2 mb-md-0">
+                        <a asp-action="Index" class="btn btn-alt-secondary w-100">
+                            <i class="fa fa-times me-1"></i>
+                            انصراف و بازگشت
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-success w-100 btn-lg" id="submitBtn">
+                            <i class="fa fa-check me-1"></i>
+                            ذخیره فرد
+                        </button>
                     </div>
                 </div>
             </div>
@@ -268,68 +356,64 @@
     </form>
 </div>
 <!-- END Page Content -->
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
     <script>
+        let phoneIndex = 1;
+
         $(document).ready(function() {
-            // ⭐ فقط اعداد و خط تیره برای شماره تلفن
-            $('#PrimaryPhone').on('input', function() {
-                let value = $(this).val();
-                // حذف تمام کاراکترها به جز اعداد و خط تیره
-                value = value.replace(/[^\d-]/g, '');
-                $(this).val(value);
-            });
+            // ⭐ Persian Date Picker (مثل Modal)
+            Dashmix.helpersOnLoad(['js-flatpickr']);
+            
+            setTimeout(function() {
+                if (typeof window.initPersianDatePicker === 'function') {
+                    window.initPersianDatePicker($('body'));
+                }
+            }, 100);
 
-            // فقط اعداد برای کد ملی
+            // ⭐ فقط اعداد برای کد ملی
             $('#NationalCode').on('input', function() {
-                let value = $(this).val();
-                value = value.replace(/\D/g, '');
+                let value = $(this).val().replace(/\D/g, '');
                 $(this).val(value);
             });
 
-            // فقط اعداد برای کد پستی
-            $('#PrimaryPostalCode').on('input', function() {
-                let value = $(this).val();
-                value = value.replace(/\D/g, '');
-                $(this).val(value);
+            // ⭐ مدیریت checkbox های IsDefault
+            $(document).on('change', '.default-check', function() {
+                if ($(this).is(':checked')) {
+                    $('.default-check').not(this).prop('checked', false);
+                }
             });
 
-            // Persian Date Picker
-            if ($.fn.persianDatepicker) {
-                $('.date-picker-shamsi').persianDatepicker({
-                    format: 'YYYY/MM/DD',
-                    initialValue: false,
-                    autoClose: true,
-                    calendar: {
-                        persian: {
-                            locale: 'fa'
-                        }
-                    }
-                });
-            }
+            // ⭐ مدیریت checkbox های IsSmsDefault
+            $(document).on('change', '.sms-check', function() {
+                if ($(this).is(':checked')) {
+                    $('.sms-check').not(this).prop('checked', false);
+                }
+            });
 
-            // Focus on first input
+            // Focus on LastName
             $('#LastName').focus();
 
-            // Form validation
-            $('form').on('submit', function(e) {
+            // ⭐ Form validation
+            $('#contactCreateForm').on('submit', function(e) {
                 const lastName = $('#LastName').val().trim();
 
                 if (!lastName) {
                     e.preventDefault();
                     Dashmix.helpers('notify', {
                         type: 'danger',
-                        icon: 'fa fa-exclamation-triangle',
+                        icon: 'fa fa-times',
                         message: 'نام خانوادگی الزامی است'
                     });
                     $('#LastName').focus();
                     return false;
                 }
 
-                // Validate National Code if provided
+                // بررسی کد ملی
                 const nationalCode = $('#NationalCode').val().trim();
                 if (nationalCode && nationalCode.length !== 10) {
                     e.preventDefault();
@@ -343,37 +427,122 @@
                 }
 
                 // Loading state
-                const submitBtn = $(this).find('button[type="submit"]');
+                const submitBtn = $('#submitBtn');
                 submitBtn.prop('disabled', true);
                 submitBtn.html('<i class="fa fa-spinner fa-spin me-1"></i> در حال ذخیره...');
             });
         });
+
+        // ⭐ افزودن شماره جدید
+        function addPhoneRow() {
+            const container = document.getElementById('phonesContainer');
+            const html = `
+                <div class="phone-row mb-3 p-3 border rounded bg-light" data-index="${phoneIndex}" id="phone-${phoneIndex}">
+                    <div class="row align-items-center">
+                        <div class="col-md-5">
+                            <label class="form-label small">شماره تماس</label>
+                            <input name="Phones[${phoneIndex}].PhoneNumber"
+                                   type="tel"
+                                   class="form-control"
+                                   placeholder="09123456789 یا 02112345678"
+                                   dir="ltr" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small">نوع</label>
+                            <select name="Phones[${phoneIndex}].PhoneType" class="form-select">
+                                <option value="0">موبایل</option>
+                                <option value="1">ثابت</option>
+                                <option value="2">کاری</option>
+                                <option value="3">منزل</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small d-block">تنظیمات</label>
+                            <div class="form-check form-check-inline">
+                                <input type="checkbox"
+                                       name="Phones[${phoneIndex}].IsDefault"
+                                       class="form-check-input default-check" />
+                                <label class="form-check-label small">پیش‌فرض</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input type="checkbox"
+                                       name="Phones[${phoneIndex}].IsSmsDefault"
+                                       class="form-check-input sms-check" />
+                                <label class="form-check-label small">SMS</label>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removePhoneRow(${phoneIndex})">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            phoneIndex++;
+
+            // Animate
+            $(`#phone-${phoneIndex - 1}`).hide().fadeIn(300);
+        }
+
+        // ⭐ حذف شماره
+        function removePhoneRow(index) {
+            $(`#phone-${index}`).fadeOut(300, function() {
+                $(this).remove();
+            });
+        }
     </script>
 }
 
 @section Styles {
     <style>
         .form-control-lg {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             padding: 0.75rem 1rem;
-        }
-
-        .form-check-lg .form-check-input {
-            width: 3rem;
-            height: 1.5rem;
         }
 
         input[dir="ltr"] {
             text-align: left;
+            font-family: 'Courier New', monospace;
         }
 
-        .alert-info {
-            border-left: 4px solid #0d6efd;
+        .phone-row {
+            transition: all 0.3s ease;
+        }
+
+        .phone-row:hover {
+            background-color: #f8f9fa !important;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .block-bordered {
+            border: 2px solid #e9ecef;
+        }
+
+        .bg-image {
+            background-size: cover;
+            background-position: center;
+        }
+
+        .bg-primary-dark-op {
+            background-color: rgba(var(--bs-primary-rgb), 0.85);
+        }
+
+        /* ⭐ استایل Persian DatePicker */
+        .js-flatpickr {
+            cursor: pointer;
+            background-color: white !important;
+        }
+
+        .js-flatpickr:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
         }
 
         @@media (max-width: 768px) {
-            .block-content {
-                padding: 1rem;
+            .phone-row .row > div {
+                margin-bottom: 0.75rem;
             }
         }
     </style>

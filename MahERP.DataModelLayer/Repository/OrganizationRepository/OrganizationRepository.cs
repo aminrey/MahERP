@@ -62,7 +62,9 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
         }
         public List<Organization> GetAllOrganizations(bool includeInactive = false, byte? organizationType = null)
         {
-            var query = _context.Organization_Tbl.AsQueryable();
+            var query = _context.Organization_Tbl
+                .Include(o => o.Phones.Where(p => p.IsActive)) // ⭐ اضافه شده
+                .AsQueryable();
 
             if (!includeInactive)
                 query = query.Where(o => o.IsActive);
@@ -108,7 +110,9 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return GetAllOrganizations(includeInactive, organizationType);
 
-            var query = _context.Organization_Tbl.AsQueryable();
+            var query = _context.Organization_Tbl
+                .Include(o => o.Phones.Where(p => p.IsActive)) // ⭐ اضافه شده
+                .AsQueryable();
 
             if (!includeInactive)
                 query = query.Where(o => o.IsActive);

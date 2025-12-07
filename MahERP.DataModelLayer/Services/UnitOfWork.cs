@@ -160,6 +160,7 @@ namespace MahERP.DataModelLayer.Services
         private GenereicClass<Contact> _contactUW;
         private GenereicClass<ContactPhone> _contactPhoneUW;
         private GenereicClass<Organization> _organizationUW;
+        private GenereicClass<OrganizationPhone> _organizationPhoneUW; // ⭐ NEW
         private GenereicClass<OrganizationDepartment> _organizationDepartmentUW;
         private GenereicClass<DepartmentPosition> _departmentPositionUW;
         private GenereicClass<DepartmentMember> _departmentMemberUW;
@@ -462,6 +463,16 @@ namespace MahERP.DataModelLayer.Services
                 if (_organizationUW == null)
                     _organizationUW = new GenereicClass<Organization>(_Context);
                 return _organizationUW;
+            }
+        }
+
+        public GenereicClass<OrganizationPhone> OrganizationPhoneUW
+        {
+            get
+            {
+                if (_organizationPhoneUW == null)
+                    _organizationPhoneUW = new GenereicClass<OrganizationPhone>(_Context);
+                return _organizationPhoneUW;
             }
         }
 
