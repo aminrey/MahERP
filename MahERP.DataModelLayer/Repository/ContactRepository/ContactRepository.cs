@@ -79,25 +79,29 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return GetAllContacts(includeInactive);
 
-            var query = _context.Contact_Tbl.AsQueryable();
+            var query = _context.Contact_Tbl
+                .Include(c => c.Phones.Where(p => p.IsActive)) // ⭐ اضافه شده
+                .AsQueryable();
 
             if (!includeInactive)
                 query = query.Where(c => c.IsActive);
 
+            // ⭐⭐⭐ بهبود یافته: جستجو در تمام فیلدها + شماره تماس
             query = query.Where(c =>
                 c.FirstName.Contains(searchTerm) ||
                 c.LastName.Contains(searchTerm) ||
                 (c.NationalCode != null && c.NationalCode.Contains(searchTerm)) ||
                 (c.PrimaryEmail != null && c.PrimaryEmail.Contains(searchTerm)) ||
-                c.Phones.Any(p => p.PhoneNumber.Contains(searchTerm))
+                (c.Notes != null && c.Notes.Contains(searchTerm)) || // ⭐ جستجو در یادداشت‌ها
+                c.Phones.Any(p => p.PhoneNumber.Contains(searchTerm)) // ⭐⭐⭐ جستجو در شماره‌های تماس
             );
 
             if (gender.HasValue)
                 query = query.Where(c => c.Gender == gender.Value);
 
             return query
-                .OrderBy(c => c.FirstName)
-                .ThenBy(c => c.LastName)
+                .OrderBy(c => c.LastName)
+                .ThenBy(c => c.FirstName)
                 .ToList();
         }
 

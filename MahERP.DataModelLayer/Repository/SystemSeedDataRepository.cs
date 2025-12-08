@@ -1,5 +1,6 @@
 ﻿using MahERP.DataModelLayer.Entities.Notifications;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Entities.Organizations; // ⭐ NEW
 using MahERP.DataModelLayer.StaticClasses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,10 @@ namespace MahERP.DataModelLayer.Repository
         // ⭐⭐⭐ Task Settings Seed Data
         Task EnsureTaskSettingsSeedDataAsync();
         Task<TaskSettings> GetGlobalDefaultSettingsAsync();
+        
+        // ⭐⭐⭐ Position Seed Data
+        Task EnsurePositionSeedDataAsync();
+        Task<bool> CheckIfPositionExistsAsync(int positionId);
     }
 
     public class SystemSeedDataRepository : ISystemSeedDataRepository
@@ -171,6 +176,44 @@ namespace MahERP.DataModelLayer.Repository
             }
 
             return globalSettings;
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ اطمینان از وجود سمت‌های استاندارد سازمانی
+        /// </summary>
+        public async Task EnsurePositionSeedDataAsync()
+        {
+            try
+            {
+                foreach (var position in StaticPositionSeedData.CommonPositions)
+                {
+                    var exists = await _context.OrganizationPosition_Tbl
+                        .AnyAsync(p => p.Id == position.Id);
+
+                    if (!exists)
+                    {
+                        _context.OrganizationPosition_Tbl.Add(position);
+                        _logger.LogInformation($"➕ Added OrganizationPosition: {position.Title} (ID: {position.Id})");
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("✅ OrganizationPosition Seed Data successfully ensured.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error ensuring organization position seed data");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ بررسی وجود سمت
+        /// </summary>
+        public async Task<bool> CheckIfPositionExistsAsync(int positionId)
+        {
+            return await _context.OrganizationPosition_Tbl
+                .AnyAsync(p => p.Id == positionId);
         }
     }
 }

@@ -181,7 +181,7 @@
                             <span class="text-muted small">(اختیاری)</span>
                         </h3>
                         <div class="block-options">
-                            <button type="button" class="btn btn-sm btn-alt-success" onclick="addPhoneRow()">
+                            <button type="button" class="btn btn-sm btn-alt-success" id="addPhoneBtn">
                                 <i class="fa fa-plus me-1"></i>
                                 افزودن شماره
                             </button>
@@ -194,51 +194,7 @@
                                 var phoneIndex = 0;
                                 foreach (var phone in Model.Phones.OrderByDescending(p => p.IsDefault).ThenBy(p => p.DisplayOrder))
                                 {
-                                    <div class="phone-row mb-3 p-3 border rounded" data-index="@phoneIndex" id="phone-@phoneIndex">
-                                        <input type="hidden" name="Phones[@phoneIndex].Id" value="@phone.Id" />
-                                        <div class="row align-items-center">
-                                            <div class="col-md-5">
-                                                <label class="form-label small">شماره تماس</label>
-                                                <input name="Phones[@phoneIndex].PhoneNumber"
-                                                       type="tel"
-                                                       class="form-control"
-                                                       value="@phone.PhoneNumber"
-                                                       placeholder="09123456789"
-                                                       dir="ltr" />
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label small">نوع</label>
-                                                <select name="Phones[@phoneIndex].PhoneType" class="form-select">
-                                                    <option value="0" selected="@(phone.PhoneType == 0)">موبایل</option>
-                                                    <option value="1" selected="@(phone.PhoneType == 1)">ثابت</option>
-                                                    <option value="2" selected="@(phone.PhoneType == 2)">کاری</option>
-                                                    <option value="3" selected="@(phone.PhoneType == 3)">منزل</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label small d-block">تنظیمات</label>
-                                                <div class="form-check form-check-inline">
-                                                    <input type="checkbox"
-                                                           name="Phones[@phoneIndex].IsDefault"
-                                                           class="form-check-input default-check"
-                                                           @(phone.IsDefault ? "checked" : "") />
-                                                    <label class="form-check-label small">پیش‌فرض</label>
-                                                </div>
-                                                <div class="form-check form-check-inline">
-                                                    <input type="checkbox"
-                                                           name="Phones[@phoneIndex].IsSmsDefault"
-                                                           class="form-check-input sms-check"
-                                                           @(phone.IsSmsDefault ? "checked" : "") />
-                                                    <label class="form-check-label small">SMS</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-1">
-                                                <button type="button" class="btn btn-sm btn-danger" onclick="removePhoneRow(@phoneIndex)">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <partial name="_PhoneRowPartial" model="phone" view-data='new ViewDataDictionary(ViewData) { { "Index", phoneIndex }, { "IsNew", false } }' />
                                     phoneIndex++;
                                 }
                                 <script>
@@ -247,50 +203,15 @@
                             }
                             else
                             {
-                                <!-- اگر شماره‌ای نداشت، یک ردیف خالی نشون بده -->
-                                <div class="phone-row mb-3 p-3 border rounded" data-index="0" id="phone-0">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-5">
-                                            <label class="form-label small">شماره تماس</label>
-                                            <input name="Phones[0].PhoneNumber"
-                                                   type="tel"
-                                                   class="form-control"
-                                                   placeholder="09123456789"
-                                                   dir="ltr" />
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label small">نوع</label>
-                                            <select name="Phones[0].PhoneType" class="form-select">
-                                                <option value="0" selected>موبایل</option>
-                                                <option value="1">ثابت</option>
-                                                <option value="2">کاری</option>
-                                                <option value="3">منزل</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label small d-block">تنظیمات</label>
-                                            <div class="form-check form-check-inline">
-                                                <input type="checkbox"
-                                                       name="Phones[0].IsDefault"
-                                                       class="form-check-input default-check"
-                                                       checked />
-                                                <label class="form-check-label small">پیش‌فرض</label>
-                                            </div>
-                                            <div class="form-check form-check-inline">
-                                                <input type="checkbox"
-                                                       name="Phones[0].IsSmsDefault"
-                                                       class="form-check-input sms-check"
-                                                       checked />
-                                                <label class="form-check-label small">SMS</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-1">
-                                            <button type="button" class="btn btn-sm btn-danger" onclick="removePhoneRow(0)">
-                                                <i class="fa fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                             
+                                    var emptyPhone = new ContactPhoneViewModel
+                                    {
+                                        PhoneType = 0,
+                                        IsDefault = true,
+                                        IsSmsDefault = true
+                                    };
+                                
+                                <partial name="_PhoneRowPartial" model="emptyPhone" view-data='new ViewDataDictionary(ViewData) { { "Index", 0 }, { "IsNew", false } }' />
                                 <script>
                                     var phoneIndex = 1;
                                 </script>
@@ -387,7 +308,7 @@
                                 <i class="fa fa-info-circle text-info me-1"></i>
                                 کد ملی باید <strong>10 رقم</strong> باشد
                             </li>
-                           
+                          
                         </ul>
                     </div>
                 </div>
@@ -426,7 +347,7 @@
 
     <script>
         $(document).ready(function() {
-            // ⭐ Persian Date Picker (مثل Modal)
+            // ⭐ Persian Date Picker
             Dashmix.helpersOnLoad(['js-flatpickr']);
             
             setTimeout(function() {
@@ -453,6 +374,41 @@
                 if ($(this).is(':checked')) {
                     $('.sms-check').not(this).prop('checked', false);
                 }
+            });
+
+            // ⭐⭐⭐ افزودن شماره جدید با AJAX
+            $('#addPhoneBtn').on('click', function() {
+                const $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '@Url.Action("AddPhoneRowPartial", "Contacts")',
+                    type: 'POST',
+                    data: {
+                        index: phoneIndex,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.status === 'update-view' && response.viewList) {
+                            response.viewList.forEach(function(item) {
+                                if (item.elementId === 'phonesContainer') {
+                                    $('#' + item.elementId).append(item.view.result);
+                                    
+                                    // Animation
+                                    $('#phone-' + phoneIndex).hide().fadeIn(300);
+                                    
+                                    phoneIndex++;
+                                }
+                            });
+                        }
+                        $btn.prop('disabled', false);
+                    },
+                    error: function(xhr) {
+                        console.error('خطا در افزودن شماره:', xhr);
+                        NotificationHelper.error('خطا در افزودن شماره');
+                        $btn.prop('disabled', false);
+                    }
+                });
             });
 
             // Focus on FirstName
@@ -493,62 +449,9 @@
             });
         });
 
-        // ⭐ افزودن شماره جدید
-        function addPhoneRow() {
-            const container = document.getElementById('phonesContainer');
-            const html = `
-                <div class="phone-row mb-3 p-3 border rounded bg-light" data-index="${phoneIndex}" id="phone-${phoneIndex}">
-                    <div class="row align-items-center">
-                        <div class="col-md-5">
-                            <label class="form-label small">شماره تماس</label>
-                            <input name="Phones[${phoneIndex}].PhoneNumber"
-                                   type="tel"
-                                   class="form-control"
-                                   placeholder="09123456789 یا 02112345678"
-                                   dir="ltr" />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small">نوع</label>
-                            <select name="Phones[${phoneIndex}].PhoneType" class="form-select">
-                                <option value="0">موبایل</option>
-                                <option value="1">ثابت</option>
-                                <option value="2">کاری</option>
-                                <option value="3">منزل</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small d-block">تنظیمات</label>
-                            <div class="form-check form-check-inline">
-                                <input type="checkbox"
-                                       name="Phones[${phoneIndex}].IsDefault"
-                                       class="form-check-input default-check" />
-                                <label class="form-check-label small">پیش‌فرض</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input type="checkbox"
-                                       name="Phones[${phoneIndex}].IsSmsDefault"
-                                       class="form-check-input sms-check" />
-                                <label class="form-check-label small">SMS</label>
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <button type="button" class="btn btn-sm btn-danger" onclick="removePhoneRow(${phoneIndex})">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
-            phoneIndex++;
-
-            // Animate
-            $(`#phone-${phoneIndex - 1}`).hide().fadeIn(300);
-        }
-
         // ⭐ حذف شماره
         function removePhoneRow(index) {
-            $(`#phone-${index}`).fadeOut(300, function() {
+            $('#phone-' + index).fadeOut(300, function() {
                 $(this).remove();
             });
         }

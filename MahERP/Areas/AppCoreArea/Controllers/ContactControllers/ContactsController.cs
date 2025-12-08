@@ -676,6 +676,52 @@ namespace MahERP.Areas.AppCoreArea.Controllers.ContactControllers
         }
 
         /// <summary>
+        /// ⭐ افزودن Phone Row جدید با AJAX (Partial View)
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> AddPhoneRowPartial(int index)
+        {
+            try
+            {
+                var phoneViewModel = new ContactPhoneViewModel
+                {
+                    PhoneType = 0, // موبایل
+                    IsDefault = false,
+                    IsSmsDefault = false,
+                    IsActive = true
+                };
+
+                ViewBag.Index = index;
+                ViewBag.IsNew = true;
+
+                var partialViewResult = await this.RenderViewToStringAsync("_PhoneRowPartial", phoneViewModel);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                        new
+                        {
+                            elementId = "phonesContainer",
+                            view = new { result = partialViewResult },
+                            appendMode = true
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("Contacts", "AddPhoneRowPartial", "خطا در افزودن شماره", ex);
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "خطا در افزودن شماره" } }
+                });
+            }
+        }
+
+        /// <summary>
         /// افزودن شماره جدید - Modal
         /// </summary>
         [HttpGet]

@@ -44,6 +44,12 @@ namespace MahERP.DataModelLayer
         public DbSet<Organization> Organization_Tbl { get; set; }
         public DbSet<OrganizationPhone> OrganizationPhone_Tbl { get; set; } // ⭐ NEW
         public DbSet<OrganizationDepartment> OrganizationDepartment_Tbl { get; set; }
+        
+        /// <summary>
+        /// ⭐⭐⭐ NEW: سمت‌های استاندارد سازمانی (Organization Standard Positions)
+        /// </summary>
+        public DbSet<OrganizationPosition> OrganizationPosition_Tbl { get; set; }
+        
         public DbSet<DepartmentPosition> DepartmentPosition_Tbl { get; set; }
         public DbSet<DepartmentMember> DepartmentMember_Tbl { get; set; }
         public DbSet<OrganizationContact> OrganizationContact_Tbl { get; set; }

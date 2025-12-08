@@ -34,8 +34,8 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         public int DisplayOrder { get; set; }
 
         // Computed Properties
-        public string PhoneTypeText { get; set; }
-        public string FormattedNumber { get; set; }
+        public string? PhoneTypeText { get; set; }
+        public string? FormattedNumber { get; set; }
     }
 
     /// <summary>

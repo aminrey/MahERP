@@ -179,42 +179,110 @@
 
             <!-- اطلاعات تماس و سایر بخش‌ها -->
             <div class="col-md-8">
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <i class="fa fa-phone me-2"></i> اطلاعات تماس
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <h6 class="text-muted">تلفن اصلی</h6>
-                                <p class="mb-0">
-                                    @if (!string.IsNullOrEmpty(Model.PrimaryPhone))
-                                    {
-                                        <i class="fa fa-phone text-primary me-2"></i>
-                                        <strong>@Model.PrimaryPhone</strong>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">-</span>
-                                    }
-                                </p>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <h6 class="text-muted">تلفن دوم</h6>
-                                <p class="mb-0">
-                                    @if (!string.IsNullOrEmpty(Model.SecondaryPhone))
-                                    {
-                                        <i class="fa fa-phone text-primary me-2"></i>
-                                        @Model.SecondaryPhone
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">-</span>
-                                    }
-                                </p>
+                <!-- ⭐⭐⭐ شماره‌های تماس (از جدول OrganizationPhone) ⭐⭐⭐ -->
+                @if (Model.Phones != null && Model.Phones.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <i class="fa fa-phone me-2"></i> شماره‌های تماس
+                            <span class="badge bg-white text-info float-end">@Model.Phones.Count شماره</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px;">#</th>
+                                            <th>شماره تماس</th>
+                                            <th>نوع</th>
+                                            <th>داخلی</th>
+                                            <th class="text-center">وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            int phoneRowNumber = 1;
+                                        }
+                                        @foreach (var phone in Model.Phones.OrderByDescending(p => p.IsDefault).ThenBy(p => p.DisplayOrder))
+                                        {
+                                            <tr class="@(phone.IsDefault ? "table-warning" : "")">
+                                                <td class="text-center">@phoneRowNumber</td>
+                                                <td>
+                                                    <strong dir="ltr" class="d-inline-block">
+                                                        <i class="fa fa-phone text-primary me-2"></i>
+                                                        @phone.FormattedNumber
+                                                    </strong>
+                                                    @if (phone.IsDefault)
+                                                    {
+                                                        <span class="badge bg-warning text-dark ms-2">
+                                                            <i class="fa fa-star"></i> پیش‌فرض
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-@(phone.PhoneType switch
+                                                          {
+                                                              0 => "success",
+                                                              1 => "primary",
+                                                              2 => "info",
+                                                              _ => "secondary"
+                                                          })">
+                                                        @phone.PhoneTypeText
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(phone.Extension))
+                                                    {
+                                                        <span class="badge bg-light text-dark" dir="ltr">
+                                                            داخلی: @phone.Extension
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (phone.IsActive)
+                                                    {
+                                                        <span class="badge bg-success">فعال</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">غیرفعال</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                            phoneRowNumber++;
+                                        }
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <i class="fa fa-phone me-2"></i> شماره‌های تماس
+                        </div>
+                        <div class="card-body text-center py-4">
+                            <i class="fa fa-phone fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">هیچ شماره تماسی ثبت نشده است</h5>
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-info mt-3">
+                                <i class="fa fa-plus me-1"></i> افزودن شماره
+                            </a>
+                        </div>
+                    </div>
+                }
 
+                <!-- اطلاعات تماس دیگر -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <i class="fa fa-envelope me-2"></i> اطلاعات تماس دیگر
+                    </div>
+                    <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <h6 class="text-muted">ایمیل</h6>
@@ -263,6 +331,7 @@
                         </div>
                     </div>
                 </div>
+
                 <!-- توضیحات -->
                 @if (!string.IsNullOrEmpty(Model.Description))
                 {

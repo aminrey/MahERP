@@ -88,9 +88,13 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
                 .FirstOrDefault(o => o.Id == id);
         }
 
-        public async Task<Organization> GetOrganizationByIdAsync(int id, bool includeDepartments = false, bool includeContacts = false)
+        public async Task<Organization> GetOrganizationByIdAsync(int id, bool includeDepartments = false, bool includeContacts = false, bool includePhones = true)
         {
             var query = _context.Organization_Tbl.AsQueryable();
+
+            // ⭐ بارگذاری شماره‌ها (پیش‌فرض: true)
+            if (includePhones)
+                query = query.Include(o => o.Phones.Where(p => p.IsActive));
 
             if (includeDepartments)
                 query = query.Include(o => o.Departments.Where(d => d.IsActive))
@@ -117,12 +121,16 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
             if (!includeInactive)
                 query = query.Where(o => o.IsActive);
 
+            // ⭐⭐⭐ بهبود یافته: جستجو در فیلدهای بیشتر + شماره تماس
             query = query.Where(o =>
                 o.Name.Contains(searchTerm) ||
                 (o.Brand != null && o.Brand.Contains(searchTerm)) ||
                 (o.RegistrationNumber != null && o.RegistrationNumber.Contains(searchTerm)) ||
                 (o.EconomicCode != null && o.EconomicCode.Contains(searchTerm)) ||
-                (o.Email != null && o.Email.Contains(searchTerm))
+                (o.Email != null && o.Email.Contains(searchTerm)) ||
+                (o.Address != null && o.Address.Contains(searchTerm)) || // ⭐ جستجو در آدرس
+                (o.Description != null && o.Description.Contains(searchTerm)) || // ⭐ جستجو در توضیحات
+                o.Phones.Any(p => p.PhoneNumber.Contains(searchTerm)) // ⭐⭐⭐ جستجو در شماره‌های تماس
             );
 
             if (organizationType.HasValue)

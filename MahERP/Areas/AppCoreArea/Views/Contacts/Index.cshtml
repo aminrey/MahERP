@@ -37,39 +37,139 @@
     <div class="block block-rounded mb-4">
         <div class="block-content block-content-full">
             <div class="row g-3">
-                <!-- افزودن فرد جدید -->
-                <div class="col-6 col-md-3">
-                    <a class="btn btn-lg btn-primary w-100" href="@Url.Action("Create", "Contacts")">
-                        <i class="fa fa-plus me-1"></i>
-                        افزودن فرد جدید
-                    </a>
+                <div class="col-md-8">
+                    <!-- ⭐⭐⭐ فرم جستجو و فیلتر ⭐⭐⭐ -->
+                    <form method="get" asp-action="Index" id="searchForm">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input type="text" 
+                                           name="searchTerm" 
+                                           class="form-control form-control-lg" 
+                                           placeholder="نام، کد ملی، ایمیل یا شماره تماس..."
+                                           value="@ViewBag.SearchTerm">
+                                    @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string))
+                                    {
+                                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                            <i class="fa fa-times"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select name="gender" class="form-select form-select-lg" onchange="document.getElementById('searchForm').submit()">
+                                    <option value="">همه جنسیت‌ها</option>
+                                    @{
+                                        var genderValue = ViewBag.Gender?.ToString();
+                                    }
+                                    
+                                    @if (genderValue == "0")
+                                    {
+                                        <option value="0" selected>آقا</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="0">آقا</option>
+                                    }
+                                    
+                                    @if (genderValue == "1")
+                                    {
+                                        <option value="1" selected>خانم</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="1">خانم</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="fa fa-search"></i> جستجو
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- مدیریت گروه‌ها -->
-                <div class="col-6 col-md-3">
-                    <a class="btn btn-lg btn-info w-100" href="@Url.Action("Index", "ContactGroups")">
-                        <i class="fa fa-layer-group me-1"></i>
-                        مدیریت گروه‌ها
-                    </a>
-                </div>
-
-                <!-- آمار -->
-                <div class="col-6 col-md-3">
-                    <a class="btn btn-lg btn-secondary w-100" href="@Url.Action("Statistics", "Contacts")">
-                        <i class="fa fa-chart-bar me-1"></i>
-                        آمار و گزارشات
-                    </a>
-                </div>
-
-                <!-- جستجو -->
-                <div class="col-6 col-md-3">
-                    <button type="button" class="btn btn-lg btn-outline-primary w-100" 
-                            data-bs-toggle="collapse" data-bs-target="#searchPanel">
-                        <i class="fa fa-search me-1"></i>
-                        جستجو
-                    </button>
+                <div class="col-md-4">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a class="btn btn-lg btn-success w-100" href="@Url.Action("Create", "Contacts")">
+                                <i class="fa fa-plus me-1"></i>
+                                افزودن
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a class="btn btn-lg btn-info w-100" href="@Url.Action("Index", "ContactGroups")">
+                                <i class="fa fa-layer-group me-1"></i>
+                                گروه‌ها
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- ⭐ نمایش فیلترهای فعال -->
+            @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string) || ViewBag.Gender != null || ViewBag.SelectedGroupId != null)
+            {
+                <div class="mt-3">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="text-muted small">فیلترهای فعال:</span>
+                        
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string))
+                        {
+                            <span class="badge bg-primary">
+                                <i class="fa fa-search me-1"></i>
+                                جستجو: @ViewBag.SearchTerm
+                                <a href="@Url.Action("Index", new { gender = ViewBag.Gender, groupId = ViewBag.SelectedGroupId })" 
+                                   class="text-white ms-1">
+                                    <i class="fa fa-times"></i>
+                                </a>
+                            </span>
+                        }
+
+                        @if (ViewBag.Gender != null)
+                        {
+                            var genderText = ViewBag.Gender switch
+                            {
+                                (byte)0 => "مرد",
+                                (byte)1 => "زن",
+                                _ => ""
+                            };
+                            <span class="badge bg-info">
+                                <i class="fa fa-venus-mars me-1"></i>
+                                جنسیت: @genderText
+                                <a href="@Url.Action("Index", new { searchTerm = ViewBag.SearchTerm, groupId = ViewBag.SelectedGroupId })" 
+                                   class="text-white ms-1">
+                                    <i class="fa fa-times"></i>
+                                </a>
+                            </span>
+                        }
+
+                        @if (ViewBag.SelectedGroupId != null && groups != null)
+                        {
+                            var selectedGroup = groups.FirstOrDefault(g => g.Id == ViewBag.SelectedGroupId);
+                            if (selectedGroup != null)
+                            {
+                                <span class="badge" style="background-color: @selectedGroup.DisplayColorHex;">
+                                    <i class="fa @selectedGroup.DisplayIconClass me-1"></i>
+                                    گروه: @selectedGroup.Title
+                                    <a href="@Url.Action("Index", new { searchTerm = ViewBag.SearchTerm, gender = ViewBag.Gender })" 
+                                       class="text-white ms-1">
+                                        <i class="fa fa-times"></i>
+                                    </a>
+                                </span>
+                            }
+                        }
+
+                        <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-danger">
+                            <i class="fa fa-times me-1"></i> پاک کردن همه فیلترها
+                        </a>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 
@@ -108,49 +208,6 @@
             </div>
         </div>
     }
-
-    <!-- پنل جستجو -->
-    <div class="collapse @(ViewBag.SearchTerm != null ? "show" : "")" id="searchPanel">
-        <div class="block block-rounded mb-4">
-            <div class="block-content">
-                <form method="get" asp-action="Index" asp-controller="Contacts">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <input type="text" name="searchTerm" class="form-control" 
-                                   placeholder="نام، کد ملی، ایمیل یا شماره..." 
-                                   value="@ViewBag.SearchTerm">
-                        </div>
-                        <div class="col-md-3">
-                            <select name="gender" class="form-select">
-                                <option value="">همه جنسیت‌ها</option>
-                                <option value="0" selected="@(ViewBag.Gender == 0)">مرد</option>
-                                <option value="1" selected="@(ViewBag.Gender == 1)">زن</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <select name="groupId" class="form-select">
-                                <option value="">همه گروه‌ها</option>
-                                @if (groups != null)
-                                {
-                                    @foreach (var group in groups)
-                                    {
-                                        <option value="@group.Id" selected="@(selectedGroupId == group.Id)">
-                                            @group.Title
-                                        </option>
-                                    }
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fa fa-search me-1"></i> جستجو
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <!-- جدول افراد -->
     <div class="block block-rounded">
@@ -220,10 +277,26 @@
                                                                class="contact-name">
                                                                 @contact.FullName
                                                             </a>
-                                                            <div class="text-muted small">
-                                                                <i class="fa fa-phone fa-fw"></i>
-                                                                @(contact.PrimaryPhone ?? "-")
-                                                            </div>
+                                                            @* ⭐⭐⭐ نمایش شماره پیش‌فرض از Phones *@
+                                                            @if (contact.Phones != null && contact.Phones.Any())
+                                                            {
+                                                                var defaultPhone = contact.Phones.FirstOrDefault(p => p.IsDefault);
+                                                                if (defaultPhone != null)
+                                                                {
+                                                                    <div class="text-muted small">
+                                                                        <i class="fa fa-phone fa-fw"></i>
+                                                                        <span dir="ltr" class="d-inline-block">@defaultPhone.FormattedNumber</span>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                            else if (!string.IsNullOrEmpty(contact.PrimaryPhone))
+                                                            {
+                                                                @* ⭐ fallback به فیلد قدیمی *@
+                                                                <div class="text-muted small">
+                                                                    <i class="fa fa-phone fa-fw"></i>
+                                                                    <span dir="ltr" class="d-inline-block">@contact.PrimaryPhone</span>
+                                                                </div>
+                                                            }
                                                         </div>
                                                         <div class="btn-group-vertical btn-group-sm">
                                                             <a href="@Url.Action("Details", "Contacts", new { id = contact.Id })" 
@@ -243,7 +316,16 @@
                                                         {
                                                             <div class="small text-muted mb-1">
                                                                 <i class="fa fa-envelope fa-fw"></i>
-                                                                @contact.PrimaryEmail
+                                                                <span dir="ltr" class="d-inline-block">@contact.PrimaryEmail</span>
+                                                            </div>
+                                                        }
+
+                                                        @* ⭐ کد ملی *@
+                                                        @if (!string.IsNullOrEmpty(contact.NationalCode))
+                                                        {
+                                                            <div class="small text-muted mb-1">
+                                                                <i class="fa fa-id-card fa-fw"></i>
+                                                                <span dir="ltr" class="d-inline-block">@contact.NationalCode</span>
                                                             </div>
                                                         }
 
@@ -408,6 +490,12 @@
         /* Smooth Scroll */
         html {
             scroll-behavior: smooth;
+        }
+
+        /* ⭐ LTR Content (Phone, Email, National Code) */
+        [dir="ltr"] {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            letter-spacing: 0.5px;
         }
 
         /* Sticky Index */

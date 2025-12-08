@@ -210,15 +210,19 @@
                                     <div class="col-md-3">
                                         <label class="form-label small d-block">تنظیمات</label>
                                         <div class="form-check form-check-inline">
+                                            <input type="hidden" name="Phones[0].IsDefault" value="false" />
                                             <input type="checkbox"
                                                    name="Phones[0].IsDefault"
+                                                   value="true"
                                                    class="form-check-input default-check"
                                                    checked />
                                             <label class="form-check-label small">پیش‌فرض</label>
                                         </div>
                                         <div class="form-check form-check-inline">
+                                            <input type="hidden" name="Phones[0].IsSmsDefault" value="false" />
                                             <input type="checkbox"
                                                    name="Phones[0].IsSmsDefault"
+                                                   value="true"
                                                    class="form-check-input sms-check"
                                                    checked />
                                             <label class="form-check-label small">SMS</label>
@@ -459,14 +463,18 @@
                         <div class="col-md-3">
                             <label class="form-label small d-block">تنظیمات</label>
                             <div class="form-check form-check-inline">
+                                <input type="hidden" name="Phones[${phoneIndex}].IsDefault" value="false" />
                                 <input type="checkbox"
                                        name="Phones[${phoneIndex}].IsDefault"
+                                       value="true"
                                        class="form-check-input default-check" />
                                 <label class="form-check-label small">پیش‌فرض</label>
                             </div>
                             <div class="form-check form-check-inline">
+                                <input type="hidden" name="Phones[${phoneIndex}].IsSmsDefault" value="false" />
                                 <input type="checkbox"
                                        name="Phones[${phoneIndex}].IsSmsDefault"
+                                       value="true"
                                        class="form-check-input sms-check" />
                                 <label class="form-check-label small">SMS</label>
                             </div>

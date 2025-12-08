@@ -15,6 +15,7 @@ namespace MahERP.DataModelLayer.Configurations
             ConfigureContactPhone(modelBuilder);
             ConfigureOrganization(modelBuilder);
             ConfigureOrganizationDepartment(modelBuilder);
+            ConfigureOrganizationPosition(modelBuilder); // ⭐⭐⭐ تغییر نام
             ConfigureDepartmentPosition(modelBuilder);
             ConfigureDepartmentMember(modelBuilder);
             ConfigureOrganizationContact(modelBuilder);
@@ -290,6 +291,91 @@ namespace MahERP.DataModelLayer.Configurations
 
                 entity.HasIndex(od => new { od.OrganizationId, od.Level })
                     .HasDatabaseName("IX_OrganizationDepartment_Org_Level");
+            });
+        }
+
+        private static void ConfigureOrganizationPosition(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<OrganizationPosition>(entity =>
+            {
+                // Primary Key
+                entity.HasKey(p => p.Id);
+
+                // Properties
+                entity.Property(p => p.Title)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(p => p.TitleEnglish)
+                    .HasMaxLength(200);
+
+                entity.Property(p => p.Category)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(p => p.Description)
+                    .HasMaxLength(2000);
+
+                entity.Property(p => p.Level)
+                    .IsRequired()
+                    .HasDefaultValue(3);
+
+                entity.Property(p => p.DefaultPowerLevel)
+                    .IsRequired()
+                    .HasDefaultValue(50);
+
+                entity.Property(p => p.IsCommon)
+                    .HasDefaultValue(true);
+
+                entity.Property(p => p.RequiresDegree)
+                    .HasDefaultValue(false);
+
+                entity.Property(p => p.CanHireSubordinates)
+                    .HasDefaultValue(false);
+
+                entity.Property(p => p.DisplayOrder)
+                    .HasDefaultValue(1);
+
+                entity.Property(p => p.IsActive)
+                    .HasDefaultValue(true);
+
+                entity.Property(p => p.CreatedDate)
+                    .IsRequired()
+                    .HasDefaultValueSql("GETDATE()");
+
+                entity.Property(p => p.SuggestedMinSalary)
+                    .HasColumnType("decimal(18,2)");
+
+                entity.Property(p => p.SuggestedMaxSalary)
+                    .HasColumnType("decimal(18,2)");
+
+                // Relationships
+                entity.HasOne(p => p.Creator)
+                    .WithMany()
+                    .HasForeignKey(p => p.CreatorUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.LastUpdater)
+                    .WithMany()
+                    .HasForeignKey(p => p.LastUpdaterUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Indexes
+                entity.HasIndex(p => p.Title)
+                    .HasDatabaseName("IX_Position_Title");
+
+                entity.HasIndex(p => p.Category)
+                    .HasDatabaseName("IX_Position_Category");
+
+                entity.HasIndex(p => new { p.Level, p.DefaultPowerLevel })
+                    .HasDatabaseName("IX_Position_Level_PowerLevel");
+
+                entity.HasIndex(p => p.IsCommon)
+                    .HasDatabaseName("IX_Position_IsCommon")
+                    .HasFilter("[IsCommon] = 1 AND [IsActive] = 1");
+
+                entity.HasIndex(p => p.DisplayOrder)
+                    .HasDatabaseName("IX_Position_DisplayOrder");
             });
         }
 

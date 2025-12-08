@@ -46,6 +46,9 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                 // اطمینان از وجود Seed Data های تنظیمات تسک
                 await seedDataRepository.EnsureTaskSettingsSeedDataAsync();
 
+                // ⭐⭐⭐ اطمینان از وجود سمت‌های رایج سازمانی
+                await seedDataRepository.EnsurePositionSeedDataAsync();
+
                 _logger.LogInformation("✅ System seed data check completed successfully.");
             }
             catch (Exception ex)

@@ -81,10 +81,7 @@
                 <div class="card mb-4">
                     <div class="card-header bg-info text-white">
                         <i class="fa fa-phone me-2"></i> شماره‌های تماس
-                        <a asp-action="ManagePhones" asp-route-contactId="@Model.Id" 
-                           class="btn btn-sm btn-light float-end">
-                            مدیریت
-                        </a>
+                      
                     </div>
                     <div class="card-body">
                         @if (Model.Phones?.Any() == true)

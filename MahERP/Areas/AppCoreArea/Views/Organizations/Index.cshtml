@@ -36,19 +36,159 @@
     <div class="block block-rounded mb-4">
         <div class="block-content block-content-full">
             <div class="row g-3">
-                <div class="col-6 col-md-3">
-                    <a class="btn btn-lg btn-primary w-100" href="@Url.Action("Create", "Organizations")">
-                        <i class="fa fa-plus me-1"></i>
-                        افزودن سازمان جدید
-                    </a>
+                <div class="col-md-8">
+                    <!-- ⭐⭐⭐ فرم جستجو و فیلتر ⭐⭐⭐ -->
+                    <form method="get" asp-action="Index" id="searchForm">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                    <input type="text" 
+                                           name="searchTerm" 
+                                           class="form-control form-control-lg" 
+                                           placeholder="نام، شماره ثبت، کد اقتصادی، ایمیل یا شماره تماس..."
+                                           value="@ViewBag.SearchTerm">
+                                    @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string))
+                                    {
+                                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                            <i class="fa fa-times"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select name="organizationType" class="form-select form-select-lg" onchange="document.getElementById('searchForm').submit()">
+                                    <option value="">همه انواع</option>
+                                    @{
+                                        var orgType = ViewBag.OrganizationType?.ToString();
+                                    }
+                                    
+                                    @if (orgType == "0")
+                                    {
+                                        <option value="0" selected>شرکت</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="0">شرکت</option>
+                                    }
+                                    
+                                    @if (orgType == "1")
+                                    {
+                                        <option value="1" selected>سازمان</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="1">سازمان</option>
+                                    }
+                                    
+                                    @if (orgType == "2")
+                                    {
+                                        <option value="2" selected>موسسه</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="2">موسسه</option>
+                                    }
+                                    
+                                    @if (orgType == "3")
+                                    {
+                                        <option value="3" selected>نهاد</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="3">نهاد</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="fa fa-search"></i> جستجو
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-                <div class="col-6 col-md-3">
-                    <a class="btn btn-lg btn-info w-100" href="@Url.Action("Index", "OrganizationGroups")">
-                        <i class="fa fa-layer-group me-1"></i>
-                        مدیریت گروه‌ها
-                    </a>
+                <div class="col-md-4">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a class="btn btn-lg btn-success w-100" href="@Url.Action("Create", "Organizations")">
+                                <i class="fa fa-plus me-1"></i>
+                                افزودن
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a class="btn btn-lg btn-info w-100" href="@Url.Action("Index", "OrganizationGroups")">
+                                <i class="fa fa-layer-group me-1"></i>
+                                گروه‌ها
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- ⭐ نمایش فیلترهای فعال -->
+            @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string) || ViewBag.OrganizationType != null || ViewBag.SelectedGroupId != null)
+            {
+                <div class="mt-3">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="text-muted small">فیلترهای فعال:</span>
+                        
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string))
+                        {
+                            <span class="badge bg-primary">
+                                <i class="fa fa-search me-1"></i>
+                                جستجو: @ViewBag.SearchTerm
+                                <a href="@Url.Action("Index", new { organizationType = ViewBag.OrganizationType, groupId = ViewBag.SelectedGroupId })" 
+                                   class="text-white ms-1">
+                                    <i class="fa fa-times"></i>
+                                </a>
+                            </span>
+                        }
+
+                        @if (ViewBag.OrganizationType != null)
+                        {
+                            var typeText = ViewBag.OrganizationType switch
+                            {
+                                (byte)0 => "شرکت",
+                                (byte)1 => "سازمان",
+                                (byte)2 => "موسسه",
+                                (byte)3 => "نهاد",
+                                _ => ""
+                            };
+                            <span class="badge bg-info">
+                                <i class="fa fa-filter me-1"></i>
+                                نوع: @typeText
+                                <a href="@Url.Action("Index", new { searchTerm = ViewBag.SearchTerm, groupId = ViewBag.SelectedGroupId })" 
+                                   class="text-white ms-1">
+                                    <i class="fa fa-times"></i>
+                                </a>
+                            </span>
+                        }
+
+                        @if (ViewBag.SelectedGroupId != null && groups != null)
+                        {
+                            var selectedGroup = groups.FirstOrDefault(g => g.Id == ViewBag.SelectedGroupId);
+                            if (selectedGroup != null)
+                            {
+                                <span class="badge" style="background-color: @selectedGroup.DisplayColorHex;">
+                                    <i class="fa @selectedGroup.DisplayIconClass me-1"></i>
+                                    گروه: @selectedGroup.Title
+                                    <a href="@Url.Action("Index", new { searchTerm = ViewBag.SearchTerm, organizationType = ViewBag.OrganizationType })" 
+                                       class="text-white ms-1">
+                                        <i class="fa fa-times"></i>
+                                    </a>
+                                </span>
+                            }
+                        }
+
+                        <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-danger">
+                            <i class="fa fa-times me-1"></i> پاک کردن همه فیلترها
+                        </a>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 
@@ -174,18 +314,36 @@
 
                                                     <!-- Organization Details -->
                                                     <div class="organization-details mt-2">
-                                                        @if (!string.IsNullOrEmpty(org.PrimaryPhone))
+                                                        @* ⭐⭐⭐ نمایش شماره پیش‌فرض از Phones *@
+                                                        @if (org.Phones != null && org.Phones.Any())
                                                         {
+                                                            var defaultPhone = org.Phones.FirstOrDefault(p => p.IsDefault);
+                                                            if (defaultPhone != null)
+                                                            {
+                                                                <div class="small text-muted mb-1">
+                                                                    <i class="fa fa-phone fa-fw"></i>
+                                                                    <span dir="ltr" class="d-inline-block">@defaultPhone.FormattedNumber</span>
+                                                                    @if (!string.IsNullOrEmpty(defaultPhone.Extension))
+                                                                    {
+                                                                        <span class="text-muted" dir="ltr">(داخلی: @defaultPhone.Extension)</span>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        }
+                                                        else if (!string.IsNullOrEmpty(org.PrimaryPhone))
+                                                        {
+                                                            @* ⭐ fallback به فیلد قدیمی اگر شماره‌ای در Phones نیست *@
                                                             <div class="small text-muted mb-1">
                                                                 <i class="fa fa-phone fa-fw"></i>
-                                                                @org.PrimaryPhone
+                                                                <span dir="ltr" class="d-inline-block">@org.PrimaryPhone</span>
                                                             </div>
                                                         }
+                                
                                                         @if (!string.IsNullOrEmpty(org.Email))
                                                         {
                                                             <div class="small text-muted mb-1">
                                                                 <i class="fa fa-envelope fa-fw"></i>
-                                                                @org.Email
+                                                                <span dir="ltr" class="d-inline-block">@org.Email</span>
                                                             </div>
                                                         }
 
@@ -348,6 +506,12 @@
         /* Smooth Scroll */
         html {
             scroll-behavior: smooth;
+        }
+
+        /* ⭐ LTR Content (Phone, Email) */
+        [dir="ltr"] {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            letter-spacing: 0.5px;
         }
 
         /* Sticky Index */

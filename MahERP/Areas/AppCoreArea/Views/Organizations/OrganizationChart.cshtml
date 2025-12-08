@@ -21,6 +21,27 @@
     </div>
 
     <div class="block-content">
+        @* ⭐⭐⭐ پیام خوش‌آمدگویی برای سازمان جدید *@
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+                <i class="fa fa-check-circle fa-2x me-3"></i>
+                <div class="flex-grow-1">
+                    <h5 class="alert-heading mb-1">عالی! سازمان با موفقیت ایجاد شد! 🎉</h5>
+                    <p class="mb-0">@TempData["SuccessMessage"]</p>
+                    <hr class="my-2">
+                    <p class="small mb-0">
+                        <i class="fa fa-lightbulb me-1"></i>
+                        <strong>مراحل بعدی:</strong>
+                        <span class="badge bg-primary ms-1">1</span> بخش‌های سازمانی را اضافه کنید
+                        <span class="badge bg-primary ms-1">2</span> سمت‌ها را تعریف کنید  
+                        <span class="badge bg-primary ms-1">3</span> اعضا را اضافه کنید
+                    </p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
         <div class="row mb-4">
             <div class="col-12">
                 <div class="alert alert-info">
@@ -79,10 +100,7 @@
                                                class="btn btn-sm btn-light">
                                                 <i class="fa fa-plus"></i> زیربخش
                                             </a>
-                                            <a asp-action="ManagePositions" asp-route-departmentId="@rootDept.Id" 
-                                               class="btn btn-sm btn-light">
-                                                <i class="fa fa-id-badge"></i> سمت‌ها
-                                            </a>
+                                          
                                             <a asp-action="AddMember" asp-route-departmentId="@rootDept.Id" 
                                                class="btn btn-sm btn-light">
                                                 <i class="fa fa-user-plus"></i> عضو
@@ -123,23 +141,51 @@
 
 @section Styles {
     <style>
-        /* استایل‌های چارت سازمانی */
+        /* ⭐⭐⭐ استایل‌های چارت سازمانی با اسکرول افقی */
         #org-chart-container {
             padding: 20px;
             background: #f8f9fa;
             border-radius: 12px;
-            overflow-x: auto;
+            overflow-x: auto; /* ⭐ اسکرول افقی */
+            overflow-y: visible;
             min-height: 400px;
+            position: relative;
+            
+            /* ⭐ استایل اسکرول‌بار سفارشی */
+            scrollbar-width: thin;
+            scrollbar-color: #0d6efd #e9ecef;
+        }
+
+        /* ⭐ اسکرول‌بار سفارشی برای Webkit (Chrome, Safari) */
+        #org-chart-container::-webkit-scrollbar {
+            height: 12px;
+        }
+
+        #org-chart-container::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 10px;
+        }
+
+        #org-chart-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        #org-chart-container::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
         }
 
         .chart-wrapper {
-            display: inline-block;
-            min-width: 100%;
+            display: inline-flex; /* ⭐ تغییر به flex */
+            flex-direction: row; /* ⭐ افقی */
+            gap: 30px; /* ⭐ فاصله بین ریشه‌ها */
+            min-width: min-content; /* ⭐ حداقل عرض محتوا */
+            padding: 20px;
         }
 
         .org-node {
             display: inline-block;
-            margin: 15px;
+            margin: 0; /* ⭐ حذف margin */
             position: relative;
             vertical-align: top;
         }
@@ -236,42 +282,31 @@
             margin-top: 40px;
             position: relative;
             display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
+            flex-direction: column; /* ⭐ عمودی برای زیرمجموعه‌ها */
             gap: 20px;
+            padding-left: 30px; /* ⭐ فاصله از چپ */
+            border-left: 2px solid #dee2e6; /* ⭐ خط عمودی */
         }
 
         .child-orgs::before {
             content: '';
             position: absolute;
             top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 0;
             width: 2px;
             height: 20px;
             background: #dee2e6;
-        }
-
-        .child-orgs::after {
-            content: '';
-            position: absolute;
-            top: -20px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #dee2e6;
-            z-index: -1;
         }
 
         .child-orgs > .org-node::before {
             content: '';
             position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2px;
-            height: 20px;
+            top: 50%;
+            left: -30px;
+            width: 30px;
+            height: 2px;
             background: #dee2e6;
+            transform: translateY(-50%);
         }
 
         /* رنگ‌بندی بر اساس سطح */
@@ -280,7 +315,7 @@
         }
 
         .org-node[data-level="1"] .org-card {
-            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%;
         }
 
         .org-node[data-level="2"] .org-card {
@@ -298,9 +333,45 @@
             padding: 3rem;
         }
 
+        /* ⭐ Indicator برای اسکرول */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 10px;
+            right: 50%;
+            transform: translateX(50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: none;
+            animation: fadeInOut 2s infinite;
+        }
+
+        .scroll-indicator i {
+            margin: 0 5px;
+            animation: scrollArrow 1s infinite;
+        }
+
+        @@keyframes fadeInOut {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @@keyframes scrollArrow {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
         /* Responsive */
         @@media (max-width: 768px) {
             #org-chart-container {
+                padding: 10px;
+            }
+
+            .chart-wrapper {
+                flex-direction: column; /* ⭐ موبایل: عمودی */
+                gap: 20px;
                 padding: 10px;
             }
 
@@ -311,15 +382,52 @@
             }
 
             .child-orgs {
-                flex-direction: column;
-                align-items: center;
-                margin-top: 30px;
-                gap: 15px;
+                padding-left: 20px;
+                margin-top: 20px;
             }
 
-            .child-orgs::after {
-                display: none;
+            .child-orgs > .org-node::before {
+                left: -20px;
+                width: 20px;
             }
         }
     </style>
+}
+
+@@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // ⭐⭐⭐ نمایش Indicator اسکرول اگر محتوا از عرض صفحه بیشتر باشد
+            const container = $('#org-chart-container');
+            const chartWrapper = $('.chart-wrapper');
+            
+            if (chartWrapper.length > 0) {
+                const hasHorizontalScroll = chartWrapper[0].scrollWidth > container.width();
+                
+                if (hasHorizontalScroll) {
+                    const indicator = $('<div class="scroll-indicator"><i class="fa fa-arrow-left"></i> اسکرول کنید <i class="fa fa-arrow-right"></i></div>');
+                    container.append(indicator);
+                    indicator.fadeIn();
+                    
+                    // پنهان کردن بعد از 3 ثانیه
+                    setTimeout(() => {
+                        indicator.fadeOut();
+                    }, 3000);
+
+                    // پنهان کردن هنگام اسکرول
+                    container.on('scroll', function() {
+                        indicator.fadeOut();
+                    });
+                }
+            }
+
+            // ⭐ Smooth scroll با ماوس wheel (افقی)
+            container.on('wheel', function(e) {
+                if (e.originalEvent.deltaY !== 0) {
+                    e.preventDefault();
+                    this.scrollLeft += e.originalEvent.deltaY;
+                }
+            });
+        });
+    </script>
 }

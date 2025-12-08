@@ -811,7 +811,27 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
 
-            // در انتهای متد AutoMapping() این mapping را اضافه کنید:
+            // ==================== POSITION MAPPINGS (سمت‌های استاندارد سازمانی) ========== ⭐⭐⭐ NEW
+
+            // OrganizationPosition -> PositionViewModel
+            CreateMap<OrganizationPosition, PositionViewModel>()
+                .ForMember(dest => dest.FullTitle, opt => opt.MapFrom(src => src.FullTitle))
+                .ForMember(dest => dest.LevelText, opt => opt.MapFrom(src => src.LevelText))
+                .ForMember(dest => dest.MinimumDegreeText, opt => opt.MapFrom(src => src.MinimumDegreeText))
+                .ForMember(dest => dest.SuggestedSalaryRangeText, opt => opt.MapFrom(src => src.SuggestedSalaryRangeText))
+                .ForMember(dest => dest.CreatorName,
+                    opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "سیستم"))
+                .ForMember(dest => dest.LastUpdaterName,
+                    opt => opt.MapFrom(src => src.LastUpdater != null ? $"{src.LastUpdater.FirstName} {src.LastUpdater.LastName}" : null));
+
+            // PositionViewModel -> OrganizationPosition
+            CreateMap<PositionViewModel, OrganizationPosition>()
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdaterUserId, opt => opt.Ignore());
 
             // ==================== TASK COMMENT MAPPINGS ====================
 
@@ -862,7 +882,6 @@ namespace MahERP.AutoMapper
                     !string.IsNullOrEmpty(src.EndDatePersian)
                         ? ConvertDateTime.ConvertShamsiToMiladi(src.EndDatePersian)
                         : (DateTime?)null))
-                // ⭐⭐⭐ FIX: اضافه کردن mapping برای NotificationTime
                 .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Task, opt => opt.Ignore())
@@ -891,16 +910,6 @@ namespace MahERP.AutoMapper
                     src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "سیستم"))
                 .ForMember(dest => dest.CreatedDatePersian, opt => opt.MapFrom(src =>
                     ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd HH:mm")));
-
-            CreateMap<TaskWorkLog, TaskWorkLogViewModel>()
-    .ForMember(dest => dest.UserName,
-        opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"))
-    .ForMember(dest => dest.UserProfileImage,
-        opt => opt.MapFrom(src => src.User.ProfileImagePath ?? "/images/default-avatar.png"));
-
-
-
-
         }
 
         // Helper methods for mapping

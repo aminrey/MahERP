@@ -2584,6 +2584,9 @@ namespace MahERP.DataModelLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("BasePositionId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("CanHireSubordinates")
                         .HasColumnType("bit");
 
@@ -2637,6 +2640,8 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BasePositionId");
 
                     b.HasIndex("CreatorUserId");
 
@@ -5673,6 +5678,121 @@ namespace MahERP.DataModelLayer.Migrations
                     b.ToTable("OrganizationGroup_Tbl");
                 });
 
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organizations.OrganizationPosition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CanHireSubordinates")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("DefaultPowerLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(50);
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsCommon")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Level")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(3);
+
+                    b.Property<byte?>("MinimumDegree")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int?>("MinimumExperienceYears")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RequiresDegree")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal?>("SuggestedMaxSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("SuggestedMinSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TitleEnglish")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category")
+                        .HasDatabaseName("IX_Position_Category");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("DisplayOrder")
+                        .HasDatabaseName("IX_Position_DisplayOrder");
+
+                    b.HasIndex("IsCommon")
+                        .HasDatabaseName("IX_Position_IsCommon")
+                        .HasFilter("[IsCommon] = 1 AND [IsActive] = 1");
+
+                    b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("Title")
+                        .HasDatabaseName("IX_Position_Title");
+
+                    b.HasIndex("Level", "DefaultPowerLevel")
+                        .HasDatabaseName("IX_Position_Level_PowerLevel");
+
+                    b.ToTable("OrganizationPosition_Tbl");
+                });
+
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Settings", b =>
                 {
                     b.Property<int>("id")
@@ -8672,6 +8792,10 @@ namespace MahERP.DataModelLayer.Migrations
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Contacts.DepartmentPosition", b =>
                 {
+                    b.HasOne("MahERP.DataModelLayer.Entities.Organizations.OrganizationPosition", "BasePosition")
+                        .WithMany()
+                        .HasForeignKey("BasePositionId");
+
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
@@ -8683,6 +8807,8 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("BasePosition");
 
                     b.Navigation("Creator");
 
@@ -9658,6 +9784,24 @@ namespace MahERP.DataModelLayer.Migrations
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organizations.OrganizationGroup", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
+                        .WithMany()
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("LastUpdater");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Organizations.OrganizationPosition", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
                         .WithMany()
