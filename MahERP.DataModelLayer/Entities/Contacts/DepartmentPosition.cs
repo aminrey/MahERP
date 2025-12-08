@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Organizations; // ⭐ اضافه شده
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -29,11 +30,21 @@ namespace MahERP.DataModelLayer.Entities.Contacts
         public virtual OrganizationDepartment Department { get; set; }
 
         /// <summary>
-        /// عنوان سمت
+        /// ⭐⭐⭐ NEW: ارجاع به سمت استاندارد سازمانی (اختیاری)
+        /// اگر مقدار داشته باشد، از سمت‌های استاندارد استفاده می‌شود
         /// </summary>
-        [Required(ErrorMessage = "عنوان سمت الزامی است")]
+        public int? BasePositionId { get; set; }
+
+        [ForeignKey(nameof(BasePositionId))]
+        public virtual OrganizationPosition? BasePosition { get; set; }
+
+        /// <summary>
+        /// عنوان سمت
+        /// اگر BasePositionId داشته باشد، این فیلد می‌تواند خالی باشد (از BasePosition استفاده می‌شود)
+        /// اگر سمت سفارشی باشد، این فیلد پر می‌شود
+        /// </summary>
         [MaxLength(200)]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         /// <summary>
         /// کد سمت
@@ -115,6 +126,32 @@ namespace MahERP.DataModelLayer.Entities.Contacts
         [NotMapped]
         public int ActiveMembersCount => Members?.Count(m => m.IsActive) ?? 0;
 
+        /// <summary>
+        /// ⭐⭐⭐ عنوان نهایی (از BasePosition یا Title)
+        /// </summary>
+        [NotMapped]
+        public string DisplayTitle => BasePosition?.Title ?? Title ?? "بدون عنوان";
+
+        /// <summary>
+        /// ⭐⭐⭐ عنوان کامل با انگلیسی (در صورت وجود)
+        /// </summary>
+        [NotMapped]
+        public string FullDisplayTitle
+        {
+            get
+            {
+                if (BasePosition != null)
+                    return BasePosition.FullTitle;
+                return Title ?? "بدون عنوان";
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ آیا سمت رایج است؟
+        /// </summary>
+        [NotMapped]
+        public bool IsCommonPosition => BasePositionId.HasValue;
+
         [NotMapped]
         public string SalaryRangeText
         {
@@ -126,6 +163,11 @@ namespace MahERP.DataModelLayer.Entities.Contacts
                     return $"از {MinSalary:N0} ریال";
                 if (MaxSalary.HasValue)
                     return $"تا {MaxSalary:N0} ریال";
+                
+                // ⭐ اگر از BasePosition استفاده می‌شود
+                if (BasePosition != null)
+                    return BasePosition.SuggestedSalaryRangeText;
+                
                 return "تعیین نشده";
             }
         }

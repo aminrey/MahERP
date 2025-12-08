@@ -2,6 +2,7 @@
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Notifications;
 using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Entities.Organizations; // ⭐⭐⭐ NEW
 using Microsoft.EntityFrameworkCore;
 
 namespace MahERP.DataModelLayer.Configurations
@@ -23,6 +24,7 @@ namespace MahERP.DataModelLayer.Configurations
             SeedDefaultPredefinedCopyDescriptions(modelBuilder);
             SeedDefaultRolePatterns(modelBuilder);
             SeedNotificationData(modelBuilder);
+            // ⭐ Position Seed Data به SystemSeedDataRepository منتقل شد
 
             // ⚠️ SeedNotificationData حذف شد - اکنون توسط SystemSeedDataBackgroundService مدیریت می‌شود
         }
@@ -317,7 +319,5 @@ namespace MahERP.DataModelLayer.Configurations
                 new RolePatternDetails { Id = 17, RolePatternId = 4, ControllerName = "Tasks", ActionName = "Index,Details,MyTasks", CanRead = true, CanCreate = false, CanEdit = false, CanDelete = false, CanApprove = false, DataAccessLevel = 0, IsActive = true }
             );
         }
-
-     
     }
 }

@@ -3,190 +3,506 @@
     ViewData["Title"] = "افزودن سازمان جدید";
 }
 
-<div class="block block-rounded">
-    <div class="block-header block-header-default">
-        <h3 class="block-title">
-            <i class="fa fa-building me-2"></i>
-            @ViewData["Title"]
-        </h3>
-        <div class="block-options">
-            <a asp-action="Index" class="btn btn-sm btn-alt-secondary">
-                <i class="fa fa-arrow-right me-1"></i> بازگشت
-            </a>
+<!-- Hero -->
+<div class="bg-image" style="background-image: url('/assets/media/photos/photo15@2x.jpg');">
+    <div class="bg-primary-dark-op">
+        <div class="content content-full text-center">
+            <div class="my-3">
+                <i class="fa fa-building fa-3x text-white-75"></i>
+            </div>
+            <h1 class="h2 text-white mb-2">افزودن سازمان جدید</h1>
+            <h2 class="h5 fw-normal text-white-75">
+                ثبت اطلاعات سازمان در سیستم
+            </h2>
         </div>
     </div>
-
-    <div class="block-content block-content-full">
-        <form asp-action="Create" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-            <div class="row">
-                <!-- اطلاعات اصلی -->
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header bg-primary text-white">
-                            <i class="fa fa-info-circle me-2"></i> اطلاعات اصلی
-                        </div>
-                        <div class="card-body">
-                            <div class="form-floating mb-3">
-                                <input asp-for="Name" class="form-control" placeholder="نام سازمان" required />
-                                <label asp-for="Name">نام سازمان *</label>
-                                <span asp-validation-for="Name" class="text-danger"></span>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input asp-for="Brand" class="form-control" placeholder="نام برند" />
-                                <label asp-for="Brand">نام برند</label>
-                                <span asp-validation-for="Brand" class="text-danger"></span>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <select asp-for="OrganizationType" class="form-select" required>
-                                    <option value="">-- انتخاب کنید --</option>
-                                    <option value="0">شرکت</option>
-                                    <option value="1">سازمان</option>
-                                    <option value="2">موسسه</option>
-                                    <option value="3">نهاد</option>
-                                </select>
-                                <label asp-for="OrganizationType">نوع سازمان *</label>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input asp-for="LegalRepresentative" class="form-control" placeholder="نماینده قانونی" />
-                                <label asp-for="LegalRepresentative">نماینده قانونی</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- اطلاعات قانونی -->
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header bg-success text-white">
-                            <i class="fa fa-file-contract me-2"></i> اطلاعات قانونی
-                        </div>
-                        <div class="card-body">
-                            <div class="form-floating mb-3">
-                                <input asp-for="RegistrationNumber" class="form-control" 
-                                       placeholder="شماره ثبت" maxlength="11" />
-                                <label asp-for="RegistrationNumber">شماره ثبت</label>
-                                <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
-                                <small class="text-muted">11 رقم</small>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input asp-for="EconomicCode" class="form-control" 
-                                       placeholder="کد اقتصادی" maxlength="12" />
-                                <label asp-for="EconomicCode">کد اقتصادی</label>
-                                <span asp-validation-for="EconomicCode" class="text-danger"></span>
-                                <small class="text-muted">12 رقم</small>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input asp-for="RegistrationDatePersian" class="form-control date-picker" 
-                                       placeholder="1400/01/01" />
-                                <label asp-for="RegistrationDatePersian">تاریخ ثبت</label>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input asp-for="Website" type="url" class="form-control" 
-                                       placeholder="https://example.com" />
-                                <label asp-for="Website">وب‌سایت</label>
-                                <span asp-validation-for="Website" class="text-danger"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- اطلاعات تماس -->
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <i class="fa fa-phone me-2"></i> اطلاعات تماس
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <input asp-for="PrimaryPhone" class="form-control" placeholder="021-12345678" />
-                                <label asp-for="PrimaryPhone">تلفن اصلی</label>
-                                <span asp-validation-for="PrimaryPhone" class="text-danger"></span>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input asp-for="Email" type="email" class="form-control" placeholder="info@example.com" />
-                                <label asp-for="Email">ایمیل</label>
-                                <span asp-validation-for="Email" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <input asp-for="SecondaryPhone" class="form-control" placeholder="021-87654321" />
-                                <label asp-for="SecondaryPhone">تلفن دوم</label>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input asp-for="PostalCode" class="form-control" placeholder="کد پستی" />
-                                <label asp-for="PostalCode">کد پستی</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-floating mb-3">
-                        <textarea asp-for="Address" class="form-control" rows="2" 
-                                  placeholder="آدرس کامل..."></textarea>
-                        <label asp-for="Address">آدرس</label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- توضیحات -->
-            <div class="card mb-4">
-                <div class="card-header bg-warning text-dark">
-                    <i class="fa fa-sticky-note me-2"></i> توضیحات
-                </div>
-                <div class="card-body">
-                    <div class="form-floating">
-                        <textarea asp-for="Description" class="form-control" rows="3" 
-                                  placeholder="توضیحات اضافی..."></textarea>
-                        <label asp-for="Description">توضیحات</label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- دکمه‌ها -->
-            <div class="row">
-                <div class="col-6">
-                    <a asp-action="Index" class="btn btn-alt-secondary w-100">
-                        <i class="fa fa-times me-1"></i> انصراف
-                    </a>
-                </div>
-                <div class="col-6">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="fa fa-check me-1"></i> ذخیره
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
 </div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content content-full">
+    <form asp-action="Create" method="post" id="organizationCreateForm">
+        @Html.AntiForgeryToken()
+
+        <!-- نمایش خطاها -->
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none mb-3"></div>
+
+        <!-- دکمه‌های بالای فرم -->
+        <div class="block block-rounded mb-2">
+            <div class="block-content bg-body-light p-3">
+                <div class="row">
+                    <div class="col-md-6 mb-2 mb-md-0">
+                        <a asp-action="Index" class="btn btn-alt-secondary w-100">
+                            <i class="fa fa-times me-1"></i>
+                            انصراف و بازگشت
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-success w-100 btn-lg">
+                            <i class="fa fa-check me-1"></i>
+                            ذخیره سازمان
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- ستون راست: اطلاعات اصلی -->
+            <div class="col-lg-8">
+
+                <!-- ========== اطلاعات اصلی ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle me-2 text-primary"></i>
+                            اطلاعات اصلی
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Name">
+                                        نام سازمان
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Name"
+                                           class="form-control form-control-lg"
+                                           placeholder="نام سازمان"
+                                           required />
+                                    <span asp-validation-for="Name" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Brand">
+                                        نام برند
+                                        <span class="text-muted small">(اختیاری)</span>
+                                    </label>
+                                    <input asp-for="Brand"
+                                           class="form-control form-control-lg"
+                                           placeholder="نام برند" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="OrganizationType">
+                                        نوع سازمان
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="OrganizationType" class="form-select" required>
+                                        <option value="">-- انتخاب کنید --</option>
+                                        <option value="0">شرکت</option>
+                                        <option value="1">سازمان</option>
+                                        <option value="2">موسسه</option>
+                                        <option value="3">نهاد</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="LegalRepresentative">
+                                        نماینده قانونی
+                                    </label>
+                                    <input asp-for="LegalRepresentative"
+                                           class="form-control"
+                                           placeholder="نام نماینده قانونی" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== اطلاعات قانونی ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-file-contract me-2 text-success"></i>
+                            اطلاعات قانونی
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="RegistrationNumber">
+                                        <i class="fa fa-id-badge me-1"></i>
+                                        شماره ثبت
+                                        <span class="text-muted small">(11 رقم)</span>
+                                    </label>
+                                    <input asp-for="RegistrationNumber"
+                                           type="text"
+                                           maxlength="11"
+                                           class="form-control"
+                                           placeholder="00000000000"
+                                           dir="ltr" />
+                                    <span asp-validation-for="RegistrationNumber" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="EconomicCode">
+                                        <i class="fa fa-barcode me-1"></i>
+                                        کد اقتصادی
+                                        <span class="text-muted small">(12 رقم)</span>
+                                    </label>
+                                    <input asp-for="EconomicCode"
+                                           type="text"
+                                           maxlength="12"
+                                           class="form-control"
+                                           placeholder="000000000000"
+                                           dir="ltr" />
+                                    <span asp-validation-for="EconomicCode" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="RegistrationDatePersian">
+                                        <i class="fa fa-calendar me-1"></i>
+                                        تاریخ ثبت
+                                    </label>
+                                    <input asp-for="RegistrationDatePersian"
+                                           type="text"
+                                           class="form-control js-flatpickr"
+                                           placeholder="1400/01/01"
+                                           readonly />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="Website">
+                                        <i class="fa fa-globe me-1"></i>
+                                        وب‌سایت
+                                    </label>
+                                    <input asp-for="Website"
+                                           type="url"
+                                           class="form-control"
+                                           placeholder="https://example.com"
+                                           dir="ltr" />
+                                    <span asp-validation-for="Website" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== شماره‌های تماس ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-phone me-2 text-info"></i>
+                            شماره‌های تماس
+                            <span class="text-muted small">(اختیاری)</span>
+                        </h3>
+                        <div class="block-options">
+                            <button type="button" class="btn btn-sm btn-alt-info" onclick="addPhoneRow()">
+                                <i class="fa fa-plus me-1"></i>
+                                افزودن شماره
+                            </button>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <div id="phonesContainer">
+                            <!-- شماره اول -->
+                            @{
+                                var firstPhone = new OrganizationPhoneViewModel
+                                {
+                                    PhoneType = 1, // ثابت
+                                    IsDefault = true,
+                                    IsActive = true
+                                };
+                            }
+                            <partial name="_PhoneRowPartial" model="firstPhone" view-data='new ViewDataDictionary(ViewData) { { "Index", 0 }, { "IsNew", false } }' />
+                        </div>
+
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fa fa-info-circle fa-2x me-3"></i>
+                            <div>
+                                <strong>نکته:</strong>
+                                شماره تماس اختیاری است. می‌توانید چندین شماره اضافه کنید.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== آدرس و ایمیل ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-map-marker-alt me-2 text-warning"></i>
+                            آدرس و اطلاعات تماس
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="mb-4">
+                            <label class="form-label" for="Email">
+                                <i class="fa fa-envelope me-1"></i>
+                                ایمیل
+                            </label>
+                            <input asp-for="Email"
+                                   type="email"
+                                   class="form-control"
+                                   placeholder="info@example.com"
+                                   dir="ltr" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label" for="Address">آدرس کامل</label>
+                            <textarea asp-for="Address"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="استان، شهر، خیابان، پلاک..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label" for="PostalCode">کد پستی</label>
+                            <input asp-for="PostalCode"
+                                   type="text"
+                                   maxlength="10"
+                                   class="form-control"
+                                   placeholder="0000000000"
+                                   dir="ltr" />
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ستون چپ: توضیحات و تنظیمات -->
+            <div class="col-lg-4">
+
+                <!-- ========== توضیحات ========== -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-sticky-note me-2 text-warning"></i>
+                            توضیحات
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <textarea asp-for="Description"
+                                  class="form-control"
+                                  rows="5"
+                                  placeholder="توضیحات اضافی..."></textarea>
+                    </div>
+                </div>
+
+                <!-- ========== راهنما ========== -->
+                <div class="block block-rounded block-bordered">
+                    <div class="block-header bg-info">
+                        <h3 class="block-title text-white">
+                            <i class="fa fa-lightbulb me-2"></i>
+                            راهنما
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <ul class="list-unstyled small">
+                            <li class="mb-2">
+                                <i class="fa fa-check-circle text-success me-1"></i>
+                                <strong>نام سازمان</strong> الزامی است
+                            </li>
+                            <li class="mb-2">
+                                <i class="fa fa-info-circle text-info me-1"></i>
+                                شماره ثبت باید <strong>11 رقم</strong> باشد
+                            </li>
+                            <li class="mb-2">
+                                <i class="fa fa-info-circle text-info me-1"></i>
+                                کد اقتصادی باید <strong>12 رقم</strong> باشد
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- دکمه‌های پایین فرم -->
+        <div class="block block-rounded">
+            <div class="block-content bg-body-light p-3">
+                <div class="row">
+                    <div class="col-md-6 mb-2 mb-md-0">
+                        <a asp-action="Index" class="btn btn-alt-secondary w-100">
+                            <i class="fa fa-times me-1"></i>
+                            انصراف و بازگشت
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-success w-100 btn-lg" id="submitBtn">
+                            <i class="fa fa-check me-1"></i>
+                            ذخیره سازمان
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- END Page Content -->
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script src="~/assets/js/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
-    <script src="~/assets/js/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.fa.min.js"></script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
     <script>
+        let phoneIndex = 1;
+
         $(document).ready(function() {
-            $('.date-picker').datepicker({
-                format: 'yyyy/mm/dd',
-                language: 'fa',
-                autoclose: true,
-                todayHighlight: true
+            // Persian Date Picker
+            Dashmix.helpersOnLoad(['js-flatpickr']);
+            
+            setTimeout(function() {
+                if (typeof window.initPersianDatePicker === 'function') {
+                    window.initPersianDatePicker($('body'));
+                }
+            }, 100);
+
+            // فقط اعداد برای شماره ثبت و کد اقتصادی
+            $('#RegistrationNumber, #EconomicCode, #PostalCode').on('input', function() {
+                let value = $(this).val().replace(/\D/g, '');
+                $(this).val(value);
+            });
+
+            // مدیریت checkbox های IsDefault
+            $(document).on('change', '.default-check', function() {
+                if ($(this).is(':checked')) {
+                    $('.default-check').not(this).prop('checked', false);
+                }
+            });
+
+            // Focus
+            $('#Name').focus();
+
+            // Form validation
+            $('#organizationCreateForm').on('submit', function(e) {
+                const name = $('#Name').val().trim();
+
+                if (!name) {
+                    e.preventDefault();
+                    Dashmix.helpers('notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times',
+                        message: 'نام سازمان الزامی است'
+                    });
+                    $('#Name').focus();
+                    return false;
+                }
+
+                // Loading state
+                const submitBtn = $('#submitBtn');
+                submitBtn.prop('disabled', true);
+                submitBtn.html('<i class="fa fa-spinner fa-spin me-1"></i> در حال ذخیره...');
             });
         });
+
+        // ⭐⭐⭐ افزودن شماره جدید با AJAX (مثل Contacts)
+        function addPhoneRow() {
+            $.ajax({
+                url: '@Url.Action("AddPhoneRowPartial", "Organizations")',
+                type: 'POST',
+                data: {
+                    index: phoneIndex,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'update-view' && response.viewList) {
+                        response.viewList.forEach(function(item) {
+                            if (item.elementId === 'phonesContainer') {
+                                $('#' + item.elementId).append(item.view.result);
+                                
+                                // Animation
+                                $('#phone-' + phoneIndex).hide().fadeIn(300);
+                                
+                                // راه‌اندازی مجدد Select2 در صورت نیاز
+                                if (typeof DynamicSelect2Manager !== 'undefined') {
+                                    DynamicSelect2Manager.reinitializeSelect2InDiv($('#phone-' + phoneIndex));
+                                }
+                                
+                                phoneIndex++;
+                            }
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    console.error('خطا در افزودن شماره:', xhr);
+                    if (typeof NotificationHelper !== 'undefined') {
+                        NotificationHelper.error('خطا در افزودن شماره');
+                    } else {
+                        alert('خطا در افزودن شماره');
+                    }
+                }
+            });
+        }
+
+        // حذف شماره
+        function removePhoneRow(index) {
+            $(`#phone-${index}`).fadeOut(300, function() {
+                $(this).remove();
+            });
+        }
     </script>
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/assets/js/plugins/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <style>
+        .form-control-lg {
+            font-size: 1.05rem;
+            padding: 0.75rem 1rem;
+        }
+
+        input[dir="ltr"] {
+            text-align: left;
+            font-family: 'Courier New', monospace;
+        }
+
+        .phone-row {
+            transition: all 0.3s ease;
+        }
+
+        .phone-row:hover {
+            background-color: #f8f9fa !important;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .block-bordered {
+            border: 2px solid #e9ecef;
+        }
+
+        .bg-image {
+            background-size: cover;
+            background-position: center;
+        }
+
+        .bg-primary-dark-op {
+            background-color: rgba(var(--bs-primary-rgb), 0.85);
+        }
+
+        .js-flatpickr {
+            cursor: pointer;
+            background-color: white !important;
+        }
+
+        .js-flatpickr:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+
+        @@media (max-width: 768px) {
+            .phone-row .row > div {
+                margin-bottom: 0.75rem;
+            }
+        }
+    </style>
 }

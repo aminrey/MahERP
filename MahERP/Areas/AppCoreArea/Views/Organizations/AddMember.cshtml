@@ -1,136 +1,605 @@
 ﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.DepartmentMemberViewModel
 @{
-    ViewData["Title"] = "افزودن عضو به بخش";
+    ViewData["Title"] = "افزودن اعضا به بخش";
+    var departmentTitle = ViewBag.DepartmentTitle as string;
+    var organizationId = ViewBag.OrganizationId as int?;
+    var departmentId = ViewBag.DepartmentId as int?;
 }
 
-<div class="block block-rounded">
-    <div class="block-header block-header-default">
-        <h3 class="block-title">
-            <i class="fa fa-user-plus me-2"></i>
-            افزودن عضو به بخش: @ViewBag.DepartmentTitle
-        </h3>
-        <div class="block-options">
-            <a asp-action="OrganizationChart" asp-route-organizationId="@ViewBag.OrganizationId"
-               class="btn btn-sm btn-alt-secondary">
-                <i class="fa fa-arrow-right me-1"></i> بازگشت
-            </a>
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
+            <div class="flex-grow-1">
+                <h1 class="h3 fw-bold mb-1">
+                    <i class="fa fa-user-plus text-success me-2"></i>
+                    افزودن اعضا به بخش
+                </h1>
+                <h2 class="fs-base lh-base fw-medium text-muted mb-0">
+                    @departmentTitle
+                </h2>
+            </div>
+            <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-alt">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Organizations")">سازمان‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("OrganizationChart", "Organizations", new { organizationId = organizationId })">
+                            چارت سازمانی
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">افزودن اعضا</li>
+                </ol>
+            </nav>
         </div>
     </div>
-
-    <div class="block-content block-content-full">
-        <form asp-action="AddMember" method="post" class="row g-3">
-            <input type="hidden" asp-for="DepartmentId" />
-
-
-            <!-- انتخاب فرد با جستجو -->
-            <div class="col-md-6">
-                <label asp-for="ContactId" class="form-label">
-                    <i class="fa fa-user text-primary me-1"></i>
-                    فرد <span class="text-danger">*</span>
-                </label>
-                <select asp-for="ContactId" asp-items="ViewBag.AvailableContacts"
-                        class="form-select select2-search"
-                        id="contactSelect"
-                        data-placeholder="جستجوی نام، کد ملی، شماره تماس..."
-                        required>
-                    <option value="">-- جستجو و انتخاب کنید --</option>
-                </select>
-                <span asp-validation-for="ContactId" class="text-danger"></span>
-                <small class="form-text text-muted">
-                    <i class="fa fa-search"></i> می‌توانید با تایپ نام، کد ملی یا شماره تماس جستجو کنید
-                </small>
-            </div>
-
-
-            <!-- انتخاب سمت (اختیاری) -->
-            <div class="col-md-6">
-                <label asp-for="PositionId" class="form-label">
-                    <i class="fa fa-briefcase text-info me-1"></i>
-                    سمت (اختیاری)
-                </label>
-                <select asp-for="PositionId" asp-items="ViewBag.Positions" class="form-select">
-                    <option value="0">-- بدون سمت (عضو عادی) --</option>
-                </select>
-                <span asp-validation-for="PositionId" class="text-danger"></span>
-                <small class="form-text text-muted">
-                    <i class="fa fa-info-circle"></i>
-                    اگر سمتی انتخاب نکنید، به صورت خودکار سمت "عضو" اختصاص داده می‌شود
-                </small>
-            </div>
-
-           
-
-            <!-- وضعیت فعال -->
-            <div class="col-md-6">
-                <div class="form-check form-switch mt-4">
-                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
-                    <label asp-for="IsActive" class="form-check-label">
-                        <i class="fa fa-check-circle text-success me-1"></i>
-                        فعال
-                    </label>
-                </div>
-            </div>
-
-            <!-- یادداشت‌ها -->
-            <div class="col-12">
-                <label asp-for="Notes" class="form-label">
-                    <i class="fa fa-sticky-note text-secondary me-1"></i>
-                    یادداشت‌ها
-                </label>
-                <textarea asp-for="Notes" class="form-control" rows="3"
-                          placeholder="توضیحات اضافی..."></textarea>
-                <span asp-validation-for="Notes" class="text-danger"></span>
-            </div>
-
-            <!-- دکمه‌ها -->
-            <div class="col-12">
-                <div class="d-flex justify-content-end gap-2">
-                    <a asp-action="OrganizationChart"
-                       asp-route-organizationId="@ViewBag.OrganizationId"
-                       class="btn btn-secondary">
-                        <i class="fa fa-times me-1"></i> انصراف
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-save me-1"></i> ذخیره
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
 </div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <form id="addMembersForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="DepartmentId" value="@departmentId" />
+
+        <div class="row">
+            <!-- ستون اصلی -->
+            <div class="col-lg-8">
+                <!-- جستجو و انتخاب اعضا -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-search me-2 text-primary"></i>
+                            جستجو و انتخاب اعضا
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="alert alert-info d-flex align-items-center mb-4">
+                            <i class="fa fa-lightbulb fa-2x me-3"></i>
+                            <div>
+                                <strong>راهنما:</strong>
+                                می‌توانید چندین عضو را همزمان انتخاب کنید. برای جستجو، نام، نام خانوادگی، یا کد ملی را تایپ کنید.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="fa fa-users me-1"></i>
+                                انتخاب اعضا
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select id="membersSelect" 
+                                    class="form-select" 
+                                    multiple="multiple">
+                            </select>
+                            <small class="form-text text-muted mt-2">
+                                <i class="fa fa-info-circle me-1"></i>
+                                با Ctrl یا Shift می‌توانید چند نفر را انتخاب کنید
+                            </small>
+                        </div>
+
+                        <!-- لیست اعضای انتخاب شده -->
+                        <div id="selectedMembersSection" style="display: none;">
+                            <div class="border rounded p-3 bg-light">
+                                <h6 class="mb-3">
+                                    <i class="fa fa-check-circle text-success me-1"></i>
+                                    اعضای انتخاب شده
+                                    <span class="badge bg-success" id="selectedMembersCount">0</span>
+                                </h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;">#</th>
+                                                <th>نام و نام خانوادگی</th>
+                                                <th>کد ملی</th>
+                                                <th>سمت</th>
+                                                <th style="width: 80px;" class="text-center">عملیات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="selectedMembersList">
+                                            <!-- اعضای انتخاب شده اینجا اضافه می‌شوند -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تنظیمات عمومی -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-cog me-2 text-info"></i>
+                            تنظیمات عمومی
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fa fa-briefcase me-1"></i>
+                                    سمت پیش‌فرض
+                                </label>
+                                <select id="defaultPositionId" class="form-select">
+                                    <option value="0">-- بدون سمت (عضو عادی) --</option>
+                                    @if (ViewBag.Positions != null)
+                                    {
+                                        @foreach (var position in (ViewBag.Positions as SelectList))
+                                        {
+                                            <option value="@position.Value">@position.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <small class="form-text text-muted">
+                                    این سمت برای همه افراد انتخاب شده اعمال می‌شود
+                                </small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fa fa-sticky-note me-1"></i>
+                                    یادداشت عمومی
+                                </label>
+                                <textarea id="defaultNotes" class="form-control" rows="2" 
+                                          placeholder="این یادداشت برای همه افراد اعمال می‌شود..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ستون کناری -->
+            <div class="col-lg-4">
+                <!-- اطلاعات بخش -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default bg-success-light">
+                        <h3 class="block-title">
+                            <i class="fa fa-sitemap me-2"></i>
+                            اطلاعات بخش
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="mb-3">
+                            <strong>بخش:</strong>
+                            <p class="mb-0">@departmentTitle</p>
+                        </div>
+                        <div class="alert alert-success mb-0">
+                            <i class="fa fa-info-circle me-1"></i>
+                            فقط اعضایی نمایش داده می‌شوند که قبلاً به سازمان اضافه شده‌اند
+                        </div>
+                    </div>
+                </div>
+
+                <!-- راهنما -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-question-circle me-2"></i>
+                            راهنما
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <ul class="small mb-0">
+                            <li class="mb-2">می‌توانید چند عضو همزمان انتخاب کنید</li>
+                            <li class="mb-2">سمت هر عضو را می‌توانید جداگانه تغییر دهید</li>
+                            <li class="mb-2">اگر سمتی انتخاب نکنید، "عضو عادی" اختصاص داده می‌شود</li>
+                            <li>قبل از ثبت، لیست را بررسی کنید</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- دکمه‌ها -->
+                <div class="block block-rounded">
+                    <div class="block-content">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-lg btn-success" id="submitBtn" disabled>
+                                <i class="fa fa-check me-1"></i>
+                                ذخیره <span id="submitCount">0</span> عضو
+                            </button>
+                            <a href="@Url.Action("OrganizationChart", "Organizations", new { organizationId = organizationId })" 
+                               class="btn btn-lg btn-secondary">
+                                <i class="fa fa-times me-1"></i>
+                                انصراف
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- END Page Content -->
+
+@section Styles {
+    <style>
+        /* ⭐ Select2 Custom Styles */
+        .select2-container--default .select2-selection--multiple {
+            min-height: 80px;
+            border: 2px solid #d4dae3;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+        }
+
+        .select2-results__option {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .select2-results__option--highlighted {
+            background-color: #e7f3ff !important;
+            color: #000 !important;
+        }
+
+        /* ⭐ Custom Option Template */
+        .member-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .member-details {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 0.2rem;
+        }
+
+        .member-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: #e9ecef;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+
+        .position-select {
+            border: 1px solid #dee2e6;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            width: 100%;
+        }
+
+        .position-select:focus {
+            border-color: #0d6efd;
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+        }
+    </style>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-
+    
     <script>
+        let selectedMembers = [];
+        let availableMembers = [];
+        let positions = [];
+
         $(document).ready(function() {
-            // تنظیم Date Picker برای تاریخ شمسی
-            $('.date-picker').persianDatepicker({
-                format: 'YYYY/MM/DD',
-                initialValue: true,
-                autoClose: true
+            // ⭐⭐⭐ دریافت لیست اعضای سازمان
+            loadOrganizationMembers();
+
+            // ⭐⭐⭐ دریافت لیست سمت‌های بخش
+            loadDepartmentPositions();
+
+            // ⭐⭐⭐ راه‌اندازی Select2
+            initializeMembersSelect();
+
+            // ⭐⭐⭐ مدیریت انتخاب اعضا
+            $('#membersSelect').on('change', function() {
+                const selectedIds = $(this).val() || [];
+                updateSelectedMembers(selectedIds);
             });
 
-            // نمایش اطلاعات فرد انتخاب شده
-            $('#ContactId').on('change', function() {
-                var contactId = $(this).val();
-                if (contactId) {
-                    // می‌توانید با AJAX اطلاعات بیشتری را دریافت کنید
-                    console.log('Selected contact:', contactId);
+            // ⭐⭐⭐ مدیریت سمت پیش‌فرض
+            $('#defaultPositionId').on('change', function() {
+                const newPositionId = $(this).val();
+                selectedMembers.forEach(member => {
+                    if (!member.positionChanged) {
+                        member.positionId = newPositionId;
+                    }
+                });
+                renderSelectedMembers();
+            });
+
+            // ⭐⭐⭐ مدیریت ارسال فرم
+            $('#addMembersForm').on('submit', function(e) {
+                e.preventDefault();
+                submitMembers();
+            });
+        });
+
+        // ⭐ دریافت لیست اعضای سازمان
+        function loadOrganizationMembers() {
+            $.ajax({
+                url: '@Url.Action("GetOrganizationMembersJson", "Organizations")',
+                type: 'GET',
+                data: { organizationId: @organizationId },
+                success: function(data) {
+                    availableMembers = data;
+                    console.log('✅ تعداد اعضای سازمان:', data.length);
+                },
+                error: function(xhr) {
+                    console.error('❌ خطا در دریافت اعضا:', xhr);
+                    Dashmix.helpers('notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times',
+                        message: 'خطا در دریافت لیست اعضا'
+                    });
                 }
             });
+        }
 
-            // هشدار در صورت عدم انتخاب سمت
-            $('form').on('submit', function(e) {
-                var positionId = $('#PositionId').val();
-                if (!positionId || positionId === '0') {
-                    var confirmed = confirm('شما سمتی انتخاب نکرده‌اید. سمت "عضو" به صورت پیش‌فرض اختصاص داده می‌شود. ادامه می‌دهید؟');
-                    if (!confirmed) {
-                        e.preventDefault();
-                        return false;
+        // ⭐ دریافت لیست سمت‌های بخش
+        function loadDepartmentPositions() {
+            @if (ViewBag.Positions != null)
+            {
+                <text>
+                positions = [
+                    { id: 0, text: 'بدون سمت (عضو عادی)' }
+                    @foreach (var position in (ViewBag.Positions as SelectList))
+                    {
+                        <text>,{ id: @position.Value, text: '@position.Text' }</text>
+                    }
+                ];
+                </text>
+            }
+        }
+
+        // ⭐ راه‌اندازی Select2
+        function initializeMembersSelect() {
+            $('#membersSelect').select2({
+                placeholder: 'نام یا کد ملی را تایپ کنید...',
+                allowClear: true,
+                width: '100%',
+                dir: 'rtl',
+                multiple: true,
+                closeOnSelect: false,
+                templateResult: formatMember,
+                templateSelection: formatMemberSelection,
+                ajax: {
+                    delay: 250,
+                    transport: function (params, success, failure) {
+                        const term = (params.data.term || '').toLowerCase();
+                        const filtered = availableMembers.filter(member => {
+                            const fullName = `${member.lastName} ${member.firstName}`.toLowerCase();
+                            const nationalCode = (member.nationalCode || '').toLowerCase();
+                            
+                            return fullName.includes(term) || 
+                                   nationalCode.includes(term) ||
+                                   member.firstName.toLowerCase().includes(term) ||
+                                   member.lastName.toLowerCase().includes(term);
+                        });
+                        
+                        success({ results: filtered.slice(0, 20) });
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results.map(member => ({
+                                id: member.contactId,
+                                text: `${member.lastName} ${member.firstName}`,
+                                member: member
+                            }))
+                        };
                     }
                 }
             });
-        });
+        }
+
+        // ⭐ قالب نمایش در Dropdown
+        function formatMember(member) {
+            if (!member.id || !member.member) return member.text;
+
+            const m = member.member;
+            const initials = `${m.firstName?.[0] || ''}${m.lastName?.[0] || ''}`.toUpperCase();
+            const phone = m.primaryPhone || '-';
+            const nationalCode = m.nationalCode || '-';
+            const relation = m.relationTypeText || '';
+
+            return $(`
+                <div class="member-option">
+                    <div class="member-avatar">${initials}</div>
+                    <div class="member-info">
+                        <div class="member-name">${m.lastName} ${m.firstName || ''}</div>
+                        <div class="member-details">
+                            <span class="member-badge"><i class="fa fa-id-card"></i> ${nationalCode}</span>
+                            <span class="member-badge"><i class="fa fa-phone"></i> ${phone}</span>
+                            ${relation ? `<span class="member-badge"><i class="fa fa-briefcase"></i> ${relation}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+
+        // ⭐ قالب نمایش انتخاب شده
+        function formatMemberSelection(member) {
+            if (!member.member) return member.text;
+            const m = member.member;
+            return `${m.lastName} ${m.firstName || ''}`;
+        }
+
+        // ⭐ بروزرسانی لیست اعضای انتخاب شده
+        function updateSelectedMembers(selectedIds) {
+            // افزودن افراد جدید
+            selectedIds.forEach(id => {
+                if (!selectedMembers.find(m => m.contactId == id)) {
+                    const member = availableMembers.find(m => m.contactId == id);
+                    if (member) {
+                        selectedMembers.push({
+                            contactId: member.contactId,
+                            firstName: member.firstName || '',
+                            lastName: member.lastName || '',
+                            nationalCode: member.nationalCode || '',
+                            positionId: $('#defaultPositionId').val(),
+                            positionChanged: false,
+                            notes: $('#defaultNotes').val()
+                        });
+                    }
+                }
+            });
+
+            // حذف افرادی که از انتخاب خارج شده‌اند
+            selectedMembers = selectedMembers.filter(m => selectedIds.includes(m.contactId.toString()));
+
+            renderSelectedMembers();
+        }
+
+        // ⭐ نمایش لیست اعضای انتخاب شده
+        function renderSelectedMembers() {
+            const $list = $('#selectedMembersList');
+            $list.empty();
+
+            if (selectedMembers.length === 0) {
+                $('#selectedMembersSection').hide();
+                $('#submitBtn').prop('disabled', true);
+                return;
+            }
+
+            $('#selectedMembersSection').show();
+            $('#submitBtn').prop('disabled', false);
+            $('#selectedMembersCount').text(selectedMembers.length);
+            $('#submitCount').text(selectedMembers.length);
+
+            selectedMembers.forEach((member, index) => {
+                const displayName = `${member.lastName} ${member.firstName}`.trim() || 'نام نامشخص';
+                
+                let positionOptions = '<option value="0">بدون سمت (عضو عادی)</option>';
+                positions.forEach(pos => {
+                    if (pos.id != 0) {
+                        positionOptions += `<option value="${pos.id}" ${member.positionId == pos.id ? 'selected' : ''}>${pos.text}</option>`;
+                    }
+                });
+
+                const row = `
+                    <tr>
+                        <td class="text-center fw-bold">${index + 1}</td>
+                        <td><strong>${displayName}</strong></td>
+                        <td><span dir="ltr">${member.nationalCode || '-'}</span></td>
+                        <td>
+                            <select class="position-select" data-member-id="${member.contactId}">
+                                ${positionOptions}
+                            </select>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeMember(${member.contactId})">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $list.append(row);
+            });
+
+            // مدیریت تغییر سمت
+            $('.position-select').on('change', function() {
+                const contactId = $(this).data('member-id');
+                const newPositionId = $(this).val();
+                const member = selectedMembers.find(m => m.contactId == contactId);
+                if (member) {
+                    member.positionId = newPositionId;
+                    member.positionChanged = true;
+                }
+            });
+        }
+
+        // ⭐ حذف عضو از لیست
+        function removeMember(contactId) {
+            selectedMembers = selectedMembers.filter(m => m.contactId != contactId);
+            
+            const currentValues = $('#membersSelect').val() || [];
+            const newValues = currentValues.filter(id => id != contactId.toString());
+            $('#membersSelect').val(newValues).trigger('change');
+            
+            renderSelectedMembers();
+        }
+
+        // ⭐ ارسال فرم
+        function submitMembers() {
+            if (selectedMembers.length === 0) {
+                Dashmix.helpers('notify', {
+                    type: 'warning',
+                    icon: 'fa fa-exclamation',
+                    message: 'لطفاً حداقل یک نفر انتخاب کنید'
+                });
+                return;
+            }
+
+            const $submitBtn = $('#submitBtn');
+            $submitBtn.prop('disabled', true);
+            $submitBtn.html('<i class="fa fa-spinner fa-spin me-1"></i> در حال ذخیره...');
+
+            $.ajax({
+                url: '@Url.Action("AddMultipleMembersToDepartment", "Organizations")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    departmentId: @departmentId,
+                    membersList: selectedMembers,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                }),
+                success: function(response) {
+                    if (response.success || response.status === 'redirect') {
+                        Dashmix.helpers('notify', {
+                            type: 'success',
+                            icon: 'fa fa-check',
+                            message: `${selectedMembers.length} عضو با موفقیت اضافه شد`
+                        });
+                        
+                        setTimeout(() => {
+                            window.location.href = '@Url.Action("OrganizationChart", "Organizations", new { organizationId = organizationId })';
+                        }, 1000);
+                    } else {
+                        Dashmix.helpers('notify', {
+                            type: 'danger',
+                            icon: 'fa fa-times',
+                            message: response.message || 'خطا در ذخیره'
+                        });
+                        $submitBtn.prop('disabled', false);
+                        $submitBtn.html('<i class="fa fa-check me-1"></i> ذخیره <span>' + selectedMembers.length + '</span> عضو');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('خطا:', xhr);
+                    Dashmix.helpers('notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times',
+                        message: 'خطا در ارتباط با سرور'
+                    });
+                    $submitBtn.prop('disabled', false);
+                    $submitBtn.html('<i class="fa fa-check me-1"></i> ذخیره <span>' + selectedMembers.length + '</span> عضو');
+                }
+            });
+        }
     </script>
 }

@@ -134,6 +134,12 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         [Display(Name = "فایل‌های پیوست")]
         public List<IFormFile>? Attachments { get; set; }
 
+        /// <summary>
+        /// ⭐⭐⭐ لیست فایل‌های پیوست موجود (برای نمایش)
+        /// </summary>
+        [Display(Name = "فایل‌های پیوست موجود")]
+        public List<TaskAttachment>? ExistingAttachments { get; set; }
+
         // Operations
         public List<TaskOperationViewModel>? Operations { get; set; }
 

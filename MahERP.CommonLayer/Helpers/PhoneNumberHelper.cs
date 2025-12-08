@@ -35,7 +35,7 @@ namespace MahERP.CommonLayer.Helpers
             }
             else if (digitsOnly.StartsWith("0098") && digitsOnly.Length == 14)
             {
-                // 00989123335566 => 09123335566
+                // 00989123333566 => 09123335566
                 return "0" + digitsOnly.Substring(4);
             }
             else if (digitsOnly.Length == 10 && !digitsOnly.StartsWith("0"))
@@ -87,7 +87,23 @@ namespace MahERP.CommonLayer.Helpers
                 return false;
             }
 
-           
+            // ⭐⭐⭐ بررسی شماره موبایل (11 رقمی که با 09 شروع می‌شود)
+            if (normalized.Length == 11 && normalized.StartsWith("09"))
+            {
+                return true; // ✅ موبایل معتبر
+            }
+
+            // ⭐⭐⭐ بررسی شماره تلفن ثابت (11 رقمی که با 0 شروع می‌شود اما نه 09)
+            if (normalized.Length == 11 && normalized.StartsWith("0") && !normalized.StartsWith("09"))
+            {
+                return true; // ✅ تلفن ثابت 11 رقمی معتبر (مثل 02634305257)
+            }
+
+            // ⭐⭐⭐ بررسی شماره تلفن ثابت (10 رقمی که با 0 شروع می‌شود)
+            if (normalized.Length == 10 && normalized.StartsWith("0"))
+            {
+                return true; // ✅ تلفن ثابت 10 رقمی معتبر
+            }
 
             errorMessage = "فرمت شماره تلفن نامعتبر است";
             return false;

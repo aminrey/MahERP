@@ -1,0 +1,335 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.PositionViewModel>
+@{
+    ViewData["Title"] = "مدیریت سمت‌های رایج سازمانی";
+    var categories = ViewBag.Categories as List<string>;
+    var categoryStats = ViewBag.CategoryStatistics as Dictionary<string, int>;
+    var levelStats = ViewBag.LevelStatistics as Dictionary<int, int>;
+    var selectedCategory = ViewBag.SelectedCategory as string;
+    var selectedLevel = ViewBag.SelectedLevel as int?;
+    var searchTerm = ViewBag.SearchTerm as string;
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">
+                                <i class="fas fa-user-tie text-primary"></i>
+                                مدیریت سمت‌های رایج سازمانی
+                            </h4>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-info-circle"></i>
+                                سمت‌های پایه و رایج برای استفاده در تمام سازمان‌ها
+                            </p>
+                        </div>
+                        <div>
+                            <a asp-action="CreatePosition" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                ایجاد سمت جدید
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form asp-action="PositionIndex" method="get" id="filterForm">
+                        <div class="row g-3">
+                            <!-- Search -->
+                            <div class="col-md-4">
+                                <label class="form-label">جستجو</label>
+                                <div class="input-group">
+                                    <input type="text" name="searchTerm" value="@searchTerm" 
+                                           class="form-control" placeholder="عنوان سمت، دسته‌بندی، توضیحات...">
+                                    <button type="submit" class="btn btn-outline-primary">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div class="col-md-3">
+                                <label class="form-label">دسته‌بندی</label>
+                                <select name="category" class="form-select" onchange="this.form.submit()">
+                                    <option value="">همه دسته‌ها (@(categoryStats?.Values.Sum() ?? 0))</option>
+                                    @if (categories != null)
+                                    {
+                                        foreach (var cat in categories.OrderBy(c => c))
+                                        {
+                                            var count = categoryStats?.ContainsKey(cat) == true ? categoryStats[cat] : 0;
+                                            <option value="@cat" selected="@(cat == selectedCategory)">
+                                                @cat (@count)
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Level Filter -->
+                            <div class="col-md-3">
+                                <label class="form-label">سطح سازمانی</label>
+                                <select name="level" class="form-select" onchange="this.form.submit()">
+                                    <option value="">همه سطوح</option>
+                                    <option value="0" selected="@(selectedLevel == 0)">مدیریت عالی</option>
+                                    <option value="1" selected="@(selectedLevel == 1)">مدیریت میانی</option>
+                                    <option value="2" selected="@(selectedLevel == 2)">کارشناس ارشد</option>
+                                    <option value="3" selected="@(selectedLevel == 3)">کارشناس</option>
+                                    <option value="4" selected="@(selectedLevel == 4)">کارمند عملیاتی</option>
+                                </select>
+                            </div>
+
+                            <!-- Reset Button -->
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <a asp-action="PositionIndex" class="btn btn-outline-secondary w-100">
+                                    <i class="fas fa-redo"></i>
+                                    پاک کردن فیلتر
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    @if (categoryStats != null && categoryStats.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="mb-3">
+                            <i class="fas fa-chart-pie text-primary"></i>
+                            آمار سمت‌ها بر اساس دسته‌بندی
+                        </h6>
+                        <div class="row g-2">
+                            @foreach (var stat in categoryStats.OrderByDescending(s => s.Value).Take(5))
+                            {
+                                var percentage = categoryStats.Values.Sum() > 0 
+                                    ? (stat.Value * 100.0 / categoryStats.Values.Sum()).ToString("F1") 
+                                    : "0";
+                                <div class="col-md-2 col-6">
+                                    <div class="text-center p-3 border rounded">
+                                        <h5 class="text-primary mb-1">@stat.Value</h5>
+                                        <small class="text-muted">@stat.Key</small>
+                                        <div class="progress mt-2" style="height: 4px;">
+                                            <div class="progress-bar bg-primary" style="width: @percentage%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Positions Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 5%;">#</th>
+                                        <th style="width: 25%;">عنوان سمت</th>
+                                        <th style="width: 15%;">دسته‌بندی</th>
+                                        <th style="width: 12%;">سطح</th>
+                                        <th style="width: 10%;">قدرت</th>
+                                        <th style="width: 10%;">مدرک</th>
+                                        <th style="width: 8%;">رایج</th>
+                                        <th style="width: 8%;">وضعیت</th>
+                                        <th style="width: 7%;">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var (item, index) in Model.Select((pos, idx) => (pos, idx)))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-light text-dark">@(index + 1)</span>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>@item.Title</strong>
+                                                    @if (!string.IsNullOrEmpty(item.TitleEnglish))
+                                                    {
+                                                        <br />
+                                                        <small class="text-muted">@item.TitleEnglish</small>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">@item.Category</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-layer-group"></i>
+                                                    @item.LevelText
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                        <div class="progress-bar @(item.DefaultPowerLevel <= 20 ? "bg-success" : item.DefaultPowerLevel <= 50 ? "bg-warning" : "bg-danger")" 
+                                                             style="width: @(100 - item.DefaultPowerLevel)%"></div>
+                                                    </div>
+                                                    <small>@item.DefaultPowerLevel</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (item.RequiresDegree && item.MinimumDegree.HasValue)
+                                                {
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-graduation-cap"></i>
+                                                        @item.MinimumDegreeText
+                                                    </small>
+                                                }
+                                                else
+                                                {
+                                                    <small class="text-muted">-</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (item.IsCommon)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-star"></i>
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="far fa-star"></i>
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (item.IsActive)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check"></i>
+                                                        فعال
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-times"></i>
+                                                        غیرفعال
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a asp-action="PositionDetails" asp-route-id="@item.Id" 
+                                                       class="btn btn-outline-info" title="جزئیات">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a asp-action="EditPosition" asp-route-id="@item.Id" 
+                                                       class="btn btn-outline-warning" title="ویرایش">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-outline-danger" 
+                                                            onclick="deletePosition(@item.Id, '@item.Title')" title="حذف">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">سمتی یافت نشد</h5>
+                            <p class="text-muted">لطفاً فیلترها را تغییر دهید یا یک سمت جدید ایجاد کنید</p>
+                            <a asp-action="CreatePosition" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                ایجاد سمت جدید
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function deletePosition(id, title) {
+            Swal.fire({
+                title: 'حذف سمت',
+                html: `آیا از حذف سمت <strong>${title}</strong> اطمینان دارید؟<br><small class="text-warning">⚠️ در صورت استفاده در بخش‌ها، امکان حذف وجود ندارد.</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، حذف شود',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("DeletePosition", "Organizations")',
+                        type: 'POST',
+                        data: {
+                            id: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفق',
+                                    text: response.message,
+                                    timer: 2000
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا',
+                                    text: response.message
+                                });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا',
+                                text: 'خطا در حذف سمت'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+</form>

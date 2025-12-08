@@ -270,6 +270,13 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 // ⭐⭐⭐ اضافه کردن IsIndependentCompletion به ViewModel
                 viewModel.IsIndependentCompletion = task.IsIndependentCompletion;
 
+                // ⭐⭐⭐ اضافه کردن فایل‌های پیوست
+                viewModel.ExistingAttachments = task.TaskAttachments?.ToList();
+                if (viewModel.ExistingAttachments == null)
+                {
+                    viewModel.ExistingAttachments = new List<MahERP.DataModelLayer.Entities.TaskManagement.TaskAttachment>();
+                }
+
                 var currentUserId = _userManager.GetUserId(User);
 
                 var isAdmin = User.IsInRole("Admin");

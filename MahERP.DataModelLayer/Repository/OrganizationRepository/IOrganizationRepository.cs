@@ -37,7 +37,7 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
         /// <summary>
         /// دریافت سازمان با شناسه به صورت Async
         /// </summary>
-        Task<Organization> GetOrganizationByIdAsync(int id, bool includeDepartments = false, bool includeContacts = false);
+        Task<Organization> GetOrganizationByIdAsync(int id, bool includeDepartments = false, bool includeContacts = false, bool includePhones = true);
 
         /// <summary>
         /// جستجوی سازمان‌ها

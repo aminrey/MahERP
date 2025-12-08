@@ -1,0 +1,76 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationPhoneViewModel
+@{
+    var index = ViewBag.Index ?? 0;
+    var isNew = ViewBag.IsNew ?? false;
+}
+
+<div class="phone-row mb-3 p-3 border rounded @(isNew ? "bg-light" : "")" data-index="@index" id="phone-@index">
+    @if (!isNew && Model.Id > 0)
+    {
+        <input type="hidden" name="Phones[@index].Id" value="@Model.Id" />
+    }
+    
+    <div class="row align-items-center">
+        <div class="col-md-5">
+            <label class="form-label small">شماره تماس</label>
+            <input name="Phones[@index].PhoneNumber"
+                   type="tel"
+                   class="form-control"
+                   value="@Model.PhoneNumber"
+                   placeholder="02112345678"
+                   dir="ltr" />
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label small">نوع</label>
+            <select name="Phones[@index].PhoneType" class="form-select">
+                @if (Model.PhoneType == 0)
+                {
+                    <option value="0" selected>موبایل</option>
+                }
+                else
+                {
+                    <option value="0">موبایل</option>
+                }
+                
+                @if (Model.PhoneType == 1)
+                {
+                    <option value="1" selected>ثابت</option>
+                }
+                else
+                {
+                    <option value="1">ثابت</option>
+                }
+                
+                @if (Model.PhoneType == 2)
+                {
+                    <option value="2" selected>کاری</option>
+                }
+                else
+                {
+                    <option value="2">کاری</option>
+                }
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label small d-block">تنظیمات</label>
+            <div class="form-check form-check-inline">
+                <input type="hidden" name="Phones[@index].IsDefault" value="false" />
+               
+                    <input type="checkbox"
+                           name="Phones[@index].IsDefault"
+                        @(Model.IsDefault ? "checked" : "")
+                           class="form-check-input default-check"/>
+                
+                <label class="form-check-label small">پیش‌فرض</label>
+            </div>
+        </div>
+        
+        <div class="col-md-1">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removePhoneRow(@index)">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>

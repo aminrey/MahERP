@@ -58,6 +58,18 @@
                 <span class="tab-title">نگاه کلی</span>
             </button>
         </li>
+          @if (Model.Attachments?.Any() == true)
+            {
+        <li class="nav-item">
+            <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#tab-attachments" type="button" role="tab">
+                <i class="fa fa-paperclip d-block mb-1"></i>
+                <span class="tab-title">پیوست‌ها</span>
+             
+                    <span class="badge bg-success rounded-pill ms-1">@Model.Attachments.Count()</span>
+                
+            </button>
+        </li>
+        }
         <li class="nav-item">
             <button class="nav-link" id="work-logs-tab" data-bs-toggle="tab" data-bs-target="#tab-work-logs" type="button" role="tab">
                 <i class="fa fa-clipboard-list d-block mb-1"></i>
@@ -101,6 +113,7 @@
                 </span>
             </button>
         </li>
+       
         <li class="nav-item">
             <button class="nav-link" id="reminders-tab" data-bs-toggle="tab" data-bs-target="#tab-reminders" type="button" role="tab">
                 <i class="fa fa-bell d-block mb-1"></i>
@@ -756,6 +769,10 @@
                     </div>
                 </div>
             </div>
+</div>
+        <!-- Tab 4: فایل‌های پیوست -->
+        <div class="tab-pane fade" id="tab-attachments" role="tabpanel">
+            @await Html.PartialAsync("_TaskAttachmentsPartial", Model)
         </div>
 
         <!-- Tab 5: تاریخچه کامل -->

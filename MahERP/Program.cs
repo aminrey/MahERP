@@ -58,6 +58,7 @@ builder.Services.AddScoped<IBranchTaskVisibilitySettingsRepository, BranchTaskVi
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IOrganizationGroupRepository, OrganizationGroupRepository>();
+builder.Services.AddScoped<IPositionRepository, PositionRepository>(); // ⭐⭐⭐ NEW
 builder.Services.AddScoped<IBaseRepository, BaseRepository>();
 builder.Services.AddScoped<ITaskGroupingRepository, TaskGroupingRepository>();
 builder.Services.AddScoped<IModuleAccessService, ModuleAccessService>();

@@ -2,26 +2,31 @@
 @{
     ViewData["Title"] = "افزودن بخش جدید";
     var organizationName = ViewBag.OrganizationName as string;
+    var organizationId = ViewBag.OrganizationId as int?;
     var parentDeptId = ViewBag.ParentDepartmentId as int?;
 }
 
 <!-- Hero -->
 <div class="bg-body-light">
     <div class="content content-full">
-        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
-            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
-                <i class="fa fa-plus-circle text-success me-2"></i>
-                افزودن بخش جدید
-            </h1>
-            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">مدیریت</li>
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
+            <div class="flex-grow-1">
+                <h1 class="h3 fw-bold mb-1">
+                    <i class="fa fa-sitemap text-success me-2"></i>
+                    افزودن بخش جدید
+                </h1>
+                <h2 class="fs-base lh-base fw-medium text-muted mb-0">
+                    @organizationName
+                </h2>
+            </div>
+            <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-alt">
                     <li class="breadcrumb-item">
-                        <a asp-action="Index">سازمان‌ها</a>
+                        <a href="@Url.Action("Index", "Organizations")">سازمان‌ها</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a asp-action="OrganizationChart" asp-route-organizationId="@Model.OrganizationId">
-                            @organizationName
+                        <a href="@Url.Action("OrganizationChart", "Organizations", new { organizationId = organizationId })">
+                            چارت سازمانی
                         </a>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">افزودن بخش</li>
@@ -33,178 +38,180 @@
 <!-- END Hero -->
 
 <!-- Page Content -->
-<div class="content content-full content-boxed">
-    <form asp-action="AddDepartment" method="post">
+<div class="content">
+    <form asp-action="AddDepartment" method="post" id="addDepartmentForm">
         @Html.AntiForgeryToken()
         <input asp-for="OrganizationId" type="hidden" />
         <input asp-for="ParentDepartmentId" type="hidden" />
 
-        <div class="block block-rounded">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">
-                    <i class="fa fa-sitemap me-2"></i>
-                    اطلاعات بخش سازمانی
-                </h3>
-                <div class="block-options">
-                    <button type="button" class="btn-block-option" data-toggle="block-option" data-action="fullscreen_toggle"></button>
-                </div>
-            </div>
-
-            <div class="block-content">
-                <!-- Alert برای نمایش خطاها -->
-                @if (!ViewData.ModelState.IsValid)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <h5 class="alert-heading">
-                            <i class="fa fa-exclamation-triangle me-2"></i>
-                            خطاهای اعتبارسنجی
-                        </h5>
-                        <ul class="mb-0">
-                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                            {
-                                <li>@error.ErrorMessage</li>
-                            }
-                        </ul>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="row">
+            <!-- ستون اصلی -->
+            <div class="col-lg-8">
+                <!-- اطلاعات اصلی بخش -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle me-2 text-primary"></i>
+                            اطلاعات بخش
+                        </h3>
                     </div>
-                }
-
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <!-- اطلاعات سازمان -->
-                        <div class="alert alert-info d-flex align-items-center mb-4">
-                            <i class="fa fa-building fa-2x me-3"></i>
-                            <div>
-                                <h5 class="mb-1">سازمان: @organizationName</h5>
-                                @if (parentDeptId.HasValue)
-                                {
-                                    <small class="text-muted">این بخش به عنوان زیربخش ایجاد خواهد شد</small>
-                                }
-                                else
-                                {
-                                    <small class="text-muted">این بخش به عنوان بخش ریشه ایجاد خواهد شد</small>
-                                }
-                            </div>
-                        </div>
-
+                    <div class="block-content">
                         <!-- عنوان بخش -->
                         <div class="mb-4">
-                            <label class="form-label" asp-for="Title">
-                                عنوان بخش <span class="text-danger">*</span>
+                            <label class="form-label fw-bold" asp-for="Title">
+                                عنوان بخش
+                                <span class="text-danger">*</span>
                             </label>
-                            <input asp-for="Title" class="form-control form-control-lg" 
+                            <input asp-for="Title" 
+                                   class="form-control form-control-lg" 
                                    placeholder="مثال: واحد فروش، بخش مالی، دپارتمان IT" 
+                                   required
                                    autofocus />
-                            <span asp-validation-for="Title" class="text-danger"></span>
-                        </div>
-
-                        <div class="row">
-                            <!-- کد بخش -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="Code">
-                                    کد بخش
-                                    <small class="text-muted">(اختیاری)</small>
-                                </label>
-                                <input asp-for="Code" class="form-control" 
-                                       placeholder="مثال: SALES-001" />
-                                <span asp-validation-for="Code" class="text-danger"></span>
-                                <small class="form-text text-muted">
-                                    کد یکتای بخش برای شناسایی سریع
-                                </small>
-                            </div>
-
-                            <!-- ترتیب نمایش -->
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label" asp-for="DisplayOrder">
-                                    ترتیب نمایش
-                                </label>
-                                <input asp-for="DisplayOrder" type="number" min="1" 
-                                       class="form-control" />
-                                <span asp-validation-for="DisplayOrder" class="text-danger"></span>
-                                <small class="form-text text-muted">
-                                    عدد کوچکتر = اولویت بالاتر
-                                </small>
-                            </div>
-                        </div>
-
-                        <!-- مدیر بخش -->
-                        <div class="mb-4">
-                            <label class="form-label" asp-for="ManagerContactId">
-                                <i class="fa fa-user-tie me-1"></i>
-                                مدیر بخش
-                                <small class="text-muted">(اختیاری)</small>
-                            </label>
-                            <select asp-for="ManagerContactId" 
-                                    asp-items="@ViewBag.AvailableContacts" 
-                                    class="form-select">
-                                <option value="">-- انتخاب کنید --</option>
-                            </select>
-                            <span asp-validation-for="ManagerContactId" class="text-danger"></span>
-                            <small class="form-text text-muted">
-                                می‌توانید بعداً مدیر بخش را تعیین کنید
-                            </small>
+                            <span asp-validation-for="Title" class="text-danger small"></span>
                         </div>
 
                         <!-- توضیحات -->
                         <div class="mb-4">
                             <label class="form-label" asp-for="Description">
                                 توضیحات
-                                <small class="text-muted">(اختیاری)</small>
+                                <span class="text-muted small">(اختیاری)</span>
                             </label>
                             <textarea asp-for="Description" 
                                       class="form-control" 
                                       rows="4" 
                                       placeholder="شرح وظایف و مسئولیت‌های این بخش..."></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
                         </div>
 
-                        <!-- وضعیت فعال -->
+                        <!-- مدیر بخش -->
                         <div class="mb-4">
-                            <div class="form-check form-switch form-check-lg">
-                                <input asp-for="IsActive" 
-                                       type="checkbox" 
-                                       class="form-check-input" 
-                                       checked />
-                                <label class="form-check-label" asp-for="IsActive">
-                                    <strong>فعال</strong>
-                                    <small class="d-block text-muted">بخش بلافاصله پس از ایجاد فعال باشد</small>
-                                </label>
+                            <label class="form-label fw-bold">
+                                <i class="fa fa-user-tie me-1 text-success"></i>
+                                مدیر بخش
+                                <span class="text-muted small">(اختیاری)</span>
+                            </label>
+                            <select id="managerSelect" 
+                                    name="ManagerContactId"
+                                    class="form-select">
+                            </select>
+                            <small class="form-text text-muted mt-2">
+                                <i class="fa fa-info-circle me-1"></i>
+                                می‌توانید بعداً مدیر بخش را تعیین کنید
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- اعضای بخش -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-users me-2 text-info"></i>
+                            اعضای بخش
+                            <span class="text-muted small">(اختیاری)</span>
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="alert alert-info d-flex align-items-center mb-3">
+                            <i class="fa fa-lightbulb fa-2x me-3"></i>
+                            <div>
+                                <strong>راهنما:</strong>
+                                می‌توانید اعضای این بخش را از بین اعضای سازمان انتخاب کنید. چند انتخابی امکان‌پذیر است.
                             </div>
                         </div>
 
-                        <!-- راهنما -->
-                        <div class="alert alert-secondary">
-                            <h6 class="alert-heading">
-                                <i class="fa fa-info-circle me-2"></i>
-                                نکات مهم
-                            </h6>
-                            <ul class="mb-0 small">
-                                <li>پس از ایجاد بخش، می‌توانید سمت‌ها و اعضا را به آن اضافه کنید</li>
-                                <li>می‌توانید زیربخش‌های متعدد برای این بخش تعریف کنید</li>
-                                <li>مدیر بخش می‌تواند از بین افراد موجود در سیستم انتخاب شود</li>
-                                <li>کد بخش برای دسترسی سریع و یکتا بودن استفاده می‌شود</li>
-                            </ul>
+                        <!-- جستجو و انتخاب اعضا -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fa fa-search me-1"></i>
+                                جستجو و انتخاب اعضا
+                            </label>
+                            <select id="membersSelect" 
+                                    class="form-select" 
+                                    multiple="multiple">
+                            </select>
                         </div>
 
+                        <!-- لیست اعضای انتخاب شده -->
+                        <div id="selectedMembersSection" style="display: none;">
+                            <div class="border rounded p-3 bg-light">
+                                <h6 class="mb-3">
+                                    <i class="fa fa-check-circle text-success me-1"></i>
+                                    اعضای انتخاب شده
+                                    <span class="badge bg-success" id="selectedMembersCount">0</span>
+                                </h6>
+                                <div id="selectedMembersList" class="d-flex flex-wrap gap-2">
+                                    <!-- اعضای انتخاب شده اینجا نمایش داده می‌شوند -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Footer با دکمه‌ها -->
-            <div class="block-content block-content-full block-content-sm bg-body-light">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="OrganizationChart" 
-                               asp-route-organizationId="@Model.OrganizationId" 
-                               class="btn btn-alt-secondary">
-                                <i class="fa fa-arrow-right me-1"></i>
-                                انصراف
-                            </a>
-                            <button type="submit" class="btn btn-primary">
+            <!-- ستون کناری -->
+            <div class="col-lg-4">
+                <!-- اطلاعات سازمان -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default bg-info-light">
+                        <h3 class="block-title">
+                            <i class="fa fa-building me-2"></i>
+                            اطلاعات سازمان
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="mb-3">
+                            <strong>سازمان:</strong>
+                            <p class="mb-0">@organizationName</p>
+                        </div>
+                        @if (parentDeptId.HasValue)
+                        {
+                            <div class="alert alert-warning mb-0">
+                                <i class="fa fa-sitemap me-1"></i>
+                                این بخش به عنوان <strong>زیربخش</strong> ایجاد خواهد شد
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-success mb-0">
+                                <i class="fa fa-home me-1"></i>
+                                این بخش به عنوان <strong>بخش ریشه</strong> ایجاد خواهد شد
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- راهنما -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-question-circle me-2"></i>
+                            راهنما
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <ul class="small mb-0">
+                            <li class="mb-2">فقط <strong>عنوان بخش</strong> الزامی است</li>
+                            <li class="mb-2">مدیر و اعضا را می‌توانید بعداً اضافه کنید</li>
+                            <li class="mb-2">برای جستجو، نام یا کد ملی را تایپ کنید</li>
+                            <li class="mb-2">می‌توانید چند عضو همزمان انتخاب کنید</li>
+                            <li>پس از ایجاد، می‌توانید زیربخش ایجاد کنید</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- دکمه‌ها -->
+                <div class="block block-rounded">
+                    <div class="block-content">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-lg btn-success" id="submitBtn">
                                 <i class="fa fa-check me-1"></i>
                                 ذخیره بخش
                             </button>
+                            <a href="@Url.Action("OrganizationChart", "Organizations", new { organizationId = organizationId })" 
+                               class="btn btn-lg btn-secondary">
+                                <i class="fa fa-times me-1"></i>
+                                انصراف
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -214,111 +221,401 @@
 </div>
 <!-- END Page Content -->
 
+@section Styles {
+    <style>
+        /* ⭐ Select2 Custom Styles */
+        .select2-container--default .select2-selection--single,
+        .select2-container--default .select2-selection--multiple {
+            min-height: 50px;
+            border: 2px solid #d4dae3;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--single,
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+        }
+
+        .select2-results__option {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .select2-results__option--highlighted {
+            background-color: #e7f3ff !important;
+            color: #000 !important;
+        }
+
+        /* ⭐ Custom Option Template */
+        .member-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .member-details {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 0.2rem;
+        }
+
+        .member-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: #e9ecef;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+
+        /* ⭐ Selected Members Badge */
+        .selected-member-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            background: #e7f3ff;
+            border: 1px solid #0d6efd;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+        }
+
+        .selected-member-badge:hover {
+            background: #cfe2ff;
+        }
+
+        .selected-member-badge .btn-remove {
+            margin-left: 0.5rem;
+            padding: 0.2rem 0.4rem;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .selected-member-badge .btn-remove:hover {
+            background: #c82333;
+        }
+    </style>
+}
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     
     <script>
+        let availableMembers = [];
+        let selectedMembers = [];
+        let managerId = null;
+
         $(document).ready(function() {
-            // اضافه کردن Select2 به dropdown مدیر بخش
-            if ($.fn.select2) {
-                $('#ManagerContactId').select2({
-                    placeholder: '-- جستجو و انتخاب مدیر --',
-                    allowClear: true,
-                    language: {
-                        noResults: function() {
-                            return "هیچ نتیجه‌ای یافت نشد";
-                        },
-                        searching: function() {
-                            return "در حال جستجو...";
-                        }
-                    }
-                });
-            }
+            // ⭐⭐⭐ دریافت لیست اعضای سازمان
+            loadOrganizationMembers();
 
-            // Focus روی فیلد عنوان
-            $('#Title').focus();
+            // ⭐⭐⭐ راه‌اندازی Select2 برای مدیر
+            initializeManagerSelect();
 
-            // تولید خودکار کد از روی عنوان (اختیاری)
-            let autoCodeGenerated = false;
-            $('#Title').on('blur', function() {
-                const codeField = $('#Code');
-                if (!autoCodeGenerated && codeField.val() === '') {
-                    const title = $(this).val().trim();
-                    if (title) {
-                        // تبدیل به کد (فقط حروف انگلیسی و اعداد)
-                        const suggestedCode = title
-                            .toUpperCase()
-                            .replace(/[^A-Z0-9]/g, '-')
-                            .substring(0, 20);
-                        
-                        if (suggestedCode) {
-                            Dashmix.helpers('notify', {
-                                type: 'info',
-                                icon: 'fa fa-lightbulb',
-                                message: 'می‌خواهید کد پیشنهادی "' + suggestedCode + '" استفاده شود؟'
-                            });
-                            codeField.val(suggestedCode);
-                            autoCodeGenerated = true;
-                        }
-                    }
-                }
+            // ⭐⭐⭐ راه‌اندازی Select2 برای اعضا
+            initializeMembersSelect();
+
+            // ⭐⭐⭐ مدیریت ارسال فرم
+            $('#addDepartmentForm').on('submit', function(e) {
+                e.preventDefault();
+                submitDepartment();
             });
 
-            // اعتبارسنجی فرم
-            $('form').on('submit', function(e) {
-                const title = $('#Title').val().trim();
-                
-                if (!title) {
-                    e.preventDefault();
+            // Focus
+            $('#Title').focus();
+        });
+
+        // ⭐ دریافت لیست اعضای سازمان از سرور
+        function loadOrganizationMembers() {
+            $.ajax({
+                url: '@Url.Action("GetOrganizationMembersJson", "Organizations")',
+                type: 'GET',
+                data: { organizationId: @organizationId },
+                success: function(data) {
+                    availableMembers = data;
+                    console.log('✅ تعداد اعضای سازمان:', data.length);
+                },
+                error: function(xhr) {
+                    console.error('❌ خطا در دریافت اعضا:', xhr);
                     Dashmix.helpers('notify', {
                         type: 'danger',
-                        icon: 'fa fa-exclamation-triangle',
-                        message: 'عنوان بخش الزامی است'
+                        icon: 'fa fa-times',
+                        message: 'خطا در دریافت لیست اعضای سازمان'
                     });
-                    $('#Title').focus();
-                    return false;
                 }
-
-                // نمایش لودینگ
-                const submitBtn = $(this).find('button[type="submit"]');
-                submitBtn.prop('disabled', true);
-                submitBtn.html('<i class="fa fa-spinner fa-spin me-1"></i> در حال ذخیره...');
             });
-        });
-    </script>
-}
-
-@section Styles {
-    <style>
-        .form-control-lg {
-            font-size: 1.1rem;
-            padding: 0.75rem 1rem;
         }
 
-        .alert-info {
-            border-left: 4px solid #0d6efd;
+        // ⭐ راه‌اندازی Select2 برای مدیر (تک‌انتخابی)
+        function initializeManagerSelect() {
+            $('#managerSelect').select2({
+                placeholder: 'جستجو و انتخاب مدیر...',
+                allowClear: true,
+                width: '100%',
+                dir: 'rtl',
+                templateResult: formatMember,
+                templateSelection: formatMemberSelection,
+                ajax: {
+                    delay: 250,
+                    transport: function (params, success, failure) {
+                        const term = (params.data.term || '').toLowerCase();
+                        const filtered = availableMembers.filter(member => {
+                            const fullName = `${member.lastName} ${member.firstName}`.toLowerCase();
+                            const nationalCode = (member.nationalCode || '').toLowerCase();
+                            
+                            return fullName.includes(term) || 
+                                   nationalCode.includes(term) ||
+                                   member.firstName.toLowerCase().includes(term) ||
+                                   member.lastName.toLowerCase().includes(term);
+                        });
+                        
+                        success({ results: filtered.slice(0, 20) });
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results.map(member => ({
+                                id: member.contactId,
+                                text: `${member.lastName} ${member.firstName}`,
+                                member: member
+                            }))
+                        };
+                    }
+                }
+            });
+
+            $('#managerSelect').on('change', function() {
+                managerId = $(this).val();
+            });
         }
 
-        .form-check-lg .form-check-input {
-            width: 3rem;
-            height: 1.5rem;
+        // ⭐ راه‌اندازی Select2 برای اعضا (چندانتخابی)
+        function initializeMembersSelect() {
+            $('#membersSelect').select2({
+                placeholder: 'نام یا کد ملی را تایپ کنید...',
+                allowClear: true,
+                width: '100%',
+                dir: 'rtl',
+                multiple: true,
+                closeOnSelect: false,
+                templateResult: formatMember,
+                templateSelection: formatMemberSelection,
+                ajax: {
+                    delay: 250,
+                    transport: function (params, success, failure) {
+                        const term = (params.data.term || '').toLowerCase();
+                        const filtered = availableMembers.filter(member => {
+                            const fullName = `${member.lastName} ${member.firstName}`.toLowerCase();
+                            const nationalCode = (member.nationalCode || '').toLowerCase();
+                            
+                            return fullName.includes(term) || 
+                                   nationalCode.includes(term) ||
+                                   member.firstName.toLowerCase().includes(term) ||
+                                   member.lastName.toLowerCase().includes(term);
+                        });
+                        
+                        success({ results: filtered.slice(0, 20) });
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results.map(member => ({
+                                id: member.contactId,
+                                text: `${member.lastName} ${member.firstName}`,
+                                member: member
+                            }))
+                        };
+                    }
+                }
+            });
+
+            $('#membersSelect').on('change', function() {
+                const selectedIds = $(this).val() || [];
+                updateSelectedMembers(selectedIds);
+            });
         }
 
-        .block-content {
-            padding: 2rem;
+        // ⭐ قالب نمایش در Dropdown
+        function formatMember(member) {
+            if (!member.id || !member.member) return member.text;
+
+            const m = member.member;
+            const initials = `${m.firstName?.[0] || ''}${m.lastName?.[0] || ''}`.toUpperCase();
+            const phone = m.primaryPhone || '-';
+            const nationalCode = m.nationalCode || '-';
+            const relation = m.relationTypeText || '';
+
+            return $(`
+                <div class="member-option">
+                    <div class="member-avatar">${initials}</div>
+                    <div class="member-info">
+                        <div class="member-name">${m.lastName} ${m.firstName || ''}</div>
+                        <div class="member-details">
+                            <span class="member-badge"><i class="fa fa-id-card"></i> ${nationalCode}</span>
+                            <span class="member-badge"><i class="fa fa-phone"></i> ${phone}</span>
+                            ${relation ? `<span class="member-badge"><i class="fa fa-briefcase"></i> ${relation}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `);
         }
 
-        @@media (max-width: 768px) {
-            .block-content {
-                padding: 1rem;
+        // ⭐ قالب نمایش انتخاب شده
+        function formatMemberSelection(member) {
+            if (!member.member) return member.text;
+            const m = member.member;
+            return `${m.lastName} ${m.firstName || ''}`;
+        }
+
+        // ⭐ بروزرسانی لیست اعضای انتخاب شده
+        function updateSelectedMembers(selectedIds) {
+            // افزودن افراد جدید
+            selectedIds.forEach(id => {
+                if (!selectedMembers.find(m => m.contactId == id)) {
+                    const member = availableMembers.find(m => m.contactId == id);
+                    if (member) {
+                        selectedMembers.push(member);
+                    }
+                }
+            });
+
+            // حذف افرادی که از انتخاب خارج شده‌اند
+            selectedMembers = selectedMembers.filter(m => selectedIds.includes(m.contactId.toString()));
+
+            renderSelectedMembers();
+        }
+
+        // ⭐ نمایش لیست اعضای انتخاب شده
+        function renderSelectedMembers() {
+            const $list = $('#selectedMembersList');
+            $list.empty();
+
+            if (selectedMembers.length === 0) {
+                $('#selectedMembersSection').hide();
+                return;
             }
+
+            $('#selectedMembersSection').show();
+            $('#selectedMembersCount').text(selectedMembers.length);
+
+            selectedMembers.forEach(member => {
+                const badge = $(`
+                    <div class="selected-member-badge">
+                        <strong>${member.lastName} ${member.firstName || ''}</strong>
+                        <button type="button" class="btn-remove" onclick="removeMember(${member.contactId})">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                `);
+                $list.append(badge);
+            });
         }
 
-        /* Select2 RTL Support */
-        .select2-container {
-            width: 100% !important;
+        // ⭐ حذف عضو از لیست
+        function removeMember(contactId) {
+            selectedMembers = selectedMembers.filter(m => m.contactId != contactId);
+            
+            // حذف از Select2
+            const currentValues = $('#membersSelect').val() || [];
+            const newValues = currentValues.filter(id => id != contactId.toString());
+            $('#membersSelect').val(newValues).trigger('change');
+            
+            renderSelectedMembers();
         }
-    </style>
+
+        // ⭐ ارسال فرم
+        function submitDepartment() {
+            const title = $('#Title').val().trim();
+
+            if (!title) {
+                Dashmix.helpers('notify', {
+                    type: 'warning',
+                    icon: 'fa fa-exclamation',
+                    message: 'عنوان بخش الزامی است'
+                });
+                $('#Title').focus();
+                return;
+            }
+
+            const $submitBtn = $('#submitBtn');
+            $submitBtn.prop('disabled', true);
+            $submitBtn.html('<i class="fa fa-spinner fa-spin me-1"></i> در حال ذخیره...');
+
+            const formData = {
+                organizationId: @organizationId,
+                parentDepartmentId: @(parentDeptId.HasValue ? parentDeptId.Value.ToString() : "null"),
+                title: title,
+                description: $('#Description').val(),
+                managerContactId: managerId,
+                memberContactIds: selectedMembers.map(m => m.contactId),
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            };
+
+            $.ajax({
+                url: '@Url.Action("AddDepartment", "Organizations")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    if (response.success || response.status === 'redirect') {
+                        Dashmix.helpers('notify', {
+                            type: 'success',
+                            icon: 'fa fa-check',
+                            message: 'بخش با موفقیت ایجاد شد'
+                        });
+                        
+                        setTimeout(() => {
+                            window.location.href = '@Url.Action("OrganizationChart", "Organizations", new { organizationId = organizationId })';
+                        }, 1000);
+                    } else {
+                        Dashmix.helpers('notify', {
+                            type: 'danger',
+                            icon: 'fa fa-times',
+                            message: response.message || 'خطا در ذخیره'
+                        });
+                        $submitBtn.prop('disabled', false);
+                        $submitBtn.html('<i class="fa fa-check me-1"></i> ذخیره بخش');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('خطا:', xhr);
+                    Dashmix.helpers('notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times',
+                        message: 'خطا در ارتباط با سرور'
+                    });
+                    $submitBtn.prop('disabled', false);
+                    $submitBtn.html('<i class="fa fa-check me-1"></i> ذخیره بخش');
+                }
+            });
+        }
+    </script>
 }

@@ -206,13 +206,15 @@ namespace MahERP.DataModelLayer.Repository.ContactGroupRepository
         public List<Contact> GetGroupContacts(int groupId, bool includeInactive = false)
         {
             var query = _context.ContactGroupMember_Tbl
-                .Where(m => m.GroupId == groupId)
-                .Select(m => m.Contact);
+                .Where(m => m.GroupId == groupId && m.IsActive);
 
             if (!includeInactive)
-                query = query.Where(c => c.IsActive);
+                query = query.Where(m => m.Contact.IsActive); // ⭐ فیلتر روی Contact
 
-            return query.ToList();
+            return query
+                .Select(m => m.Contact)
+                .Include(c => c.Phones.Where(p => p.IsDefault))
+                .ToList();
         }
 
         /// <summary>
