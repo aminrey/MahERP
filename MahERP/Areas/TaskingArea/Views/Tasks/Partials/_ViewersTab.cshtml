@@ -1,0 +1,48 @@
+﻿@model TaskViewModel
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-eye me-2"></i>ناظرین تسک
+        </h3>
+        <div class="block-options">
+            <small class="text-muted">افرادی که می‌توانند این تسک را مشاهده کنند</small>
+        </div>
+    </div>
+    <div class="block-content">
+        <!-- راهنمای اولیه -->
+        <div class="alert alert-info mb-4">
+            <h6><i class="fa fa-info-circle me-1"></i> درباره ناظرین:</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary mt-2">
+                        <i class="fa fa-robot me-1"></i>ناظرین خودکار (سیستمی)
+                    </h6>
+                    <ul class="mb-0 small">
+                        <li>سازنده تسک</li>
+                        <li>کاربران منتصب به تسک</li>
+                        <li>مدیر تیم (اگر تسک تیمی باشد)</li>
+                        <li>سرپرستان بر اساس سلسله مراتب</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-success mt-2">
+                        <i class="fa fa-user-plus me-1"></i>ناظرین رونوشت (دستی)
+                    </h6>
+                    <ul class="mb-0 small">
+                        <li>افرادی که شما به صورت دستی اضافه می‌کنید</li>
+                        <li>می‌توانند تسک را مشاهده کنند</li>
+                        <li>نمی‌توانند تسک را تکمیل یا ویرایش کنند</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            @Html.Partial("Partials/_SystemViewersSection", Model)
+            @Html.Partial("Partials/_CarbonCopyViewersSection", Model)
+        </div>
+
+        @Html.Partial("Partials/_ViewersStats", Model)
+    </div>
+</div>

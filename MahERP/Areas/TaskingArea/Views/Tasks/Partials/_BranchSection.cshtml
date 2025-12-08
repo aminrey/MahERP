@@ -1,0 +1,42 @@
+﻿@model TaskViewModel
+
+<!-- بخش 3: انتخاب شعبه -->
+@if (Model.branchListInitial != null && Model.branchListInitial.Count() > 1)
+{
+    <div class="task-section task-section-required">
+        <div class="task-section-title">
+            <i class="fa fa-building"></i>
+            <h5>شعبه</h5>
+            <span class="badge bg-danger ms-2">الزامی</span>
+        </div>
+        
+        <div class="mb-0">
+            <label class="form-label" for="BranchIdSelected">انتخاب شعبه <span class="text-danger">*</span></label>
+            <select class="js-select2 form-select branch @(ViewData.ModelState["BranchIdSelected"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                    asp-items="@(new SelectList(Model.branchListInitial, "Id", "Name", Model.BranchIdSelected))"
+                    id="BranchIdSelected"
+                    name="BranchIdSelected"
+                    asp-for="BranchIdSelected"
+                    data-placeholder="شعبه را انتخاب کنید"
+                    data-url="@Url.Action("BranchTriggerSelect", "Tasks")"
+                    data-toggle="multiplepartialview"
+                    data-target-divs="UsersDiv,TeamsDiv,StakeholdersDiv,TaskCategoriesDiv"
+                    data-param-name="branchId"
+                    style="width: 100%;" required>
+                <option value="">انتخاب شعبه</option>
+            </select>
+            <div class="invalid-feedback">
+                <span asp-validation-for="BranchIdSelected"></span>
+            </div>
+            <small class="form-text text-muted">
+                <i class="fa fa-info-circle me-1"></i>
+                انتخاب شعبه باعث بروزرسانی کاربران و تیم‌ها می‌شود
+            </small>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Hidden input برای شعبه یکتا -->
+    <input type="hidden" asp-for="BranchIdSelected" id="BranchIdSelected" value="@(Model.branchListInitial?.FirstOrDefault()?.Id ?? 0)" />
+}

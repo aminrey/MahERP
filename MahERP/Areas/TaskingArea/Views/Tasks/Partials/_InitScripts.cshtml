@@ -1,0 +1,90 @@
+﻿<script>
+    // متغیرهای کمکی
+    let operationsCounter = 0;
+    let operationsArray = [];
+    let remindersCounter = 0;
+    let remindersList = [];
+    
+    // متغیرهای سراسری برای مدیریت User-Team Assignments
+    let userAssignments = [];
+    let availableUsers = [];
+    let availableTeams = [];
+    let assignmentCounter = 0;
+
+    $(document).ready(function() {
+        console.log('Document ready - شروع بارگذاری فرم');
+        initializeForm();
+        setupEventHandlers();
+        initializeTasksManagement();
+        initializeUserAssignments();
+        autoSelectSingleBranch();
+    });
+
+    function initializeForm() {
+        console.log('شروع راه‌اندازی فرم');
+
+        // راه‌اندازی Select2
+        $('.js-select2').select2({
+            width: '100%',
+            allowClear: true,
+            dropdownAutoWidth: true,
+            containerCssClass: 'select2-validation',
+            escapeMarkup: function(markup) {
+                return markup;
+            }
+        });
+
+        $('#createTaskForm').attr('novalidate', 'novalidate');
+        console.log('راه‌اندازی فرم کامل شد');
+    }
+
+    function initializeTasksManagement() {
+        console.log('راه‌اندازی سیستم مدیریت کارها');
+        updateOperationsDisplay();
+        updateOperationsCount();
+    }
+
+    // راه‌اندازی سیستم User-Team Assignments
+    function initializeUserAssignments() {
+        $('#add-user-assignment').on('click', function() {
+            if (availableUsers.length === 0) {
+                alert('ابتدا شعبه را انتخاب کنید');
+                return;
+            }
+            addUserAssignmentRow();
+        });
+        
+        // هنگام تغییر شعبه، لیست کاربران و تیم‌ها را بروزرسانی کن
+        $('#BranchIdSelected').on('change', function() {
+            const branchId = $(this).val();
+            if (branchId) {
+                loadBranchUsersAndTeams(branchId);
+            }
+        });
+    }
+
+    // انتخاب خودکار شعبه
+    function autoSelectSingleBranch() {
+        const branchSelect = $('#BranchIdSelected');
+        const options = branchSelect.find('option[value!=""]');
+        
+        // اگر فقط یک شعبه باشد، خودکار انتخاب شود
+        if (options.length === 1) {
+            const branchId = options.first().val();
+            branchSelect.val(branchId);
+            loadBranchUsersAndTeams(branchId);
+            
+            if (typeof toastr !== 'undefined') {
+                toastr.info('شعبه به صورت خودکار انتخاب شد', '', {timeOut: 2000});
+            }
+        }
+        // اگر hidden input باشد (یک شعبه)، مقدار آن را بارگذاری کن
+        else if (branchSelect.is('[type="hidden"]')) {
+            const branchId = branchSelect.val();
+            if (branchId && branchId !== '0') {
+                loadBranchUsersAndTeams(branchId);
+                enableCarbonCopyButton();
+            }
+        }
+    }
+</script>

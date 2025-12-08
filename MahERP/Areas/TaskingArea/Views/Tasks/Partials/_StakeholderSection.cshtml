@@ -1,0 +1,99 @@
+﻿@model TaskViewModel
+
+<!-- بخش 5: طرف حساب -->
+<div class="task-section">
+    <div class="task-section-title">
+        <i class="fa fa-handshake"></i>
+        <h5>طرف حساب</h5>
+        <span class="badge bg-secondary ms-2">اختیاری</span>
+    </div>
+
+    <!-- Tab Navigation برای انتخاب نوع -->
+    <ul class="nav nav-pills mb-3" id="stakeholderTypeTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="organization-tab"
+                    data-bs-toggle="pill" data-bs-target="#organization-panel"
+                    type="button" role="tab">
+                <i class="fa fa-building me-1"></i>
+                شرکت/سازمان
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="contact-tab"
+                    data-bs-toggle="pill" data-bs-target="#contact-panel"
+                    type="button" role="tab">
+                <i class="fa fa-user me-1"></i>
+                فرد
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Panel 1: انتخاب Organization -->
+        <div class="tab-pane fade show active" id="organization-panel" role="tabpanel">
+            <div id="OrganizationSelectionDiv">
+                <select asp-for="SelectedOrganizationId"
+                        class="js-select2 form-select"
+                        id="SelectedOrganizationId"
+                        name="SelectedOrganizationId"
+                        data-placeholder="انتخاب شرکت/سازمان"
+                        data-url="@Url.Action("OrganizationTriggerSelect", "Tasks")"
+                        data-toggle="partialview"
+                        data-target-div="OrganizationContactsDiv"
+                        data-param-name="organizationId"
+                        style="width: 100%;">
+                    <option value="">انتخاب شرکت/سازمان</option>
+                    @if (Model.OrganizationsInitial != null && Model.OrganizationsInitial.Any())
+                    {
+                        @foreach (var org in Model.OrganizationsInitial)
+                        {
+                            <option value="@org.Id">
+                                @org.DisplayName
+                                @if (!string.IsNullOrEmpty(org.RegistrationNumber))
+                                {
+                                    <text> (ثبت: @org.RegistrationNumber)</text>
+                                }
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <small class="form-text text-muted mt-1">
+                <i class="fa fa-building me-1"></i>
+                شرکت‌ها و سازمان‌هایی که در شعبه انتخاب شده تعریف شده‌اند
+            </small>
+
+            <!-- بخش نمایش افراد مرتبط با Organization -->
+            <div id="OrganizationContactsDiv" class="mt-3" style="display: none;">
+                <!-- محتوا از AJAX بارگذاری می‌شود -->
+            </div>
+        </div>
+
+        <!-- Panel 2: انتخاب Contact -->
+        <div class="tab-pane fade" id="contact-panel" role="tabpanel">
+            <div id="ContactSelectionDiv">
+                <select asp-for="SelectedContactId"
+                        class="js-select2 form-select"
+                        id="SelectedContactId"
+                        name="SelectedContactId"
+                        data-placeholder="انتخاب فرد"
+                        style="width: 100%;">
+                    <option value="">انتخاب فرد</option>
+                    @if (Model.ContactsInitial != null && Model.ContactsInitial.Any())
+                    {
+                        @foreach (var contact in Model.ContactsInitial)
+                        {
+                            <option value="@contact.Id">@contact.FullName (@contact.NationalCode)</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <small class="form-text text-muted mt-1">
+                <i class="fa fa-user me-1"></i>
+                افرادی که در شعبه انتخاب شده تعریف شده‌اند
+            </small>
+        </div>
+    </div>
+</div>

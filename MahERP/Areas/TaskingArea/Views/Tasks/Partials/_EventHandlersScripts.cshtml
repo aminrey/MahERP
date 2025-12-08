@@ -1,0 +1,128 @@
+﻿<script>
+    function setupEventHandlers() {
+        console.log('شروع تنظیم event handlers');
+
+        // مدیریت Enter key
+        $('#js-task-input').off('keypress keydown keyup').on('keypress', function(e) {
+            if (e.which === 13 || e.keyCode === 13) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                addNewTask();
+                return false;
+            }
+        });
+
+        $('#addTaskBtn, #addOperationBtn').off('click').on('click', function(e) {
+            e.preventDefault();
+            addNewTask();
+            return false;
+        });
+
+        $('#Title').on('blur input', function() {
+            validateMainInfo();
+            if ($(this).val().trim()) {
+                $(this).removeClass('is-invalid').addClass('is-valid');
+            }
+        });
+
+        $('#BranchIdSelected').on('change select2:select select2:unselect', function() {
+            validateMainInfo();
+            updateBranchDependentSelects();
+            if ($(this).val()) {
+                $(this).removeClass('is-invalid').addClass('is-valid');
+            }
+        });
+
+        $('#SuggestedStartDatePersian, #DueDatePersian, #EstimatedHours').on('change', updateTimePreview);
+        
+        // نمایش/مخفی کردن یادآوری پیش‌فرض بر اساس تاریخ پایان
+        $('#DueDatePersian').on('change', toggleDefaultReminder);
+
+        $('#createTaskForm').on('submit', function(e) {
+            e.preventDefault();
+            if (!validateFormBeforeSubmit()) {
+                return false;
+            }
+            updateAllHiddenInputs();
+            this.submit();
+        });
+
+        $('.nav-link').on('click', function() {
+            const targetTab = $(this).data('bs-target');
+            if (targetTab === '#viewers') {
+                updateViewersList();
+            }
+            if (targetTab === '#project-info') {
+                checkProjectTabRequirements();
+            }
+        });
+
+        $(document).on('change', '#StakeholderId, #TaskCategoryIdSelected', function() {
+            updateProjectStats();
+        });
+
+        $(document).on('change', '.reminder-type, .reminder-title, .reminder-time, #defaultReminder', function() {
+            updateRemindersData();
+            updateRemindersCount();
+        });
+
+        $('#manualTaskCode').on('input', function() {
+            validateManualTaskCode();
+        });
+
+        $('#manualTaskCode').on('blur', function() {
+            checkTaskCodeUniqueness();
+        });
+
+        // تنظیمات رویدادهای زمان‌بندی خودکار
+        $('#enableScheduleCheckbox').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            $('#scheduleContent').toggle(isChecked);
+            if (!isChecked) {
+                resetTaskScheduleFields();
+            }
+        });
+
+        $('#scheduleType').on('change', function() {
+            const selectedType = $(this).val();
+            toggleScheduleOptions(selectedType);
+        });
+
+        // ⭐⭐⭐ اصلاح: استفاده از Event Delegation برای روزهای هفته
+        $(document).on('change', 'input[name="dayOfWeek"]', function() {
+            const selectedDays = [];
+            $('input[name="dayOfWeek"]:checked').each(function() {
+                selectedDays.push($(this).val());
+            });
+            $('#scheduledDaysOfWeek').val(selectedDays.join(','));
+            console.log('✅ Selected week days:', selectedDays.join(','));
+        });
+
+        // ⭐⭐⭐ اصلاح: استفاده از Event Delegation برای روزهای ماه
+        $(document).on('change', 'input[name="dayOfMonth"]', function() {
+            const selectedDays = [];
+            $('input[name="dayOfMonth"]:checked').each(function() {
+                selectedDays.push($(this).val());
+            });
+            // مرتب‌سازی عددی
+            selectedDays.sort((a, b) => parseInt(a) - parseInt(b));
+            $('#scheduledDaysOfMonth').val(selectedDays.join(','));
+            console.log('✅ Selected month days:', selectedDays.join(','));
+        });
+
+        // ابتدای بارگذاری فرم
+        toggleScheduleOptions($('#scheduleType').val());
+        updateRemindersCount();
+        toggleDefaultReminder();
+
+        console.log('تنظیم event handlers کامل شد');
+    }
+
+    function toggleTaskCodeInput() {
+        const isManual = $('#toggleManualCode').is(':checked');
+        $('#automaticCodeDiv').toggle(!isManual);
+        $('#manualCodeDiv').toggle(isManual);
+        if (isManual) $('#manualTaskCode').focus();
+    }
+</script>

@@ -1,0 +1,281 @@
+﻿<script>
+    // مدیریت ناظرین تسک
+
+    let carbonCopyViewers = []; // لیست ناظران رونوشتی
+
+    /**
+     * بروزرسانی لیست ناظران خودکار (سیستمی)
+     */
+    function updateSystemViewersList() {
+        const currentUserId = '@(Model.CreatorUserId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)';
+        const systemViewers = new Map();
+
+        // 1️⃣ سازنده تسک (کاربر جاری)
+        if (currentUserId) {
+            systemViewers.set(currentUserId, {
+                userId: currentUserId,
+                name: '@(User.Identity?.Name ?? "شما")',
+                profileImage: '/images/default-avatar.png',
+                reason: 'سازنده تسک',
+                teamName: null
+            });
+        }
+
+        // 2️⃣ کاربران منتصب
+        $('.user-assignment-row').each(function() {
+            const userId = $(this).find('.user-select').val();
+            const userName = $(this).find('.user-select option:selected').text();
+            const teamId = $(this).find('.team-select').val();
+            const teamName = $(this).find('.team-select option:selected').text();
+
+            if (userId && !systemViewers.has(userId)) {
+                systemViewers.set(userId, {
+                    userId: userId,
+                    name: userName,
+                    profileImage: '/images/default-avatar.png',
+                    reason: 'کاربر منتصب',
+                    teamName: teamName !== 'انتخاب تیم...' ? teamName : null
+                });
+            }
+
+            // 3️⃣ مدیر تیم (اگر تیم انتخاب شده باشد)
+            if (teamId && teamId !== '0') {
+                const team = availableTeams.find(t => t.id == teamId);
+                if (team && team.managerId && !systemViewers.has(team.managerId)) {
+                    systemViewers.set(team.managerId, {
+                        userId: team.managerId,
+                        name: team.managerName || 'مدیر تیم',
+                        profileImage: '/images/default-avatar.png',
+                        reason: 'مدیر تیم',
+                        teamName: team.name
+                    });
+                }
+            }
+        });
+
+        // 4️⃣ رندر لیست
+        renderSystemViewers(Array.from(systemViewers.values()));
+    }
+
+    /**
+     * رندر کردن لیست ناظران خودکار
+     */
+    function renderSystemViewers(viewers) {
+        const $container = $('#system-viewers-list');
+
+        if (viewers.length === 0) {
+            $container.html(`
+                <div class="text-center py-4 text-muted">
+                    <i class="fa fa-users-slash fa-3x mb-3 opacity-25"></i>
+                    <p class="mb-1">ناظران خودکار پس از انتخاب کاربران منتصب نمایش داده می‌شوند</p>
+                    <small>شامل: سازنده، کاربران منتصب، مدیر تیم و سرپرستان</small>
+                </div>
+            `);
+        } else {
+            let html = '<div class="list-group">';
+
+            viewers.forEach(viewer => {
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <img src="${viewer.profileImage}"
+                                 class="rounded-circle me-3"
+                                 style="width: 40px; height: 40px; object-fit: cover;"
+                                 alt="${viewer.name}">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${viewer.name}</h6>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <span class="badge bg-primary">
+                                        <i class="fa fa-shield-alt me-1"></i>${viewer.reason}
+                                    </span>
+                                    ${viewer.teamName ? `<span class="badge bg-info"><i class="fa fa-users me-1"></i>${viewer.teamName}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            $container.html(html);
+        }
+
+        // بروزرسانی شمارنده
+        $('#system-viewers-count, #system-viewers-stat').text(viewers.length);
+        updateTotalViewersCount();
+    }
+
+    /**
+     * نمایش مودال افزودن ناظر رونوشتی
+     */
+    function showAddCarbonCopyViewerModal() {
+        const branchId = $('#BranchIdSelected').val();
+
+        if (!branchId) {
+            if (typeof toastr !== 'undefined') {
+                toastr.warning('ابتدا شعبه را انتخاب کنید');
+            }
+            return;
+        }
+
+        createAndShowModal({
+            url: '@Url.Action("AddCarbonCopyViewerModal", "TaskViewers")?branchId=' + branchId,
+            onShown: function(modalInstance, $modal) {
+                console.log('✅ Carbon Copy modal loaded');
+
+                $modal.find('#carbon-copy-user-select').select2({
+                    width: '100%',
+                    placeholder: 'یک کاربر انتخاب کنید...',
+                    dropdownParent: $modal
+                });
+            },
+            onSubmitSuccess: function(response, modalInstance) {
+                console.log('✅ Carbon Copy added:', response);
+
+                if (response.status === 'success' && response.data) {
+                    carbonCopyViewers.push({
+                        userId: response.data.userId,
+                        name: response.data.userName,
+                        profileImage: response.data.profileImage || '/images/default-avatar.png',
+                        note: response.data.note,
+                        addedDate: new Date().toISOString()
+                    });
+
+                    renderCarbonCopyViewers();
+                    updateCarbonCopyViewersJson();
+
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('ناظر رونوشتی اضافه شد');
+                    }
+                }
+
+                modalInstance.hide();
+            }
+        });
+    }
+
+    /**
+     * حذف ناظر رونوشتی
+     */
+    function removeCarbonCopyViewer(userId) {
+        carbonCopyViewers = carbonCopyViewers.filter(v => v.userId !== userId);
+        renderCarbonCopyViewers();
+        updateCarbonCopyViewersJson();
+
+        if (typeof toastr !== 'undefined') {
+            toastr.info('ناظر رونوشتی حذف شد');
+        }
+    }
+
+    /**
+     * رندر کردن لیست ناظران رونوشتی
+     */
+    function renderCarbonCopyViewers() {
+        const $container = $('#carbon-copy-viewers-list');
+
+        if (carbonCopyViewers.length === 0) {
+            $container.html(`
+                <div class="text-center py-4 text-muted" id="empty-carbon-copy-message">
+                    <i class="fa fa-user-slash fa-3x mb-3 opacity-25"></i>
+                    <p class="mb-1">هیچ ناظر رونوشتی اضافه نشده است</p>
+                    <small>از دکمه "افزودن ناظر" استفاده کنید</small>
+                </div>
+            `);
+        } else {
+            let html = '<div class="list-group">';
+
+            carbonCopyViewers.forEach(viewer => {
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-start">
+                            <img src="${viewer.profileImage}"
+                                 class="rounded-circle me-3"
+                                 style="width: 40px; height: 40px; object-fit: cover;"
+                                 alt="${viewer.name}">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1">${viewer.name}</h6>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            onclick="removeCarbonCopyViewer('${viewer.userId}')"
+                                            title="حذف ناظر">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                                <span class="badge bg-success mb-2">
+                                    <i class="fa fa-copy me-1"></i>رونوشت
+                                </span>
+                                ${viewer.note ? `<div class="alert alert-light p-2 mb-0 mt-2"><small class="text-muted"><i class="fa fa-sticky-note me-1"></i>${viewer.note}</small></div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            $container.html(html);
+        }
+
+        $('#carbon-copy-viewers-count, #carbon-copy-viewers-stat').text(carbonCopyViewers.length);
+        updateTotalViewersCount();
+    }
+
+    /**
+     * بروزرسانی hidden input برای ارسال به سرور
+     */
+    function updateCarbonCopyViewersJson() {
+        const json = JSON.stringify(carbonCopyViewers.map(v => ({
+            UserId: v.userId,
+            Note: v.note || null
+        })));
+        $('#CarbonCopyViewersJson').val(json);
+        console.log('📤 Carbon Copy Viewers JSON:', json);
+    }
+
+    /**
+     * بروزرسانی شمارنده کل ناظران
+     */
+    function updateTotalViewersCount() {
+        const systemCount = parseInt($('#system-viewers-count').text()) || 0;
+        const carbonCopyCount = carbonCopyViewers.length;
+        const total = systemCount + carbonCopyCount;
+
+        $('#total-viewers-count').text(total);
+        $('#viewers-count').text(total);
+    }
+
+    /**
+     * فعال‌سازی دکمه افزودن ناظر رونوشتی
+     */
+    function enableCarbonCopyButton() {
+        const branchId = $('#BranchIdSelected').val();
+
+        if (branchId && branchId !== '0') {
+            $('#add-carbon-copy-viewer-btn')
+                .prop('disabled', false)
+                .attr('title', 'افزودن ناظر رونوشتی');
+
+            console.log('✅ Carbon Copy button enabled');
+        } else {
+            $('#add-carbon-copy-viewer-btn')
+                .prop('disabled', true)
+                .attr('title', 'ابتدا شعبه را انتخاب کنید');
+
+            console.log('⚠️ Carbon Copy button disabled - no branch selected');
+        }
+    }
+
+    // رویدادها
+    $(document).ready(function() {
+        $('#add-carbon-copy-viewer-btn').on('click', showAddCarbonCopyViewerModal);
+
+        $('#BranchIdSelected').on('change', function() {
+            enableCarbonCopyButton();
+            updateSystemViewersList();
+        });
+
+        $('#viewers-tab').on('shown.bs.tab', function() {
+            updateSystemViewersList();
+        });
+    });
+</script>

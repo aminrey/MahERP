@@ -1,0 +1,115 @@
+﻿<script>
+    $(document).ready(function() {
+        // مدیریت تغییر شعبه: بروزرسانی Contacts و Organizations
+        $('#BranchIdSelected').on('change', function() {
+            const branchId = $(this).val();
+
+            if (!branchId) {
+                $('#SelectedContactId, #SelectedOrganizationId')
+                    .prop('disabled', true)
+                    .empty()
+                    .append('<option value="">ابتدا شعبه را انتخاب کنید</option>');
+                $('#OrganizationContactsDiv').hide();
+                return;
+            }
+
+            // نمایش loading
+            $('#ContactSelectionDiv').html('<div class="text-center py-2"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
+            $('#OrganizationSelectionDiv').html('<div class="text-center py-2"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
+
+            $.ajax({
+                url: '@Url.Action("BranchTriggerSelectForStakeholders", "Tasks")',
+                type: 'POST',
+                data: {
+                    branchId: branchId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success && response.viewList) {
+                        // بروزرسانی Contact dropdown
+                        const contactView = response.viewList.find(v => v.elementId === 'ContactSelectionDiv');
+                        if (contactView && contactView.view && contactView.view.result) {
+                            $('#ContactSelectionDiv').html(contactView.view.result);
+                            $('#SelectedContactId').select2({
+                                width: '100%',
+                                placeholder: 'انتخاب فرد',
+                                allowClear: true
+                            });
+                        }
+
+                        // بروزرسانی Organization dropdown
+                        const orgView = response.viewList.find(v => v.elementId === 'OrganizationSelectionDiv');
+                        if (orgView && orgView.view && orgView.view.result) {
+                            $('#OrganizationSelectionDiv').html(orgView.view.result);
+                            $('#SelectedOrganizationId').select2({
+                                width: '100%',
+                                placeholder: 'انتخاب شرکت/سازمان',
+                                allowClear: true
+                            });
+                        }
+
+                        // پاک کردن بخش افراد سازمان
+                        $('#OrganizationContactsDiv').hide().empty();
+
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('لیست افراد و سازمان‌ها بروز شد', '', {timeOut: 2000});
+                        }
+                    }
+                },
+                error: function() {
+                    $('#ContactSelectionDiv').html('<select class="form-select" disabled><option>خطا در بارگذاری</option></select>');
+                    $('#OrganizationSelectionDiv').html('<select class="form-select" disabled><option>خطا در بارگذاری</option></select>');
+
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در بارگذاری اطلاعات');
+                    }
+                }
+            });
+        });
+
+        // مدیریت تغییر Organization: نمایش افراد مرتبط
+        $(document).on('change', '#SelectedOrganizationId', function() {
+            const organizationId = $(this).val();
+
+            if (!organizationId) {
+                $('#OrganizationContactsDiv').hide().empty();
+                return;
+            }
+
+            $('#OrganizationContactsDiv').html('<div class="text-center py-3"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری افراد...</div>').show();
+
+            $.ajax({
+                url: '@Url.Action("OrganizationTriggerSelect", "Tasks")',
+                type: 'POST',
+                data: {
+                    organizationId: organizationId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(html) {
+                    $('#OrganizationContactsDiv').html(html);
+
+                    $('#OrganizationRelatedContactId').select2({
+                        width: '100%',
+                        placeholder: 'انتخاب فرد',
+                        allowClear: true
+                    });
+                },
+                error: function() {
+                    $('#OrganizationContactsDiv').html('<div class="alert alert-danger">خطا در بارگذاری افراد</div>');
+                }
+            });
+        });
+
+        // مدیریت تغییر Tab: پاک کردن انتخاب‌های قبلی
+        $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function(e) {
+            const target = $(e.target).attr('data-bs-target');
+
+            if (target === '#contact-panel') {
+                $('#SelectedOrganizationId').val('').trigger('change');
+                $('#OrganizationContactsDiv').hide().empty();
+            } else if (target === '#organization-panel') {
+                $('#SelectedContactId').val('').trigger('change');
+            }
+        });
+    });
+</script>

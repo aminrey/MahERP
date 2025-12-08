@@ -1,0 +1,105 @@
+﻿@model TaskViewModel
+
+<!-- بخش 1: کد و نوع تسک -->
+<div class="task-section task-section-required">
+    <div class="task-section-title">
+        <i class="fa fa-barcode"></i>
+        <h5>کد و نوع تسک</h5>
+        <span class="badge bg-danger ms-2">الزامی</span>
+    </div>
+    
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="mb-3">
+                <label class="form-label" for="TaskCode">
+                    کد تسک <span class="text-danger">*</span>
+                    @if (Model.TaskCodeSettings?.AllowManualInput == true)
+                    {
+                        <small class="text-muted ms-2">
+                            (پیشوند سیستمی: @Model.TaskCodeSettings.SystemPrefix-)
+                        </small>
+                    }
+                </label>
+
+                <!-- نمایش کد اتوماتیک -->
+                <div id="automaticCodeDiv" style="@(Model.IsManualTaskCode ? "display: none;" : "")">
+                    <input asp-for="TaskCode" class="form-control bg-light" readonly
+                           placeholder="کد تسک به صورت خودکار تولید می‌شود"
+                           id="automaticTaskCode">
+                    <div class="invalid-feedback">
+                        <span asp-validation-for="TaskCode"></span>
+                    </div>
+                    <small class="form-text text-success">
+                        <i class="fa fa-robot me-1"></i>
+                        @if (!string.IsNullOrEmpty(Model.TaskCode))
+                        {
+                            <span>کد تسک به صورت خودکار تولید شده: <strong>@Model.TaskCode</strong></span>
+                        }
+                        else
+                        {
+                            <span>کد تسک به صورت خودکار تولید می‌شود</span>
+                        }
+                    </small>
+                </div>
+
+                <!-- ورودی کد دستی -->
+                @if (Model.TaskCodeSettings?.AllowManualInput == true)
+                {
+                    <div id="manualCodeDiv" style="@(Model.IsManualTaskCode ? "" : "display: none;")">
+                        <input asp-for="ManualTaskCode" class="form-control @(ViewData.ModelState["ManualTaskCode"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                               placeholder="کد تسک دلخواه خود را وارد کنید"
+                               id="manualTaskCode" maxlength="50">
+                        <div class="invalid-feedback">
+                            <span asp-validation-for="ManualTaskCode"></span>
+                        </div>
+                        <small class="form-text text-warning">
+                            <i class="fa fa-exclamation-triangle me-1"></i>
+                            نمی‌توانید از پیشوند '@Model.TaskCodeSettings.SystemPrefix-' استفاده کنید
+                        </small>
+                        <div id="taskCodeMessages"></div>
+                    </div>
+
+                    <div class="form-check mt-2">
+                        <input asp-for="IsManualTaskCode" class="form-check-input"
+                               id="toggleManualCode" onchange="toggleTaskCodeInput()">
+                        <label class="form-check-label" for="toggleManualCode">
+                            <i class="fa fa-edit me-1"></i>
+                            ورود دستی کد تسک
+                        </label>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="mb-3">
+                <label class="form-label">نوع تسک <span class="text-danger">*</span></label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check form-check-inline">
+                        <input asp-for="TaskType" class="form-check-input @(ViewData.ModelState["TaskType"]?.Errors.Count > 0 ? "is-invalid" : "")" id="tasktype-normal" type="radio" value="0" checked />
+                        <label class="form-check-label" for="tasktype-normal">
+                            <i class="fa fa-tasks me-2 text-muted"></i> عادی
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input asp-for="TaskType" class="form-check-input @(ViewData.ModelState["TaskType"]?.Errors.Count > 0 ? "is-invalid" : "")" id="tasktype-important" type="radio" value="1" />
+                        <label class="form-check-label" for="tasktype-important">
+                            <i class="fa fa-exclamation-circle me-2 text-warning"></i> مهم
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input asp-for="TaskType" class="form-check-input @(ViewData.ModelState["TaskType"]?.Errors.Count > 0 ? "is-invalid" : "")" id="tasktype-urgent" type="radio" value="2" />
+                        <label class="form-check-label" for="tasktype-urgent">
+                            <i class="fa fa-fire me-2 text-danger"></i> اضطراری
+                        </label>
+                    </div>
+                </div>
+                @if (ViewData.ModelState["TaskType"]?.Errors.Count > 0)
+                {
+                    <div class="invalid-feedback d-block">
+                        <span asp-validation-for="TaskType"></span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

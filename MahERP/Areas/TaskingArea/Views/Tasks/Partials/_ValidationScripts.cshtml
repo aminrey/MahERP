@@ -1,0 +1,378 @@
+﻿<script>
+    // بقیه توابع کمکی
+    function addNewTask() {
+        const taskInput = $('#js-task-input');
+        const taskText = taskInput.val().trim();
+
+        if (!taskText) {
+            taskInput.focus();
+            return false;
+        }
+
+        operationsCounter++;
+        const taskId = operationsCounter;
+
+        const taskHtml = `
+            <div class="js-task border rounded p-3 mb-2 bg-light animated fadeIn" data-task-id="${taskId}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="js-task-content fw-medium">${taskText}</div>
+                    <button class="btn btn-sm btn-outline-danger" type="button" onclick="removeTask(${taskId})" title="حذف کار">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        $('#operationsList').append(taskHtml);
+        taskInput.val('').focus();
+
+        updateOperationsDisplay();
+        updateOperationsCount();
+        extractOperationsData();
+
+        return false;
+    }
+
+    function removeTask(taskId) {
+        if (confirm('آیا از حذف این کار اطمینان دارید؟')) {
+            $(`[data-task-id="${taskId}"]`).remove();
+            updateOperationsDisplay();
+            updateOperationsCount();
+            extractOperationsData();
+        }
+    }
+
+    function extractOperationsData() {
+        const currentOperations = [];
+
+        $('#operationsList .js-task').each(function(index) {
+            const title = $(this).find('.js-task-content').text().trim();
+            if (title) {
+                currentOperations.push({
+                    Title: title,
+                    OperationOrder: index + 1,
+                    IsCompleted: false,
+                    IsStarred: false,
+                    EstimatedHours: null
+                });
+            }
+        });
+
+        $('#taskOperationsData').val(JSON.stringify(currentOperations));
+    }
+
+    function updateOperationsDisplay() {
+        const tasksCount = $('#operationsList .js-task').length;
+        $('#emptyOperationsList').toggle(tasksCount === 0);
+        $('#operationsList').toggle(tasksCount > 0);
+    }
+
+    function updateOperationsCount() {
+        const tasksCount = $('#operationsList .js-task').length;
+        $('#operations-count, #operationsBadge').text(tasksCount);
+    }
+
+    function updateRemindersCount() {
+        const dueDate = $('#DueDatePersian').val();
+        let count = 0;
+        
+        if (dueDate && dueDate.trim() !== '' && $('#defaultReminder').is(':checked')) {
+            count = 1;
+        }
+        
+        count += $('#customRemindersList .card').length;
+        $('#reminders-count').text(count);
+    }
+
+    function toggleDefaultReminder() {
+        const dueDate = $('#DueDatePersian').val();
+        
+        if (dueDate && dueDate.trim() !== '') {
+            $('#default-reminder-card').fadeIn();
+            $('#due-date-display').text(dueDate);
+            
+            if (!$('#defaultReminder').prop('checked')) {
+                $('#defaultReminder').prop('checked', true);
+            }
+        } else {
+            $('#default-reminder-card').fadeOut();
+            $('#defaultReminder').prop('checked', false);
+        }
+        
+        updateRemindersCount();
+        updateRemindersData();
+    }
+
+    function validateMainInfo() {
+        let hasErrors = false;
+
+        const title = $('#Title').val().trim();
+        $('#Title').toggleClass('is-invalid', !title).toggleClass('is-valid', !!title);
+        hasErrors = hasErrors || !title;
+
+        const branchId = $('#BranchIdSelected').val();
+        $('#BranchIdSelected').toggleClass('is-invalid', !branchId).toggleClass('is-valid', !!branchId);
+        $('#BranchIdSelected').next('.select2-container').toggleClass('select2-invalid', !branchId);
+        hasErrors = hasErrors || !branchId;
+
+        $('#main-info-error').toggleClass('d-none', !hasErrors);
+        return !hasErrors;
+    }
+
+    function validateFormBeforeSubmit() {
+        let isValid = true;
+        const errors = [];
+
+        $('.is-invalid').removeClass('is-invalid');
+        $('.select2-invalid').removeClass('select2-invalid');
+
+        // بررسی عنوان
+        const title = $('#Title').val().trim();
+        if (!title) {
+            isValid = false;
+            errors.push('عنوان تسک الزامی است');
+            $('#Title').addClass('is-invalid');
+            $('#main-info-tab').tab('show');
+        }
+
+        // بررسی شعبه
+        const branchId = $('#BranchIdSelected').val();
+        if (!branchId) {
+            isValid = false;
+            errors.push('انتخاب شعبه الزامی است');
+            $('#BranchIdSelected').addClass('is-invalid').next('.select2-container').addClass('select2-invalid');
+            $('#main-info-tab').tab('show');
+        }
+
+        // بررسی تخصیص کاربران
+        const assignedUsers = JSON.parse($('#AssignmentsSelectedTaskUserArraysString').val() || '[]');
+        if (assignedUsers.length === 0) {
+            isValid = false;
+            errors.push('لطفاً حداقل یک کاربر را برای انجام تسک انتخاب کنید');
+            $('#main-info-tab').tab('show');
+        }
+
+        // بررسی تکمیل بودن تیم برای هر کاربر
+        let hasIncompleteAssignment = false;
+        $('.user-assignment-row').each(function() {
+            const userId = $(this).find('.user-select').val();
+            const teamId = $(this).find('.team-select').val();
+
+            if (userId && !teamId) {
+                isValid = false;
+                hasIncompleteAssignment = true;
+                $(this).find('.team-select').addClass('is-invalid');
+            }
+        });
+
+        if (hasIncompleteAssignment) {
+            errors.push('لطفاً برای تمام کاربران منتصب، تیم مربوطه را انتخاب کنید');
+        }
+
+        // بررسی کد دستی
+        const isManualCode = $('#toggleManualCode').is(':checked');
+        if (isManualCode) {
+            const manualCode = $('#manualTaskCode').val().trim();
+            if (!manualCode) {
+                isValid = false;
+                errors.push('لطفاً کد تسک را وارد کنید');
+                $('#manualTaskCode').addClass('is-invalid');
+            } else if ($('#manualTaskCode').hasClass('is-invalid')) {
+                isValid = false;
+                errors.push('کد تسک وارد شده تکراری یا نامعتبر است');
+            }
+        }
+
+        if (!isValid && errors.length > 0) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'خطا در اعتبارسنجی',
+                    html: '<div class="text-start"><ul class="mb-0">' +
+                          errors.map(e => `<li>${e}</li>`).join('') +
+                          '</ul></div>',
+                    icon: 'error',
+                    confirmButtonText: 'متوجه شدم'
+                });
+            } else {
+                alert('لطفاً خطاهای زیر را رفع کنید:\n\n' + errors.join('\n'));
+            }
+        }
+
+        return isValid;
+    }
+
+    function updateBranchDependentSelects() {
+        const branchId = $('#BranchIdSelected').val();
+        $('#StakeholderId, #TaskCategoryIdSelected').prop('disabled', !branchId);
+    }
+
+    function validateManualTaskCode() {
+        const manualCode = $('#manualTaskCode').val().trim();
+        const systemPrefix = '@(Model.TaskCodeSettings?.SystemPrefix ?? "TSK")';
+
+        if (!manualCode) {
+            $('#manualTaskCode').removeClass('is-valid is-invalid');
+            return true;
+        }
+
+        const isValid = !manualCode.startsWith(systemPrefix + '-');
+        $('#manualTaskCode').toggleClass('is-invalid', !isValid).toggleClass('is-valid', isValid);
+        return isValid;
+    }
+
+    function checkTaskCodeUniqueness() {
+        const taskCode = $('#manualTaskCode').val().trim();
+        if (!taskCode || !validateManualTaskCode()) return;
+
+        $.ajax({
+            url: '@Url.Action("CheckTaskCodeUniqueness", "Tasks")',
+            type: 'POST',
+            data: {
+                taskCode: taskCode,
+                __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                if (response.success && response.isUnique) {
+                    $('#manualTaskCode').addClass('is-valid').removeClass('is-invalid');
+                    $('#taskCodeMessages').html('<small class="text-success"><i class="fa fa-check me-1"></i>کد تسک معتبر و منحصر به فرد است</small>');
+                } else {
+                    $('#manualTaskCode').addClass('is-invalid').removeClass('is-valid');
+                    $('#taskCodeMessages').html('<small class="text-danger"><i class="fa fa-times me-1"></i>این کد تسک قبلاً استفاده شده است</small>');
+                }
+            }
+        });
+    }
+
+    function updateTimePreview() {
+        const startDate = $('#SuggestedStartDatePersian').val();
+        const dueDate = $('#DueDatePersian').val();
+        const estimatedHours = $('#EstimatedHours').val();
+
+        if (!startDate && !dueDate && !estimatedHours) {
+            $('#timePreview').hide();
+            return;
+        }
+
+        let previewHtml = '<div class="row">';
+        if (startDate) previewHtml += `<div class="col-sm-4"><strong>شروع:</strong> ${startDate}</div>`;
+        if (dueDate) previewHtml += `<div class="col-sm-4"><strong>مهلت:</strong> ${dueDate}</div>`;
+        if (estimatedHours) previewHtml += `<div class="col-sm-4"><strong>مدت تخمینی:</strong> ${estimatedHours} ساعت</div>`;
+        previewHtml += '</div>';
+
+        $('#timePreviewContent').html(previewHtml);
+        $('#timePreview').show();
+    }
+
+    function toggleScheduleOptions(scheduleType) {
+        $('#oneTimeOptions, #weeklyOptions, #monthlyOptions').hide();
+        $('#scheduledDaysOfWeek').val('');
+
+        switch (scheduleType) {
+            case '0': // One-Time
+                $('#oneTimeOptions').show();
+                break;
+            case '1': // Daily
+                break;
+            case '2': // Weekly
+                $('#weeklyOptions').show();
+                break;
+            case '3': // Monthly
+                $('#monthlyOptions').show();
+                break;
+        }
+    }
+
+    function resetTaskScheduleFields() {
+        $('#TaskSchedule_ScheduleTitle').val('');
+        $('#TaskSchedule_ScheduleDescription').val('');
+        $('#TaskSchedule_ScheduledTime').val('');
+        $('#TaskSchedule_OneTimeExecutionDatePersian').val('');
+        $('#TaskSchedule_ScheduledDayOfMonth').val('');
+        $('#scheduledDaysOfWeek').val('');
+        $('#TaskSchedule_StartDatePersian').val('');
+        $('#TaskSchedule_EndDatePersian').val('');
+        $('#TaskSchedule_MaxOccurrences').val('');
+        $('#TaskSchedule_CreateImmediately').prop('checked', false);
+    }
+
+    function updateAllHiddenInputs() {
+        updateRemindersData();
+        extractOperationsData();
+        updateUserAssignmentsData();
+    }
+
+    function updateRemindersData() {
+        remindersList = [];
+        if ($('#defaultReminder').is(':checked')) {
+            remindersList.push({
+                Title: 'یادآوری پیش‌فرض سیستم',
+                ReminderType: 2,
+                DaysBeforeDeadline: 3,
+                NotificationTime: '09:00:00'
+            });
+        }
+
+        $('#customRemindersList .reminder-data').each(function() {
+            const data = $(this).data();
+            const reminderObj = {
+                Title: data.title,
+                Description: data.description,
+                ReminderType: parseInt(data.type),
+                NotificationTime: data.time
+            };
+
+            if (data.interval) {
+                reminderObj.IntervalDays = parseInt(data.interval);
+            }
+            if (data.daysBefore) {
+                reminderObj.DaysBeforeDeadline = parseInt(data.daysBefore);
+            }
+            if (data.startDate) {
+                reminderObj.StartDatePersian = data.startDate;
+            }
+
+            remindersList.push(reminderObj);
+        });
+
+        const jsonData = JSON.stringify(remindersList);
+        $('#taskRemindersData').val(jsonData);
+    }
+
+    function removeReminder(reminderId) {
+        if (confirm('آیا از حذف این یادآوری اطمینان دارید؟')) {
+            $(`[data-reminder-id="${reminderId}"]`).remove();
+            updateRemindersCount();
+            updateRemindersData();
+        }
+    }
+
+    function updateViewersList() {
+        const selectedUsers = $('#AssignmentsSelectedTaskUserArraysString').val() || [];
+        const selectedTeams = $('#AssignmentsSelectedTeamIds').val() || [];
+
+        if (selectedUsers.length === 0 && selectedTeams.length === 0) {
+            $('#viewersWaiting').show();
+            $('#viewersContent').hide();
+            $('#viewers-count').text('0');
+            return;
+        }
+
+        let viewersCount = selectedUsers.length;
+        selectedTeams.forEach(function(teamId) {
+            viewersCount += 5;
+        });
+
+        $('#viewers-count').text(viewersCount);
+        $('#viewersWaiting').hide();
+        $('#viewersContent').show().html(`
+            <div class="alert alert-success">
+                <i class="fa fa-users me-2"></i>
+                <strong>تعداد ناظرین تقریبی:</strong> ${viewersCount} نفر
+                <ul class="mt-2 mb-0">
+                    <li>کاربران منتصب مستقیم: ${selectedUsers.length} نفر</li>
+                    <li>اعضای تیم‌های انتخاب شده: ${selectedTeams.length} تیم</li>
+                </ul>
+            </div>
+        `);
+    }
+</script>

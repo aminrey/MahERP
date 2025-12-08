@@ -1,0 +1,186 @@
+﻿@model TaskViewModel
+
+<!-- بخش زمان‌بندی خودکار تسک -->
+<div class="task-section mt-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="text-white">
+            <h5 class="mb-1 text-white">
+                <i class="fa fa-robot me-2"></i>
+                زمان‌بندی خودکار تسک
+            </h5>
+            <small class="opacity-75">ساخت خودکار تسک در زمان‌های مشخص</small>
+        </div>
+        <div class="form-check form-switch">
+            <input class="form-check-input" 
+                   type="checkbox" 
+                   id="enableScheduleCheckbox"
+                   name="TaskSchedule.IsScheduled"
+                   style="width: 3rem; height: 1.5rem;">
+            <label class="form-check-label text-white ms-2" for="enableScheduleCheckbox">
+                <strong>فعال‌سازی</strong>
+            </label>
+        </div>
+    </div>
+
+    <!-- محتوای زمان‌بندی -->
+    <div id="scheduleContent" style="display: none;">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <!-- اطلاعات اصلی -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">عنوان زمان‌بندی</label>
+                        <input name="TaskSchedule.ScheduleTitle" 
+                               class="form-control" 
+                               placeholder="عنوان توصیفی برای این زمان‌بندی">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">نوع تکرار <span class="text-danger">*</span></label>
+                        <select name="TaskSchedule.ScheduleType" 
+                                class="form-select" 
+                                id="scheduleType">
+                            <option value="0">یکبار (One-Time)</option>
+                            <option value="1">روزانه (Daily)</option>
+                            <option value="2">هفتگی (Weekly)</option>
+                            <option value="3">ماهانه (Monthly)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label class="form-label">توضیحات زمان‌بندی</label>
+                        <textarea name="TaskSchedule.ScheduleDescription" 
+                                  class="form-control" 
+                                  rows="2"
+                                  placeholder="توضیحات اضافی درباره این زمان‌بندی..."></textarea>
+                    </div>
+                </div>
+
+                <!-- تنظیمات بر اساس نوع -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">ساعت اجرا <span class="text-danger">*</span></label>
+                        <input name="TaskSchedule.ScheduledTime" 
+                               type="time" 
+                               class="form-control">
+                    </div>
+
+                    <!-- تاریخ یکباره (فقط برای OneTime) -->
+                    <div class="col-md-6" id="oneTimeOptions" style="display: none;">
+                        <label class="form-label">تاریخ اجرا <span class="text-danger">*</span></label>
+                        <input name="TaskSchedule.OneTimeExecutionDatePersian" 
+                               class="form-control js-flatpickr" 
+                               placeholder="yyyy/MM/dd">
+                    </div>
+
+                    <!-- روز ماه (فقط برای Monthly) -->
+                    <div class="col-md-6" id="monthlyOptions" style="display: none;">
+                        <label class="form-label">
+                            انتخاب روزهای ماه <span class="text-danger">*</span>
+                            <small class="text-muted">(می‌توانید چند روز انتخاب کنید)</small>
+                        </label>
+                        
+                        <!-- دکمه‌های انتخاب چند روز -->
+                        <div class="btn-group-vertical w-100 mb-2" role="group">
+                            <!-- سطر 1: روزهای 1-10 -->
+                            <div class="btn-group mb-1" role="group">
+                                @for (int day = 1; day <= 10; day++)
+                                {
+                                    <input type="checkbox" class="btn-check" name="dayOfMonth" value="@day" id="scheduleDay@(day)" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="scheduleDay@(day)">@day</label>
+                                }
+                            </div>
+                            
+                            <!-- سطر 2: روزهای 11-20 -->
+                            <div class="btn-group mb-1" role="group">
+                                @for (int day = 11; day <= 20; day++)
+                                {
+                                    <input type="checkbox" class="btn-check" name="dayOfMonth" value="@day" id="scheduleDay@(day)" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="scheduleDay@(day)">@day</label>
+                                }
+                            </div>
+                            
+                            <!-- سطر 3: روزهای 21-31 -->
+                            <div class="btn-group" role="group">
+                                @for (int day = 21; day <= 31; day++)
+                                {
+                                    <input type="checkbox" class="btn-check" name="dayOfMonth" value="@day" id="scheduleDay@(day)" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="scheduleDay@(day)">@day</label>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Hidden input برای ذخیره روزهای انتخاب شده -->
+                        <input type="hidden" name="TaskSchedule.ScheduledDaysOfMonth" id="scheduledDaysOfMonth">
+                    
+                        <small class="form-text text-muted d-block mt-2">
+                            <i class="fa fa-info-circle me-1"></i>
+                            مثال: انتخاب روزهای 10، 20، 25 هر ماه
+                        </small>
+                    </div>
+                </div>
+
+                <!-- تنظیمات بازه زمانی -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">تاریخ شروع</label>
+                        <input name="TaskSchedule.StartDatePersian" 
+                               class="form-control js-flatpickr" 
+                               placeholder="yyyy/MM/dd">
+                        <small class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            از چه زمانی زمان‌بندی فعال شود
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">تاریخ پایان</label>
+                        <input name="TaskSchedule.EndDatePersian" 
+                               class="form-control js-flatpickr" 
+                               placeholder="yyyy/MM/dd">
+                        <small class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            تا چه زمانی زمان‌بندی ادامه یابد
+                        </small>
+                    </div>
+                </div>
+
+                <!-- تنظیمات پیشرفته -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">حداکثر تعداد اجرا</label>
+                        <input name="TaskSchedule.MaxOccurrences" 
+                               type="number" 
+                               min="1" 
+                               class="form-control" 
+                               placeholder="نامحدود">
+                        <small class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            خالی بگذارید برای تکرار نامحدود
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mt-4">
+                            <input name="TaskSchedule.CreateImmediately" 
+                                   type="checkbox" 
+                                   class="form-check-input"
+                                   id="createImmediately">
+                            <label for="createImmediately" class="form-check-label">
+                                <strong>ساخت فوری</strong>
+                                <small class="d-block text-muted">
+                                    علاوه بر زمان‌بندی، همین الان هم یک تسک بساز
+                                </small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- پیش‌نمایش زمان‌بندی -->
+                <div class="alert alert-info mt-3" id="schedulePreview" style="display: none;">
+                    <h6><i class="fa fa-info-circle me-1"></i> خلاصه زمان‌بندی:</h6>
+                    <div id="schedulePreviewContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

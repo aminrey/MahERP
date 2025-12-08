@@ -1,0 +1,65 @@
+﻿@model TaskViewModel
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">جزئیات بیشتر در تسک</h3>
+        <div class="block-options">
+            <small class="text-muted">اطلاعات اختیاری برای دسته‌بندی بهتر</small>
+        </div>
+    </div>
+    <div class="block-content">
+        <div class="row justify-content-center">
+            <div class="col-md-12 col-lg-10">
+                
+                <!-- راهنمای استفاده -->
+                <div class="alert alert-info mb-4">
+                    <h6><i class="fa fa-info-circle me-1"></i> درباره این بخش:</h6>
+                    <p class="mb-2">این بخش برای دسته‌بندی و سازماندهی بهتر تسک‌ها طراحی شده و اختیاری است.</p>
+                    <ul class="mb-0">
+                        <li><strong>دسته‌بندی:</strong> برای گروه‌بندی تسک‌ها بر اساس موضوع</li>
+                    </ul>
+                </div>
+
+                <!-- دسته‌بندی تسک -->
+                <div class="task-section">
+                    <div class="task-section-title">
+                        <i class="fa fa-tags"></i>
+                        <h5>دسته‌بندی تسک</h5>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <label class="form-label" for="TaskCategoryIdSelected">دسته‌بندی تسک</label>
+                        <div id="TaskCategoriesDiv">
+                            <select asp-for="TaskCategoryIdSelected"
+                                    id="TaskCategoryIdSelected"
+                                    name="TaskCategoryIdSelected"
+                                    class="js-select2 form-select"
+                                    data-placeholder="ابتدا شعبه را انتخاب کنید"
+                                    style="width: 100%;"
+                                    disabled>
+                                <option value="">انتخاب دسته‌بندی</option>
+                            </select>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fa fa-tags me-1"></i>
+                            دسته‌بندی کمک می‌کند تسک‌ها بر اساس موضوع گروه‌بندی شوند
+                        </small>
+                    </div>
+                </div>
+
+                <!-- پیغام راهنما -->
+                <div class="alert alert-warning" id="project-branch-warning" style="display: none;">
+                    <h6><i class="fa fa-exclamation-triangle me-1"></i> توجه:</h6>
+                    <p class="mb-0">
+                        برای استفاده از این بخش، ابتدا باید در تب "اطلاعات اصلی" شعبه را انتخاب کنید.
+                        <br>
+                        <a href="#" onclick="$('#main-info-tab').click(); return false;" class="text-decoration-underline">
+                            برگشت به اطلاعات اصلی
+                        </a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

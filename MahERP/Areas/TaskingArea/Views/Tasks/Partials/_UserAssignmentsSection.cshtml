@@ -1,0 +1,60 @@
+﻿@model TaskViewModel
+
+<!-- بخش 4: کاربران منتصب -->
+<div class="task-section task-section-required">
+    <div class="task-section-title">
+        <i class="fa fa-users"></i>
+        <h5>کاربران منتصب</h5>
+        <span class="badge bg-danger ms-2">الزامی</span>
+    </div>
+    
+    <div class="alert alert-info mb-3">
+        <i class="fa fa-info-circle me-1"></i>
+        برای هر کاربر باید تیم مربوطه را مشخص کنید (در صورتی که کاربر در چند تیم عضو باشد)
+    </div>
+    
+    <!-- تیک نوع تکمیل -->
+    <div class="alert alert-info mb-3" id="completion-mode-info" style="display: none;">
+        <div class="form-check form-switch">
+            <input asp-for="IsIndependentCompletion"
+                   class="form-check-input"
+                   type="checkbox"
+                   checked
+                   id="completionModeSwitch">
+            <label asp-for="IsIndependentCompletion" class="form-check-label">
+                <strong>تکمیل مستقل (هر نفر جداگانه باید تسک را تکمیل کند)</strong>
+            </label>
+        </div>
+        <small class="text-muted d-block mt-2">
+            <i class="fa fa-info-circle me-1"></i>
+            <span id="completion-mode-desc">
+                <strong>حالت فعلی: مشترک</strong> - یکنفر تکمیل کند، برای همه تکمیل می‌شود
+            </span>
+        </small>
+    </div>
+    
+    <div id="user-assignments-container">
+        <!-- ردیف‌های تخصیص کاربر-تیم به صورت دینامیک اضافه می‌شوند -->
+    </div>
+    
+    <!-- دکمه اضافه کردن کاربر جدید -->
+    <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add-user-assignment">
+        <i class="fa fa-plus me-1"></i> اضافه کردن کاربر
+    </button>
+    
+    <!-- Hidden inputs برای ارسال داده‌ها -->
+    <input type="hidden" id="AssignmentsSelectedTaskUserArraysString" name="AssignmentsSelectedTaskUserArraysString" />
+    <input type="hidden" id="UserTeamAssignmentsJson" asp-for="UserTeamAssignmentsJson" />
+    
+    @if (ViewData.ModelState["AssignmentsSelectedTaskUserArraysString"]?.Errors.Count > 0)
+    {
+        <div class="invalid-feedback d-block">
+            <span asp-validation-for="AssignmentsSelectedTaskUserArraysString"></span>
+        </div>
+    }
+    
+    <small class="form-text text-muted">
+        <i class="fa fa-users me-1"></i>
+        کاربرانی که این تسک به آن‌ها اختصاص داده می‌شود و تیم مربوطه
+    </small>
+</div>

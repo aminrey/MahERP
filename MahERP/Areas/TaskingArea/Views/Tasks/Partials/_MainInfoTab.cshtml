@@ -1,0 +1,64 @@
+﻿@model TaskViewModel
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">اطلاعات اصلی تسک</h3>
+        <div class="block-options">
+            <small class="text-muted">اطلاعات ضروری و الزامی</small>
+        </div>
+    </div>
+    <div class="block-content">
+        <div class="row justify-content-center">
+            <div class="col-md-12 col-lg-10">
+                
+                <!-- نمایش خطاهای عمومی -->
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger alert-dismissible" role="alert">
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <h4 class="alert-heading">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            خطا در اعتبارسنجی اطلاعات
+                        </h4>
+                        <p class="mb-0">لطفاً خطاهای زیر را اصلاح کنید:</p>
+                        <hr>
+                        <ul class="mb-0">
+                            @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@modelError.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <!-- نمایش پیام‌های موفقیت -->
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible" role="alert">
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <i class="fa fa-check-circle me-2"></i>
+                        @TempData["SuccessMessage"]
+                    </div>
+                }
+
+                <!-- نمایش پیام‌های خطای عمومی -->
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible" role="alert">
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <i class="fa fa-times-circle me-2"></i>
+                        @TempData["ErrorMessage"]
+                    </div>
+                }
+
+                @Html.Partial("Partials/_TaskCodeSection", Model)
+                @Html.Partial("Partials/_TitleDescriptionSection", Model)
+                @Html.Partial("Partials/_BranchSection", Model)
+                @Html.Partial("Partials/_UserAssignmentsSection", Model)
+                @Html.Partial("Partials/_StakeholderSection", Model)
+                @Html.Partial("Partials/_AttachmentsSection", Model)
+
+            </div>
+        </div>
+    </div>
+</div>

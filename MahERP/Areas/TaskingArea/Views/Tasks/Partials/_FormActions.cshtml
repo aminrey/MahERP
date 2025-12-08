@@ -1,0 +1,25 @@
+﻿@model TaskViewModel
+
+<!-- دکمه‌های عملیات -->
+<div class="block block-rounded">
+    <div class="block-content block-content-full block-content-sm bg-body-light">
+        <div class="row">
+            <div class="col-sm-6">
+                <button type="button" class="btn btn-alt-secondary" onclick="window.history.back();">
+                    <i class="fa fa-arrow-right me-1"></i> انصراف
+                </button>
+            </div>
+            <div class="col-sm-6 text-end">
+                <button type="button" class="btn btn-alt-primary me-2" id="previewTaskBtn">
+                    <i class="fa fa-eye me-1"></i> پیش‌نمایش
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitTaskBtn">
+                    <i class="fa fa-check me-1"></i> ذخیره تسک
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden input for IsActive -->
+<input type="hidden" name="IsActive" value="true" />

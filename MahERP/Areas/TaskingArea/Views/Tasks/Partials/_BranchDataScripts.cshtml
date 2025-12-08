@@ -1,0 +1,153 @@
+﻿<script>
+    // بارگذاری کاربران و تیم‌های شعبه
+    function loadBranchUsersAndTeams(branchId) {
+        console.log('🔄 Loading users and teams for branch:', branchId);
+
+        $.ajax({
+            url: '@Url.Action("BranchTriggerSelect", "Tasks")',
+            type: 'POST',
+            data: {
+                branchId: branchId,
+                __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                console.log('✅ Branch data loaded:', response);
+
+                if (response.status === 'update-view' && response.viewList) {
+                    // استخراج کاربران
+                    const usersHtml = response.viewList.find(v => v.elementId === 'UsersDiv')?.view?.result;
+                    if (usersHtml) {
+                        const tempDiv = $('<div>').html(usersHtml);
+                        availableUsers = [];
+                        tempDiv.find('option[value!=""]').each(function() {
+                            availableUsers.push({
+                                id: $(this).val(),
+                                name: $(this).text(),
+                                profileImage: $(this).data('profile-image') || '/images/default-avatar.png',
+                                displayName: $(this).data('display-name') || $(this).text()
+                            });
+                        });
+                        console.log('👥 Available users:', availableUsers.length);
+                    }
+
+                    // استخراج تیم‌ها با اطلاعات کامل مدیر
+                    const teamsHtml = response.viewList.find(v => v.elementId === 'TeamsDiv')?.view?.result;
+                    if (teamsHtml) {
+                        const tempDiv = $('<div>').html(teamsHtml);
+                        availableTeams = [];
+                        tempDiv.find('option[value!=""]').each(function() {
+                            const $option = $(this);
+                            availableTeams.push({
+                                id: $option.val(),
+                                name: $option.text(),
+                                managerId: $option.data('manager-id') || null,
+                                managerName: $option.data('manager-name') || null,
+                                memberCount: $option.data('member-count') || 0
+                            });
+                        });
+                        console.log('👔 Available teams:', availableTeams.length);
+                        console.log('📊 Teams with managers:', availableTeams.filter(t => t.managerName).length);
+                    }
+
+                    // بروزرسانی تخصیص‌های موجود
+                    refreshUserAssignmentSelects();
+                    
+                    // فعال‌سازی دکمه رونوشت بعد از بارگذاری کاربران
+                    enableCarbonCopyButton();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ Error loading branch data:', error);
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('خطا در بارگذاری داده‌های شعبه');
+                }
+            }
+        });
+    }
+
+    // بروزرسانی سلکت‌های موجود
+    function refreshUserAssignmentSelects() {
+        $('.user-assignment-row').each(function() {
+            const rowId = $(this).data('row-id');
+            const currentUserId = $(this).find('.user-select').val();
+            const currentTeamId = $(this).find('.team-select').val();
+
+            // بروزرسانی options کاربران با data attributes
+            let userOptions = availableUsers.map(u => {
+                const selected = u.id === currentUserId ? 'selected' : '';
+                return `<option value="${u.id}"
+                               data-profile-image="${u.profileImage}"
+                               data-display-name="${u.displayName}"
+                               ${selected}>
+                            ${u.name}
+                        </option>`;
+            }).join('');
+
+            // بروزرسانی options تیم‌ها با data attributes و نام مدیر
+            let teamOptions = availableTeams.map(t => {
+                const selected = t.id == currentTeamId ? 'selected' : '';
+                const managerInfo = t.managerName ? ` (مدیر: ${t.managerName})` : '';
+                return `<option value="${t.id}"
+                               data-manager-id="${t.managerId || ''}"
+                               data-manager-name="${t.managerName || ''}"
+                               data-member-count="${t.memberCount}"
+                               ${selected}>
+                            ${t.name}${managerInfo}
+                        </option>`;
+            }).join('');
+
+            $(this).find('.user-select').html('<option value="">انتخاب کاربر...</option>' + userOptions);
+            $(this).find('.team-select').html('<option value="">انتخاب تیم...</option>' + teamOptions);
+
+            // راه‌اندازی مجدد Select2
+            $(this).find('.user-select').select2('destroy').select2({
+                width: '100%',
+                placeholder: 'انتخاب کاربر...',
+                templateResult: formatUserWithImage,
+                templateSelection: formatUserWithImage,
+                escapeMarkup: function(markup) { return markup; }
+            });
+
+            $(this).find('.team-select').select2('destroy').select2({
+                width: '100%',
+                placeholder: 'انتخاب تیم...'
+            });
+        });
+
+        console.log('✅ Assignment selects refreshed with manager names');
+    }
+
+    // فرمت سفارشی برای Select2 با تصویر
+    function formatUserWithImage(user) {
+        if (!user.id) {
+            return user.text;
+        }
+
+        const $user = $(user.element);
+        const imageUrl = $user.data('profile-image') || '/images/default-avatar.png';
+        const displayName = $user.data('display-name') || user.text;
+
+        return $(`
+            <div class="d-flex align-items-center">
+                <img src="${imageUrl}"
+                     class="rounded-circle me-2"
+                     style="width: 24px; height: 24px; object-fit: cover;"
+                     onerror="this.src='/images/default-avatar.png'">
+                <span>${displayName}</span>
+            </div>
+        `);
+    }
+
+    // اعمال به User Select
+    function initializeUserSelect($select) {
+        $select.select2({
+            width: '100%',
+            placeholder: 'انتخاب کاربر...',
+            templateResult: formatUserWithImage,
+            templateSelection: formatUserWithImage,
+            escapeMarkup: function(markup) {
+                return markup;
+            }
+        });
+    }
+</script>

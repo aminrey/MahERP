@@ -1,0 +1,35 @@
+﻿@model TaskViewModel
+
+<!-- بخش 2: ناظرین رونوشت شده (دستی) -->
+<div class="col-lg-6">
+    <div class="block block-rounded">
+        <div class="block-header bg-success text-white">
+            <h3 class="block-title text-white mb-0">
+                <i class="fa fa-user-plus me-2"></i>ناظرین رونوشت
+            </h3>
+            <div class="block-options d-flex align-items-center gap-2">
+                <span class="badge bg-white text-success" id="carbon-copy-viewers-count">0</span>
+                <button type="button" 
+                        class="btn btn-sm btn-light"
+                        id="add-carbon-copy-viewer-btn"
+                        disabled
+                        title="ابتدا شعبه را انتخاب کنید">
+                    <i class="fa fa-plus me-1"></i>افزودن ناظر
+                </button>
+            </div>
+        </div>
+        <div class="block-content p-3">
+            <div id="carbon-copy-viewers-list">
+                <!-- محتوا به صورت دینامیک اضافه می‌شود -->
+                <div class="text-center py-4 text-muted" id="empty-carbon-copy-message">
+                    <i class="fa fa-user-slash fa-3x mb-3 opacity-25"></i>
+                    <p class="mb-1">هیچ ناظر رونوشتی اضافه نشده است</p>
+                    <small>برای افزودن، ابتدا شعبه را انتخاب کنید</small>
+                </div>
+            </div>
+
+            <!-- Hidden input برای ذخیره CarbonCopy Viewers -->
+            <input type="hidden" id="CarbonCopyViewersJson" name="CarbonCopyViewersJson" value="[]" />
+        </div>
+    </div>
+</div>

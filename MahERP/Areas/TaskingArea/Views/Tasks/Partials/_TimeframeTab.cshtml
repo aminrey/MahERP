@@ -1,0 +1,97 @@
+﻿@model TaskViewModel
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">بازه زمانی تسک</h3>
+        <div class="block-options">
+            <small class="text-muted">تعیین زمان‌بندی پیشنهادی توسط سازنده تسک</small>
+        </div>
+    </div>
+    <div class="block-content">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="task-section">
+                            <div class="task-section-title">
+                                <i class="fa fa-play"></i>
+                                <h5>تاریخ شروع</h5>
+                            </div>
+                            <input asp-for="SuggestedStartDatePersian" class="form-control js-flatpickr" 
+                                   placeholder="انتخاب تاریخ و ساعت شروع">
+                            <span asp-validation-for="SuggestedStartDatePersian" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-play me-1"></i>
+                                تاریخ پیشنهادی برای شروع انجام تسک
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="task-section">
+                            <div class="task-section-title">
+                                <i class="fa fa-flag-checkered"></i>
+                                <h5>مهلت انجام</h5>
+                            </div>
+                            <input asp-for="DueDatePersian" class="form-control js-flatpickr" 
+                                   placeholder="انتخاب تاریخ و ساعت مهلت">
+                            <span asp-validation-for="DueDatePersian" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="fa fa-flag-checkered me-1"></i>
+                                آخرین مهلت برای تکمیل تسک
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="task-section">
+                    <div class="task-section-title">
+                        <i class="fa fa-clock"></i>
+                        <h5>تخمین زمان و تنظیمات</h5>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">مدت زمان تخمینی</label>
+                                <div class="input-group">
+                                    <input asp-for="EstimatedHours" type="number" step="0.5" min="0" 
+                                           class="form-control" placeholder="0">
+                                    <span class="input-group-text">ساعت</span>
+                                </div>
+                                <span asp-validation-for="EstimatedHours" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4 pt-2">
+                                <input asp-for="IsHardDeadline" type="checkbox" class="form-check-input">
+                                <label asp-for="IsHardDeadline" class="form-check-label">
+                                    <strong>مهلت سخت</strong>
+                                    <small class="d-block text-muted">
+                                        مهلت قطعی و غیرقابل تغییر توسط انجام‌دهنده
+                                    </small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label">یادداشت زمان‌بندی</label>
+                        <textarea asp-for="TimeNote" class="form-control" rows="3" 
+                                  placeholder="توضیحات اضافی درباره زمان‌بندی، اولویت‌ها یا ملاحظات خاص..."></textarea>
+                        <span asp-validation-for="TimeNote" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- پیش‌نمایش زمان‌بندی -->
+                <div class="alert alert-info" id="timePreview" style="display: none;">
+                    <h6><i class="fa fa-info-circle me-1"></i> خلاصه زمان‌بندی:</h6>
+                    <div id="timePreviewContent"></div>
+                </div>
+
+                @Html.Partial("Partials/_AutoScheduleSection", Model)
+
+            </div>
+        </div>
+    </div>
+</div>

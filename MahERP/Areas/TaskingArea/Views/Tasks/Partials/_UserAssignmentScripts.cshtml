@@ -1,0 +1,266 @@
+﻿<script>
+    // ادامه تابع addUserAssignmentRow
+    function addUserAssignmentRow(userId = '', teamId = '') {
+        assignmentCounter++;
+        const rowId = `assignment-row-${assignmentCounter}`;
+        const teamContainerId = `team-select-container-${assignmentCounter}`;
+
+        const userOptions = availableUsers.map(u =>
+            `<option value="${u.id}" ${u.id === userId ? 'selected' : ''}>${u.name}</option>`
+        ).join('');
+
+        const rowHtml = `
+            <div class="card mb-2 user-assignment-row" id="${rowId}" data-row-id="${assignmentCounter}">
+                <div class="card-body p-3">
+                    <div class="row g-2">
+                        <div class="col-md-5">
+                            <label class="form-label small mb-1">کاربر: <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-sm user-select js-select2"
+                                    data-row-id="${assignmentCounter}"
+                                    data-container-id="${teamContainerId}"
+                                    required>
+                                <option value="">انتخاب کاربر...</option>
+                                ${userOptions}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small mb-1">تیم: <span class="text-danger">*</span></label>
+                            <div id="${teamContainerId}">
+                                <select class="form-select form-select-sm team-select js-select2"
+                                        data-row-id="${assignmentCounter}"
+                                        disabled>
+                                    <option value="">ابتدا کاربر را انتخاب کنید</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex justify-content-center align-items-center">
+                            <button type="button"
+                                    class="btn btn-sm btn-danger w-100 remove-assignment"
+                                    data-row-id="${assignmentCounter}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('#user-assignments-container').append(rowHtml);
+
+        const $row = $(`#${rowId}`);
+        const $userSelect = $row.find('.user-select');
+
+        initializeUserSelect($userSelect);
+
+        // رویداد change کاربر
+        $userSelect.on('change', function() {
+            const selectedUserId = $(this).val();
+            const teamContainerId = $(this).data('container-id');
+            const branchId = $('#BranchIdSelected').val();
+
+            if (!selectedUserId || !branchId) {
+                $(`#${teamContainerId}`).html(`
+                    <select class="form-select form-select-sm team-select" disabled>
+                        <option value="">ابتدا کاربر و شعبه را انتخاب کنید</option>
+                    </select>
+                `);
+                updateUserAssignmentsData();
+                return;
+            }
+
+            // نمایش loading
+            $(`#${teamContainerId}`).html(`
+                <div class="text-center p-2">
+                    <i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...
+                </div>
+            `);
+
+            // AJAX
+            $.ajax({
+                url: '@Url.Action("GetUserTeams", "Tasks")',
+                type: 'POST',
+                data: {
+                    userId: selectedUserId,
+                    branchId: branchId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'update-view' && response.viewList) {
+                        // بروزرسانی HTML
+                        response.viewList.forEach(function(item) {
+                            $(`#${teamContainerId}`).html(item.view.result);
+
+                            // استخراج تیم‌ها با نام مدیر
+                            const $teamSelect = $(`#${teamContainerId} .team-select`);
+                            const teamOptions = [];
+                            $teamSelect.find('option[value!=""]').each(function() {
+                                const $opt = $(this);
+                                teamOptions.push({
+                                    id: $opt.val(),
+                                    text: $opt.text(),
+                                    managerName: $opt.data('manager-name') || '',
+                                    memberCount: $opt.data('member-count') || 0
+                                });
+                            });
+
+                            console.log('👔 User teams loaded:', teamOptions.length);
+
+                            // راه‌اندازی Select2 برای تیم
+                            $teamSelect.select2({
+                                width: '100%',
+                                dropdownParent: $row,
+                                placeholder: 'انتخاب تیم...'
+                            });
+
+                            // رویداد change برای تیم
+                            $teamSelect.on('change', updateUserAssignmentsData);
+
+                            // مدیریت انتخاب خودکار
+                            if (response.hasNoTeam === true) {
+                                $teamSelect.val('0').trigger('change');
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.warning('این کاربر در هیچ تیمی عضو نیست', '', {timeOut: 3000});
+                                }
+                            } else {
+                                const options = $teamSelect.find('option[value!=""][value!="0"]');
+                                if (options.length === 1) {
+                                    $teamSelect.val(options.first().val()).trigger('change');
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.info(`تیم "${options.first().text()}" خودکار انتخاب شد`, '', {timeOut: 2000});
+                                    }
+                                }
+                            }
+                        });
+
+                        updateUserAssignmentsData();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    $(`#${teamContainerId}`).html(`
+                        <select class="form-select form-select-sm team-select">
+                            <option value="0">بدون تیم (خطا در بارگذاری)</option>
+                        </select>
+                    `);
+
+                    $(`#${teamContainerId} .team-select`).select2({
+                        width: '100%',
+                        dropdownParent: $row
+                    }).val('0').trigger('change');
+
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در بارگذاری تیم‌ها - گزینه "بدون تیم" انتخاب شد');
+                    }
+
+                    updateUserAssignmentsData();
+                }
+            });
+        });
+
+        // رویداد حذف
+        $row.find('.remove-assignment').on('click', function() {
+            removeUserAssignmentRow($(this).data('row-id'));
+        });
+
+        // trigger اولیه
+        if (userId) {
+            $userSelect.val(userId).trigger('change');
+        }
+
+        updateCompletionModeVisibility();
+        updateUserAssignmentsData();
+    }
+
+    // حذف ردیف تخصیص
+    function removeUserAssignmentRow(rowId) {
+        $(`#assignment-row-${rowId}`).remove();
+        updateUserAssignmentsData();
+        updateCompletionModeVisibility();
+        updateSystemViewersList();
+    }
+
+    // اصلاح تابع updateUserAssignmentsData
+    function updateUserAssignmentsData() {
+        const assignments = [];
+        const userTeamMap = {};
+
+        $('.user-assignment-row').each(function() {
+            let userId = $(this).find('.user-select').val();
+            const teamId = $(this).find('.team-select').val();
+
+            // پاکسازی کامل userId
+            if (userId) {
+                userId = String(userId)
+                    .replace(/[\[\]\/\s"'`]/g, '')
+                    .trim();
+
+                console.log('🔍 Cleaned userId:', userId, 'Length:', userId.length);
+
+                // بررسی معتبر بودن GUID
+                const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                if (!guidRegex.test(userId)) {
+                    console.warn('⚠️ Invalid GUID format:', userId);
+                    return;
+                }
+            }
+
+            if (userId && teamId !== null && teamId !== undefined) {
+                if (!assignments.includes(userId)) {
+                    assignments.push(userId);
+                }
+                userTeamMap[userId] = teamId === "" ? 0 : parseInt(teamId);
+            }
+        });
+
+        const assignmentsJson = JSON.stringify(assignments);
+        const userTeamMapJson = JSON.stringify(userTeamMap);
+
+        console.log('📤 Assignments JSON:', assignmentsJson);
+        console.log('📤 UserTeamMap JSON:', userTeamMapJson);
+
+        // بررسی نهایی: آیا JSON معتبر است؟
+        if (assignmentsJson.includes('[[')) {
+            console.error('❌ NESTED ARRAY DETECTED! Fixing...');
+            const fixed = JSON.parse(assignmentsJson).flat();
+            $('#AssignmentsSelectedTaskUserArraysString').val(JSON.stringify(fixed));
+        } else {
+            $('#AssignmentsSelectedTaskUserArraysString').val(assignmentsJson);
+        }
+
+        $('#UserTeamAssignmentsJson').val(userTeamMapJson);
+        
+        updateSystemViewersList();
+    }
+
+    // نمایش تیک CompletionMode فقط وقتی بیش از یک نفر منتصب شود
+    function updateCompletionModeVisibility() {
+        const assignmentsCount = $('.user-assignment-row').length;
+
+        if (assignmentsCount > 1) {
+            $('#completion-mode-info').fadeIn();
+        } else {
+            $('#completion-mode-info').fadeOut();
+            $('#completionModeSwitch').prop('checked', true);
+            $('#completionModeHidden').val(1);
+            updateCompletionModeDescription(false);
+        }
+    }
+
+    // تابع جدید: بروزرسانی توضیحات
+    function updateCompletionModeDescription(isIndependent) {
+        const desc = isIndependent
+            ? '<strong>حالت فعلی: مستقل</strong> - هر نفر باید جداگانه تسک را تکمیل کند'
+            : '<strong>حالت فعلی: مشترک</strong> - یک نفر تکمیل کند، برای همه تکمیل می‌شود';
+
+        $('#completion-mode-desc').html(`<i class="fa fa-info-circle me-1"></i>${desc}`);
+    }
+
+    $(document).ready(function() {
+        $('#completionModeSwitch').on('change', function() {
+            const isIndependent = $(this).is(':checked');
+            $('#completionModeHidden').val(isIndependent ? 1 : 0);
+            updateCompletionModeDescription(isIndependent);
+            console.log('✅ CompletionMode changed to:', isIndependent ? 'مستقل (1)' : 'مشترک (0)');
+        });
+    });
+</script>

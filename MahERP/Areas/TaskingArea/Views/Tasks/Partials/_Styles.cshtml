@@ -1,0 +1,103 @@
+﻿<style>
+    .select2-invalid .select2-selection {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+
+    .select2-validation .select2-selection {
+        border: 1px solid #ced4da;
+    }
+
+    .select2-validation.select2-invalid .select2-selection {
+        border-color: #dc3545;
+    }
+
+    /* استایل‌های جدید برای لیست کارها */
+    .js-task {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6 !important;
+    }
+
+        .js-task:hover {
+            border-color: #007bff !important;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+        }
+
+        .js-task .js-task-content {
+            color: #495057;
+            line-height: 1.4;
+        }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animated.fadeIn {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    /* استایل‌های جدید برای بخش‌بندی */
+    .task-section {
+        border: 2px dashed #e3e7ed;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+        background: #f9fafb;
+        transition: all 0.3s ease;
+    }
+
+    .task-section:hover {
+        border-color: #4c9aff;
+        background: #f0f7ff;
+        box-shadow: 0 2px 8px rgba(76, 154, 255, 0.1);
+    }
+
+    .task-section-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #e3e7ed;
+    }
+
+    .task-section-title i {
+        font-size: 20px;
+        margin-left: 10px;
+        color: #4c9aff;
+    }
+
+    .task-section-title h5 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .task-section-required {
+        background: #fff3cd;
+        border-color: #ffc107;
+    }
+
+    .task-section-required:hover {
+        background: #fff8dc;
+        border-color: #ff9800;
+    }
+
+    /* بهبود user assignment cards */
+    .user-assignment-row {
+        transition: all 0.2s ease;
+        border: 1px solid #e3e7ed;
+    }
+
+    .user-assignment-row:hover {
+        border-color: #4c9aff;
+        box-shadow: 0 2px 6px rgba(76, 154, 255, 0.15);
+    }
+</style>

@@ -1,0 +1,62 @@
+﻿@model TaskViewModel
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">فهرست کارها</h3>
+        <div class="block-options">
+            <button type="button" class="btn btn-sm btn-success" id="addOperationBtn">
+                <i class="fa fa-plus me-1"></i> اضافه کردن کار
+            </button>
+        </div>
+    </div>
+    <div class="block-content">
+        <div class="js-tasks" id="taskOperationsList">
+            
+            <!-- راهنمای استفاده -->
+            <div class="alert alert-info" id="operationsGuide">
+                <h6><i class="fa fa-lightbulb me-1"></i> راهنمای استفاده:</h6>
+                <ul class="mb-0">
+                    <li>برای هر تسک می‌توانید فهرستی از کارهای جزئی تعریف کنید</li>
+                    <li>انجام‌دهندگان می‌توانند هر کار را جداگانه تیک بزنند</li>
+                    <li>کارهای ضروری با علامت قرمز مشخص می‌شوند</li>
+                </ul>
+            </div>
+
+            <div class="mb-4">
+                <div class="input-group input-group-lg">
+                    <input class="form-control form-control-lg fs-base border-2"
+                           id="js-task-input"
+                           name="js-task-input"
+                           placeholder="یک کار جدید اضافه کنید و Enter را فشار دهید..."
+                           type="text"
+                           autocomplete="off" />
+                    <button class="btn btn-primary btn-lg" type="button" id="addTaskBtn">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- لیست کارها -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="content-heading pb-0 mb-0 border-0">
+                    فهرست کارها
+                </h6>
+                <span class="js-task-badge badge rounded-pill bg-primary" id="operationsBadge">0</span>
+            </div>
+            
+            <div class="js-task-list" id="operationsList">
+                <!-- کارها به صورت دینامیک اضافه می‌شوند -->
+            </div>
+
+            <!-- پیام خالی بودن لیست -->
+            <div class="text-center py-4 text-muted" id="emptyOperationsList">
+                <i class="fa fa-tasks fa-2x mb-2"></i>
+                <p class="mb-0">هنوز هیچ کاری اضافه نشده است</p>
+                <small>برای اضافه کردن اولین کار، از فرم بالا استفاده کنید</small>
+            </div>
+
+            <!-- Hidden input برای ذخیره operations -->
+            <input type="hidden" asp-for="TaskOperationsJson" id="taskOperationsData" />
+        </div>
+    </div>
+</div>
