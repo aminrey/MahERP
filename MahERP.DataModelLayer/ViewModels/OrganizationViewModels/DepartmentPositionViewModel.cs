@@ -56,6 +56,10 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         [Display(Name = "وضعیت")]
         public bool IsActive { get; set; } = true;
 
+        // ⭐⭐⭐ شناسه سمت استاندارد پایه (برای انتخاب از لیست سمت‌های رایج)
+        [Display(Name = "سمت استاندارد پایه")]
+        public int? BasePositionId { get; set; }
+
         // ========== Computed Properties ==========
         
         [Display(Name = "تعداد اعضا")]
@@ -63,5 +67,17 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
 
         [Display(Name = "بازه حقوق")]
         public string SalaryRangeText { get; set; }
+
+        /// <summary>
+        /// ⭐ عنوان نمایشی سمت
+        /// </summary>
+        [Display(Name = "عنوان نمایشی")]
+        public string DisplayTitle => !string.IsNullOrEmpty(Title) ? Title : "بدون عنوان";
+
+        /// <summary>
+        /// ⭐ آیا این سمت از یک سمت استاندارد رایج گرفته شده است؟
+        /// </summary>
+        [Display(Name = "سمت رایج")]
+        public bool IsCommonPosition { get; set; } = false;
     }
 }

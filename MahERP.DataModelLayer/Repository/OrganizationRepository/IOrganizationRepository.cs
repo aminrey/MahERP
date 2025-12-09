@@ -197,6 +197,13 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
         /// <returns>موفقیت عملیات</returns>
         Task<bool> DeletePositionAsync(int id);
 
+        /// <summary>
+        /// ⭐ بررسی امکان حذف سمت (آیا عضو فعالی دارد؟)
+        /// </summary>
+        /// <param name="positionId">شناسه سمت</param>
+        /// <returns>true اگر قابل حذف باشد</returns>
+        bool CanDeletePosition(int positionId);
+
         #endregion
 
         #region Department Members
@@ -351,6 +358,14 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
         /// <param name="includeInactive">شامل سازمان‌های غیرفعال</param>
         /// <returns>لیست سازمان‌های مطابق</returns>
         Task<List<Organization>> SearchOrganizationsAsync(string searchTerm, bool includeInactive = false);
+
+        /// <summary>
+        /// جستجوی سازمان‌ها برای Select2 (با محدودیت تعداد)
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="maxResults">حداکثر تعداد نتایج</param>
+        /// <returns>لیست سازمان‌های مطابق</returns>
+        Task<List<Organization>> SearchOrganizationsAsync(string searchTerm, int maxResults);
 
         /// <summary>
         /// جستجوی اعضا در سازمان

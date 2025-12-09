@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Entities.Contacts; // ⭐ اضافه شده
 using MahERP.DataModelLayer.Entities.Core;
 
 namespace MahERP.DataModelLayer.Entities.Crm
@@ -92,49 +93,85 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// </summary>
         public DateTime? EndTime { get; set; }
 
-        // اطلاعات اصلی
+        // ========== ⭐⭐⭐ NEW: Contact & Organization (جایگزین Stakeholder) ==========
+        
         /// <summary>
-        /// طرف حساب مرتبط با تعامل
+        /// فرد مرتبط با تعامل (سیستم جدید)
         /// </summary>
+        public int? ContactId { get; set; }
+        
+        [ForeignKey(nameof(ContactId))]
+        public virtual Contact? Contact { get; set; }
+
+        /// <summary>
+        /// سازمان مرتبط با تعامل (سیستم جدید)
+        /// </summary>
+        public int? OrganizationId { get; set; }
+        
+        [ForeignKey(nameof(OrganizationId))]
+        public virtual Organization? Organization { get; set; }
+
+        // ========== ❌ DEPRECATED: Stakeholder (سیستم قدیمی - نگه‌داری برای backward compatibility) ==========
+        
+        /// <summary>
+        /// طرف حساب مرتبط با تعامل (DEPRECATED - از Contact/Organization استفاده کنید)
+        /// </summary>
+        [Obsolete("Use ContactId or OrganizationId instead")]
         public int? StakeholderId { get; set; }
-        [ForeignKey("StakeholderId")]
+        
+        [ForeignKey(nameof(StakeholderId))]
+        [Obsolete("Use Contact or Organization instead")]
         public virtual Stakeholder? Stakeholder { get; set; }
 
         /// <summary>
-        /// شخص مرتبط با طرف حساب (مانند کارمند یا نماینده شرکت مشتری)
+        /// شخص مرتبط با طرف حساب (DEPRECATED - از Contact استفاده کنید)
         /// </summary>
+        [Obsolete("Use ContactId instead")]
         public int? StakeholderContactId { get; set; }
-        [ForeignKey("StakeholderContactId")]
+        
+        [ForeignKey(nameof(StakeholderContactId))]
+        [Obsolete("Use Contact instead")]
         public virtual StakeholderContact? StakeholderContact { get; set; }
+
+        // ========== اطلاعات اصلی ==========
 
         /// <summary>
         /// شعبه مربوط به تعامل
         /// </summary>
+        [Required(ErrorMessage = "شعبه الزامی است")]
         public int BranchId { get; set; }
-        [ForeignKey("BranchId")]
+        
+        [ForeignKey(nameof(BranchId))]
         public virtual Branch Branch { get; set; }
 
         /// <summary>
         /// قرارداد مرتبط با تعامل (در صورت وجود)
         /// </summary>
         public int? ContractId { get; set; }
-        [ForeignKey("ContractId")]
+        
+        [ForeignKey(nameof(ContractId))]
         public virtual Contract? Contract { get; set; }
 
-        // اطلاعات زمانی
+        // ========== اطلاعات زمانی ==========
+        
         /// <summary>
         /// تاریخ ایجاد رکورد
         /// </summary>
-        public DateTime CreateDate { get; set; }
+        [Required]
+        public DateTime CreateDate { get; set; } = DateTime.Now;
 
         /// <summary>
         /// کاربر ایجاد کننده
         /// </summary>
+        [Required]
+        [MaxLength(450)]
         public string CreatorUserId { get; set; }
-        [ForeignKey("CreatorUserId")]
+        
+        [ForeignKey(nameof(CreatorUserId))]
         public virtual AppUsers Creator { get; set; }
 
-        // اطلاعات تکمیلی برای پیگیری‌های آینده
+        // ========== اطلاعات پیگیری ==========
+        
         /// <summary>
         /// تاریخ پیگیری بعدی
         /// </summary>
@@ -143,6 +180,7 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// <summary>
         /// یادداشت پیگیری بعدی
         /// </summary>
+        [MaxLength(1000)]
         public string? NextFollowUpNote { get; set; }
         
         /// <summary>
@@ -153,8 +191,10 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// <summary>
         /// کاربر آخرین بروزرسانی کننده
         /// </summary>
+        [MaxLength(450)]
         public string? LastUpdaterUserId { get; set; }
-        [ForeignKey("LastUpdaterUserId")]
+        
+        [ForeignKey(nameof(LastUpdaterUserId))]
         public virtual AppUsers? LastUpdater { get; set; }
 
         /// <summary>
@@ -167,7 +207,8 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// </summary>
         public bool IsDeleted { get; set; } = false;
 
-        // Navigation properties
+        // ========== Navigation Properties ==========
+        
         /// <summary>
         /// پیوست‌های مربوط به تعامل CRM
         /// </summary>
@@ -192,5 +233,41 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// تیم‌های مرتبط با تعامل
         /// </summary>
         public virtual ICollection<CRMTeam> CRMTeams { get; set; } = new HashSet<CRMTeam>();
+
+        // ========== Computed Properties ==========
+        
+        [NotMapped]
+        public string DisplayContactName => Contact?.FullName ?? "بدون فرد";
+
+        [NotMapped]
+        public string DisplayOrganizationName => Organization?.DisplayName ?? "بدون سازمان";
+
+        [NotMapped]
+        public string CRMTypeText => CRMType switch
+        {
+            0 => "تماس تلفنی",
+            1 => "جلسه حضوری",
+            2 => "ایمیل",
+            3 => "پیامک",
+            4 => "سایر",
+            _ => "نامشخص"
+        };
+
+        [NotMapped]
+        public string DirectionText => Direction switch
+        {
+            0 => "ورودی",
+            1 => "خروجی",
+            _ => "نامشخص"
+        };
+
+        [NotMapped]
+        public string ResultText => Result switch
+        {
+            0 => "بی نتیجه",
+            1 => "موفق",
+            2 => "نیاز به پیگیری",
+            _ => "نامشخص"
+        };
     }
 }

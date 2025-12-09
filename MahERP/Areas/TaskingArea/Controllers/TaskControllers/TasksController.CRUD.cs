@@ -270,6 +270,17 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 // ⭐⭐⭐ اضافه کردن IsIndependentCompletion به ViewModel
                 viewModel.IsIndependentCompletion = task.IsIndependentCompletion;
 
+                // ⭐⭐⭐ اضافه کردن نام Contact و Organization به ViewModel
+                if (task.ContactId.HasValue && task.Contact != null)
+                {
+                    viewModel.ContactFullName = $"{task.Contact.FirstName} {task.Contact.LastName}";
+                }
+
+                if (task.OrganizationId.HasValue && task.Organization != null)
+                {
+                    viewModel.OrganizationName = task.Organization.DisplayName;
+                }
+
                 // ⭐⭐⭐ اضافه کردن فایل‌های پیوست
                 viewModel.ExistingAttachments = task.TaskAttachments?.ToList();
                 if (viewModel.ExistingAttachments == null)

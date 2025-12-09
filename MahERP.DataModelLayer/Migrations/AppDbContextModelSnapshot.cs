@@ -4283,6 +4283,423 @@ namespace MahERP.DataModelLayer.Migrations
                     b.ToTable("CRMTeam_Tbl");
                 });
 
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmFollowUp", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssignedUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CompletionResult")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte>("FollowUpType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<bool>("HasReminder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int?>("InteractionId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("LeadId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
+
+                    b.Property<DateTime?>("ReminderDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ReminderMinutesBefore")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("ReminderSent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("SendEmailReminder")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SendSmsReminder")
+                        .HasColumnType("bit");
+
+                    b.Property<byte>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
+                    b.Property<int?>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedUserId")
+                        .HasDatabaseName("IX_CrmFollowUp_AssignedUserId");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("DueDate")
+                        .HasDatabaseName("IX_CrmFollowUp_DueDate");
+
+                    b.HasIndex("InteractionId")
+                        .HasDatabaseName("IX_CrmFollowUp_InteractionId");
+
+                    b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("LeadId")
+                        .HasDatabaseName("IX_CrmFollowUp_LeadId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_CrmFollowUp_Status");
+
+                    b.HasIndex("TaskId")
+                        .HasDatabaseName("IX_CrmFollowUp_TaskId");
+
+                    b.HasIndex("AssignedUserId", "Status", "DueDate")
+                        .HasDatabaseName("IX_CrmFollowUp_User_Status_Due");
+
+                    b.HasIndex("HasReminder", "ReminderSent", "ReminderDate")
+                        .HasDatabaseName("IX_CrmFollowUp_Reminder")
+                        .HasFilter("[HasReminder] = 1 AND [ReminderSent] = 0");
+
+                    b.ToTable("CrmFollowUp_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLead", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssignedUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal?>("EstimatedValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastContactDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("NextFollowUpDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Score")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedUserId")
+                        .HasDatabaseName("IX_CrmLead_AssignedUserId");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("IX_CrmLead_BranchId");
+
+                    b.HasIndex("ContactId")
+                        .HasDatabaseName("IX_CrmLead_ContactId");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("NextFollowUpDate")
+                        .HasDatabaseName("IX_CrmLead_NextFollowUpDate");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("IX_CrmLead_OrganizationId");
+
+                    b.HasIndex("StatusId")
+                        .HasDatabaseName("IX_CrmLead_StatusId");
+
+                    b.HasIndex("BranchId", "StatusId")
+                        .HasDatabaseName("IX_CrmLead_Branch_Status");
+
+                    b.ToTable("CrmLead_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadInteraction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte?>("Direction")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmailAddress")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("InteractionDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<byte>("InteractionType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("LeadId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("RelatedTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<byte?>("Result")
+                        .HasMaxLength(500)
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("InteractionDate")
+                        .HasDatabaseName("IX_CrmLeadInteraction_Date");
+
+                    b.HasIndex("InteractionType")
+                        .HasDatabaseName("IX_CrmLeadInteraction_Type");
+
+                    b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("LeadId")
+                        .HasDatabaseName("IX_CrmLeadInteraction_LeadId");
+
+                    b.HasIndex("RelatedTaskId")
+                        .HasDatabaseName("IX_CrmLeadInteraction_TaskId");
+
+                    b.HasIndex("LeadId", "InteractionDate")
+                        .HasDatabaseName("IX_CrmLeadInteraction_Lead_Date");
+
+                    b.ToTable("CrmLeadInteraction_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadStatus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ColorCode")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("#6c757d");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<string>("Icon")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("fa-circle");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsFinal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsPositive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TitleEnglish")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("DisplayOrder")
+                        .HasDatabaseName("IX_CrmLeadStatus_DisplayOrder");
+
+                    b.HasIndex("IsDefault")
+                        .HasDatabaseName("IX_CrmLeadStatus_IsDefault");
+
+                    b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("Title")
+                        .HasDatabaseName("IX_CrmLeadStatus_Title");
+
+                    b.ToTable("CrmLeadStatus_Tbl", (string)null);
+                });
+
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.StakeholderCRM", b =>
                 {
                     b.Property<int>("Id")
@@ -9451,6 +9868,161 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmFollowUp", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLeadInteraction", "Interaction")
+                        .WithMany("FollowUps")
+                        .HasForeignKey("InteractionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
+                        .WithMany()
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLead", "Lead")
+                        .WithMany("FollowUps")
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AssignedUser");
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("Interaction");
+
+                    b.Navigation("LastUpdater");
+
+                    b.Navigation("Lead");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLead", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Contact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
+                        .WithMany()
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLeadStatus", "Status")
+                        .WithMany("Leads")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedUser");
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("LastUpdater");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadInteraction", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
+                        .WithMany()
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLead", "Lead")
+                        .WithMany("Interactions")
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "RelatedTask")
+                        .WithMany()
+                        .HasForeignKey("RelatedTaskId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("LastUpdater");
+
+                    b.Navigation("Lead");
+
+                    b.Navigation("RelatedTask");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadStatus", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
+                        .WithMany()
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("LastUpdater");
+                });
+
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.StakeholderCRM", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "SalesRep")
@@ -10792,6 +11364,23 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("CRMParticipants");
 
                     b.Navigation("CRMTeams");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLead", b =>
+                {
+                    b.Navigation("FollowUps");
+
+                    b.Navigation("Interactions");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadInteraction", b =>
+                {
+                    b.Navigation("FollowUps");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadStatus", b =>
+                {
+                    b.Navigation("Leads");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailTemplate", b =>

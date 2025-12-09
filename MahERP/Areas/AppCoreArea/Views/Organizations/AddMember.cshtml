@@ -60,6 +60,16 @@
                             <div>
                                 <strong>راهنما:</strong>
                                 می‌توانید چندین عضو را همزمان انتخاب کنید. برای جستجو، نام، نام خانوادگی، یا کد ملی را تایپ کنید.
+                                @if (ViewBag.Positions == null || !(ViewBag.Positions as SelectList).Any())
+                                {
+                                    <div class="alert alert-warning mt-2 mb-0">
+                                        <i class="fa fa-exclamation-triangle me-1"></i>
+                                        <strong>توجه:</strong> هنوز سمتی برای این بخش تعریف نشده است. 
+                                        <a asp-action="ManagePositions" asp-route-departmentId="@departmentId" class="alert-link">
+                                            ابتدا سمت‌ها را تعریف کنید
+                                        </a>
+                                    </div>
+                                }
                             </div>
                         </div>
 
@@ -363,18 +373,25 @@
 
         // ⭐ دریافت لیست سمت‌های بخش
         function loadDepartmentPositions() {
+            positions = [
+                { id: 0, text: 'بدون سمت (عضو عادی)' }
+            ];
+            
             @if (ViewBag.Positions != null)
             {
-                <text>
-                positions = [
-                    { id: 0, text: 'بدون سمت (عضو عادی)' }
-                    @foreach (var position in (ViewBag.Positions as SelectList))
+                var positionsList = ViewBag.Positions as SelectList;
+                if (positionsList != null)
+                {
+                    foreach (var position in positionsList)
                     {
-                        <text>,{ id: @position.Value, text: '@position.Text' }</text>
+                        <text>
+                        positions.push({ id: @position.Value, text: '@Html.Raw(position.Text)' });
+                        </text>
                     }
-                ];
-                </text>
+                }
             }
+            
+            console.log('✅ تعداد سمت‌های بارگذاری شده:', positions.length);
         }
 
         // ⭐ راه‌اندازی Select2

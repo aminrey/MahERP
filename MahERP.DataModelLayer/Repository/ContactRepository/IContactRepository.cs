@@ -31,6 +31,11 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
         List<Contact> SearchContacts(string searchTerm, byte? gender = null, bool includeInactive = false);
 
         /// <summary>
+        /// جستجوی Async افراد برای Select2
+        /// </summary>
+        Task<List<Contact>> SearchContactsAsync(string searchTerm, int maxResults = 20);
+
+        /// <summary>
         /// بررسی یکتا بودن کد ملی
         /// </summary>
         bool IsNationalCodeUnique(string nationalCode, int? excludeId = null);

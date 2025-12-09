@@ -139,6 +139,28 @@ namespace MahERP.DataModelLayer
         public DbSet<CRMTeam> CRMTeam_Tbl { get; set; }
         public DbSet<StakeholderCRM> StakeholderCRM_Tbl { get; set; }
         public DbSet<TaskCRMDetails> TaskCRMDetails_Tbl { get; set; }
+
+        // ⭐⭐⭐ NEW: CRM Lead Management System
+        /// <summary>
+        /// وضعیت‌های سرنخ CRM
+        /// </summary>
+        public DbSet<CrmLeadStatus> CrmLeadStatus_Tbl { get; set; }
+        
+        /// <summary>
+        /// سرنخ‌های CRM
+        /// </summary>
+        public DbSet<CrmLead> CrmLead_Tbl { get; set; }
+        
+        /// <summary>
+        /// تعاملات سرنخ CRM
+        /// </summary>
+        public DbSet<CrmLeadInteraction> CrmLeadInteraction_Tbl { get; set; }
+        
+        /// <summary>
+        /// پیگیری‌های CRM
+        /// </summary>
+        public DbSet<CrmFollowUp> CrmFollowUp_Tbl { get; set; }
+
         // SMS Management
         public DbSet<SmsProvider> SmsProvider_Tbl { get; set; }
         public DbSet<SmsLog> SmsLog_Tbl { get; set; }
@@ -239,6 +261,9 @@ namespace MahERP.DataModelLayer
             NotificationEntitiesConfiguration.Configure(modelBuilder);
             ContactOrganizationConfiguration.Configure(modelBuilder);
             CoreEntitiesConfiguration.Configure(modelBuilder);
+            
+            // ⭐⭐⭐ کانفیگ CRM Entities
+            CrmEntitiesConfiguration.Configure(modelBuilder);
             
             // ⭐⭐⭐ کانفیگ زمان‌بندی تسک‌ها
             modelBuilder.ApplyConfiguration(new ScheduledTaskCreationConfiguration());

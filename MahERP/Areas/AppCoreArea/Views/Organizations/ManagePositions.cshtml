@@ -1,0 +1,194 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.DepartmentPositionViewModel>
+@{
+    ViewData["Title"] = "مدیریت سمت‌های بخش";
+    var departmentTitle = ViewBag.DepartmentTitle as string;
+    var departmentId = ViewBag.DepartmentId as int?;
+    var organizationId = ViewBag.OrganizationId as int?;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
+            <div class="flex-grow-1">
+                <h1 class="h3 fw-bold mb-1">
+                    <i class="fa fa-briefcase text-warning me-2"></i>
+                    مدیریت سمت‌ها
+                </h1>
+                <h2 class="fs-base lh-base fw-medium text-muted mb-0">
+                    @departmentTitle
+                </h2>
+            </div>
+            <nav class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-alt">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Organizations")">سازمان‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("OrganizationChart", "Organizations", new { organizationId = organizationId })">
+                            چارت سازمانی
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">مدیریت سمت‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list me-2"></i>
+                سمت‌های بخش
+            </h3>
+            <div class="block-options">
+                <a href="@Url.Action("AddPositionModal", "Organizations", new { departmentId = departmentId })"
+                   data-toggle="modal-ajax"
+                   class="btn btn-sm btn-primary">
+                    <i class="fa fa-plus me-1"></i>
+                    سمت جدید
+                </a>
+                <a href="@Url.Action("OrganizationChart", "Organizations", new { organizationId = organizationId })"
+                   class="btn btn-sm btn-secondary">
+                    <i class="fa fa-arrow-right me-1"></i>
+                    بازگشت
+                </a>
+            </div>
+        </div>
+        <div class="block-content">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-warning d-flex align-items-center">
+                    <i class="fa fa-exclamation-triangle fa-2x me-3"></i>
+                    <div>
+                        <h5 class="alert-heading">هیچ سمتی تعریف نشده است!</h5>
+                        <p class="mb-0">
+                            برای افزودن اعضا به این بخش، ابتدا باید سمت‌ها را تعریف کنید.
+                            <br />
+                            <strong>راهنما:</strong> می‌توانید از سمت‌های استاندارد سازمانی استفاده کنید یا سمت سفارشی ایجاد کنید.
+                        </p>
+                        <a href="@Url.Action("AddPositionModal", "Organizations", new { departmentId = departmentId })"
+                           data-toggle="modal-ajax"
+                           class="btn btn-primary mt-2">
+                            <i class="fa fa-plus me-1"></i>
+                            ایجاد اولین سمت
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-vcenter">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th>عنوان سمت</th>
+                                <th style="width: 15%;">سطح قدرت</th>
+                                <th style="width: 10%;">تعداد اعضا</th>
+                                <th style="width: 10%;">وضعیت</th>
+                                <th style="width: 15%;" class="text-center">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positionsTableBody">
+                            @foreach (var (item, index) in Model.Select((p, i) => (p, i)))
+                            {
+                                <tr>
+                                    <td class="text-center fw-bold">@(index + 1)</td>
+                                    <td>
+                                        <strong>@item.DisplayTitle</strong>
+                                        @if (item.IsCommonPosition)
+                                        {
+                                            <span class="badge bg-success ms-1">
+                                                <i class="fa fa-star"></i>
+                                                رایج
+                                            </span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(item.Description))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@item.Description</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar @(item.PowerLevel <= 20 ? "bg-danger" : item.PowerLevel <= 50 ? "bg-warning" : "bg-success")"
+                                                 style="width: @(100 - item.PowerLevel)%">
+                                                @item.PowerLevel
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">@item.ActiveMembersCount عضو</span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-warning" 
+                                                    onclick="showComingSoonNotification(event, 'ویرایش سمت')">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-danger" 
+                                                    onclick="deletePosition(@item.Id, '@item.DisplayTitle')">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        function deletePosition(id, title) {
+            showDeleteConfirmation(`سمت "${title}"`).then(function(confirmed) {
+                if (confirmed) {
+                    $.ajax({
+                        url: '@Url.Action("DeletePosition", "Organizations")',
+                        type: 'POST',
+                        data: {
+                            id: id,
+                            __RequestVerificationToken: getAntiForgeryToken()
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                showSuccessSwal('حذف شد!', 'سمت با موفقیت حذف شد');
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                showErrorSwal('خطا!', response.message || 'خطا در حذف سمت');
+                            }
+                        },
+                        error: function(xhr) {
+                            showErrorSwal('خطا!', 'خطا در ارتباط با سرور');
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

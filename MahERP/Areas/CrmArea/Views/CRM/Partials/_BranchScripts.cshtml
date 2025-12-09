@@ -1,0 +1,111 @@
+﻿<script>
+    // ⭐⭐⭐ مدیریت انتخاب شعبه و بارگذاری داده‌ها
+    function initializeBranchSelection() {
+        $('#branchSelect').on('change', function() {
+            const branchId = $(this).val();
+            
+            if (!branchId || branchId === '') {
+                console.log('⚠️ No branch selected');
+                clearStakeholderDropdowns();
+                return;
+            }
+
+            console.log(`🔄 Branch changed: ${branchId}`);
+            loadBranchData(branchId);
+        });
+    }
+
+    // ⭐⭐⭐ بارگذاری داده‌های شعبه (Contacts & Organizations)
+    function loadBranchData(branchId) {
+        // نمایش Loading
+        showLoadingOnDropdowns();
+
+        $.ajax({
+            url: '@Url.Action("BranchTriggerSelect", "CRM")',
+            type: 'POST',
+            data: {
+                branchId: branchId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                if (response.status === 'update-view' && response.viewList) {
+                    console.log('✅ Branch data loaded successfully');
+
+                    // بروزرسانی dropdown ها
+                    response.viewList.forEach(function(item) {
+                        if (item.elementId && item.view && item.view.result) {
+                            $(`#${item.elementId}`).html(item.view.result);
+                        }
+                    });
+
+                    // راه‌اندازی مجدد Select2
+                    reinitializeSelect2();
+
+                    // نمایش پیام موفقیت
+                    Dashmix.helpers('notify', {
+                        type: 'success',
+                        icon: 'fa fa-check',
+                        message: 'داده‌های شعبه بارگذاری شد'
+                    });
+                } else {
+                    console.error('❌ Invalid response format');
+                    showErrorOnDropdowns();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ Error loading branch data:', error);
+                showErrorOnDropdowns();
+                
+                Dashmix.helpers('notify', {
+                    type: 'danger',
+                    icon: 'fa fa-times',
+                    message: 'خطا در بارگذاری داده‌ها'
+                });
+            }
+        });
+    }
+
+    // ⭐ نمایش Loading در Dropdown ها
+    function showLoadingOnDropdowns() {
+        $('#contactSelect, #organizationSelect').html('<option value="">در حال بارگذاری...</option>');
+    }
+
+    // ⭐ پاکسازی Dropdown ها
+    function clearStakeholderDropdowns() {
+        $('#contactSelect').html('<option value="">-- ابتدا شعبه را انتخاب کنید --</option>');
+        $('#organizationSelect').html('<option value="">-- ابتدا شعبه را انتخاب کنید --</option>');
+        $('#contactOrganizationsSection').hide();
+        $('#organizationContactsSection').hide();
+    }
+
+    // ⭐ نمایش خطا در Dropdown ها
+    function showErrorOnDropdowns() {
+        $('#contactSelect').html('<option value="">خطا در بارگذاری</option>');
+        $('#organizationSelect').html('<option value="">خطا در بارگذاری</option>');
+    }
+
+    // ⭐ راه‌اندازی مجدد Select2 بعد از Ajax
+    function reinitializeSelect2() {
+        $('.select2-contact').select2('destroy').select2({
+            dir: 'rtl',
+            width: '100%',
+            placeholder: 'نام یا کد ملی را تایپ کنید...',
+            allowClear: true,
+            templateResult: formatContactOption,
+            templateSelection: formatContactSelection
+        });
+
+        $('.select2-organization').select2('destroy').select2({
+            dir: 'rtl',
+            width: '100%',
+            placeholder: 'نام سازمان را تایپ کنید...',
+            allowClear: true,
+            templateResult: formatOrganizationOption,
+            templateSelection: formatOrganizationSelection
+        });
+
+        console.log('✅ Select2 reinitialized');
+    }
+
+    console.log('✅ Branch Scripts Loaded');
+</script>

@@ -6,6 +6,7 @@ using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.ContactGroupRepository;
 using MahERP.DataModelLayer.Repository.ContactRepository;
+using MahERP.DataModelLayer.Repository.CrmRepository;
 using MahERP.DataModelLayer.Repository.Notifications;
 using MahERP.DataModelLayer.Repository.OrganizationGroupRepository;
 using MahERP.DataModelLayer.Repository.OrganizationRepository;
@@ -88,6 +89,12 @@ builder.Services.AddScoped<TaskCodeGenerator>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<TransactionManager>();
 builder.Services.AddSignalR();
+
+// ⭐⭐⭐ CRM Lead Management Services
+builder.Services.AddScoped<ICrmLeadStatusRepository, CrmLeadStatusRepository>();
+builder.Services.AddScoped<ICrmLeadRepository, CrmLeadRepository>();
+builder.Services.AddScoped<ICrmLeadInteractionRepository, CrmLeadInteractionRepository>();
+builder.Services.AddScoped<ICrmFollowUpRepository, CrmFollowUpRepository>();
 
 // Activity Logger Service
 builder.Services.AddScoped<ActivityLoggerService>();

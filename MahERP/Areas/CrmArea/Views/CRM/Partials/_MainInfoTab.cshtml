@@ -1,0 +1,153 @@
+﻿@model CRMInteractionViewModel
+
+<div class="block-content block-content-full">
+    <div class="row g-4">
+        <!-- کد تعامل و شعبه -->
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-barcode text-primary me-1"></i>
+                کد تعامل
+                <span class="text-danger">*</span>
+            </label>
+            <input asp-for="CRMCode" class="form-control form-control-lg" readonly />
+            <span asp-validation-for="CRMCode" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-building text-info me-1"></i>
+                شعبه
+                <span class="text-danger">*</span>
+            </label>
+            @if (Model.BranchesInitial != null && Model.BranchesInitial.Count == 1)
+            {
+                @* فقط یک شعبه - نمایش به عنوان فیلد غیرفعال *@
+                var branch = Model.BranchesInitial.First();
+                <input type="text" class="form-control form-control-lg" value="@branch.Name" readonly />
+                <input type="hidden" asp-for="BranchId" value="@branch.Id" />
+            }
+            else
+            {
+                @* چند شعبه - نمایش Dropdown *@
+                <select asp-for="BranchId" 
+                        class="form-select form-select-lg" 
+                        id="branchSelect"
+                        asp-items="@(new SelectList(Model.BranchesInitial ?? new List<BranchViewModel>(), "Id", "Name"))">
+                    <option value="">-- انتخاب شعبه --</option>
+                </select>
+            }
+            <span asp-validation-for="BranchId" class="text-danger"></span>
+        </div>
+
+        <!-- عنوان -->
+        <div class="col-12">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-heading text-success me-1"></i>
+                عنوان تعامل
+                <span class="text-danger">*</span>
+            </label>
+            <input asp-for="Title" 
+                   class="form-control form-control-lg" 
+                   placeholder="عنوان کوتاه و مفید برای تعامل وارد کنید..." 
+                   maxlength="200" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <!-- توضیحات -->
+        <div class="col-12">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-align-left text-secondary me-1"></i>
+                توضیحات تعامل
+            </label>
+            <textarea asp-for="Description" 
+                      class="form-control" 
+                      rows="5" 
+                      placeholder="جزئیات کامل تعامل را وارد کنید..."
+                      maxlength="2000"></textarea>
+            <div class="form-text">
+                <i class="fa fa-info-circle me-1"></i>
+                توضیحات کامل شامل: نتیجه مذاکرات، نیازهای مشتری، اقدامات بعدی و ...
+            </div>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <!-- نوع تعامل و جهت -->
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-list text-warning me-1"></i>
+                نوع تعامل
+                <span class="text-danger">*</span>
+            </label>
+            <select asp-for="CRMType" class="form-select form-select-lg">
+                <option value="0">📞 تماس تلفنی</option>
+                <option value="1">👥 جلسه حضوری</option>
+                <option value="2">📧 ایمیل</option>
+                <option value="3">💬 پیامک</option>
+                <option value="4">🔹 سایر</option>
+            </select>
+            <span asp-validation-for="CRMType" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-exchange-alt text-info me-1"></i>
+                جهت تماس
+                <span class="text-danger">*</span>
+            </label>
+            <select asp-for="Direction" class="form-select form-select-lg">
+                <option value="0">📥 ورودی (مشتری تماس گرفته)</option>
+                <option value="1">📤 خروجی (ما تماس گرفتیم)</option>
+            </select>
+            <span asp-validation-for="Direction" class="text-danger"></span>
+        </div>
+
+        <!-- نتیجه و مدت زمان -->
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-check-circle text-success me-1"></i>
+                نتیجه تعامل
+                <span class="text-danger">*</span>
+            </label>
+            <select asp-for="Result" class="form-select form-select-lg">
+                <option value="0">❌ بی‌نتیجه</option>
+                <option value="1">✅ موفق</option>
+                <option value="2">🔁 نیاز به پیگیری</option>
+            </select>
+            <span asp-validation-for="Result" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-clock text-warning me-1"></i>
+                مدت زمان (دقیقه)
+            </label>
+            <input asp-for="Duration" 
+                   type="number" 
+                   min="0" 
+                   max="1440" 
+                   class="form-control form-control-lg" 
+                   placeholder="مثلاً: 30" />
+            <div class="form-text">
+                <i class="fa fa-info-circle me-1"></i>
+                مدت زمان تعامل را به دقیقه وارد کنید
+            </div>
+            <span asp-validation-for="Duration" class="text-danger"></span>
+        </div>
+    </div>
+
+    <!-- دکمه‌های ناوبری -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between">
+                <a href="@Url.Action("Index", "CRM")" class="btn btn-alt-secondary">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </a>
+                <button type="button" class="btn btn-primary" onclick="goToTab('stakeholder-info')">
+                    مرحله بعد
+                    <i class="fa fa-arrow-left ms-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

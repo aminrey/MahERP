@@ -36,6 +36,9 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             // ⭐ System
             services.AddHostedService<ExpiredRoleCleanupService>();
             services.AddHostedService<SystemSeedDataBackgroundService>();
+            
+            // ⭐⭐⭐ Permission Sync - همگام‌سازی Permission ها از JSON (هر 1 ساعت)
+            services.AddHostedService<PermissionSyncBackgroundService>();
 
             // ⭐⭐⭐ Task Settings - REMOVED (متدها به TaskRepository منتقل شدند)
             // services.AddHostedService<TaskSettingsBackgroundService>();

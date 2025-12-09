@@ -1,0 +1,346 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLeadStatusListViewModel
+@{
+    ViewData["Title"] = "مدیریت وضعیت‌های سرنخ";
+    int counter = 1;
+}
+
+<!-- Main Container -->
+<main id="main-container">
+    <!-- Hero -->
+    <div class="bg-body-light">
+        <div class="content content-full">
+            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+                <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                    <i class="fa fa-tags text-primary me-2"></i>
+                    وضعیت‌های سرنخ
+                </h1>
+                <nav aria-label="breadcrumb" class="flex-shrink-0 my-2 my-sm-0 ms-sm-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a asp-area="CrmArea" asp-controller="Dashboard" asp-action="Index">CRM</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a asp-area="CrmArea" asp-controller="Leads" asp-action="Index">سرنخ‌ها</a>
+                        </li>
+                        <li aria-current="page" class="breadcrumb-item active">وضعیت‌ها</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero -->
+
+    <!-- Page Content -->
+    <div class="content">
+        <!-- آمار کلی -->
+        <div class="row mb-4">
+            <div class="col-6 col-md-3">
+                <div class="block block-rounded text-center">
+                    <div class="block-content block-content-full">
+                        <div class="fs-1 fw-bold text-primary">@Model.Statuses.Count</div>
+                        <div class="text-muted">کل وضعیت‌ها</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="block block-rounded text-center">
+                    <div class="block-content block-content-full">
+                        <div class="fs-1 fw-bold text-success">@Model.Statuses.Count(s => s.IsActive)</div>
+                        <div class="text-muted">فعال</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="block block-rounded text-center">
+                    <div class="block-content block-content-full">
+                        <div class="fs-1 fw-bold text-info">@Model.Statuses.Count(s => s.IsFinal && s.IsPositive)</div>
+                        <div class="text-muted">موفق</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="block block-rounded text-center">
+                    <div class="block-content block-content-full">
+                        <div class="fs-1 fw-bold text-warning">@Model.Statuses.Sum(s => s.LeadsCount)</div>
+                        <div class="text-muted">کل سرنخ‌ها</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- لیست وضعیت‌ها -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-list me-1"></i>
+                    لیست وضعیت‌ها
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn btn-sm btn-success"
+                            data-bs-target="#modal-action" data-toggle="modal-ajax"
+                            asp-controller="LeadStatus" asp-action="Create">
+                        <i class="fa fa-plus me-1"></i>
+                        وضعیت جدید
+                    </button>
+                </div>
+            </div>
+            <div class="block-content block-content-full">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-vcenter js-dataTable-no-pagination">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 60px;">#</th>
+                                <th class="text-center">عنوان</th>
+                                <th class="text-center" style="width: 100px;">نمونه</th>
+                                <th class="text-center" style="width: 80px;">ترتیب</th>
+                                <th class="text-center" style="width: 100px;">تعداد سرنخ</th>
+                                <th class="text-center" style="width: 120px;">ویژگی‌ها</th>
+                                <th class="text-center" style="width: 80px;">وضعیت</th>
+                                <th class="text-center" style="width: 150px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var status in Model.Statuses.OrderBy(s => s.DisplayOrder))
+                            {
+                                <tr class="@(!status.IsActive ? "table-secondary" : "")">
+                                    <td class="text-center fw-semibold">@counter</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge me-2" style="background-color: @status.ColorCode; min-width: 30px;">
+                                                <i class="fa @status.Icon"></i>
+                                            </span>
+                                            <div>
+                                                <div class="fw-semibold">@status.Title</div>
+                                                @if (!string.IsNullOrEmpty(status.TitleEnglish))
+                                                {
+                                                    <small class="text-muted">@status.TitleEnglish</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="@status.BadgeClass">
+                                            <i class="fa @status.Icon me-1"></i>
+                                            @status.Title
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">@status.DisplayOrder</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (status.LeadsCount > 0)
+                                        {
+                                            <a asp-controller="Leads" asp-action="Index" asp-route-statusId="@status.Id"
+                                               class="badge bg-info">
+                                                @status.LeadsCount سرنخ
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (status.IsDefault)
+                                        {
+                                            <span class="badge bg-primary" title="پیش‌فرض">
+                                                <i class="fa fa-star"></i>
+                                            </span>
+                                        }
+                                        @if (status.IsFinal)
+                                        {
+                                            <span class="badge @(status.IsPositive ? "bg-success" : "bg-danger")" 
+                                                  title="@(status.IsPositive ? "نهایی - موفق" : "نهایی - ناموفق")">
+                                                <i class="fa @(status.IsPositive ? "fa-check" : "fa-times")"></i>
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (status.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <!-- ویرایش -->
+                                            <button type="button" class="btn btn-sm btn-alt-secondary"
+                                                    data-bs-target="#modal-action" data-toggle="modal-ajax"
+                                                    asp-controller="LeadStatus" asp-action="Edit" asp-route-id="@status.Id"
+                                                    title="ویرایش">
+                                                <i class="fa fa-pencil-alt"></i>
+                                            </button>
+
+                                            <!-- تنظیم پیش‌فرض -->
+                                            @if (!status.IsDefault && status.IsActive)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-alt-primary"
+                                                        onclick="setAsDefault(@status.Id)"
+                                                        title="تنظیم به عنوان پیش‌فرض">
+                                                    <i class="fa fa-star"></i>
+                                                </button>
+                                            }
+
+                                            <!-- حذف -->
+                                            @if (status.LeadsCount == 0)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-alt-danger"
+                                                        onclick="deleteStatus(@status.Id, '@status.Title')"
+                                                        title="حذف">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                                counter++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- راهنما -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-info-circle me-1"></i>
+                    راهنمای وضعیت‌ها
+                </h3>
+            </div>
+            <div class="block-content">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-star me-1"></i>
+                                وضعیت پیش‌فرض
+                            </h6>
+                            <p class="mb-0 small">سرنخ‌های جدید به صورت خودکار با این وضعیت ایجاد می‌شوند.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-check me-1"></i>
+                                وضعیت نهایی موفق
+                            </h6>
+                            <p class="mb-0 small">نشان‌دهنده تبدیل موفق سرنخ به مشتری است.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-danger">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-times me-1"></i>
+                                وضعیت نهایی ناموفق
+                            </h6>
+                            <p class="mb-0 small">نشان‌دهنده از دست رفتن سرنخ است.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Page Content -->
+</main>
+<!-- END Main Container -->
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // DataTable بدون صفحه‌بندی
+            if ($('.js-dataTable-no-pagination').length) {
+                $('.js-dataTable-no-pagination').DataTable({
+                    paging: false,
+                    info: false,
+                    ordering: false,
+                    language: {
+                        search: "جستجو:",
+                        searchPlaceholder: "جستجو..."
+                    }
+                });
+            }
+        });
+
+        // تنظیم پیش‌فرض
+        function setAsDefault(statusId) {
+            Swal.fire({
+                title: 'تنظیم پیش‌فرض',
+                text: 'آیا این وضعیت به عنوان پیش‌فرض تنظیم شود؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله',
+                cancelButtonText: 'خیر'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("SetAsDefault", "LeadStatus")',
+                        type: 'POST',
+                        data: { id: statusId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire('موفق', response.message, 'success').then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire('خطا', response.message, 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('خطا', 'خطا در ارتباط با سرور', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        // حذف وضعیت
+        function deleteStatus(statusId, statusTitle) {
+            Swal.fire({
+                title: 'حذف وضعیت',
+                html: `آیا از حذف وضعیت <strong>${statusTitle}</strong> مطمئن هستید؟`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'بله، حذف شود',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("Delete", "LeadStatus")',
+                        type: 'POST',
+                        data: { id: statusId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire('حذف شد', response.message, 'success').then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire('خطا', response.message, 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('خطا', 'خطا در ارتباط با سرور', 'error');
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}
+
+<!-- Anti-Forgery Token -->
+<form style="display: none;">
+    @Html.AntiForgeryToken()
+</form>

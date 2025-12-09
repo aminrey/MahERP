@@ -34,6 +34,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
 
                 ViewBag.DepartmentId = departmentId;
                 ViewBag.DepartmentTitle = department.Title;
+                ViewBag.OrganizationId = department.OrganizationId; // ⭐ اضافه شده - برای دکمه‌های بازگشت و انصراف
                 ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
                 ViewBag.Positions = new SelectList(positions, "Id", "Title");
 
@@ -80,6 +81,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
 
                         ViewBag.DepartmentId = model.DepartmentId;
                         ViewBag.DepartmentTitle = department?.Title;
+                        ViewBag.OrganizationId = department?.OrganizationId; // ⭐ اضافه شده
                         ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
                         ViewBag.Positions = new SelectList(positions, "Id", "Title");
 
@@ -123,6 +125,7 @@ namespace MahERP.Areas.AppCoreArea.Controllers.OrganizationControllers
 
                 ViewBag.DepartmentId = model.DepartmentId;
                 ViewBag.DepartmentTitle = department?.Title;
+                ViewBag.OrganizationId = department?.OrganizationId; // ⭐ اضافه شده
                 ViewBag.AvailableContacts = new SelectList(contacts, "Id", "FullName");
                 ViewBag.Positions = new SelectList(positions, "Id", "Title");
             }

@@ -1,0 +1,188 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.DepartmentPositionViewModel
+@{
+    var standardPositions = ViewBag.StandardPositions as Dictionary<string, List<dynamic>>;
+}
+
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="block block-rounded mb-0">
+            <div class="block-header bg-warning">
+                <h3 class="block-title text-white">
+                    <i class="fa fa-briefcase me-2"></i>
+                    افزودن سمت جدید به بخش @ViewBag.DepartmentTitle
+                </h3>
+                <div class="block-options">
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal">
+                        <i class="fa fa-times text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form asp-action="AddPosition" asp-controller="Organizations" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="DepartmentId" />
+
+                <div class="block-content">
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-tabs nav-tabs-block" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-standard" type="button">
+                                <i class="fa fa-star me-1"></i>
+                                سمت‌های استاندارد
+                                @if (standardPositions != null)
+                                {
+                                    <span class="badge bg-white text-warning ms-1">@standardPositions.Values.Sum(v => v.Count)</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-custom" type="button">
+                                <i class="fa fa-edit me-1"></i>
+                                سمت سفارشی
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content mt-3">
+                        <!-- سمت‌های استاندارد -->
+                        <div class="tab-pane fade show active" id="tab-standard" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fa fa-list me-1"></i>
+                                    انتخاب از سمت‌های رایج
+                                </label>
+                                <select id="basePositionId" name="BasePositionId" class="form-select">
+                                    <option value="0">-- انتخاب کنید --</option>
+                                    @if (standardPositions != null && standardPositions.Any())
+                                    {
+                                        @foreach (var category in standardPositions)
+                                        {
+                                            <optgroup label="@category.Key">
+                                                @foreach (var position in category.Value)
+                                                {
+                                                    string title = position.Title?.ToString() ?? "";
+                                                    string titleEn = position.TitleEnglish?.ToString() ?? "";
+                                                    string displayText = !string.IsNullOrEmpty(titleEn) ? $"{title} ({titleEn})" : title;
+                                                    int powerLevel = (int)(position.DefaultPowerLevel ?? 50);
+                                                    <option value="@position.Id" data-power="@powerLevel" data-title="@title">
+                                                        @displayText
+                                                    </option>
+                                                }
+                                            </optgroup>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option value="" disabled>سمت‌های استاندارد یافت نشد</option>
+                                    }
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    با انتخاب سمت رایج، سطح قدرت پیشنهادی تنظیم می‌شود
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- سمت سفارشی -->
+                        <div class="tab-pane fade" id="tab-custom" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    عنوان سمت
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Title" class="form-control" placeholder="مثلاً: مهندس DevOps" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">توضیحات</label>
+                                <textarea asp-for="Description" class="form-control" rows="2"
+                                          placeholder="شرح وظایف این سمت..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تنظیمات مشترک -->
+                    <hr />
+                    <h6 class="mb-3">
+                        <i class="fa fa-cog me-1"></i>
+                        تنظیمات سمت
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    سطح قدرت
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="PowerLevel" type="number" min="0" max="100"
+                                       class="form-control" />
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    0 = بالاترین قدرت (مدیرعامل)، 100 = پایین‌ترین
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">ترتیب نمایش</label>
+                                <input asp-for="DisplayOrder" type="number" min="1"
+                                       class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="IsDefault" class="form-check-input" type="checkbox" />
+                        <label class="form-check-label" asp-for="IsDefault">
+                            <i class="fa fa-star text-warning me-1"></i>
+                            سمت پیش‌فرض (برای اعضای جدید بدون سمت مشخص)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="block-content block-content-full text-end bg-body">
+                    <button type="button" class="btn btn-sm btn-alt-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i> انصراف
+                    </button>
+                    <button type="submit" class="btn btn-sm btn-warning" data-save="modal-ajax-save">
+                        <i class="fa fa-check me-1"></i> ذخیره سمت
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        // ⭐ مدیریت انتخاب سمت استاندارد - تنظیم سطح قدرت و عنوان خودکار
+        $('#basePositionId').off('change').on('change', function () {
+            const $selected = $(this).find('option:selected');
+            const powerLevel = $selected.data('power');
+            const title = $selected.data('title');
+            
+            if (powerLevel !== undefined && powerLevel !== null) {
+                $('input[name="PowerLevel"]').val(powerLevel);
+            }
+            
+            // تنظیم عنوان سمت
+            if (title) {
+                $('input[name="Title"]').val(title);
+            }
+        });
+
+        // ⭐ وقتی به تب سفارشی می‌رویم، انتخاب سمت استاندارد را پاک کن
+        $('button[data-bs-target="#tab-custom"]').on('click', function() {
+            $('#basePositionId').val('0');
+        });
+
+        // ⭐ وقتی به تب استاندارد می‌رویم، فیلدهای سفارشی را پاک کن
+        $('button[data-bs-target="#tab-standard"]').on('click', function() {
+            $('input[name="Title"]').val('');
+            $('textarea[name="Description"]').val('');
+        });
+    })();
+</script>

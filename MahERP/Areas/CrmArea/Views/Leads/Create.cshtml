@@ -1,0 +1,442 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLeadCreateViewModel
+@{
+    ViewData["Title"] = "ایجاد سرنخ جدید";
+    var statuses = ViewBag.Statuses as SelectList;
+    var users = ViewBag.Users as SelectList;
+    var sources = ViewBag.SuggestedSources as List<string>;
+}
+
+<!-- Main Container -->
+<main id="main-container">
+    <!-- Hero -->
+    <div class="bg-body-light">
+        <div class="content content-full">
+            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+                <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                    <i class="fa fa-plus-circle text-success me-2"></i>
+                    ایجاد سرنخ جدید
+                </h1>
+                <nav aria-label="breadcrumb" class="flex-shrink-0 my-2 my-sm-0 ms-sm-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a asp-area="CrmArea" asp-controller="Dashboard" asp-action="Index">CRM</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a asp-action="Index">سرنخ‌ها</a>
+                        </li>
+                        <li aria-current="page" class="breadcrumb-item active">ایجاد</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- END Hero -->
+
+    <!-- Page Content -->
+    <div class="content">
+        <form asp-action="Create" method="post" id="createLeadForm">
+            @Html.AntiForgeryToken()
+
+            <div class="row">
+                <!-- ستون اصلی -->
+                <div class="col-lg-8">
+                    <!-- انتخاب نوع سرنخ -->
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-user-tag me-1"></i>
+                                نوع سرنخ
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="LeadType" id="leadTypeContact" 
+                                               value="Contact" checked autocomplete="off" onchange="toggleLeadType('Contact')">
+                                        <label class="btn btn-outline-primary" for="leadTypeContact">
+                                            <i class="fa fa-user me-2"></i>
+                                            فرد (شخص حقیقی)
+                                        </label>
+
+                                        <input type="radio" class="btn-check" name="LeadType" id="leadTypeOrganization" 
+                                               value="Organization" autocomplete="off" onchange="toggleLeadType('Organization')">
+                                        <label class="btn btn-outline-info" for="leadTypeOrganization">
+                                            <i class="fa fa-building me-2"></i>
+                                            سازمان (شخص حقوقی)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- انتخاب فرد/سازمان موجود یا ایجاد جدید -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="CreateNewEntity" 
+                                               name="CreateNewEntity" onchange="toggleNewEntity()">
+                                        <label class="form-check-label" for="CreateNewEntity">
+                                            <span id="newEntityLabel">ایجاد فرد جدید</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- انتخاب از موجود -->
+                            <div id="existingEntitySection">
+                                <!-- انتخاب فرد -->
+                                <div id="contactSelectSection" class="mb-3">
+                                    <label class="form-label">انتخاب فرد</label>
+                                    <select class="form-select" id="ContactId" name="ContactId" 
+                                            data-placeholder="جستجو و انتخاب فرد...">
+                                        <option value="">انتخاب کنید...</option>
+                                    </select>
+                                    <span asp-validation-for="ContactId" class="text-danger"></span>
+                                </div>
+
+                                <!-- انتخاب سازمان -->
+                                <div id="organizationSelectSection" class="mb-3" style="display: none;">
+                                    <label class="form-label">انتخاب سازمان</label>
+                                    <select class="form-select" id="OrganizationId" name="OrganizationId"
+                                            data-placeholder="جستجو و انتخاب سازمان...">
+                                        <option value="">انتخاب کنید...</option>
+                                    </select>
+                                    <span asp-validation-for="OrganizationId" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- ایجاد جدید -->
+                            <div id="newEntitySection" style="display: none;">
+                                <!-- فیلدهای فرد جدید -->
+                                <div id="newContactFields">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">نام <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" name="FirstName" 
+                                                   placeholder="نام" />
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">نام خانوادگی <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" name="LastName" 
+                                                   placeholder="نام خانوادگی" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">شماره موبایل</label>
+                                            <input type="tel" class="form-control" name="PhoneNumber" 
+                                                   placeholder="09123456789" dir="ltr" />
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">ایمیل</label>
+                                            <input type="email" class="form-control" name="Email" 
+                                                   placeholder="email@example.com" dir="ltr" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- فیلدهای سازمان جدید -->
+                                <div id="newOrganizationFields" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">نام سازمان <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" name="OrganizationName" 
+                                                   placeholder="نام سازمان" />
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">شماره تلفن</label>
+                                            <input type="tel" class="form-control" name="OrganizationPhone" 
+                                                   placeholder="02112345678" dir="ltr" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- اطلاعات تکمیلی -->
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-info-circle me-1"></i>
+                                اطلاعات تکمیلی
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">منبع سرنخ</label>
+                                    <select class="form-select" name="Source" id="Source">
+                                        <option value="">انتخاب کنید...</option>
+                                        @if (sources != null)
+                                        {
+                                            foreach (var source in sources)
+                                            {
+                                                <option value="@source">@source</option>
+                                            }
+                                        }
+                                    </select>
+                                    <small class="text-muted">یا نام جدید وارد کنید</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">برچسب‌ها</label>
+                                    <input type="text" class="form-control" name="Tags" 
+                                           placeholder="برچسب‌ها را با کاما جدا کنید" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">یادداشت</label>
+                                    <textarea class="form-control" name="Notes" rows="3" 
+                                              placeholder="یادداشت‌ها و توضیحات اولیه..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ستون کناری -->
+                <div class="col-lg-4">
+                    <!-- تنظیمات -->
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-cog me-1"></i>
+                                تنظیمات
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="mb-3">
+                                <label class="form-label">وضعیت اولیه</label>
+                                <select class="form-select" name="StatusId" id="StatusId">
+                                    @if (statuses != null)
+                                    {
+                                        foreach (var status in statuses)
+                                        {
+                                            <option value="@status.Value">@status.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <small class="text-muted">اگر انتخاب نشود، وضعیت پیش‌فرض استفاده می‌شود</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">کاربر مسئول</label>
+                                <select class="form-select" name="AssignedUserId" id="AssignedUserId">
+                                    <option value="">خودم (کاربر جاری)</option>
+                                    @if (users != null)
+                                    {
+                                        foreach (var user in users)
+                                        {
+                                            <option value="@user.Value">@user.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <input type="hidden" name="BranchId" value="@ViewBag.CurrentBranchId" />
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌ها -->
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fa fa-save me-1"></i>
+                                    ذخیره سرنخ
+                                </button>
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="fa fa-times me-1"></i>
+                                    انصراف
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- راهنما -->
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-lightbulb me-1"></i>
+                                راهنما
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <ul class="list-unstyled small text-muted">
+                                <li class="mb-2">
+                                    <i class="fa fa-check text-success me-1"></i>
+                                    می‌توانید از افراد/سازمان‌های موجود استفاده کنید
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fa fa-check text-success me-1"></i>
+                                    یا یک فرد/سازمان جدید ایجاد کنید
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fa fa-check text-success me-1"></i>
+                                    منبع سرنخ برای تحلیل بازاریابی مفید است
+                                </li>
+                                <li>
+                                    <i class="fa fa-check text-success me-1"></i>
+                                    برچسب‌ها برای دسته‌بندی سریع استفاده می‌شوند
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <!-- END Page Content -->
+</main>
+<!-- END Main Container -->
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Select2 برای انتخاب فرد با جستجوی AJAX
+            $('#ContactId').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'جستجو و انتخاب فرد...',
+                allowClear: true,
+                ajax: {
+                    url: '@Url.Action("SearchContacts", "Leads")',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function(params) {
+                        return { term: params.term };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.map(function(item) {
+                                return {
+                                    id: item.id,
+                                    text: item.text,
+                                    phone: item.phone,
+                                    email: item.email
+                                };
+                            })
+                        };
+                    }
+                },
+                templateResult: formatContactResult,
+                templateSelection: formatContactSelection
+            });
+
+            // Select2 برای انتخاب سازمان با جستجوی AJAX
+            $('#OrganizationId').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'جستجو و انتخاب سازمان...',
+                allowClear: true,
+                ajax: {
+                    url: '@Url.Action("SearchOrganizations", "Leads")',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function(params) {
+                        return { term: params.term };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.map(function(item) {
+                                return {
+                                    id: item.id,
+                                    text: item.text,
+                                    phone: item.phone
+                                };
+                            })
+                        };
+                    }
+                },
+                templateResult: formatOrganizationResult,
+                templateSelection: formatOrganizationSelection
+            });
+
+            // Select2 برای منبع با امکان تایپ
+            $('#Source').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                tags: true,
+                placeholder: 'انتخاب یا وارد کنید...'
+            });
+
+            // سایر Select2
+            $('#StatusId, #AssignedUserId').select2({
+                theme: 'bootstrap-5',
+                width: '100%'
+            });
+        });
+
+        // فرمت نمایش نتایج فرد
+        function formatContactResult(contact) {
+            if (!contact.id) return contact.text;
+            var html = '<div class="d-flex align-items-center">';
+            html += '<div class="me-2"><i class="fa fa-user text-primary"></i></div>';
+            html += '<div>';
+            html += '<div class="fw-semibold">' + contact.text + '</div>';
+            if (contact.phone || contact.email) {
+                html += '<small class="text-muted">';
+                if (contact.phone) html += '<i class="fa fa-phone me-1"></i>' + contact.phone;
+                if (contact.phone && contact.email) html += ' | ';
+                if (contact.email) html += '<i class="fa fa-envelope me-1"></i>' + contact.email;
+                html += '</small>';
+            }
+            html += '</div></div>';
+            return $(html);
+        }
+
+        function formatContactSelection(contact) {
+            return contact.text || contact.id;
+        }
+
+        // فرمت نمایش نتایج سازمان
+        function formatOrganizationResult(org) {
+            if (!org.id) return org.text;
+            var html = '<div class="d-flex align-items-center">';
+            html += '<div class="me-2"><i class="fa fa-building text-info"></i></div>';
+            html += '<div>';
+            html += '<div class="fw-semibold">' + org.text + '</div>';
+            if (org.phone) {
+                html += '<small class="text-muted"><i class="fa fa-phone me-1"></i>' + org.phone + '</small>';
+            }
+            html += '</div></div>';
+            return $(html);
+        }
+
+        function formatOrganizationSelection(org) {
+            return org.text || org.id;
+        }
+
+        // تغییر نوع سرنخ
+        function toggleLeadType(type) {
+            if (type === 'Contact') {
+                $('#contactSelectSection').show();
+                $('#organizationSelectSection').hide();
+                $('#newContactFields').show();
+                $('#newOrganizationFields').hide();
+                $('#newEntityLabel').text('ایجاد فرد جدید');
+                $('#OrganizationId').val(null).trigger('change');
+            } else {
+                $('#contactSelectSection').hide();
+                $('#organizationSelectSection').show();
+                $('#newContactFields').hide();
+                $('#newOrganizationFields').show();
+                $('#newEntityLabel').text('ایجاد سازمان جدید');
+                $('#ContactId').val(null).trigger('change');
+            }
+        }
+
+        // تغییر حالت ایجاد جدید
+        function toggleNewEntity() {
+            var isNew = $('#CreateNewEntity').is(':checked');
+            if (isNew) {
+                $('#existingEntitySection').hide();
+                $('#newEntitySection').show();
+            } else {
+                $('#existingEntitySection').show();
+                $('#newEntitySection').hide();
+            }
+        }
+    </script>
+}

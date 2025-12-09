@@ -1,6 +1,7 @@
 ﻿using MahERP.DataModelLayer.Entities.Notifications;
 using MahERP.DataModelLayer.Entities.TaskManagement;
-using MahERP.DataModelLayer.Entities.Organizations; // ⭐ NEW
+using MahERP.DataModelLayer.Entities.Organizations;
+using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.StaticClasses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,10 @@ namespace MahERP.DataModelLayer.Repository
         // ⭐⭐⭐ Position Seed Data
         Task EnsurePositionSeedDataAsync();
         Task<bool> CheckIfPositionExistsAsync(int positionId);
+        
+        // ⭐⭐⭐ CRM Lead Status Seed Data
+        Task EnsureCrmLeadStatusSeedDataAsync();
+        Task<bool> CheckIfCrmLeadStatusExistsAsync(int statusId);
     }
 
     public class SystemSeedDataRepository : ISystemSeedDataRepository
@@ -65,19 +70,32 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// اطمینان از وجود ماژول‌های اعلان
+        /// ⭐ اصلاح شده - اطمینان از وجود ماژول‌های اعلان
         /// </summary>
         private async Task EnsureNotificationModulesAsync()
         {
             foreach (var module in StaticNotificationSeedData.NotificationModules)
             {
+                // ⭐ بررسی بر اساس ModuleCode (نه Id)
                 var exists = await _context.NotificationModuleConfig_Tbl
-                    .AnyAsync(m => m.Id == module.Id);
+                    .AnyAsync(m => m.ModuleCode == module.ModuleCode);
 
                 if (!exists)
                 {
-                    _context.NotificationModuleConfig_Tbl.Add(module);
-                    _logger.LogInformation($"➕ Added NotificationModule: {module.ModuleNameFa} (ID: {module.Id})");
+                    // ⭐ ایجاد entity جدید بدون Id ثابت
+                    var newModule = new NotificationModuleConfig
+                    {
+                        ModuleCode = module.ModuleCode,
+                        ModuleNameFa = module.ModuleNameFa,
+                        ModuleNameEn = module.ModuleNameEn,
+                        Description = module.Description,
+                        ColorCode = module.ColorCode,
+                        IsActive = module.IsActive,
+                        DisplayOrder = module.DisplayOrder
+                    };
+
+                    _context.NotificationModuleConfig_Tbl.Add(newModule);
+                    _logger.LogInformation($"➕ Added NotificationModule: {module.ModuleNameFa} ({module.ModuleCode})");
                 }
             }
 
@@ -85,19 +103,49 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// اطمینان از وجود انواع اعلان‌ها
+        /// ⭐ اصلاح شده - اطمینان از وجود انواع اعلان‌ها
         /// </summary>
         private async Task EnsureNotificationTypesAsync()
         {
+            // ⭐ اول ماژول TASKING را پیدا کن (که قبلاً ایجاد شده)
+            var taskingModule = await _context.NotificationModuleConfig_Tbl
+                .FirstOrDefaultAsync(m => m.ModuleCode == "TASKING");
+
+            if (taskingModule == null)
+            {
+                _logger.LogWarning("⚠️ TASKING module not found, skipping notification types");
+                return;
+            }
+
             foreach (var notificationType in StaticNotificationSeedData.NotificationTypes)
             {
+                // ⭐ بررسی بر اساس TypeCode (نه Id)
                 var exists = await _context.NotificationTypeConfig_Tbl
-                    .AnyAsync(nt => nt.Id == notificationType.Id);
+                    .AnyAsync(nt => nt.TypeCode == notificationType.TypeCode);
 
                 if (!exists)
                 {
-                    _context.NotificationTypeConfig_Tbl.Add(notificationType);
-                    _logger.LogInformation($"➕ Added NotificationType: {notificationType.TypeNameFa} (ID: {notificationType.Id})");
+                    // ⭐ ایجاد entity جدید بدون Id ثابت
+                    var newType = new NotificationTypeConfig
+                    {
+                        ModuleConfigId = taskingModule.Id, // ⭐ از Id واقعی ماژول استفاده کن
+                        TypeCode = notificationType.TypeCode,
+                        TypeNameFa = notificationType.TypeNameFa,
+                        Description = notificationType.Description,
+                        CoreNotificationTypeGeneral = notificationType.CoreNotificationTypeGeneral,
+                        CoreNotificationTypeSpecific = notificationType.CoreNotificationTypeSpecific,
+                        IsActive = notificationType.IsActive,
+                        DefaultPriority = notificationType.DefaultPriority,
+                        SupportsEmail = notificationType.SupportsEmail,
+                        SupportsSms = notificationType.SupportsSms,
+                        SupportsTelegram = notificationType.SupportsTelegram,
+                        AllowUserCustomization = notificationType.AllowUserCustomization,
+                        DisplayOrder = notificationType.DisplayOrder,
+                        RelatedEventTypes = notificationType.RelatedEventTypes
+                    };
+
+                    _context.NotificationTypeConfig_Tbl.Add(newType);
+                    _logger.LogInformation($"➕ Added NotificationType: {notificationType.TypeNameFa} ({notificationType.TypeCode})");
                 }
             }
 
@@ -123,41 +171,17 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// ⭐⭐⭐ اطمینان از وجود تنظیمات پیش‌فرض سراسری سیستم
+        /// ⭐⭐⭐ تنظیمات پیش‌فرض تسک از StaticClass خوانده می‌شود
+        /// توجه: TaskSettings_Tbl فقط برای تنظیمات تسک‌های خاص است (نه Global)
+        /// برای Global از StaticTaskSettingsSeedData.GetGlobalDefaultSettings() استفاده کنید
         /// </summary>
         public async Task EnsureTaskSettingsSeedDataAsync()
         {
-            try
-            {
-                // بررسی وجود تنظیمات سراسری (TaskId = 0 یعنی Global)
-                var globalSettings = await _context.TaskSettings_Tbl
-                    .FirstOrDefaultAsync(ts => ts.TaskId == 0);
-
-                if (globalSettings == null)
-                {
-                    // ایجاد تنظیمات سراسری
-                    var defaultSettings = StaticTaskSettingsSeedData.GetGlobalDefaultSettings();
-                    defaultSettings.TaskId = 0; // Global indicator
-                    defaultSettings.InheritedFrom = 0; // Global
-                    defaultSettings.IsInherited = false;
-                    defaultSettings.CreatedByUserId = "system";
-                    defaultSettings.CreatedDate = DateTime.Now;
-
-                    _context.TaskSettings_Tbl.Add(defaultSettings);
-                    await _context.SaveChangesAsync();
-
-                    _logger.LogInformation("✅ Global Task Settings successfully created.");
-                }
-                else
-                {
-                    _logger.LogInformation("ℹ️ Global Task Settings already exist.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error ensuring task settings seed data");
-                throw;
-            }
+            // ⭐ این متد دیگر نیازی به seed کردن ندارد
+            // چون TaskSettings_Tbl دارای FK به Tasks_Tbl است
+            // و برای تنظیمات Global از StaticTaskSettingsSeedData استفاده می‌شود
+            _logger.LogInformation("ℹ️ Task Settings: Using StaticTaskSettingsSeedData for global defaults (no DB seeding needed)");
+            await Task.CompletedTask;
         }
 
         /// <summary>
@@ -185,15 +209,47 @@ namespace MahERP.DataModelLayer.Repository
         {
             try
             {
+                // ⭐ پیدا کردن اولین کاربر برای CreatorUserId
+                var systemUser = await _context.Users.FirstOrDefaultAsync();
+                
+                if (systemUser == null)
+                {
+                    _logger.LogWarning("⚠️ No users found in database, skipping Position seed");
+                    return;
+                }
+
                 foreach (var position in StaticPositionSeedData.CommonPositions)
                 {
+                    // ⭐ بررسی بر اساس Title و Category (نه Id چون IDENTITY است)
                     var exists = await _context.OrganizationPosition_Tbl
-                        .AnyAsync(p => p.Id == position.Id);
+                        .AnyAsync(p => p.Title == position.Title && p.Category == position.Category);
 
                     if (!exists)
                     {
-                        _context.OrganizationPosition_Tbl.Add(position);
-                        _logger.LogInformation($"➕ Added OrganizationPosition: {position.Title} (ID: {position.Id})");
+                        // ⭐ ایجاد entity جدید بدون Id ثابت (SQL Server خودش Id میدهد)
+                        var newPosition = new OrganizationPosition
+                        {
+                            Title = position.Title,
+                            TitleEnglish = position.TitleEnglish,
+                            Category = position.Category,
+                            Description = position.Description,
+                            Level = position.Level,
+                            DefaultPowerLevel = position.DefaultPowerLevel,
+                            IsCommon = position.IsCommon,
+                            RequiresDegree = position.RequiresDegree,
+                            MinimumDegree = position.MinimumDegree,
+                            MinimumExperienceYears = position.MinimumExperienceYears,
+                            SuggestedMinSalary = position.SuggestedMinSalary,
+                            SuggestedMaxSalary = position.SuggestedMaxSalary,
+                            CanHireSubordinates = position.CanHireSubordinates,
+                            DisplayOrder = position.DisplayOrder,
+                            IsActive = true,
+                            CreatedDate = DateTime.Now,
+                            CreatorUserId = systemUser.Id // ⭐ استفاده از کاربر واقعی
+                        };
+
+                        _context.OrganizationPosition_Tbl.Add(newPosition);
+                        _logger.LogInformation($"➕ Added OrganizationPosition: {position.Title} ({position.Category})");
                     }
                 }
 
@@ -214,6 +270,71 @@ namespace MahERP.DataModelLayer.Repository
         {
             return await _context.OrganizationPosition_Tbl
                 .AnyAsync(p => p.Id == positionId);
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ اطمینان از وجود وضعیت‌های سرنخ CRM
+        /// </summary>
+        public async Task EnsureCrmLeadStatusSeedDataAsync()
+        {
+            try
+            {
+                // پیدا کردن اولین کاربر برای CreatorUserId
+                var systemUser = await _context.Users.FirstOrDefaultAsync();
+                
+                if (systemUser == null)
+                {
+                    _logger.LogWarning("⚠️ No users found in database, skipping CRM Lead Status seed");
+                    return;
+                }
+
+                foreach (var status in StaticCrmLeadStatusSeedData.DefaultStatuses)
+                {
+                    // بررسی بر اساس Title (نه Id چون IDENTITY است)
+                    var exists = await _context.CrmLeadStatus_Tbl
+                        .AnyAsync(s => s.Title == status.Title);
+
+                    if (!exists)
+                    {
+                        // ایجاد وضعیت جدید
+                        var newStatus = new CrmLeadStatus
+                        {
+                            Title = status.Title,
+                            TitleEnglish = status.TitleEnglish,
+                            ColorCode = status.ColorCode,
+                            Icon = status.Icon,
+                            DisplayOrder = status.DisplayOrder,
+                            IsDefault = status.IsDefault,
+                            IsFinal = status.IsFinal,
+                            IsPositive = status.IsPositive,
+                            Description = status.Description,
+                            IsActive = true,
+                            CreatedDate = DateTime.Now,
+                            CreatorUserId = systemUser.Id
+                        };
+
+                        _context.CrmLeadStatus_Tbl.Add(newStatus);
+                        _logger.LogInformation($"➕ Added CrmLeadStatus: {status.Title} ({status.TitleEnglish})");
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("✅ CRM Lead Status Seed Data successfully ensured.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error ensuring CRM Lead Status seed data");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// ⭐⭐⭐ بررسی وجود وضعیت سرنخ
+        /// </summary>
+        public async Task<bool> CheckIfCrmLeadStatusExistsAsync(int statusId)
+        {
+            return await _context.CrmLeadStatus_Tbl
+                .AnyAsync(s => s.Id == statusId);
         }
     }
 }

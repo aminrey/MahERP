@@ -1,0 +1,75 @@
+﻿<script>
+    // ⭐⭐⭐ مدیریت انتخاب Contact
+    function initializeContactSelection() {
+        $('#contactSelect').on('change', function() {
+            const contactId = $(this).val();
+            
+            if (!contactId || contactId === '') {
+                $('#contactOrganizationsSection').hide();
+                return;
+            }
+
+            console.log(`🔄 Contact changed: ${contactId}`);
+            loadContactOrganizations(contactId);
+        });
+    }
+
+    // ⭐⭐⭐ بارگذاری سازمان‌های یک Contact
+    function loadContactOrganizations(contactId) {
+        $.ajax({
+            url: '@Url.Action("ContactTriggerSelect", "CRM")',
+            type: 'POST',
+            data: {
+                contactId: contactId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(html) {
+                $('#contactOrganizationsList').html(html);
+                $('#contactOrganizationsSection').slideDown();
+                console.log('✅ Contact organizations loaded');
+            },
+            error: function(xhr) {
+                console.error('❌ Error loading contact organizations:', xhr);
+                $('#contactOrganizationsSection').hide();
+            }
+        });
+    }
+
+    // ⭐⭐⭐ مدیریت انتخاب Organization
+    function initializeOrganizationSelection() {
+        $('#organizationSelect').on('change', function() {
+            const organizationId = $(this).val();
+            
+            if (!organizationId || organizationId === '') {
+                $('#organizationContactsSection').hide();
+                return;
+            }
+
+            console.log(`🔄 Organization changed: ${organizationId}`);
+            loadOrganizationContacts(organizationId);
+        });
+    }
+
+    // ⭐⭐⭐ بارگذاری اعضای یک Organization
+    function loadOrganizationContacts(organizationId) {
+        $.ajax({
+            url: '@Url.Action("OrganizationTriggerSelect", "CRM")',
+            type: 'POST',
+            data: {
+                organizationId: organizationId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(html) {
+                $('#organizationContactsList').html(html);
+                $('#organizationContactsSection').slideDown();
+                console.log('✅ Organization contacts loaded');
+            },
+            error: function(xhr) {
+                console.error('❌ Error loading organization contacts:', xhr);
+                $('#organizationContactsSection').hide();
+            }
+        });
+    }
+
+    console.log('✅ Contact/Organization Scripts Loaded');
+</script>

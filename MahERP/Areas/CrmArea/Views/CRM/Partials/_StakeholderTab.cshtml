@@ -1,0 +1,121 @@
+﻿@model CRMInteractionViewModel
+
+<div class="block-content block-content-full">
+    <div class="alert alert-info d-flex align-items-center mb-4">
+        <i class="fa fa-lightbulb fa-2x me-3"></i>
+        <div>
+            <strong>راهنما:</strong>
+            طرف حساب می‌تواند یک فرد، یک سازمان یا هر دو باشد.
+            ابتدا شعبه را انتخاب کنید تا لیست طرف حساب‌ها بارگذاری شود.
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- انتخاب Contact (فرد) -->
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-user text-primary me-1"></i>
+                انتخاب فرد
+            </label>
+            <div id="ContactSelectionDiv">
+                <select asp-for="ContactId" 
+                        class="form-select form-select-lg select2-contact" 
+                        id="contactSelect">
+                    <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
+                    @if (Model.ContactsInitial != null)
+                    {
+                        foreach (var contact in Model.ContactsInitial)
+                        {
+                            <option value="@contact.Id" 
+                                    data-firstname="@contact.FirstName"
+                                    data-lastname="@contact.LastName"
+                                    data-nationalcode="@contact.NationalCode"
+                                    data-phone="@contact.PrimaryPhone">
+                                @contact.LastName @contact.FirstName
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-text">
+                <i class="fa fa-info-circle me-1"></i>
+                می‌توانید نام، نام خانوادگی یا کد ملی را جستجو کنید
+            </div>
+            <span asp-validation-for="ContactId" class="text-danger"></span>
+        </div>
+
+        <!-- انتخاب Organization (سازمان) -->
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-building text-info me-1"></i>
+                انتخاب سازمان
+            </label>
+            <div id="OrganizationSelectionDiv">
+                <select asp-for="OrganizationId" 
+                        class="form-select form-select-lg select2-organization" 
+                        id="organizationSelect">
+                    <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
+                    @if (Model.OrganizationsInitial != null)
+                    {
+                        foreach (var org in Model.OrganizationsInitial)
+                        {
+                            <option value="@org.Id"
+                                    data-name="@org.Name"
+                                    data-registration="@org.RegistrationNumber"
+                                    data-phone="@org.PrimaryPhone">
+                                @org.Name
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-text">
+                <i class="fa fa-info-circle me-1"></i>
+                نام سازمان یا شماره ثبت را جستجو کنید
+            </div>
+            <span asp-validation-for="OrganizationId" class="text-danger"></span>
+        </div>
+
+        <!-- نمایش سازمان‌های مرتبط با Contact انتخاب شده -->
+        <div class="col-12" id="contactOrganizationsSection" style="display: none;">
+            <div class="border rounded p-3 bg-light">
+                <h6 class="mb-3">
+                    <i class="fa fa-sitemap text-info me-1"></i>
+                    سازمان‌های مرتبط با این فرد
+                </h6>
+                <div id="contactOrganizationsList">
+                    <!-- محتوا با Ajax بارگذاری می‌شود -->
+                </div>
+            </div>
+        </div>
+
+        <!-- نمایش افراد مرتبط با Organization انتخاب شده -->
+        <div class="col-12" id="organizationContactsSection" style="display: none;">
+            <div class="border rounded p-3 bg-light">
+                <h6 class="mb-3">
+                    <i class="fa fa-users text-primary me-1"></i>
+                    اعضای این سازمان
+                </h6>
+                <div id="organizationContactsList">
+                    <!-- محتوا با Ajax بارگذاری می‌شود -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- دکمه‌های ناوبری -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-alt-secondary" onclick="goToTab('main-info')">
+                    <i class="fa fa-arrow-right me-1"></i>
+                    مرحله قبل
+                </button>
+                <button type="button" class="btn btn-primary" onclick="goToTab('interaction-details')">
+                    مرحله بعد
+                    <i class="fa fa-arrow-left ms-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

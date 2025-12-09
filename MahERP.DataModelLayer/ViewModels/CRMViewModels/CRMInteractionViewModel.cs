@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MahERP.DataModelLayer.ViewModels.ContactViewModels;
+using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
+using MahERP.DataModelLayer.ViewModels.UserViewModels;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace MahERP.DataModelLayer.ViewModels.CRMViewModels
 {
@@ -33,13 +37,15 @@ namespace MahERP.DataModelLayer.ViewModels.CRMViewModels
         public int? Duration { get; set; }
 
         [Display(Name = "شماره تماس")]
+        [MaxLength(20)]
         public string? PhoneNumber { get; set; }
 
         [Display(Name = "آدرس ایمیل")]
-        [EmailAddress(ErrorMessage = "آدرس ایمیل معتبر نیست")]
+        [MaxLength(100)]
         public string? EmailAddress { get; set; }
 
         [Display(Name = "محل جلسه")]
+        [MaxLength(200)]
         public string? MeetingLocation { get; set; }
 
         [Display(Name = "زمان شروع")]
@@ -48,11 +54,20 @@ namespace MahERP.DataModelLayer.ViewModels.CRMViewModels
         [Display(Name = "زمان پایان")]
         public DateTime? EndTime { get; set; }
 
-        [Display(Name = "طرف حساب")]
+        [Display(Name = "تاریخ پیگیری بعدی")]
+        public DateTime? NextFollowUpDate { get; set; }
+
+        [Display(Name = "طرف حساب (Stakeholder - قدیمی)")]
         public int? StakeholderId { get; set; }
 
-        [Display(Name = "شخص مرتبط")]
+        [Display(Name = "شخص مرتبط (قدیمی)")]
         public int? StakeholderContactId { get; set; }
+
+        [Display(Name = "فرد")]
+        public int? ContactId { get; set; }
+
+        [Display(Name = "سازمان")]
+        public int? OrganizationId { get; set; }
 
         [Required(ErrorMessage = "شعبه الزامی است")]
         [Display(Name = "شعبه")]
@@ -60,9 +75,6 @@ namespace MahERP.DataModelLayer.ViewModels.CRMViewModels
 
         [Display(Name = "قرارداد")]
         public int? ContractId { get; set; }
-
-        [Display(Name = "تاریخ پیگیری بعدی")]
-        public DateTime? NextFollowUpDate { get; set; }
 
         [Display(Name = "یادداشت پیگیری")]
         public string? NextFollowUpNote { get; set; }
@@ -86,6 +98,13 @@ namespace MahERP.DataModelLayer.ViewModels.CRMViewModels
 
         // File uploads
         public List<IFormFile>? UploadFiles { get; set; }
+
+        // ⭐⭐⭐ لیست‌های برای Dropdown (مشابه TaskViewModel)
+        public List<BranchViewModel>? BranchesInitial { get; set; }
+        public List<ContactViewModel>? ContactsInitial { get; set; }
+        public List<OrganizationViewModel>? OrganizationsInitial { get; set; }
+        public List<OrganizationViewModel>? ContactOrganizations { get; set; }
+        public List<UserViewModelFull>? UsersInitial { get; set; }
 
         // Helper properties
         public string CRMTypeText => CRMType switch

@@ -1,0 +1,78 @@
+﻿@model CRMInteractionViewModel
+
+<div class="block-content block-content-full">
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center">
+                <i class="fa fa-paperclip fa-2x me-3"></i>
+                <div>
+                    <strong>راهنما:</strong>
+                    می‌توانید فایل‌های مرتبط با این تعامل را ضمیمه کنید (مثلاً: قرارداد، مکاتبات، تصاویر و ...)
+                    <br />
+                    <small class="text-muted">
+                        حداکثر حجم هر فایل: 10 مگابایت | فرمت‌های مجاز: PDF, Word, Excel, تصویر
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label fw-semibold">
+                <i class="fa fa-cloud-upload-alt text-primary me-1"></i>
+                انتخاب فایل‌ها
+            </label>
+            <input type="file" 
+                   name="UploadFiles" 
+                   multiple 
+                   class="form-control form-control-lg" 
+                   id="fileUpload"
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" />
+            <div class="form-text">
+                <i class="fa fa-info-circle me-1"></i>
+                می‌توانید چندین فایل را همزمان انتخاب کنید (Ctrl + کلیک)
+            </div>
+        </div>
+
+        <!-- پیش‌نمایش فایل‌های انتخاب شده -->
+        <div class="col-12" id="filePreviewSection" style="display: none;">
+            <div class="border rounded p-3 bg-light">
+                <h6 class="mb-3">
+                    <i class="fa fa-file-alt text-success me-1"></i>
+                    فایل‌های انتخاب شده
+                    <span class="badge bg-success" id="fileCount">0</span>
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>نام فایل</th>
+                                <th>حجم</th>
+                                <th style="width: 80px;" class="text-center">حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filePreviewList">
+                            <!-- فایل‌ها با jQuery اضافه می‌شوند -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- دکمه‌های ناوبری -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-alt-secondary" onclick="goToTab('interaction-details')">
+                    <i class="fa fa-arrow-right me-1"></i>
+                    مرحله قبل
+                </button>
+                <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                    <i class="fa fa-check me-1"></i>
+                    ثبت تعامل
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

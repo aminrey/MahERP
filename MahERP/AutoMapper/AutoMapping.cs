@@ -140,226 +140,207 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => CalculateProgress(src)))
                 .ForMember(dest => dest.WorkLogs, opt => opt.MapFrom(src => src.TaskWorkLogs))
                 .ForMember(dest => dest.TaskCode, opt => opt.MapFrom(src => src.TaskCode))
-    .ForMember(dest => dest.IsIndependentCompletion, opt => opt.MapFrom(src => src.IsIndependentCompletion)) 
-                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => $"{src.Creator.FirstName} {src.Creator.LastName}" ))
-                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.TaskComments));
+                .ForMember(dest => dest.IsIndependentCompletion, opt => opt.MapFrom(src => src.IsIndependentCompletion))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => 
+                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : ""))
+                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.TaskComments))
+                // ⭐⭐⭐ NEW - Mapping Contact و Organization
+                .ForMember(dest => dest.SelectedContactId, opt => opt.MapFrom(src => src.ContactId))
+                .ForMember(dest => dest.SelectedOrganizationId, opt => opt.MapFrom(src => src.OrganizationId))
+                .ForMember(dest => dest.ContactFullName, opt => opt.MapFrom(src => 
+                    src.Contact != null ? $"{src.Contact.FirstName} {src.Contact.LastName}" : null))
+                .ForMember(dest => dest.OrganizationName, opt => opt.MapFrom(src => 
+                    src.Organization != null ? src.Organization.DisplayName : null))
+                // ⭐⭐⭐ Mapping فیلدهای زمان‌بندی
+                .ForMember(dest => dest.SuggestedStartDate, opt => opt.MapFrom(src => src.SuggestedStartDate))
+                .ForMember(dest => dest.EstimatedHours, opt => opt.MapFrom(src => src.EstimatedHours))
+                .ForMember(dest => dest.IsHardDeadline, opt => opt.MapFrom(src => src.IsHardDeadline))
+                .ForMember(dest => dest.TimeNote, opt => opt.MapFrom(src => src.TimeNote))
+                // ⭐⭐⭐ Mapping فیلدهای اضافی
+                .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority))
+                .ForMember(dest => dest.Important, opt => opt.MapFrom(src => src.Important))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.VisibilityLevel, opt => opt.MapFrom(src => src.VisibilityLevel))
+                .ForMember(dest => dest.TaskTypeInput, opt => opt.MapFrom(src => src.TaskTypeInput))
+                .ForMember(dest => dest.CreationMode, opt => opt.MapFrom(src => src.CreationMode))
+                .ForMember(dest => dest.IsPrivate, opt => opt.MapFrom(src => src.IsPrivate))
+                .ForMember(dest => dest.CompletionMode, opt => opt.MapFrom(src => src.CompletionMode))
+                // ⭐⭐⭐ Ignore فیلدهای فقط-خواندنی و محاسباتی
+                .ForMember(dest => dest.ExistingAttachments, opt => opt.Ignore())
+                .ForMember(dest => dest.Attachments, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskOperationsJson, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskRemindersJson, opt => opt.Ignore())
+                .ForMember(dest => dest.branchListInitial, opt => opt.Ignore())
+                .ForMember(dest => dest.UsersInitial, opt => opt.Ignore())
+                .ForMember(dest => dest.StakeholdersInitial, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskCategoryInitial, opt => opt.Ignore())
+                .ForMember(dest => dest.TeamsInitial, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignmentsCopyCarbonUsers, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignmentsSelectedTaskUserArraysString, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignmentsSelectedTeamIds, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignmentsSelectedCopyCarbonUsersArraysString, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskCodeSettings, opt => opt.Ignore())
+                .ForMember(dest => dest.UserTeamAssignments, opt => opt.Ignore())
+                .ForMember(dest => dest.UserTeamAssignmentsJson, opt => opt.Ignore())
+                .ForMember(dest => dest.ContactsInitial, opt => opt.Ignore())
+                .ForMember(dest => dest.OrganizationsInitial, opt => opt.Ignore())
+                .ForMember(dest => dest.ContactOrganizations, opt => opt.Ignore())
+                .ForMember(dest => dest.IsAssignedToCurrentUser, opt => opt.Ignore())
+                .ForMember(dest => dest.IsCreator, opt => opt.Ignore())
+                .ForMember(dest => dest.IsManager, opt => opt.Ignore())
+                .ForMember(dest => dest.IsSupervisor, opt => opt.Ignore())
+                .ForMember(dest => dest.IsCompletedByMe, opt => opt.Ignore())
+                .ForMember(dest => dest.CurrentUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.CurrentUserContext, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskSchedule, opt => opt.Ignore())
+                .ForMember(dest => dest.IsFocused, opt => opt.Ignore())
+                .ForMember(dest => dest.FocusedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.IsInMyDay, opt => opt.Ignore())
+                .ForMember(dest => dest.FromList, opt => opt.Ignore())
+                .ForMember(dest => dest.SuggestedStartDatePersian, opt => opt.Ignore())
+                .ForMember(dest => dest.BranchIdSelected, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskCategoryIdSelected, opt => opt.Ignore())
+                .ForMember(dest => dest.IsManualTaskCode, opt => opt.Ignore())
+                .ForMember(dest => dest.ManualTaskCode, opt => opt.Ignore())
+                .ForMember(dest => dest.EnableDefaultReminder, opt => opt.Ignore())
+                .ForMember(dest => dest.CategoryTitle, opt => opt.MapFrom(src => 
+                    src.TaskCategory != null ? src.TaskCategory.Title : null))
+                .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.TaskCategoryId))
+                .ForMember(dest => dest.StakeholderName, opt => opt.Ignore())
+                .ForMember(dest => dest.ContractTitle, opt => opt.MapFrom(src => 
+                    src.Contract != null ? src.Contract.Title : null));
             CreateMap<TaskViewModel, Tasks>()
-                     .ForMember(dest => dest.ContactId, opt => opt.MapFrom(src => src.SelectedContactId))
-    .ForMember(dest => dest.OrganizationId,
-         opt => opt.MapFrom(src => src.SelectedOrganizationId))
-
-                 .ForMember(dest => dest.Id, opt => opt.Ignore())
-                 .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
-                 .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
-                 .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
-                 .ForMember(dest => dest.TaskAssignments, opt => opt.Ignore())
-                 .ForMember(dest => dest.TaskComments, opt => opt.Ignore())
-                 .ForMember(dest => dest.TaskAttachments, opt => opt.Ignore())
-                 .ForMember(dest => dest.TaskNotifications, opt => opt.Ignore())
-                 .ForMember(dest => dest.TaskOperations, opt => opt.Ignore())
-                 .ForMember(dest => dest.TaskViewers, opt => opt.Ignore());
+                .ForMember(dest => dest.ContactId, opt => opt.MapFrom(src => src.SelectedContactId))
+                .ForMember(dest => dest.OrganizationId, opt => opt.MapFrom(src => src.SelectedOrganizationId))
+                // ⭐⭐⭐ Mapping فیلدهای زمان‌بندی
+                .ForMember(dest => dest.SuggestedStartDate, opt => opt.MapFrom(src => src.SuggestedStartDate))
+                .ForMember(dest => dest.EstimatedHours, opt => opt.MapFrom(src => src.EstimatedHours))
+                .ForMember(dest => dest.IsHardDeadline, opt => opt.MapFrom(src => src.IsHardDeadline))
+                .ForMember(dest => dest.TimeNote, opt => opt.MapFrom(src => src.TimeNote))
+                // ⭐⭐⭐ Mapping فیلدهای اضافی
+                .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority))
+                .ForMember(dest => dest.Important, opt => opt.MapFrom(src => src.Important))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.VisibilityLevel, opt => opt.MapFrom(src => src.VisibilityLevel))
+                .ForMember(dest => dest.TaskTypeInput, opt => opt.MapFrom(src => src.TaskTypeInput))
+                .ForMember(dest => dest.CreationMode, opt => opt.MapFrom(src => src.CreationMode))
+                .ForMember(dest => dest.IsPrivate, opt => opt.MapFrom(src => src.IsPrivate))
+                .ForMember(dest => dest.CompletionMode, opt => opt.MapFrom(src => src.CompletionMode))
+                .ForMember(dest => dest.IsIndependentCompletion, opt => opt.MapFrom(src => src.IsIndependentCompletion))
+                // ⭐⭐⭐ Ignore navigation properties
+                .ForMember(dest => dest.Contact, opt => opt.Ignore())
+                .ForMember(dest => dest.Organization, opt => opt.Ignore())
+                .ForMember(dest => dest.Team, opt => opt.Ignore())
+                .ForMember(dest => dest.Schedule, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskAssignments, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskComments, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskAttachments, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskNotifications, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskOperations, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskViewers, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskWorkLogs, opt => opt.Ignore())
+                .ForMember(dest => dest.CarbonCopies, opt => opt.Ignore())
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.ParentTask, opt => opt.Ignore())
+                .ForMember(dest => dest.Contract, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskCategory, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedUserInfo, opt => opt.Ignore())
+                .ForMember(dest => dest.ScheduleId, opt => opt.Ignore())
+                .ForMember(dest => dest.TeamId, opt => opt.Ignore())
+                .ForMember(dest => dest.DisplayLevel, opt => opt.Ignore());
             // Mapping TaskOperation به TaskOperationViewModel
             CreateMap<TaskOperation, TaskOperationViewModel>()
                 .ForMember(dest => dest.WorkLogs, opt => opt.MapFrom(src => src.WorkLogs))
                 .ForMember(dest => dest.IsCompleted, opt => opt.MapFrom(src => src.IsCompleted))
-                .ForMember(dest => dest.IsStarred, opt => opt.MapFrom(src => src.IsStarred));
-
-
-        // Task operations mapping
-        CreateMap<TaskOperation, TaskOperationViewModel>()
-                .ForMember(dest => dest.CompletedByUserName, opt => opt.MapFrom(src => src.CompletedByUser != null ? $"{src.CompletedByUser.FirstName} {src.CompletedByUser.LastName}" : null));
+                .ForMember(dest => dest.IsStarred, opt => opt.MapFrom(src => src.IsStarred))
+                .ForMember(dest => dest.CompletedByUserName, opt => opt.MapFrom(src => 
+                    src.CompletedByUser != null ? $"{src.CompletedByUser.FirstName} {src.CompletedByUser.LastName}" : null))
+                .ForMember(dest => dest.CreatorUserName, opt => opt.MapFrom(src => 
+                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
+                .ForMember(dest => dest.CreatedDatePersian, opt => opt.Ignore())
+                .ForMember(dest => dest.CompletionDatePersian, opt => opt.Ignore());
 
             CreateMap<TaskOperationViewModel, TaskOperation>()
                 .ForMember(dest => dest.Task, opt => opt.Ignore())
                 .ForMember(dest => dest.CompletedByUser, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore());
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.WorkLogs, opt => opt.Ignore());
 
-            // Task assignments mapping
-            CreateMap<TaskAssignment, TaskAssignmentViewModel>()
-                .ForMember(dest => dest.CompletionNote, opt => opt.MapFrom(src => src.UserReport ))
-                .ForMember(dest => dest.AssignedUserName, opt => opt.MapFrom(src => src.AssignedUser != null ? $"{src.AssignedUser.FirstName} {src.AssignedUser.LastName}" : null))
-                .ForMember(dest => dest.AssignerUserName, opt => opt.MapFrom(src => src.AssignerUser != null ? $"{src.AssignerUser.FirstName} {src.AssignerUser.LastName}" : null))
-                .ForMember(dest => dest.CompletionNote, opt => opt.MapFrom(src => src.UserReport)); // ⭐⭐⭐ اضافه کنید
+            // ⭐⭐⭐ NEW - Mapping برای TaskOperationWorkLog
+            CreateMap<TaskOperationWorkLog, OperationWorkLogViewModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => (int?)src.Id))
+                .ForMember(dest => dest.TaskOperationId, opt => opt.MapFrom(src => src.TaskOperationId))
+                .ForMember(dest => dest.WorkDescription, opt => opt.MapFrom(src => src.WorkDescription))
+                .ForMember(dest => dest.DurationMinutes, opt => opt.MapFrom(src => src.DurationMinutes))
+                .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => src.ProgressPercentage))
+                .ForMember(dest => dest.WorkDate, opt => opt.MapFrom(src => (DateTime?)src.WorkDate))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => 
+                    src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : ""))
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate))
+                .ForMember(dest => dest.WorkDatePersian, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDatePersian, opt => opt.Ignore())
+                .ForMember(dest => dest.OperationTitle, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskTitle, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskId, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskCode, opt => opt.Ignore())
+                .ForMember(dest => dest.IsAlreadyWorkedOn, opt => opt.Ignore())
+                .ForMember(dest => dest.RecentWorkLogs, opt => opt.Ignore())
+                .ForMember(dest => dest.TotalWorkLogsCount, opt => opt.Ignore())
+                .ForMember(dest => dest.CanEdit, opt => opt.Ignore())
+                .ForMember(dest => dest.CanDelete, opt => opt.Ignore());
 
-            CreateMap<TaskAssignmentViewModel, TaskAssignment>()
+            CreateMap<OperationWorkLogViewModel, TaskOperationWorkLog>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id ?? 0))
+                .ForMember(dest => dest.TaskOperationId, opt => opt.MapFrom(src => src.TaskOperationId))
+                .ForMember(dest => dest.WorkDescription, opt => opt.MapFrom(src => src.WorkDescription))
+                .ForMember(dest => dest.DurationMinutes, opt => opt.MapFrom(src => src.DurationMinutes))
+                .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => src.ProgressPercentage))
+                .ForMember(dest => dest.WorkDate, opt => opt.MapFrom(src => src.WorkDate ?? DateTime.Now))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate))
+                .ForMember(dest => dest.IsDeleted, opt => opt.MapFrom(src => false))
+                .ForMember(dest => dest.DeletedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskOperation, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore());
+
+            // ⭐⭐⭐ NEW - Mapping برای TaskWorkLog (سطح کلی تسک)
+            CreateMap<TaskWorkLog, TaskWorkLogViewModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => (int?)src.Id))
+                .ForMember(dest => dest.TaskId, opt => opt.MapFrom(src => src.TaskId))
+                .ForMember(dest => dest.WorkDescription, opt => opt.MapFrom(src => src.WorkDescription))
+                .ForMember(dest => dest.DurationMinutes, opt => opt.MapFrom(src => src.DurationMinutes))
+                .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => src.ProgressPercentage))
+                .ForMember(dest => dest.WorkDate, opt => opt.MapFrom(src => src.WorkDate))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => 
+                    src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : ""))
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate))
+                .ForMember(dest => dest.WorkDatePersian, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDatePersian, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskTitle, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskCode, opt => opt.Ignore())
+                .ForMember(dest => dest.IsAlreadyWorkedOn, opt => opt.Ignore())
+                .ForMember(dest => dest.UserProfileImage, opt => opt.Ignore());
+
+            CreateMap<TaskWorkLogViewModel, TaskWorkLog>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id ?? 0))
+                .ForMember(dest => dest.TaskId, opt => opt.MapFrom(src => src.TaskId))
+                .ForMember(dest => dest.WorkDescription, opt => opt.MapFrom(src => src.WorkDescription))
+                .ForMember(dest => dest.DurationMinutes, opt => opt.MapFrom(src => src.DurationMinutes))
+                .ForMember(dest => dest.ProgressPercentage, opt => opt.MapFrom(src => src.ProgressPercentage))
+                .ForMember(dest => dest.WorkDate, opt => opt.MapFrom(src => src.WorkDate))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate))
+                .ForMember(dest => dest.IsDeleted, opt => opt.MapFrom(src => false))
+                .ForMember(dest => dest.DeletedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.Task, opt => opt.Ignore())
-                .ForMember(dest => dest.AssignedUser, opt => opt.Ignore())
-                .ForMember(dest => dest.AssignerUser, opt => opt.Ignore());
-
-            // Task categories mapping
-            CreateMap<TaskCategory, TaskCategoryViewModel>()
-                .ForMember(dest => dest.ParentCategoryTitle, opt => opt.MapFrom(src => src.ParentCategory != null ? src.ParentCategory.Title : null));
-
-            CreateMap<TaskCategoryViewModel, TaskCategory>()
-                .ForMember(dest => dest.ParentCategory, opt => opt.Ignore());
-
-            // اضافه کردن mapping جدید برای TaskCategoryItemViewModel
-            CreateMap<OperationWorkLogViewModel, TaskOperationWorkLog>().ReverseMap();
-            CreateMap<TaskCategory, TaskCategoryItemViewModel>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
-                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
-
-            CreateMap<TaskCategoryItemViewModel, TaskCategory>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
-                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
-                .ForMember(dest => dest.ParentCategory, opt => opt.Ignore())
-                .ForMember(dest => dest.ChildCategories, opt => opt.Ignore());
-              
-
-            // CRM Interaction Mappings
-            CreateMap<CRMInteraction, CRMInteractionViewModel>()
-                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : ""))
-                .ForMember(dest => dest.StakeholderName, opt => opt.MapFrom(src => src.Stakeholder != null ? $"{src.Stakeholder.FirstName} {src.Stakeholder.LastName}" : ""))
-                .ForMember(dest => dest.StakeholderContactName, opt => opt.MapFrom(src => src.StakeholderContact != null ? $"{src.StakeholderContact.FirstName} {src.StakeholderContact.LastName}" : ""))
-                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
-                .ForMember(dest => dest.ContractTitle, opt => opt.MapFrom(src => src.Contract != null ? src.Contract.Title : ""))
-                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.CRMAttachments))
-                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.CRMComments))
-                .ForMember(dest => dest.Participants, opt => opt.MapFrom(src => src.CRMParticipants));
-
-            CreateMap<CRMInteractionViewModel, CRMInteraction>()
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Stakeholder, opt => opt.Ignore())
-                .ForMember(dest => dest.StakeholderContact, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Contract, opt => opt.Ignore())
-                .ForMember(dest => dest.CRMAttachments, opt => opt.Ignore())
-                .ForMember(dest => dest.CRMComments, opt => opt.Ignore())
-                .ForMember(dest => dest.CRMParticipants, opt => opt.Ignore())
-                .ForMember(dest => dest.CRMTeams, opt => opt.Ignore())
-                .ForMember(dest => dest.ActivityCRMs, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore());
-
-            // CRM Attachment Mappings
-            CreateMap<CRMAttachment, CRMAttachmentViewModel>()
-                .ForMember(dest => dest.UploaderName, opt => opt.MapFrom(src => src.Uploader != null ? $"{src.Uploader.FirstName} {src.Uploader.LastName}" : ""));
-
-            CreateMap<CRMAttachmentViewModel, CRMAttachment>()
-                .ForMember(dest => dest.Uploader, opt => opt.Ignore())
-                .ForMember(dest => dest.CRMInteraction, opt => opt.Ignore());
-
-            // CRM Comment Mappings
-            CreateMap<CRMComment, CRMCommentViewModel>()
-                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : ""))
-                .ForMember(dest => dest.Replies, opt => opt.MapFrom(src => src.Replies));
-
-            CreateMap<CRMCommentViewModel, CRMComment>()
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.CRMInteraction, opt => opt.Ignore())
-                .ForMember(dest => dest.ParentComment, opt => opt.Ignore())
-                .ForMember(dest => dest.Replies, opt => opt.Ignore());
-
-            // CRM Participant Mappings
-            CreateMap<CRMParticipant, CRMParticipantViewModel>()
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : ""))
-                .ForMember(dest => dest.StakeholderContactName, opt => opt.MapFrom(src => src.StakeholderContact != null ? $"{src.StakeholderContact.FirstName} {src.StakeholderContact.LastName}" : ""));
-
-            CreateMap<CRMParticipantViewModel, CRMParticipant>()
-                .ForMember(dest => dest.User, opt => opt.Ignore())
-                .ForMember(dest => dest.StakeholderContact, opt => opt.Ignore())
-                .ForMember(dest => dest.CRMInteraction, opt => opt.Ignore());
-
-            // BranchTaskCategory Mappings - انتساب دسته‌بندی تسک به شعبه و طرف حساب
-            CreateMap<BranchTaskCategoryStakeholder, BranchTaskCategoryStakeholderViewModel>()
-                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
-                .ForMember(dest => dest.TaskCategoryTitle, opt => opt.MapFrom(src => src.TaskCategory != null ? src.TaskCategory.Title : ""))
-                .ForMember(dest => dest.StakeholderName, opt => opt.MapFrom(src => src.Stakeholder != null ? $"{src.Stakeholder.FirstName} {src.Stakeholder.LastName}" : ""))
-                .ForMember(dest => dest.AssignedByUserName, opt => opt.MapFrom(src => src.AssignedByUser != null ? $"{src.AssignedByUser.FirstName} {src.AssignedByUser.LastName}" : ""));
-
-            CreateMap<BranchTaskCategoryStakeholderViewModel, BranchTaskCategoryStakeholder>()
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskCategory, opt => opt.Ignore())
-                .ForMember(dest => dest.Stakeholder, opt => opt.Ignore())
-                .ForMember(dest => dest.AssignedByUser, opt => opt.Ignore());
-
-            // RolePattern mappings
-            CreateMap<RolePattern, RolePatternViewModel>()
-                .ForMember(dest => dest.AccessLevelText, opt => opt.MapFrom(src => GetAccessLevelText(src.AccessLevel)))
-                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "سیستم"))
-                .ForMember(dest => dest.LastUpdaterName, opt => opt.MapFrom(src => src.LastUpdater != null ? $"{src.LastUpdater.FirstName} {src.LastUpdater.LastName}" : null))
-                .ReverseMap()
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
-                .ForMember(dest => dest.RolePatternDetails, opt => opt.Ignore())
-                .ForMember(dest => dest.UserRolePatterns, opt => opt.Ignore());
-
-            // RolePatternDetails mappings
-            CreateMap<RolePatternDetails, RolePatternDetailsViewModel>()
-                .ForMember(dest => dest.DataAccessLevelText, opt => opt.MapFrom(src => GetDataAccessLevelText(src.DataAccessLevel)))
-                .ForMember(dest => dest.ControllerDisplayName, opt => opt.MapFrom(src => GetControllerDisplayName(src.ControllerName)))
-                .ForMember(dest => dest.ActionDisplayName, opt => opt.MapFrom(src => GetActionDisplayName(src.ActionName)))
-                .ReverseMap()
-                .ForMember(dest => dest.RolePattern, opt => opt.Ignore());
-
-            // UserRolePattern mappings
-            CreateMap<UserRolePattern, UserRolePatternInfo>()
-                .ForMember(dest => dest.PatternName, opt => opt.MapFrom(src => src.RolePattern.PatternName))
-                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.RolePattern.Description))
-                .ForMember(dest => dest.AssignedByName, opt => opt.MapFrom(src => $"{src.AssignedByUser.FirstName} {src.AssignedByUser.LastName}"))
-                .ForMember(dest => dest.AssignDate, opt => opt.MapFrom(src => src.AssignDate));
-
-            // UserPermission mappings
-            CreateMap<AppUsers, UserPermissionViewModel>()
-                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
-                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => "")) // This should be populated separately
-                .ForMember(dest => dest.SystemRoles, opt => opt.Ignore()) // This should be populated separately
-                .ForMember(dest => dest.RolePatterns, opt => opt.Ignore()); // This should be populated separately
-
-            // AssignRolePattern mappings
-            CreateMap<AssignRolePatternViewModel, UserRolePattern>()
-                .ForMember(dest => dest.User, opt => opt.Ignore())
-                .ForMember(dest => dest.RolePattern, opt => opt.Ignore())
-                .ForMember(dest => dest.AssignedByUser, opt => opt.Ignore());
-
-            // NEW TEAM MAPPINGS
-            // Team -> TeamViewModel
-            CreateMap<Team, TeamViewModel>()
-                .ForMember(dest => dest.ParentTeamTitle, opt => opt.MapFrom(src => src.ParentTeam != null ? src.ParentTeam.Title : null))
-                .ForMember(dest => dest.ManagerFullName, opt => opt.MapFrom(src => src.Manager != null ? $"{src.Manager.FirstName} {src.Manager.LastName}" : null))
-                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : null))
-                .ForMember(dest => dest.AccessLevelText, opt => opt.MapFrom(src => GetTeamAccessLevelText(src.AccessLevel)))
-                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
-                .ForMember(dest => dest.LastUpdaterName, opt => opt.MapFrom(src => src.LastUpdater != null ? $"{src.LastUpdater.FirstName} {src.LastUpdater.LastName}" : null))
-                .ForMember(dest => dest.CreatorUserId, opt => opt.MapFrom(src => src.CreatorUserId))
-                .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
-                .ForMember(dest => dest.TeamMembers, opt => opt.Ignore())
-                .ForMember(dest => dest.Level, opt => opt.Ignore())
-                
-                .ReverseMap()
-                                .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
-                                .ForMember(dest => dest.TeamMembers, opt => opt.Ignore());
-
-            // TeamViewModel -> Team
-            CreateMap<TeamViewModel, Team>()
-                .ForMember(dest => dest.ParentTeam, opt => opt.Ignore())
-                .ForMember(dest => dest.Manager, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
-                .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
-                .ForMember(dest => dest.TeamMembers, opt => opt.Ignore());
-
-            // TeamMember -> TeamMemberViewModel
-            CreateMap<TeamMember, TeamMemberViewModel>()
-                .ForMember(dest => dest.TeamTitle, opt => opt.MapFrom(src => src.Team != null ? src.Team.Title : null))
-                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : null))
-                .ForMember(dest => dest.MembershipTypeText, opt => opt.MapFrom(src => GetMembershipTypeText(src.MembershipType)))
-                .ForMember(dest => dest.AddedByUserName, opt => opt.MapFrom(src => src.AddedByUser != null ? $"{src.AddedByUser.FirstName} {src.AddedByUser.LastName}" : null));
-
-            // TeamMemberViewModel -> TeamMember
-            CreateMap<TeamPositionViewModel, TeamPosition>().ReverseMap();
-            CreateMap<TeamMemberViewModel, TeamMember>()
-                .ForMember(dest => dest.Team, opt => opt.Ignore())
-                .ForMember(dest => dest.User, opt => opt.Ignore())
-                .ForMember(dest => dest.AddedByUser, opt => opt.Ignore());
-
-
-
-
+                .ForMember(dest => dest.User, opt => opt.Ignore());
 
 
             // Stakeholder Mappings
@@ -741,175 +722,26 @@ namespace MahERP.AutoMapper
 
             CreateMap<SmsProvider, SmsProviderViewModel>().ReverseMap();
 
-            // ContactGroup -> ContactGroupViewModel
-            CreateMap<ContactGroup, ContactGroupViewModel>()
-                .ForMember(dest => dest.MembersCount,
-                    opt => opt.MapFrom(src => src.ActiveMembersCount))
-                .ForMember(dest => dest.CreatedDatePersian,
-                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")))
-                .ForMember(dest => dest.CreatorName,
-                    opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : ""));
+            // Task assignments mapping
+            CreateMap<TaskAssignment, TaskAssignmentViewModel>()
+                .ForMember(dest => dest.CompletionNote, opt => opt.MapFrom(src => src.UserReport))
+                .ForMember(dest => dest.AssignedUserName, opt => opt.MapFrom(src => 
+                    src.AssignedUser != null ? $"{src.AssignedUser.FirstName} {src.AssignedUser.LastName}" : null))
+                .ForMember(dest => dest.AssignerUserName, opt => opt.MapFrom(src => 
+                    src.AssignerUser != null ? $"{src.AssignerUser.FirstName} {src.AssignerUser.LastName}" : null))
+                .ForMember(dest => dest.AssignedUserProfileImage, opt => opt.MapFrom(src => 
+                    src.AssignedUser != null ? (src.AssignedUser.ProfileImagePath ?? "/images/default-avatar.png") : "/images/default-avatar.png"))
+                .ForMember(dest => dest.IsFocused, opt => opt.Ignore())
+                .ForMember(dest => dest.FocusedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignedInTeamName, opt => opt.Ignore())
+                .ForMember(dest => dest.PersonalStartDate, opt => opt.Ignore())
+                .ForMember(dest => dest.PersonalDueDate, opt => opt.Ignore());
 
-            // ContactGroupViewModel -> ContactGroup
-            CreateMap<ContactGroupViewModel, ContactGroup>()
-                .ForMember(dest => dest.Members, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
-
-            // BranchContactGroup -> BranchContactGroupViewModel
-            CreateMap<BranchContactGroup, BranchContactGroupViewModel>()
-                .ForMember(dest => dest.BranchName,
-                    opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
-                .ForMember(dest => dest.MembersCount,
-                    opt => opt.MapFrom(src => src.ActiveMembersCount))
-                .ForMember(dest => dest.CreatedDatePersian,
-                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")));
-
-            // BranchContactGroupViewModel -> BranchContactGroup
-            CreateMap<BranchContactGroupViewModel, BranchContactGroup>()
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Members, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
-
-            // OrganizationGroup -> OrganizationGroupViewModel
-            CreateMap<OrganizationGroup, OrganizationGroupViewModel>()
-                .ForMember(dest => dest.MembersCount,
-                    opt => opt.MapFrom(src => src.ActiveMembersCount))
-                .ForMember(dest => dest.CreatedDatePersian,
-                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")))
-                .ForMember(dest => dest.CreatorName,
-                    opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : ""));
-
-            // OrganizationGroupViewModel -> OrganizationGroup
-            CreateMap<OrganizationGroupViewModel, OrganizationGroup>()
-                .ForMember(dest => dest.Members, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
-
-            // BranchOrganizationGroup -> BranchOrganizationGroupViewModel
-            CreateMap<BranchOrganizationGroup, BranchOrganizationGroupViewModel>()
-                .ForMember(dest => dest.BranchName,
-                    opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : ""))
-                .ForMember(dest => dest.MembersCount,
-                    opt => opt.MapFrom(src => src.ActiveMembersCount))
-                .ForMember(dest => dest.CreatedDatePersian,
-                    opt => opt.MapFrom(src => ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd")));
-
-            // BranchOrganizationGroupViewModel -> BranchOrganizationGroup
-            CreateMap<BranchOrganizationGroupViewModel, BranchOrganizationGroup>()
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Members, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore());
-
-            // ==================== POSITION MAPPINGS (سمت‌های استاندارد سازمانی) ========== ⭐⭐⭐ NEW
-
-            // OrganizationPosition -> PositionViewModel
-            CreateMap<OrganizationPosition, PositionViewModel>()
-                .ForMember(dest => dest.FullTitle, opt => opt.MapFrom(src => src.FullTitle))
-                .ForMember(dest => dest.LevelText, opt => opt.MapFrom(src => src.LevelText))
-                .ForMember(dest => dest.MinimumDegreeText, opt => opt.MapFrom(src => src.MinimumDegreeText))
-                .ForMember(dest => dest.SuggestedSalaryRangeText, opt => opt.MapFrom(src => src.SuggestedSalaryRangeText))
-                .ForMember(dest => dest.CreatorName,
-                    opt => opt.MapFrom(src => src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "سیستم"))
-                .ForMember(dest => dest.LastUpdaterName,
-                    opt => opt.MapFrom(src => src.LastUpdater != null ? $"{src.LastUpdater.FirstName} {src.LastUpdater.LastName}" : null));
-
-            // PositionViewModel -> OrganizationPosition
-            CreateMap<PositionViewModel, OrganizationPosition>()
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdaterUserId, opt => opt.Ignore());
-
-            // ==================== TASK COMMENT MAPPINGS ====================
-
-            // TaskComment -> TaskCommentViewModel
-            CreateMap<TaskComment, TaskCommentViewModel>()
-                .ForMember(dest => dest.CreatorName,
-                    opt => opt.MapFrom(src => src.Creator != null
-                        ? $"{src.Creator.FirstName} {src.Creator.LastName}"
-                        : "نامشخص"))
-                .ForMember(dest => dest.CreatorProfileImage,
-                    opt => opt.MapFrom(src => src.Creator != null
-                        ? (src.Creator.ProfileImagePath ?? "/images/default-avatar.png")
-                        : "/images/default-avatar.png"))
-               
-                .ForMember(dest => dest.Attachments,
-                    opt => opt.MapFrom(src => src.Attachments));
-
-            // TaskCommentViewModel -> TaskComment
-            CreateMap<TaskCommentViewModel, TaskComment>()
+            CreateMap<TaskAssignmentViewModel, TaskAssignment>()
                 .ForMember(dest => dest.Task, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.ParentComment, opt => opt.Ignore())
-                .ForMember(dest => dest.MentionedUsers, opt => opt.Ignore())
-                .ForMember(dest => dest.Notifications, opt => opt.Ignore())
-                .ForMember(dest => dest.Attachments, opt => opt.Ignore())
-                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
-                .ForMember(dest => dest.EditDate, opt => opt.Ignore())
-                .ForMember(dest => dest.IsEdited, opt => opt.Ignore());
-
-            // TaskCommentAttachment -> TaskCommentAttachmentViewModel
-            CreateMap<TaskCommentAttachment, TaskCommentAttachmentViewModel>();
-
-            // TaskCommentAttachmentViewModel -> TaskCommentAttachment
-            CreateMap<TaskCommentAttachmentViewModel, TaskCommentAttachment>()
-                .ForMember(dest => dest.Comment, opt => opt.Ignore())
-                .ForMember(dest => dest.Uploader, opt => opt.Ignore())
-                .ForMember(dest => dest.UploadDate, opt => opt.Ignore())
-                .ForMember(dest => dest.UploaderUserId, opt => opt.Ignore());
-
-            // در متد AutoMapping() در کلاس AutoMapping
-            CreateMap<TaskReminderViewModel, TaskReminderSchedule>()
-                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src =>
-                    !string.IsNullOrEmpty(src.StartDatePersian)
-                        ? ConvertDateTime.ConvertShamsiToMiladi(src.StartDatePersian)
-                        : (DateTime?)null))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
-                    !string.IsNullOrEmpty(src.EndDatePersian)
-                        ? ConvertDateTime.ConvertShamsiToMiladi(src.EndDatePersian)
-                        : (DateTime?)null))
-                .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Task, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.GeneratedEvents, opt => opt.Ignore())
-                .ForMember(dest => dest.IsSystemDefault, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
-                .ForMember(dest => dest.LastExecuted, opt => opt.Ignore())
-                .ForMember(dest => dest.SentCount, opt => opt.Ignore());
-
-            CreateMap<TaskReminderSchedule, TaskReminderViewModel>()
-                .ForMember(dest => dest.StartDatePersian, opt => opt.MapFrom(src =>
-                    src.StartDate.HasValue
-                        ? ConvertDateTime.ConvertMiladiToShamsi(src.StartDate.Value, "yyyy/MM/dd")
-                        : null))
-                .ForMember(dest => dest.EndDatePersian, opt => opt.MapFrom(src =>
-                    src.EndDate.HasValue
-                        ? ConvertDateTime.ConvertMiladiToShamsi(src.EndDate.Value, "yyyy/MM/dd")
-                        : null))
-                // ⭐⭐⭐ FIX: اضافه کردن mapping برای NotificationTime
-                .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
-                .ForMember(dest => dest.TaskTitle, opt => opt.MapFrom(src => src.Task != null ? src.Task.Title : null))
-                .ForMember(dest => dest.TaskCode, opt => opt.MapFrom(src => src.Task != null ? src.Task.TaskCode : null))
-                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
-                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "سیستم"))
-                .ForMember(dest => dest.CreatedDatePersian, opt => opt.MapFrom(src =>
-                    ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd HH:mm")));
+                .ForMember(dest => dest.AssignedUser, opt => opt.Ignore())
+                .ForMember(dest => dest.AssignerUser, opt => opt.Ignore())
+                .ForMember(dest => dest.UserReport, opt => opt.MapFrom(src => src.CompletionNote));
         }
 
         // Helper methods for mapping

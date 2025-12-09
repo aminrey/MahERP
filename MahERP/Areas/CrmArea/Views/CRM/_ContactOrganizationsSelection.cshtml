@@ -1,0 +1,38 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationViewModel>
+
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>نام سازمان</th>
+                    <th>شماره ثبت</th>
+                    <th>تلفن</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var (org, index) in Model.Select((o, i) => (o, i + 1)))
+                {
+                    <tr>
+                        <td class="fw-bold">@index</td>
+                        <td>
+                            <i class="fa fa-building text-info me-1"></i>
+                            <strong>@org.Name</strong>
+                        </td>
+                        <td dir="ltr">@(org.RegistrationNumber ?? "-")</td>
+                        <td dir="ltr">@(org.PrimaryPhone ?? "-")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mb-0">
+        <i class="fa fa-exclamation-triangle me-1"></i>
+        این فرد در هیچ سازمانی عضو نیست
+    </div>
+}

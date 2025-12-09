@@ -367,6 +367,15 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
             }
         }
 
+        /// <summary>
+        /// ⭐ بررسی امکان حذف سمت (آیا عضو فعالی دارد؟)
+        /// </summary>
+        public bool CanDeletePosition(int positionId)
+        {
+            return !_context.DepartmentMember_Tbl
+                .Any(m => m.PositionId == positionId && m.IsActive);
+        }
+
         // ==================== MEMBER ====================
 
         public List<DepartmentMember> GetDepartmentMembers(int departmentId, bool includeInactive = false)
@@ -789,6 +798,27 @@ namespace MahERP.DataModelLayer.Repository.OrganizationRepository
 
             return await query
                 .OrderBy(o => o.Name)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// جستجوی سازمان‌ها برای Select2 (با محدودیت تعداد)
+        /// </summary>
+        public async Task<List<Organization>> SearchOrganizationsAsync(string searchTerm, int maxResults)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return new List<Organization>();
+
+            return await _context.Organization_Tbl
+                .Include(o => o.Phones.Where(p => p.IsActive))
+                .Where(o => o.IsActive &&
+                    (o.Name.Contains(searchTerm) ||
+                     (o.Brand != null && o.Brand.Contains(searchTerm)) ||
+                     (o.RegistrationNumber != null && o.RegistrationNumber.Contains(searchTerm)) ||
+                     (o.EconomicCode != null && o.EconomicCode.Contains(searchTerm)) ||
+                     o.Phones.Any(p => p.PhoneNumber.Contains(searchTerm))))
+                .OrderBy(o => o.Name)
+                .Take(maxResults)
                 .ToListAsync();
         }
 

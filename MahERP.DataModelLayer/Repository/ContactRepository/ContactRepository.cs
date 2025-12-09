@@ -105,6 +105,28 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
                 .ToList();
         }
 
+        /// <summary>
+        /// جستجوی Async افراد برای Select2
+        /// </summary>
+        public async Task<List<Contact>> SearchContactsAsync(string searchTerm, int maxResults = 20)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return new List<Contact>();
+
+            return await _context.Contact_Tbl
+                .Include(c => c.Phones.Where(p => p.IsActive))
+                .Where(c => c.IsActive &&
+                    (c.FirstName.Contains(searchTerm) ||
+                     c.LastName.Contains(searchTerm) ||
+                     (c.NationalCode != null && c.NationalCode.Contains(searchTerm)) ||
+                     (c.PrimaryEmail != null && c.PrimaryEmail.Contains(searchTerm)) ||
+                     c.Phones.Any(p => p.PhoneNumber.Contains(searchTerm))))
+                .OrderBy(c => c.LastName)
+                .ThenBy(c => c.FirstName)
+                .Take(maxResults)
+                .ToListAsync();
+        }
+
         public bool IsNationalCodeUnique(string nationalCode, int? excludeId = null)
         {
             if (string.IsNullOrWhiteSpace(nationalCode))

@@ -55,6 +55,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Areas\CrmArea\Controllers\DashboardControllers\" />
     <Folder Include="MappingProfiles\" />
   </ItemGroup>
 

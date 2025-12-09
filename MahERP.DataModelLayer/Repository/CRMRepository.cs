@@ -1,21 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using MahERP.DataModelLayer.Services;
 
 namespace MahERP.DataModelLayer.Repository
 {
-    public class CRMRepository : ICRMRepository
+    /// <summary>
+    /// CRM Repository - Main Class (Existing Methods)
+    /// متدهای CRUD، Data، Comments و Search در فایل‌های Partial جداگانه قرار دارند
+    /// </summary>
+    public partial class CRMRepository : ICRMRepository
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public CRMRepository(AppDbContext context)
+        public CRMRepository(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
+
+        #region Existing Methods - CRM Interactions
 
         public IEnumerable<CRMInteraction> GetCRMInteractions(bool includeDeleted = false)
         {
@@ -138,6 +144,10 @@ namespace MahERP.DataModelLayer.Repository
             return !query.Any();
         }
 
+        #endregion
+
+        #region Existing Methods - Comments
+
         public IEnumerable<CRMComment> GetCRMComments(int crmInteractionId)
         {
             return _context.CRMComment_Tbl
@@ -156,6 +166,10 @@ namespace MahERP.DataModelLayer.Repository
                 .FirstOrDefault(c => c.Id == id);
         }
 
+        #endregion
+
+        #region Existing Methods - Attachments
+
         public IEnumerable<CRMAttachment> GetCRMAttachments(int crmInteractionId)
         {
             return _context.CRMAttachment_Tbl
@@ -171,6 +185,10 @@ namespace MahERP.DataModelLayer.Repository
                 .Include(a => a.Uploader)
                 .FirstOrDefault(a => a.Id == id);
         }
+
+        #endregion
+
+        #region Existing Methods - Participants
 
         public IEnumerable<CRMParticipant> GetCRMParticipants(int crmInteractionId)
         {
@@ -189,6 +207,10 @@ namespace MahERP.DataModelLayer.Repository
                 .FirstOrDefault(p => p.Id == id);
         }
 
+        #endregion
+
+        #region Existing Methods - Teams
+
         public IEnumerable<CRMTeam> GetCRMTeams(int crmInteractionId)
         {
             return _context.CRMTeam_Tbl
@@ -206,6 +228,10 @@ namespace MahERP.DataModelLayer.Repository
                 .FirstOrDefault(t => t.Id == id);
         }
 
+        #endregion
+
+        #region Existing Methods - Statistics
+
         public int GetTotalCRMInteractionsCount()
         {
             return _context.CRMInteraction_Tbl.Count(c => !c.IsDeleted);
@@ -220,8 +246,8 @@ namespace MahERP.DataModelLayer.Repository
         public int GetPendingFollowUpsCount()
         {
             var today = DateTime.Today;
-            return _context.CRMInteraction_Tbl.Count(c => !c.IsDeleted && 
-                                                       c.NextFollowUpDate.HasValue && 
+            return _context.CRMInteraction_Tbl.Count(c => !c.IsDeleted &&
+                                                       c.NextFollowUpDate.HasValue &&
                                                        c.NextFollowUpDate.Value.Date <= today);
         }
 
@@ -266,5 +292,7 @@ namespace MahERP.DataModelLayer.Repository
 
             return result;
         }
+
+        #endregion
     }
 }

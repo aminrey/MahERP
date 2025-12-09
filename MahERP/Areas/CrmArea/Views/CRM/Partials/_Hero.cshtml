@@ -1,0 +1,49 @@
+﻿@* بخش Hero (سربرگ صفحه) *@
+<div class="bg-image" style="background-image: url('/media/photos/photo14.jpg');">
+    <div class="bg-primary-dark-op">
+        <div class="content content-full">
+            <div class="py-4 text-center">
+                <h1 class="h2 fw-bold text-white mb-2">
+                    <i class="fa fa-handshake fa-fw text-white-50 me-2"></i>
+                    افزودن تعامل CRM جدید
+                </h1>
+                <h2 class="h5 fw-normal text-white-75 mb-0">
+                    ثبت تعامل با مشتری
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Breadcrumb -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center py-2">
+            <div class="flex-grow-1">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-alt mb-0">
+                        <li class="breadcrumb-item">
+                            <a class="link-fx" href="@Url.Action("Index", "Dashboard", new { area = "CrmArea" })">
+                                داشبورد CRM
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a class="link-fx" href="@Url.Action("Index", "CRM")">
+                                تعاملات
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            افزودن جدید
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="flex-shrink-0 mt-3 mt-sm-0 ms-sm-3">
+                <a href="@Url.Action("Index", "CRM")" class="btn btn-sm btn-alt-secondary">
+                    <i class="fa fa-arrow-right opacity-50 me-1"></i>
+                    بازگشت به لیست
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,19 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationViewModel>
+
+<select name="OrganizationId" 
+        class="form-select form-select-lg select2-organization" 
+        id="organizationSelect">
+    <option value="">-- انتخاب سازمان --</option>
+    @if (Model != null && Model.Any())
+    {
+        foreach (var org in Model)
+        {
+            <option value="@org.Id"
+                    data-name="@org.Name"
+                    data-registration="@org.RegistrationNumber"
+                    data-phone="@org.PrimaryPhone">
+                @org.Name
+            </option>
+        }
+    }
+</select>

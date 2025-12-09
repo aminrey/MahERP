@@ -560,7 +560,7 @@
     {
       "Code": "CORE.ROLE.ASSIGN",
       "NameEn": "Assign Role Permissions",
-      "NameFa": "تخصیص دسترسی به نقش",
+      "NameFa": "ت تخصیص دسترسی به نقش",
       "Description": "تخصیص دسترسی‌ها به نقش",
       "Icon": "fa fa-link",
       "Color": "#6610f2",
@@ -703,6 +703,17 @@
       "DisplayOrder": 4,
       "IsSystemPermission": true
     },
+    {
+      "Code": "ORG.GROUPS",
+      "NameEn": "Organization Groups",
+      "NameFa": "گروه‌های سازمان‌ها",
+      "Description": "مدیریت گروه‌بندی سازمان‌ها",
+      "Icon": "fa fa-layer-group",
+      "Color": "#6610f2",
+      "ParentCode": "ORG",
+      "DisplayOrder": 5,
+      "IsSystemPermission": true
+    },
 
     {
       "Code": "CONTACT",
@@ -768,6 +779,17 @@
       "Color": "#007bff",
       "ParentCode": "CONTACT",
       "DisplayOrder": 5,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CONTACT.GROUPS",
+      "NameEn": "Contact Groups",
+      "NameFa": "گروه‌های افراد",
+      "Description": "مدیریت گروه‌بندی افراد",
+      "Icon": "fa fa-layer-group",
+      "Color": "#6610f2",
+      "ParentCode": "CONTACT",
+      "DisplayOrder": 6,
       "IsSystemPermission": true
     },
 
@@ -854,10 +876,98 @@
       "NameEn": "Lead Management",
       "NameFa": "مدیریت سرنخ‌ها",
       "Description": "مدیریت سرنخ‌های فروش",
-      "Icon": "fa fa-user-plus",
+      "Icon": "fa fa-user-tag",
       "Color": "#ffc107",
       "ParentCode": "CRM",
       "DisplayOrder": 2,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CRM.LEAD.VIEW",
+      "NameEn": "View Leads",
+      "NameFa": "مشاهده سرنخ‌ها",
+      "Description": "مشاهده لیست سرنخ‌ها",
+      "Icon": "fa fa-eye",
+      "Color": "#17a2b8",
+      "ParentCode": "CRM.LEAD",
+      "DisplayOrder": 1,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CRM.LEAD.CREATE",
+      "NameEn": "Create Lead",
+      "NameFa": "ایجاد سرنخ",
+      "Description": "ایجاد سرنخ جدید",
+      "Icon": "fa fa-plus-circle",
+      "Color": "#28a745",
+      "ParentCode": "CRM.LEAD",
+      "DisplayOrder": 2,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CRM.LEAD.EDIT",
+      "NameEn": "Edit Lead",
+      "NameFa": "ویرایش سرنخ",
+      "Description": "ویرایش اطلاعات سرنخ",
+      "Icon": "fa fa-edit",
+      "Color": "#ffc107",
+      "ParentCode": "CRM.LEAD",
+      "DisplayOrder": 3,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CRM.LEAD.DELETE",
+      "NameEn": "Delete Lead",
+      "NameFa": "حذف سرنخ",
+      "Description": "حذف سرنخ از سیستم",
+      "Icon": "fa fa-trash",
+      "Color": "#dc3545",
+      "ParentCode": "CRM.LEAD",
+      "DisplayOrder": 4,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CRM.LEAD.CONVERT",
+      "NameEn": "Convert Lead",
+      "NameFa": "تبدیل سرنخ",
+      "Description": "تبدیل سرنخ به مشتری",
+      "Icon": "fa fa-exchange-alt",
+      "Color": "#6610f2",
+      "ParentCode": "CRM.LEAD",
+      "DisplayOrder": 5,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CRM.LEAD.STATUS",
+      "NameEn": "Lead Status Management",
+      "NameFa": "مدیریت وضعیت‌ها",
+      "Description": "مدیریت وضعیت‌های سرنخ",
+      "Icon": "fa fa-sliders-h",
+      "Color": "#6c757d",
+      "ParentCode": "CRM.LEAD",
+      "DisplayOrder": 6,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CRM.LEAD.ASSIGN",
+      "NameEn": "Assign Lead",
+      "NameFa": "تخصیص سرنخ",
+      "Description": "تخصیص سرنخ به کاربران",
+      "Icon": "fa fa-user-plus",
+      "Color": "#007bff",
+      "ParentCode": "CRM.LEAD",
+      "DisplayOrder": 7,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "CRM.LEAD.REPORTS",
+      "NameEn": "Lead Reports",
+      "NameFa": "گزارشات سرنخ‌ها",
+      "Description": "مشاهده گزارشات و آمار سرنخ‌ها",
+      "Icon": "fa fa-chart-bar",
+      "Color": "#28a745",
+      "ParentCode": "CRM.LEAD",
+      "DisplayOrder": 8,
       "IsSystemPermission": true
     },
     {
@@ -1068,6 +1178,72 @@
       "Icon": "fa fa-database",
       "Color": "#28a745",
       "ParentCode": "SETTINGS",
+      "DisplayOrder": 2,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "NOTIFICATION.SETTINGS",
+      "NameEn": "Notification Settings",
+      "NameFa": "تنظیمات اعلان‌رسانی",
+      "Description": "مدیریت تنظیمات سیستم اعلان‌رسانی",
+      "Icon": "fa fa-bell",
+      "Color": "#007bff",
+      "ParentCode": "CORE",
+      "DisplayOrder": 9,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "NOTIFICATION.SETTINGS.VIEW",
+      "NameEn": "View Notification Settings",
+      "NameFa": "مشاهده تنظیمات",
+      "Description": "مشاهده تنظیمات سیستم اعلان",
+      "Icon": "fa fa-eye",
+      "Color": "#17a2b8",
+      "ParentCode": "NOTIFICATION.SETTINGS",
+      "DisplayOrder": 1,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "NOTIFICATION.SETTINGS.MANAGE",
+      "NameEn": "Manage Notification Settings",
+      "NameFa": "مدیریت تنظیمات",
+      "Description": "ویرایش و مدیریت تنظیمات اعلان",
+      "Icon": "fa fa-cog",
+      "Color": "#ffc107",
+      "ParentCode": "NOTIFICATION.SETTINGS",
+      "DisplayOrder": 2,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "NOTIFICATION.TEMPLATES",
+      "NameEn": "Notification Templates",
+      "NameFa": "الگوهای اعلان",
+      "Description": "مدیریت الگوهای پیام اعلان",
+      "Icon": "fa fa-file-alt",
+      "Color": "#28a745",
+      "ParentCode": "CORE",
+      "DisplayOrder": 10,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "NOTIFICATION.TEMPLATES.VIEW",
+      "NameEn": "View Notification Templates",
+      "NameFa": "مشاهده الگوها",
+      "Description": "مشاهده لیست الگوهای اعلان",
+      "Icon": "fa fa-eye",
+      "Color": "#17a2b8",
+      "ParentCode": "NOTIFICATION.TEMPLATES",
+      "DisplayOrder": 1,
+      "IsSystemPermission": true
+    },
+    {
+      "Code": "NOTIFICATION.TEMPLATES.CREATE",
+      "NameEn": "Create Notification Template",
+      "NameFa": "ایجاد الگو",
+      "Description": "ایجاد الگوی اعلان جدید",
+      "Icon": "fa fa-plus-circle",
+      "Color": "#28a745",
+      "ParentCode": "NOTIFICATION.TEMPLATES",
       "DisplayOrder": 2,
       "IsSystemPermission": true
     }
