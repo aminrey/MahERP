@@ -1,4 +1,8 @@
 ﻿@model AddToMyDayViewModel
+@{
+
+    List<string> GroupTitles = ViewBag.GroupTitles;
+}
 <style>
     .modal {
         --bs-modal-width: 40%;
@@ -63,9 +67,9 @@
                         <div class="mb-3">
                             <label asp-for="GroupTitle" class="form-label">
                                 <i class="fa fa-folder me-1"></i>عنوان گروه
-                                @if (ViewBag.GroupTitles != null && ((List<string>)ViewBag.GroupTitles).Count > 0)
+                                @if (ViewBag.GroupTitles != null && GroupTitles.Count() > 0)
                                 {
-                                    <span class="badge bg-info ms-2">@((List<string>)ViewBag.GroupTitles).Count() گروه موجود</span>
+                                    <span class="badge bg-info ms-2">@GroupTitles.Count() گروه موجود</span>
                                 }
                             </label>
                             <input asp-for="GroupTitle" 
@@ -76,10 +80,10 @@
                                    autocomplete="off" />
                             
                             @* ⭐⭐⭐ HTML5 Datalist - لیست پیشنهادی *@
-                            @if (ViewBag.GroupTitles != null && ((List<string>)ViewBag.GroupTitles).Count > 0)
+                            @if (ViewBag.GroupTitles != null && GroupTitles.Count > 0)
                             {
                                 <datalist id="groupTitlesList">
-                                    @foreach (var groupTitle in (List<string>)ViewBag.GroupTitles)
+                                    @foreach (var groupTitle in GroupTitles)
                                     {
                                         <option value="@groupTitle">@groupTitle</option>
                                     }

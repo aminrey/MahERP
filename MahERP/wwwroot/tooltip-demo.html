@@ -1,0 +1,327 @@
+﻿<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Tooltip Demo</title>
+    
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Tooltip CSS -->
+    <link href="/assets/css/custom-tooltip.css?v=2.2" rel="stylesheet" />
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .demo-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .demo-section {
+            margin-bottom: 40px;
+            padding-bottom: 40px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .demo-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .demo-title {
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .demo-subtitle {
+            color: #666;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .btn-demo {
+            min-width: 120px;
+            margin: 5px;
+        }
+        
+        .avatar-demo {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin: 0 5px;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .avatar-demo:hover {
+            transform: scale(1.1);
+        }
+        
+        .icon-demo {
+            font-size: 32px;
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .icon-demo:hover {
+            transform: scale(1.2);
+        }
+        
+        .position-demo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 40px;
+        }
+        
+        .center-button {
+            font-size: 18px;
+            padding: 15px 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="demo-card">
+        <h1 class="text-center mb-5" style="color: #667eea; font-weight: 800;">
+            🎨 Custom Tooltip Demo
+        </h1>
+        
+        <!-- Section 1: Color Themes -->
+        <div class="demo-section">
+            <h2 class="demo-title">
+                <i class="fas fa-palette"></i> تم‌های رنگی
+            </h2>
+            <p class="demo-subtitle">5 تم رنگی مختلف:</p>
+            <div class="d-flex flex-wrap justify-content-center">
+                <button class="btn btn-dark btn-demo"
+                        data-tooltip="تم Dark - برای استفاده عمومی"
+                        data-tooltip-theme="dark">
+                    <i class="fas fa-moon"></i> Dark
+                </button>
+                
+                <button class="btn btn-primary btn-demo"
+                        data-tooltip="تم Primary - برای اطلاعات"
+                        data-tooltip-theme="primary">
+                    <i class="fas fa-info-circle"></i> Primary
+                </button>
+                
+                <button class="btn btn-success btn-demo"
+                        data-tooltip="تم Success - برای موفقیت"
+                        data-tooltip-theme="success">
+                    <i class="fas fa-check-circle"></i> Success
+                </button>
+                
+                <button class="btn btn-danger btn-demo"
+                        data-tooltip="تم Danger - برای خطر و حذف"
+                        data-tooltip-theme="danger">
+                    <i class="fas fa-exclamation-triangle"></i> Danger
+                </button>
+                
+                <button class="btn btn-warning btn-demo text-white"
+                        data-tooltip="تم Warning - برای هشدار"
+                        data-tooltip-theme="warning">
+                    <i class="fas fa-exclamation-circle"></i> Warning
+                </button>
+            </div>
+        </div>
+        
+        <!-- Section 2: Positions -->
+        <div class="demo-section">
+            <h2 class="demo-title">
+                <i class="fas fa-arrows-alt"></i> موقعیت‌های مختلف
+            </h2>
+            <p class="demo-subtitle">4 موقعیت: Top, Bottom, Left, Right</p>
+            <div class="position-demo-container">
+                <button class="btn btn-primary center-button"
+                        data-tooltip="Top - بالای دکمه"
+                        data-tooltip-position="top"
+                        data-tooltip-theme="primary">
+                    Mouse Over Me!
+                </button>
+            </div>
+            <div class="d-flex flex-wrap justify-content-center mt-3">
+                <button class="btn btn-secondary btn-demo"
+                        data-tooltip="موقعیت TOP"
+                        data-tooltip-position="top">
+                    <i class="fas fa-arrow-up"></i> Top
+                </button>
+                
+                <button class="btn btn-secondary btn-demo"
+                        data-tooltip="موقعیت BOTTOM"
+                        data-tooltip-position="bottom">
+                    <i class="fas fa-arrow-down"></i> Bottom
+                </button>
+                
+                <button class="btn btn-secondary btn-demo"
+                        data-tooltip="موقعیت LEFT"
+                        data-tooltip-position="left">
+                    <i class="fas fa-arrow-left"></i> Left
+                </button>
+                
+                <button class="btn btn-secondary btn-demo"
+                        data-tooltip="موقعیت RIGHT"
+                        data-tooltip-position="right">
+                    <i class="fas fa-arrow-right"></i> Right
+                </button>
+            </div>
+        </div>
+        
+        <!-- Section 3: Action Buttons -->
+        <div class="demo-section">
+            <h2 class="demo-title">
+                <i class="fas fa-cog"></i> دکمه‌های عملیاتی
+            </h2>
+            <p class="demo-subtitle">مثال‌های کاربردی برای دکمه‌های CRUD:</p>
+            <div class="btn-group" role="group">
+                <button class="btn btn-secondary"
+                        data-tooltip="نمایش جزئیات"
+                        data-tooltip-theme="dark">
+                    <i class="fas fa-eye"></i>
+                </button>
+                
+                <button class="btn btn-primary"
+                        data-tooltip="ویرایش رکورد"
+                        data-tooltip-theme="primary">
+                    <i class="fas fa-edit"></i>
+                </button>
+                
+                <button class="btn btn-success"
+                        data-tooltip="تایید و ذخیره"
+                        data-tooltip-theme="success">
+                    <i class="fas fa-check"></i>
+                </button>
+                
+                <button class="btn btn-danger"
+                        data-tooltip="حذف دائمی"
+                        data-tooltip-theme="danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+                
+                <button class="btn btn-warning"
+                        data-tooltip="دانلود فایل"
+                        data-tooltip-theme="warning">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Section 4: Avatar Team -->
+        <div class="demo-section">
+            <h2 class="demo-title">
+                <i class="fas fa-users"></i> آواتار تیم
+            </h2>
+            <p class="demo-subtitle">نمایش اعضای تیم با tooltip:</p>
+            <div class="d-flex justify-content-center">
+                <img src="https://i.pravatar.cc/150?img=1" 
+                     class="avatar-demo"
+                     data-tooltip="علی رضایی - برنامه‌نویس ارشد"
+                     data-tooltip-position="top"
+                     data-tooltip-theme="dark"
+                     alt="علی">
+                
+                <img src="https://i.pravatar.cc/150?img=5" 
+                     class="avatar-demo"
+                     data-tooltip="سارا احمدی - طراح UI/UX"
+                     data-tooltip-position="top"
+                     data-tooltip-theme="dark"
+                     alt="سارا">
+                
+                <img src="https://i.pravatar.cc/150?img=12" 
+                     class="avatar-demo"
+                     data-tooltip="محمد کریمی - مدیر پروژه"
+                     data-tooltip-position="top"
+                     data-tooltip-theme="dark"
+                     alt="محمد">
+                
+                <img src="https://i.pravatar.cc/150?img=20" 
+                     class="avatar-demo"
+                     data-tooltip="زهرا محمدی - توسعه‌دهنده"
+                     data-tooltip-position="top"
+                     data-tooltip-theme="dark"
+                     alt="زهرا">
+                     
+                <div class="avatar-demo d-flex align-items-center justify-content-center bg-secondary text-white"
+                     data-tooltip="3 نفر دیگر"
+                     data-tooltip-position="top"
+                     data-tooltip-theme="dark"
+                     style="font-weight: bold;">
+                    +3
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section 5: Icons -->
+        <div class="demo-section">
+            <h2 class="demo-title">
+                <i class="fas fa-icons"></i> آیکون‌ها
+            </h2>
+            <p class="demo-subtitle">Tooltip برای آیکون‌های مختلف:</p>
+            <div class="d-flex justify-content-center flex-wrap">
+                <i class="fas fa-home icon-demo text-primary"
+                   data-tooltip="خانه"
+                   data-tooltip-theme="primary"></i>
+                
+                <i class="fas fa-heart icon-demo text-danger"
+                   data-tooltip="علاقه‌مندی‌ها"
+                   data-tooltip-theme="danger"></i>
+                
+                <i class="fas fa-star icon-demo text-warning"
+                   data-tooltip="ستاره‌ها"
+                   data-tooltip-theme="warning"></i>
+                
+                <i class="fas fa-bell icon-demo text-success"
+                   data-tooltip="اعلان‌ها"
+                   data-tooltip-theme="success"></i>
+                
+                <i class="fas fa-cog icon-demo text-secondary"
+                   data-tooltip="تنظیمات"
+                   data-tooltip-theme="dark"></i>
+            </div>
+        </div>
+        
+        <!-- Section 6: Info -->
+        <div class="text-center mt-5">
+            <p class="text-muted mb-2">
+                <i class="fas fa-code"></i> Custom Tooltip System v2.0
+            </p>
+            <p class="text-muted small">
+                ساخته شده با ❤️ برای MahERP
+            </p>
+        </div>
+    </div>
+
+    <!-- Custom Tooltip JS -->
+    <script src="/assets/js/custom-tooltip.js?v=2.2"></script>
+    
+    <script>
+        // Log initialization
+        console.log('%c✨ Tooltip Demo Loaded!', 'color: #667eea; font-size: 16px; font-weight: bold;');
+        console.log('%cHover over any element to see the tooltip', 'color: #666; font-size: 14px;');
+    </script>
+
+</body>
+</html>

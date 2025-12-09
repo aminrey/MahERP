@@ -1,4 +1,26 @@
 ﻿// ========================================
+// ⭐⭐⭐ Tooltip Initialization Helper
+// ========================================
+function initializeTooltips(container) {
+    // ⭐ Initialize custom tooltips
+    if (typeof CustomTooltip !== 'undefined') {
+        try {
+            const count = CustomTooltip.init('[data-tooltip]', {
+                delay: 150,
+                hideDelay: 50
+            });
+            if (count > 0) {
+                console.log(`✅ ${count} custom tooltips initialized`);
+            }
+        } catch (error) {
+            console.warn('⚠️ Error initializing tooltips:', error);
+        }
+    } else {
+        console.warn('⚠️ CustomTooltip not loaded');
+    }
+}
+
+// ========================================
 // ⭐⭐⭐ State Management
 // ========================================
 const TaskListState = {
@@ -196,6 +218,8 @@ const TaskListManager = {
                             setTimeout(function () {
                                 GroupCollapseManager.applyState();
                                 initializeGroupToggle();
+                                // ⭐⭐⭐ Initialize tooltips after content load
+                                initializeTooltips(document.getElementById(item.elementId));
                             }, 100);
 
                             if (typeof ModalUtils !== 'undefined') {
@@ -374,6 +398,8 @@ const AdvancedFiltersManager = {
                             setTimeout(function () {
                                 GroupCollapseManager.applyState();
                                 initializeGroupToggle();
+                                // ⭐⭐⭐ Initialize tooltips after content load
+                                initializeTooltips(document.getElementById(item.elementId));
                             }, 100);
                         }
                     });
@@ -418,6 +444,8 @@ const AdvancedFiltersManager = {
                             setTimeout(function () {
                                 GroupCollapseManager.applyState();
                                 initializeGroupToggle();
+                                // ⭐⭐⭐ Initialize tooltips after content load
+                                initializeTooltips(document.getElementById(item.elementId));
                             }, 100);
                         }
                     });
@@ -472,6 +500,9 @@ $(document).ready(function () {
 
     GroupCollapseManager.applyState();
     initializeGroupToggle();
+    
+    // ⭐⭐⭐ Initialize tooltips on page load
+    initializeTooltips();
 
     // ⭐⭐⭐ Event handler برای دکمه‌های گروه‌بندی
     $(document).on('click', '.btn-grouping', function (e) {
@@ -523,6 +554,8 @@ $(document).ready(function () {
                             setTimeout(function () {
                                 GroupCollapseManager.applyState();
                                 initializeGroupToggle();
+                                // ⭐⭐⭐ Initialize tooltips after content load
+                                initializeTooltips(document.getElementById(item.elementId));
                             }, 100);
 
                             if (typeof ModalUtils !== 'undefined') {

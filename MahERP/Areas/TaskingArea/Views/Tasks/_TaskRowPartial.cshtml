@@ -137,18 +137,20 @@
                                         @if (!string.IsNullOrEmpty(member.ProfileImagePath))
                                         {
                                             <img src="@member.ProfileImagePath"
-                                                 class="rounded-circle"
-                                                 style="width: 24px; height: 24px; margin-left: -4px; border: 2px solid white;"
-                                                 data-bs-toggle="tooltip"
-                                                 title="@member.TooltipText"
+                                                 class="rounded-circle task-member-avatar"
+                                                 style="width: 24px; height: 24px; margin-left: -4px; border: 2px solid white; cursor: pointer;"
+                                                 data-tooltip="@member.TooltipText"
+                                                 data-tooltip-position="top"
+                                                 data-tooltip-theme="primary"
                                                  alt="@member.FullName">
                                         }
                                         else
                                         {
-                                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold"
-                                                 style="width: 24px; height: 24px; margin-left: -4px; border: 2px solid white; font-size: 10px;"
-                                                 data-bs-toggle="tooltip"
-                                                 title="@member.TooltipText">
+                                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold task-member-avatar"
+                                                 style="width: 24px; height: 24px; margin-left: -4px; border: 2px solid white; font-size: 10px; cursor: pointer;"
+                                                 data-tooltip="@member.TooltipText"
+                                                 data-tooltip-position="top"
+                                                 data-tooltip-theme="primary">
                                                 @member.Initials
                                             </div>
                                         }
@@ -156,7 +158,10 @@
                                     @if (Model.RemainingMembers > 0)
                                     {
                                         <div class="d-flex align-items-center justify-content-center rounded-circle bg-secondary text-white fw-bold"
-                                             style="width: 24px; height: 24px; margin-left: -4px; border: 2px solid white; font-size: 9px;">
+                                             style="width: 24px; height: 24px; margin-left: -4px; border: 2px solid white; font-size: 9px; cursor: pointer;"
+                                             data-tooltip="@Model.RemainingMembers نفر دیگر"
+                                             data-tooltip-position="top"
+                                             data-tooltip-theme="dark">
                                             +@Model.RemainingMembers
                                         </div>
                                     }
@@ -221,18 +226,20 @@
                                 @if (!string.IsNullOrEmpty(member.ProfileImagePath))
                                 {
                                     <img src="@member.ProfileImagePath"
-                                         class="rounded-circle"
-                                         style="width: 28px; height: 28px; margin-left: -6px; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"
-                                         data-bs-toggle="tooltip"
-                                         title="@member.FullName"
+                                         class="rounded-circle task-member-avatar"
+                                         style="width: 28px; height: 28px; margin-left: -6px; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer;"
+                                         data-tooltip="@member.TooltipText"
+                                         data-tooltip-position="top"
+                                         data-tooltip-theme="primary"
                                          alt="@member.FullName">
                                 }
                                 else
                                 {
-                                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold"
-                                         style="width: 28px; height: 28px; margin-left: -6px; border: 2px solid white; font-size: 11px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"
-                                         data-bs-toggle="tooltip"
-                                         title="@member.TooltipText">
+                                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold task-member-avatar"
+                                         style="width: 28px; height: 28px; margin-left: -6px; border: 2px solid white; font-size: 11px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer;"
+                                         data-tooltip="@member.TooltipText"
+                                         data-tooltip-position="top"
+                                         data-tooltip-theme="primary">
                                         @member.Initials
                                     </div>
                                 }
@@ -240,9 +247,10 @@
                             @if (Model.RemainingMembers > 0)
                             {
                                 <div class="d-flex align-items-center justify-content-center rounded-circle bg-secondary text-white fw-bold"
-                                     style="width: 28px; height: 28px; margin-left: -6px; border: 2px solid white; font-size: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"
-                                     data-bs-toggle="tooltip"
-                                     title="@Model.RemainingMembers نفر دیگر">
+                                     style="width: 28px; height: 28px; margin-left: -6px; border: 2px solid white; font-size: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer;"
+                                     data-tooltip="@Model.RemainingMembers نفر دیگر"
+                                     data-tooltip-position="top"
+                                     data-tooltip-theme="dark">
                                     +@Model.RemainingMembers
                                 </div>
                             }
@@ -286,17 +294,19 @@
                         <a target="_blank" 
                            href="@Url.Action("Details", "Tasks", new { id = Model.Id })"
                            class="btn btn-sm btn-alt-secondary"
-                           data-bs-toggle="tooltip"
-                           title="جزئیات">
+                           data-tooltip="جزئیات"
+                           data-tooltip-position="top"
+                           data-tooltip-theme="dark">
                             <i class="fa fa-eye"></i>
                         </a>
 
                         @if (!Model.IsCompleted && Model.CanComplete)
                         {
                             <button class="btn btn-sm btn-success complete-task-from-list-btn"
-                                               data-toggle="modal-ajax"
-                                    data-bs-toggle="tooltip"
-                                    title="تکمیل"
+                                    data-toggle="modal-ajax"
+                                    data-tooltip="تکمیل تسک"
+                                    data-tooltip-position="top"
+                                    data-tooltip-theme="success"
                                     asp-controller="Tasks" asp-action="CompleteTask" asp-route-id="@Model.Id" asp-route-fromList="true" asp-route-rowNum="@Model.CardNumber">
                                 <i class="fa fa-check"></i>
                             </button>
@@ -306,8 +316,9 @@
                         {
                             <button class="btn btn-sm btn-alt-secondary d-none d-sm-inline-block"
                                     onclick="editTask(@Model.Id)"
-                                    data-bs-toggle="tooltip"
-                                    title="ویرایش">
+                                    data-tooltip="ویرایش تسک"
+                                    data-tooltip-position="top"
+                                    data-tooltip-theme="dark">
                                 <i class="fa fa-pencil-alt"></i>
                             </button>
                         }
@@ -434,6 +445,11 @@
 
     .task-title:hover {
         color: #4285f4 !important;
+    }
+
+    /* ⭐⭐⭐ اطمینان از نمایش صحیح tooltip */
+    .task-member-avatar {
+        cursor: pointer;
     }
 
     /* Responsive adjustments */

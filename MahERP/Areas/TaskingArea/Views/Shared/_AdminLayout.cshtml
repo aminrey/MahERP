@@ -66,6 +66,9 @@
     <!-- Custom CSS -->
     <link href="/assets/css/custom-fonts.css" rel="stylesheet" />
     <link href="/assets/css/CustomStyle.css" rel="stylesheet" />
+    
+    <!-- ⭐⭐⭐ Custom Tooltip Styles -->
+    <link href="/assets/css/custom-tooltip.css?v=2.3" rel="stylesheet" />
 
     @RenderSection("styles", required: false)
 
@@ -277,6 +280,44 @@
     <script src="~/assets/js/methods.js"></script>
     <script src="/assets/js/notifications.js"></script>
     <script src="~/assets/js/callenderconfig.js"></script>
+    
+    <!-- ⭐⭐⭐ Custom Tooltip System -->
+    <script src="/assets/js/custom-tooltip.js?v=2.3"></script>
+    
+    <!-- ⭐⭐⭐ Initialize Custom Tooltips -->
+    <script>
+        console.log('🎨 Custom Tooltip System Loading...');
+        
+        // Wait for everything to load
+        $(document).ready(function() {
+            // Check if CustomTooltip is loaded
+            if (typeof CustomTooltip !== 'undefined') {
+                console.log('✅ CustomTooltip class loaded successfully');
+                
+                // Initialize tooltips
+                try {
+                    CustomTooltip.init('[data-tooltip]', {
+                        delay: 150,
+                        hideDelay: 50
+                    });
+                    console.log('✅ Custom tooltips initialized');
+                } catch (error) {
+                    console.error('❌ Error initializing tooltips:', error);
+                }
+            } else {
+                console.error('❌ CustomTooltip class not found!');
+                console.error('Make sure /assets/js/custom-tooltip.js is loaded properly');
+            }
+            
+            // Debug: Show all elements with data-tooltip
+            const tooltipElements = document.querySelectorAll('[data-tooltip]');
+            console.log(`📌 Found ${tooltipElements.length} elements with data-tooltip attribute`);
+            
+            if (tooltipElements.length > 0) {
+                console.log('First 3 tooltip elements:', Array.from(tooltipElements).slice(0, 3));
+            }
+        });
+    </script>
   
     <!-- ⭐⭐⭐ Page-specific Scripts - Load LAST -->
     @RenderSection("Scripts", required: false)
