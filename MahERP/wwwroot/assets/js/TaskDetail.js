@@ -1088,9 +1088,6 @@ function deleteOperation(operationId) {
         }
     });
 }
-/**
- * انجام عملیات حذف (پس از تأیید)
- */
 function performDeleteOperation(operationId) {
     // ⭐⭐⭐ پیدا کردن دکمه حذف و جلوگیری از کلیک مجدد
     const $deleteButton = $(`.btn-delete-operation[data-operation-id="${operationId}"]`);
@@ -1462,3 +1459,311 @@ const DynamicOperationsManager = {
         });
     }
 };
+
+// ========================================
+// ⭐⭐⭐ Task Viewers Management
+// ========================================
+
+/**
+ * بارگذاری ناظرین تسک
+ */
+function loadTaskViewers() {
+    const config = window.TaskDetailConfig;
+
+    if (!config || !config.urls || !config.urls.getTaskViewers) {
+        console.error('❌ TaskDetailConfig or getTaskViewers URL not found!');
+        return;
+    }
+
+    console.log('🔄 Loading task viewers...');
+
+    // نمایش loading
+    $('#system-viewers-list').html(`
+        <div class="text-center py-4">
+            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+            <p class="text-muted mt-2">در حال بارگذاری...</p>
+        </div>
+    `);
+
+    $('#carbon-copy-viewers-list').html(`
+        <div class="text-center py-4">
+            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+            <p class="text-muted mt-2">در حال بارگذاری...</p>
+        </div>
+    `);
+
+    $.ajax({
+        url: config.urls.getTaskViewers,
+        type: 'GET',
+        data: { taskId: config.taskId },
+        success: function(response) {
+            console.log('✅ Task viewers loaded:', response);
+
+            if (response.systemViewers) {
+                renderSystemViewers(response.systemViewers);
+            }
+
+            if (response.carbonCopyViewers) {
+                renderCarbonCopyViewers(response.carbonCopyViewers);
+            }
+
+            updateViewersStats(response);
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ Error loading viewers:', error);
+
+            $('#system-viewers-list').html(`
+                <div class="alert alert-danger">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    خطا در بارگذاری ناظران خودکار
+                </div>
+            `);
+
+            $('#carbon-copy-viewers-list').html(`
+                <div class="alert alert-danger">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    خطا در بارگذاری ناظران رونوشت
+                </div>
+            `);
+
+            if (typeof toastr !== 'undefined') {
+                toastr.error('خطا در بارگذاری ناظران تسک');
+            }
+        }
+    });
+}
+
+/**
+ * نمایش ناظرین سیستمی (خودکار)
+ */
+function renderSystemViewers(viewers) {
+    const $container = $('#system-viewers-list');
+
+    if (!viewers || viewers.length === 0) {
+        $container.html(`
+            <div class="text-center py-4 text-muted">
+                <i class="fa fa-users-slash fa-3x mb-3 opacity-25"></i>
+                <p class="mb-1">هیچ ناظر سیستمی یافت نشد</p>
+                <small>ناظران خودکار پس از تخصیص کاربران نمایش داده می‌شوند</small>
+            </div>
+        `);
+        return;
+    }
+
+    let html = '<div class="list-group">';
+
+    viewers.forEach(viewer => {
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex align-items-center">
+                    <img src="${viewer.profileImage || '/images/default-avatar.png'}"
+                         class="rounded-circle me-3"
+                         style="width: 48px; height: 48px; object-fit: cover;"
+                         alt="${viewer.fullName}">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${viewer.fullName}</h6>
+                        <div class="d-flex flex-wrap gap-1">
+                            <span class="badge bg-primary">
+                                <i class="fa fa-shield-alt me-1"></i>${viewer.viewerReason}
+                            </span>
+                            ${viewer.teamName ? `<span class="badge bg-info"><i class="fa fa-users me-1"></i>${viewer.teamName}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    $container.html(html);
+}
+
+/**
+ * نمایش ناظرین رونوشت (دستی)
+ */
+function renderCarbonCopyViewers(viewers) {
+    const $container = $('#carbon-copy-viewers-list');
+
+    if (!viewers || viewers.length === 0) {
+        $container.html(`
+            <div class="text-center py-4 text-muted">
+                <i class="fa fa-user-slash fa-3x mb-3 opacity-25"></i>
+                <p class="mb-1">هیچ ناظر رونوشتی اضافه نشده است</p>
+                <small>فقط سازنده یا مدیر می‌تواند ناظر رونوشتی اضافه کند</small>
+            </div>
+        `);
+        return;
+    }
+
+    let html = '<div class="list-group">';
+
+    viewers.forEach(viewer => {
+        const canRemove = viewer.canRemove && !window.TaskDetailConfig.isTaskCompleted;
+        
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex align-items-start">
+                    <img src="${viewer.profileImage || '/images/default-avatar.png'}"
+                         class="rounded-circle me-3"
+                         style="width: 48px; height: 48px; object-fit: cover;"
+                         alt="${viewer.fullName}">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${viewer.fullName}</h6>
+                                <span class="badge bg-success mb-2">
+                                    <i class="fa fa-copy me-1"></i>رونوشت
+                                </span>
+                            </div>
+                            ${canRemove ? 
+                                `<button type="button" 
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="removeCarbonCopyViewer(${viewer.id})"
+                                        title="حذف ناظر">
+                                    <i class="fa fa-trash"></i>
+                                </button>` 
+                                : ''}
+                        </div>
+                        ${viewer.note ? `<div class="alert alert-light p-2 mb-0 mt-2"><small class="text-muted"><i class="fa fa-sticky-note me-1"></i>${viewer.note}</small></div>` : ''}
+                        <small class="text-muted d-block mt-1">
+                            <i class="fa fa-user me-1"></i>اضافه شده توسط: ${viewer.addedByUserName}
+                            <i class="fa fa-calendar me-1 ms-2"></i>${viewer.addedDatePersian}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    $container.html(html);
+}
+
+/**
+ * بروزرسانی آمار ناظرین
+ */
+function updateViewersStats(response) {
+    const systemCount = response.systemViewers?.length || 0;
+    const carbonCopyCount = response.carbonCopyViewers?.length || 0;
+    const totalCount = systemCount + carbonCopyCount;
+
+    $('#system-viewers-count, #system-viewers-stat').text(systemCount);
+    $('#carbon-copy-viewers-count, #carbon-copy-viewers-stat').text(carbonCopyCount);
+    $('#total-viewers-count').text(totalCount);
+    $('#viewers-badge-count').text(totalCount);
+
+    console.log(`📊 Viewers stats updated: Total=${totalCount}, System=${systemCount}, CarbonCopy=${carbonCopyCount}`);
+}
+
+/**
+ * حذف ناظر رونوشت
+ */
+function removeCarbonCopyViewer(carbonCopyId) {
+    if (!carbonCopyId) {
+        console.error('❌ Carbon Copy ID is required');
+        return;
+    }
+
+    const config = window.TaskDetailConfig;
+
+    if (!config || !config.urls || !config.urls.removeCarbonCopy) {
+        console.error('❌ removeCarbonCopy URL not found!');
+        return;
+    }
+
+    if (!confirm('آیا از حذف این ناظر رونوشتی اطمینان دارید؟')) {
+        return;
+    }
+
+    console.log('🗑️ Removing carbon copy viewer:', carbonCopyId);
+
+    $.ajax({
+        url: config.urls.removeCarbonCopy,
+        type: 'POST',
+        data: {
+            carbonCopyId: carbonCopyId,
+            __RequestVerificationToken: getAntiForgeryToken()
+        },
+        success: function(response) {
+            console.log('✅ Carbon copy removed:', response);
+
+            if (response.status === 'success' || response.success) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('ناظر رونوشتی با موفقیت حذف شد');
+                } else if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.success('ناظر رونوشتی با موفقیت حذف شد');
+                }
+
+                // بارگذاری مجدد لیست
+                loadTaskViewers();
+            } else {
+                const errorMsg = response.message?.[0]?.text || 'خطا در حذف ناظر';
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(errorMsg);
+                } else if (typeof NotificationHelper !== 'undefined') {
+                    NotificationHelper.error(errorMsg);
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ Error removing carbon copy:', error);
+            if (typeof toastr !== 'undefined') {
+                toastr.error('خطا در حذف ناظر رونوشتی');
+            } else if (typeof NotificationHelper !== 'undefined') {
+                NotificationHelper.error('خطا در حذف ناظر رونوشتی');
+            }
+        }
+    });
+}
+
+// ========================================
+// ⭐⭐⭐ Document Ready
+// ========================================
+$(document).ready(function () {
+    console.log('🔄 TaskDetail.js: Document Ready');
+
+    // ⭐⭐⭐ بررسی وجود Config
+    if (typeof window.TaskDetailConfig === 'undefined') {
+        console.error('❌ TaskDetailConfig not found! Make sure it is defined in the page.');
+        console.error('Checking for config in 500ms...');
+
+        // ⭐ تلاش مجدد بعد از 500ms (برای اطمینان از load شدن)
+        setTimeout(function () {
+            if (typeof window.TaskDetailConfig !== 'undefined') {
+                console.log('✅ Config found on retry');
+                initializeTaskDetails();
+            } else {
+                console.error('❌ Config still not found after retry');
+            }
+        }, 500);
+
+        return;
+    }
+
+    initializeTaskDetails();
+
+    // ⭐⭐⭐ بارگذاری ناظران هنگام کلیک روی تب
+    $('#viewers-tab').one('shown.bs.tab', function() {
+        console.log('👁️ Viewers tab shown - loading viewers');
+        if (window.TaskDetailConfig) {
+            loadTaskViewers();
+        }
+    });
+
+    // ⭐⭐⭐ بروزرسانی لیست بعد از افزودن ناظر رونوشتی موفق
+    $(document).on('modal-ajax-success', function(event, response) {
+        // بررسی که آیا این response مربوط به افزودن ناظر است
+        if (response && response.status === 'success' && 
+            response.message && response.message[0] && 
+            response.message[0].text && 
+            response.message[0].text.includes('ناظر')) {
+            
+            console.log('✅ Carbon copy added successfully, refreshing viewers list...');
+            
+            // بارگذاری مجدد لیست ناظران
+            setTimeout(function() {
+                loadTaskViewers();
+            }, 300);
+        }
+    });
+});

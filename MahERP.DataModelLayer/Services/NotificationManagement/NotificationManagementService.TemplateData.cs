@@ -1,6 +1,6 @@
 ﻿using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Enums;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; // ⭐⭐⭐ FIX: تصحیح using
 using Microsoft.Extensions.Logging;
 using System.Text;
 
@@ -125,6 +125,7 @@ namespace MahERP.DataModelLayer.Services
                 data["TaskBranch"] = task.BranchName;
                 data["DueDate"] = data["TaskDueDate"];
 
+                // ⭐⭐⭐ FIX: دریافت اطلاعات سازنده تسک
                 if (!string.IsNullOrEmpty(task.CreatorUserId))
                 {
                     var creator = await _context.Users
@@ -133,9 +134,15 @@ namespace MahERP.DataModelLayer.Services
                         .FirstOrDefaultAsync();
 
                     if (creator != null)
-                        data["TaskCreatorName"] = $"{creator.FirstName} {creator.LastName}".Trim();
+                    {
+                        var creatorName = $"{creator.FirstName} {creator.LastName}".Trim();
+                        data["TaskCreatorName"] = creatorName;
+                        // ⭐⭐⭐ FIX: اضافه کردن هم به عنوان CreatorName برای سازگاری با قالب‌ها
+                        data["CreatorName"] = creatorName;
+                    }
                 }
 
+                // ⭐⭐⭐ FIX: دریافت اطلاعات فرستنده (SenderName)
                 if (!string.IsNullOrEmpty(senderUserId) && senderUserId != "SYSTEM")
                 {
                     var sender = await _context.Users

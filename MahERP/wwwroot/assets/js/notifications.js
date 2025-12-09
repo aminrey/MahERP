@@ -267,3 +267,123 @@ function markAllHeaderNotificationsAsRead() {
         notificationManager.markAllAsRead();
     }
 }
+
+$(document).ready(function () {
+    console.log('🔔 Initializing notification badge...');
+
+    // بارگذاری فوری تعداد نوتیفیکیشن‌ها
+    loadNotificationCount();
+
+    // بارگذاری لیست نوتیفیکیشن‌ها
+    loadNotificationList();
+
+    // بروزرسانی دوره‌ای هر 30 ثانیه
+    setInterval(function () {
+        loadNotificationCount();
+    }, 30000);
+});
+
+// ⭐ تابع بارگذاری تعداد نوتیفیکیشن‌ها
+function loadNotificationCount() {
+    $.ajax({
+        url: '/TaskingArea/Notification/GetUnreadCount', // ⭐⭐⭐ FIX: از URL استاتیک استفاده می‌کنیم
+        type: 'GET',
+        dataType: 'json',
+        success: function (response) {
+            console.log('📊 Notification count response:', response);
+
+            if (response && response.success) {
+                updateNotificationBadgeUI(response.count || 0);
+            } else {
+                console.warn('⚠️ Invalid response format:', response);
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('❌ Failed to load notification count:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                error: error
+            });
+        }
+    });
+}
+
+// ⭐ تابع بارگذاری لیست نوتیفیکیشن‌ها
+function loadNotificationList() {
+    $.ajax({
+        url: '/TaskingArea/Notification/GetHeaderNotifications', // ⭐⭐⭐ FIX: از URL استاتیک استفاده می‌کنیم
+        type: 'GET',
+        success: function (html) {
+            $('#headerNotificationsList').html(html);
+            console.log('✅ Notification list loaded');
+        },
+        error: function () {
+            $('#headerNotificationsList').html(`
+                    <div class="text-center p-3 text-muted">
+                        <i class="fa fa-exclamation-triangle mb-2"></i>
+                        <p>خطا در بارگذاری اعلان‌ها</p>
+                    </div>
+                `);
+        }
+    });
+}
+
+// ⭐⭐⭐ تابع بروزرسانی UI Badge
+function updateNotificationBadgeUI(count) {
+    const badge = $('#headerNotificationBadge');
+    const bell = $('.notification-bell');
+    const oldCount = parseInt(badge.text()) || 0;
+
+    console.log('🔄 Updating badge: old=' + oldCount + ', new=' + count);
+
+    if (count > 0) {
+        badge.text(count > 99 ? '99+' : count).show();
+
+        // اگر تعداد افزایش یافته (نوتیفیکیشن جدید)
+        if (count > oldCount && oldCount !== 0) {
+            console.log('✨ New notification detected!');
+
+            // ⭐⭐⭐ بروزرسانی لیست نوتیفیکیشن‌ها
+            loadNotificationList();
+
+            // اضافه کردن کلاس برای انیمیشن
+            badge.removeClass('new-notification').addClass('new-notification');
+            bell.removeClass('shake has-new').addClass('shake has-new');
+
+            // حذف کلاس بعد از اتمام انیمیشن
+            setTimeout(() => {
+                badge.removeClass('new-notification');
+                bell.removeClass('shake');
+            }, 600);
+
+            // حذف ring effect بعد از 3 ثانیه
+            setTimeout(() => {
+                bell.removeClass('has-new');
+            }, 3000);
+
+            // پخش صدای نوتیفیکیشن
+            playNotificationSoundUI();
+        }
+    } else {
+        console.log('✅ No unread notifications');
+        badge.hide();
+        bell.removeClass('has-new');
+    }
+}
+
+// ⭐ پخش صدای نوتیفیکشن
+function playNotificationSoundUI() {
+    const audio = document.getElementById('notificationSound');
+    if (audio) {
+        audio.volume = 0.5;
+        audio.play().catch(err => {
+            console.log('🔇 Could not play notification sound:', err);
+        });
+    }
+}
+
+// ⭐ تابع global برای استفاده از سایر قسمت‌ها
+window.refreshNotificationBadge = function () {
+    loadNotificationCount();
+    loadNotificationList();
+};
