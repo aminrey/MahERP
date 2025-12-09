@@ -742,6 +742,36 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.AssignedUser, opt => opt.Ignore())
                 .ForMember(dest => dest.AssignerUser, opt => opt.Ignore())
                 .ForMember(dest => dest.UserReport, opt => opt.MapFrom(src => src.CompletionNote));
+
+            // ⭐⭐⭐ NEW - Task Comment Mappings
+            CreateMap<TaskComment, TaskCommentViewModel>()
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
+                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "نامشخص"))
+                .ForMember(dest => dest.CreatorProfileImage, opt => opt.MapFrom(src =>
+                    src.Creator != null ? (src.Creator.ProfileImagePath ?? "/images/default-avatar.png") : "/images/default-avatar.png"))
+                .ForMember(dest => dest.Replies, opt => opt.Ignore())
+                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.Attachments));
+
+            CreateMap<TaskCommentViewModel, TaskComment>()
+                .ForMember(dest => dest.Task, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.ParentComment, opt => opt.Ignore())
+                .ForMember(dest => dest.MentionedUsers, opt => opt.Ignore())
+                .ForMember(dest => dest.Notifications, opt => opt.Ignore())
+                .ForMember(dest => dest.Attachments, opt => opt.Ignore());
+
+            // ⭐⭐⭐ NEW - Task Comment Attachment Mappings
+            CreateMap<TaskCommentAttachment, TaskCommentAttachmentViewModel>()
+                .ForMember(dest => dest.FileSize, opt => opt.MapFrom(src =>
+                    !string.IsNullOrEmpty(src.FileSize) ? long.Parse(src.FileSize) : 0));
+
+            CreateMap<TaskCommentAttachmentViewModel, TaskCommentAttachment>()
+                .ForMember(dest => dest.FileSize, opt => opt.MapFrom(src => src.FileSize.ToString()))
+                .ForMember(dest => dest.Comment, opt => opt.Ignore())
+                .ForMember(dest => dest.Uploader, opt => opt.Ignore())
+                .ForMember(dest => dest.UploaderUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.UploadDate, opt => opt.Ignore())
+                .ForMember(dest => dest.FileUUID, opt => opt.Ignore());
         }
 
         // Helper methods for mapping
