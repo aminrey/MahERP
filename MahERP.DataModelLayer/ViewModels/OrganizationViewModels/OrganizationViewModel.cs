@@ -85,6 +85,12 @@ namespace MahERP.DataModelLayer.ViewModels.OrganizationViewModels
         [Display(Name = "فعال")]
         public bool IsActive { get; set; }
 
+        /// <summary>
+        /// ⭐ شعبه (برای Quick Add)
+        /// </summary>
+        [Display(Name = "شعبه")]
+        public int BranchId { get; set; }
+
         // فیلدهای نمایشی
 
         [Display(Name = "تاریخ ایجاد")]

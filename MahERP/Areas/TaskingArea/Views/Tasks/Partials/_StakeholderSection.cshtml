@@ -31,16 +31,24 @@
     <div class="tab-content">
         <!-- Panel 1: انتخاب Organization -->
         <div class="tab-pane fade show active" id="organization-panel" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label mb-0 fw-semibold">انتخاب شرکت/سازمان</label>
+                <!-- ⭐⭐⭐ دکمه افزودن سریع سازمان -->
+                <button type="button" 
+                        class="btn btn-sm btn-alt-info" 
+                        onclick="openQuickAddModalForTask('organization')"
+                        title="افزودن سریع سازمان جدید">
+                    <i class="fa fa-building me-1"></i>
+                    افزودن سریع
+                </button>
+            </div>
+
             <div id="OrganizationSelectionDiv">
                 <select asp-for="SelectedOrganizationId"
                         class="js-select2 form-select"
                         id="SelectedOrganizationId"
                         name="SelectedOrganizationId"
                         data-placeholder="انتخاب شرکت/سازمان"
-                        data-url="@Url.Action("OrganizationTriggerSelect", "Tasks")"
-                        data-toggle="partialview"
-                        data-target-div="OrganizationContactsDiv"
-                        data-param-name="organizationId"
                         style="width: 100%;">
                     <option value="">انتخاب شرکت/سازمان</option>
                     @if (Model.OrganizationsInitial != null && Model.OrganizationsInitial.Any())
@@ -48,7 +56,7 @@
                         @foreach (var org in Model.OrganizationsInitial)
                         {
                             <option value="@org.Id">
-                                @org.DisplayName
+                                @org.Name
                                 @if (!string.IsNullOrEmpty(org.RegistrationNumber))
                                 {
                                     <text> (ثبت: @org.RegistrationNumber)</text>
@@ -64,14 +72,34 @@
                 شرکت‌ها و سازمان‌هایی که در شعبه انتخاب شده تعریف شده‌اند
             </small>
 
-            <!-- بخش نمایش افراد مرتبط با Organization -->
+            <!-- ⭐⭐⭐ بخش نمایش افراد مرتبط با Organization (با سمت) -->
             <div id="OrganizationContactsDiv" class="mt-3" style="display: none;">
-                <!-- محتوا از AJAX بارگذاری می‌شود -->
+                <div class="border rounded p-3 bg-light">
+                    <h6 class="mb-3">
+                        <i class="fa fa-users text-primary me-1"></i>
+                        اعضای این سازمان
+                    </h6>
+                    <div id="organizationMembersList">
+                        <!-- محتوا از AJAX بارگذاری می‌شود -->
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Panel 2: انتخاب Contact -->
         <div class="tab-pane fade" id="contact-panel" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label mb-0 fw-semibold">انتخاب فرد</label>
+                <!-- ⭐⭐⭐ دکمه افزودن سریع فرد -->
+                <button type="button" 
+                        class="btn btn-sm btn-alt-primary" 
+                        onclick="openQuickAddModalForTask('contact')"
+                        title="افزودن سریع فرد جدید">
+                    <i class="fa fa-user-plus me-1"></i>
+                    افزودن سریع
+                </button>
+            </div>
+
             <div id="ContactSelectionDiv">
                 <select asp-for="SelectedContactId"
                         class="js-select2 form-select"
@@ -94,6 +122,28 @@
                 <i class="fa fa-user me-1"></i>
                 افرادی که در شعبه انتخاب شده تعریف شده‌اند
             </small>
+
+            <!-- ⭐⭐⭐ نمایش سازمان‌های مرتبط با فرد (اختیاری) -->
+            <div id="contactOrganizationsSection" class="mt-3" style="display: none;">
+                <div class="border rounded p-3 bg-light">
+                    <h6 class="mb-3">
+                        <i class="fa fa-sitemap text-info me-1"></i>
+                        سازمان‌های مرتبط با این فرد
+                    </h6>
+                    <div id="contactOrganizationsList">
+                        <!-- محتوا با Ajax بارگذاری می‌شود -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ⭐⭐⭐ Modal برای افزودن سریع -->
+<div class="modal fade" id="quickAddModalTask" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" id="quickAddModalTaskContent">
+            <!-- محتوا به صورت داینامیک بارگذاری می‌شود -->
         </div>
     </div>
 </div>

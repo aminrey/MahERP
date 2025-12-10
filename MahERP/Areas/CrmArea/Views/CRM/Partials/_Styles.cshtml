@@ -17,18 +17,19 @@
     }
 
     .nav-tabs-block .nav-link:hover {
-        color: #fff;
+        color: #fff !important; /* ⭐⭐⭐ اضافه شد */
         background: rgba(255, 255, 255, 0.1);
     }
 
     .nav-tabs-block .nav-link.active {
-        color: #fff;
+        color: #fff !important; /* ⭐⭐⭐ اضافه شد */
         background: rgba(255, 255, 255, 0.2);
         font-weight: 600;
     }
 
     .nav-tabs-block .nav-link i {
         margin-left: 0.5rem;
+        color: inherit; /* ⭐⭐⭐ اضافه شد */
     }
 
     /* ⭐ Select2 Enhanced Styles */
@@ -52,6 +53,17 @@
 
     .select2-container--default .select2-selection__arrow {
         height: 43px;
+    }
+
+    /* ⭐⭐⭐ Select2 Results - Hover State */
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #667eea !important;
+        color: #fff !important;
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] .stakeholder-name,
+    .select2-container--default .select2-results__option--highlighted[aria-selected] .stakeholder-details {
+        color: #fff !important;
     }
 
     /* ⭐ Contact/Organization Option Template */
@@ -85,11 +97,13 @@
         color: #2c3e50;
         font-size: 1rem;
         margin-bottom: 0.2rem;
+        transition: color 0.2s ease; /* ⭐⭐⭐ اضافه شد */
     }
 
     .stakeholder-details {
         font-size: 0.85rem;
         color: #6c757d;
+        transition: color 0.2s ease; /* ⭐⭐⭐ اضافه شد */
     }
 
     .stakeholder-badge {
@@ -99,6 +113,14 @@
         border-radius: 0.25rem;
         font-size: 0.75rem;
         margin-left: 0.25rem;
+        color: #495057;
+        transition: all 0.2s ease; /* ⭐⭐⭐ اضافه شد */
+    }
+
+    /* ⭐⭐⭐ Badge در حالت hover */
+    .select2-results__option--highlighted .stakeholder-badge {
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
     }
 
     .stakeholder-badge i {
@@ -130,7 +152,20 @@
 
     .alert-info {
         background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        color: #fff;
+        color: #fff !important; /* ⭐⭐⭐ اضافه شد */
+    }
+
+    /* ⭐⭐⭐ Alert Content - متن‌های داخل Alert */
+    .alert-info * {
+        color: #fff !important;
+    }
+
+    .alert-info i {
+        color: #fff !important;
+    }
+
+    .alert-info strong {
+        color: #fff !important;
     }
 
     /* ⭐ Buttons */
@@ -138,12 +173,45 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
         box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+        color: #fff !important; /* ⭐⭐⭐ اضافه شد */
     }
 
     .btn-primary:hover {
         background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
         box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
         transform: translateY(-2px);
+        color: #fff !important; /* ⭐⭐⭐ اضافه شد */
+    }
+
+    .btn-primary i {
+        color: #fff !important; /* ⭐⭐⭐ اضافه شد */
+    }
+
+    /* ⭐⭐⭐ دکمه‌های دیگر */
+    .btn-alt-secondary:hover {
+        background-color: #6c757d;
+        color: #fff !important;
+    }
+
+    /* ⭐⭐⭐ Form Controls with Background on Hover */
+    .form-control:hover:not(:disabled):not([readonly]),
+    .form-select:hover:not(:disabled):not([readonly]) {
+        border-color: #667eea;
+    }
+
+    /* ⭐⭐⭐ Form Check Switch */
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+
+    .form-check-label {
+        transition: color 0.2s ease;
+    }
+
+    /* ⭐⭐⭐ Background Light Sections */
+    .bg-light:hover {
+        background-color: #f8f9fa !important;
     }
 
     /* ⭐ Tab Content Animation */
@@ -172,5 +240,44 @@
         .nav-tabs-block .nav-link i {
             display: none;
         }
+    }
+
+    /* ⭐⭐⭐ اضافه: Fix برای تمام المان‌هایی که hover دارند */
+    [class*="bg-"]:hover,
+    [class*="bg-"]:hover * {
+        transition: all 0.2s ease;
+    }
+
+    /* ⭐⭐⭐ Box/Card با بکگراند رنگی */
+    .bg-primary,
+    .bg-info,
+    .bg-warning,
+    .bg-success,
+    .bg-danger {
+        color: #fff !important;
+    }
+
+    .bg-primary *,
+    .bg-info *,
+    .bg-warning *,
+    .bg-success *,
+    .bg-danger * {
+        color: #fff !important;
+    }
+
+    /* ⭐⭐⭐ List Group Items with Hover */
+    .list-group-item:hover {
+        background-color: rgba(102, 126, 234, 0.1);
+        color: #2c3e50;
+    }
+
+    /* ⭐⭐⭐ Dropdown Items */
+    .dropdown-item:hover {
+        background-color: #667eea;
+        color: #fff !important;
+    }
+
+    .dropdown-item:hover * {
+        color: #fff !important;
     }
 </style>

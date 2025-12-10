@@ -6,17 +6,70 @@
         <div>
             <strong>راهنما:</strong>
             طرف حساب می‌تواند یک فرد، یک سازمان یا هر دو باشد.
-            ابتدا شعبه را انتخاب کنید تا لیست طرف حساب‌ها بارگذاری شود.
+            <br />
+            <strong>⭐ نکته:</strong> با انتخاب سازمان، لیست افراد به اعضای آن سازمان محدود می‌شود.
         </div>
     </div>
 
     <div class="row g-4">
-        <!-- انتخاب Contact (فرد) -->
+        <!-- ⭐⭐⭐ انتخاب Organization (سازمان) - حالا در سمت راست -->
         <div class="col-md-6">
-            <label class="form-label fw-semibold">
-                <i class="fa fa-user text-primary me-1"></i>
-                انتخاب فرد
-            </label>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-semibold mb-0">
+                    <i class="fa fa-building text-info me-1"></i>
+                    انتخاب سازمان
+                </label>
+                <!-- ⭐⭐⭐ دکمه افزودن سریع سازمان -->
+                <button type="button" 
+                        class="btn btn-sm btn-alt-info" 
+                        onclick="openQuickAddModalForCRM('organization')"
+                        title="افزودن سریع سازمان جدید">
+                    <i class="fa fa-building me-1"></i>
+                    افزودن سریع
+                </button>
+            </div>
+            <div id="OrganizationSelectionDiv">
+                <select asp-for="OrganizationId" 
+                        class="form-select form-select-lg select2-organization" 
+                        id="organizationSelect">
+                    <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
+                    @if (Model.OrganizationsInitial != null)
+                    {
+                        foreach (var org in Model.OrganizationsInitial)
+                        {
+                            <option value="@org.Id"
+                                    data-name="@org.Name"
+                                    data-registration="@org.RegistrationNumber"
+                                    data-phone="@org.PrimaryPhone">
+                                @org.Name
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-text">
+                <i class="fa fa-info-circle me-1"></i>
+                نام سازمان یا شماره ثبت را جستجو کنید
+            </div>
+            <span asp-validation-for="OrganizationId" class="text-danger"></span>
+        </div>
+
+        <!-- ⭐⭐⭐ انتخاب Contact (فرد) - حالا در سمت چپ -->
+        <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-semibold mb-0">
+                    <i class="fa fa-user text-primary me-1"></i>
+                    انتخاب فرد
+                </label>
+                <!-- ⭐⭐⭐ دکمه افزودن سریع فرد -->
+                <button type="button" 
+                        class="btn btn-sm btn-alt-primary" 
+                        onclick="openQuickAddModalForCRM('contact')"
+                        title="افزودن سریع فرد جدید">
+                    <i class="fa fa-user-plus me-1"></i>
+                    افزودن سریع
+                </button>
+            </div>
             <div id="ContactSelectionDiv">
                 <select asp-for="ContactId" 
                         class="form-select form-select-lg select2-contact" 
@@ -44,36 +97,17 @@
             <span asp-validation-for="ContactId" class="text-danger"></span>
         </div>
 
-        <!-- انتخاب Organization (سازمان) -->
-        <div class="col-md-6">
-            <label class="form-label fw-semibold">
-                <i class="fa fa-building text-info me-1"></i>
-                انتخاب سازمان
-            </label>
-            <div id="OrganizationSelectionDiv">
-                <select asp-for="OrganizationId" 
-                        class="form-select form-select-lg select2-organization" 
-                        id="organizationSelect">
-                    <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
-                    @if (Model.OrganizationsInitial != null)
-                    {
-                        foreach (var org in Model.OrganizationsInitial)
-                        {
-                            <option value="@org.Id"
-                                    data-name="@org.Name"
-                                    data-registration="@org.RegistrationNumber"
-                                    data-phone="@org.PrimaryPhone">
-                                @org.Name
-                            </option>
-                        }
-                    }
-                </select>
+        <!-- ⭐⭐⭐ نمایش افراد مرتبط با Organization انتخاب شده -->
+        <div class="col-12" id="organizationContactsSection" style="display: none;">
+            <div class="border rounded p-3 bg-light">
+                <h6 class="mb-3">
+                    <i class="fa fa-users text-primary me-1"></i>
+                    اعضای این سازمان
+                </h6>
+                <div id="organizationContactsList">
+                    <!-- محتوا با Ajax بارگذاری می‌شود -->
+                </div>
             </div>
-            <div class="form-text">
-                <i class="fa fa-info-circle me-1"></i>
-                نام سازمان یا شماره ثبت را جستجو کنید
-            </div>
-            <span asp-validation-for="OrganizationId" class="text-danger"></span>
         </div>
 
         <!-- نمایش سازمان‌های مرتبط با Contact انتخاب شده -->
@@ -84,19 +118,6 @@
                     سازمان‌های مرتبط با این فرد
                 </h6>
                 <div id="contactOrganizationsList">
-                    <!-- محتوا با Ajax بارگذاری می‌شود -->
-                </div>
-            </div>
-        </div>
-
-        <!-- نمایش افراد مرتبط با Organization انتخاب شده -->
-        <div class="col-12" id="organizationContactsSection" style="display: none;">
-            <div class="border rounded p-3 bg-light">
-                <h6 class="mb-3">
-                    <i class="fa fa-users text-primary me-1"></i>
-                    اعضای این سازمان
-                </h6>
-                <div id="organizationContactsList">
                     <!-- محتوا با Ajax بارگذاری می‌شود -->
                 </div>
             </div>

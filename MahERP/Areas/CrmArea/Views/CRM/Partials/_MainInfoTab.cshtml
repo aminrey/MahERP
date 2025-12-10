@@ -24,17 +24,28 @@
                 @* فقط یک شعبه - نمایش به عنوان فیلد غیرفعال *@
                 var branch = Model.BranchesInitial.First();
                 <input type="text" class="form-control form-control-lg" value="@branch.Name" readonly />
-                <input type="hidden" asp-for="BranchId" value="@branch.Id" />
+                <input type="hidden" asp-for="BranchId" value="@branch.Id" id="branchSelect" />
             }
-            else
+            else if (Model.BranchesInitial != null && Model.BranchesInitial.Count > 1)
             {
-                @* چند شعبه - نمایش Dropdown *@
+                @* چند شعبه - نمایش Dropdown با اولین شعبه به عنوان انتخاب پیش‌فرض *@
+                var firstBranch = Model.BranchesInitial.First();
                 <select asp-for="BranchId" 
                         class="form-select form-select-lg" 
                         id="branchSelect"
-                        asp-items="@(new SelectList(Model.BranchesInitial ?? new List<BranchViewModel>(), "Id", "Name"))">
-                    <option value="">-- انتخاب شعبه --</option>
+                        asp-items="@(new SelectList(Model.BranchesInitial, "Id", "Name", firstBranch.Id))">
                 </select>
+            }
+            else
+            {
+                @* هیچ شعبه‌ای وجود ندارد - نمایش پیام خطا *@
+                <div class="alert alert-danger d-flex align-items-center mb-0">
+                    <i class="fa fa-exclamation-triangle fa-2x me-3"></i>
+                    <div>
+                        <strong>خطا:</strong> هیچ شعبه‌ای یافت نشد. لطفاً ابتدا شعبه ایجاد کنید.
+                    </div>
+                </div>
+                <input type="hidden" asp-for="BranchId" value="0" id="branchSelect" />
             }
             <span asp-validation-for="BranchId" class="text-danger"></span>
         </div>

@@ -1,0 +1,152 @@
+﻿<script>
+    // ⭐⭐⭐ CRM Quick Add Modal Handler
+    // این اسکریپت در صفحه Create.cshtml استفاده می‌شود
+
+    $(document).ready(function() {
+        console.log('✅ CRM Quick Add Scripts loaded');
+    });
+
+   
+    window.openQuickAddModalForCRM = function(type) {
+        // ⭐⭐⭐ بررسی انتخاب شعبه (دو حالت: select و hidden input)
+        var branchId = $('#branchSelect').val() || $('input[name="BranchId"]').val();
+        
+        console.log('🔍 Checking BranchId:', {
+            fromSelect: $('#branchSelect').val(),
+            fromHidden: $('input[name="BranchId"]').val(),
+            finalBranchId: branchId
+        });
+
+        if (!branchId) {
+            if (typeof Dashmix !== 'undefined') {
+                Dashmix.helpers('jq-notify', {
+                    type: 'warning',
+                    icon: 'fa fa-exclamation-triangle me-1',
+                    message: 'لطفاً ابتدا شعبه را انتخاب کنید'
+                });
+            } else {
+                alert('لطفاً ابتدا شعبه را انتخاب کنید');
+            }
+            return;
+        }
+
+        var url = '';
+        if (type === 'contact') {
+            url = '@Url.Action("QuickAddContactPartial", "CRM")';
+        } else if (type === 'organization') {
+            url = '@Url.Action("QuickAddOrganizationPartial", "CRM")';
+        } else {
+            console.error('Invalid type:', type);
+            return;
+        }
+
+        console.log('🎯 Opening Quick Add Modal for CRM:', type, url, 'with BranchId:', branchId);
+
+        // ⭐⭐⭐ استفاده از createAndShowModal از main.js
+        if (typeof createAndShowModal === 'function') {
+            createAndShowModal({
+                url: url,
+                backdrop: true,
+                keyboard: true,
+                removeOnHide: true,
+                onShown: function(modalInstance, $modal) {
+                    console.log('✅ Quick Add Modal shown for CRM');
+                    
+                    // تنظیم BranchId در فیلدهای hidden
+                    $('#quickContactBranchId, #quickOrgBranchId').val(branchId);
+                    
+                    console.log('BranchId set to:', branchId);
+                },
+                onSubmitSuccess: function(response, modalInstance) {
+                    console.log('✅ Quick Add Success:', response);
+                    
+                    if (response.success) {
+                        // ⭐⭐⭐ مدیریت پاسخ Contact
+                        if (type === 'contact' && response.contact) {
+                            var fullName = (response.contact.firstName || '') + ' ' + (response.contact.lastName || '');
+                            var newOption = new Option(
+                                fullName.trim(),
+                                response.contact.id,
+                                true,
+                                true
+                            );
+                            $('#contactSelect').append(newOption).trigger('change');
+                            
+                            // نمایش پیام موفقیت
+                            if (typeof Dashmix !== 'undefined') {
+                                Dashmix.helpers('jq-notify', {
+                                    type: 'success',
+                                    icon: 'fa fa-check me-1',
+                                    message: 'فرد با موفقیت ایجاد و انتخاب شد'
+                                });
+                            }
+                            
+                            console.log('✅ Contact added to select:', response.contact.id);
+
+                            // ⭐⭐⭐ اگر Contact به سازمان اضافه شده، لیست افراد سازمان را بروز کن
+                            if (response.contact.organizationId) {
+                                var currentOrgId = $('#organizationSelect').val();
+                                if (currentOrgId == response.contact.organizationId) {
+                                    // Reload کردن اعضای سازمان
+                                    $('#organizationSelect').trigger('change');
+                                }
+                            }
+                        } 
+                        // ⭐⭐⭐ مدیریت پاسخ Organization
+                        else if (type === 'organization' && response.organization) {
+                            var newOption = new Option(
+                                response.organization.name,
+                                response.organization.id,
+                                true,
+                                true
+                            );
+                            $('#organizationSelect').append(newOption).trigger('change');
+                            
+                            // نمایش پیام موفقیت
+                            if (typeof Dashmix !== 'undefined') {
+                                Dashmix.helpers('jq-notify', {
+                                    type: 'success',
+                                    icon: 'fa fa-check me-1',
+                                    message: 'سازمان با موفقیت ایجاد و انتخاب شد'
+                                });
+                            }
+                            
+                            console.log('✅ Organization added to select:', response.organization.id);
+                            
+                            // ⭐ بارگذاری خودکار اعضای سازمان
+                            setTimeout(function() {
+                                $('#organizationSelect').trigger('change');
+                            }, 500);
+                        }
+                        
+                        // بستن modal
+                        modalInstance.hide();
+                    } else {
+                        // نمایش خطا
+                        if (typeof Dashmix !== 'undefined') {
+                            Dashmix.helpers('jq-notify', {
+                                type: 'danger',
+                                icon: 'fa fa-times me-1',
+                                message: response.message || 'خطا در ایجاد'
+                            });
+                        }
+                    }
+                },
+                onLoadError: function(error) {
+                    console.error('❌ Modal load error:', error);
+                    
+                    if (typeof Dashmix !== 'undefined') {
+                        Dashmix.helpers('jq-notify', {
+                            type: 'danger',
+                            icon: 'fa fa-times me-1',
+                            message: 'خطا در بارگذاری فرم'
+                        });
+                    }
+                }
+            });
+        } else {
+            console.error('❌ createAndShowModal is not defined');
+            alert('خطا در سیستم: createAndShowModal یافت نشد');
+        }
+    };
+</script>

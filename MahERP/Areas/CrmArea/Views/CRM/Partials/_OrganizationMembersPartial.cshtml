@@ -1,0 +1,211 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.ContactViewModels.OrganizationMemberViewModel>
+
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover table-vcenter mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th style="width: 50px;" class="text-center">
+                        <i class="fa fa-user"></i>
+                    </th>
+                    <th>نام و نام خانوادگی</th>
+                    <th>سمت</th>
+                    <th>بخش</th>
+                    <th class="text-center">تلفن</th>
+                    <th style="width: 80px;" class="text-center">انتخاب</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var (member, index) in Model.Select((m, i) => (m, i + 1)))
+                {
+                    <tr class="organization-member-row" 
+                        data-contact-id="@member.ContactId"
+                        data-contact-name="@member.ContactFullName"
+                        data-position="@member.PositionTitle"
+                        data-department="@member.DepartmentName">
+                        
+                        <td class="text-center">
+                            <div class="avatar avatar-sm bg-primary-light">
+                                <span class="text-primary fw-bold">@index</span>
+                            </div>
+                        </td>
+                        
+                        <td>
+                            <div class="fw-semibold">@member.ContactFullName</div>
+                            @if (!string.IsNullOrEmpty(member.ContactNationalCode))
+                            {
+                                <div class="fs-sm text-muted">
+                                    <i class="fa fa-id-card me-1"></i>
+                                    کد ملی: @member.ContactNationalCode
+                                </div>
+                            }
+                        </td>
+                        
+                        <td>
+                            @if (!string.IsNullOrEmpty(member.PositionTitle))
+                            {
+                                <span class="badge bg-info-light text-info">
+                                    <i class="fa fa-briefcase me-1"></i>
+                                    @member.PositionTitle
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        
+                        <td>
+                            @if (!string.IsNullOrEmpty(member.DepartmentName))
+                            {
+                                <span class="badge bg-secondary-light text-secondary">
+                                    <i class="fa fa-sitemap me-1"></i>
+                                    @member.DepartmentName
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        
+                        <td class="text-center" dir="ltr">
+                            @if (!string.IsNullOrEmpty(member.ContactPhone))
+                            {
+                                <small class="text-muted">
+                                    <i class="fa fa-phone me-1"></i>
+                                    @member.ContactPhone
+                                </small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        
+                        <td class="text-center">
+                            <button type="button" 
+                                    class="btn btn-sm btn-alt-primary select-member-btn"
+                                    data-contact-id="@member.ContactId"
+                                    data-contact-name="@member.ContactFullName"
+                                    title="انتخاب این عضو">
+                                <i class="fa fa-check"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-3 text-center text-muted">
+        <small>
+            <i class="fa fa-info-circle me-1"></i>
+            تعداد کل اعضا: <strong>@Model.Count</strong> نفر
+        </small>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mb-0">
+        <div class="d-flex align-items-center">
+            <i class="fa fa-exclamation-triangle fa-2x me-3"></i>
+            <div>
+                <strong>این سازمان عضوی ندارد</strong>
+                <p class="mb-0 mt-1">
+                    می‌توانید از دکمه "افزودن سریع فرد" برای اضافه کردن عضو جدید استفاده کنید.
+                </p>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    $(document).ready(function() {
+        // رویداد کلیک روی دکمه انتخاب عضو
+        $('.select-member-btn').on('click', function() {
+            var contactId = $(this).data('contact-id');
+            var contactName = $(this).data('contact-name');
+
+            // انتخاب Contact در Select2
+            if ($('#contactSelect').length) {
+                // بررسی اینکه آیا Contact در لیست موجود است
+                var existingOption = $('#contactSelect').find('option[value="' + contactId + '"]');
+                
+                if (existingOption.length) {
+                    // اگر وجود دارد، انتخاب کن
+                    $('#contactSelect').val(contactId).trigger('change');
+                } else {
+                    // اگر وجود ندارد، اضافه کن و انتخاب کن
+                    var newOption = new Option(contactName, contactId, true, true);
+                    $('#contactSelect').append(newOption).trigger('change');
+                }
+
+                // نمایش پیام موفقیت
+                Dashmix.helpers('jq-notify', {
+                    type: 'success',
+                    icon: 'fa fa-check me-1',
+                    message: 'عضو سازمان انتخاب شد: ' + contactName
+                });
+
+                // هایلایت کردن ردیف انتخاب شده
+                $('.organization-member-row').removeClass('table-active');
+                $(this).closest('.organization-member-row').addClass('table-active');
+            }
+        });
+
+        // رویداد کلیک روی ردیف
+        $('.organization-member-row').on('click', function(e) {
+            if (!$(e.target).closest('.select-member-btn').length) {
+                $(this).find('.select-member-btn').trigger('click');
+            }
+        });
+
+        // اضافه کردن cursor pointer
+        $('.organization-member-row').css('cursor', 'pointer');
+    });
+</script>
+
+<style>
+    .organization-member-row {
+        transition: all 0.2s ease;
+    }
+
+    .organization-member-row:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .organization-member-row.table-active {
+        background-color: #e7f3ff;
+        border-left: 3px solid #0d6efd;
+    }
+
+    .avatar {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.35rem 0.65rem;
+    }
+
+    .bg-primary-light {
+        background-color: #e7f3ff;
+    }
+
+    .bg-info-light {
+        background-color: #e1f5fe;
+    }
+
+    .bg-secondary-light {
+        background-color: #f5f5f5;
+    }
+</style>

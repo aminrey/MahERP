@@ -40,6 +40,12 @@ namespace MahERP.DataModelLayer.ViewModels.ContactViewModels
         public string? PrimaryPhone { get; set; }
 
         /// <summary>
+        /// ⭐ شعبه (برای Quick Add)
+        /// </summary>
+        [Display(Name = "شعبه")]
+        public int BranchId { get; set; }
+
+        /// <summary>
         /// ⭐ اضافه شده
         /// </summary>
         [Display(Name = "نوع رابطه")]

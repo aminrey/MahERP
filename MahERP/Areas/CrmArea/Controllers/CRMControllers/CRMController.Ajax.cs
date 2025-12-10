@@ -163,6 +163,90 @@ namespace MahERP.Areas.CrmArea.Controllers.CRMControllers
             }
         }
 
+        /// <summary>
+        /// ⭐⭐⭐ NEW: دریافت اعضای سازمان با جزئیات (برای فیلتر کردن dropdown افراد)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetOrganizationMembers(int organizationId)
+        {
+            try
+            {
+                if (organizationId <= 0)
+                {
+                    return Json(new
+                    {
+                        status = "error",
+                        message = "شناسه سازمان نامعتبر است"
+                    });
+                }
+
+                // ⭐ دریافت اعضای سازمان با جزئیات
+                var members = await _crmRepository.GetOrganizationMembersWithDetailsAsync(organizationId);
+
+                // رندر کردن Partial View
+                var membersHtml = await this.RenderViewToStringAsync("Partials/_OrganizationMembersPartial", members);
+
+                var viewList = new List<object>
+                {
+                    new {
+                        elementId = "organizationContactsList",
+                        view = new { result = membersHtml }
+                    }
+                };
+
+                await _activityLogger.LogActivityAsync(
+                    ActivityTypeEnum.View,
+                    "CRM",
+                    "GetOrganizationMembers",
+                    $"دریافت اعضای Organization {organizationId} - تعداد: {members.Count}",
+                    recordId: organizationId.ToString()
+                );
+
+                // ⭐⭐⭐ تبدیل به anonymous object با property names صریح برای JavaScript
+                var membersForDropdown = members.Select(m => new
+                {
+                    id = m.Id,
+                    contactId = m.ContactId,
+                    contactFullName = m.ContactFullName,
+                    contactNationalCode = m.ContactNationalCode ?? "",
+                    contactPhone = m.ContactPhone ?? "",
+                    organizationId = m.OrganizationId,
+                    organizationName = m.OrganizationName ?? "",
+                    departmentId = m.DepartmentId,
+                    departmentName = m.DepartmentName ?? "",
+                    positionId = m.PositionId,
+                    positionTitle = m.PositionTitle ?? "",
+                    relationType = m.RelationType,
+                    isPrimary = m.IsPrimary,
+                    isActive = m.IsActive
+                }).ToList();
+
+                return Json(new
+                {
+                    status = "update-view",
+                    viewList = viewList,
+                    membersCount = members.Count,
+                    members = membersForDropdown // ⭐⭐⭐ با camelCase property names
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "CRM",
+                    "GetOrganizationMembers",
+                    "خطا در دریافت اعضای سازمان",
+                    ex,
+                    recordId: organizationId.ToString()
+                );
+
+                return Json(new
+                {
+                    status = "error",
+                    message = "خطا در دریافت اعضای سازمان: " + ex.Message
+                });
+            }
+        }
+
         #endregion
     }
 }

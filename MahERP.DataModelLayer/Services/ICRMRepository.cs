@@ -1,4 +1,5 @@
-﻿using MahERP.DataModelLayer.Entities.Crm;
+﻿using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.CRMViewModels;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
@@ -72,6 +73,26 @@ namespace MahERP.DataModelLayer.Services
 
         // ⭐ Search Dropdowns
         Task<(SelectList stakeholders, SelectList branches)> GetSearchDropdownsAsync();
+
+        #endregion
+
+        #region ⭐⭐⭐ Quick Add Methods
+
+        // ⭐ Contact Quick Add
+        Task<Contact?> GetContactByNationalCodeAsync(string nationalCode);
+        Task<int> CreateContactWithPhoneAsync(Contact contact, string phoneNumber, string userId);
+        Task AssignContactToBranchAsync(int contactId, int branchId, string userId);
+
+        // ⭐ Organization Quick Add
+        Task<Organization?> GetOrganizationByRegistrationNumberAsync(string registrationNumber);
+        Task<int> CreateOrganizationWithPhoneAsync(Organization organization, string phoneNumber, string userId);
+        Task AssignOrganizationToBranchAsync(int organizationId, int branchId, string userId);
+
+        // ⭐⭐⭐ Get or Create Default Department
+        Task<OrganizationDepartment?> GetOrCreateDefaultDepartmentAsync(int organizationId, string userId);
+
+        // ⭐ Get Organization Members
+        Task<List<OrganizationMemberViewModel>> GetOrganizationMembersWithDetailsAsync(int organizationId);
 
         #endregion
     }

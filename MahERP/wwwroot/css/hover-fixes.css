@@ -1,0 +1,293 @@
+﻿/**
+ * ⭐⭐⭐ Hover Fixes for Better Readability
+ * این فایل CSS برای رفع مشکلات خوانایی در حالت hover است
+ */
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 General Hover Rules
+   ═══════════════════════════════════════════════════════════ */
+
+/* تمام المان‌هایی که بکگراند رنگی دارند */
+[class*="bg-primary"]:hover,
+[class*="bg-info"]:hover,
+[class*="bg-success"]:hover,
+[class*="bg-warning"]:hover,
+[class*="bg-danger"]:hover,
+[class*="bg-dark"]:hover {
+    color: #fff !important;
+}
+
+[class*="bg-primary"]:hover *,
+[class*="bg-info"]:hover *,
+[class*="bg-success"]:hover *,
+[class*="bg-warning"]:hover *,
+[class*="bg-danger"]:hover *,
+[class*="bg-dark"]:hover * {
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🔘 Buttons
+   ═══════════════════════════════════════════════════════════ */
+
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    color: #fff !important;
+}
+
+.btn-info,
+.btn-info:hover,
+.btn-info:focus,
+.btn-info:active {
+    color: #fff !important;
+}
+
+.btn-success,
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active {
+    color: #fff !important;
+}
+
+.btn-warning,
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:active {
+    color: #fff !important;
+}
+
+.btn-danger,
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-danger:active {
+    color: #fff !important;
+}
+
+/* آیکون‌های داخل دکمه‌ها */
+.btn i,
+.btn:hover i,
+.btn:focus i,
+.btn:active i {
+    color: inherit !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📋 List Groups
+   ═══════════════════════════════════════════════════════════ */
+
+.list-group-item-primary:hover,
+.list-group-item-info:hover,
+.list-group-item-success:hover,
+.list-group-item-warning:hover,
+.list-group-item-danger:hover {
+    color: #fff !important;
+}
+
+.list-group-item-primary:hover *,
+.list-group-item-info:hover *,
+.list-group-item-success:hover *,
+.list-group-item-warning:hover *,
+.list-group-item-danger:hover * {
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📊 Cards & Blocks
+   ═══════════════════════════════════════════════════════════ */
+
+.card-primary:hover,
+.card-info:hover,
+.card-success:hover,
+.card-warning:hover,
+.card-danger:hover {
+    color: #fff !important;
+}
+
+.card-primary:hover *,
+.card-info:hover *,
+.card-success:hover *,
+.card-warning:hover *,
+.card-danger:hover * {
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎯 Badges
+   ═══════════════════════════════════════════════════════════ */
+
+.badge-primary,
+.badge-info,
+.badge-success,
+.badge-warning,
+.badge-danger {
+    color: #fff !important;
+}
+
+.bg-primary .badge,
+.bg-info .badge,
+.bg-success .badge,
+.bg-warning .badge,
+.bg-danger .badge {
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🚨 Alerts
+   ═══════════════════════════════════════════════════════════ */
+
+.alert-primary,
+.alert-primary *,
+.alert-info,
+.alert-info *,
+.alert-success,
+.alert-success *,
+.alert-warning,
+.alert-warning *,
+.alert-danger,
+.alert-danger * {
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📑 Tabs & Navigation
+   ═══════════════════════════════════════════════════════════ */
+
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-link:hover,
+.nav-pills .nav-link.active,
+.nav-pills .nav-link:hover {
+    color: #fff !important;
+}
+
+.nav-tabs .nav-link.active *,
+.nav-tabs .nav-link:hover *,
+.nav-pills .nav-link.active *,
+.nav-pills .nav-link:hover * {
+    color: inherit !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 Gradient Backgrounds
+   ═══════════════════════════════════════════════════════════ */
+
+[style*="background: linear-gradient"],
+[style*="background:linear-gradient"] {
+    color: #fff !important;
+}
+
+[style*="background: linear-gradient"] *,
+[style*="background:linear-gradient"] * {
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📝 Select2 Dropdown
+   ═══════════════════════════════════════════════════════════ */
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #667eea !important;
+    color: #fff !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] * {
+    color: #fff !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] .badge {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📂 Dropdown Menu
+   ═══════════════════════════════════════════════════════════ */
+
+.dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-item.active {
+    background-color: #667eea !important;
+    color: #fff !important;
+}
+
+.dropdown-item:hover *,
+.dropdown-item:focus *,
+.dropdown-item.active * {
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🔗 Links in Colored Backgrounds
+   ═══════════════════════════════════════════════════════════ */
+
+.bg-primary a,
+.bg-info a,
+.bg-success a,
+.bg-warning a,
+.bg-danger a,
+.bg-dark a {
+    color: #fff !important;
+    text-decoration: underline;
+}
+
+.bg-primary a:hover,
+.bg-info a:hover,
+.bg-success a:hover,
+.bg-warning a:hover,
+.bg-danger a:hover,
+.bg-dark a:hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎭 Table Rows with Hover
+   ═══════════════════════════════════════════════════════════ */
+
+.table-hover tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.1) !important;
+}
+
+.table-primary tbody tr:hover,
+.table-info tbody tr:hover,
+.table-success tbody tr:hover,
+.table-warning tbody tr:hover,
+.table-danger tbody tr:hover {
+    color: #fff !important;
+}
+
+.table-primary tbody tr:hover *,
+.table-info tbody tr:hover *,
+.table-success tbody tr:hover *,
+.table-warning tbody tr:hover *,
+.table-danger tbody tr:hover * {
+    color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ✨ Smooth Transitions
+   ═══════════════════════════════════════════════════════════ */
+
+[class*="bg-"],
+[class*="btn-"],
+[class*="badge-"],
+[class*="alert-"],
+.nav-link,
+.dropdown-item,
+.list-group-item {
+    transition: all 0.2s ease-in-out;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🌐 RTL Support
+   ═══════════════════════════════════════════════════════════ */
+
+[dir="rtl"] .btn i {
+    margin-right: 0.5rem;
+    margin-left: 0;
+}
+
+[dir="rtl"] .alert i {
+    margin-right: 0.5rem;
+    margin-left: 0;
+}

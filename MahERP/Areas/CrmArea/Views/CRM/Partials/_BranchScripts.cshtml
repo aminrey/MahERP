@@ -1,10 +1,29 @@
 ﻿<script>
     // ⭐⭐⭐ مدیریت انتخاب شعبه و بارگذاری داده‌ها
     function initializeBranchSelection() {
+        // ⭐⭐⭐ بارگذاری خودکار داده‌ها اگر شعبه از پیش انتخاب شده باشد
+        const initialBranchId = $('#branchSelect').val() || $('input[name="BranchId"]').val();
+        
+        if (initialBranchId && initialBranchId !== '' && initialBranchId !== '0') {
+            console.log(`🎯 Initial branch detected: ${initialBranchId}, loading data...`);
+            
+            // کمی تاخیر برای اطمینان از بارگذاری کامل صفحه
+            setTimeout(function() {
+                loadBranchData(initialBranchId);
+            }, 500);
+        } else {
+            console.log('ℹ️ No initial branch selected');
+            clearStakeholderDropdowns();
+        }
+
+        // ⭐ Event handler برای تغییر شعبه
         $('#branchSelect').on('change', function() {
             const branchId = $(this).val();
             
-            if (!branchId || branchId === '') {
+            // Flag برای نمایش پیام
+            $(this).data('user-changed', true);
+            
+            if (!branchId || branchId === '' || branchId === '0') {
                 console.log('⚠️ No branch selected');
                 clearStakeholderDropdowns();
                 return;
@@ -17,6 +36,8 @@
 
     // ⭐⭐⭐ بارگذاری داده‌های شعبه (Contacts & Organizations)
     function loadBranchData(branchId) {
+        console.log('📡 Loading branch data for:', branchId);
+        
         // نمایش Loading
         showLoadingOnDropdowns();
 
@@ -27,13 +48,19 @@
                 branchId: branchId,
                 __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
             },
+            beforeSend: function() {
+                console.log('🚀 Sending branch data request...');
+            },
             success: function(response) {
+                console.log('✅ Response received:', response);
+                
                 if (response.status === 'update-view' && response.viewList) {
-                    console.log('✅ Branch data loaded successfully');
+                    console.log('📝 Updating dropdowns...');
 
                     // بروزرسانی dropdown ها
                     response.viewList.forEach(function(item) {
                         if (item.elementId && item.view && item.view.result) {
+                            console.log(`  → Updating ${item.elementId}`);
                             $(`#${item.elementId}`).html(item.view.result);
                         }
                     });
@@ -41,70 +68,144 @@
                     // راه‌اندازی مجدد Select2
                     reinitializeSelect2();
 
-                    // نمایش پیام موفقیت
-                    Dashmix.helpers('notify', {
-                        type: 'success',
-                        icon: 'fa fa-check',
-                        message: 'داده‌های شعبه بارگذاری شد'
-                    });
+                    // نمایش پیام موفقیت (فقط برای تغییر دستی)
+                    if ($('#branchSelect').data('user-changed')) {
+                        if (typeof Dashmix !== 'undefined') {
+                            Dashmix.helpers('jq-notify', {
+                                type: 'success',
+                                icon: 'fa fa-check me-1',
+                                message: 'داده‌های شعبه بارگذاری شد'
+                            });
+                        }
+                        $('#branchSelect').data('user-changed', false);
+                    }
+                    
+                    console.log('✅ Branch data loaded successfully');
                 } else {
-                    console.error('❌ Invalid response format');
+                    console.error('❌ Invalid response format:', response);
                     showErrorOnDropdowns();
                 }
             },
             error: function(xhr, status, error) {
-                console.error('❌ Error loading branch data:', error);
+                console.error('❌ AJAX Error:', {
+                    status: status,
+                    error: error,
+                    statusCode: xhr.status,
+                    responseText: xhr.responseText
+                });
+                
                 showErrorOnDropdowns();
                 
-                Dashmix.helpers('notify', {
-                    type: 'danger',
-                    icon: 'fa fa-times',
-                    message: 'خطا در بارگذاری داده‌ها'
-                });
+                if (typeof Dashmix !== 'undefined') {
+                    Dashmix.helpers('jq-notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times me-1',
+                        message: 'خطا در بارگذاری داده‌ها'
+                    });
+                }
             }
         });
     }
 
     // ⭐ نمایش Loading در Dropdown ها
     function showLoadingOnDropdowns() {
-        $('#contactSelect, #organizationSelect').html('<option value="">در حال بارگذاری...</option>');
+        console.log('⏳ Showing loading state on dropdowns...');
+        
+        $('#ContactSelectionDiv').html(`
+            <select class="form-select form-select-lg" disabled>
+                <option>در حال بارگذاری افراد...</option>
+            </select>
+        `);
+        
+        $('#OrganizationSelectionDiv').html(`
+            <select class="form-select form-select-lg" disabled>
+                <option>در حال بارگذاری سازمان‌ها...</option>
+            </select>
+        `);
     }
 
     // ⭐ پاکسازی Dropdown ها
     function clearStakeholderDropdowns() {
-        $('#contactSelect').html('<option value="">-- ابتدا شعبه را انتخاب کنید --</option>');
-        $('#organizationSelect').html('<option value="">-- ابتدا شعبه را انتخاب کنید --</option>');
+        console.log('🧹 Clearing dropdowns...');
+        
+        $('#ContactSelectionDiv').html(`
+            <select name="ContactId" class="form-select form-select-lg select2-contact" id="contactSelect">
+                <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
+            </select>
+        `);
+        
+        $('#OrganizationSelectionDiv').html(`
+            <select name="OrganizationId" class="form-select form-select-lg select2-organization" id="organizationSelect">
+                <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
+            </select>
+        `);
+        
         $('#contactOrganizationsSection').hide();
         $('#organizationContactsSection').hide();
     }
 
     // ⭐ نمایش خطا در Dropdown ها
     function showErrorOnDropdowns() {
-        $('#contactSelect').html('<option value="">خطا در بارگذاری</option>');
-        $('#organizationSelect').html('<option value="">خطا در بارگذاری</option>');
+        console.error('❌ Showing error state on dropdowns...');
+        
+        $('#ContactSelectionDiv').html(`
+            <select class="form-select form-select-lg" disabled>
+                <option>خطا در بارگذاری افراد</option>
+            </select>
+        `);
+        
+        $('#OrganizationSelectionDiv').html(`
+            <select class="form-select form-select-lg" disabled>
+                <option>خطا در بارگذاری سازمان‌ها</option>
+            </select>
+        `);
     }
 
     // ⭐ راه‌اندازی مجدد Select2 بعد از Ajax
     function reinitializeSelect2() {
-        $('.select2-contact').select2('destroy').select2({
-            dir: 'rtl',
-            width: '100%',
-            placeholder: 'نام یا کد ملی را تایپ کنید...',
-            allowClear: true,
-            templateResult: formatContactOption,
-            templateSelection: formatContactSelection
-        });
+        console.log('🔄 Reinitializing Select2...');
+        
+        // تلاش برای Destroy کردن Select2 موجود
+        try {
+            if ($('.select2-contact').hasClass('select2-hidden-accessible')) {
+                $('.select2-contact').select2('destroy');
+            }
+        } catch (e) {
+            console.warn('⚠️ Could not destroy select2-contact:', e);
+        }
+        
+        try {
+            if ($('.select2-organization').hasClass('select2-hidden-accessible')) {
+                $('.select2-organization').select2('destroy');
+            }
+        } catch (e) {
+            console.warn('⚠️ Could not destroy select2-organization:', e);
+        }
 
-        $('.select2-organization').select2('destroy').select2({
-            dir: 'rtl',
-            width: '100%',
-            placeholder: 'نام سازمان را تایپ کنید...',
-            allowClear: true,
-            templateResult: formatOrganizationOption,
-            templateSelection: formatOrganizationSelection
-        });
+        // راه‌اندازی مجدد Select2
+        try {
+            $('.select2-contact').select2({
+                dir: 'rtl',
+                width: '100%',
+                placeholder: 'نام یا کد ملی را تایپ کنید...',
+                allowClear: true,
+                templateResult: typeof formatContactOption !== 'undefined' ? formatContactOption : null,
+                templateSelection: typeof formatContactSelection !== 'undefined' ? formatContactSelection : null
+            });
+            
+            $('.select2-organization').select2({
+                dir: 'rtl',
+                width: '100%',
+                placeholder: 'نام سازمان را تایپ کنید...',
+                allowClear: true,
+                templateResult: typeof formatOrganizationOption !== 'undefined' ? formatOrganizationOption : null,
+                templateSelection: typeof formatOrganizationSelection !== 'undefined' ? formatOrganizationSelection : null
+            });
 
-        console.log('✅ Select2 reinitialized');
+            console.log('✅ Select2 reinitialized successfully');
+        } catch (e) {
+            console.error('❌ Error reinitializing Select2:', e);
+        }
     }
 
     console.log('✅ Branch Scripts Loaded');
