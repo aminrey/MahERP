@@ -2,107 +2,219 @@
 
 @if (Model != null && Model.Any())
 {
+    
+        // ⭐⭐⭐ مرتب‌سازی بر اساس بخش، سپس IsPrimary
+        var sortedMembers = Model
+            .OrderBy(m => m.DepartmentName ?? "zzz") // بخش‌ها به ترتیب الفبا
+            .ThenBy(m => m.IsPrimary ? 0 : 1) // مدیران اول
+            .ToList();
+
+        // گروه‌بندی بر اساس بخش
+        var departmentGroups = sortedMembers
+            .GroupBy(m => new { m.DepartmentId, m.DepartmentName })
+            .OrderBy(g => g.Key.DepartmentName ?? "zzz")
+            .ToList();
+    
+
     <div class="table-responsive">
-        <table class="table table-sm table-hover table-vcenter mb-0">
-            <thead class="bg-light">
+        <table class="table table-sm table-vcenter mb-0 hierarchical-org-table">
+            <thead class="table-header">
                 <tr>
-                    <th style="width: 50px;" class="text-center">
-                        <i class="fa fa-user"></i>
-                    </th>
-                    <th>نام و نام خانوادگی</th>
-                    <th>سمت</th>
-                    <th>بخش</th>
-                    <th class="text-center">تلفن</th>
-                    <th style="width: 80px;" class="text-center">انتخاب</th>
+                    <th style="width: 35%;">نام و نام خانوادگی</th>
+                    <th style="width: 20%;">سمت</th>
+                    <th style="width: 20%;">بخش</th>
+                    <th class="text-center" style="width: 15%;">تلفن</th>
+                    <th class="text-center" style="width: 10%;">انتخاب</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var (member, index) in Model.Select((m, i) => (m, i + 1)))
+                @foreach (var deptGroup in departmentGroups)
                 {
-                    <tr class="organization-member-row" 
-                        data-contact-id="@member.ContactId"
-                        data-contact-name="@member.ContactFullName"
-                        data-position="@member.PositionTitle"
-                        data-department="@member.DepartmentName">
+                   
+                        var deptMembers = deptGroup.ToList();
+                        var managers = deptMembers.Where(m => m.IsPrimary).ToList();
+                        var employees = deptMembers.Where(m => !m.IsPrimary).ToList();
+                        var isLastDept = deptGroup == departmentGroups.Last();
+                    
+
+                    @* ⭐⭐⭐ مدیران (سطح اول) *@
+                    @foreach (var (manager, mIndex) in managers.Select((m, i) => (m, i)))
+                    {
+                        var isLastManager = mIndex == managers.Count - 1 && !employees.Any();
                         
-                        <td class="text-center">
-                            <div class="avatar avatar-sm bg-primary-light">
-                                <span class="text-primary fw-bold">@index</span>
-                            </div>
-                        </td>
-                        
-                        <td>
-                            <div class="fw-semibold">@member.ContactFullName</div>
-                            @if (!string.IsNullOrEmpty(member.ContactNationalCode))
-                            {
-                                <div class="fs-sm text-muted">
-                                    <i class="fa fa-id-card me-1"></i>
-                                    کد ملی: @member.ContactNationalCode
+                        <tr class="org-row manager-row" 
+                            data-contact-id="@manager.ContactId"
+                            data-contact-name="@manager.ContactFullName"
+                            data-level="0">
+                            
+                            <td class="name-cell">
+                                <div class="hierarchy-wrapper level-0">
+                                    <!-- آیکون مدیر -->
+                                    <div class="hierarchy-icon manager-icon">
+                                        <i class="fa fa-star"></i>
+                                    </div>
+                                    
+                                    <!-- نام و مشخصات -->
+                                    <div class="member-details">
+                                        <div class="member-name fw-bold">@manager.ContactFullName</div>
+                                        @if (!string.IsNullOrEmpty(manager.ContactNationalCode))
+                                        {
+                                            <div class="member-meta">
+                                                <i class="fa fa-id-card me-1"></i>
+                                                @manager.ContactNationalCode
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
-                            }
-                        </td>
-                        
-                        <td>
-                            @if (!string.IsNullOrEmpty(member.PositionTitle))
-                            {
-                                <span class="badge bg-info-light text-info">
-                                    <i class="fa fa-briefcase me-1"></i>
-                                    @member.PositionTitle
+                            </td>
+                            
+                            <td>
+                                <span class="badge badge-manager">
+                                    <i class="fa fa-star me-1"></i>
+                                    @(manager.PositionTitle ?? "مدیر")
                                 </span>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </td>
+                            </td>
+                            
+                            <td>
+                                @if (!string.IsNullOrEmpty(manager.DepartmentName))
+                                {
+                                    <span class="badge badge-department">
+                                        <i class="fa fa-sitemap me-1"></i>
+                                        @manager.DepartmentName
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            
+                            <td class="text-center phone-cell" dir="ltr">
+                                @if (!string.IsNullOrEmpty(manager.ContactPhone))
+                                {
+                                    <span>@manager.ContactPhone</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            
+                            <td class="text-center">
+                                <button type="button" 
+                                        class="btn btn-sm btn-select select-member-btn"
+                                        data-contact-id="@manager.ContactId"
+                                        data-contact-name="@manager.ContactFullName">
+                                    <i class="fa fa-check"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+
+                    @* ⭐⭐⭐ کارمندان (زیرمجموعه) *@
+                    @foreach (var (employee, eIndex) in employees.Select((e, i) => (e, i)))
+                    {
+                        var isLastEmployee = eIndex == employees.Count - 1;
                         
-                        <td>
-                            @if (!string.IsNullOrEmpty(member.DepartmentName))
-                            {
-                                <span class="badge bg-secondary-light text-secondary">
-                                    <i class="fa fa-sitemap me-1"></i>
-                                    @member.DepartmentName
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </td>
-                        
-                        <td class="text-center" dir="ltr">
-                            @if (!string.IsNullOrEmpty(member.ContactPhone))
-                            {
-                                <small class="text-muted">
-                                    <i class="fa fa-phone me-1"></i>
-                                    @member.ContactPhone
-                                </small>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </td>
-                        
-                        <td class="text-center">
-                            <button type="button" 
-                                    class="btn btn-sm btn-alt-primary select-member-btn"
-                                    data-contact-id="@member.ContactId"
-                                    data-contact-name="@member.ContactFullName"
-                                    title="انتخاب این عضو">
-                                <i class="fa fa-check"></i>
-                            </button>
-                        </td>
-                    </tr>
+                        <tr class="org-row employee-row" 
+                            data-contact-id="@employee.ContactId"
+                            data-contact-name="@employee.ContactFullName"
+                            data-level="1">
+                            
+                            <td class="name-cell">
+                                <div class="hierarchy-wrapper level-1 @(isLastEmployee ? "is-last" : "")">
+                                    <!-- خط عمودی و افقی -->
+                                    <div class="tree-lines">
+                                        <div class="vertical-line"></div>
+                                        <div class="horizontal-line"></div>
+                                    </div>
+                                    
+                                    <!-- آیکون کارمند -->
+                                    <div class="hierarchy-icon employee-icon">
+                                        <i class="fa fa-user"></i>
+                                    </div>
+                                    
+                                    <!-- نام و مشخصات -->
+                                    <div class="member-details">
+                                        <div class="member-name">@employee.ContactFullName</div>
+                                        @if (!string.IsNullOrEmpty(employee.ContactNationalCode))
+                                        {
+                                            <div class="member-meta">
+                                                <i class="fa fa-id-card me-1"></i>
+                                                @employee.ContactNationalCode
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                @if (!string.IsNullOrEmpty(employee.PositionTitle))
+                                {
+                                    <span class="badge badge-employee">
+                                        <i class="fa fa-briefcase me-1"></i>
+                                        @employee.PositionTitle
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-employee">
+                                        <i class="fa fa-user me-1"></i>
+                                        کارمند
+                                    </span>
+                                }
+                            </td>
+                            
+                            <td>
+                                @if (!string.IsNullOrEmpty(employee.DepartmentName))
+                                {
+                                    <span class="badge badge-department-light">
+                                        <i class="fa fa-sitemap me-1"></i>
+                                        @employee.DepartmentName
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            
+                            <td class="text-center phone-cell" dir="ltr">
+                                @if (!string.IsNullOrEmpty(employee.ContactPhone))
+                                {
+                                    <span>@employee.ContactPhone</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            
+                            <td class="text-center">
+                                <button type="button" 
+                                        class="btn btn-sm btn-select select-member-btn"
+                                        data-contact-id="@employee.ContactId"
+                                        data-contact-name="@employee.ContactFullName">
+                                    <i class="fa fa-check"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
     </div>
 
-    <div class="mt-3 text-center text-muted">
-        <small>
-            <i class="fa fa-info-circle me-1"></i>
-            تعداد کل اعضا: <strong>@Model.Count</strong> نفر
+    <div class="mt-3 text-center">
+        <small class="text-muted">
+            <i class="fa fa-users me-1"></i>
+            تعداد کل: <strong>@Model.Count</strong> نفر
+            <span class="mx-2">|</span>
+            <i class="fa fa-star text-warning me-1"></i>
+            مدیران: <strong>@Model.Count(m => m.IsPrimary)</strong>
+            <span class="mx-2">|</span>
+            <i class="fa fa-user text-info me-1"></i>
+            کارمندان: <strong>@Model.Count(m => !m.IsPrimary)</strong>
         </small>
     </div>
 }
@@ -123,89 +235,304 @@ else
 
 <script>
     $(document).ready(function() {
-        // رویداد کلیک روی دکمه انتخاب عضو
-        $('.select-member-btn').on('click', function() {
+        console.log('✅ Organization Hierarchical Table Loaded');
+
+        // ⭐ انتخاب عضو
+        $('.select-member-btn').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
             var contactId = $(this).data('contact-id');
             var contactName = $(this).data('contact-name');
 
-            // انتخاب Contact در Select2
-            if ($('#contactSelect').length) {
-                // بررسی اینکه آیا Contact در لیست موجود است
-                var existingOption = $('#contactSelect').find('option[value="' + contactId + '"]');
-                
-                if (existingOption.length) {
-                    // اگر وجود دارد، انتخاب کن
-                    $('#contactSelect').val(contactId).trigger('change');
-                } else {
-                    // اگر وجود ندارد، اضافه کن و انتخاب کن
-                    var newOption = new Option(contactName, contactId, true, true);
-                    $('#contactSelect').append(newOption).trigger('change');
-                }
+            var $contactSelect = $('#contactSelectForOrg');
+            if ($contactSelect.length === 0) return;
 
-                // نمایش پیام موفقیت
+            var existingOption = $contactSelect.find('option[value="' + contactId + '"]');
+            if (existingOption.length) {
+                $contactSelect.val(contactId).trigger('change');
+            } else {
+                var newOption = new Option(contactName, contactId, true, true);
+                $contactSelect.append(newOption).trigger('change');
+            }
+
+            $('.org-row').removeClass('selected');
+            $('[data-contact-id="' + contactId + '"]').addClass('selected');
+
+            $('.select-member-btn').removeClass('btn-selected').addClass('btn-select').html('<i class="fa fa-check"></i>');
+            $(this).removeClass('btn-select').addClass('btn-selected').html('<i class="fa fa-check-circle"></i>');
+
+            if (typeof Dashmix !== 'undefined') {
                 Dashmix.helpers('jq-notify', {
                     type: 'success',
                     icon: 'fa fa-check me-1',
-                    message: 'عضو سازمان انتخاب شد: ' + contactName
+                    message: 'عضو انتخاب شد: ' + contactName
                 });
-
-                // هایلایت کردن ردیف انتخاب شده
-                $('.organization-member-row').removeClass('table-active');
-                $(this).closest('.organization-member-row').addClass('table-active');
             }
         });
 
-        // رویداد کلیک روی ردیف
-        $('.organization-member-row').on('click', function(e) {
+        // ⭐ کلیک روی ردیف
+        $('.org-row').on('click', function(e) {
             if (!$(e.target).closest('.select-member-btn').length) {
                 $(this).find('.select-member-btn').trigger('click');
             }
         });
 
-        // اضافه کردن cursor pointer
-        $('.organization-member-row').css('cursor', 'pointer');
+        // ⭐ Sync با dropdown
+        $('#contactSelectForOrg').on('change', function() {
+            var selectedContactId = $(this).val();
+            
+            $('.org-row').removeClass('selected');
+            $('.select-member-btn').removeClass('btn-selected').addClass('btn-select').html('<i class="fa fa-check"></i>');
+
+            if (selectedContactId) {
+                var $row = $('.org-row[data-contact-id="' + selectedContactId + '"]');
+                if ($row.length) {
+                    $row.addClass('selected');
+                    $row.find('.select-member-btn').removeClass('btn-select').addClass('btn-selected').html('<i class="fa fa-check-circle"></i>');
+                }
+            }
+        });
     });
 </script>
 
 <style>
-    .organization-member-row {
-        transition: all 0.2s ease;
+    /* ⭐ جدول اصلی */
+    .hierarchical-org-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
     }
 
-    .organization-member-row:hover {
+    /* ⭐ Header */
+    .table-header th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 600;
+        padding: 14px 12px;
+        border: none;
+        font-size: 0.9rem;
+        text-align: right;
+    }
+
+    .table-header th:first-child {
+        border-radius: 8px 0 0 0;
+    }
+
+    .table-header th:last-child {
+        border-radius: 0 8px 0 0;
+    }
+
+    /* ⭐ ردیف‌ها */
+    .org-row {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .org-row td {
+        padding: 14px 12px;
+        vertical-align: middle;
+    }
+
+    .org-row:hover {
         background-color: #f8f9fa;
-        transform: translateY(-2px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
-    .organization-member-row.table-active {
-        background-color: #e7f3ff;
-        border-left: 3px solid #0d6efd;
+    /* ⭐ ردیف مدیر */
+    .manager-row {
+        background: linear-gradient(90deg, rgba(255, 249, 230, 0.4) 0%, rgba(255, 255, 255, 0) 100%);
+        font-weight: 500;
     }
 
-    .avatar {
+    .manager-row:hover {
+        background: linear-gradient(90deg, rgba(255, 243, 205, 0.6) 0%, rgba(255, 255, 255, 0.1) 100%);
+    }
+
+    /* ⭐ ردیف انتخاب شده */
+    .org-row.selected {
+        background: linear-gradient(90deg, rgba(231, 243, 255, 0.8) 0%, rgba(255, 255, 255, 0.2) 100%) !important;
+        box-shadow: inset 4px 0 0 #0d6efd, 0 2px 8px rgba(13, 110, 253, 0.2);
+    }
+
+    /* ⭐ سلول نام */
+    .name-cell {
+        padding: 8px 12px !important;
+    }
+
+    .hierarchy-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+    }
+
+    /* ⭐ خطوط درختی */
+    .tree-lines {
+        position: absolute;
+        right: 14px;
+        width: 24px;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .vertical-line {
+        position: absolute;
+        right: 11px;
+        top: -14px;
+        width: 2px;
+        height: calc(100% + 14px);
+        background: linear-gradient(180deg, #d4d4d8 0%, #0d6efd 50%, #d4d4d8 100%);
+    }
+
+    .level-1.is-last .vertical-line {
+        height: 50%;
+        background: linear-gradient(180deg, #d4d4d8 0%, #0d6efd 100%);
+    }
+
+    .horizontal-line {
+        position: absolute;
+        right: 11px;
+        top: 50%;
+        width: 18px;
+        height: 2px;
+        background: linear-gradient(90deg, #0d6efd 0%, #667eea 100%);
+        transform: translateY(-50%);
+    }
+
+    /* ⭐ آیکون‌ها */
+    .hierarchy-icon {
         width: 36px;
         height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+        position: relative;
+    }
+
+    .manager-icon {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: white;
+    }
+
+    .employee-icon {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .level-1 .hierarchy-icon {
+        margin-right: 36px;
+    }
+
+    /* ⭐ جزئیات عضو */
+    .member-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .member-name {
+        font-size: 0.95rem;
+        color: #212529;
+        margin-bottom: 3px;
+        font-weight: 500;
+    }
+
+    .member-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    /* ⭐ Badge ها */
+    .badge {
+        font-weight: 500;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.82rem;
+        border-radius: 6px;
+    }
+
+    .badge-manager {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: #fff;
+    }
+
+    .badge-employee {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+    }
+
+    .badge-department {
+        background: #0d6efd;
+        color: #fff;
+    }
+
+    .badge-department-light {
+        background: #e7f3ff;
+        color: #0d6efd;
+    }
+
+    /* ⭐ ستون تلفن */
+    .phone-cell {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* ⭐ دکمه انتخاب */
+    .btn-select,
+    .btn-selected {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        padding: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 50%;
+        transition: all 0.2s ease;
+        border: 2px solid;
     }
 
-    .badge {
-        font-weight: 500;
-        padding: 0.35rem 0.65rem;
+    .btn-select {
+        background: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
     }
 
-    .bg-primary-light {
-        background-color: #e7f3ff;
+    .btn-select:hover {
+        background: #0b5ed7;
+        transform: scale(1.1);
     }
 
-    .bg-info-light {
-        background-color: #e1f5fe;
+    .btn-selected {
+        background: #198754;
+        border-color: #198754;
+        color: white;
+        box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
     }
 
-    .bg-secondary-light {
-        background-color: #f5f5f5;
+    /* ⭐ Responsive */
+    @@media (max-width: 768px) {
+        .hierarchical-org-table {
+            font-size: 0.85rem;
+        }
+
+        .hierarchy-icon {
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.5rem;
+        }
+
+        .level-1 .hierarchy-icon {
+            margin-right: 28px;
+        }
     }
 </style>

@@ -5,136 +5,230 @@
         <i class="fa fa-lightbulb fa-2x me-3"></i>
         <div>
             <strong>راهنما:</strong>
-            طرف حساب می‌تواند یک فرد، یک سازمان یا هر دو باشد.
+            طرف حساب می‌تواند یک <strong>سازمان</strong> (با انتخاب اعضای آن) یا یک <strong>فرد</strong> باشد.
             <br />
-            <strong>⭐ نکته:</strong> با انتخاب سازمان، لیست افراد به اعضای آن سازمان محدود می‌شود.
+            <strong>⭐ نکته:</strong> با انتخاب سازمان، می‌توانید یکی از اعضای آن را انتخاب کنید.
         </div>
     </div>
 
-    <div class="row g-4">
-        <!-- ⭐⭐⭐ انتخاب Organization (سازمان) - حالا در سمت راست -->
-        <div class="col-md-6">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label fw-semibold mb-0">
-                    <i class="fa fa-building text-info me-1"></i>
-                    انتخاب سازمان
-                </label>
-                <!-- ⭐⭐⭐ دکمه افزودن سریع سازمان -->
-                <button type="button" 
-                        class="btn btn-sm btn-alt-info" 
-                        onclick="openQuickAddModalForCRM('organization')"
-                        title="افزودن سریع سازمان جدید">
-                    <i class="fa fa-building me-1"></i>
-                    افزودن سریع
-                </button>
-            </div>
-            <div id="OrganizationSelectionDiv">
-                <select asp-for="OrganizationId" 
-                        class="form-select form-select-lg select2-organization" 
-                        id="organizationSelect">
-                    <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
-                    @if (Model.OrganizationsInitial != null)
-                    {
-                        foreach (var org in Model.OrganizationsInitial)
-                        {
-                            <option value="@org.Id"
-                                    data-name="@org.Name"
-                                    data-registration="@org.RegistrationNumber"
-                                    data-phone="@org.PrimaryPhone">
-                                @org.Name
-                            </option>
-                        }
-                    }
-                </select>
-            </div>
-            <div class="form-text">
-                <i class="fa fa-info-circle me-1"></i>
-                نام سازمان یا شماره ثبت را جستجو کنید
-            </div>
-            <span asp-validation-for="OrganizationId" class="text-danger"></span>
-        </div>
+    <!-- ⭐⭐⭐ Tab Navigation برای انتخاب نوع (مشابه Tasking) -->
+    <ul class="nav nav-pills nav-justified mb-4" id="stakeholderTypeTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" 
+                    id="organization-tab"
+                    data-bs-toggle="pill" 
+                    data-bs-target="#organization-panel"
+                    type="button" 
+                    role="tab"
+                    aria-controls="organization-panel"
+                    aria-selected="true">
+                <i class="fa fa-building me-2"></i>
+                <strong>شرکت / سازمان</strong>
+                <p class="small mb-0 mt-1 opacity-75">انتخاب سازمان و اعضای آن</p>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    id="contact-tab"
+                    data-bs-toggle="pill" 
+                    data-bs-target="#contact-panel"
+                    type="button" 
+                    role="tab"
+                    aria-controls="contact-panel"
+                    aria-selected="false">
+                <i class="fa fa-user me-2"></i>
+                <strong>فرد</strong>
+                <p class="small mb-0 mt-1 opacity-75">انتخاب فرد به صورت مستقیم</p>
+            </button>
+        </li>
+    </ul>
 
-        <!-- ⭐⭐⭐ انتخاب Contact (فرد) - حالا در سمت چپ -->
-        <div class="col-md-6">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label fw-semibold mb-0">
-                    <i class="fa fa-user text-primary me-1"></i>
-                    انتخاب فرد
-                </label>
-                <!-- ⭐⭐⭐ دکمه افزودن سریع فرد -->
-                <button type="button" 
-                        class="btn btn-sm btn-alt-primary" 
-                        onclick="openQuickAddModalForCRM('contact')"
-                        title="افزودن سریع فرد جدید">
-                    <i class="fa fa-user-plus me-1"></i>
-                    افزودن سریع
-                </button>
-            </div>
-            <div id="ContactSelectionDiv">
-                <select asp-for="ContactId" 
-                        class="form-select form-select-lg select2-contact" 
-                        id="contactSelect">
-                    <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
-                    @if (Model.ContactsInitial != null)
-                    {
-                        foreach (var contact in Model.ContactsInitial)
-                        {
-                            <option value="@contact.Id" 
-                                    data-firstname="@contact.FirstName"
-                                    data-lastname="@contact.LastName"
-                                    data-nationalcode="@contact.NationalCode"
-                                    data-phone="@contact.PrimaryPhone">
-                                @contact.LastName @contact.FirstName
-                            </option>
-                        }
-                    }
-                </select>
-            </div>
-            <div class="form-text">
-                <i class="fa fa-info-circle me-1"></i>
-                می‌توانید نام، نام خانوادگی یا کد ملی را جستجو کنید
-            </div>
-            <span asp-validation-for="ContactId" class="text-danger"></span>
-        </div>
+    <div class="tab-content" id="stakeholderTypeTabsContent">
+        <!-- ⭐⭐⭐ Panel 1: انتخاب Organization -->
+        <div class="tab-pane fade show active" 
+             id="organization-panel" 
+             role="tabpanel" 
+             aria-labelledby="organization-tab">
+            
+            <div class="row g-4">
+                <!-- انتخاب سازمان -->
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-semibold mb-0">
+                            <i class="fa fa-building text-info me-1"></i>
+                            انتخاب شرکت/سازمان
+                        </label>
+                        <!-- ⭐⭐⭐ دکمه افزودن سریع سازمان -->
+                        <button type="button" 
+                                class="btn btn-sm btn-alt-info" 
+                                onclick="openQuickAddModalForCRM('organization')"
+                                title="افزودن سریع سازمان جدید">
+                            <i class="fa fa-building me-1"></i>
+                            افزودن سریع
+                        </button>
+                    </div>
+                    <div id="OrganizationSelectionDiv">
+                        <select asp-for="OrganizationId" 
+                                class="form-select form-select-lg select2-organization" 
+                                id="organizationSelect"
+                                data-placeholder="انتخاب شرکت/سازمان">
+                            <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
+                            @if (Model.OrganizationsInitial != null)
+                            {
+                                foreach (var org in Model.OrganizationsInitial)
+                                {
+                                    <option value="@org.Id"
+                                            data-name="@org.Name"
+                                            data-registration="@org.RegistrationNumber"
+                                            data-phone="@org.PrimaryPhone">
+                                        @org.Name
+                                        @if (!string.IsNullOrEmpty(org.RegistrationNumber))
+                                        {
+                                            <text> (ثبت: @org.RegistrationNumber)</text>
+                                        }
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="form-text">
+                        <i class="fa fa-info-circle me-1"></i>
+                        شرکت‌ها و سازمان‌هایی که در شعبه انتخاب شده تعریف شده‌اند
+                    </div>
+                    <span asp-validation-for="OrganizationId" class="text-danger"></span>
+                </div>
 
-        <!-- ⭐⭐⭐ نمایش افراد مرتبط با Organization انتخاب شده -->
-        <div class="col-12" id="organizationContactsSection" style="display: none;">
-            <div class="border rounded p-3 bg-light">
-                <h6 class="mb-3">
-                    <i class="fa fa-users text-primary me-1"></i>
-                    اعضای این سازمان
-                </h6>
-                <div id="organizationContactsList">
-                    <!-- محتوا با Ajax بارگذاری می‌شود -->
+                <!-- انتخاب فرد از اعضای سازمان -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                        <i class="fa fa-user text-primary me-1"></i>
+                        انتخاب فرد (از اعضای سازمان)
+                        <span class="badge bg-secondary ms-1">اختیاری</span>
+                    </label>
+                    <div id="ContactSelectionForOrgDiv">
+                        <select asp-for="ContactId" 
+                                class="form-select form-select-lg select2-contact" 
+                                id="contactSelectForOrg"
+                                data-placeholder="ابتدا سازمان را انتخاب کنید">
+                            <option value="">-- ابتدا سازمان را انتخاب کنید --</option>
+                        </select>
+                    </div>
+                    <div class="form-text">
+                        <i class="fa fa-info-circle me-1"></i>
+                        پس از انتخاب سازمان، لیست اعضا نمایش داده می‌شود
+                    </div>
+                    <span asp-validation-for="ContactId" class="text-danger"></span>
+                </div>
+
+                <!-- ⭐⭐⭐ نمایش اعضای سازمان با سمت و بخش -->
+                <div class="col-12" id="organizationContactsSection" style="display: none;">
+                    <div class="border rounded p-4 bg-light">
+                        <h6 class="mb-3">
+                            <i class="fa fa-users text-primary me-2"></i>
+                            اعضای این سازمان
+                            <span class="badge bg-primary ms-2" id="membersCount">0</span>
+                        </h6>
+                        <div id="organizationContactsList">
+                            <!-- محتوا از AJAX بارگذاری می‌شود -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- نمایش سازمان‌های مرتبط با Contact انتخاب شده -->
-        <div class="col-12" id="contactOrganizationsSection" style="display: none;">
-            <div class="border rounded p-3 bg-light">
-                <h6 class="mb-3">
-                    <i class="fa fa-sitemap text-info me-1"></i>
-                    سازمان‌های مرتبط با این فرد
-                </h6>
-                <div id="contactOrganizationsList">
-                    <!-- محتوا با Ajax بارگذاری می‌شود -->
+        <!-- ⭐⭐⭐ Panel 2: انتخاب Contact مستقیم -->
+        <div class="tab-pane fade" 
+             id="contact-panel" 
+             role="tabpanel" 
+             aria-labelledby="contact-tab">
+            
+            <div class="row g-4">
+                <!-- انتخاب فرد -->
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-semibold mb-0">
+                            <i class="fa fa-user text-primary me-1"></i>
+                            انتخاب فرد
+                        </label>
+                        <!-- ⭐⭐⭐ دکمه افزودن سریع فرد -->
+                        <button type="button" 
+                                class="btn btn-sm btn-alt-primary" 
+                                onclick="openQuickAddModalForCRM('contact')"
+                                title="افزودن سریع فرد جدید">
+                            <i class="fa fa-user-plus me-1"></i>
+                            افزودن سریع
+                        </button>
+                    </div>
+                    <div id="ContactSelectionDiv">
+                        <select asp-for="ContactId" 
+                                class="form-select form-select-lg select2-contact" 
+                                id="contactSelect"
+                                data-placeholder="انتخاب فرد">
+                            <option value="">-- ابتدا شعبه را انتخاب کنید --</option>
+                            @if (Model.ContactsInitial != null)
+                            {
+                                foreach (var contact in Model.ContactsInitial)
+                                {
+                                    <option value="@contact.Id" 
+                                            data-firstname="@contact.FirstName"
+                                            data-lastname="@contact.LastName"
+                                            data-nationalcode="@contact.NationalCode"
+                                            data-phone="@contact.PrimaryPhone">
+                                        @contact.LastName @contact.FirstName
+                                        @if (!string.IsNullOrEmpty(contact.NationalCode))
+                                        {
+                                            <text> (@contact.NationalCode)</text>
+                                        }
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="form-text">
+                        <i class="fa fa-info-circle me-1"></i>
+                        افرادی که در شعبه انتخاب شده تعریف شده‌اند
+                    </div>
+                    <span asp-validation-for="ContactId" class="text-danger"></span>
+                </div>
+
+                <!-- فیلد خالی برای تراز (optional) -->
+                <div class="col-md-6">
+                    <div class="alert alert-primary d-flex align-items-center">
+                        <i class="fa fa-info-circle fa-2x me-3"></i>
+                        <div class="small">
+                            <strong>نکته:</strong>
+                            در صورتی که فرد عضو سازمانی است، می‌توانید از تب "شرکت/سازمان" استفاده کنید.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ⭐⭐⭐ (اختیاری) نمایش سازمان‌های مرتبط با فرد -->
+                <div class="col-12" id="contactOrganizationsSection" style="display: none;">
+                    <div class="border rounded p-4 bg-light">
+                        <h6 class="mb-3">
+                            <i class="fa fa-sitemap text-info me-2"></i>
+                            سازمان‌های مرتبط با این فرد
+                        </h6>
+                        <div id="contactOrganizationsList">
+                            <!-- محتوا با Ajax بارگذاری می‌شود -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- دکمه‌های ناوبری -->
-    <div class="row mt-4">
+    <div class="row mt-5">
         <div class="col-12">
             <div class="d-flex justify-content-between">
-                <button type="button" class="btn btn-alt-secondary" onclick="goToTab('main-info')">
-                    <i class="fa fa-arrow-right me-1"></i>
+                <button type="button" class="btn btn-lg btn-alt-secondary" onclick="goToTab('main-info')">
+                    <i class="fa fa-arrow-right me-2"></i>
                     مرحله قبل
                 </button>
-                <button type="button" class="btn btn-primary" onclick="goToTab('interaction-details')">
+                <button type="button" class="btn btn-lg btn-primary" onclick="goToTab('interaction-details')">
                     مرحله بعد
-                    <i class="fa fa-arrow-left ms-1"></i>
+                    <i class="fa fa-arrow-left ms-2"></i>
                 </button>
             </div>
         </div>

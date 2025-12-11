@@ -1,85 +1,107 @@
 ﻿<script>
-    // ⭐⭐⭐ مدیریت انتخاب Contact
-    function initializeContactSelection() {
-        $('#contactSelect').on('change', function() {
-            const contactId = $(this).val();
-            
-            if (!contactId || contactId === '') {
-                $('#contactOrganizationsSection').hide();
-                return;
-            }
+$(document).ready(function() {
+    console.log('✅ CRM Contact/Organization Scripts Loading...');
 
-            console.log(`🔄 Contact changed: ${contactId}`);
-            loadContactOrganizations(contactId);
-        });
-    }
+    // ========== مدیریت تغییر شعبه ==========
+    $('#branchSelect').on('change', function() {
+        const branchId = $(this).val();
 
-    // ⭐⭐⭐ بارگذاری سازمان‌های یک Contact
-    function loadContactOrganizations(contactId) {
-        $.ajax({
-            url: '@Url.Action("ContactTriggerSelect", "CRM")',
-            type: 'POST',
-            data: {
-                contactId: contactId,
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-            },
-            success: function(html) {
-                $('#contactOrganizationsList').html(html);
-                $('#contactOrganizationsSection').slideDown();
-                console.log('✅ Contact organizations loaded');
-            },
-            error: function(xhr) {
-                console.error('❌ Error loading contact organizations:', xhr);
-                $('#contactOrganizationsSection').hide();
-            }
-        });
-    }
-
-    // ⭐⭐⭐ مدیریت انتخاب Organization
-    function initializeOrganizationSelection() {
-        $('#organizationSelect').on('change', function() {
-            const organizationId = $(this).val();
-            
-            console.log('🔍 Organization Select Changed:', {
-                organizationId: organizationId,
-                elementExists: $('#organizationSelect').length > 0,
-                selectValue: $(this).val(),
-                selectedText: $(this).find('option:selected').text()
-            });
-            
-            if (!organizationId || organizationId === '' || organizationId === '0') {
-                console.log('⚠️ No organization selected, resetting contact dropdown');
-                $('#organizationContactsSection').hide();
-                
-                // ⭐⭐⭐ بازگرداندن dropdown افراد به حالت اولیه (همه افراد شعبه)
-                resetContactDropdownToAllBranchContacts();
-                return;
-            }
-
-            console.log(`🔄 Organization changed: ${organizationId}, loading members...`);
-            loadOrganizationMembers(organizationId);
-        });
-    }
-
-    // ⭐⭐⭐ بازگرداندن dropdown افراد به حالت اولیه
-    function resetContactDropdownToAllBranchContacts() {
-        console.log('🔄 Resetting contact dropdown to all branch contacts...');
-        
-        const branchId = $('#branchSelect').val() || $('input[name="BranchId"]').val();
-        
         if (!branchId) {
-            console.warn('⚠️ No branchId found, cannot reset contacts');
+            $('#organizationSelect, #contactSelect, #contactSelectForOrg')
+                .prop('disabled', true)
+                .empty()
+                .append('<option value="">ابتدا شعبه را انتخاب کنید</option>');
+            $('#organizationContactsSection, #contactOrganizationsSection').hide();
             return;
         }
-        
-        // Trigger کردن بارگذاری مجدد داده‌های شعبه
-        loadBranchData(branchId);
-    }
 
-    // ⭐⭐⭐ بارگذاری اعضای یک Organization با سمت (مشابه Task)
+        console.log('🔄 Branch changed:', branchId);
+
+        // نمایش loading
+        $('#OrganizationSelectionDiv').html('<div class="text-center py-2"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
+        $('#ContactSelectionDiv').html('<div class="text-center py-2"><i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
+
+        $.ajax({
+            url: '@Url.Action("BranchTriggerSelect", "CRM")',
+            type: 'POST',
+            data: {
+                branchId: branchId,
+                __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                console.log('✅ Branch data loaded:', response);
+
+                if (response.status === 'update-view' && response.viewList) {
+                    // بروزرسانی Contact dropdown
+                    const contactView = response.viewList.find(v => v.elementId === 'ContactSelectionDiv');
+                    if (contactView && contactView.view && contactView.view.result) {
+                        $('#ContactSelectionDiv').html(contactView.view.result);
+                        initializeContactSelect2();
+                    }
+
+                    // بروزرسانی Organization dropdown
+                    const orgView = response.viewList.find(v => v.elementId === 'OrganizationSelectionDiv');
+                    if (orgView && orgView.view && orgView.view.result) {
+                        $('#OrganizationSelectionDiv').html(orgView.view.result);
+                        initializeOrganizationSelect2();
+                    }
+
+                    // پاک کردن بخش‌های نمایش
+                    $('#organizationContactsSection').hide().find('#organizationContactsList').empty();
+                    $('#contactOrganizationsSection').hide().find('#contactOrganizationsList').empty();
+
+                    if (typeof Dashmix !== 'undefined') {
+                        Dashmix.helpers('jq-notify', {
+                            type: 'success',
+                            icon: 'fa fa-check me-1',
+                            message: 'لیست افراد و سازمان‌ها بروز شد'
+                        });
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ Error loading branch data:', { status, error });
+                $('#ContactSelectionDiv').html('<select class="form-select" disabled><option>خطا در بارگذاری</option></select>');
+                $('#OrganizationSelectionDiv').html('<select class="form-select" disabled><option>خطا در بارگذاری</option></select>');
+
+                if (typeof Dashmix !== 'undefined') {
+                    Dashmix.helpers('jq-notify', {
+                        type: 'danger',
+                        icon: 'fa fa-times me-1',
+                        message: 'خطا در بارگذاری اطلاعات'
+                    });
+                }
+            }
+        });
+    });
+
+    // ========== مدیریت تغییر Organization ==========
+    $(document).on('change', '#organizationSelect', function() {
+        const organizationId = $(this).val();
+
+        console.log('🔍 Organization Select Changed:', organizationId);
+
+        if (!organizationId || organizationId === '' || organizationId === '0') {
+            console.log('⚠️ No organization selected, hiding members');
+            $('#organizationContactsSection').slideUp();
+            
+            // پاک کردن dropdown افراد در panel سازمان
+            $('#contactSelectForOrg')
+                .empty()
+                .append('<option value="">-- ابتدا سازمان را انتخاب کنید --</option>')
+                .prop('disabled', true);
+            
+            return;
+        }
+
+        console.log(`🔄 Organization changed: ${organizationId}, loading members...`);
+        loadOrganizationMembers(organizationId);
+    });
+
+    // ========== بارگذاری اعضای سازمان ==========
     function loadOrganizationMembers(organizationId) {
         console.log('📡 [CRM] Loading organization members for:', organizationId);
-        
+
         // نمایش Loading
         $('#organizationContactsList').html(`
             <div class="text-center py-4">
@@ -96,40 +118,43 @@
             type: 'GET',
             data: { organizationId: organizationId },
             beforeSend: function() {
-                console.log('🚀 [CRM] Sending request to:', '@Url.Action("GetOrganizationMembers", "CRM")');
+                console.log('🚀 [CRM] Sending request to GetOrganizationMembers');
             },
             success: function(response) {
                 console.log('✅ [CRM] Response received:', response);
-                
-                // ⭐⭐⭐ بررسی دقیق response (مشابه Task)
+
                 if (response.status === 'update-view' && response.viewList && response.viewList.length > 0) {
                     var viewData = response.viewList[0];
-                    console.log('📝 [CRM] Updating element:', viewData.elementId);
-                    
-                    // ⭐ به‌روزرسانی HTML
                     $('#organizationContactsList').html(viewData.view.result);
-                    
+
+                    // ⭐⭐⭐ به‌روزرسانی Badge تعداد
+                    if (response.membersCount !== undefined) {
+                        $('#membersCount').text(response.membersCount);
+                    }
+
                     console.log(`✅ [CRM] Organization members loaded: ${response.membersCount} members`);
-                    
-                    // ⭐⭐⭐ به‌روزرسانی dropdown افراد (فقط برای CRM، Task نیاز ندارد)
+
+                    // ⭐⭐⭐ به‌روزرسانی dropdown افراد با اعضای سازمان
                     if (response.members && Array.isArray(response.members) && response.members.length > 0) {
-                        console.log('🔄 [CRM] Updating contact dropdown with', response.members.length, 'members');
+                        console.log('🔄 [CRM] Updating contact dropdown with members');
                         updateContactDropdownWithMembers(response.members);
                     } else {
                         console.warn('⚠️ [CRM] No members array in response');
+                        
+                        // غیرفعال کردن dropdown اگر هیچ عضوی نیست
+                        $('#contactSelectForOrg')
+                            .empty()
+                            .append('<option value="">-- هیچ عضوی در این سازمان نیست --</option>')
+                            .prop('disabled', true);
                     }
-                    
+
                     // نمایش نوتیفیکیشن
-                    if (response.membersCount > 0) {
-                        if (typeof Dashmix !== 'undefined') {
-                            Dashmix.helpers('jq-notify', {
-                                type: 'info',
-                                icon: 'fa fa-users me-1',
-                                message: `${response.membersCount} عضو در این سازمان یافت شد`
-                            });
-                        }
-                    } else {
-                        console.log('ℹ️ [CRM] No members found in this organization');
+                    if (response.membersCount > 0 && typeof Dashmix !== 'undefined') {
+                        Dashmix.helpers('jq-notify', {
+                            type: 'info',
+                            icon: 'fa fa-users me-1',
+                            message: `${response.membersCount} عضو در این سازمان یافت شد`
+                        });
                     }
                 } else if (response.status === 'error') {
                     console.error('❌ [CRM] Server error:', response.message);
@@ -141,129 +166,78 @@
                     `);
                 } else {
                     console.error('❌ [CRM] Invalid response format:', response);
-                    $('#organizationContactsList').html(`
-                        <div class="alert alert-warning">
-                            <i class="fa fa-exclamation-triangle me-2"></i>
-                            فرمت پاسخ نامعتبر است
-                            <pre class="mt-2 small">${JSON.stringify(response, null, 2)}</pre>
-                        </div>
-                    `);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('❌ [CRM] AJAX Error:', {
-                    status: status,
-                    error: error,
-                    statusCode: xhr.status,
-                    responseText: xhr.responseText?.substring(0, 500)
-                });
-                
+                console.error('❌ [CRM] AJAX Error:', { status, error, statusCode: xhr.status });
+
                 $('#organizationContactsList').html(`
                     <div class="alert alert-danger">
                         <i class="fa fa-exclamation-triangle me-2"></i>
                         <strong>خطا در دریافت اعضای سازمان</strong>
-                        <p class="mb-0 mt-2 small">
-                            Status: ${xhr.status} - ${error}
-                        </p>
-                        <pre class="mt-2 small text-muted">${xhr.responseText?.substring(0, 300)}</pre>
+                        <p class="mb-0 mt-2 small">Status: ${xhr.status} - ${error}</p>
                     </div>
                 `);
             }
         });
     }
 
-    // ⭐⭐⭐ به‌روزرسانی dropdown افراد با اعضای سازمان
+    // ========== به‌روزرسانی dropdown افراد با اعضای سازمان ==========
     function updateContactDropdownWithMembers(members) {
-        console.log('🔄 Updating contact dropdown with members:', members);
-        
-        if (!members || members.length === 0) {
-            console.warn('⚠️ No members provided to updateContactDropdownWithMembers');
+        console.log('🔄 Updating contact dropdown with', members.length, 'members');
+
+        var $contactSelectForOrg = $('#contactSelectForOrg');
+
+        if ($contactSelectForOrg.length === 0) {
+            console.error('❌ contactSelectForOrg not found!');
             return;
         }
-        
-        // پیدا کردن dropdown افراد
-        var $contactSelect = $('#contactSelect');
-        
-        if ($contactSelect.length === 0) {
-            console.error('❌ Contact select element not found!');
-            return;
+
+        // Destroy Select2 if exists
+        if ($contactSelectForOrg.hasClass('select2-hidden-accessible')) {
+            $contactSelectForOrg.select2('destroy');
         }
-        
-        console.log('✅ Contact select found, updating options...');
-        
-        // Destroy کردن Select2 موجود
-        try {
-            if ($contactSelect.hasClass('select2-hidden-accessible')) {
-                $contactSelect.select2('destroy');
-                console.log('  → Select2 destroyed');
-            }
-        } catch (e) {
-            console.warn('⚠️ Could not destroy Select2:', e);
-        }
-        
-        // پاک کردن options موجود
-        $contactSelect.empty();
-        
-        // افزودن option پیش‌فرض
-        $contactSelect.append('<option value="">-- انتخاب فرد از اعضای سازمان --</option>');
-        console.log('  → Default option added');
-        
-        // اضافه کردن اعضای سازمان
+
+        // پاک کردن و افزودن option پیش‌فرض
+        $contactSelectForOrg.empty().append('<option value="">-- انتخاب فرد از اعضای سازمان --</option>');
+
+        // اضافه کردن اعضا
         var addedCount = 0;
         members.forEach(function(member) {
-            try {
-                // ⭐ استفاده از camelCase (از controller)
-                var optionText = member.contactFullName || 'نام نامشخص';
-                var contactId = member.contactId;
-                
-                if (member.positionTitle) {
-                    optionText += ` (${member.positionTitle})`;
-                }
-                if (member.departmentName) {
-                    optionText += ` - ${member.departmentName}`;
-                }
-                
-                var fullName = optionText.split(' (')[0] || '';
-                var nameParts = fullName.split(' ');
-                
-                var $option = $('<option></option>')
-                    .val(contactId)
-                    .text(optionText)
-                    .attr('data-firstname', nameParts[0] || '')
-                    .attr('data-lastname', nameParts[1] || '')
-                    .attr('data-nationalcode', member.contactNationalCode || '')
-                    .attr('data-phone', member.contactPhone || '')
-                    .attr('data-position', member.positionTitle || '')
-                    .attr('data-department', member.departmentName || '');
-                
-                $contactSelect.append($option);
-                addedCount++;
-                
-                console.log(`  → Added: ${optionText} (ID: ${contactId})`);
-            } catch (e) {
-                console.error('❌ Error adding member option:', e, member);
+            var optionText = member.contactFullName || 'نام نامشخص';
+
+            if (member.positionTitle) {
+                optionText += ` (${member.positionTitle})`;
             }
+            if (member.departmentName) {
+                optionText += ` - ${member.departmentName}`;
+            }
+
+            var $option = $('<option></option>')
+                .val(member.contactId)
+                .text(optionText)
+                .attr('data-position', member.positionTitle || '')
+                .attr('data-department', member.departmentName || '')
+                .attr('data-phone', member.contactPhone || '');
+
+            $contactSelectForOrg.append($option);
+            addedCount++;
         });
-        
+
         console.log(`  → Added ${addedCount} member options`);
-        
-        // راه‌اندازی مجدد Select2
-        try {
-            $contactSelect.select2({
-                dir: 'rtl',
-                width: '100%',
-                placeholder: 'انتخاب فرد از اعضای سازمان...',
-                allowClear: true,
-                templateResult: typeof formatContactOption !== 'undefined' ? formatContactOption : null,
-                templateSelection: typeof formatContactSelection !== 'undefined' ? formatContactSelection : null
-            });
-            console.log('  → Select2 reinitialized');
-        } catch (e) {
-            console.error('❌ Error reinitializing Select2:', e);
-        }
-        
+
+        // فعال کردن و راه‌اندازی مجدد Select2
+        $contactSelectForOrg.prop('disabled', false);
+
+        $contactSelectForOrg.select2({
+            dir: 'rtl',
+            width: '100%',
+            placeholder: 'انتخاب فرد از اعضای سازمان...',
+            allowClear: true
+        });
+
         console.log(`✅ Contact dropdown updated with ${addedCount} members`);
-        
+
         // نمایش پیام موفقیت
         if (typeof Dashmix !== 'undefined') {
             Dashmix.helpers('jq-notify', {
@@ -274,11 +248,180 @@
         }
     }
 
-    // ⭐ DEPRECATED: نگه‌داری برای backward compatibility
-    function loadOrganizationContacts(organizationId) {
-        console.log('⚠️ DEPRECATED: loadOrganizationContacts called, redirecting to loadOrganizationMembers');
-        loadOrganizationMembers(organizationId);
+    // ========== مدیریت تغییر Contact (اختیاری) ==========
+    $(document).on('change', '#contactSelect', function() {
+        const contactId = $(this).val();
+
+        if (!contactId) {
+            $('#contactOrganizationsSection').slideUp();
+            return;
+        }
+
+        console.log(`🔄 Contact changed: ${contactId}`);
+        // می‌توانید اینجا سازمان‌های مرتبط با فرد را بارگذاری کنید
+        // loadContactOrganizations(contactId);
+    });
+
+    // ========== مدیریت تغییر Tab ==========
+    $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function(e) {
+        const target = $(e.target).attr('data-bs-target');
+
+        console.log('🔄 Tab changed:', target);
+
+        if (target === '#contact-panel') {
+            // پاک کردن انتخاب سازمان
+            $('#organizationSelect').val('').trigger('change.select2');
+            $('#contactSelectForOrg').val('').trigger('change.select2');
+            $('#organizationContactsSection').slideUp();
+
+        } else if (target === '#organization-panel') {
+            // پاک کردن انتخاب فرد
+            $('#contactSelect').val('').trigger('change.select2');
+            $('#contactOrganizationsSection').slideUp();
+        }
+    });
+
+    // ========== راه‌اندازی Select2 اولیه ==========
+    function initializeContactSelect2() {
+        $('#contactSelect').select2({
+            dir: 'rtl',
+            width: '100%',
+            placeholder: 'انتخاب فرد...',
+            allowClear: true
+        });
+        console.log('✅ Contact Select2 initialized');
     }
 
-    console.log('✅ Contact/Organization Scripts Loaded');
+    function initializeOrganizationSelect2() {
+        $('#organizationSelect').select2({
+            dir: 'rtl',
+            width: '100%',
+            placeholder: 'انتخاب شرکت/سازمان...',
+            allowClear: true
+        });
+        console.log('✅ Organization Select2 initialized');
+    }
+
+    // اجرای اولیه
+    initializeContactSelect2();
+    initializeOrganizationSelect2();
+
+    console.log('✅ CRM Contact/Organization Scripts Loaded Successfully');
+});
+
+// ========== باز کردن Modal افزودن سریع ==========
+window.openQuickAddModalForCRM = function(type) {
+    console.log('🎯 Opening Quick Add Modal:', type);
+
+    // بررسی انتخاب شعبه
+    var branchId = $('#branchSelect').val() || $('input[name="BranchId"]').val();
+    
+    if (!branchId) {
+        if (typeof Dashmix !== 'undefined') {
+            Dashmix.helpers('jq-notify', {
+                type: 'warning',
+                icon: 'fa fa-exclamation-triangle me-1',
+                message: 'لطفاً ابتدا شعبه را انتخاب کنید'
+            });
+        } else {
+            alert('لطفاً ابتدا شعبه را انتخاب کنید');
+        }
+        return;
+    }
+
+    var url = '';
+    if (type === 'contact') {
+        url = '@Url.Action("QuickAddContactPartial", "CRM")';
+    } else if (type === 'organization') {
+        url = '@Url.Action("QuickAddOrganizationPartial", "CRM")';
+    }
+
+    console.log('  → URL:', url);
+    console.log('  → Branch ID:', branchId);
+
+    // ⭐⭐⭐ استفاده از createAndShowModal از main.js
+    if (typeof createAndShowModal === 'function') {
+        createAndShowModal({
+            url: url,
+            backdrop: true,
+            keyboard: true,
+            removeOnHide: true,
+            onShown: function(modalInstance, $modal) {
+                console.log('✅ Quick Add Modal shown');
+
+                // تنظیم BranchId
+                $('#quickContactBranchId, #quickOrgBranchId').val(branchId);
+            },
+            onSubmitSuccess: function(response, modalInstance) {
+                console.log('✅ Quick Add Success:', response);
+
+                if (response.success) {
+                    // اضافه کردن به Select2
+                    if (type === 'contact' && response.contact) {
+                        // ⭐ چک کردن tab فعال
+                        const activeTab = $('.nav-link.active[data-bs-toggle="pill"]').attr('data-bs-target');
+                        
+                        let contactSelect;
+                        if (activeTab === '#organization-panel') {
+                            contactSelect = '#contactSelectForOrg';
+                        } else {
+                            contactSelect = '#contactSelect';
+                        }
+
+                        var newOption = new Option(
+                            response.contact.lastName + ' ' + response.contact.firstName,
+                            response.contact.id,
+                            true,
+                            true
+                        );
+                        $(contactSelect).append(newOption).trigger('change');
+
+                        console.log('  → Contact added to dropdown:', contactSelect);
+
+                        // نمایش پیام
+                        if (typeof Dashmix !== 'undefined') {
+                            Dashmix.helpers('jq-notify', {
+                                type: 'success',
+                                icon: 'fa fa-check me-1',
+                                message: 'فرد با موفقیت ایجاد و انتخاب شد'
+                            });
+                        }
+
+                    } else if (type === 'organization' && response.organization) {
+                        var orgSelect = '#organizationSelect';
+                        var newOption = new Option(
+                            response.organization.name,
+                            response.organization.id,
+                            true,
+                            true
+                        );
+                        $(orgSelect).append(newOption).trigger('change');
+
+                        console.log('  → Organization added to dropdown');
+
+                        // نمایش پیام
+                        if (typeof Dashmix !== 'undefined') {
+                            Dashmix.helpers('jq-notify', {
+                                type: 'success',
+                                icon: 'fa fa-check me-1',
+                                message: 'سازمان با موفقیت ایجاد و انتخاب شد'
+                            });
+                        }
+
+                        // بارگذاری اعضای سازمان
+                        setTimeout(function() {
+                            $(orgSelect).trigger('change');
+                        }, 500);
+                    }
+
+                    // بستن modal
+                    modalInstance.hide();
+                }
+            }
+        });
+    } else {
+        console.error('❌ createAndShowModal is not defined');
+        alert('خطا در سیستم: createAndShowModal یافت نشد');
+    }
+};
 </script>
