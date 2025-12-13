@@ -14,6 +14,7 @@ using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
+using MahERP.DataModelLayer.Services.CoreServices; // ⭐⭐⭐ NEW
 using MahERP.Hubs;
 using MahERP.Services;
 using MahERP.WebApp.Services;
@@ -95,6 +96,17 @@ builder.Services.AddScoped<ICrmLeadStatusRepository, CrmLeadStatusRepository>();
 builder.Services.AddScoped<ICrmLeadRepository, CrmLeadRepository>();
 builder.Services.AddScoped<ICrmLeadInteractionRepository, CrmLeadInteractionRepository>();
 builder.Services.AddScoped<ICrmFollowUpRepository, CrmFollowUpRepository>();
+
+// ⭐⭐⭐ CRM Lead Source & Lost Reason Services - NEW
+builder.Services.AddScoped<CrmLeadSourceRepository>();
+builder.Services.AddScoped<CrmLostReasonRepository>();
+
+// ⭐⭐⭐ CRM Pipeline & Opportunity Services
+builder.Services.AddScoped<ICrmPipelineStageRepository, CrmPipelineStageRepository>();
+builder.Services.AddScoped<ICrmOpportunityRepository, CrmOpportunityRepository>();
+
+// ⭐⭐⭐ Core Integration Service (هسته مرکزی یکپارچگی ماژول‌ها)
+builder.Services.AddScoped<ICoreIntegrationService, CoreIntegrationService>();
 
 // Activity Logger Service
 builder.Services.AddScoped<ActivityLoggerService>();

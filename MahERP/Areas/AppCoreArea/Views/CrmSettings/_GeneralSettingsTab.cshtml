@@ -1,0 +1,232 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmGeneralSettingsViewModel
+
+<div class="p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="fa fa-sliders-h text-info me-2"></i>تنظیمات عمومی CRM
+        </h5>
+    </div>
+
+    <form id="generalSettingsForm">
+        @Html.AntiForgeryToken()
+        <div class="row">
+            <!-- ستون چپ: اعلان‌ها -->
+            <div class="col-lg-6">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-bell text-primary me-2"></i>تنظیمات اعلان‌ها
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="EnableNotifications" 
+                                       id="enableNotifications" @(Model.EnableNotifications ? "checked" : "") />
+                                <label class="form-check-label fw-semibold" for="enableNotifications">
+                                    فعال‌سازی اعلان‌های CRM
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="notificationOptions" class="ps-4">
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="NotifyOnNewLead" 
+                                           id="notifyOnNewLead" @(Model.NotifyOnNewLead ? "checked" : "") />
+                                    <label class="form-check-label" for="notifyOnNewLead">
+                                        <i class="fa fa-user-plus text-success me-1"></i>اعلان Lead جدید
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="NotifyOnStageChange" 
+                                           id="notifyOnStageChange" @(Model.NotifyOnStageChange ? "checked" : "") />
+                                    <label class="form-check-label" for="notifyOnStageChange">
+                                        <i class="fa fa-exchange-alt text-info me-1"></i>اعلان تغییر مرحله Opportunity
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="NotifyOnOpportunityWon" 
+                                           id="notifyOnOpportunityWon" @(Model.NotifyOnOpportunityWon ? "checked" : "") />
+                                    <label class="form-check-label" for="notifyOnOpportunityWon">
+                                        <i class="fa fa-trophy text-warning me-1"></i>اعلان برنده شدن فرصت
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="NotifyOnOpportunityLost" 
+                                           id="notifyOnOpportunityLost" @(Model.NotifyOnOpportunityLost ? "checked" : "") />
+                                    <label class="form-check-label" for="notifyOnOpportunityLost">
+                                        <i class="fa fa-times-circle text-danger me-1"></i>اعلان از دست رفتن فرصت
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fa fa-clock me-1"></i>هشدار عدم فعالیت (روز)
+                                </label>
+                                <input type="number" class="form-control" name="InactivityWarningDays" 
+                                       value="@Model.InactivityWarningDays" min="1" max="365" />
+                                <small class="form-text text-muted">
+                                    بعد از این تعداد روز بدون فعالیت، هشدار ارسال می‌شود
+                                </small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fa fa-calendar-check me-1"></i>یادآوری پیگیری (روز)
+                                </label>
+                                <input type="number" class="form-control" name="FollowUpReminderDays" 
+                                       value="@Model.FollowUpReminderDays" min="1" max="30" />
+                                <small class="form-text text-muted">
+                                    چند روز قبل از موعد پیگیری یادآوری ارسال شود
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ستون راست: تنظیمات فروش -->
+            <div class="col-lg-6">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-chart-line text-success me-2"></i>تنظیمات فروش
+                        </h3>
+                    </div>
+                    <div class="block-content">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fa fa-money-bill me-1"></i>واحد پول پیش‌فرض
+                                </label>
+                                <select class="form-select" name="DefaultCurrency" id="defaultCurrency">
+                                    <option value="IRR">ریال (IRR)</option>
+                                    <option value="IRT">تومان (IRT)</option>
+                                    <option value="USD">دلار (USD)</option>
+                                    <option value="EUR">یورو (EUR)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fa fa-percent me-1"></i>درصد احتمال پیش‌فرض
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="DefaultProbability" 
+                                           value="@Model.DefaultProbability" min="0" max="100" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="form-text text-muted">
+                                    درصد پیش‌فرض برای Opportunity جدید
+                                </small>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="AutoCreateFollowUpTask" 
+                                       id="autoCreateFollowUpTask" @(Model.AutoCreateFollowUpTask ? "checked" : "") />
+                                <label class="form-check-label" for="autoCreateFollowUpTask">
+                                    <i class="fa fa-tasks text-primary me-1"></i>ایجاد خودکار تسک پیگیری
+                                </label>
+                            </div>
+                            <small class="form-text text-muted ps-4">
+                                هنگام ایجاد پیگیری، به صورت خودکار تسک مربوطه نیز ایجاد شود
+                            </small>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="EnableAutoAssignment" 
+                                       id="enableAutoAssignment" @(Model.EnableAutoAssignment ? "checked" : "") />
+                                <label class="form-check-label" for="enableAutoAssignment">
+                                    <i class="fa fa-random text-warning me-1"></i>تخصیص خودکار Lead
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="autoAssignmentOptions" class="ps-4">
+                            <label class="form-label">نوع تخصیص خودکار</label>
+                            <select class="form-select" name="AutoAssignmentType" id="autoAssignmentType">
+                                <option value="0">Round Robin (چرخشی)</option>
+                                <option value="1">بر اساس بار کاری</option>
+                                <option value="2">بر اساس تخصص</option>
+                            </select>
+                            <small class="form-text text-muted">
+                                نحوه تخصیص خودکار Lead به کاربران
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- دکمه ذخیره -->
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <button type="submit" class="btn btn-primary w-100" id="saveGeneralSettingsBtn">
+                    <i class="fa fa-save me-1"></i>ذخیره تنظیمات
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Set initial values from model
+        $('#defaultCurrency').val('@Model.DefaultCurrency');
+        $('#autoAssignmentType').val('@Model.AutoAssignmentType');
+
+        // Toggle notification options
+        $('#enableNotifications').change(function () {
+            $('#notificationOptions').toggle($(this).is(':checked'));
+        }).trigger('change');
+
+        // Toggle auto-assignment options
+        $('#enableAutoAssignment').change(function () {
+            $('#autoAssignmentOptions').toggle($(this).is(':checked'));
+        }).trigger('change');
+
+        // Submit form
+        $('#generalSettingsForm').submit(function (e) {
+            e.preventDefault();
+
+            var $btn = $('#saveGeneralSettingsBtn');
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ذخیره...');
+
+            $.ajax({
+                url: '/AppCoreArea/CrmSettings/SaveGeneralSettings',
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function (response) {
+                    if (response.success) {
+                        SendResposeMessage([{ status: 'success', text: response.message }]);
+                    } else {
+                        SendResposeMessage([{ status: 'error', text: response.message }]);
+                    }
+                },
+                error: function () {
+                    SendResposeMessage([{ status: 'error', text: 'خطا در ذخیره تنظیمات' }]);
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i>ذخیره تنظیمات');
+                }
+            });
+        });
+    });
+</script>

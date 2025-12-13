@@ -1,4 +1,5 @@
 ﻿using MahERP.CommonLayer.PublicClasses;
+using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.ViewModels.Common;
 using System;
 using System.Collections.Generic;
@@ -163,6 +164,110 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         /// </summary>
         [Display(Name = "تاریخ پایان مهلت")]
         public string? TaskDueDatePersian { get; set; }
+
+        // ========== ⭐⭐⭐ CRM Integration Fields ==========
+
+        /// <summary>
+        /// ماژول منبع تسک
+        /// </summary>
+        [Display(Name = "ماژول منبع")]
+        public ModuleSourceType SourceModule { get; set; } = ModuleSourceType.Tasking;
+
+        /// <summary>
+        /// آیا تسک از CRM آمده؟
+        /// </summary>
+        [NotMapped]
+        public bool IsFromCrm => SourceModule == ModuleSourceType.CRM;
+
+        /// <summary>
+        /// نوع منبع CRM
+        /// </summary>
+        [Display(Name = "نوع منبع CRM")]
+        public CrmTaskSourceType? CrmSourceType { get; set; }
+
+        /// <summary>
+        /// شناسه سرنخ CRM
+        /// </summary>
+        public int? CrmLeadId { get; set; }
+
+        /// <summary>
+        /// نام سرنخ CRM (برای نمایش)
+        /// </summary>
+        [Display(Name = "سرنخ CRM")]
+        public string? CrmLeadName { get; set; }
+
+        /// <summary>
+        /// شناسه فرصت فروش CRM
+        /// </summary>
+        public int? CrmOpportunityId { get; set; }
+
+        /// <summary>
+        /// شناسه پیگیری CRM
+        /// </summary>
+        public int? CrmFollowUpId { get; set; }
+
+        /// <summary>
+        /// متن Badge CRM
+        /// </summary>
+        [NotMapped]
+        public string? CrmBadgeText => CrmSourceType switch
+        {
+            CrmTaskSourceType.LeadFollowUp => "پیگیری سرنخ",
+            CrmTaskSourceType.OpportunityNextAction => "فرصت فروش",
+            CrmTaskSourceType.Ticket => "تیکت",
+            CrmTaskSourceType.ContractRenewal => "تمدید قرارداد",
+            CrmTaskSourceType.CustomerCall => "تماس مشتری",
+            CrmTaskSourceType.PaymentReminder => "یادآوری پرداخت",
+            _ => null
+        };
+
+        /// <summary>
+        /// رنگ Badge CRM
+        /// </summary>
+        [NotMapped]
+        public string? CrmBadgeColor => CrmSourceType switch
+        {
+            CrmTaskSourceType.LeadFollowUp => "info",
+            CrmTaskSourceType.OpportunityNextAction => "success",
+            CrmTaskSourceType.Ticket => "warning",
+            CrmTaskSourceType.ContractRenewal => "primary",
+            CrmTaskSourceType.CustomerCall => "secondary",
+            CrmTaskSourceType.PaymentReminder => "danger",
+            _ => null
+        };
+
+        /// <summary>
+        /// آیکون CRM
+        /// </summary>
+        [NotMapped]
+        public string? CrmIcon => CrmSourceType switch
+        {
+            CrmTaskSourceType.LeadFollowUp => "fa-user-plus",
+            CrmTaskSourceType.OpportunityNextAction => "fa-handshake",
+            CrmTaskSourceType.Ticket => "fa-ticket",
+            CrmTaskSourceType.ContractRenewal => "fa-file-contract",
+            CrmTaskSourceType.CustomerCall => "fa-phone",
+            CrmTaskSourceType.PaymentReminder => "fa-credit-card",
+            _ => null
+        };
+
+        /// <summary>
+        /// لینک به صفحه CRM مرتبط
+        /// </summary>
+        [NotMapped]
+        public string? CrmLink
+        {
+            get
+            {
+                if (CrmLeadId.HasValue)
+                    return $"/CrmArea/Leads/Details/{CrmLeadId}";
+                if (CrmOpportunityId.HasValue)
+                    return $"/CrmArea/Opportunities/Details/{CrmOpportunityId}";
+                return null;
+            }
+        }
+
+        // ========== END CRM Integration Fields ==========
 
         /// <summary>
         /// ⭐ بررسی تکمیل شدن تسک

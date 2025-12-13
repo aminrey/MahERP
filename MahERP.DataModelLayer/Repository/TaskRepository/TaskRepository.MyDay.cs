@@ -29,6 +29,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         .ThenInclude(t => t.TaskCategory)
                 .Include(tmd => tmd.TaskAssignment.Task.Contact)
                 .Include(tmd => tmd.TaskAssignment.Task.Organization)
+                .Include(tmd => tmd.TaskAssignment.Task.CrmLead) // ⭐⭐⭐ CRM Lead
                 .Include(tmd => tmd.TaskAssignment.Task.TaskOperations.Where(o => !o.IsDeleted))
                 .Where(tmd =>
                     tmd.TaskAssignment.AssignedUserId == userId &&
@@ -99,6 +100,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                         .ThenInclude(t => t.TaskCategory)
                 .Include(tmd => tmd.TaskAssignment.Task.Contact)
                 .Include(tmd => tmd.TaskAssignment.Task.Organization)
+                .Include(tmd => tmd.TaskAssignment.Task.CrmLead) // ⭐⭐⭐ CRM Lead
                 .Include(tmd => tmd.TaskAssignment.Task.TaskOperations.Where(o => !o.IsDeleted))
                 .Where(tmd =>
                     tmd.TaskAssignment.AssignedUserId == userId &&
@@ -671,7 +673,15 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 TaskDueDate = task.DueDate,
                 TaskDueDatePersian = task.DueDate.HasValue 
                     ? ConvertDateTime.ConvertMiladiToShamsi(task.DueDate.Value, "yyyy/MM/dd") 
-                    : null
+                    : null,
+
+                // ⭐⭐⭐ CRM Integration Fields
+                SourceModule = task.SourceModule,
+                CrmSourceType = task.CrmSourceType,
+                CrmLeadId = task.CrmLeadId,
+                CrmLeadName = task.CrmLead?.DisplayName,
+                CrmOpportunityId = task.CrmOpportunityId,
+                CrmFollowUpId = task.CrmFollowUpId
             };
         }
 

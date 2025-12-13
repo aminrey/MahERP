@@ -1,0 +1,131 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmPipelineStageViewModel
+@{
+    Layout = null;
+    var isEdit = Model?.Id > 0;
+    var modalTitle = isEdit ? "ویرایش مرحله" : "مرحله جدید";
+    var modalIcon = isEdit ? "fa-edit" : "fa-plus-circle";
+}
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content modal-contents">
+        <div class="block block-rounded block-themed block-transparent mb-0">
+            <div class="block-header bg-primary">
+                <h3 class="block-title text-white">
+                    <i class="fas @modalIcon me-2"></i>@modalTitle
+                </h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form asp-area="CrmArea" asp-controller="Pipeline" asp-action="SaveStage" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="BranchId" />
+                
+                <div class="block-content">
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label">نام مرحله <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">توضیحات</label>
+                        <input asp-for="Description" class="form-control" />
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">رنگ</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="color" asp-for="ColorCode" class="form-control form-control-color" style="width: 60px; height: 40px;" />
+                                    <input asp-for="ColorCode" type="text" class="form-control" style="width: 100px;" />
+                                    
+                                    <!-- Color Palette -->
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm" style="background: #3b82f6; width: 30px; height: 30px;" onclick="setStageColor('#3b82f6')"></button>
+                                        <button type="button" class="btn btn-sm" style="background: #10b981; width: 30px; height: 30px;" onclick="setStageColor('#10b981')"></button>
+                                        <button type="button" class="btn btn-sm" style="background: #f59e0b; width: 30px; height: 30px;" onclick="setStageColor('#f59e0b')"></button>
+                                        <button type="button" class="btn btn-sm" style="background: #ef4444; width: 30px; height: 30px;" onclick="setStageColor('#ef4444')"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Icon" class="form-label">آیکون</label>
+                                <select asp-for="Icon" class="form-select">
+                                    <option value="fas fa-circle">⭕ دایره</option>
+                                    <option value="fas fa-star">⭐ ستاره</option>
+                                    <option value="fas fa-phone">📞 تلفن</option>
+                                    <option value="fas fa-handshake">🤝 مذاکره</option>
+                                    <option value="fas fa-file-contract">📋 قرارداد</option>
+                                    <option value="fas fa-check">✅ تایید</option>
+                                    <option value="fas fa-trophy">🏆 برنده</option>
+                                    <option value="fas fa-times">❌ رد</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="WinProbability" class="form-label">
+                            احتمال موفقیت: <span id="probabilityDisplay">@Model.WinProbability</span>%
+                        </label>
+                        <input asp-for="WinProbability" type="range" class="form-range" min="0" max="100" 
+                               oninput="document.getElementById('probabilityDisplay').textContent = this.value" />
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsDefault" type="checkbox" class="form-check-input" />
+                                <label asp-for="IsDefault" class="form-check-label">پیش‌فرض</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsWonStage" type="checkbox" class="form-check-input" />
+                                <label asp-for="IsWonStage" class="form-check-label">مرحله برنده</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsLostStage" type="checkbox" class="form-check-input" />
+                                <label asp-for="IsLostStage" class="form-check-label">مرحله باخت</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if (isEdit)
+                    {
+                        <div class="mt-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" type="checkbox" class="form-check-input" />
+                                <label asp-for="IsActive" class="form-check-label">فعال</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                    <button class="btn btn-hero btn-primary" data-save="modal-ajax-save" type="button">
+                        <i class="fas fa-save me-1"></i>
+                        ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setStageColor(color) {
+        $('input[name="ColorCode"]').val(color);
+    }
+</script>

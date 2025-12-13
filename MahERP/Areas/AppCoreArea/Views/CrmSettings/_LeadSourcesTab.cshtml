@@ -1,0 +1,187 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLeadSourceListViewModel>
+
+<div class="p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="fa fa-globe text-success me-2"></i>مدیریت منابع سرنخ
+        </h5>
+        <button type="button" class="btn btn-success"
+                data-toggle="modal-ajax"
+                href="@Url.Action("CreateLeadSourceModal", "CrmSettings", new { area = "AppCoreArea" })">
+            <i class="fa fa-plus me-1"></i>افزودن منبع جدید
+        </button>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle me-2"></i>
+        منابع سرنخ نحوه آشنایی مشتریان بالقوه با کسب و کار شما را مشخص می‌کنند (مثل: وب‌سایت، تبلیغات، معرفی و...).
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-vcenter">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>نام منبع</th>
+                    <th>کد</th>
+                    <th class="text-center">رنگ</th>
+                    <th class="text-center">آیکون</th>
+                    <th class="text-center">تعداد Lead</th>
+                    <th class="text-center">ویژگی‌ها</th>
+                    <th class="text-center">وضعیت</th>
+                    <th class="text-center" style="width: 150px;">عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="leadSourceTableBody">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var source in Model)
+                    {
+                        <tr data-id="@source.Id">
+                            <td>
+                                <i class="fa fa-grip-vertical text-muted cursor-move"></i>
+                                <span class="ms-2">@source.DisplayOrder</span>
+                            </td>
+                            <td>
+                                <i class="fa @source.Icon me-2" style="color: @source.ColorCode;"></i>
+                                <strong>@source.Name</strong>
+                                @if (!string.IsNullOrEmpty(source.NameEnglish))
+                                {
+                                    <small class="text-muted d-block">@source.NameEnglish</small>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(source.Code))
+                                {
+                                    <code>@source.Code</code>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" style="background-color: @source.ColorCode; width: 30px; height: 20px; display: inline-block;"></span>
+                            </td>
+                            <td class="text-center">
+                                <i class="fa @source.Icon" style="color: @source.ColorCode;"></i>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@source.LeadsCount</span>
+                            </td>
+                            <td class="text-center">
+                                @if (source.IsDefault)
+                                {
+                                    <span class="badge bg-primary me-1" title="پیش‌فرض">پیش‌فرض</span>
+                                }
+                                @if (source.IsSystem)
+                                {
+                                    <span class="badge bg-info me-1" title="سیستمی">سیستمی</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (source.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">غیرفعال</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-alt-primary" title="ویرایش"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("EditLeadSourceModal", "CrmSettings", new { area = "AppCoreArea", id = source.Id })">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                @if (source.CanDelete)
+                                {
+                                    <button type="button" class="btn btn-sm btn-alt-danger" title="حذف" onclick="deleteLeadSource(@source.Id)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="fa fa-inbox fa-3x mb-3 d-block"></i>
+                            هیچ منبعی تعریف نشده است
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- منابع پیشنهادی -->
+    <div class="mt-4">
+        <h6 class="text-muted mb-3">
+            <i class="fa fa-lightbulb me-2"></i>منابع پیشنهادی برای افزودن:
+        </h6>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddSource('وب‌سایت', 'WEBSITE', 'fa-globe')">
+                <i class="fa fa-globe me-1"></i>وب‌سایت
+            </button>
+            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddSource('معرفی', 'REFERRAL', 'fa-users')">
+                <i class="fa fa-users me-1"></i>معرفی
+            </button>
+            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddSource('تبلیغات', 'ADS', 'fa-ad')">
+                <i class="fa fa-ad me-1"></i>تبلیغات
+            </button>
+            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddSource('نمایشگاه', 'EXHIBITION', 'fa-store')">
+                <i class="fa fa-store me-1"></i>نمایشگاه
+            </button>
+            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddSource('شبکه‌های اجتماعی', 'SOCIAL', 'fa-share-alt')">
+                <i class="fa fa-share-alt me-1"></i>شبکه‌های اجتماعی
+            </button>
+            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddSource('تماس مستقیم', 'DIRECT', 'fa-phone')">
+                <i class="fa fa-phone me-1"></i>تماس مستقیم
+            </button>
+            <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddSource('ایمیل مارکتینگ', 'EMAIL', 'fa-envelope')">
+                <i class="fa fa-envelope me-1"></i>ایمیل مارکتینگ
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function quickAddSource(name, code, icon) {
+    // بارگذاری مودال با پارامترهای پیش‌فرض
+    var url = '@Url.Action("CreateLeadSourceModal", "CrmSettings", new { area = "AppCoreArea" })' + 
+              '?name=' + encodeURIComponent(name) + 
+              '&code=' + encodeURIComponent(code) + 
+              '&icon=' + encodeURIComponent(icon);
+    
+    openModalAjax(url);
+}
+
+function deleteLeadSource(id) {
+    Swal.fire({
+        title: 'حذف منبع سرنخ',
+        text: 'آیا از حذف این منبع مطمئن هستید؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'بله، حذف شود',
+        cancelButtonText: 'انصراف',
+        confirmButtonColor: '#d33'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post('@Url.Action("DeleteLeadSource", "CrmSettings", new { area = "AppCoreArea" })', 
+                { id: id, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() }, 
+                function (response) {
+                    if (response.success) {
+                        SendResposeMessage([{ status: 'success', text: response.message }]);
+                        location.reload();
+                    } else {
+                        SendResposeMessage([{ status: 'error', text: response.message }]);
+                    }
+                });
+        }
+    });
+}
+</script>

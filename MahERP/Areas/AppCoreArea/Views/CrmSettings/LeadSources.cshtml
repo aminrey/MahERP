@@ -1,0 +1,49 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLeadSourceListViewModel>
+@{
+    ViewData["Title"] = "مدیریت منابع سرنخ";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-globe text-success me-2"></i>مدیریت منابع سرنخ
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="Index">تنظیمات CRM</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">منابع سرنخ</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list me-1"></i>لیست منابع سرنخ
+            </h3>
+            <div class="block-options">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#leadSourceModal">
+                    <i class="fa fa-plus me-1"></i>افزودن منبع جدید
+                </button>
+            </div>
+        </div>
+        <div class="block-content">
+            @await Html.PartialAsync("_LeadSourcesTab", Model)
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+@await Html.PartialAsync("_LeadSourceModal")

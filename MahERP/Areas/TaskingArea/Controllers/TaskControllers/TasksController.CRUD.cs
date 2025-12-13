@@ -450,6 +450,12 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
+                // ⭐⭐⭐ اطلاع‌رسانی به Core Integration Service (برای CRM و سایر ماژول‌ها)
+                await _coreIntegrationService.OnTaskCompletedAsync(
+                    model.TaskId, 
+                    userId, 
+                    model.CompletionReport);
+
                 // ثبت در تاریخچه
                 await _taskHistoryRepository.LogTaskCompletedAsync(
                     model.TaskId,

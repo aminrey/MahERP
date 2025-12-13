@@ -1,0 +1,204 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLostReasonListViewModel>
+
+<div class="p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="fa fa-times-circle text-danger me-2"></i>مدیریت دلایل از دست رفتن
+        </h5>
+        <button type="button" class="btn btn-danger"
+                data-toggle="modal-ajax"
+                href="@Url.Action("CreateLostReasonModal", "CrmSettings", new { area = "AppCoreArea" })">
+            <i class="fa fa-plus me-1"></i>افزودن دلیل جدید
+        </button>
+    </div>
+
+    <div class="alert alert-warning">
+        <i class="fa fa-exclamation-triangle me-2"></i>
+        دلایل از دست رفتن به شما کمک می‌کند علت عدم تبدیل سرنخ‌ها و فرصت‌ها به مشتری را تحلیل کنید و استراتژی‌های فروش را بهبود دهید.
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-vcenter">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>عنوان</th>
+                    <th>کد</th>
+                    <th class="text-center">کاربرد</th>
+                    <th class="text-center">دسته‌بندی</th>
+                    <th class="text-center">استفاده</th>
+                    <th class="text-center">ویژگی‌ها</th>
+                    <th class="text-center">وضعیت</th>
+                    <th class="text-center" style="width: 150px;">عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="lostReasonTableBody">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var reason in Model)
+                    {
+                        <tr data-id="@reason.Id">
+                            <td>
+                                <i class="fa fa-grip-vertical text-muted cursor-move"></i>
+                                <span class="ms-2">@reason.DisplayOrder</span>
+                            </td>
+                            <td>
+                                <i class="fa @reason.Icon me-2" style="color: @reason.ColorCode;"></i>
+                                <strong>@reason.Title</strong>
+                                @if (!string.IsNullOrEmpty(reason.TitleEnglish))
+                                {
+                                    <small class="text-muted d-block">@reason.TitleEnglish</small>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(reason.Code))
+                                {
+                                    <code>@reason.Code</code>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @(reason.AppliesTo == 0 ? "bg-info" : reason.AppliesTo == 1 ? "bg-primary" : "bg-warning")">
+                                    @reason.AppliesToText
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@reason.CategoryText</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="text-muted" title="Lead">
+                                    <i class="fa fa-user me-1"></i>@reason.LeadCount
+                                </span>
+                                <span class="mx-1">|</span>
+                                <span class="text-muted" title="Opportunity">
+                                    <i class="fa fa-handshake me-1"></i>@reason.OpportunityCount
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                @if (reason.IsSystem)
+                                {
+                                    <span class="badge bg-info me-1" title="سیستمی">سیستمی</span>
+                                }
+                                @if (reason.RequiresNote)
+                                {
+                                    <span class="badge bg-warning me-1" title="نیاز به توضیح">
+                                        <i class="fa fa-comment"></i>
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (reason.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">غیرفعال</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-alt-primary" title="ویرایش"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("EditLostReasonModal", "CrmSettings", new { area = "AppCoreArea", id = reason.Id })">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                @if (reason.CanDelete)
+                                {
+                                    <button type="button" class="btn btn-sm btn-alt-danger" title="حذف" onclick="deleteLostReason(@reason.Id)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="fa fa-inbox fa-3x mb-3 d-block"></i>
+                            هیچ دلیلی تعریف نشده است
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- دلایل پیشنهادی -->
+    <div class="mt-4">
+        <h6 class="text-muted mb-3">
+            <i class="fa fa-lightbulb me-2"></i>دلایل پیشنهادی برای افزودن:
+        </h6>
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-danger"><i class="fa fa-dollar-sign me-1"></i>دلایل مرتبط با قیمت</h6>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-sm btn-alt-danger" onclick="quickAddReason('قیمت بالا', 'PRICE_HIGH', 0)">قیمت بالا</button>
+                    <button type="button" class="btn btn-sm btn-alt-danger" onclick="quickAddReason('بودجه ناکافی', 'NO_BUDGET', 0)">بودجه ناکافی</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-warning"><i class="fa fa-users me-1"></i>دلایل مرتبط با رقابت</h6>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-sm btn-alt-warning" onclick="quickAddReason('انتخاب رقیب', 'COMPETITOR', 1)">انتخاب رقیب</button>
+                    <button type="button" class="btn btn-sm btn-alt-warning" onclick="quickAddReason('ویژگی‌های رقیب بهتر', 'COMPETITOR_FEATURES', 1)">ویژگی‌های رقیب بهتر</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-info"><i class="fa fa-clock me-1"></i>دلایل مرتبط با زمان</h6>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-sm btn-alt-info" onclick="quickAddReason('زمان‌بندی نامناسب', 'BAD_TIMING', 2)">زمان‌بندی نامناسب</button>
+                    <button type="button" class="btn btn-sm btn-alt-info" onclick="quickAddReason('پروژه متوقف شد', 'PROJECT_STOPPED', 2)">پروژه متوقف شد</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-secondary"><i class="fa fa-question-circle me-1"></i>سایر دلایل</h6>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddReason('عدم پاسخگویی', 'NO_RESPONSE', 5)">عدم پاسخگویی</button>
+                    <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddReason('نیاز نداشتن', 'NO_NEED', 4)">نیاز نداشتن</button>
+                    <button type="button" class="btn btn-sm btn-alt-secondary" onclick="quickAddReason('سایر', 'OTHER', 5)">سایر</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function quickAddReason(title, code, category) {
+    var url = '@Url.Action("CreateLostReasonModal", "CrmSettings", new { area = "AppCoreArea" })' + 
+              '?title=' + encodeURIComponent(title) + 
+              '&code=' + encodeURIComponent(code) + 
+              '&category=' + category;
+    
+    openModalAjax(url);
+}
+
+function deleteLostReason(id) {
+    Swal.fire({
+        title: 'حذف دلیل از دست رفتن',
+        text: 'آیا از حذف این دلیل مطمئن هستید؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'بله، حذف شود',
+        cancelButtonText: 'انصراف',
+        confirmButtonColor: '#d33'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post('@Url.Action("DeleteLostReason", "CrmSettings", new { area = "AppCoreArea" })', 
+                { id: id, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() }, 
+                function (response) {
+                    if (response.success) {
+                        SendResposeMessage([{ status: 'success', text: response.message }]);
+                        location.reload();
+                    } else {
+                        SendResposeMessage([{ status: 'error', text: response.message }]);
+                    }
+                });
+        }
+    });
+}
+</script>

@@ -11,6 +11,7 @@ using MahERP.DataModelLayer.Repository.Tasking;
 using MahERP.DataModelLayer.Repository.TaskRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
+using MahERP.DataModelLayer.Services.CoreServices; // ⭐⭐⭐ NEW
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -43,6 +44,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         private readonly IOrganizationRepository _organizationRepository;
         private readonly ITeamRepository _teamRepository;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ICoreIntegrationService _coreIntegrationService; // ⭐⭐⭐ NEW
 
         #endregion
 
@@ -67,7 +69,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             IModuleAccessService moduleAccessService,
             IOrganizationRepository organizationRepository,
             ITeamRepository teamRepository,
-            IServiceScopeFactory serviceScopeFactory)
+            IServiceScopeFactory serviceScopeFactory,
+            ICoreIntegrationService coreIntegrationService) // ⭐⭐⭐ NEW
             : base(uow, userManager, persianDateHelper, memoryCache, activityLogger, 
                    userRepository, BaseRepository, moduleTracking, moduleAccessService)
         {
@@ -83,6 +86,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             _organizationRepository = organizationRepository;
             _teamRepository = teamRepository;
             _serviceScopeFactory = serviceScopeFactory;
+            _coreIntegrationService = coreIntegrationService; // ⭐⭐⭐ NEW
         }
 
         #endregion

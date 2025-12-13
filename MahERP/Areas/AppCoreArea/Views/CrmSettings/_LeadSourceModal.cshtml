@@ -1,0 +1,84 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLeadSourceViewModel
+@{
+    Layout = null;
+    var isEdit = Model?.Id > 0;
+    var modalTitle = isEdit ? "ویرایش منبع سرنخ" : "افزودن منبع سرنخ";
+    var modalIcon = isEdit ? "fa-edit" : "fa-plus";
+}
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content modal-contents">
+        <div class="block block-rounded block-themed block-transparent mb-0">
+            <div class="block-header bg-success">
+                <h3 class="block-title text-white">
+                    <i class="fa @modalIcon me-2"></i>@modalTitle
+                </h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="SaveLeadSource" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <div class="block-content">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Name" class="form-label">نام منبع <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" required />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="NameEnglish" class="form-label">نام انگلیسی</label>
+                            <input asp-for="NameEnglish" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Code" class="form-label">کد</label>
+                            <input asp-for="Code" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="ColorCode" class="form-label">رنگ</label>
+                            <input asp-for="ColorCode" type="color" class="form-control form-control-color w-100" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Icon" class="form-label">آیکون</label>
+                            <input asp-for="Icon" class="form-control" placeholder="fa-globe" />
+                            <small class="text-muted">مثال: fa-globe</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DisplayOrder" class="form-label">ترتیب نمایش</label>
+                            <input asp-for="DisplayOrder" type="number" class="form-control" min="1" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch mt-4">
+                                <input asp-for="IsDefault" type="checkbox" class="form-check-input" />
+                                <label asp-for="IsDefault" class="form-check-label">پیش‌فرض</label>
+                            </div>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label asp-for="Description" class="form-label">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" type="checkbox" class="form-check-input" />
+                                <label asp-for="IsActive" class="form-check-label">فعال</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                    <button class="btn btn-hero btn-success" data-save="modal-ajax-save" type="button">
+                        <i class="fa fa-save me-1"></i>
+                        ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

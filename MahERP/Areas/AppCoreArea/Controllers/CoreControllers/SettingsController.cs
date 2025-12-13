@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
 {
     [Area("AppCoreArea")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class SettingsController : BaseController
     {
         private readonly TelegramBotSendNotification _telegramService;

@@ -8,12 +8,24 @@
                 transition: all 0.2s ease;">
 
         @* ⭐ Ribbons کوچک برای ویژگی‌ها *@
-        @if (Model.IsFocused || Model.IsInMyDay)
+        @if (Model.IsFocused || Model.IsInMyDay || Model.IsFromCrm)
         {
             <div class="position-absolute top-0 start-0 d-flex" style="z-index: 3;">
+                @* ⭐⭐⭐ Badge CRM *@
+                @if (Model.IsFromCrm && !string.IsNullOrEmpty(Model.CrmBadgeText))
+                {
+                    <a href="@Model.CrmLink" 
+                       class="badge @Model.CrmBadgeColor text-white me-1 mt-2 ms-2 text-decoration-none" 
+                       style="font-size: 0.65rem;"
+                       data-tooltip="@(Model.CrmLeadName ?? "مشاهده در CRM")"
+                       data-tooltip-position="top"
+                       data-tooltip-theme="dark">
+                        <i class="fa @Model.CrmIcon me-1"></i>@Model.CrmBadgeText
+                    </a>
+                }
                 @if (Model.IsFocused)
                 {
-                    <span class="badge bg-warning text-dark me-1 mt-2 ms-2" style="font-size: 0.65rem;">
+                    <span class="badge bg-warning text-dark me-1 mt-2 @(Model.IsFromCrm ? "" : "ms-2")" style="font-size: 0.65rem;">
                         <i class="fa fa-star"></i> فوکوس
                     </span>
                 }
@@ -55,6 +67,16 @@
 
                         @* Badge های اطلاعاتی (همیشه نمایش) *@
                         <div class="mt-1 d-flex flex-wrap gap-1">
+                            @* ⭐⭐⭐ Badge CRM (نسخه موبایل - در ردیف badge ها) *@
+                            @if (Model.IsFromCrm && !string.IsNullOrEmpty(Model.CrmBadgeText))
+                            {
+                                <a href="@Model.CrmLink" 
+                                   class="badge @Model.CrmBadgeColor text-white text-decoration-none d-lg-none" 
+                                   style="font-size: 0.65rem;">
+                                    <i class="fa @Model.CrmIcon me-1"></i>CRM
+                                </a>
+                            }
+                            
                             @* دسته‌بندی *@
                             @if (!string.IsNullOrEmpty(Model.CategoryTitle))
                             {
@@ -300,6 +322,19 @@
                             <i class="fa fa-eye"></i>
                         </a>
 
+                        @* ⭐⭐⭐ لینک سریع به CRM *@
+                        @if (Model.IsFromCrm && !string.IsNullOrEmpty(Model.CrmLink))
+                        {
+                            <a href="@Model.CrmLink" 
+                               target="_blank"
+                               class="btn btn-sm btn-alt-info d-none d-md-inline-block"
+                               data-tooltip="مشاهده در CRM"
+                               data-tooltip-position="top"
+                               data-tooltip-theme="info">
+                                <i class="fa fa-external-link-alt"></i>
+                            </a>
+                        }
+
                         @if (!Model.IsCompleted && Model.CanComplete)
                         {
                             <button class="btn btn-sm btn-success complete-task-from-list-btn"
@@ -333,6 +368,17 @@
                                 <i class="fa fa-ellipsis-v"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                @* ⭐⭐⭐ لینک CRM در منو *@
+                                @if (Model.IsFromCrm && !string.IsNullOrEmpty(Model.CrmLink))
+                                {
+                                    <li>
+                                        <a class="dropdown-item" href="@Model.CrmLink" target="_blank">
+                                            <i class="fa @Model.CrmIcon me-2 text-info"></i>مشاهده @Model.CrmBadgeText
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                }
+                                
                                 @if (!Model.IsCompleted)
                                 {
                                     @if (!Model.IsInMyDay)
@@ -392,8 +438,15 @@
     /// </summary>
     string GetBorderAndBackgroundStyle(TaskCardViewModel model)
     {
-        // ⭐⭐⭐ اولویت: فوکوس > روز من > تکمیل شده > پیش‌فرض
-        if (model.IsFocused)
+        // ⭐⭐⭐ اولویت: CRM > فوکوس > روز من > تکمیل شده > پیش‌فرض
+        if (model.IsFromCrm)
+        {
+            // فیروزه‌ای برای CRM
+            return "border-right: 5px solid #17a2b8; " +
+                   "background: linear-gradient(90deg, rgba(23,162,184,0.08) 0%, rgba(255,255,255,0) 100%); " +
+                   "border-block: 1px solid #bee5eb;";
+        }
+        else if (model.IsFocused)
         {
             // زرد برای فوکوس - استایل bg-gd-sun
             return "border-right: 5px solid #f59f00; " +
@@ -426,19 +479,17 @@
     /* ⭐⭐⭐ استایل کارت نواری با فاصله بیشتر */
     .task-row-card {
         transition: all 0.2s ease !important;
-        position: relative; /* ⭐ ضروری برای z-index */
+        position: relative;
         z-index: 1;
     }
 
-    /* ⭐⭐⭐ افزایش z-index هنگام hover یا باز بودن dropdown */
     .task-row-card:hover,
     .task-row-card:has(.dropdown-menu.show) {
         transform: translateX(-3px);
         box-shadow: 0 4px 15px rgba(0,0,0,0.12) !important;
-        z-index: 100 !important; /* ⭐ بالاتر از بقیه کارت‌ها */
+        z-index: 100 !important;
     }
 
-    /* ⭐ اطمینان از اینکه dropdown بالای همه چیز باشد */
     .task-row-card .dropdown-menu {
         z-index: 1000;
     }
@@ -447,7 +498,6 @@
         color: #4285f4 !important;
     }
 
-    /* ⭐⭐⭐ اطمینان از نمایش صحیح tooltip */
     .task-member-avatar {
         cursor: pointer;
     }

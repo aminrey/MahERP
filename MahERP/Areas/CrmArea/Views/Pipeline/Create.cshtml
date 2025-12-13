@@ -1,0 +1,265 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmOpportunityCreateViewModel
+@{
+    ViewData["Title"] = "ایجاد فرصت جدید";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+                <div>
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>
+                        ایجاد فرصت جدید
+                    </h4>
+                    <small class="text-muted">ایجاد فرصت فروش و تعیین اقدام بعدی</small>
+                </div>
+            </div>
+            
+            <form asp-action="Create" method="post" id="createForm">
+                <input type="hidden" asp-for="BranchId" />
+                
+                <!-- Basic Info Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        اطلاعات اصلی
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label">عنوان فرصت <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" placeholder="مثال: فروش نرم‌افزار به شرکت X" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="توضیحات فرصت..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Value" class="form-label">ارزش تخمینی (تومان)</label>
+                                    <input asp-for="Value" type="number" class="form-control" placeholder="0" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Source" class="form-label">منبع</label>
+                                    <select asp-for="Source" class="form-select">
+                                        <option value="">انتخاب کنید...</option>
+                                        @if (ViewBag.Sources != null)
+                                        {
+                                            @foreach (var source in ViewBag.Sources as List<string>)
+                                            {
+                                                <option value="@source">@source</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-user text-primary me-2"></i>
+                        مشتری
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            یک فرد یا سازمان را انتخاب کنید
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">فرد (Contact)</label>
+                                    <select asp-for="ContactId" class="form-select select2-contacts">
+                                        <option value="">انتخاب کنید...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">سازمان</label>
+                                    <select asp-for="OrganizationId" class="form-select select2-organizations">
+                                        <option value="">انتخاب کنید...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pipeline & Assignment -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        Pipeline و مسئول
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="StageId" class="form-label">مرحله Pipeline</label>
+                                    <select asp-for="StageId" class="form-select" asp-items="ViewBag.Stages as SelectList">
+                                        <option value="">مرحله پیش‌فرض</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="AssignedUserId" class="form-label">مسئول پیگیری</label>
+                                    <select asp-for="AssignedUserId" class="form-select" asp-items="ViewBag.Users as SelectList">
+                                        <option value="">کاربر فعلی</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="ExpectedCloseDatePersian" class="form-label">تاریخ پیش‌بینی بسته شدن</label>
+                                    <input asp-for="ExpectedCloseDatePersian" class="form-control persian-date" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ⭐⭐⭐ NEXT ACTION CARD -->
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="fas fa-bell me-2"></i>
+                        <strong>اقدام بعدی (الزامی)</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="NextActionType" class="form-label">نوع اقدام <span class="text-danger">*</span></label>
+                                    <select asp-for="NextActionType" class="form-select" asp-items="ViewBag.NextActionTypes as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>">
+                                        <option value="">انتخاب کنید...</option>
+                                    </select>
+                                    <span asp-validation-for="NextActionType" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="NextActionDatePersian" class="form-label">تاریخ <span class="text-danger">*</span></label>
+                                    <input asp-for="NextActionDatePersian" class="form-control persian-date" />
+                                    <span asp-validation-for="NextActionDatePersian" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="NextActionTime" class="form-label">ساعت</label>
+                                    <input asp-for="NextActionTime" type="time" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="NextActionNote" class="form-label">یادداشت اقدام</label>
+                            <textarea asp-for="NextActionNote" class="form-control" rows="2" placeholder="توضیحات اقدام بعدی..."></textarea>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input asp-for="CreateTaskForNextAction" class="form-check-input" type="checkbox" />
+                            <label asp-for="CreateTaskForNextAction" class="form-check-label">
+                                <i class="fas fa-tasks me-1"></i>
+                                ایجاد تسک خودکار برای این اقدام
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-sticky-note text-primary me-2"></i>
+                        یادداشت‌ها
+                    </div>
+                    <div class="card-body">
+                        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="یادداشت‌های داخلی..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        ذخیره فرصت
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Initialize Select2 for contacts
+        $('.select2-contacts').select2({
+            placeholder: 'جستجوی فرد...',
+            allowClear: true,
+            ajax: {
+                url: '/CrmArea/Contacts/Search',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return { term: params.term };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.map(function(item) {
+                            return { id: item.id, text: item.text };
+                        })
+                    };
+                }
+            }
+        });
+        
+        // Initialize Select2 for organizations
+        $('.select2-organizations').select2({
+            placeholder: 'جستجوی سازمان...',
+            allowClear: true,
+            ajax: {
+                url: '/CrmArea/Organizations/Search',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return { term: params.term };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.map(function(item) {
+                            return { id: item.id, text: item.text };
+                        })
+                    };
+                }
+            }
+        });
+        
+        // Persian date picker
+        if (typeof $('.persian-date').persianDatepicker !== 'undefined') {
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true
+            });
+        }
+    </script>
+}

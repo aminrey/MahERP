@@ -1,0 +1,134 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmSettingsIndexViewModel
+@{
+    ViewData["Title"] = "تنظیمات CRM";
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-cog text-primary me-2"></i>تنظیمات ماژول CRM
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-area="AppCoreArea" asp-controller="Dashboard" asp-action="Index">داشبورد</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">تنظیمات CRM</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <!-- آمار کلی -->
+    <div class="row">
+        <div class="col-md-3">
+            <a class="block block-rounded block-link-shadow text-center" href="#leadStatusSection">
+                <div class="block-content block-content-full">
+                    <div class="fs-1 fw-bold text-primary">@Model.TotalLeadStatuses</div>
+                </div>
+                <div class="block-content py-2 bg-body-light">
+                    <p class="fw-semibold fs-sm text-muted mb-0">
+                        <i class="fa fa-tags me-1"></i>وضعیت‌های Lead
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a class="block block-rounded block-link-shadow text-center" href="#pipelineSection">
+                <div class="block-content block-content-full">
+                    <div class="fs-1 fw-bold text-info">@Model.TotalPipelineStages</div>
+                </div>
+                <div class="block-content py-2 bg-body-light">
+                    <p class="fw-semibold fs-sm text-muted mb-0">
+                        <i class="fa fa-layer-group me-1"></i>مراحل Pipeline
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a class="block block-rounded block-link-shadow text-center" href="#leadSourceSection">
+                <div class="block-content block-content-full">
+                    <div class="fs-1 fw-bold text-success">@Model.TotalLeadSources</div>
+                </div>
+                <div class="block-content py-2 bg-body-light">
+                    <p class="fw-semibold fs-sm text-muted mb-0">
+                        <i class="fa fa-globe me-1"></i>منابع سرنخ
+                    </p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a class="block block-rounded block-link-shadow text-center" href="#lostReasonSection">
+                <div class="block-content block-content-full">
+                    <div class="fs-1 fw-bold text-danger">@Model.TotalLostReasons</div>
+                </div>
+                <div class="block-content py-2 bg-body-light">
+                    <p class="fw-semibold fs-sm text-muted mb-0">
+                        <i class="fa fa-times-circle me-1"></i>دلایل از دست رفتن
+                    </p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- تب‌ها -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-cogs me-1"></i>تنظیمات پایه CRM
+            </h3>
+        </div>
+        <div class="block-content">
+            <ul class="nav nav-tabs nav-tabs-alt" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="tab-leadstatus" data-bs-toggle="tab" href="#leadStatusSection" role="tab">
+                        <i class="fa fa-tags me-1"></i>وضعیت‌های Lead
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-leadsource" data-bs-toggle="tab" href="#leadSourceSection" role="tab">
+                        <i class="fa fa-globe me-1"></i>منابع سرنخ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-lostreason" data-bs-toggle="tab" href="#lostReasonSection" role="tab">
+                        <i class="fa fa-times-circle me-1"></i>دلایل از دست رفتن
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-general" data-bs-toggle="tab" href="#generalSection" role="tab">
+                        <i class="fa fa-sliders-h me-1"></i>تنظیمات عمومی
+                    </a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <!-- ========== تب وضعیت‌های Lead ========== -->
+                <div class="tab-pane fade show active" id="leadStatusSection" role="tabpanel">
+                    @await Html.PartialAsync("_LeadStatusesTab", Model.LeadStatuses)
+                </div>
+
+                <!-- ========== تب منابع سرنخ ========== -->
+                <div class="tab-pane fade" id="leadSourceSection" role="tabpanel">
+                    @await Html.PartialAsync("_LeadSourcesTab", Model.LeadSources)
+                </div>
+
+                <!-- ========== تب دلایل از دست رفتن ========== -->
+                <div class="tab-pane fade" id="lostReasonSection" role="tabpanel">
+                    @await Html.PartialAsync("_LostReasonsTab", Model.LostReasons)
+                </div>
+
+                <!-- ========== تب تنظیمات عمومی ========== -->
+                <div class="tab-pane fade" id="generalSection" role="tabpanel">
+                    @await Html.PartialAsync("_GeneralSettingsTab", Model.GeneralSettings)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->

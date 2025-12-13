@@ -89,6 +89,18 @@ namespace MahERP.DataModelLayer.Repository.CrmRepository
         /// </summary>
         Task<CrmLead> CreateFromOrganizationAsync(int organizationId, int branchId, string assignedUserId, string creatorUserId);
         
+        // ========== ⭐⭐⭐ Quick Create (برای فرم سریع) ==========
+        
+        /// <summary>
+        /// ایجاد Contact سریع و برگرداندن شناسه
+        /// </summary>
+        Task<int?> CreateQuickContactAndGetIdAsync(string? firstName, string? lastName, string? mobile, string? email, string creatorUserId);
+        
+        /// <summary>
+        /// ایجاد Organization سریع و برگرداندن شناسه
+        /// </summary>
+        Task<int?> CreateQuickOrganizationAndGetIdAsync(string? name, string? phone, string creatorUserId);
+        
         // ========== Statistics ==========
         
         /// <summary>

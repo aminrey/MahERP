@@ -1,4 +1,5 @@
-﻿using MahERP.DataModelLayer.Entities.Crm;
+﻿using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.ViewModels.CrmViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -389,6 +390,78 @@ namespace MahERP.DataModelLayer.Repository.CrmRepository
             };
 
             return await CreateAsync(lead);
+        }
+
+        // ========== ⭐⭐⭐ Quick Create (برای فرم سریع) ==========
+        
+        public async Task<int?> CreateQuickContactAndGetIdAsync(string? firstName, string? lastName, string? mobile, string? email, string creatorUserId)
+        {
+            try
+            {
+                var contact = new Contact
+                {
+                    FirstName = firstName ?? "",
+                    LastName = lastName ?? "",
+                    PrimaryEmail = email,
+                    CreatedDate = DateTime.Now,
+                    CreatorUserId = creatorUserId,
+                    IsActive = true
+                };
+                
+                _context.Contact_Tbl.Add(contact);
+                await _context.SaveChangesAsync();
+                
+                // اضافه کردن شماره موبایل
+                if (!string.IsNullOrWhiteSpace(mobile))
+                {
+                    var phone = new ContactPhone
+                    {
+                        ContactId = contact.Id,
+                        PhoneNumber = mobile,
+                        PhoneType = 1, // موبایل
+                        IsDefault = true,
+                        IsActive = true
+                    };
+                    _context.ContactPhone_Tbl.Add(phone);
+                    await _context.SaveChangesAsync();
+                }
+                
+                _logger.LogInformation("Contact سریع ایجاد شد: ID {Id}, نام: {Name}", contact.Id, contact.FullName);
+                
+                return contact.Id;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "خطا در ایجاد Contact سریع");
+                throw;
+            }
+        }
+        
+        public async Task<int?> CreateQuickOrganizationAndGetIdAsync(string? name, string? phone, string creatorUserId)
+        {
+            try
+            {
+                var organization = new Organization
+                {
+                    Name = name ?? "",
+                    PrimaryPhone = phone,
+                    CreatedDate = DateTime.Now,
+                    CreatorUserId = creatorUserId,
+                    IsActive = true
+                };
+                
+                _context.Organization_Tbl.Add(organization);
+                await _context.SaveChangesAsync();
+                
+                _logger.LogInformation("Organization سریع ایجاد شد: ID {Id}, نام: {Name}", organization.Id, organization.DisplayName);
+                
+                return organization.Id;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "خطا در ایجاد Organization سریع");
+                throw;
+            }
         }
 
         // ========== Statistics ==========

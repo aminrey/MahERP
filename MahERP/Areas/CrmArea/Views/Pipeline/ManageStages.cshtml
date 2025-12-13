@@ -1,0 +1,505 @@
+﻿@using MahERP.DataModelLayer.ViewModels.CrmViewModels
+
+@model List<CrmPipelineStageViewModel>
+@{
+    ViewData["Title"] = "مدیریت مراحل Pipeline";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .stage-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: move;
+            transition: all 0.2s ease;
+        }
+        
+        .stage-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .stage-card.dragging {
+            opacity: 0.5;
+        }
+        
+        .stage-color {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .stage-info {
+            flex: 1;
+        }
+        
+        .stage-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stage-meta {
+            font-size: 0.85rem;
+            color: var(--bs-secondary);
+        }
+        
+        .stage-badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .drag-handle {
+            color: var(--bs-gray-400);
+            cursor: move;
+        }
+        
+        .color-picker-input {
+            width: 60px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="mb-1">
+                        <i class="fas fa-cog text-primary"></i>
+                        مدیریت مراحل Pipeline
+                    </h4>
+                    <p class="text-muted mb-0 small">تنظیم و ترتیب‌بندی مراحل فرآیند فروش</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <select id="branchSelect" class="form-select form-select-sm" style="width: 180px;">
+                        @if (ViewBag.Branches != null)
+                        {
+                            foreach (var branch in ViewBag.Branches as SelectList)
+                            {
+                                if (branch.Selected)
+                                {
+                                    <option value="@branch.Value" selected>@branch.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@branch.Value">@branch.Text</option>
+                                }
+                            }
+                        }
+                    </select>
+                    
+                    <button class="btn btn-primary btn-sm" 
+                            data-toggle="modal-ajax" 
+                            href="@Url.Action("CreateStageModal", "Pipeline", new { branchId = ViewBag.CurrentBranchId })">
+                        <i class="fas fa-plus me-1"></i>
+                        مرحله جدید
+                    </button>
+                    
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Stages List -->
+            <div id="stagesList">
+                @foreach (var stage in Model.OrderBy(s => s.DisplayOrder))
+                {
+                    var bgStyle = $"background: {stage.ColorCode}; color: white;";
+                    
+                    <div class="stage-card" data-stage-id="@stage.Id" draggable="true">
+                        <div class="drag-handle">
+                            <i class="fas fa-grip-vertical fa-lg"></i>
+                        </div>
+                        
+                        <div class="stage-color" style="@bgStyle">
+                            <i class="@stage.Icon"></i>
+                        </div>
+                        
+                        <div class="stage-info">
+                            <div class="stage-name">@stage.Name</div>
+                            <div class="stage-meta">
+                                احتمال موفقیت: @stage.WinProbability%
+                                @if (!string.IsNullOrEmpty(stage.Description))
+                                {
+                                    <span class="mx-1">|</span>
+                                    @stage.Description
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="stage-badges">
+                            @if (stage.IsDefault)
+                            {
+                                <span class="badge bg-primary">پیش‌فرض</span>
+                            }
+                            @if (stage.IsWonStage)
+                            {
+                                <span class="badge bg-success">برنده</span>
+                            }
+                            @if (stage.IsLostStage)
+                            {
+                                <span class="badge bg-danger">از دست رفته</span>
+                            }
+                            @if (!stage.IsActive)
+                            {
+                                <span class="badge bg-secondary">غیرفعال</span>
+                            }
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    data-toggle="modal-ajax" 
+                                    href="@Url.Action("EditStageModal", "Pipeline", new { id = stage.Id })">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            @if (!stage.IsWonStage && !stage.IsLostStage && !stage.IsDefault)
+                            {
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteStage(@stage.Id)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            <!-- Info Alert -->
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>راهنما:</strong> برای تغییر ترتیب مراحل، کارت‌ها را با ماوس بکشید و رها کنید.
+                مراحل «برنده» و «از دست رفته» در انتهای Pipeline نمایش داده می‌شوند.
+            </div>
+        </div>
+        
+        <!-- Right Panel -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb text-warning me-2"></i>
+                    بهترین شیوه‌ها
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li class="mb-2">مراحل را بر اساس فرآیند واقعی فروش خود تنظیم کنید</li>
+                        <li class="mb-2">احتمال موفقیت هر مرحله را بر اساس تجربه تنظیم کنید</li>
+                        <li class="mb-2">از رنگ‌های متفاوت برای تمایز بصری استفاده کنید</li>
+                        <li class="mb-2">تعداد مراحل را معقول نگه دارید (5-8 مرحله)</li>
+                        <li>یک مرحله را به عنوان پیش‌فرض تنظیم کنید</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="fas fa-palette text-primary me-2"></i>
+                    رنگ‌های پیشنهادی
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn p-2" style="background: #3b82f6; width: 40px; height: 40px;" onclick="setColor('#3b82f6')"></button>
+                        <button class="btn p-2" style="background: #10b981; width: 40px; height: 40px;" onclick="setColor('#10b981')"></button>
+                        <button class="btn p-2" style="background: #f59e0b; width: 40px; height: 40px;" onclick="setColor('#f59e0b')"></button>
+                        <button class="btn p-2" style="background: #ef4444; width: 40px; height: 40px;" onclick="setColor('#ef4444')"></button>
+                        <button class="btn p-2" style="background: #8b5cf6; width: 40px; height: 40px;" onclick="setColor('#8b5cf6')"></button>
+                        <button class="btn p-2" style="background: #06b6d4; width: 40px; height: 40px;" onclick="setColor('#06b6d4')"></button>
+                        <button class="btn p-2" style="background: #ec4899; width: 40px; height: 40px;" onclick="setColor('#ec4899')"></button>
+                        <button class="btn p-2" style="background: #6b7280; width: 40px; height: 40px;" onclick="setColor('#6b7280')"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Stage Modal -->
+<div class="modal fade" id="stageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stageModalTitle">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    مرحله جدید
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stageForm">
+                    <input type="hidden" id="stageId" name="Id" value="0" />
+                    <input type="hidden" id="stageBranchId" name="BranchId" value="@ViewBag.CurrentBranchId" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label">نام مرحله <span class="text-danger">*</span></label>
+                        <input type="text" id="stageName" name="Name" class="form-control" required />
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">توضیحات</label>
+                        <input type="text" id="stageDescription" name="Description" class="form-control" />
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">رنگ</label>
+                                <div class="d-flex gap-2">
+                                    <input type="color" id="stageColor" name="ColorCode" class="color-picker-input" value="#3b82f6" />
+                                    <input type="text" id="stageColorText" class="form-control" value="#3b82f6" style="width: 100px;" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">آیکون</label>
+                                <select id="stageIcon" name="Icon" class="form-select">
+                                    <option value="fas fa-circle">⭕ دایره</option>
+                                    <option value="fas fa-star">⭐ ستاره</option>
+                                    <option value="fas fa-phone">📞 تلفن</option>
+                                    <option value="fas fa-handshake">🤝 مذاکره</option>
+                                    <option value="fas fa-file-contract">📋 قرارداد</option>
+                                    <option value="fas fa-check">✅ تایید</option>
+                                    <option value="fas fa-trophy">🏆 برنده</option>
+                                    <option value="fas fa-times">❌ رد</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">احتمال موفقیت (%)</label>
+                        <input type="range" id="stageProbability" name="WinProbability" class="form-range" min="0" max="100" value="50" />
+                        <div class="d-flex justify-content-between">
+                            <span>0%</span>
+                            <span id="probabilityValue">50%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" id="stageIsDefault" name="IsDefault" class="form-check-input" />
+                                <label class="form-check-label">پیش‌فرض</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" id="stageIsWon" name="IsWonStage" class="form-check-input" />
+                                <label class="form-check-label">مرحله برنده</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" id="stageIsLost" name="IsLostStage" class="form-check-input" />
+                                <label class="form-check-label">مرحله از دست رفته</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check mt-3" id="isActiveContainer" style="display: none;">
+                        <input type="checkbox" id="stageIsActive" name="IsActive" class="form-check-input" checked />
+                        <label class="form-check-label">فعال</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="saveStage()">
+                    <i class="fas fa-save me-1"></i>
+                    ذخیره
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Stage data for editing
+        const stagesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+        
+        // Color picker sync
+        document.getElementById('stageColor').addEventListener('input', function() {
+            document.getElementById('stageColorText').value = this.value;
+        });
+        document.getElementById('stageColorText').addEventListener('input', function() {
+            document.getElementById('stageColor').value = this.value;
+        });
+        
+        // Probability slider
+        document.getElementById('stageProbability').addEventListener('input', function() {
+            document.getElementById('probabilityValue').textContent = this.value + '%';
+        });
+        
+        // Branch change
+        document.getElementById('branchSelect').addEventListener('change', function() {
+            window.location.href = '@Url.Action("ManageStages")?branchId=' + this.value;
+        });
+        
+        // Show add modal
+        function showAddModal() {
+            document.getElementById('stageModalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>مرحله جدید';
+            document.getElementById('stageId').value = '0';
+            document.getElementById('stageName').value = '';
+            document.getElementById('stageDescription').value = '';
+            document.getElementById('stageColor').value = '#3b82f6';
+            document.getElementById('stageColorText').value = '#3b82f6';
+            document.getElementById('stageIcon').value = 'fas fa-circle';
+            document.getElementById('stageProbability').value = '50';
+            document.getElementById('probabilityValue').textContent = '50%';
+            document.getElementById('stageIsDefault').checked = false;
+            document.getElementById('stageIsWon').checked = false;
+            document.getElementById('stageIsLost').checked = false;
+            document.getElementById('stageIsActive').checked = true;
+            document.getElementById('isActiveContainer').style.display = 'none';
+            
+            new bootstrap.Modal(document.getElementById('stageModal')).show();
+        }
+        
+        // Edit stage
+        function editStage(stageId) {
+            const stage = stagesData.find(s => s.Id === stageId);
+            if (!stage) return;
+            
+            document.getElementById('stageModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>ویرایش مرحله';
+            document.getElementById('stageId').value = stage.Id;
+            document.getElementById('stageName').value = stage.Name;
+            document.getElementById('stageDescription').value = stage.Description || '';
+            document.getElementById('stageColor').value = stage.ColorCode || '#3b82f6';
+            document.getElementById('stageColorText').value = stage.ColorCode || '#3b82f6';
+            document.getElementById('stageIcon').value = stage.Icon || 'fas fa-circle';
+            document.getElementById('stageProbability').value = stage.WinProbability || 50;
+            document.getElementById('probabilityValue').textContent = (stage.WinProbability || 50) + '%';
+            document.getElementById('stageIsDefault').checked = stage.IsDefault;
+            document.getElementById('stageIsWon').checked = stage.IsWonStage;
+            document.getElementById('stageIsLost').checked = stage.IsLostStage;
+            document.getElementById('stageIsActive').checked = stage.IsActive;
+            document.getElementById('isActiveContainer').style.display = 'block';
+            
+            new bootstrap.Modal(document.getElementById('stageModal')).show();
+        }
+        
+        // Save stage
+        function saveStage() {
+            const formData = new FormData(document.getElementById('stageForm'));
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert checkboxes
+            data.IsDefault = document.getElementById('stageIsDefault').checked;
+            data.IsWonStage = document.getElementById('stageIsWon').checked;
+            data.IsLostStage = document.getElementById('stageIsLost').checked;
+            data.IsActive = document.getElementById('stageIsActive').checked;
+            data.WinProbability = parseInt(document.getElementById('stageProbability').value);
+            
+            fetch('@Url.Action("SaveStage")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: new URLSearchParams(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('stageModal')).hide();
+                    toastr.success(result.message);
+                    location.reload();
+                } else {
+                    toastr.error(result.message);
+                }
+            });
+        }
+        
+        // Delete stage
+        function deleteStage(stageId) {
+            if (!confirm('آیا از حذف این مرحله اطمینان دارید؟')) return;
+            
+            // TODO: Implement delete API
+            toastr.info('حذف مرحله در حال حاضر امکان‌پذیر نیست. می‌توانید آن را غیرفعال کنید.');
+        }
+        
+        // Set color from palette
+        function setColor(color) {
+            document.getElementById('stageColor').value = color;
+            document.getElementById('stageColorText').value = color;
+        }
+        
+        // Drag & Drop for reordering
+        const stagesList = document.getElementById('stagesList');
+        let draggedItem = null;
+        
+        stagesList.querySelectorAll('.stage-card').forEach(card => {
+            card.addEventListener('dragstart', function() {
+                draggedItem = this;
+                this.classList.add('dragging');
+            });
+            
+            card.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                saveOrder();
+            });
+            
+            card.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(stagesList, e.clientY);
+                if (afterElement == null) {
+                    stagesList.appendChild(draggedItem);
+                } else {
+                    stagesList.insertBefore(draggedItem, afterElement);
+                }
+            });
+        });
+        
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.stage-card:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        function saveOrder() {
+            const stageIds = [...document.querySelectorAll('.stage-card')].map(card => parseInt(card.dataset.stageId));
+            const branchId = document.getElementById('branchSelect').value;
+            
+            fetch('@Url.Action("ReorderStages")?branchId=' + branchId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify(stageIds)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    toastr.success(result.message);
+                } else {
+                    toastr.error(result.message);
+                }
+            });
+        }
+    </script>
+}

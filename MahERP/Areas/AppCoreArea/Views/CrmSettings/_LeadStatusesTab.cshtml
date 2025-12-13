@@ -1,0 +1,137 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLeadStatusViewModel>
+
+<div class="p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="fa fa-tags text-primary me-2"></i>مدیریت وضعیت‌های Lead
+        </h5>
+        <button type="button" class="btn btn-primary" 
+                data-toggle="modal-ajax" 
+                href="@Url.Action("CreateLeadStatusModal", "CrmSettings", new { area = "AppCoreArea" })">
+            <i class="fa fa-plus me-1"></i>افزودن وضعیت جدید
+        </button>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle me-2"></i>
+        وضعیت‌های Lead مراحل مختلف یک سرنخ را از آغاز تا تبدیل شدن به مشتری یا از دست رفتن مشخص می‌کنند.
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-vcenter">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>عنوان</th>
+                    <th class="text-center">رنگ</th>
+                    <th class="text-center">آیکون</th>
+                    <th class="text-center">تعداد Lead</th>
+                    <th class="text-center">ویژگی‌ها</th>
+                    <th class="text-center">وضعیت</th>
+                    <th class="text-center" style="width: 150px;">عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="leadStatusTableBody">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var status in Model)
+                    {
+                        <tr data-id="@status.Id">
+                            <td>
+                                <i class="fa fa-grip-vertical text-muted cursor-move"></i>
+                                <span class="ms-2">@status.DisplayOrder</span>
+                            </td>
+                            <td>
+                                <strong>@status.Title</strong>
+                                @if (!string.IsNullOrEmpty(status.TitleEnglish))
+                                {
+                                    <small class="text-muted d-block">@status.TitleEnglish</small>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" style="background-color: @status.ColorCode; width: 30px; height: 20px; display: inline-block;"></span>
+                            </td>
+                            <td class="text-center">
+                                <i class="fa @status.Icon" style="color: @status.ColorCode;"></i>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@status.LeadsCount</span>
+                            </td>
+                            <td class="text-center">
+                                @if (status.IsDefault)
+                                {
+                                    <span class="badge bg-primary me-1" title="پیش‌فرض">پیش‌فرض</span>
+                                }
+                                @if (status.IsFinal)
+                                {
+                                    <span class="badge @(status.IsPositive ? "bg-success" : "bg-danger") me-1" title="مرحله نهایی">
+                                        @(status.IsPositive ? "تبدیل" : "از دست رفته")
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (status.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">غیرفعال</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-alt-primary" title="ویرایش"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("EditLeadStatusModal", "CrmSettings", new { area = "AppCoreArea", id = status.Id })">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                @if (status.LeadsCount == 0 && !status.IsDefault)
+                                {
+                                    <button type="button" class="btn btn-sm btn-alt-danger" title="حذف" onclick="deleteLeadStatus(@status.Id)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="fa fa-inbox fa-3x mb-3 d-block"></i>
+                            هیچ وضعیتی تعریف نشده است
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function deleteLeadStatus(id) {
+    Swal.fire({
+        title: 'حذف وضعیت',
+        text: 'آیا از حذف این وضعیت مطمئن هستید؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'بله، حذف شود',
+        cancelButtonText: 'انصراف',
+        confirmButtonColor: '#d33'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post('@Url.Action("DeleteLeadStatus", "CrmSettings", new { area = "AppCoreArea" })', 
+                { id: id, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() }, 
+                function (response) {
+                    if (response.success) {
+                        SendResposeMessage([{ status: 'success', text: response.message }]);
+                        location.reload();
+                    } else {
+                        SendResposeMessage([{ status: 'error', text: response.message }]);
+                    }
+                });
+        }
+    });
+}
+</script>

@@ -579,6 +579,46 @@
 					</li>
 				}
 
+				<!-- ============== ⚙️ SYSTEM SETTINGS ============== -->
+				@if (Html.CanAccessAnyIn("CORE.SETTINGS", "CRM.SETTINGS"))
+				{
+					<li class="nav-main-heading">تنظیمات سیستم</li>
+
+					<!-- تنظیمات CRM -->
+					@if (Html.CanAccessAnyIn("CRM.SETTINGS"))
+					{
+						<li class="nav-main-item @(IsCrmSettingsMenuActive(currentController) ? "open" : "")">
+							<a aria-expanded="@(IsCrmSettingsMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+								<i class="nav-main-link-icon fa fa-cog text-info"></i>
+								<span class="nav-main-link-name">تنظیمات CRM</span>
+							</a>
+							<ul class="nav-main-submenu">
+								@if (Html.CanAccessAny("CRM.SETTINGS", "CRM.SETTINGS.VIEW"))
+								{
+									<li class="nav-main-item">
+										<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "Index") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="Index">
+											<i class="nav-main-link-icon fa fa-sliders-h text-primary"></i>
+											<span class="nav-main-link-name">تنظیمات کلی</span>
+										</a>
+									</li>
+									<li class="nav-main-item">
+										<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "LeadSources") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="LeadSources">
+											<i class="nav-main-link-icon fa fa-bullseye text-warning"></i>
+											<span class="nav-main-link-name">منابع سرنخ</span>
+										</a>
+									</li>
+									<li class="nav-main-item">
+										<a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "LostReasons") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="LostReasons">
+											<i class="nav-main-link-icon fa fa-times-circle text-danger"></i>
+											<span class="nav-main-link-name">دلایل از دست دادن</span>
+										</a>
+									</li>
+								}
+							</ul>
+						</li>
+					}
+				}
+
 				<!-- ============== 🚪 LOGOUT ============== -->
 				<li class="nav-main-heading">خروج</li>
 				<li class="nav-main-item">
@@ -605,13 +645,14 @@
 	public bool IsBranchMenuActive(string currentController) => currentController == "Branch" || currentController == "BranchUser";
 	public bool IsTeamMenuActive(string currentController) => currentController == "Team";
 	public bool IsUserManagementMenuActive(string currentController) => currentController == "UserManager";
-	public bool IsPermissionMenuActive(string currentController) => currentController == "Permission" || currentController == "Role" || currentController == "UserPermission";
+	public bool IsPermissionMenuActive(string currentController) => currentController == "Permission" || currentController == "Role" || currentController == "UserPermission" || currentController == "ModuleAccess";
 	public bool IsContactMenuActive(string currentController) => currentController == "Contacts" || currentController == "ContactGroups" || currentController == "BranchContactGroups";
 	public bool IsOrganizationMenuActive(string currentController) => currentController == "Organizations" || currentController == "OrganizationGroups" || currentController == "BranchOrganizationGroups";
 	public bool IsContractMenuActive(string currentController) => currentController == "Contract";
 	public bool IsActivityLogMenuActive(string currentController) => currentController == "UserActivityLog";
 	public bool IsNotificationSettingsMenuActive(string currentController)
 		=> currentController == "NotificationSettings" || currentController == "NotificationTemplates";
+	public bool IsCrmSettingsMenuActive(string currentController) => currentController == "CrmSettings";
 }
 
 <style>

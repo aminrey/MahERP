@@ -1,6 +1,8 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Core;
+using MahERP.DataModelLayer.Entities.TaskManagement;
+using MahERP.DataModelLayer.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -77,10 +79,41 @@ namespace MahERP.DataModelLayer.Entities.Crm
         // ========== اطلاعات تکمیلی ==========
 
         /// <summary>
-        /// منبع سرنخ
+        /// منبع سرنخ (متن قدیمی - برای سازگاری)
         /// </summary>
         [MaxLength(100)]
         public string? Source { get; set; }
+
+        /// <summary>
+        /// ⭐ شناسه منبع سرنخ (جدول جدید)
+        /// </summary>
+        [Display(Name = "منبع سرنخ")]
+        public int? SourceId { get; set; }
+
+        [ForeignKey(nameof(SourceId))]
+        public virtual CrmLeadSource? LeadSource { get; set; }
+
+        /// <summary>
+        /// ⭐ شناسه دلیل از دست رفتن (وقتی وضعیت Lost است)
+        /// </summary>
+        [Display(Name = "دلیل از دست رفتن")]
+        public int? LostReasonId { get; set; }
+
+        [ForeignKey(nameof(LostReasonId))]
+        public virtual CrmLostReason? LostReason { get; set; }
+
+        /// <summary>
+        /// ⭐ توضیحات از دست رفتن
+        /// </summary>
+        [Display(Name = "توضیحات از دست رفتن")]
+        [MaxLength(1000)]
+        public string? LostReasonNote { get; set; }
+
+        /// <summary>
+        /// ⭐ تاریخ از دست رفتن
+        /// </summary>
+        [Display(Name = "تاریخ از دست رفتن")]
+        public DateTime? LostDate { get; set; }
 
         /// <summary>
         /// امتیاز سرنخ (0-100)
@@ -120,6 +153,41 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// وضعیت فعال/غیرفعال
         /// </summary>
         public bool IsActive { get; set; } = true;
+
+        // ========== ⭐⭐⭐ NextAction Fields (اقدام بعدی اجباری) ==========
+
+        /// <summary>
+        /// نوع اقدام بعدی
+        /// </summary>
+        [Display(Name = "نوع اقدام بعدی")]
+        public CrmNextActionType? NextActionType { get; set; }
+
+        /// <summary>
+        /// تاریخ اقدام بعدی
+        /// </summary>
+        [Display(Name = "تاریخ اقدام بعدی")]
+        public DateTime? NextActionDate { get; set; }
+
+        /// <summary>
+        /// یادداشت اقدام بعدی
+        /// </summary>
+        [Display(Name = "یادداشت اقدام بعدی")]
+        [MaxLength(500)]
+        public string? NextActionNote { get; set; }
+
+        /// <summary>
+        /// شناسه تسک اقدام بعدی (اگر به تسک تبدیل شده باشد)
+        /// </summary>
+        [Display(Name = "تسک اقدام بعدی")]
+        public int? NextActionTaskId { get; set; }
+
+        /// <summary>
+        /// Navigation به Task
+        /// </summary>
+        [ForeignKey(nameof(NextActionTaskId))]
+        public virtual Tasks? NextActionTask { get; set; }
+
+        // ========== END NextAction Fields ==========
 
         // ========== Audit Fields ==========
 
@@ -256,5 +324,67 @@ namespace MahERP.DataModelLayer.Entities.Crm
         public int? DaysSinceLastContact => LastContactDate.HasValue 
             ? (int)(DateTime.Now - LastContactDate.Value).TotalDays 
             : null;
+
+        // ========== ⭐⭐⭐ NEW Computed Properties ==========
+
+        /// <summary>
+        /// آیا اقدام بعدی دارد؟
+        /// </summary>
+        [NotMapped]
+        public bool HasNextAction => NextActionDate.HasValue || NextActionTaskId.HasValue;
+
+        /// <summary>
+        /// آیا اقدام بعدی سررسید شده؟
+        /// </summary>
+        [NotMapped]
+        public bool IsNextActionOverdue => NextActionDate.HasValue && NextActionDate.Value < DateTime.Now;
+
+        /// <summary>
+        /// آیا از دست رفته؟
+        /// </summary>
+        [NotMapped]
+        public bool IsLost => LostDate.HasValue || LostReasonId.HasValue;
+
+        /// <summary>
+        /// نام منبع سرنخ
+        /// </summary>
+        [NotMapped]
+        public string? SourceName => LeadSource?.Name ?? Source;
+
+        /// <summary>
+        /// متن نوع اقدام بعدی
+        /// </summary>
+        [NotMapped]
+        public string? NextActionTypeText => NextActionType switch
+        {
+            CrmNextActionType.Call => "تماس",
+            CrmNextActionType.Meeting => "جلسه",
+            CrmNextActionType.Email => "ایمیل",
+            CrmNextActionType.Sms => "پیامک",
+            CrmNextActionType.SendQuote => "ارسال پیشنهاد",
+            CrmNextActionType.FollowUpQuote => "پیگیری پیشنهاد",
+            CrmNextActionType.Visit => "بازدید",
+            CrmNextActionType.Demo => "دمو",
+            CrmNextActionType.Other => "سایر",
+            _ => null
+        };
+
+        /// <summary>
+        /// آیکون نوع اقدام بعدی
+        /// </summary>
+        [NotMapped]
+        public string? NextActionTypeIcon => NextActionType switch
+        {
+            CrmNextActionType.Call => "fa-phone",
+            CrmNextActionType.Meeting => "fa-users",
+            CrmNextActionType.Email => "fa-envelope",
+            CrmNextActionType.Sms => "fa-comment-sms",
+            CrmNextActionType.SendQuote => "fa-file-invoice",
+            CrmNextActionType.FollowUpQuote => "fa-file-signature",
+            CrmNextActionType.Visit => "fa-building",
+            CrmNextActionType.Demo => "fa-desktop",
+            CrmNextActionType.Other => "fa-tasks",
+            _ => null
+        };
     }
 }

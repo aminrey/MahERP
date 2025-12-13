@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 namespace MahERP.Areas.AppCoreArea.Controllers
 {
     [Area("AppCoreArea")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [PermissionRequired("NOTIFICATION.TEMPLATES")]
     public class NotificationTemplatesController : BaseController
     {

@@ -147,6 +147,16 @@ namespace MahERP.DataModelLayer
         public DbSet<CrmLeadStatus> CrmLeadStatus_Tbl { get; set; }
         
         /// <summary>
+        /// ⭐ منابع سرنخ CRM
+        /// </summary>
+        public DbSet<CrmLeadSource> CrmLeadSource_Tbl { get; set; }
+        
+        /// <summary>
+        /// ⭐ دلایل از دست رفتن
+        /// </summary>
+        public DbSet<CrmLostReason> CrmLostReason_Tbl { get; set; }
+        
+        /// <summary>
         /// سرنخ‌های CRM
         /// </summary>
         public DbSet<CrmLead> CrmLead_Tbl { get; set; }
@@ -160,6 +170,27 @@ namespace MahERP.DataModelLayer
         /// پیگیری‌های CRM
         /// </summary>
         public DbSet<CrmFollowUp> CrmFollowUp_Tbl { get; set; }
+
+        // ⭐⭐⭐ NEW: CRM Pipeline & Opportunity System
+        /// <summary>
+        /// مراحل Pipeline فروش
+        /// </summary>
+        public DbSet<CrmPipelineStage> CrmPipelineStage_Tbl { get; set; }
+        
+        /// <summary>
+        /// فرصت‌های فروش (Opportunity)
+        /// </summary>
+        public DbSet<CrmOpportunity> CrmOpportunity_Tbl { get; set; }
+        
+        /// <summary>
+        /// فعالیت‌های فرصت فروش
+        /// </summary>
+        public DbSet<CrmOpportunityActivity> CrmOpportunityActivity_Tbl { get; set; }
+        
+        /// <summary>
+        /// محصولات/خدمات فرصت فروش
+        /// </summary>
+        public DbSet<CrmOpportunityProduct> CrmOpportunityProduct_Tbl { get; set; }
 
         // SMS Management
         public DbSet<SmsProvider> SmsProvider_Tbl { get; set; }

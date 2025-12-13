@@ -1,6 +1,8 @@
 ﻿using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Core;
+using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -227,6 +229,72 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         /// </summary>
         [ForeignKey("ScheduleId")]
         public virtual ScheduledTaskCreation? Schedule { get; set; }
+
+        // ========== ⭐⭐⭐ CRM Integration Fields ==========
+
+        /// <summary>
+        /// ماژول منبع که این تسک را ایجاد کرده
+        /// 0 = System, 1 = Tasking, 2 = CRM, 3 = Accounting, ...
+        /// </summary>
+        [Display(Name = "ماژول منبع")]
+        public ModuleSourceType SourceModule { get; set; } = ModuleSourceType.Tasking;
+
+        /// <summary>
+        /// نوع منبع CRM (اگر از CRM آمده باشد)
+        /// 0 = Manual, 1 = LeadFollowUp, 2 = OpportunityNextAction, ...
+        /// </summary>
+        [Display(Name = "نوع منبع CRM")]
+        public CrmTaskSourceType? CrmSourceType { get; set; }
+
+        /// <summary>
+        /// شناسه سرنخ CRM مرتبط
+        /// </summary>
+        [Display(Name = "سرنخ CRM")]
+        public int? CrmLeadId { get; set; }
+
+        /// <summary>
+        /// Navigation به CrmLead
+        /// </summary>
+        [ForeignKey("CrmLeadId")]
+        public virtual CrmLead? CrmLead { get; set; }
+
+        /// <summary>
+        /// شناسه فرصت فروش CRM مرتبط (آینده)
+        /// </summary>
+        [Display(Name = "فرصت فروش CRM")]
+        public int? CrmOpportunityId { get; set; }
+
+        /// <summary>
+        /// شناسه پیگیری CRM مرتبط
+        /// </summary>
+        [Display(Name = "پیگیری CRM")]
+        public int? CrmFollowUpId { get; set; }
+
+        /// <summary>
+        /// Navigation به CrmFollowUp
+        /// </summary>
+        [ForeignKey("CrmFollowUpId")]
+        public virtual CrmFollowUp? CrmFollowUp { get; set; }
+
+        /// <summary>
+        /// شناسه تیکت پشتیبانی CRM مرتبط (آینده)
+        /// </summary>
+        [Display(Name = "تیکت CRM")]
+        public int? CrmTicketId { get; set; }
+
+        /// <summary>
+        /// شناسه قرارداد CRM مرتبط (آینده)
+        /// </summary>
+        [Display(Name = "قرارداد CRM")]
+        public int? CrmContractId { get; set; }
+
+        /// <summary>
+        /// شناسه مشتری CRM مرتبط (آینده)
+        /// </summary>
+        [Display(Name = "مشتری CRM")]
+        public int? CrmCustomerId { get; set; }
+
+        // ========== END CRM Integration Fields ==========
 
         /// <summary>
         /// تاریخ آخرین بروزرسانی

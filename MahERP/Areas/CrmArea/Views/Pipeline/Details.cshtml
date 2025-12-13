@@ -1,0 +1,717 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmOpportunityViewModel
+@{
+    ViewData["Title"] = $"فرصت - {Model.Title}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .opportunity-header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .opportunity-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .stage-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            height: 100%;
+        }
+        
+        .info-card-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--bs-gray-200);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed var(--bs-gray-200);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: var(--bs-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .info-value {
+            font-weight: 500;
+        }
+        
+        .next-action-card {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+        
+        .activity-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--bs-gray-200);
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .product-table th {
+            background: var(--bs-gray-100);
+            font-weight: 600;
+        }
+        
+        .won-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .lost-badge {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .probability-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.3);
+            overflow: hidden;
+        }
+        
+        .probability-fill {
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- ========================================
+         ⭐⭐⭐ HEADER
+         ======================================== -->
+    <div class="opportunity-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <a href="@Url.Action("Index")" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <h3 class="mb-0">@Model.Title</h3>
+                    
+                    @if (Model.IsWon)
+                    {
+                        <span class="stage-badge won-badge">
+                            <i class="fas fa-trophy"></i> برنده شده
+                        </span>
+                    }
+                    else if (Model.IsLost)
+                    {
+                        <span class="stage-badge lost-badge">
+                            <i class="fas fa-times-circle"></i> از دست رفته
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="stage-badge" style="background: @Model.StageColor;">
+                            @Model.StageName
+                        </span>
+                    }
+                </div>
+                
+                <div class="d-flex align-items-center gap-4">
+                    <div>
+                        <i class="fas fa-@(Model.CustomerType == "Individual" ? "user" : "building") me-1"></i>
+                        @Model.CustomerName
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.AssignedUserName))
+                    {
+                        <div>
+                            <i class="fas fa-user-tag me-1"></i>
+                            @Model.AssignedUserName
+                        </div>
+                    }
+                    <div>
+                        <i class="fas fa-calendar me-1"></i>
+                        ایجاد: @Model.CreatedDatePersian
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 text-end">
+                <div class="opportunity-value">@Model.ValueFormatted</div>
+                <div class="opacity-75">تومان</div>
+                
+                @if (Model.IsOpen)
+                {
+                    <div class="mt-3">
+                        <div class="d-flex align-items-center justify-content-end gap-2 mb-1">
+                            <span class="small">احتمال موفقیت:</span>
+                            <span class="fw-bold">@Model.Probability%</span>
+                        </div>
+                        <div class="probability-bar" style="width: 150px; margin-right: auto;">
+                            <div class="probability-fill" style="width: @Model.Probability%;"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <!-- ========================================
+         ⭐⭐⭐ ACTION BUTTONS
+         ======================================== -->
+    @if (Model.IsOpen)
+    {
+        <div class="d-flex gap-2 mb-4">
+            <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i>
+                ویرایش
+            </a>
+            
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-exchange-alt me-1"></i>
+                    تغییر مرحله
+                </button>
+                <ul class="dropdown-menu">
+                    @if (ViewBag.Stages != null)
+                    {
+                        @foreach (var stage in ViewBag.Stages as SelectList)
+                        {
+                            <li>
+                                <a class="dropdown-item @(stage.Selected ? "active" : "")" 
+                                   href="javascript:void(0)" 
+                                   onclick="changeStage(@stage.Value)">
+                                    @stage.Text
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+            
+            <button class="btn btn-success" onclick="showWonModal()">
+                <i class="fas fa-trophy me-1"></i>
+                برنده شد
+            </button>
+            
+            <button class="btn btn-danger" onclick="showLostModal()">
+                <i class="fas fa-times-circle me-1"></i>
+                از دست رفت
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex gap-2 mb-4">
+            <button class="btn btn-warning" onclick="reopenOpportunity()">
+                <i class="fas fa-redo me-1"></i>
+                بازگشایی مجدد
+            </button>
+        </div>
+    }
+    
+    <div class="row g-4">
+        <!-- ========================================
+             ⭐⭐⭐ LEFT COLUMN
+             ======================================== -->
+        <div class="col-lg-8">
+            <!-- Description -->
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="info-card mb-4">
+                    <div class="info-card-title">
+                        <i class="fas fa-align-right text-primary"></i>
+                        توضیحات
+                    </div>
+                    <p class="mb-0">@Model.Description</p>
+                </div>
+            }
+            
+            <!-- Products -->
+            <div class="info-card mb-4">
+                <div class="info-card-title">
+                    <i class="fas fa-box text-primary"></i>
+                    محصولات / خدمات
+                    <span class="badge bg-primary ms-auto">@Model.ProductsCount</span>
+                </div>
+                
+                @if (Model.Products.Any())
+                {
+                    <table class="table product-table">
+                        <thead>
+                            <tr>
+                                <th>محصول</th>
+                                <th class="text-center">تعداد</th>
+                                <th class="text-center">قیمت واحد</th>
+                                <th class="text-center">تخفیف</th>
+                                <th class="text-center">جمع</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var product in Model.Products)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@product.ProductName</strong>
+                                        @if (!string.IsNullOrEmpty(product.Description))
+                                        {
+                                            <br /><small class="text-muted">@product.Description</small>
+                                        }
+                                    </td>
+                                    <td class="text-center">@product.Quantity</td>
+                                    <td class="text-center">@product.UnitPrice.ToString("N0")</td>
+                                    <td class="text-center">@product.DiscountPercent%</td>
+                                    <td class="text-center fw-bold">@product.TotalAmount.ToString("N0")</td>
+                                    <td>
+                                        @if (Model.IsOpen)
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" onclick="removeProduct(@product.Id)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="4" class="text-end fw-bold">جمع کل:</td>
+                                <td class="text-center fw-bold text-success">@Model.ProductsTotal.ToString("N0")</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-box-open fa-2x mb-2 d-block opacity-50"></i>
+                        هیچ محصولی اضافه نشده
+                    </div>
+                }
+                
+                @if (Model.IsOpen)
+                {
+                    <button class="btn btn-outline-primary btn-sm" onclick="showAddProductModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        افزودن محصول
+                    </button>
+                }
+            </div>
+            
+            <!-- Activities -->
+            <div class="info-card">
+                <div class="info-card-title">
+                    <i class="fas fa-history text-primary"></i>
+                    تاریخچه فعالیت‌ها
+                </div>
+                
+                @if (Model.RecentActivities.Any())
+                {
+                    @foreach (var activity in Model.RecentActivities)
+                    {
+                        <div class="activity-item">
+                            <div class="activity-icon bg-primary bg-opacity-10 text-primary">
+                                <i class="fas fa-@GetActivityIcon(activity.ActivityType)"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong>@activity.Title</strong>
+                                    <small class="text-muted">@activity.ActivityDatePersian</small>
+                                </div>
+                                @if (!string.IsNullOrEmpty(activity.Description))
+                                {
+                                    <p class="mb-0 text-muted small">@activity.Description</p>
+                                }
+                                @if (!string.IsNullOrEmpty(activity.UserName))
+                                {
+                                    <small class="text-muted">توسط @activity.UserName</small>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-history fa-2x mb-2 d-block opacity-50"></i>
+                        هیچ فعالیتی ثبت نشده
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- ========================================
+             ⭐⭐⭐ RIGHT COLUMN
+             ======================================== -->
+        <div class="col-lg-4">
+            <!-- Next Action -->
+            @if (Model.IsOpen && Model.NextActionType.HasValue)
+            {
+                <div class="next-action-card mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="fas fa-bell fa-lg"></i>
+                        <strong>اقدام بعدی</strong>
+                    </div>
+                    
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="fs-4">@Model.NextActionTypeText</span>
+                    </div>
+                    
+                    @if (Model.NextActionDate.HasValue)
+                    {
+                        <div class="mb-2">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            @Model.NextActionDatePersian
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(Model.NextActionNote))
+                    {
+                        <div class="bg-white bg-opacity-10 rounded p-2 mt-2">
+                            <small>@Model.NextActionNote</small>
+                        </div>
+                    }
+                    
+                    @if (Model.NextActionTaskId.HasValue)
+                    {
+                        <div class="mt-3">
+                            <a href="/TaskingArea/Tasks/Details/@Model.NextActionTaskId" class="btn btn-light btn-sm">
+                                <i class="fas fa-tasks me-1"></i>
+                                مشاهده تسک
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+            
+            <!-- Info -->
+            <div class="info-card mb-4">
+                <div class="info-card-title">
+                    <i class="fas fa-info-circle text-primary"></i>
+                    اطلاعات فرصت
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">شعبه</span>
+                    <span class="info-value">@Model.BranchName</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">منبع</span>
+                    <span class="info-value">@(Model.Source ?? "-")</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">تاریخ پیش‌بینی بسته شدن</span>
+                    <span class="info-value">@(Model.ExpectedCloseDatePersian ?? "-")</span>
+                </div>
+                
+                @if (Model.ActualCloseDate.HasValue)
+                {
+                    <div class="info-row">
+                        <span class="info-label">تاریخ واقعی بسته شدن</span>
+                        <span class="info-value">@Model.ActualCloseDatePersian</span>
+                    </div>
+                }
+                
+                @if (Model.DaysToClose.HasValue)
+                {
+                    <div class="info-row">
+                        <span class="info-label">مدت زمان تا بسته شدن</span>
+                        <span class="info-value">@Model.DaysToClose روز</span>
+                    </div>
+                }
+                
+                @if (Model.IsLost)
+                {
+                    <div class="info-row">
+                        <span class="info-label">دلیل از دست رفتن</span>
+                        <span class="info-value text-danger">@Model.LostReason</span>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(Model.WinningCompetitor))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">رقیب برنده</span>
+                            <span class="info-value">@Model.WinningCompetitor</span>
+                        </div>
+                    }
+                }
+                
+                <div class="info-row">
+                    <span class="info-label">ارزش وزن‌دار</span>
+                    <span class="info-value text-success">@Model.WeightedValueFormatted تومان</span>
+                </div>
+            </div>
+            
+            <!-- Customer Info -->
+            <div class="info-card mb-4">
+                <div class="info-card-title">
+                    <i class="fas fa-@(Model.CustomerType == "Individual" ? "user" : "building") text-primary"></i>
+                    اطلاعات مشتری
+                </div>
+                
+                <div class="text-center mb-3">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="fas fa-@(Model.CustomerType == "Individual" ? "user" : "building") fa-2x text-primary"></i>
+                    </div>
+                    <h5 class="mt-2 mb-0">@Model.CustomerName</h5>
+                </div>
+                
+                @if (Model.ContactId.HasValue)
+                {
+                    <a href="/CrmArea/Contacts/Details/@Model.ContactId" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-eye me-1"></i>
+                        مشاهده پروفایل
+                    </a>
+                }
+                else if (Model.OrganizationId.HasValue)
+                {
+                    <a href="/CrmArea/Organizations/Details/@Model.OrganizationId" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-eye me-1"></i>
+                        مشاهده سازمان
+                    </a>
+                }
+            </div>
+            
+            <!-- Source Lead -->
+            @if (Model.SourceLeadId.HasValue)
+            {
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <i class="fas fa-funnel-dollar text-primary"></i>
+                        سرنخ منبع
+                    </div>
+                    <a href="/CrmArea/Leads/Details/@Model.SourceLeadId" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="fas fa-eye me-1"></i>
+                        مشاهده سرنخ اصلی
+                    </a>
+                </div>
+            }
+            
+            <!-- Tags -->
+            @if (Model.TagsList.Any())
+            {
+                <div class="info-card mt-4">
+                    <div class="info-card-title">
+                        <i class="fas fa-tags text-primary"></i>
+                        برچسب‌ها
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var tag in Model.TagsList)
+                        {
+                            <span class="badge bg-primary">@tag</span>
+                        }
+                    </div>
+                </div>
+            }
+            
+            <!-- Notes -->
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <div class="info-card mt-4">
+                    <div class="info-card-title">
+                        <i class="fas fa-sticky-note text-primary"></i>
+                        یادداشت‌ها
+                    </div>
+                    <p class="mb-0">@Model.Notes</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+@await Html.PartialAsync("_OpportunityModals", Model)
+
+@section Scripts {
+    <script>
+        function changeStage(stageId) {
+            fetch('@Url.Action("MoveToStage")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `opportunityId=@Model.Id&newStageId=${stageId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    location.reload();
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        }
+        
+        function showWonModal() {
+            new bootstrap.Modal(document.getElementById('wonModal')).show();
+        }
+        
+        function showLostModal() {
+            new bootstrap.Modal(document.getElementById('lostModal')).show();
+        }
+        
+        function confirmMarkAsWon() {
+            const note = document.getElementById('wonNote').value;
+            
+            fetch('@Url.Action("MarkAsWon")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `id=@Model.Id&note=${encodeURIComponent(note)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    if (typeof confetti !== 'undefined') {
+                        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    }
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        }
+        
+        function confirmMarkAsLost() {
+            const lostReason = document.getElementById('lostReason').value;
+            const competitor = document.getElementById('winningCompetitor').value;
+            
+            if (!lostReason) {
+                toastr.warning('لطفاً دلیل از دست رفتن را انتخاب کنید');
+                return;
+            }
+            
+            fetch('@Url.Action("MarkAsLost")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `id=@Model.Id&lostReason=${encodeURIComponent(lostReason)}&competitor=${encodeURIComponent(competitor)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.info(data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        }
+        
+        function reopenOpportunity() {
+            if (!confirm('آیا از بازگشایی این فرصت اطمینان دارید؟')) return;
+            
+            // Get first active stage
+            const firstStageId = @(ViewBag.Stages != null ? ((SelectList)ViewBag.Stages).FirstOrDefault()?.Value ?? "0" : "0");
+            
+            fetch('@Url.Action("Reopen")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `id=@Model.Id&stageId=${firstStageId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        }
+        
+        function removeProduct(productId) {
+            if (!confirm('آیا از حذف این محصول اطمینان دارید؟')) return;
+            
+            fetch('@Url.Action("RemoveProduct")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `productId=${productId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    location.reload();
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        }
+        
+        function showAddProductModal() {
+            new bootstrap.Modal(document.getElementById('addProductModal')).show();
+        }
+    </script>
+}
+
+@functions {
+    string GetActivityIcon(string activityType)
+    {
+        return activityType switch
+        {
+            "Call" => "phone",
+            "Email" => "envelope",
+            "Meeting" => "users",
+            "Note" => "sticky-note",
+            "StageChange" => "exchange-alt",
+            "Won" => "trophy",
+            "Lost" => "times-circle",
+            _ => "circle"
+        };
+    }
+}

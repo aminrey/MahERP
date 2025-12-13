@@ -122,6 +122,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 .Include(t => t.Contact)
                 .Include(t => t.Organization)
                 .Include(t => t.Creator)
+                .Include(t => t.CrmLead) // ⭐⭐⭐ CRM Lead
                 .FirstOrDefaultAsync(t => t.Id == taskId);
 
             if (task == null)
@@ -226,14 +227,22 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 // زمان باقیمانده
                 DaysRemaining = daysRemaining,
 
-                // ⭐⭐⭐ NEW: IsInMyDay و IsFocused
+                // ⭐⭐⭐ IsInMyDay و IsFocused
                 IsInMyDay = isInMyDay,
                 IsFocused = isFocused,
 
                 // دسترسی‌ها
                 CanEdit = task.CreatorUserId == userId,
                 CanDelete = task.CreatorUserId == userId,
-                CanComplete = userAssignment != null && !isCompleted
+                CanComplete = userAssignment != null && !isCompleted,
+
+                // ⭐⭐⭐ CRM Integration Fields
+                SourceModule = task.SourceModule,
+                CrmSourceType = task.CrmSourceType,
+                CrmLeadId = task.CrmLeadId,
+                CrmLeadName = task.CrmLead?.DisplayName,
+                CrmOpportunityId = task.CrmOpportunityId,
+                CrmFollowUpId = task.CrmFollowUpId
             };
         }
 

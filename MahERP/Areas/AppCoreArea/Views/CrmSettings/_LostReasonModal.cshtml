@@ -1,0 +1,107 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLostReasonViewModel
+@{
+    Layout = null;
+    var isEdit = Model?.Id > 0;
+    var modalTitle = isEdit ? "ویرایش دلیل از دست رفتن" : "افزودن دلیل از دست رفتن";
+    var modalIcon = isEdit ? "fa-edit" : "fa-plus";
+}
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content modal-contents">
+        <div class="block block-rounded block-themed block-transparent mb-0">
+            <div class="block-header bg-danger">
+                <h3 class="block-title text-white">
+                    <i class="fa @modalIcon me-2"></i>@modalTitle
+                </h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="SaveLostReason" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <div class="block-content">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Title" class="form-label">عنوان <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" required />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="TitleEnglish" class="form-label">عنوان انگلیسی</label>
+                            <input asp-for="TitleEnglish" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Code" class="form-label">کد</label>
+                            <input asp-for="Code" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="AppliesTo" class="form-label">کاربرد</label>
+                            <select asp-for="AppliesTo" class="form-select">
+                                <option value="0">Lead و Opportunity</option>
+                                <option value="1">فقط Lead</option>
+                                <option value="2">فقط Opportunity</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Category" class="form-label">دسته‌بندی</label>
+                            <select asp-for="Category" class="form-select">
+                                <option value="0">قیمت</option>
+                                <option value="1">رقابت</option>
+                                <option value="2">زمان‌بندی</option>
+                                <option value="3">کیفیت</option>
+                                <option value="4">نیاز نداشتن</option>
+                                <option value="5">سایر</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="ColorCode" class="form-label">رنگ</label>
+                            <input asp-for="ColorCode" type="color" class="form-control form-control-color w-100" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Icon" class="form-label">آیکون</label>
+                            <input asp-for="Icon" class="form-control" placeholder="fa-times-circle" />
+                            <small class="text-muted">مثال: fa-times-circle</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="DisplayOrder" class="form-label">ترتیب نمایش</label>
+                            <input asp-for="DisplayOrder" type="number" class="form-control" min="1" />
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label asp-for="Description" class="form-label">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input asp-for="RequiresNote" type="checkbox" class="form-check-input" />
+                                        <label asp-for="RequiresNote" class="form-check-label">نیاز به توضیح اضافی</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input asp-for="IsActive" type="checkbox" class="form-check-input" />
+                                        <label asp-for="IsActive" class="form-check-label">فعال</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
+                    <button class="btn btn-hero btn-danger" data-save="modal-ajax-save" type="button">
+                        <i class="fa fa-save me-1"></i>
+                        ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

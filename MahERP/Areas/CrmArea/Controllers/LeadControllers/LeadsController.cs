@@ -4,12 +4,14 @@ using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer;
 using MahERP.DataModelLayer.Entities.AcControl;
 using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.Repository;
 using MahERP.DataModelLayer.Repository.ContactRepository;
 using MahERP.DataModelLayer.Repository.CrmRepository;
 using MahERP.DataModelLayer.Repository.OrganizationRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
+using MahERP.DataModelLayer.Services.CoreServices;
 using MahERP.DataModelLayer.ViewModels.CrmViewModels;
 using MahERP.Services;
 using MahERP.WebApp.Services;
@@ -22,6 +24,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
+// ⭐⭐⭐ Alias برای جلوگیری از تداخل
+using CrmSelectListItem = MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmSelectListItem;
 
 namespace MahERP.Areas.CrmArea.Controllers.LeadControllers
 {
@@ -39,6 +44,7 @@ namespace MahERP.Areas.CrmArea.Controllers.LeadControllers
         private readonly ICrmFollowUpRepository _followUpRepo;
         private readonly IContactRepository _contactRepo;
         private readonly IOrganizationRepository _organizationRepo;
+        private readonly ICoreIntegrationService _coreIntegrationService;
 
         public LeadsController(
             ICrmLeadRepository leadRepo,
@@ -47,6 +53,7 @@ namespace MahERP.Areas.CrmArea.Controllers.LeadControllers
             ICrmFollowUpRepository followUpRepo,
             IContactRepository contactRepo,
             IOrganizationRepository organizationRepo,
+            ICoreIntegrationService coreIntegrationService,
             IUnitOfWork uow,
             UserManager<AppUsers> userManager,
             PersianDateHelper persianDateHelper,
@@ -64,6 +71,7 @@ namespace MahERP.Areas.CrmArea.Controllers.LeadControllers
             _followUpRepo = followUpRepo;
             _contactRepo = contactRepo;
             _organizationRepo = organizationRepo;
+            _coreIntegrationService = coreIntegrationService;
         }
 
         // ========== لیست سرنخ‌ها ==========
@@ -665,5 +673,384 @@ namespace MahERP.Areas.CrmArea.Controllers.LeadControllers
             // منابع پیشنهادی
             ViewBag.SuggestedSources = DataModelLayer.StaticClasses.StaticCrmLeadStatusSeedData.SuggestedSources;
         }
+
+        // ========== ⭐⭐⭐ Quick Entry (ثبت سریع سرنخ) ==========
+
+        /// <summary>
+        /// صفحه ثبت سریع سرنخ
+        /// </summary>
+        [HttpGet]
+        [PermissionRequired("CRM.LEAD.CREATE")]
+        public async Task<IActionResult> QuickEntry(string? returnUrl = null, string? sourcePage = null)
+        {
+            var model = await PrepareQuickEntryModelAsync();
+            model.ReturnUrl = returnUrl;
+            model.SourcePage = sourcePage;
+
+            return View(model);
+        }
+
+        /// <summary>
+        /// مودال ثبت سریع سرنخ
+        /// </summary>
+        [HttpGet]
+        [PermissionRequired("CRM.LEAD.CREATE")]
+        public async Task<IActionResult> QuickEntryModal(string? returnUrl = null, string? sourcePage = null)
+        {
+            var model = await PrepareQuickEntryModelAsync();
+            model.ReturnUrl = returnUrl;
+            model.SourcePage = sourcePage;
+
+            return PartialView("_QuickEntryModal", model);
+        }
+
+        /// <summary>
+        /// ثبت سریع سرنخ
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [PermissionRequired("CRM.LEAD.CREATE")]
+        public async Task<IActionResult> QuickEntry(QuickLeadEntryViewModel model)
+        {
+            try
+            {
+                var currentUser = await _userManager.GetUserAsync(User);
+                var result = new QuickLeadEntryResult();
+
+                // ⭐ اعتبارسنجی
+                var validationErrors = ValidateQuickEntry(model);
+                if (validationErrors.Any())
+                {
+                    foreach (var error in validationErrors)
+                    {
+                        ModelState.AddModelError("", error);
+                    }
+
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new
+                        {
+                            success = false,
+                            message = string.Join("، ", validationErrors),
+                            errors = validationErrors
+                        });
+                    }
+
+                    model = await PrepareQuickEntryModelAsync(model);
+                    return View(model);
+                }
+
+                // ⭐ شروع تراکنش
+                await _uow.BeginTransactionAsync();
+
+                try
+                {
+                    int? contactId = null;
+                    int? organizationId = null;
+
+                    // 1️⃣ ایجاد Contact/Organization جدید (اگر نیاز باشد)
+                    if (model.IsNewEntity)
+                    {
+                        if (model.LeadType == "Contact")
+                        {
+                            // ایجاد Contact از طریق Lead Repository
+                            contactId = await _leadRepo.CreateQuickContactAndGetIdAsync(
+                                model.FirstName,
+                                model.LastName,
+                                model.MobileNumber,
+                                model.Email,
+                                currentUser.Id);
+                            result.ContactId = contactId;
+                        }
+                        else
+                        {
+                            // ایجاد Organization از طریق Lead Repository
+                            organizationId = await _leadRepo.CreateQuickOrganizationAndGetIdAsync(
+                                model.OrganizationName,
+                                model.OrganizationPhone,
+                                currentUser.Id);
+                            result.OrganizationId = organizationId;
+                        }
+                    }
+                    else
+                    {
+                        contactId = model.ContactId;
+                        organizationId = model.OrganizationId;
+                    }
+
+                    // 2️⃣ ایجاد Lead
+                    CrmLead lead;
+                    if (contactId.HasValue)
+                    {
+                        lead = await _leadRepo.CreateFromContactAsync(
+                            contactId.Value,
+                            model.BranchId,
+                            currentUser.Id, // مسئول = کاربر جاری
+                            currentUser.Id);
+                    }
+                    else
+                    {
+                        lead = await _leadRepo.CreateFromOrganizationAsync(
+                            organizationId.Value,
+                            model.BranchId,
+                            currentUser.Id,
+                            currentUser.Id);
+                    }
+
+                    // 3️⃣ بروزرسانی اطلاعات تکمیلی Lead
+                    lead.Source = model.Source;
+                    lead.Notes = model.Notes;
+                    if (model.StatusId.HasValue)
+                        lead.StatusId = model.StatusId.Value;
+
+                    // ⭐⭐⭐ تنظیم NextAction (اقدام بعدی)
+                    lead.NextActionType = model.NextActionType;
+                    lead.NextActionDate = ParseNextActionDateTime(model.NextActionDatePersian, model.NextActionTime);
+                    lead.NextActionNote = model.NextActionNote;
+
+                    await _leadRepo.UpdateAsync(lead);
+                    result.LeadId = lead.Id;
+
+                    // 4️⃣ ⭐⭐⭐ ایجاد تسک برای اقدام بعدی (اگر فعال باشد)
+                    if (model.CreateTaskForNextAction)
+                    {
+                        var taskResult = await _coreIntegrationService.CreateTaskFromCrmLeadAsync(
+                            new CrmLeadTaskRequest
+                            {
+                                LeadId = lead.Id,
+                                ActionType = model.NextActionType,
+                                DueDate = lead.NextActionDate ?? DateTime.Now.AddDays(1),
+                                Description = model.NextActionNote,
+                                Priority = model.TaskPriority,
+                                CreatorUserId = currentUser.Id,
+                                AssignedUserId = currentUser.Id,
+                                CreateFollowUpRecord = true
+                            });
+
+                        if (taskResult.Success)
+                        {
+                            // ذخیره شناسه تسک در Lead
+                            lead.NextActionTaskId = taskResult.TaskId;
+                            await _leadRepo.UpdateAsync(lead);
+
+                            result.TaskId = taskResult.TaskId;
+                            result.TaskCode = taskResult.TaskCode;
+                        }
+                    }
+
+                    await _uow.CommitTransactionAsync();
+
+                    // ⭐ لاگ فعالیت
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "CrmLead",
+                        "QuickEntry",
+                        $"سرنخ جدید ایجاد شد: {lead.DisplayName}",
+                        recordId: lead.Id.ToString(),
+                        entityType: "CrmLead"
+                    );
+
+                    result.Success = true;
+                    result.Message = "سرنخ با موفقیت ثبت شد";
+
+                    // ⭐ پاسخ AJAX یا Redirect
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new
+                        {
+                            success = true,
+                            message = result.Message,
+                            leadId = result.LeadId,
+                            taskId = result.TaskId,
+                            taskCode = result.TaskCode,
+                            redirectUrl = Url.Action("Details", new { id = result.LeadId })
+                        });
+                    }
+
+                    TempData["SuccessMessage"] = result.Message;
+                    
+                    if (!string.IsNullOrEmpty(model.ReturnUrl))
+                        return Redirect(model.ReturnUrl);
+                    
+                    return RedirectToAction("Details", new { id = result.LeadId });
+                }
+                catch
+                {
+                    await _uow.RollbackTransactionAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "CrmLead", "QuickEntry", $"خطا در ثبت سریع سرنخ: {ex.Message}", ex);
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"خطا: {ex.Message}"
+                    });
+                }
+
+                ModelState.AddModelError("", $"خطا: {ex.Message}");
+                model = await PrepareQuickEntryModelAsync(model);
+                return View(model);
+            }
+        }
+
+        /// <summary>
+        /// آماده‌سازی مدل Quick Entry
+        /// </summary>
+        private async Task<QuickLeadEntryViewModel> PrepareQuickEntryModelAsync(QuickLeadEntryViewModel? existing = null)
+        {
+            var model = existing ?? new QuickLeadEntryViewModel();
+
+            // لیست شعبه‌ها (از UnitOfWork)
+            var userBranches = _uow.BranchUW.Get(
+                b => b.IsActive,
+                null,
+                "").ToList();
+            
+            model.BranchesInitial = userBranches.Select(b => new CrmSelectListItem(
+                b.Id.ToString(), b.Name, b.Id == model.BranchId
+            )).ToList();
+
+            // اگر یک شعبه داریم، انتخاب کن
+            if (!model.BranchesInitial.Any(b => b.Selected) && model.BranchesInitial.Count == 1)
+            {
+                model.BranchesInitial[0].Selected = true;
+                model.BranchId = int.Parse(model.BranchesInitial[0].Value);
+            }
+
+            // لیست منابع سرنخ
+            model.SourcesInitial = DataModelLayer.StaticClasses.StaticCrmLeadStatusSeedData.SuggestedSources
+                .Select(s => new CrmSelectListItem(s, s, s == model.Source))
+                .ToList();
+
+            // لیست وضعیت‌ها
+            var statuses = await _statusRepo.GetAllAsync();
+            model.StatusesInitial = statuses.Select(s => new CrmSelectListItem(
+                s.Id.ToString(), s.Title, s.Id == model.StatusId
+            )).ToList();
+
+            // لیست انواع اقدام بعدی
+            model.NextActionTypesInitial = Enum.GetValues<CrmNextActionType>()
+                .Select(t => new CrmSelectListItem(
+                    ((int)t).ToString(),
+                    GetNextActionTypeText(t),
+                    t == model.NextActionType
+                )).ToList();
+
+            // لیست اولویت‌های تسک
+            model.TaskPrioritiesInitial = Enum.GetValues<CrmTaskPriority>()
+                .Select(p => new CrmSelectListItem(
+                    ((int)p).ToString(),
+                    GetTaskPriorityText(p),
+                    p == model.TaskPriority
+                )).ToList();
+
+            // تاریخ پیش‌فرض
+            if (string.IsNullOrEmpty(model.NextActionDatePersian))
+            {
+                model.NextActionDatePersian = ConvertDateTime.ConvertMiladiToShamsi(
+                    DateTime.Now.AddDays(1), "yyyy/MM/dd");
+            }
+
+            return model;
+        }
+
+        /// <summary>
+        /// اعتبارسنجی Quick Entry
+        /// </summary>
+        private List<string> ValidateQuickEntry(QuickLeadEntryViewModel model)
+        {
+            var errors = new List<string>();
+
+            // اعتبارسنجی نوع سرنخ
+            if (model.IsNewEntity)
+            {
+                if (model.LeadType == "Contact")
+                {
+                    if (string.IsNullOrWhiteSpace(model.FirstName))
+                        errors.Add("نام الزامی است");
+                    if (string.IsNullOrWhiteSpace(model.LastName))
+                        errors.Add("نام خانوادگی الزامی است");
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(model.OrganizationName))
+                        errors.Add("نام سازمان الزامی است");
+                }
+            }
+            else
+            {
+                if (model.LeadType == "Contact" && !model.ContactId.HasValue)
+                    errors.Add("لطفاً یک فرد انتخاب کنید");
+                if (model.LeadType == "Organization" && !model.OrganizationId.HasValue)
+                    errors.Add("لطفاً یک سازمان انتخاب کنید");
+            }
+
+            // اعتبارسنجی شعبه
+            if (model.BranchId <= 0)
+                errors.Add("شعبه الزامی است");
+
+            // ⭐⭐⭐ اعتبارسنجی NextAction (اجباری!)
+            if (string.IsNullOrWhiteSpace(model.NextActionDatePersian))
+                errors.Add("تاریخ اقدام بعدی الزامی است");
+
+            return errors;
+        }
+
+        /// <summary>
+        /// تبدیل تاریخ و ساعت اقدام بعدی
+        /// </summary>
+        private DateTime ParseNextActionDateTime(string datePersian, string? time)
+        {
+            var date = ConvertDateTime.ConvertShamsiToMiladi(datePersian);
+
+            if (!string.IsNullOrEmpty(time) && TimeSpan.TryParse(time, out var timeSpan))
+            {
+                date = date.Date.Add(timeSpan);
+            }
+            else
+            {
+                date = date.Date.AddHours(9); // 9 صبح پیش‌فرض
+            }
+
+            return date;
+        }
+
+        /// <summary>
+        /// متن نوع اقدام بعدی
+        /// </summary>
+        private string GetNextActionTypeText(CrmNextActionType type) => type switch
+        {
+            CrmNextActionType.Call => "📞 تماس تلفنی",
+            CrmNextActionType.Meeting => "🤝 جلسه حضوری",
+            CrmNextActionType.Email => "📧 ارسال ایمیل",
+            CrmNextActionType.Sms => "💬 ارسال پیامک",
+            CrmNextActionType.SendQuote => "📋 ارسال پیشنهاد قیمت",
+            CrmNextActionType.FollowUpQuote => "🔄 پیگیری پیشنهاد",
+            CrmNextActionType.Visit => "🏢 بازدید",
+            CrmNextActionType.Demo => "💻 دمو محصول",
+            CrmNextActionType.Other => "📝 سایر",
+            _ => type.ToString()
+        };
+
+        /// <summary>
+        /// متن اولویت تسک
+        /// </summary>
+        private string GetTaskPriorityText(CrmTaskPriority priority) => priority switch
+        {
+            CrmTaskPriority.Low => "پایین",
+            CrmTaskPriority.Normal => "عادی",
+            CrmTaskPriority.High => "مهم",
+            CrmTaskPriority.Urgent => "فوری",
+            _ => priority.ToString()
+        };
+
+        // ========== END Quick Entry ==========
     }
 }

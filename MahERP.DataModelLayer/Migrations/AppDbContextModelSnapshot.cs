@@ -4472,6 +4472,29 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("LostDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("LostReasonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LostReasonNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("NextActionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NextActionNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("NextActionTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<byte?>("NextActionType")
+                        .HasColumnType("tinyint");
+
                     b.Property<DateTime?>("NextFollowUpDate")
                         .HasColumnType("datetime2");
 
@@ -4490,6 +4513,9 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<string>("Source")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("SourceId")
+                        .HasColumnType("int");
 
                     b.Property<int>("StatusId")
                         .HasColumnType("int");
@@ -4513,11 +4539,19 @@ namespace MahERP.DataModelLayer.Migrations
 
                     b.HasIndex("LastUpdaterUserId");
 
+                    b.HasIndex("LostReasonId")
+                        .HasDatabaseName("IX_CrmLead_LostReasonId");
+
+                    b.HasIndex("NextActionTaskId");
+
                     b.HasIndex("NextFollowUpDate")
                         .HasDatabaseName("IX_CrmLead_NextFollowUpDate");
 
                     b.HasIndex("OrganizationId")
                         .HasDatabaseName("IX_CrmLead_OrganizationId");
+
+                    b.HasIndex("SourceId")
+                        .HasDatabaseName("IX_CrmLead_SourceId");
 
                     b.HasIndex("StatusId")
                         .HasDatabaseName("IX_CrmLead_StatusId");
@@ -4620,6 +4654,101 @@ namespace MahERP.DataModelLayer.Migrations
                     b.ToTable("CrmLeadInteraction_Tbl", (string)null);
                 });
 
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadSource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ColorCode")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("#6c757d");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<string>("Icon")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("fa-globe");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsSystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NameEnglish")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .HasDatabaseName("IX_CrmLeadSource_Code");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("DisplayOrder")
+                        .HasDatabaseName("IX_CrmLeadSource_DisplayOrder");
+
+                    b.HasIndex("IsDefault")
+                        .HasDatabaseName("IX_CrmLeadSource_IsDefault");
+
+                    b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_CrmLeadSource_Name");
+
+                    b.ToTable("CrmLeadSource_Tbl", (string)null);
+                });
+
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadStatus", b =>
                 {
                     b.Property<int>("Id")
@@ -4711,6 +4840,463 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasDatabaseName("IX_CrmLeadStatus_Title");
 
                     b.ToTable("CrmLeadStatus_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLostReason", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte>("AppliesTo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
+                    b.Property<byte>("Category")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)5);
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ColorCode")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("#dc3545");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<string>("Icon")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("fa-times-circle");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsSystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("RequiresNote")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TitleEnglish")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppliesTo")
+                        .HasDatabaseName("IX_CrmLostReason_AppliesTo");
+
+                    b.HasIndex("Category")
+                        .HasDatabaseName("IX_CrmLostReason_Category");
+
+                    b.HasIndex("Code")
+                        .HasDatabaseName("IX_CrmLostReason_Code");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("DisplayOrder")
+                        .HasDatabaseName("IX_CrmLostReason_DisplayOrder");
+
+                    b.HasIndex("LastUpdaterUserId");
+
+                    b.HasIndex("Title")
+                        .HasDatabaseName("IX_CrmLostReason_Title");
+
+                    b.ToTable("CrmLostReason_Tbl", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmOpportunity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualCloseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IRR");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("ExpectedCloseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastUpdateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastUpdaterUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LostReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("LostReasonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LostReasonNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("NextActionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NextActionNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("NextActionTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<byte?>("NextActionType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Probability")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("SourceLeadId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<decimal?>("Value")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal?>("WeightedValue")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("WinningCompetitor")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedUserId")
+                        .HasDatabaseName("IX_CrmOpportunity_AssignedUserId");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("IX_CrmOpportunity_BranchId");
+
+                    b.HasIndex("ContactId")
+                        .HasDatabaseName("IX_CrmOpportunity_ContactId");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("ExpectedCloseDate")
+                        .HasDatabaseName("IX_CrmOpportunity_ExpectedCloseDate");
+
+                    b.HasIndex("LostReasonId")
+                        .HasDatabaseName("IX_CrmOpportunity_LostReasonId");
+
+                    b.HasIndex("NextActionDate")
+                        .HasDatabaseName("IX_CrmOpportunity_NextActionDate");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("IX_CrmOpportunity_OrganizationId");
+
+                    b.HasIndex("SourceLeadId")
+                        .HasDatabaseName("IX_CrmOpportunity_SourceLeadId");
+
+                    b.HasIndex("StageId")
+                        .HasDatabaseName("IX_CrmOpportunity_StageId");
+
+                    b.HasIndex("AssignedUserId", "IsActive")
+                        .HasDatabaseName("IX_CrmOpportunity_User_Active");
+
+                    b.HasIndex("BranchId", "StageId", "IsActive")
+                        .HasDatabaseName("IX_CrmOpportunity_Branch_Stage_Active");
+
+                    b.ToTable("CrmOpportunities", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmOpportunityActivity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActivityDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("NewStageId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OpportunityId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PreviousStageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OpportunityId")
+                        .HasDatabaseName("IX_CrmOpportunityActivity_OpportunityId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("OpportunityId", "ActivityDate")
+                        .HasDatabaseName("IX_CrmOpportunityActivity_Opp_Date");
+
+                    b.ToTable("CrmOpportunityActivities", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmOpportunityProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("OpportunityId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<decimal>("Quantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,4)")
+                        .HasDefaultValue(1m);
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OpportunityId")
+                        .HasDatabaseName("IX_CrmOpportunityProduct_OpportunityId");
+
+                    b.ToTable("CrmOpportunityProducts", (string)null);
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmPipelineStage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ColorCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("#4285f4");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("CreatorUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsLostStage")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsWonStage")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("WinProbability")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("IX_CrmPipelineStage_BranchId");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("BranchId", "DisplayOrder")
+                        .HasDatabaseName("IX_CrmPipelineStage_Branch_Order");
+
+                    b.HasIndex("BranchId", "IsDefault")
+                        .HasDatabaseName("IX_CrmPipelineStage_Branch_Default");
+
+                    b.ToTable("CrmPipelineStages", (string)null);
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.StakeholderCRM", b =>
@@ -8161,6 +8747,27 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<string>("CreatorUserId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("CrmContractId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CrmCustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CrmFollowUpId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CrmLeadId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CrmOpportunityId")
+                        .HasColumnType("int");
+
+                    b.Property<byte?>("CrmSourceType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int?>("CrmTicketId")
+                        .HasColumnType("int");
+
                     b.Property<string>("DeletedUserInfo")
                         .HasColumnType("nvarchar(max)");
 
@@ -8224,6 +8831,9 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Property<int?>("ScheduleId")
                         .HasColumnType("int");
 
+                    b.Property<byte>("SourceModule")
+                        .HasColumnType("tinyint");
+
                     b.Property<int?>("StakeholderId")
                         .HasColumnType("int");
 
@@ -8278,6 +8888,10 @@ namespace MahERP.DataModelLayer.Migrations
                     b.HasIndex("ContractId");
 
                     b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("CrmFollowUpId");
+
+                    b.HasIndex("CrmLeadId");
 
                     b.HasIndex("OrganizationId");
 
@@ -9971,10 +10585,24 @@ namespace MahERP.DataModelLayer.Migrations
                         .HasForeignKey("LastUpdaterUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLostReason", "LostReason")
+                        .WithMany("Leads")
+                        .HasForeignKey("LostReasonId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.TaskManagement.Tasks", "NextActionTask")
+                        .WithMany()
+                        .HasForeignKey("NextActionTaskId");
+
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLeadSource", "LeadSource")
+                        .WithMany("Leads")
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLeadStatus", "Status")
                         .WithMany("Leads")
@@ -9991,6 +10619,12 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("Creator");
 
                     b.Navigation("LastUpdater");
+
+                    b.Navigation("LeadSource");
+
+                    b.Navigation("LostReason");
+
+                    b.Navigation("NextActionTask");
 
                     b.Navigation("Organization");
 
@@ -10030,6 +10664,24 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("RelatedTask");
                 });
 
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadSource", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
+                        .WithMany()
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("LastUpdater");
+                });
+
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadStatus", b =>
                 {
                     b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
@@ -10046,6 +10698,133 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("Creator");
 
                     b.Navigation("LastUpdater");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLostReason", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "LastUpdater")
+                        .WithMany()
+                        .HasForeignKey("LastUpdaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("LastUpdater");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmOpportunity", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "AssignedUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Contact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLostReason", "LostReasonNavigation")
+                        .WithMany("Opportunities")
+                        .HasForeignKey("LostReasonId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLead", "SourceLead")
+                        .WithMany()
+                        .HasForeignKey("SourceLeadId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmPipelineStage", "Stage")
+                        .WithMany("Opportunities")
+                        .HasForeignKey("StageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedUser");
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("LostReasonNavigation");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("SourceLead");
+
+                    b.Navigation("Stage");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmOpportunityActivity", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmOpportunity", "Opportunity")
+                        .WithMany("Activities")
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Opportunity");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmOpportunityProduct", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmOpportunity", "Opportunity")
+                        .WithMany("Products")
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Opportunity");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmPipelineStage", b =>
+                {
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.AcControl.AppUsers", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Creator");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.StakeholderCRM", b =>
@@ -11109,6 +11888,14 @@ namespace MahERP.DataModelLayer.Migrations
                         .WithMany()
                         .HasForeignKey("CreatorUserId");
 
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmFollowUp", "CrmFollowUp")
+                        .WithMany()
+                        .HasForeignKey("CrmFollowUpId");
+
+                    b.HasOne("MahERP.DataModelLayer.Entities.Crm.CrmLead", "CrmLead")
+                        .WithMany()
+                        .HasForeignKey("CrmLeadId");
+
                     b.HasOne("MahERP.DataModelLayer.Entities.Contacts.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId");
@@ -11140,6 +11927,10 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("Contract");
 
                     b.Navigation("Creator");
+
+                    b.Navigation("CrmFollowUp");
+
+                    b.Navigation("CrmLead");
 
                     b.Navigation("Organization");
 
@@ -11403,9 +12194,33 @@ namespace MahERP.DataModelLayer.Migrations
                     b.Navigation("FollowUps");
                 });
 
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadSource", b =>
+                {
+                    b.Navigation("Leads");
+                });
+
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLeadStatus", b =>
                 {
                     b.Navigation("Leads");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmLostReason", b =>
+                {
+                    b.Navigation("Leads");
+
+                    b.Navigation("Opportunities");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmOpportunity", b =>
+                {
+                    b.Navigation("Activities");
+
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("MahERP.DataModelLayer.Entities.Crm.CrmPipelineStage", b =>
+                {
+                    b.Navigation("Opportunities");
                 });
 
             modelBuilder.Entity("MahERP.DataModelLayer.Entities.Email.EmailTemplate", b =>

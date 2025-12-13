@@ -102,6 +102,91 @@
                     </li>
                 }
 
+                <!-- ============== 💰 PIPELINE & OPPORTUNITIES ============== -->
+                @if (Html.CanAccessAnyIn("CRM.PIPELINE", "CRM.OPPORTUNITY"))
+                {
+                    <li class="nav-main-heading">فرصت‌های فروش</li>
+                    
+                    <!-- Pipeline -->
+                    @if (Html.CanAccessAnyIn("CRM.PIPELINE"))
+                    {
+                        <li class="nav-main-item @(IsPipelineMenuActive(currentController) ? "open" : "")">
+                            <a aria-expanded="@(IsPipelineMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                                <i class="nav-main-link-icon fa fa-filter text-success"></i>
+                                <span class="nav-main-link-name">پایپ‌لاین فروش</span>
+                            </a>
+                            <ul class="nav-main-submenu">
+                                @if (Html.CanAccessAny("CRM.PIPELINE", "CRM.PIPELINE.VIEW"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Pipeline", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Pipeline" asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                            <span class="nav-main-link-name">لیست پایپ‌لاین‌ها</span>
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @if (Html.CanAccessAny("CRM.PIPELINE", "CRM.PIPELINE.CREATE"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Pipeline", "Create") ? "active" : "")" asp-area="CrmArea" asp-controller="Pipeline" asp-action="Create">
+                                            <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                            <span class="nav-main-link-name fw-semibold">پایپ‌لاین جدید</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+
+                    <!-- Opportunities -->
+                    @if (Html.CanAccessAnyIn("CRM.OPPORTUNITY"))
+                    {
+                        <li class="nav-main-item @(IsOpportunityMenuActive(currentController) ? "open" : "")">
+                            <a aria-expanded="@(IsOpportunityMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                                <i class="nav-main-link-icon fa fa-hand-holding-usd text-warning"></i>
+                                <span class="nav-main-link-name">فرصت‌ها</span>
+                            </a>
+                            <ul class="nav-main-submenu">
+                                @if (Html.CanAccessAny("CRM.OPPORTUNITY", "CRM.OPPORTUNITY.VIEW"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Opportunity", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Opportunity" asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                            <span class="nav-main-link-name">همه فرصت‌ها</span>
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @if (Html.CanAccessAny("CRM.OPPORTUNITY", "CRM.OPPORTUNITY.CREATE"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Opportunity", "Create") ? "active" : "")" asp-area="CrmArea" asp-controller="Opportunity" asp-action="Create">
+                                            <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                            <span class="nav-main-link-name fw-semibold">فرصت جدید</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (Html.CanAccessAny("CRM.OPPORTUNITY", "CRM.OPPORTUNITY.VIEW"))
+                                {
+                                    <li class="nav-main-item nav-submenu-separator mt-2">
+                                        <div class="nav-submenu-title">
+                                            <small class="text-muted fw-semibold">نمای کانبان</small>
+                                        </div>
+                                    </li>
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Opportunity", "Kanban") ? "active" : "")" asp-area="CrmArea" asp-controller="Opportunity" asp-action="Kanban">
+                                            <i class="nav-main-link-icon fa fa-columns text-primary"></i>
+                                            <span class="nav-main-link-name">نمای کانبان</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                }
+
                 <!-- ============== 💼 CRM MANAGEMENT ============== -->
                 @if (Html.CanAccessAnyIn("CRM"))
                 {
@@ -284,6 +369,42 @@
                     }
                 }
 
+                <!-- ============== ⚙️ CRM SETTINGS ============== -->
+                @if (Html.CanAccessAnyIn("CRM.SETTINGS"))
+                {
+                    <li class="nav-main-heading">تنظیمات CRM</li>
+                    
+                    <li class="nav-main-item @(IsCrmSettingsMenuActive(currentController) ? "open" : "")">
+                        <a aria-expanded="@(IsCrmSettingsMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-cog text-secondary"></i>
+                            <span class="nav-main-link-name">تنظیمات</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            @if (Html.CanAccessAny("CRM.SETTINGS", "CRM.SETTINGS.VIEW"))
+                            {
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "Index") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="Index">
+                                        <i class="nav-main-link-icon fa fa-sliders-h text-primary"></i>
+                                        <span class="nav-main-link-name">تنظیمات کلی</span>
+                                    </a>
+                                </li>
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "LeadSources") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="LeadSources">
+                                        <i class="nav-main-link-icon fa fa-bullseye text-warning"></i>
+                                        <span class="nav-main-link-name">منابع سرنخ</span>
+                                    </a>
+                                </li>
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "LostReasons") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="LostReasons">
+                                        <i class="nav-main-link-icon fa fa-times-circle text-danger"></i>
+                                        <span class="nav-main-link-name">دلایل از دست دادن</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </li>
+                }
+
                 <!-- ============== 🚪 LOGOUT ============== -->
                 <li class="nav-main-heading">خروج</li>
                 <li class="nav-main-item">
@@ -308,9 +429,12 @@
     }
 
     public bool IsLeadsMenuActive(string currentController) => currentController == "Leads" || currentController == "LeadStatus";
+    public bool IsPipelineMenuActive(string currentController) => currentController == "Pipeline";
+    public bool IsOpportunityMenuActive(string currentController) => currentController == "Opportunity";
     public bool IsCRMMenuActive(string currentController) => currentController == "CRM";
     public bool IsSmsMenuActive(string currentController) => currentController == "SmsSend" || currentController == "SmsTemplate" || currentController == "SmsProvider";
     public bool IsEmailMenuActive(string currentController) => currentController == "EmailSend" || currentController == "EmailTemplate";
+    public bool IsCrmSettingsMenuActive(string currentController) => currentController == "CrmSettings";
 }
 
 <style>

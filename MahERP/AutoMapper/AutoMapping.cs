@@ -772,6 +772,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.UploaderUserId, opt => opt.Ignore())
                 .ForMember(dest => dest.UploadDate, opt => opt.Ignore())
                 .ForMember(dest => dest.FileUUID, opt => opt.Ignore());
+            
         }
 
         // Helper methods for mapping
