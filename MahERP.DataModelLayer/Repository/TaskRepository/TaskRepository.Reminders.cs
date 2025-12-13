@@ -118,7 +118,17 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         {
             try
             {
+                // ⭐⭐⭐ بررسی TaskId قبل از mapping
+                if (model.TaskId <= 0)
+                {
+                    Console.WriteLine($"❌ Error: TaskId is invalid: {model.TaskId}");
+                    return 0;
+                }
+
                 var reminder = _mapper.Map<TaskReminderSchedule>(model);
+                
+                // ⭐⭐⭐ اطمینان از TaskId
+                reminder.TaskId = model.TaskId;
                 reminder.IsSystemDefault = false;
                 reminder.CreatedDate = DateTime.Now;
                 reminder.CreatorUserId = userId;
@@ -134,11 +144,14 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     reminder.EndDate = ConvertDateTime.ConvertShamsiToMiladi(model.EndDatePersian);
                 }
 
-                // ⭐⭐⭐ Copy ScheduledDaysOfMonth 🆕
+                // ⭐⭐⭐ Copy ScheduledDaysOfMonth
                 if (!string.IsNullOrEmpty(model.ScheduledDaysOfMonth))
                 {
                     reminder.ScheduledDaysOfMonth = model.ScheduledDaysOfMonth;
                 }
+
+                // ⭐⭐⭐ Log برای Debug
+                Console.WriteLine($"✅ Creating reminder for TaskId: {reminder.TaskId}, Title: {reminder.Title}");
 
                 _context.TaskReminderSchedule_Tbl.Add(reminder);
                 await _context.SaveChangesAsync();
@@ -148,6 +161,10 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error in CreateReminderAsync: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"❌ Inner Exception: {ex.InnerException.Message}");
+                }
                 return 0;
             }
         }

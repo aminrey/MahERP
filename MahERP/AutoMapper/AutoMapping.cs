@@ -761,6 +761,50 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.Attachments, opt => opt.Ignore());
 
             // ⭐⭐⭐ NEW - Task Comment Attachment Mappings
+            CreateMap<TaskReminderSchedule, TaskReminderViewModel>()
+                .ForMember(dest => dest.StartDatePersian, opt => opt.MapFrom(src =>
+                    src.StartDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.StartDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.EndDatePersian, opt => opt.MapFrom(src =>
+                    src.EndDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.EndDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
+                .ForMember(dest => dest.TaskTitle, opt => opt.MapFrom(src => src.Task != null ? src.Task.Title : null))
+                .ForMember(dest => dest.TaskCode, opt => opt.MapFrom(src => src.Task != null ? src.Task.TaskCode : null))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
+                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "سیستم"))
+                .ForMember(dest => dest.CreatedDatePersian, opt => opt.MapFrom(src =>
+                    ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd HH:mm")));
+
+            CreateMap<TaskReminderViewModel, TaskReminderSchedule>()
+                .ForMember(dest => dest.TaskId, opt => opt.MapFrom(src => src.TaskId)) // ⭐⭐⭐ اضافه شد
+                .ForMember(dest => dest.StartDate, opt => opt.Ignore()) // در controller handle می‌شود
+                .ForMember(dest => dest.EndDate, opt => opt.Ignore()) // در controller handle می‌شود
+                .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.ReminderType, opt => opt.MapFrom(src => src.ReminderType))
+                .ForMember(dest => dest.IntervalDays, opt => opt.MapFrom(src => src.IntervalDays))
+                .ForMember(dest => dest.DaysBeforeDeadline, opt => opt.MapFrom(src => src.DaysBeforeDeadline))
+                .ForMember(dest => dest.ScheduledDaysOfMonth, opt => opt.MapFrom(src => src.ScheduledDaysOfMonth))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                // ⭐⭐⭐ Ignore فیلدهای سیستمی
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.IsSystemDefault, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastExecuted, opt => opt.Ignore())
+                .ForMember(dest => dest.SentCount, opt => opt.Ignore())
+                .ForMember(dest => dest.IsExpired, opt => opt.Ignore())
+                .ForMember(dest => dest.ExpiredReason, opt => opt.Ignore())
+                .ForMember(dest => dest.ExpiredDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Task, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.GeneratedEvents, opt => opt.Ignore());
+
+            // ⭐⭐⭐ Task Comment Attachment Mappings
             CreateMap<TaskCommentAttachment, TaskCommentAttachmentViewModel>()
                 .ForMember(dest => dest.FileSize, opt => opt.MapFrom(src =>
                     !string.IsNullOrEmpty(src.FileSize) ? long.Parse(src.FileSize) : 0));
@@ -772,7 +816,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.UploaderUserId, opt => opt.Ignore())
                 .ForMember(dest => dest.UploadDate, opt => opt.Ignore())
                 .ForMember(dest => dest.FileUUID, opt => opt.Ignore());
-            
+
         }
 
         // Helper methods for mapping
