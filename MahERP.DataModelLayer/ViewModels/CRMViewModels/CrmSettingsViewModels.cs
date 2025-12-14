@@ -61,7 +61,7 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
     public class CrmLeadSourceListViewModel
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public string? NameEnglish { get; set; }
         public string? Code { get; set; }
         public string? Icon { get; set; }
@@ -135,7 +135,7 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
     public class CrmLostReasonListViewModel
     {
         public int Id { get; set; }
-        public string Title { get; set; }
+        public string? Title { get; set; }
         public string? TitleEnglish { get; set; }
         public string? Code { get; set; }
         public byte AppliesTo { get; set; }
@@ -162,7 +162,7 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
         /// <summary>
         /// نام نمایشی
         /// </summary>
-        public string DisplayTitle => string.IsNullOrEmpty(TitleEnglish) 
+        public string? DisplayTitle => string.IsNullOrEmpty(TitleEnglish) 
             ? Title 
             : $"{Title} ({TitleEnglish})";
 
@@ -462,11 +462,11 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
 
         [MaxLength(500)]
         [Display(Name = "توضیحات")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [MaxLength(20)]
         [Display(Name = "کد رنگ")]
-        public string ColorCode { get; set; }
+        public string? ColorCode { get; set; }
 
         [Display(Name = "حداقل امتیاز")]
         [Range(0, 100)]

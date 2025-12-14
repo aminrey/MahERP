@@ -85,12 +85,11 @@
                                         href="@Url.Action("EditLeadStatusModal", "CrmSettings", new { area = "AppCoreArea", id = status.Id })">
                                     <i class="fa fa-edit"></i>
                                 </button>
-                                @if (status.LeadsCount == 0 && !status.IsDefault)
-                                {
-                                    <button type="button" class="btn btn-sm btn-alt-danger" title="حذف" onclick="deleteLeadStatus(@status.Id)">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                }
+                                <button type="button" class="btn btn-sm btn-alt-danger" title="حذف"
+                                        data-toggle="modal-ajax"
+                                        href="@Url.Action("DeleteLeadStatusModal", "CrmSettings", new { area = "AppCoreArea", id = status.Id })">
+                                    <i class="fa fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                     }
@@ -108,30 +107,3 @@
         </table>
     </div>
 </div>
-
-<script>
-function deleteLeadStatus(id) {
-    Swal.fire({
-        title: 'حذف وضعیت',
-        text: 'آیا از حذف این وضعیت مطمئن هستید؟',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'بله، حذف شود',
-        cancelButtonText: 'انصراف',
-        confirmButtonColor: '#d33'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.post('@Url.Action("DeleteLeadStatus", "CrmSettings", new { area = "AppCoreArea" })', 
-                { id: id, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() }, 
-                function (response) {
-                    if (response.success) {
-                        SendResposeMessage([{ status: 'success', text: response.message }]);
-                        location.reload();
-                    } else {
-                        SendResposeMessage([{ status: 'error', text: response.message }]);
-                    }
-                });
-        }
-    });
-}
-</script>

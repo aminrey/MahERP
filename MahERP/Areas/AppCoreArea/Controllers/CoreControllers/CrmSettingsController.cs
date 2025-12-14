@@ -9,6 +9,7 @@ using MahERP.DataModelLayer.Repository.CrmRepository;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.CrmViewModels;
+using MahERP.Extentions;
 using MahERP.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -204,6 +205,259 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
         }
 
         /// <summary>
+        /// مودال ایجاد وضعیت Lead جدید
+        /// </summary>
+        [HttpGet]
+        public IActionResult CreateLeadStatusModal()
+        {
+            var model = new CrmLeadStatusViewModel
+            {
+                ColorCode = "#6c757d",
+                Icon = "fa-circle",
+                DisplayOrder = 100,
+                IsActive = true
+            };
+
+            return PartialView("_CreateLeadStatusModal", model);
+        }
+
+        /// <summary>
+        /// مودال ویرایش وضعیت Lead
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> EditLeadStatusModal(int id)
+        {
+            try
+            {
+                var status = await _context.CrmLeadStatus_Tbl.FindAsync(id);
+                if (status == null)
+                {
+                    return NotFound();
+                }
+
+                var model = new CrmLeadStatusViewModel
+                {
+                    Id = status.Id,
+                    Title = status.Title,
+                    TitleEnglish = status.TitleEnglish,
+                    ColorCode = status.ColorCode,
+                    Icon = status.Icon,
+                    DisplayOrder = status.DisplayOrder,
+                    IsDefault = status.IsDefault,
+                    IsFinal = status.IsFinal,
+                    IsPositive = status.IsPositive,
+                    Description = status.Description,
+                    IsActive = status.IsActive,
+                    LeadsCount = status.Leads.Count
+                };
+
+                return PartialView("_EditLeadStatusModal", model);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// مودال حذف وضعیت Lead
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> DeleteLeadStatusModal(int id)
+        {
+            try
+            {
+                var status = await _context.CrmLeadStatus_Tbl
+                    .Include(s => s.Leads)
+                    .FirstOrDefaultAsync(s => s.Id == id);
+
+                if (status == null)
+                {
+                    return NotFound();
+                }
+
+                var model = new CrmLeadStatusViewModel
+                {
+                    Id = status.Id,
+                    Title = status.Title,
+                    IsDefault = status.IsDefault,
+                    LeadsCount = status.Leads.Count
+                };
+
+                return PartialView("_DeleteLeadStatusModal", model);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// ذخیره وضعیت Lead (Create یا Update)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveLeadStatus(CrmLeadStatusViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return Json(new
+                    {
+                        status = "validation-error",
+                        message = new[]
+                        {
+                            new { status = "error", text = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)) }
+                        }
+                    });
+                }
+
+                if (model.Id > 0)
+                {
+                    // ویرایش
+                    var status = await _context.CrmLeadStatus_Tbl.FindAsync(model.Id);
+                    if (status == null)
+                    {
+                        return Json(new
+                        {
+                            status = "error",
+                            message = new[] { new { status = "error", text = "وضعیت یافت نشد" } }
+                        });
+                    }
+
+                    // اگر پیش‌فرض انتخاب شده، سایرین را غیرفعال کن
+                    if (model.IsDefault && !status.IsDefault)
+                    {
+                        var defaultStatuses = await _context.CrmLeadStatus_Tbl
+                            .Where(s => s.IsDefault && s.Id != model.Id)
+                            .ToListAsync();
+
+                        foreach (var s in defaultStatuses)
+                        {
+                            s.IsDefault = false;
+                        }
+                    }
+
+                    status.Title = model.Title;
+                    status.TitleEnglish = model.TitleEnglish;
+                    status.ColorCode = model.ColorCode ?? "#6c757d";
+                    status.Icon = model.Icon ?? "fa-circle";
+                    status.DisplayOrder = model.DisplayOrder;
+                    status.IsDefault = model.IsDefault;
+                    status.IsFinal = model.IsFinal;
+                    status.IsPositive = model.IsPositive;
+                    status.Description = model.Description;
+                    status.IsActive = model.IsActive;
+                    status.LastUpdateDate = DateTime.Now;
+                    status.LastUpdaterUserId = GetUserId();
+
+                    await _context.SaveChangesAsync();
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Update,
+                        "CrmSettings",
+                        "SaveLeadStatus",
+                        $"ویرایش وضعیت Lead: {model.Title}",
+                        recordId: model.Id.ToString());
+                }
+                else
+                {
+                    // ایجاد جدید
+                    if (model.IsDefault)
+                    {
+                        var defaultStatuses = await _context.CrmLeadStatus_Tbl
+                            .Where(s => s.IsDefault)
+                            .ToListAsync();
+
+                        foreach (var status in defaultStatuses)
+                        {
+                            status.IsDefault = false;
+                        }
+                    }
+
+                    var newStatus = new CrmLeadStatus
+                    {
+                        Title = model.Title,
+                        TitleEnglish = model.TitleEnglish,
+                        ColorCode = model.ColorCode ?? "#6c757d",
+                        Icon = model.Icon ?? "fa-circle",
+                        DisplayOrder = model.DisplayOrder,
+                        IsDefault = model.IsDefault,
+                        IsFinal = model.IsFinal,
+                        IsPositive = model.IsPositive,
+                        Description = model.Description,
+                        IsActive = model.IsActive,
+                        CreatedDate = DateTime.Now,
+                        CreatorUserId = GetUserId()
+                    };
+
+                    await _context.CrmLeadStatus_Tbl.AddAsync(newStatus);
+                    await _context.SaveChangesAsync();
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "CrmSettings",
+                        "SaveLeadStatus",
+                        $"ایجاد وضعیت Lead جدید: {model.Title}",
+                        recordId: newStatus.Id.ToString());
+                }
+
+                // بروزرسانی Tab
+                var statuses = await _context.CrmLeadStatus_Tbl
+                    .OrderBy(s => s.DisplayOrder)
+                    .Select(s => new CrmLeadStatusViewModel
+                    {
+                        Id = s.Id,
+                        Title = s.Title,
+                        TitleEnglish = s.TitleEnglish,
+                        ColorCode = s.ColorCode,
+                        Icon = s.Icon,
+                        DisplayOrder = s.DisplayOrder,
+                        IsDefault = s.IsDefault,
+                        IsFinal = s.IsFinal,
+                        IsPositive = s.IsPositive,
+                        IsActive = s.IsActive,
+                        LeadsCount = s.Leads.Count
+                    })
+                    .ToListAsync();
+
+                var tabView = await this.RenderViewToStringAsync("_LeadStatusesTab", statuses);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[]
+                    {
+                        new { status = "success", text = model.Id > 0 ? "وضعیت با موفقیت بروزرسانی شد" : "وضعیت با موفقیت ایجاد شد" }
+                    },
+                    viewList = new[]
+                    {
+                        new
+                        {
+                            elementId = "leadStatusSection",
+                            view = new { result = tabView }
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync(
+                    "CrmSettings",
+                    "SaveLeadStatus",
+                    "خطا در ذخیره وضعیت",
+                    ex);
+
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = $"خطا: {ex.Message}" } }
+                });
+            }
+        }
+
+        /// <summary>
         /// ایجاد وضعیت Lead جدید
         /// </summary>
         [HttpPost]
@@ -363,15 +617,22 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
 
                 if (status == null)
                 {
-                    return Json(new { success = false, message = "وضعیت یافت نشد" });
+                    return Json(new
+                    {
+                        status = "error",
+                        message = new[] { new { status = "error", text = "وضعیت یافت نشد" } }
+                    });
                 }
 
                 if (status.Leads.Any())
                 {
                     return Json(new
                     {
-                        success = false,
-                        message = $"این وضعیت {status.Leads.Count} سرنخ فعال دارد و قابل حذف نیست"
+                        status = "error",
+                        message = new[]
+                        {
+                            new { status = "error", text = $"این وضعیت {status.Leads.Count} سرنخ فعال دارد و قابل حذف نیست" }
+                        }
                     });
                 }
 
@@ -379,8 +640,11 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
                 {
                     return Json(new
                     {
-                        success = false,
-                        message = "وضعیت پیش‌فرض قابل حذف نیست. ابتدا وضعیت پیش‌فرض دیگری تعیین کنید"
+                        status = "error",
+                        message = new[]
+                        {
+                            new { status = "error", text = "وضعیت پیش‌فرض قابل حذف نیست. ابتدا وضعیت پیش‌فرض دیگری تعیین کنید" }
+                        }
                     });
                 }
 
@@ -394,7 +658,43 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
                     $"حذف وضعیت Lead: {status.Title}",
                     recordId: id.ToString());
 
-                return Json(new { success = true, message = "وضعیت با موفقیت حذف شد" });
+                // بروزرسانی Tab
+                var statuses = await _context.CrmLeadStatus_Tbl
+                    .OrderBy(s => s.DisplayOrder)
+                    .Select(s => new CrmLeadStatusViewModel
+                    {
+                        Id = s.Id,
+                        Title = s.Title,
+                        TitleEnglish = s.TitleEnglish,
+                        ColorCode = s.ColorCode,
+                        Icon = s.Icon,
+                        DisplayOrder = s.DisplayOrder,
+                        IsDefault = s.IsDefault,
+                        IsFinal = s.IsFinal,
+                        IsPositive = s.IsPositive,
+                        IsActive = s.IsActive,
+                        LeadsCount = s.Leads.Count
+                    })
+                    .ToListAsync();
+
+                var tabView = await this.RenderViewToStringAsync("_LeadStatusesTab", statuses);
+
+                return Json(new
+                {
+                    status = "update-view",
+                    message = new[]
+                    {
+                        new { status = "success", text = "وضعیت با موفقیت حذف شد" }
+                    },
+                    viewList = new[]
+                    {
+                        new
+                        {
+                            elementId = "leadStatusSection",
+                            view = new { result = tabView }
+                        }
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -404,7 +704,11 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
                     "خطا در حذف وضعیت",
                     ex);
 
-                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = $"خطا: {ex.Message}" } }
+                });
             }
         }
 
@@ -480,6 +784,164 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
         }
 
         /// <summary>
+        /// مودال ایجاد منبع سرنخ جدید
+        /// </summary>
+        [HttpGet]
+        public IActionResult CreateLeadSourceModal(string name = null, string code = null, string icon = null)
+        {
+            var model = new CrmLeadSourceViewModel
+            {
+                Name = name,
+                Code = code,
+                Icon = icon ?? "fa-globe",
+                ColorCode = "#6c757d",
+                DisplayOrder = 100,
+                IsActive = true
+            };
+
+            return PartialView("_LeadSourceModal", model);
+        }
+
+        /// <summary>
+        /// مودال ویرایش منبع سرنخ
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> EditLeadSourceModal(int id)
+        {
+            try
+            {
+                var source = await _leadSourceRepository.GetByIdAsync(id);
+                if (source == null)
+                {
+                    return NotFound();
+                }
+
+                var model = new CrmLeadSourceViewModel
+                {
+                    Id = source.Id,
+                    Name = source.Name,
+                    NameEnglish = source.NameEnglish,
+                    Code = source.Code,
+                    Icon = source.Icon,
+                    ColorCode = source.ColorCode,
+                    Description = source.Description,
+                    DisplayOrder = source.DisplayOrder,
+                    IsDefault = source.IsDefault,
+                    IsActive = source.IsActive
+                };
+
+                return PartialView("_LeadSourceModal", model);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// ذخیره منبع سرنخ (Create یا Update)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveLeadSource(CrmLeadSourceViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
+                    });
+                }
+
+                if (model.Id > 0)
+                {
+                    // ویرایش
+                    var existing = await _leadSourceRepository.GetByIdAsync(model.Id);
+                    if (existing == null)
+                    {
+                        return Json(new { success = false, message = "منبع سرنخ یافت نشد" });
+                    }
+
+                    // بررسی تکراری نبودن نام
+                    if (await _leadSourceRepository.IsNameDuplicateAsync(model.Name, model.Id))
+                    {
+                        return Json(new { success = false, message = "این نام قبلاً استفاده شده است" });
+                    }
+
+                    existing.Name = model.Name;
+                    existing.NameEnglish = model.NameEnglish;
+                    existing.Code = model.Code;
+                    existing.Icon = model.Icon;
+                    existing.ColorCode = model.ColorCode;
+                    existing.Description = model.Description;
+                    existing.DisplayOrder = model.DisplayOrder;
+                    existing.IsDefault = model.IsDefault;
+                    existing.IsActive = model.IsActive;
+                    existing.LastUpdaterUserId = GetUserId();
+
+                    await _leadSourceRepository.UpdateAsync(existing);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Update,
+                        "CrmSettings",
+                        "SaveLeadSource",
+                        $"ویرایش منبع سرنخ: {model.Name}",
+                        recordId: model.Id.ToString());
+
+                    return Json(new { success = true, message = "منبع سرنخ با موفقیت بروزرسانی شد" });
+                }
+                else
+                {
+                    // ایجاد جدید
+                    // بررسی تکراری نبودن نام
+                    if (await _leadSourceRepository.IsNameDuplicateAsync(model.Name))
+                    {
+                        return Json(new { success = false, message = "این نام قبلاً استفاده شده است" });
+                    }
+
+                    // بررسی تکراری نبودن کد
+                    if (!string.IsNullOrEmpty(model.Code) && await _leadSourceRepository.IsCodeDuplicateAsync(model.Code))
+                    {
+                        return Json(new { success = false, message = "این کد قبلاً استفاده شده است" });
+                    }
+
+                    var entity = new CrmLeadSource
+                    {
+                        Name = model.Name,
+                        NameEnglish = model.NameEnglish,
+                        Code = model.Code,
+                        Icon = model.Icon ?? "fa-globe",
+                        ColorCode = model.ColorCode ?? "#6c757d",
+                        Description = model.Description,
+                        DisplayOrder = model.DisplayOrder,
+                        IsDefault = model.IsDefault,
+                        IsActive = model.IsActive,
+                        CreatorUserId = GetUserId()
+                    };
+
+                    await _leadSourceRepository.CreateAsync(entity);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "CrmSettings",
+                        "SaveLeadSource",
+                        $"ایجاد منبع سرنخ: {model.Name}",
+                        recordId: entity.Id.ToString());
+
+                    return Json(new { success = true, message = "منبع سرنخ با موفقیت ایجاد شد", data = new { id = entity.Id } });
+                }
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("CrmSettings", "SaveLeadSource", "خطا در ذخیره منبع سرنخ", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
         /// دریافت لیست منابع Lead به صورت JSON
         /// </summary>
         [HttpGet]
@@ -509,127 +971,6 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// ایجاد منبع سرنخ جدید
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateLeadSource(CrmLeadSourceFormViewModel model)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
-                    });
-                }
-
-                // بررسی تکراری نبودن نام
-                if (await _leadSourceRepository.IsNameDuplicateAsync(model.Name))
-                {
-                    return Json(new { success = false, message = "این نام قبلاً استفاده شده است" });
-                }
-
-                // بررسی تکراری نبودن کد
-                if (!string.IsNullOrEmpty(model.Code) && await _leadSourceRepository.IsCodeDuplicateAsync(model.Code))
-                {
-                    return Json(new { success = false, message = "این کد قبلاً استفاده شده است" });
-                }
-
-                var entity = new CrmLeadSource
-                {
-                    Name = model.Name,
-                    NameEnglish = model.NameEnglish,
-                    Code = model.Code,
-                    Icon = model.Icon ?? "fa-globe",
-                    ColorCode = model.ColorCode ?? "#6c757d",
-                    Description = model.Description,
-                    DisplayOrder = model.DisplayOrder,
-                    IsDefault = model.IsDefault,
-                    IsActive = model.IsActive,
-                    CreatorUserId = GetUserId()
-                };
-
-                await _leadSourceRepository.CreateAsync(entity);
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Create,
-                    "CrmSettings",
-                    "CreateLeadSource",
-                    $"ایجاد منبع سرنخ: {model.Name}",
-                    recordId: entity.Id.ToString());
-
-                return Json(new { success = true, message = "منبع سرنخ با موفقیت ایجاد شد", data = new { id = entity.Id } });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("CrmSettings", "CreateLeadSource", "خطا در ایجاد منبع سرنخ", ex);
-                return Json(new { success = false, message = $"خطا: {ex.Message}" });
-            }
-        }
-
-        /// <summary>
-        /// ویرایش منبع سرنخ
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateLeadSource(CrmLeadSourceFormViewModel model)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
-                    });
-                }
-
-                var existing = await _leadSourceRepository.GetByIdAsync(model.Id);
-                if (existing == null)
-                {
-                    return Json(new { success = false, message = "منبع سرنخ یافت نشد" });
-                }
-
-                // بررسی تکراری نبودن نام
-                if (await _leadSourceRepository.IsNameDuplicateAsync(model.Name, model.Id))
-                {
-                    return Json(new { success = false, message = "این نام قبلاً استفاده شده است" });
-                }
-
-                existing.Name = model.Name;
-                existing.NameEnglish = model.NameEnglish;
-                existing.Code = model.Code;
-                existing.Icon = model.Icon;
-                existing.ColorCode = model.ColorCode;
-                existing.Description = model.Description;
-                existing.DisplayOrder = model.DisplayOrder;
-                existing.IsDefault = model.IsDefault;
-                existing.IsActive = model.IsActive;
-                existing.LastUpdaterUserId = GetUserId();
-
-                await _leadSourceRepository.UpdateAsync(existing);
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Update,
-                    "CrmSettings",
-                    "UpdateLeadSource",
-                    $"ویرایش منبع سرنخ: {model.Name}",
-                    recordId: model.Id.ToString());
-
-                return Json(new { success = true, message = "منبع سرنخ با موفقیت بروزرسانی شد" });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("CrmSettings", "UpdateLeadSource", "خطا در ویرایش منبع سرنخ", ex);
-                return Json(new { success = false, message = $"خطا: {ex.Message}" });
             }
         }
 
@@ -738,6 +1079,167 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
         }
 
         /// <summary>
+        /// مودال ایجاد دلیل از دست رفتن جدید
+        /// </summary>
+        [HttpGet]
+        public IActionResult CreateLostReasonModal(string title = null, string code = null, byte? category = null)
+        {
+            var model = new CrmLostReasonViewModel
+            {
+                Title = title,
+                Code = code,
+                Category = category ?? 5,
+                Icon = "fa-times-circle",
+                ColorCode = "#dc3545",
+                DisplayOrder = 100,
+                IsActive = true,
+                RequiresNote = false,
+                AppliesTo = 0
+            };
+
+            return PartialView("_LostReasonModal", model);
+        }
+
+        /// <summary>
+        /// مودال ویرایش دلیل از دست رفتن
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> EditLostReasonModal(int id)
+        {
+            try
+            {
+                var reason = await _lostReasonRepository.GetByIdAsync(id);
+                if (reason == null)
+                {
+                    return NotFound();
+                }
+
+                var model = new CrmLostReasonViewModel
+                {
+                    Id = reason.Id,
+                    Title = reason.Title,
+                    TitleEnglish = reason.TitleEnglish,
+                    Code = reason.Code,
+                    AppliesTo = reason.AppliesTo,
+                    Category = reason.Category,
+                    Description = reason.Description,
+                    Icon = reason.Icon,
+                    ColorCode = reason.ColorCode,
+                    DisplayOrder = reason.DisplayOrder,
+                    RequiresNote = reason.RequiresNote,
+                    IsActive = reason.IsActive
+                };
+
+                return PartialView("_LostReasonModal", model);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// ذخیره دلیل از دست رفتن (Create یا Update)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveLostReason(CrmLostReasonViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
+                    });
+                }
+
+                if (model.Id > 0)
+                {
+                    // ویرایش
+                    var existing = await _lostReasonRepository.GetByIdAsync(model.Id);
+                    if (existing == null)
+                    {
+                        return Json(new { success = false, message = "دلیل یافت نشد" });
+                    }
+
+                    // بررسی تکراری نبودن عنوان
+                    if (await _lostReasonRepository.IsTitleDuplicateAsync(model.Title, model.Id))
+                    {
+                        return Json(new { success = false, message = "این عنوان قبلاً استفاده شده است" });
+                    }
+
+                    existing.Title = model.Title;
+                    existing.TitleEnglish = model.TitleEnglish;
+                    existing.Code = model.Code;
+                    existing.AppliesTo = model.AppliesTo;
+                    existing.Category = model.Category;
+                    existing.Description = model.Description;
+                    existing.Icon = model.Icon;
+                    existing.ColorCode = model.ColorCode;
+                    existing.DisplayOrder = model.DisplayOrder;
+                    existing.RequiresNote = model.RequiresNote;
+                    existing.IsActive = model.IsActive;
+                    existing.LastUpdaterUserId = GetUserId();
+
+                    await _lostReasonRepository.UpdateAsync(existing);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Update,
+                        "CrmSettings",
+                        "SaveLostReason",
+                        $"ویرایش دلیل از دست رفتن: {model.Title}",
+                        recordId: model.Id.ToString());
+
+                    return Json(new { success = true, message = "دلیل از دست رفتن با موفقیت بروزرسانی شد" });
+                }
+                else
+                {
+                    // ایجاد جدید
+                    // بررسی تکراری نبودن عنوان
+                    if (await _lostReasonRepository.IsTitleDuplicateAsync(model.Title))
+                    {
+                        return Json(new { success = false, message = "این عنوان قبلاً استفاده شده است" });
+                    }
+
+                    var entity = new CrmLostReason
+                    {
+                        Title = model.Title,
+                        TitleEnglish = model.TitleEnglish,
+                        Code = model.Code,
+                        AppliesTo = model.AppliesTo,
+                        Category = model.Category,
+                        Description = model.Description,
+                        Icon = model.Icon ?? "fa-times-circle",
+                        ColorCode = model.ColorCode ?? "#dc3545",
+                        DisplayOrder = model.DisplayOrder,
+                        RequiresNote = model.RequiresNote,
+                        IsActive = model.IsActive,
+                        CreatorUserId = GetUserId()
+                    };
+
+                    await _lostReasonRepository.CreateAsync(entity);
+
+                    await _activityLogger.LogActivityAsync(
+                        ActivityTypeEnum.Create,
+                        "CrmSettings",
+                        "SaveLostReason",
+                        $"ایجاد دلیل از دست رفتن: {model.Title}",
+                        recordId: entity.Id.ToString());
+
+                    return Json(new { success = true, message = "دلیل از دست رفتن با موفقیت ایجاد شد", data = new { id = entity.Id } });
+                }
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogErrorAsync("CrmSettings", "SaveLostReason", "خطا در ذخیره دلیل از دست رفتن", ex);
+                return Json(new { success = false, message = $"خطا: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
         /// دریافت لیست دلایل از دست رفتن به صورت JSON
         /// </summary>
         [HttpGet]
@@ -819,125 +1321,6 @@ namespace MahERP.Areas.AppCoreArea.Controllers.CoreControllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// ایجاد دلیل از دست رفتن جدید
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateLostReason(CrmLostReasonFormViewModel model)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
-                    });
-                }
-
-                // بررسی تکراری نبودن عنوان
-                if (await _lostReasonRepository.IsTitleDuplicateAsync(model.Title))
-                {
-                    return Json(new { success = false, message = "این عنوان قبلاً استفاده شده است" });
-                }
-
-                var entity = new CrmLostReason
-                {
-                    Title = model.Title,
-                    TitleEnglish = model.TitleEnglish,
-                    Code = model.Code,
-                    AppliesTo = model.AppliesTo,
-                    Category = model.Category,
-                    Description = model.Description,
-                    Icon = model.Icon ?? "fa-times-circle",
-                    ColorCode = model.ColorCode ?? "#dc3545",
-                    DisplayOrder = model.DisplayOrder,
-                    RequiresNote = model.RequiresNote,
-                    IsActive = model.IsActive,
-                    CreatorUserId = GetUserId()
-                };
-
-                await _lostReasonRepository.CreateAsync(entity);
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Create,
-                    "CrmSettings",
-                    "CreateLostReason",
-                    $"ایجاد دلیل از دست رفتن: {model.Title}",
-                    recordId: entity.Id.ToString());
-
-                return Json(new { success = true, message = "دلیل از دست رفتن با موفقیت ایجاد شد", data = new { id = entity.Id } });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("CrmSettings", "CreateLostReason", "خطا در ایجاد دلیل از دست رفتن", ex);
-                return Json(new { success = false, message = $"خطا: {ex.Message}" });
-            }
-        }
-
-        /// <summary>
-        /// ویرایش دلیل از دست رفتن
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateLostReason(CrmLostReasonFormViewModel model)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
-                    });
-                }
-
-                var existing = await _lostReasonRepository.GetByIdAsync(model.Id);
-                if (existing == null)
-                {
-                    return Json(new { success = false, message = "دلیل یافت نشد" });
-                }
-
-                // بررسی تکراری نبودن عنوان
-                if (await _lostReasonRepository.IsTitleDuplicateAsync(model.Title, model.Id))
-                {
-                    return Json(new { success = false, message = "این عنوان قبلاً استفاده شده است" });
-                }
-
-                existing.Title = model.Title;
-                existing.TitleEnglish = model.TitleEnglish;
-                existing.Code = model.Code;
-                existing.AppliesTo = model.AppliesTo;
-                existing.Category = model.Category;
-                existing.Description = model.Description;
-                existing.Icon = model.Icon;
-                existing.ColorCode = model.ColorCode;
-                existing.DisplayOrder = model.DisplayOrder;
-                existing.RequiresNote = model.RequiresNote;
-                existing.IsActive = model.IsActive;
-                existing.LastUpdaterUserId = GetUserId();
-
-                await _lostReasonRepository.UpdateAsync(existing);
-
-                await _activityLogger.LogActivityAsync(
-                    ActivityTypeEnum.Update,
-                    "CrmSettings",
-                    "UpdateLostReason",
-                    $"ویرایش دلیل از دست رفتن: {model.Title}",
-                    recordId: model.Id.ToString());
-
-                return Json(new { success = true, message = "دلیل از دست رفتن با موفقیت بروزرسانی شد" });
-            }
-            catch (Exception ex)
-            {
-                await _activityLogger.LogErrorAsync("CrmSettings", "UpdateLostReason", "خطا در ویرایش دلیل از دست رفتن", ex);
-                return Json(new { success = false, message = $"خطا: {ex.Message}" });
             }
         }
 

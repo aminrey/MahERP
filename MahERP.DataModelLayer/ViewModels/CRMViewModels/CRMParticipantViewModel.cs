@@ -40,7 +40,7 @@ namespace MahERP.DataModelLayer.ViewModels.CRMViewModels
             _ => "نامشخص"
         };
 
-        public string DisplayName => ParticipantType switch
+        public string? DisplayName => ParticipantType switch
         {
             0 => UserName,
             1 => StakeholderContactName,

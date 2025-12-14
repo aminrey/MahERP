@@ -108,7 +108,7 @@ namespace MahERP.DataModelLayer.Entities.Crm
         // ========== Computed Properties ==========
 
         [NotMapped]
-        public string DisplayTitle => string.IsNullOrEmpty(TitleEnglish) 
+        public string? DisplayTitle => string.IsNullOrEmpty(TitleEnglish) 
             ? Title 
             : $"{Title} ({TitleEnglish})";
 
@@ -119,7 +119,7 @@ namespace MahERP.DataModelLayer.Entities.Crm
         /// کلاس CSS بر اساس رنگ
         /// </summary>
         [NotMapped]
-        public string BadgeClass
+        public string? BadgeClass
         {
             get
             {

@@ -1,0 +1,70 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLeadStatusViewModel
+@{
+    Layout = null;
+}
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content modal-contents">
+        <div class="block block-rounded block-themed block-transparent mb-0">
+            <div class="block-header bg-danger">
+                <h3 class="block-title" style="color:white;">
+                    <i class="fa fa-trash me-2"></i>حذف وضعیت Lead
+                </h3>
+                <div class="block-options">
+                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
+                        <i class="fa fa-fw fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="DeleteLeadStatus" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <div class="block-content">
+                    <div class="row push">
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="fa fa-exclamation-triangle me-2"></i>
+                                <strong>توجه:</strong> این عملیات قابل بازگشت نیست!
+                            </div>
+                            
+                            <p class="fs-5">
+                                آیا از حذف وضعیت 
+                                <strong class="text-danger">"@Model.Title"</strong> 
+                                مطمئن هستید؟
+                            </p>
+                            
+                            @if (Model.LeadsCount > 0)
+                            {
+                                <div class="alert alert-danger">
+                                    <i class="fa fa-times-circle me-2"></i>
+                                    این وضعیت <strong>@Model.LeadsCount</strong> سرنخ فعال دارد و قابل حذف نیست.
+                                </div>
+                            }
+                            
+                            @if (Model.IsDefault)
+                            {
+                                <div class="alert alert-danger">
+                                    <i class="fa fa-times-circle me-2"></i>
+                                    این وضعیت <strong>پیش‌فرض</strong> است و قابل حذف نیست. 
+                                    ابتدا وضعیت پیش‌فرض دیگری تعیین کنید.
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="block-content block-content-full text-end bg-body">
+                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">بازگشت</button>
+                    @if (Model.LeadsCount == 0 && !Model.IsDefault)
+                    {
+                        <button class="btn btn-hero btn-danger" data-save="modal-ajax-save" type="button">
+                            <i class="fa fa-trash me-1"></i>تایید حذف
+                        </button>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
