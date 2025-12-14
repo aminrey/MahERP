@@ -41,16 +41,30 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 var accessTask = _taskRepository.CanUserViewTaskAsync(currentUserId, model.TaskId);
                 var taskTask = _taskRepository.GetTaskByIdAsync(model.TaskId);
                 var assignmentTask = _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, model.TaskId);
+                // ⭐⭐⭐ بررسی دسترسی کامنت‌گذاری بر اساس تنظیمات تسک
+                var canCommentTask = _taskRepository.CanUserPerformActionAsync(model.TaskId, currentUserId, TaskAction.Comment);
 
-                await Task.WhenAll(accessTask, taskTask, assignmentTask);
+                await Task.WhenAll(accessTask, taskTask, assignmentTask, canCommentTask);
 
                 var hasAccess = await accessTask;
                 var task = await taskTask;
                 var currentUserAssignment = await assignmentTask;
+                var canComment = await canCommentTask;
 
                 if (!hasAccess)
                 {
                     return Json(new { success = false, message = "شما به این تسک دسترسی ندارید" });
+                }
+
+                // ⭐⭐⭐ بررسی دسترسی کامنت‌گذاری بر اساس تنظیمات تسک
+                if (!canComment)
+                {
+                    return Json(new { 
+                        success = false, 
+                        message = new[] {
+                            new { status = "error", text = "شما مجوز کامنت‌گذاری در این تسک را ندارید" }
+                        }
+                    });
                 }
 
                 var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;

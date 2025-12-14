@@ -4,6 +4,9 @@
     var isCreator = ViewBag.IsCreator ?? false;
     var isManager = ViewBag.IsManager ?? false;
     var isTaskCompleted = ViewBag.IsTaskCompleted ?? false;
+    // ⭐⭐⭐ دسترسی‌های مبتنی بر تنظیمات تسک
+    var canAddMembers = ViewBag.CanAddMembers ?? (isCreator || isManager);
+    var canRemoveMembers = ViewBag.CanRemoveMembers ?? (isCreator || isManager);
 }
 
 @if (!assignments.Any())
@@ -12,7 +15,7 @@
     <div class="py-5 text-center text-muted">
         <i class="fa fa-users fa-4x opacity-25 mb-3"></i>
         <h5>هیچ کاربری اختصاص داده نشده است</h5>
-        @if ((isCreator || isManager) && !isTaskCompleted)
+        @if (canAddMembers && !isTaskCompleted)
         {
             <p class="mb-3">برای شروع همکاری، اولین عضو را اضافه کنید</p>
             <button type="button"
@@ -97,7 +100,7 @@ else
                                 </div>
                             </div>
 
-                            @if ((isCreator || isManager) && !isTaskCompleted)
+                            @if (canRemoveMembers && !isTaskCompleted)
                             {
                                 <button type="button"
                                         class="btn btn-sm btn-outline-danger flex-shrink-0"

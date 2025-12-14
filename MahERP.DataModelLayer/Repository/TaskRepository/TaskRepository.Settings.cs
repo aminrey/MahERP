@@ -68,10 +68,38 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 if (task == null)
                     return roles;
 
-                // 1. بررسی مدیر
-                if (task.TeamId.HasValue && task.Team?.ManagerUserId == userId)
+                // ⭐⭐⭐ دریافت assignment کاربر در این تسک
+                var userAssignment = task.TaskAssignments?
+                    .FirstOrDefault(a => a.AssignedUserId == userId);
+
+                // ⭐⭐⭐ تیم صحیح:
+                // - اگر کاربر منتصب است: تیمی که در آن منتصب شده (AssignedInTeamId)
+                // - اگر کاربر منتصب نیست (مثلاً فقط سازنده): تیم اصلی تسک (task.TeamId)
+                int? relevantTeamId = userAssignment?.AssignedInTeamId ?? task.TeamId;
+
+                // 1. بررسی مدیر تیم
+                if (relevantTeamId.HasValue)
                 {
-                    roles.Add(TaskRole.Manager);
+                    // اگر از assignment آمده، تیم را جداگانه بگیر
+                    // اگر از task.TeamId آمده، team از include موجود است
+                    string? teamManagerId = null;
+                    
+                    if (userAssignment?.AssignedInTeamId != null)
+                    {
+                        var assignedTeam = await _context.Team_Tbl
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(t => t.Id == userAssignment.AssignedInTeamId);
+                        teamManagerId = assignedTeam?.ManagerUserId;
+                    }
+                    else
+                    {
+                        teamManagerId = task.Team?.ManagerUserId;
+                    }
+
+                    if (teamManagerId == userId)
+                    {
+                        roles.Add(TaskRole.Manager);
+                    }
                 }
 
                 // 2. بررسی سازنده
@@ -80,18 +108,19 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     roles.Add(TaskRole.Creator);
                 }
 
-                // 3. بررسی عضو
-                var isAssigned = task.TaskAssignments?.Any(a => a.AssignedUserId == userId) ?? false;
-                if (isAssigned)
+                // 3. بررسی عضو (اگر assignment دارد)
+                // ⭐⭐⭐ AssignmentType: 0=اجراکننده، 1=رونوشت، 2=ناظر
+                // همه assignment ها (حتی رونوشت و ناظر) باید دسترسی Member داشته باشند
+                if (userAssignment != null)
                 {
                     roles.Add(TaskRole.Member);
                 }
 
                 // 4. بررسی ناظر (از TeamMember با MembershipType = 1)
-                if (task.TeamId.HasValue)
+                if (relevantTeamId.HasValue)
                 {
                     var isSupervisor = await _context.TeamMember_Tbl
-                        .AnyAsync(tm => tm.TeamId == task.TeamId &&
+                        .AnyAsync(tm => tm.TeamId == relevantTeamId.Value &&
                                        tm.UserId == userId &&
                                        tm.MembershipType == 1 &&
                                        tm.IsActive);
@@ -118,15 +147,34 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
             /// <summary>
             /// بررسی اینکه آیا کاربر می‌تواند تنظیمات را ویرایش کند
+            /// ⭐⭐⭐ بر اساس تنظیم CanEditSettingsRoles و Authority Level
             /// </summary>
             public async Task<bool> CanUserEditSettingsAsync(int taskId, string userId)
             {
-                var roles = await GetUserRolesInTaskAsync(taskId, userId);
-
-                // ⭐⭐⭐ فقط مدیر و سازنده می‌توانند تنظیمات را تغییر دهند
-                if (roles.Contains(TaskRole.Manager) || roles.Contains(TaskRole.Creator))
+                // ⭐⭐⭐ ابتدا بررسی Admin سیستم
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+                
+                if (user?.IsAdmin == true)
                 {
                     return true;
+                }
+
+                // ⭐⭐⭐ دریافت نقش کاربر در تسک
+                var userRole = await GetUserRoleInTaskAsync(taskId, userId);
+                if (userRole == null)
+                {
+                    return false;
+                }
+
+                // ⭐⭐⭐ دریافت تنظیمات تسک
+                var settings = await GetTaskSettingsAsync(taskId);
+
+                // ⭐⭐⭐ بررسی آیا نقش کاربر در لیست CanEditSettingsRoles است
+                if (!settings.CanEditSettings(userRole.Value))
+                {
+                    return false;
                 }
 
                 // ⭐⭐⭐ بررسی HierarchyManager (مدیر تیم‌های بالاتر)
@@ -134,7 +182,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     .Include(t => t.Team)
                     .FirstOrDefaultAsync(t => t.Id == taskId);
 
-                if (task?.TeamId != null)
+                if (task?.TeamId != null && userRole.Value != TaskRole.Manager)
                 {
                     var isHierarchyManager = await IsUserHierarchyManagerOfTaskAsync(userId, task.TeamId.Value);
                     if (isHierarchyManager)
@@ -143,7 +191,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                     }
                 }
 
-                return false;
+                return true;
             }
 
             /// <summary>
@@ -486,6 +534,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 return new TaskSettings
                 {
                     TaskId = 0,
+                    CanEditSettingsRoles = "a,b", // ⭐⭐⭐ پیش‌فرض: مدیر و سازنده
                     CanCommentRoles = "a,b,c,d,e",
                     CanAddMembersRoles = "a,b",
                     CanRemoveMembersRoles = "a,b",
@@ -710,21 +759,33 @@ namespace MahERP.DataModelLayer.Repository.Tasking
 
         /// <summary>
         /// تبدیل Entity به ViewModel
+        /// ⭐⭐⭐ نکته: settings.TaskId ممکن است 0 باشد (برای Global Settings)
+        /// بنابراین taskId اصلی را جداگانه می‌گیریم
         /// </summary>
-        public async Task<TaskSettingsViewModel> MapEntityToViewModelAsync(TaskSettings settings, string currentUserId)
+        public async Task<TaskSettingsViewModel> MapEntityToViewModelAsync(TaskSettings settings, string currentUserId, int? originalTaskId = null)
         {
+            // ⭐⭐⭐ استفاده از taskId اصلی (اگر داده شده) یا settings.TaskId
+            int taskId = originalTaskId ?? settings.TaskId;
+            
             var task = await _context.Tasks_Tbl
                 .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Id == settings.TaskId);
+                .FirstOrDefaultAsync(t => t.Id == taskId);
 
             var viewModel = new TaskSettingsViewModel
             {
-                TaskId = settings.TaskId,
+                TaskId = taskId,
                 TaskTitle = task?.Title ?? "نامشخص",
                 TaskCode = task?.TaskCode ?? "",
                 IsInherited = settings.IsInherited,
                 InheritedFromText = GetInheritedFromText(settings.InheritedFrom)
             };
+
+            // ⭐⭐⭐ تنظیم 0: تغییر تنظیمات (فقط مدیر می‌بیند)
+            viewModel.EditSettingsSetting = CreateSettingItem(
+                0,
+                "دسترسی به تنظیمات",
+                "چه کسانی می‌توانند تنظیمات تسک را تغییر دهند",
+                settings.CanEditSettingsRoles);
 
             // تنظیم 1: کامنت
             viewModel.CommentSetting = CreateSettingItem(
@@ -764,12 +825,43 @@ namespace MahERP.DataModelLayer.Repository.Tasking
                 IsReadOnly = false
             };
 
-            // بررسی دسترسی کاربر
-            var userRole = await GetUserRoleInTaskAsync(settings.TaskId, currentUserId);
-            // TODO: Uncomment when TaskSettingsViewModel is created
-            // viewModel.UserCanEditSettings = userRole == TaskRole.Manager || userRole == TaskRole.Creator;
+            // ⭐⭐⭐ بررسی Admin سیستم
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == currentUserId);
+
+            if (user?.IsAdmin == true)
+            {
+                viewModel.CurrentUserRole = TaskRole.Manager;
+                viewModel.CurrentUserRoleText = "مدیر سیستم";
+                viewModel.CanEdit = true;
+            }
+            else
+            {
+                // ⭐⭐⭐ بررسی نقش کاربر در تسک - با taskId اصلی
+                var userRole = await GetUserRoleInTaskAsync(taskId, currentUserId);
+                viewModel.CurrentUserRole = userRole ?? TaskRole.CarbonCopy;
+                viewModel.CurrentUserRoleText = GetRoleText(userRole);
+                viewModel.CanEdit = await CanUserEditSettingsAsync(taskId, currentUserId);
+            }
 
             return viewModel;
+        }
+
+        /// <summary>
+        /// دریافت متن نقش کاربر
+        /// </summary>
+        private string GetRoleText(TaskRole? role)
+        {
+            return role switch
+            {
+                TaskRole.Manager => "مدیر تیم",
+                TaskRole.Creator => "سازنده تسک",
+                TaskRole.Supervisor => "سرپرست",
+                TaskRole.Member => "عضو تسک",
+                TaskRole.CarbonCopy => "ناظر (رونوشت)",
+                _ => "بدون نقش"
+            };
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.Enums;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
@@ -311,6 +312,14 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 var isInMyDay = await _taskRepository.IsTaskInMyDayAsync(id, currentUserId);
                 ViewBag.IsInMyDay = isInMyDay;
+
+                // ⭐⭐⭐ دریافت اطلاعات نقش کاربر و سلسله مراتب دسترسی
+                viewModel.UserRoleInfo = await _taskRepository.GetUserRoleInfoAsync(id, currentUserId);
+
+                // ⭐⭐⭐ بررسی دسترسی‌های مبتنی بر تنظیمات تسک
+                ViewBag.CanAddMembers = await _taskRepository.CanUserPerformActionAsync(id, currentUserId, TaskAction.AddMember);
+                ViewBag.CanRemoveMembers = await _taskRepository.CanUserPerformActionAsync(id, currentUserId, TaskAction.RemoveMember);
+                ViewBag.CanComment = await _taskRepository.CanUserPerformActionAsync(id, currentUserId, TaskAction.Comment);
 
                 // ⭐⭐⭐ تنظیم URL بازگشت
                 SetBackUrlInViewBag("Index", "Tasks", "TaskingArea");

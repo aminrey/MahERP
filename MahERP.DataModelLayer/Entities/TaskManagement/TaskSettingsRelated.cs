@@ -18,6 +18,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
 
         #region تنظیمات پیش‌فرض
 
+        /// <summary>
+        /// ⭐⭐⭐ تنظیم 0: چه کسانی می‌توانند تنظیمات را تغییر دهند
+        /// </summary>
+        [Required]
+        [MaxLength(50)]
+        public string CanEditSettingsRoles { get; set; } = "a,b";
+
         [Required]
         [MaxLength(50)]
         public string CanCommentRoles { get; set; } = "a,b,c,d,e";
@@ -76,6 +83,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
             return new TaskSettings
             {
                 TaskId = taskId,
+                CanEditSettingsRoles = this.CanEditSettingsRoles,
                 CanCommentRoles = this.CanCommentRoles,
                 CanAddMembersRoles = this.CanAddMembersRoles,
                 CanRemoveMembersRoles = this.CanRemoveMembersRoles,
@@ -102,6 +110,13 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         public int BranchId { get; set; }
 
         #region تنظیمات پیش‌فرض
+
+        /// <summary>
+        /// ⭐⭐⭐ تنظیم 0: چه کسانی می‌توانند تنظیمات را تغییر دهند
+        /// </summary>
+        [Required]
+        [MaxLength(50)]
+        public string CanEditSettingsRoles { get; set; } = "a,b";
 
         [Required]
         [MaxLength(50)]
@@ -161,6 +176,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
             return new TaskSettings
             {
                 TaskId = taskId,
+                CanEditSettingsRoles = this.CanEditSettingsRoles,
                 CanCommentRoles = this.CanCommentRoles,
                 CanAddMembersRoles = this.CanAddMembersRoles,
                 CanRemoveMembersRoles = this.CanRemoveMembersRoles,

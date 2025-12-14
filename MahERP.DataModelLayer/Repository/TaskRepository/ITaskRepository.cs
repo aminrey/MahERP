@@ -1031,6 +1031,11 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// </summary>
         Task<bool> CanUserEditSettingsAsync(int taskId, string userId);
 
+        /// <summary>
+        /// ⭐⭐⭐ دریافت اطلاعات نقش کاربر در تسک و سلسله مراتب دسترسی
+        /// </summary>
+        Task<UserRoleInfoViewModel> GetUserRoleInfoAsync(int taskId, string userId);
+
         #endregion
 
         #region Settings Change Log
@@ -1067,7 +1072,7 @@ namespace MahERP.DataModelLayer.Repository.Tasking
         /// <summary>
         /// تبدیل Entity به ViewModel
         /// </summary>
-        Task<TaskSettingsViewModel> MapEntityToViewModelAsync(TaskSettings settings, string currentUserId);
+        Task<TaskSettingsViewModel> MapEntityToViewModelAsync(TaskSettings settings, string currentUserId, int? originalTaskId = null);
 
         #endregion
 

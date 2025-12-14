@@ -22,6 +22,15 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         #region تنظیمات دسترسی (Comma-Separated: "a,b,c,d,e")
 
         /// <summary>
+        /// ⭐⭐⭐ تنظیم 0: چه کسانی می‌توانند تنظیمات را تغییر دهند
+        /// پیش‌فرض: مدیر و سازنده (a,b)
+        /// نکته: هر نقش فقط می‌تواند نقش‌های پایین‌تر از خود را مدیریت کند
+        /// </summary>
+        [Required]
+        [MaxLength(50)]
+        public string CanEditSettingsRoles { get; set; } = "a,b";
+
+        /// <summary>
         /// تنظیم 1: چه کسانی می‌توانند کامنت بزنند
         /// </summary>
         [Required]
@@ -100,6 +109,11 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
         #region Helper Methods
 
         /// <summary>
+        /// ⭐⭐⭐ بررسی اینکه آیا نقش مشخص شده می‌تواند تنظیمات را تغییر دهد
+        /// </summary>
+        public bool CanEditSettings(TaskRole userRole) => HasRole(CanEditSettingsRoles, userRole);
+
+        /// <summary>
         /// بررسی اینکه آیا نقش مشخص شده می‌تواند کامنت بزند
         /// </summary>
         public bool CanComment(TaskRole userRole) => HasRole(CanCommentRoles, userRole);
@@ -159,6 +173,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
                 nameof(CanAddMembersRoles) => CanAddMembersRoles,
                 nameof(CanRemoveMembersRoles) => CanRemoveMembersRoles,
                 nameof(CanEditAfterCompletionRoles) => CanEditAfterCompletionRoles,
+                nameof(CanEditSettingsRoles) => CanEditSettingsRoles,
                 _ => string.Empty
             };
 
@@ -185,6 +200,9 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
                     case nameof(CanEditAfterCompletionRoles):
                         CanEditAfterCompletionRoles = newValue;
                         break;
+                    case nameof(CanEditSettingsRoles):
+                        CanEditSettingsRoles = newValue;
+                        break;
                 }
             }
         }
@@ -201,6 +219,7 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
                 nameof(CanAddMembersRoles) => CanAddMembersRoles,
                 nameof(CanRemoveMembersRoles) => CanRemoveMembersRoles,
                 nameof(CanEditAfterCompletionRoles) => CanEditAfterCompletionRoles,
+                nameof(CanEditSettingsRoles) => CanEditSettingsRoles,
                 _ => string.Empty
             };
 
@@ -224,6 +243,9 @@ namespace MahERP.DataModelLayer.Entities.TaskManagement
                     break;
                 case nameof(CanEditAfterCompletionRoles):
                     CanEditAfterCompletionRoles = newValue;
+                    break;
+                case nameof(CanEditSettingsRoles):
+                    CanEditSettingsRoles = newValue;
                     break;
             }
         }

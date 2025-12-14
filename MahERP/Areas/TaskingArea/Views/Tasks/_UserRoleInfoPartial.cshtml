@@ -1,0 +1,148 @@
+﻿@model UserRoleInfoViewModel
+@{
+    if (Model == null) return;
+}
+
+<!-- ⭐⭐⭐ کارت اطلاعات نقش و دسترسی -->
+<div class="block block-rounded block-fx-shadow mb-4">
+    <div class="block-header bg-@Model.RoleBadgeColor text-white">
+        <h3 class="block-title text-white mb-0">
+            <i class="fa @Model.RoleIcon me-2"></i>نقش شما در این تسک
+        </h3>
+    </div>
+    <div class="block-content">
+        <!-- نقش اصلی -->
+        <div class="d-flex align-items-center mb-3">
+            <div class="flex-shrink-0 me-3">
+                <div class="rounded-circle bg-@Model.RoleBadgeColor text-white d-flex align-items-center justify-content-center" 
+                     style="width: 56px; height: 56px;">
+                    <i class="fa @Model.RoleIcon fa-lg"></i>
+                </div>
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="mb-1">@Model.PrimaryRole</h5>
+                <p class="text-muted mb-0 small">@Model.RoleDescription</p>
+            </div>
+        </div>
+
+        @if (Model.IsSystemAdmin)
+        {
+            <div class="alert alert-danger mb-3">
+                <i class="fa fa-crown me-2"></i>
+                <strong>دسترسی کامل:</strong> شما به عنوان مدیر سیستم به تمام تسک‌ها دسترسی دارید.
+            </div>
+        }
+
+        <!-- اطلاعات تیم تسک -->
+        @if (!string.IsNullOrEmpty(Model.TaskTeamName))
+        {
+            <div class="bg-body-light rounded-3 p-3 mb-3">
+                <h6 class="text-muted mb-2">
+                    <i class="fa fa-users me-1"></i>تیم تسک:
+                </h6>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-2">@Model.TaskTeamName</span>
+                    @if (!string.IsNullOrEmpty(Model.TaskBranchName))
+                    {
+                        <small class="text-muted">
+                            <i class="fa fa-building me-1"></i>@Model.TaskBranchName
+                        </small>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- ⭐⭐⭐ اطلاعات سلسله مراتب (فقط برای HierarchyManager) -->
+        @if (Model.IsHierarchyAccess && Model.HierarchyChain?.Any() == true)
+        {
+            <div class="alert alert-info mb-3">
+                <h6 class="alert-heading mb-2">
+                    <i class="fa fa-sitemap me-2"></i>دسترسی سلسله مراتبی
+                </h6>
+                <p class="mb-2 small">@Model.HierarchyExplanation</p>
+            </div>
+
+            <!-- زنجیره سلسله مراتب -->
+            <div class="hierarchy-chain mb-3">
+                <h6 class="text-muted mb-2">
+                    <i class="fa fa-project-diagram me-1"></i>نمودار سلسله مراتب:
+                </h6>
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var team in Model.HierarchyChain.OrderByDescending(h => h.Level))
+                    {
+                        var isUserTeam = team.IsCurrentUserManager;
+                        var isTaskTeam = team.Level == 0;
+                        var bgColor = isUserTeam ? "primary" : (isTaskTeam ? "success" : "light");
+                        var textColor = isUserTeam || isTaskTeam ? "white" : "dark";
+
+                        <div class="d-flex align-items-center">
+                            <!-- خط اتصال -->
+                            @if (team.Level < Model.HierarchyChain.Max(h => h.Level))
+                            {
+                                <div class="hierarchy-line"></div>
+                            }
+                            
+                            <!-- باکس تیم -->
+                            <div class="hierarchy-item bg-@bgColor text-@textColor rounded-3 p-2 flex-grow-1 @(isUserTeam ? "border border-2 border-primary" : "")">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <strong>@team.TeamName</strong>
+                                        @if (isUserTeam)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1">
+                                                <i class="fa fa-star"></i> تیم شما
+                                            </span>
+                                        }
+                                        @if (isTaskTeam)
+                                        {
+                                            <span class="badge bg-light text-success ms-1">
+                                                <i class="fa fa-tasks"></i> تیم تسک
+                                            </span>
+                                        }
+                                    </div>
+                                    <small class="opacity-75">
+                                        <i class="fa fa-user-tie me-1"></i>@team.ManagerName
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- فلش بین تیم‌ها -->
+                        @if (team.Level > 0)
+                        {
+                            <div class="text-center text-muted py-1">
+                                <i class="fa fa-arrow-down"></i>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- اطلاعات تیم کاربر (فقط برای Manager) -->
+        @if (!string.IsNullOrEmpty(Model.UserTeamName) && Model.PrimaryRole == "مدیر تیم")
+        {
+            <div class="bg-body-light rounded-3 p-3">
+                <h6 class="text-muted mb-2">
+                    <i class="fa fa-user-tie me-1"></i>تیم تحت مدیریت شما:
+                </h6>
+                <span class="badge bg-primary">@Model.UserTeamName</span>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .hierarchy-item {
+        transition: all 0.2s ease;
+    }
+    .hierarchy-item:hover {
+        transform: translateX(5px);
+    }
+    .hierarchy-line {
+        width: 2px;
+        height: 20px;
+        background: #dee2e6;
+        margin-left: 20px;
+    }
+</style>

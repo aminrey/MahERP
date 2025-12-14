@@ -42,7 +42,12 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
 
         #endregion
 
-        #region تنظیمات 5 گانه
+        #region تنظیمات 6 گانه
+
+        /// <summary>
+        /// ⭐⭐⭐ تنظیم 0: چه کسانی می‌توانند تنظیمات را تغییر دهند
+        /// </summary>
+        public SettingItemViewModel EditSettingsSetting { get; set; }
 
         /// <summary>
         /// تنظیم 1: چه کسانی می‌توانند کامنت بزنند
@@ -190,6 +195,11 @@ namespace MahERP.DataModelLayer.ViewModels.TaskViewModels
     {
         [Required]
         public int TaskId { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ نقش‌های مجاز برای تغییر تنظیمات (comma-separated: "a,b")
+        /// </summary>
+        public string CanEditSettingsRoles { get; set; }
 
         /// <summary>
         /// نقش‌های مجاز برای کامنت (comma-separated: "a,b,c")

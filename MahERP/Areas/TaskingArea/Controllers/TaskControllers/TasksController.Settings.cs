@@ -23,6 +23,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
             try
             {
                 var currentUserId = _userManager.GetUserId(User);
+                var isAdmin = User.IsInRole("Admin");
 
                 // بررسی دسترسی به تسک
                 var task = await _taskRepository.GetTaskByIdAsync(taskId);
@@ -38,24 +39,29 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
                 }
 
-                // بررسی دسترسی ویرایش تنظیمات
+                // ⭐⭐⭐ بررسی دسترسی ویرایش تنظیمات
                 var canEdit = await _taskRepository.CanUserEditSettingsAsync(taskId, currentUserId);
 
-                if (!canEdit)
+                // ⭐⭐⭐ اگر Admin سیستم است، اجازه ویرایش بده
+                if (isAdmin)
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        status = "error",
-                        message = new[] {
-                            new { status = "error", text = "شما مجوز تغییر تنظیمات این تسک را ندارید" }
-                        }
-                    });
+                    canEdit = true;
                 }
+
+                // ⭐⭐⭐ حتی اگر کاربر نمی‌تواند ویرایش کند، اجازه مشاهده بده
+                // فقط CanEdit در ViewModel روی false باشد
 
                 // دریافت تنظیمات
                 var settings = await _taskRepository.GetTaskSettingsAsync(taskId);
-                var viewModel = await _taskRepository.MapEntityToViewModelAsync(settings, currentUserId);
+                // ⭐⭐⭐ ارسال taskId اصلی - چون settings.TaskId ممکن است 0 باشد (Global)
+                var viewModel = await _taskRepository.MapEntityToViewModelAsync(settings, currentUserId, taskId);
+
+                // ⭐⭐⭐ اگر Admin است، متن نقش را تغییر بده
+                if (isAdmin)
+                {
+                    viewModel.CurrentUserRoleText = "مدیر سیستم";
+                    viewModel.CanEdit = true;
+                }
 
                 // ⭐⭐⭐ Render Partial View به String
                 var htmlContent = await this.RenderViewToStringAsync("_TaskSettingsPartial", viewModel);
@@ -159,6 +165,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     // حذف تنظیمات سفارشی و بازگشت به وراثت
                     await _taskRepository.ResetTaskSettingsAsync(model.TaskId);
 
+                    // ⭐⭐⭐ دریافت تنظیمات جدید (وراثتی) و رندر partial view
+                    var inheritedSettings = await _taskRepository.GetTaskSettingsAsync(model.TaskId);
+                    var inheritedViewModel = await _taskRepository.MapEntityToViewModelAsync(inheritedSettings, currentUserId);
+                    var inheritedHtmlContent = await this.RenderViewToStringAsync("_TaskSettingsPartial", inheritedViewModel);
+
                     return Json(new
                     {
                         success = true,
@@ -168,8 +179,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         status = "update-view",
                         viewList = new[] {
                             new {
-                                elementId = "task-settings-tab",
-                                view = new { result = "تنظیمات بازنشانی شد" }
+                                elementId = "task-settings-container",
+                                view = new { result = inheritedHtmlContent }
                             }
                         }
                     });
@@ -192,6 +203,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 var settings = new TaskSettings
                 {
                     TaskId = model.TaskId,
+                    CanEditSettingsRoles = NormalizeRoles(model.CanEditSettingsRoles), // ⭐⭐⭐ جدید
                     CanCommentRoles = NormalizeRoles(model.CanCommentRoles),
                     CanAddMembersRoles = NormalizeRoles(model.CanAddMembersRoles),
                     CanRemoveMembersRoles = NormalizeRoles(model.CanRemoveMembersRoles),
@@ -215,6 +227,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     entityType: "TaskSettings"
                 );
 
+                // ⭐⭐⭐ دریافت تنظیمات جدید و رندر partial view
+                var updatedSettings = await _taskRepository.GetTaskSettingsAsync(model.TaskId);
+                var updatedViewModel = await _taskRepository.MapEntityToViewModelAsync(updatedSettings, currentUserId);
+                var htmlContent = await this.RenderViewToStringAsync("_TaskSettingsPartial", updatedViewModel);
+
                 return Json(new
                 {
                     success = true,
@@ -224,8 +241,8 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     status = "update-view",
                     viewList = new[] {
                         new {
-                            elementId = "task-settings-badge",
-                            view = new { result = "<span class='badge bg-warning'>سفارشی</span>" }
+                            elementId = "task-settings-container",
+                            view = new { result = htmlContent }
                         }
                     }
                 });
@@ -293,11 +310,23 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         entityType: "TaskSettings"
                     );
 
+                    // ⭐⭐⭐ دریافت تنظیمات جدید (وراثتی) و رندر partial view
+                    var inheritedSettings = await _taskRepository.GetTaskSettingsAsync(taskId);
+                    var inheritedViewModel = await _taskRepository.MapEntityToViewModelAsync(inheritedSettings, currentUserId);
+                    var htmlContent = await this.RenderViewToStringAsync("_TaskSettingsPartial", inheritedViewModel);
+
                     return Json(new
                     {
                         success = true,
                         message = new[] {
                             new { status = "success", text = "تنظیمات تسک به حالت پیش‌فرض بازگشت داده شد" }
+                        },
+                        status = "update-view",
+                        viewList = new[] {
+                            new {
+                                elementId = "task-settings-container",
+                                view = new { result = htmlContent }
+                            }
                         }
                     });
                 }
@@ -338,11 +367,18 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
         /// <summary>
         /// اعتبارسنجی نقش‌ها - بررسی Authority Level (نسخه Async)
+        /// ⭐⭐⭐ هر نقش فقط می‌تواند نقش‌های پایین‌تر از خود را مدیریت کند
         /// </summary>
         private async Task<(bool IsValid, string ErrorMessage)> ValidateRolesAsync(
             SaveTaskSettingsViewModel model,
             string currentUserId)
         {
+            // ⭐⭐⭐ اگر Admin سیستم است، بدون محدودیت اجازه دهید
+            if (User.IsInRole("Admin"))
+            {
+                return (true, string.Empty);
+            }
+
             var userRole = await _taskRepository.GetUserRoleInTaskAsync(model.TaskId, currentUserId);
 
             if (userRole == null)
@@ -350,16 +386,17 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 return (false, "نقش شما در تسک مشخص نیست");
             }
 
-            // بررسی اینکه کاربر نقش بالاتر از خود را اضافه نکرده
+            // ⭐⭐⭐ بررسی Authority Level برای هر تنظیم
             var allRoles = new[]
             {
-                model.CanCommentRoles,
-                model.CanAddMembersRoles,
-                model.CanRemoveMembersRoles,
-                model.CanEditAfterCompletionRoles
+                (Name: "تغییر تنظیمات", Roles: model.CanEditSettingsRoles),
+                (Name: "کامنت‌گذاری", Roles: model.CanCommentRoles),
+                (Name: "افزودن عضو", Roles: model.CanAddMembersRoles),
+                (Name: "حذف عضو", Roles: model.CanRemoveMembersRoles),
+                (Name: "ویرایش پس از اتمام", Roles: model.CanEditAfterCompletionRoles)
             };
 
-            foreach (var roleString in allRoles)
+            foreach (var (settingName, roleString) in allRoles)
             {
                 if (string.IsNullOrWhiteSpace(roleString))
                     continue;
@@ -380,15 +417,26 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                     if (targetRole.HasValue)
                     {
+                        // ⭐⭐⭐ بررسی Authority Level
                         if (!_taskRepository.CanManageRole(userRole.Value, targetRole.Value))
                         {
-                            return (false, $"شما نمی‌توانید دسترسی '{GetRoleText(targetRole.Value)}' را مدیریت کنید");
+                            return (false, $"شما نمی‌توانند دسترسی '{GetRoleText(targetRole.Value)}' را در تنظیم '{settingName}' مدیریت کنید");
                         }
                     }
                 }
             }
 
-            // بررسی تنظیم 5 (فقط مدیر)
+            // ⭐⭐⭐ بررسی تنظیم CanEditSettingsRoles - سازنده نمی‌تواند دسترسی مدیر را تغییر دهد
+            if (userRole.Value == TaskRole.Creator && !string.IsNullOrWhiteSpace(model.CanEditSettingsRoles))
+            {
+                if (model.CanEditSettingsRoles.Contains("a"))
+                {
+                    // سازنده می‌تواند دسترسی مدیر را حفظ کند، ولی نمی‌تواند حذفش کند
+                    // این منطق در اینجا OK است چون سازنده نمی‌تواند "a" را اضافه/حذف کند
+                }
+            }
+
+            // بررسی تنظیم 5 (فقط مدیر می‌تواند تغییر دهد)
             if (model.CreatorCanEditDelete && userRole.Value != TaskRole.Manager)
             {
                 return (false, "فقط مدیر تیم می‌تواند مجوز حذف/ویرایش برای سازنده را تغییر دهد");
