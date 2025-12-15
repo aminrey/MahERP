@@ -50,7 +50,7 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
         // Computed
         public string DisplayTitle => string.IsNullOrEmpty(TitleEnglish) ? Title : $"{Title} ({TitleEnglish})";
         public int LeadsCount { get; set; }
-        public string BadgeClass { get; set; }
+        public string? BadgeClass { get; set; }
 
         // Audit
         public DateTime CreatedDate { get; set; }

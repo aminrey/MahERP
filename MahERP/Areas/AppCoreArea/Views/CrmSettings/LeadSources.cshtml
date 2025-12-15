@@ -46,4 +46,24 @@
 </div>
 
 <!-- Modal -->
-@await Html.PartialAsync("_LeadSourceModal")
+<div class="modal fade" id="leadSourceModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <!-- محتوای مودال از طریق AJAX بارگذاری می‌شود -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// بارگذاری مودال ایجاد
+$(document).on('click', '[data-bs-target="#leadSourceModal"]', function () {
+    var url = '@Url.Action("CreateLeadSourceModal", "CrmSettings", new { area = "AppCoreArea" })';
+    
+    $.get(url, function (data) {
+        $('#leadSourceModal .modal-content').html(data);
+        $('#leadSourceModal').modal('show');
+    });
+});
+</script>
+}

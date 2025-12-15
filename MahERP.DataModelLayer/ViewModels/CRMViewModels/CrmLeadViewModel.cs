@@ -72,10 +72,10 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
         public bool IsActive { get; set; } = true;
 
         // Computed
-        public string LeadType { get; set; }
+        public string? LeadType { get; set; }
         public bool IsContact { get; set; }
         public bool IsOrganization { get; set; }
-        public string DisplayName { get; set; }
+        public string? DisplayName { get; set; }
         public string? PrimaryPhone { get; set; }
         public string? PrimaryEmail { get; set; }
         public int InteractionsCount { get; set; }

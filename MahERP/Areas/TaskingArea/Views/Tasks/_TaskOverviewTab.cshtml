@@ -362,6 +362,12 @@
 
     <!-- Sidebar -->
     <div id="sidebar-stats-container" class="col-lg-4">
+        <!-- ⭐⭐⭐ اطلاعات نقش کاربر و سلسله مراتب دسترسی -->
+        @if (Model.UserRoleInfo != null)
+        {
+            @await Html.PartialAsync("_UserRoleInfoPartial", Model.UserRoleInfo)
+        }
+
         @await Html.PartialAsync("_TaskSidebarStats", Model)
     </div>
 </div>

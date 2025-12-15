@@ -467,7 +467,139 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         [Display(Name = "زمان‌بندی ساخت")]
         public TaskScheduleViewModel? TaskSchedule { get; set; }
 
+        /// <summary>
+        /// ⭐⭐⭐ اطلاعات نقش کاربر و سلسله مراتب
+        /// </summary>
+        public UserRoleInfoViewModel? UserRoleInfo { get; set; }
+
     }
+    /// <summary>
+    /// ⭐⭐⭐ اطلاعات نقش کاربر در تسک و سلسله مراتب دسترسی
+    /// </summary>
+    public class UserRoleInfoViewModel
+    {
+        /// <summary>
+        /// نقش اصلی کاربر در تسک
+        /// </summary>
+        public string PrimaryRole { get; set; } = "نامشخص";
+
+        /// <summary>
+        /// توضیح نقش (مثلاً: "مدیر تیم مدیریت شعبه ماهبر")
+        /// </summary>
+        public string RoleDescription { get; set; } = "";
+
+        /// <summary>
+        /// آیا کاربر به دلیل سلسله مراتب (Hierarchy) دسترسی دارد؟
+        /// </summary>
+        public bool IsHierarchyAccess { get; set; }
+
+        /// <summary>
+        /// توضیح سلسله مراتب دسترسی
+        /// </summary>
+        public string? HierarchyExplanation { get; set; }
+
+        /// <summary>
+        /// نام تیم کاربر (که باعث دسترسی شده)
+        /// </summary>
+        public string? UserTeamName { get; set; }
+
+        /// <summary>
+        /// شناسه تیم کاربر
+        /// </summary>
+        public int? UserTeamId { get; set; }
+
+        /// <summary>
+        /// نام تیم تسک
+        /// </summary>
+        public string? TaskTeamName { get; set; }
+
+        /// <summary>
+        /// شناسه تیم تسک
+        /// </summary>
+        public int? TaskTeamId { get; set; }
+
+        /// <summary>
+        /// زنجیره سلسله مراتب تیم‌ها (از تیم تسک تا تیم کاربر)
+        /// </summary>
+        public List<TeamHierarchyItem> HierarchyChain { get; set; } = new();
+
+        /// <summary>
+        /// نام شعبه تیم تسک
+        /// </summary>
+        public string? TaskBranchName { get; set; }
+
+        /// <summary>
+        /// آیا کاربر Admin سیستم است؟
+        /// </summary>
+        public bool IsSystemAdmin { get; set; }
+
+        /// <summary>
+        /// رنگ CSS برای badge نقش
+        /// </summary>
+        public string RoleBadgeColor => PrimaryRole switch
+        {
+            "مدیر تیم" => "primary",
+            "سازنده" => "success",
+            "عضو تسک" => "info",
+            "سرپرست" => "warning",
+            "مدیر بالاسری" => "purple",
+            "ناظر (رونوشت)" => "secondary",
+            "مدیر سیستم" => "danger",
+            _ => "dark"
+        };
+
+        /// <summary>
+        /// آیکون FontAwesome برای نقش
+        /// </summary>
+        public string RoleIcon => PrimaryRole switch
+        {
+            "مدیر تیم" => "fa-user-tie",
+            "سازنده" => "fa-user-plus",
+            "عضو تسک" => "fa-user",
+            "سرپرست" => "fa-user-shield",
+            "مدیر بالاسری" => "fa-sitemap",
+            "ناظر (رونوشت)" => "fa-eye",
+            "مدیر سیستم" => "fa-crown",
+            _ => "fa-user-circle"
+        };
+    }
+
+    /// <summary>
+    /// یک آیتم در زنجیره سلسله مراتب تیم‌ها
+    /// </summary>
+    public class TeamHierarchyItem
+    {
+        /// <summary>
+        /// شناسه تیم
+        /// </summary>
+        public int TeamId { get; set; }
+
+        /// <summary>
+        /// نام تیم
+        /// </summary>
+        public string TeamName { get; set; } = "";
+
+        /// <summary>
+        /// نام مدیر تیم
+        /// </summary>
+        public string? ManagerName { get; set; }
+
+        /// <summary>
+        /// شناسه مدیر تیم
+        /// </summary>
+        public string? ManagerUserId { get; set; }
+
+        /// <summary>
+        /// سطح در سلسله مراتب (0 = تیم تسک، 1 = تیم والد، ...)
+        /// </summary>
+        public int Level { get; set; }
+
+        /// <summary>
+        /// آیا کاربر فعلی مدیر این تیم است؟
+        /// </summary>
+        public bool IsCurrentUserManager { get; set; }
+    }
+
     /// <summary>
     /// ⭐⭐⭐ اطلاعات Context کاربر در رابطه با یک تسک
     /// </summary>

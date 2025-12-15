@@ -13,6 +13,11 @@
     var isFocused = Model.IsFocused ?? false;
     var isAdmin = ViewBag.IsAdmin ?? false;
 
+    // ⭐⭐⭐ دسترسی‌های مبتنی بر تنظیمات تسک
+    var canAddMembers = ViewBag.CanAddMembers ?? false;
+    var canRemoveMembers = ViewBag.CanRemoveMembers ?? false;
+    var canComment = ViewBag.CanComment ?? true;
+
     // تعیین رنگ و وضعیت
     string statusColor = "primary";
     string statusText = "در حال انجام";
@@ -303,7 +308,8 @@
                 <i class="fa fa-users me-2"></i>اعضای تسک
             </h3>
             <div class="block-options">
-                @if ((isCreator || isManager) && !isCompletedByMe)
+                @* ⭐⭐⭐ استفاده از canAddMembers که از تنظیمات تسک می‌آید *@
+                @if (canAddMembers && !isCompletedByMe)
                 {
                     <button type="button" 
                             class="btn btn-sm btn-light" 
@@ -325,9 +331,13 @@
             <div id="task-members-container">
                 @{
                     ViewBag.Assignments = Model.AssignmentsTaskUser;
+                    ViewBag.TaskId = Model.Id;
                     ViewBag.IsCreator = isCreator;
                     ViewBag.IsManager = isManager;
                     ViewBag.IsTaskCompleted = Model.CompletionDate.HasValue;
+                    // ⭐⭐⭐ دسترسی‌های مبتنی بر تنظیمات تسک
+                    ViewBag.CanAddMembers = canAddMembers;
+                    ViewBag.CanRemoveMembers = canRemoveMembers;
                 }
                 @await Html.PartialAsync("_TaskMembersList")
             </div>

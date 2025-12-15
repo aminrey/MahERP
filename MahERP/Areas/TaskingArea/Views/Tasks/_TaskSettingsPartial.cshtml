@@ -245,7 +245,7 @@
                         <button type="button" class="btn btn-warning me-2" onclick="resetToDefaultSettings()">
                             <i class="fa fa-undo me-1"></i>بازنشانی
                         </button>
-                        <button type="submit" class="btn btn-primary" data-save="modal-ajax-save">
+                        <button type="button" class="btn btn-primary" id="save-settings-btn" onclick="saveTaskSettings()">
                             <i class="fa fa-save me-1"></i>ذخیره تنظیمات
                         </button>
                     </div>
@@ -256,6 +256,61 @@
 </div>
 
 <script>
+    // ⭐⭐⭐ تابع ذخیره تنظیمات تسک
+    function saveTaskSettings() {
+        const $form = $('#task-settings-form');
+        const $btn = $('#save-settings-btn');
+        const originalBtnText = $btn.html();
+        
+        // Disable button
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>در حال ذخیره...');
+        
+        const formData = new FormData($form[0]);
+        
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            dataType: 'json',
+            success: function(response) {
+                console.log('✅ Settings save response:', response);
+                
+                // ⭐ نمایش پیام
+                if (response.message) {
+                    SendResposeMessage(response.message);
+                }
+                
+                if (response.success === true || response.status === 'update-view') {
+                    // ⭐ بروزرسانی view
+                    if (response.viewList && response.viewList.length > 0) {
+                        updateMultipleViews(response.viewList);
+                    }
+                } else if (response.success === false) {
+                    // ⭐ خطا - فقط پیام نمایش بده
+                    console.warn('❌ Settings save failed:', response.message);
+                }
+                
+                // Re-enable button
+                $btn.prop('disabled', false).html(originalBtnText);
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ AJAX Error:', xhr);
+                
+                // نمایش خطا
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    SendResposeMessage(xhr.responseJSON.message);
+                } else {
+                    showErrorSwal('خطا', 'خطا در ذخیره تنظیمات');
+                }
+                
+                // Re-enable button
+                $btn.prop('disabled', false).html(originalBtnText);
+            }
+        });
+    }
+
     // تابع بازگشت به تنظیمات پیش‌فرض
     async function resetToDefaultSettings() {
         const confirmed = await showConfirmationSwal({

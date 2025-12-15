@@ -1,5 +1,7 @@
 ﻿using MahERP.DataModelLayer.Enums;
+using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Services;
+using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
 using MahERP.Extentions;
@@ -28,11 +30,18 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 if (task == null)
                     return NotFound();
 
-                var isCreator = task.CreatorUserId == userId;
                 var isAdmin = User.IsInRole("Admin");
 
-                if (!isCreator && !isAdmin)
-                    return Forbid();
+                // ⭐⭐⭐ بررسی دسترسی افزودن عضو بر اساس تنظیمات تسک
+                var canAddMembers = await _taskRepository.CanUserPerformActionAsync(taskId, userId, TaskAction.AddMember);
+
+                if (!canAddMembers && !isAdmin)
+                    return Json(new
+                    {
+                        success = false,
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما مجوز افزودن عضو به این تسک را ندارید" } }
+                    });
 
                 var model = new AssignUserToTaskViewModel
                 {
@@ -77,14 +86,16 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         message = new[] { new { status = "error", text = "تسک یافت نشد" } }
                     });
 
-                var isCreator = task.CreatorUserId == userId;
                 var isAdmin = User.IsInRole("Admin");
 
-                if (!isCreator && !isAdmin)
+                // ⭐⭐⭐ بررسی دسترسی افزودن عضو بر اساس تنظیمات تسک
+                var canAddMembers = await _taskRepository.CanUserPerformActionAsync(model.TaskId, userId, TaskAction.AddMember);
+
+                if (!canAddMembers && !isAdmin)
                     return Json(new
                     {
                         status = "error",
-                        message = new[] { new { status = "error", text = "شما دسترسی لازم را ندارید" } }
+                        message = new[] { new { status = "error", text = "شما مجوز افزودن عضو به این تسک را ندارید" } }
                     });
 
                 var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(userId, model.TaskId);
@@ -122,6 +133,15 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                     await _taskHistoryRepository.LogUserAssignedAsync(model.TaskId, userId, assignedUserName);
 
+                    // ⭐⭐⭐ ارسال اعلان فقط به کاربر جدید اضافه شده
+                    NotificationProcessingBackgroundService.EnqueueTaskNotificationForUsers(
+                        model.TaskId,
+                        userId,
+                        NotificationEventType.TaskAssigned,
+                        new List<string> { model.SelectedUserId },
+                        priority: 1
+                    );
+
                     await _activityLogger.LogActivityAsync(
                         ActivityTypeEnum.Create,
                         "Tasks",
@@ -146,15 +166,23 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         })
                         .ToList();
 
+                    // ⭐⭐⭐ دریافت دسترسی‌های مبتنی بر تنظیمات
+                    var canAddMembersForView = await _taskRepository.CanUserPerformActionAsync(model.TaskId, userId, TaskAction.AddMember);
+                    var canRemoveMembersForView = await _taskRepository.CanUserPerformActionAsync(model.TaskId, userId, TaskAction.RemoveMember);
+                    var isCreator = task.CreatorUserId == userId;
+
                     var partialHtml = await this.RenderViewToStringAsync(
                         "_TaskMembersList",
-                        new
+                        (object)null,
+                        viewBag: new
                         {
                             Assignments = assignments,
                             TaskId = task.Id,
                             IsCreator = isCreator,
                             IsManager = isAdmin,
-                            IsTaskCompleted = isTaskCompletedForCurrentUser
+                            IsTaskCompleted = isTaskCompletedForCurrentUser,
+                            CanAddMembers = canAddMembersForView,
+                            CanRemoveMembers = canRemoveMembersForView
                         });
 
                     return Json(new
@@ -203,13 +231,18 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     return NotFound();
 
                 var task = assignment.Task;
-
-                // بررسی دسترسی
-                var isCreator = task.CreatorUserId == userId;
                 var isAdmin = User.IsInRole("Admin");
 
-                if (!isCreator && !isAdmin)
-                    return Forbid();
+                // ⭐⭐⭐ بررسی دسترسی حذف عضو بر اساس تنظیمات تسک
+                var canRemoveMembers = await _taskRepository.CanUserPerformActionAsync(task.Id, userId, TaskAction.RemoveMember);
+
+                if (!canRemoveMembers && !isAdmin)
+                    return Json(new
+                    {
+                        success = false,
+                        status = "error",
+                        message = new[] { new { status = "error", text = "شما مجوز حذف عضو از این تسک را ندارید" } }
+                    });
 
                 var model = new RemoveAssignmentViewModel
                 {
@@ -250,16 +283,16 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     });
 
                 var task = assignment.Task;
-
-                // بررسی دسترسی
-                var isCreator = task.CreatorUserId == userId;
                 var isAdmin = User.IsInRole("Admin");
 
-                if (!isCreator && !isAdmin)
+                // ⭐⭐⭐ بررسی دسترسی حذف عضو بر اساس تنظیمات تسک
+                var canRemoveMembers = await _taskRepository.CanUserPerformActionAsync(task.Id, userId, TaskAction.RemoveMember);
+
+                if (!canRemoveMembers && !isAdmin)
                     return Json(new
                     {
                         status = "error",
-                        message = new[] { new { status = "error", text = "شما دسترسی لازم را ندارید" } }
+                        message = new[] { new { status = "error", text = "شما مجوز حذف عضو از این تسک را ندارید" } }
                     });
 
                 // ⭐ بررسی اینکه آیا تسک برای کاربر جاری تکمیل شده؟
@@ -310,21 +343,29 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                                 ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
                                 : "نامشخص",
                             AssignDate = a.AssignmentDate,
-                            CompletionDate = a.CompletionDate, // ⭐⭐⭐ از Assignment
+                            CompletionDate = a.CompletionDate,
                             Description = a.Description
                         })
                         .ToList();
 
+                    // ⭐⭐⭐ دریافت دسترسی‌های مبتنی بر تنظیمات
+                    var canAddMembersForView = await _taskRepository.CanUserPerformActionAsync(task.Id, userId, TaskAction.AddMember);
+                    var canRemoveMembersForView = await _taskRepository.CanUserPerformActionAsync(task.Id, userId, TaskAction.RemoveMember);
+                    var isCreator = task.CreatorUserId == userId;
+
                     // ⭐⭐⭐ رندر Partial View
                     var partialHtml = await this.RenderViewToStringAsync(
                         "_TaskMembersList",
-                        new
+                        (object)null,
+                        viewBag: new
                         {
                             Assignments = assignments,
                             TaskId = task.Id,
                             IsCreator = isCreator,
                             IsManager = isAdmin,
-                            IsTaskCompleted = isTaskCompletedForCurrentUser // ⭐⭐⭐ برای کاربر جاری
+                            IsTaskCompleted = isTaskCompletedForCurrentUser,
+                            CanAddMembers = canAddMembersForView,
+                            CanRemoveMembers = canRemoveMembersForView
                         });
 
                     // ⭐⭐⭐ برگرداندن JSON با ساختار update-view

@@ -34,7 +34,9 @@
                 <i class="fa fa-list me-1"></i>لیست دلایل از دست رفتن
             </h3>
             <div class="block-options">
-                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#lostReasonModal">
+                <button type="button" class="btn btn-danger"
+                        data-toggle="modal-ajax"
+                        href="@Url.Action("CreateLostReasonModal", "CrmSettings", new { area = "AppCoreArea" })">
                     <i class="fa fa-plus me-1"></i>افزودن دلیل جدید
                 </button>
             </div>
@@ -44,6 +46,3 @@
         </div>
     </div>
 </div>
-
-<!-- Modal -->
-@await Html.PartialAsync("_LostReasonModal")

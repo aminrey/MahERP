@@ -1,14 +1,14 @@
 ﻿using AutoMapper;
 using MahERP.CommonLayer.PublicClasses;
 using MahERP.DataModelLayer.Entities.AcControl;
-using MahERP.DataModelLayer.Entities.Contacts; // ⭐ NEW
+using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Core;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.Organizations;
 using MahERP.DataModelLayer.Entities.Sms;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.ViewModels;
-using MahERP.DataModelLayer.ViewModels.ContactViewModels; // ⭐ NEW
+using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using MahERP.DataModelLayer.ViewModels.CRMViewModels;
 using MahERP.DataModelLayer.ViewModels.OrganizationViewModels;
 using MahERP.DataModelLayer.ViewModels.PermissionViewModels;
@@ -36,6 +36,71 @@ namespace MahERP.AutoMapper
             CreateMap<Permission, PermissionTreeViewModel>()
                 .ForMember(dest => dest.IsSelected, opt => opt.Ignore())
                 .ForMember(dest => dest.Children, opt => opt.Ignore());
+
+            // ==================== TEAM MAPPINGS ====================
+            // Team -> TeamViewModel
+            CreateMap<Team, TeamViewModel>()
+                .ForMember(dest => dest.ParentTeamTitle, opt => opt.MapFrom(src =>
+                    src.ParentTeam != null ? src.ParentTeam.Title : null))
+                .ForMember(dest => dest.ManagerFullName, opt => opt.MapFrom(src =>
+                    src.Manager != null ? $"{src.Manager.FirstName} {src.Manager.LastName}" : null))
+                .ForMember(dest => dest.ManagerName, opt => opt.MapFrom(src =>
+                    src.Manager != null ? $"{src.Manager.FirstName} {src.Manager.LastName}" : null))
+                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src =>
+                    src.Branch != null ? src.Branch.Name : null))
+                .ForMember(dest => dest.AccessLevelText, opt => opt.MapFrom(src =>
+                    GetTeamAccessLevelText(src.AccessLevel)))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
+                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : null))
+                .ForMember(dest => dest.LastUpdaterName, opt => opt.MapFrom(src =>
+                    src.LastUpdater != null ? $"{src.LastUpdater.FirstName} {src.LastUpdater.LastName}" : null))
+                .ForMember(dest => dest.MemberCount, opt => opt.MapFrom(src =>
+                    src.TeamMembers != null ? src.TeamMembers.Count(tm => tm.IsActive) : 0))
+                .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
+                .ForMember(dest => dest.TeamPositions, opt => opt.Ignore())
+                .ForMember(dest => dest.TeamMembers, opt => opt.Ignore())
+                .ForMember(dest => dest.Level, opt => opt.Ignore());
+
+            // TeamViewModel -> Team
+            CreateMap<TeamViewModel, Team>()
+                .ForMember(dest => dest.ParentTeam, opt => opt.Ignore())
+                .ForMember(dest => dest.Manager, opt => opt.Ignore())
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdater, opt => opt.Ignore())
+                .ForMember(dest => dest.ChildTeams, opt => opt.Ignore())
+                .ForMember(dest => dest.TeamMembers, opt => opt.Ignore())
+                .ForMember(dest => dest.TeamPositions, opt => opt.Ignore())
+                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore());
+
+            // TeamMember -> TeamMemberViewModel
+            CreateMap<TeamMember, TeamMemberViewModel>()
+                .ForMember(dest => dest.TeamTitle, opt => opt.MapFrom(src =>
+                    src.Team != null ? src.Team.Title : null))
+                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src =>
+                    src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : null))
+                .ForMember(dest => dest.PositionTitle, opt => opt.MapFrom(src =>
+                    src.Position != null ? src.Position.Title : null))
+                .ForMember(dest => dest.PowerLevel, opt => opt.MapFrom(src =>
+                    src.Position != null ? (int?)src.Position.PowerLevel : null))
+                .ForMember(dest => dest.Position, opt => opt.MapFrom(src =>
+                    src.Position != null ? src.Position.Title : "عضو"))
+                .ForMember(dest => dest.MembershipTypeText, opt => opt.MapFrom(src =>
+                    GetMembershipTypeText(src.MembershipType)))
+                .ForMember(dest => dest.AddedByUserName, opt => opt.MapFrom(src =>
+                    src.AddedByUser != null ? $"{src.AddedByUser.FirstName} {src.AddedByUser.LastName}" : null));
+
+            // TeamMemberViewModel -> TeamMember
+            CreateMap<TeamMemberViewModel, TeamMember>()
+                .ForMember(dest => dest.Team, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Position, opt => opt.Ignore())
+                .ForMember(dest => dest.AddedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.CreateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore());
+
+            // ==================== BRANCH MAPPINGS ====================
             // BranchContact -> BranchContactViewModel
             CreateMap<BranchContact, BranchContactViewModel>()
                 .ForMember(dest => dest.BranchName,
@@ -761,6 +826,50 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.Attachments, opt => opt.Ignore());
 
             // ⭐⭐⭐ NEW - Task Comment Attachment Mappings
+            CreateMap<TaskReminderSchedule, TaskReminderViewModel>()
+                .ForMember(dest => dest.StartDatePersian, opt => opt.MapFrom(src =>
+                    src.StartDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.StartDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.EndDatePersian, opt => opt.MapFrom(src =>
+                    src.EndDate.HasValue
+                        ? ConvertDateTime.ConvertMiladiToShamsi(src.EndDate.Value, "yyyy/MM/dd")
+                        : null))
+                .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
+                .ForMember(dest => dest.TaskTitle, opt => opt.MapFrom(src => src.Task != null ? src.Task.Title : null))
+                .ForMember(dest => dest.TaskCode, opt => opt.MapFrom(src => src.Task != null ? src.Task.TaskCode : null))
+                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
+                    src.Creator != null ? $"{src.Creator.FirstName} {src.Creator.LastName}" : "سیستم"))
+                .ForMember(dest => dest.CreatedDatePersian, opt => opt.MapFrom(src =>
+                    ConvertDateTime.ConvertMiladiToShamsi(src.CreatedDate, "yyyy/MM/dd HH:mm")));
+
+            CreateMap<TaskReminderViewModel, TaskReminderSchedule>()
+                .ForMember(dest => dest.TaskId, opt => opt.MapFrom(src => src.TaskId)) // ⭐⭐⭐ اضافه شد
+                .ForMember(dest => dest.StartDate, opt => opt.Ignore()) // در controller handle می‌شود
+                .ForMember(dest => dest.EndDate, opt => opt.Ignore()) // در controller handle می‌شود
+                .ForMember(dest => dest.NotificationTime, opt => opt.MapFrom(src => src.NotificationTime))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.ReminderType, opt => opt.MapFrom(src => src.ReminderType))
+                .ForMember(dest => dest.IntervalDays, opt => opt.MapFrom(src => src.IntervalDays))
+                .ForMember(dest => dest.DaysBeforeDeadline, opt => opt.MapFrom(src => src.DaysBeforeDeadline))
+                .ForMember(dest => dest.ScheduledDaysOfMonth, opt => opt.MapFrom(src => src.ScheduledDaysOfMonth))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                // ⭐⭐⭐ Ignore فیلدهای سیستمی
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.IsSystemDefault, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatorUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.LastExecuted, opt => opt.Ignore())
+                .ForMember(dest => dest.SentCount, opt => opt.Ignore())
+                .ForMember(dest => dest.IsExpired, opt => opt.Ignore())
+                .ForMember(dest => dest.ExpiredReason, opt => opt.Ignore())
+                .ForMember(dest => dest.ExpiredDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Task, opt => opt.Ignore())
+                .ForMember(dest => dest.Creator, opt => opt.Ignore())
+                .ForMember(dest => dest.GeneratedEvents, opt => opt.Ignore());
+
+            // ⭐⭐⭐ Task Comment Attachment Mappings
             CreateMap<TaskCommentAttachment, TaskCommentAttachmentViewModel>()
                 .ForMember(dest => dest.FileSize, opt => opt.MapFrom(src =>
                     !string.IsNullOrEmpty(src.FileSize) ? long.Parse(src.FileSize) : 0));
@@ -772,7 +881,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.UploaderUserId, opt => opt.Ignore())
                 .ForMember(dest => dest.UploadDate, opt => opt.Ignore())
                 .ForMember(dest => dest.FileUUID, opt => opt.Ignore());
-            
+
         }
 
         // Helper methods for mapping

@@ -42,46 +42,49 @@
     <div class="block-content">
         <div class="row">
             <div class="col-12">
-                <div id="org-chart-container" class="text-center">
-                    @if (!string.IsNullOrEmpty(ViewBag.NoBranchMessage as string))
-                    {
-                        <!-- نمایش پیام عدم وجود شعبه -->
-                        <div class="no-branch-state py-5">
-                            <i class="fa fa-building fa-4x text-warning mb-4"></i>
-                            <h3 class="text-warning mb-3">عدم دسترسی به شعبه</h3>
-                            <p class="text-muted fs-5 mb-4">@ViewBag.NoBranchMessage</p>
-                            <div class="alert alert-info mx-auto" style="max-width: 600px;">
-                                <i class="fa fa-info-circle me-2"></i>
-                                <strong>راهنمایی:</strong> برای مشاهده چارت سازمانی، ابتدا باید به حداقل یک شعبه دسترسی داشته باشید.
-                            </div>
-                            <div class="mt-4">
-                                <a href="@Url.Action("Index", "Branch")" class="btn btn-primary me-2">
-                                    <i class="fa fa-list me-1"></i> مشاهده شعب
-                                </a>
-                                <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">
-                                    <i class="fa fa-home me-1"></i> بازگشت به داشبورد
-                                </a>
-                            </div>
-                        </div>
-                    }
-                    else if (Model.RootTeams.Any())
-                    {
-                        @foreach (var rootTeam in Model.RootTeams)
+                <!-- اضافه شدن wrapper برای اسکرول افقی -->
+                <div class="org-chart-scroll-wrapper">
+                    <div id="org-chart-container" class="text-center">
+                        @if (!string.IsNullOrEmpty(ViewBag.NoBranchMessage as string))
                         {
-                            @await Html.PartialAsync("_TeamNode", rootTeam)
+                            <!-- نمایش پیام عدم وجود شعبه -->
+                            <div class="no-branch-state py-5">
+                                <i class="fa fa-building fa-4x text-warning mb-4"></i>
+                                <h3 class="text-warning mb-3">عدم دسترسی به شعبه</h3>
+                                <p class="text-muted fs-5 mb-4">@ViewBag.NoBranchMessage</p>
+                                <div class="alert alert-info mx-auto" style="max-width: 600px;">
+                                    <i class="fa fa-info-circle me-2"></i>
+                                    <strong>راهنمایی:</strong> برای مشاهده چارت سازمانی، ابتدا باید به حداقل یک شعبه دسترسی داشته باشید.
+                                </div>
+                                <div class="mt-4">
+                                    <a href="@Url.Action("Index", "Branch")" class="btn btn-primary me-2">
+                                        <i class="fa fa-list me-1"></i> مشاهده شعب
+                                    </a>
+                                    <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">
+                                        <i class="fa fa-home me-1"></i> بازگشت به داشبورد
+                                    </a>
+                                </div>
+                            </div>
                         }
-                    }
-                    else
-                    {
-                        <div class="empty-state py-5">
-                            <i class="fa fa-sitemap fa-3x text-muted mb-3"></i>
-                            <h4 class="text-muted">هیچ تیمی تعریف نشده است</h4>
-                            <p class="text-muted">برای شروع، یک تیم جدید ایجاد کنید</p>
-                            <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-primary">
-                                <i class="fa fa-plus me-1"></i> ایجاد اولین تیم
-                            </a>
-                        </div>
-                    }
+                        else if (Model.RootTeams.Any())
+                        {
+                            @foreach (var rootTeam in Model.RootTeams)
+                            {
+                                @await Html.PartialAsync("_TeamNode", rootTeam)
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state py-5">
+                                <i class="fa fa-sitemap fa-3x text-muted mb-3"></i>
+                                <h4 class="text-muted">هیچ تیمی تعریف نشده است</h4>
+                                <p class="text-muted">برای شروع، یک تیم جدید ایجاد کنید</p>
+                                <a asp-action="Create" asp-route-branchId="@Model.BranchId" class="btn btn-primary">
+                                    <i class="fa fa-plus me-1"></i> ایجاد اولین تیم
+                                </a>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -89,12 +92,44 @@
 </div>
 
 @section Styles {
-    <!-- CSS موجود بدون تغییر -->
     <style>
+        /* ⭐ اضافه شده: wrapper برای اسکرول افقی */
+        .org-chart-scroll-wrapper {
+            overflow-x: auto;
+            overflow-y: visible;
+            padding: 20px 10px;
+            margin: -20px -10px;
+            /* استایل اسکرول بار */
+            scrollbar-width: thin;
+            scrollbar-color: #667eea #f1f1f1;
+        }
+
+        /* استایل اسکرول بار برای webkit browsers */
+        .org-chart-scroll-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .org-chart-scroll-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .org-chart-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .org-chart-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
         .org-chart-container {
             padding: 20px;
             background: #f8f9fa;
             border-radius: 8px;
+            min-width: fit-content; /* ⭐ اضافه شده: اجازه رشد افقی */
+            display: inline-block; /* ⭐ اضافه شده */
+            width: 100%;
         }
 
         .team-node {
@@ -112,8 +147,10 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             min-width: 250px;
+            max-width: 300px; /* ⭐ اضافه شده: محدود کردن عرض کارت */
             position: relative;
             overflow: hidden;
+            white-space: normal; /* ⭐ اضافه شده: اجازه شکستن متن */
         }
 
         .team-card:hover {
@@ -167,12 +204,14 @@
             font-weight: bold;
             margin-bottom: 8px;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            word-wrap: break-word; /* ⭐ اضافه شده */
         }
 
         .team-manager {
             font-size: 0.9em;
             opacity: 0.9;
             margin-bottom: 12px;
+            word-wrap: break-word; /* ⭐ اضافه شده */
         }
 
         .team-actions {
@@ -194,8 +233,9 @@
             display: flex;
             flex-direction: row;
             justify-content: center;
-            flex-wrap: wrap;
+            flex-wrap: nowrap; /* ⭐ تغییر از wrap به nowrap */
             gap: 20px;
+            min-width: fit-content; /* ⭐ اضافه شده */
         }
 
         .child-teams::before {
@@ -249,6 +289,7 @@
         @@media (max-width: 768px) {
             .team-card {
                 min-width: 200px;
+                max-width: 250px;
                 padding: 15px;
             }
             
@@ -257,8 +298,8 @@
             }
 
             .child-teams {
-                flex-direction: column;
-                align-items: center;
+                flex-wrap: wrap; /* ⭐ در موبایل wrap می‌شود */
+                justify-content: center;
             }
 
             .child-teams::after {
@@ -271,6 +312,11 @@
 
             .no-branch-state .alert {
                 margin: 0 1rem;
+            }
+
+            /* ⭐ اضافه شده: کاهش padding در موبایل */
+            .org-chart-scroll-wrapper {
+                padding: 10px 5px;
             }
         }
 
@@ -289,6 +335,36 @@
         .team-node[data-level="3"] .team-card {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
+
+        /* ⭐ اضافه شده: نمایش راهنما برای اسکرول */
+        .org-chart-scroll-wrapper::after {
+            content: '← برای مشاهده تیم‌های بیشتر اسکرول کنید →';
+            position: sticky;
+            left: 50%;
+            transform: translateX(-50%);
+            display: block;
+            text-align: center;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 6px;
+            color: #667eea;
+            font-size: 0.85em;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .org-chart-scroll-wrapper:hover::after {
+            opacity: 1;
+        }
+
+        /* ⭐ مخفی کردن راهنما در موبایل */
+        @@media (max-width: 768px) {
+            .org-chart-scroll-wrapper::after {
+                content: '← اسکرول →';
+                font-size: 0.75em;
+            }
+        }
     </style>
 }
 
@@ -301,5 +377,31 @@
         function updateChartNode(teamId) {
             refreshChart();
         }
+
+        // ⭐ اضافه شده: smooth scroll با mouse wheel افقی
+        $(document).ready(function() {
+            const scrollWrapper = $('.org-chart-scroll-wrapper');
+            
+            if (scrollWrapper.length) {
+                // فعال‌سازی اسکرول افقی با mouse wheel
+                scrollWrapper.on('wheel', function(e) {
+                    // اگر محتوا از عرض صفحه بیشتر است
+                    if (this.scrollWidth > this.clientWidth) {
+                        e.preventDefault();
+                        this.scrollLeft += e.originalEvent.deltaY;
+                    }
+                });
+
+                // نمایش راهنما فقط در اولین بار
+                if (scrollWrapper[0].scrollWidth > scrollWrapper[0].clientWidth) {
+                    scrollWrapper.addClass('has-scroll');
+                    
+                    // مخفی کردن راهنما بعد از 3 ثانیه
+                    setTimeout(() => {
+                        scrollWrapper.find('::after').css('opacity', '0');
+                    }, 3000);
+                }
+            }
+        });
     </script>
 }

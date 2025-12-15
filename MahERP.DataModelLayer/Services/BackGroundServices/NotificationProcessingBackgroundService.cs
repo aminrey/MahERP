@@ -53,6 +53,31 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             });
         }
 
+        /// <summary>
+        /// ⭐⭐⭐ افزودن اعلان به صف با کاربران هدف مشخص
+        /// استفاده: وقتی می‌خواهیم فقط به کاربران خاصی اعلان ارسال کنیم
+        /// </summary>
+        public static void EnqueueTaskNotificationForUsers(
+            int taskId,
+            string senderUserId,
+            NotificationEventType eventType,
+            List<string> targetUserIds,
+            byte priority = 1)
+        {
+            if (targetUserIds == null || !targetUserIds.Any())
+                return;
+
+            _notificationQueue.Enqueue(new NotificationQueueItem
+            {
+                TaskId = taskId,
+                SenderUserId = senderUserId,
+                EventType = eventType,
+                Priority = priority,
+                EnqueuedAt = DateTime.Now,
+                TargetUserIds = targetUserIds
+            });
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("🔔 Notification Processing Background Service شروع شد");
@@ -96,13 +121,25 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
                         continue;
                     }
 
-                    // ⭐⭐⭐ دریافت لیست دریافت‌کنندگان بر اساس نوع رویداد
-                    var recipients = await GetRecipientsForEventAsync(
-                        taskRepo, 
-                        task, 
-                        item.SenderUserId, 
-                        item.EventType
-                    );
+                    // ⭐⭐⭐ دریافت لیست دریافت‌کنندگان
+                    List<string> recipients;
+                    
+                    if (item.TargetUserIds != null && item.TargetUserIds.Any())
+                    {
+                        // ⭐ اگر کاربران هدف مشخص شده باشند، فقط به آن‌ها ارسال کن
+                        recipients = item.TargetUserIds.Where(id => id != item.SenderUserId).ToList();
+                        _logger.LogInformation($"📧 ارسال اعلان {item.EventType} به {recipients.Count} کاربر مشخص شده");
+                    }
+                    else
+                    {
+                        // ⭐ در غیر این صورت، از منطق پیش‌فرض استفاده کن
+                        recipients = await GetRecipientsForEventAsync(
+                            taskRepo, 
+                            task, 
+                            item.SenderUserId, 
+                            item.EventType
+                        );
+                    }
 
                     if (!recipients.Any())
                     {
@@ -538,6 +575,13 @@ namespace MahERP.DataModelLayer.Services.BackgroundServices
             public byte Priority { get; set; }
             public DateTime EnqueuedAt { get; set; }
             public int RetryCount { get; set; } = 0;
+            
+            /// <summary>
+            /// ⭐⭐⭐ لیست کاربران هدف (اختیاری)
+            /// اگر null باشد، از منطق پیش‌فرض استفاده می‌شود
+            /// اگر مقدار داشته باشد، فقط به این کاربران اعلان ارسال می‌شود
+            /// </summary>
+            public List<string>? TargetUserIds { get; set; }
         }
     }
 }
