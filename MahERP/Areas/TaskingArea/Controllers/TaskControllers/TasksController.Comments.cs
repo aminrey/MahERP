@@ -107,6 +107,11 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                 var taskTitle = task?.Title ?? "N/A";
                 var commentPreview = model.CommentText.Substring(0, Math.Min(50, model.CommentText.Length));
 
+                // ⭐⭐⭐ دریافت کامنت‌های جدید قبل از Task.Run (برای جلوگیری از DbContext Conflict)
+                var comments = await _taskRepository.GetTaskCommentsAsync(taskId);
+                var commentsHtml = await this.RenderViewToStringAsync("_TaskCommentsPartial", comments);
+                var commentCount = comments?.Count ?? 0;
+
                 // ⭐⭐⭐ کارهای بعدی را Fire-and-Forget کن (با Scope جدید)
                 Task.Run(async () =>
                 {
@@ -158,16 +163,13 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     }
                 }, TaskScheduler.Default);
 
-                // ⭐⭐⭐ دریافت کامنت‌های جدید و برگرداندن HTML
-                var comments = await _taskRepository.GetTaskCommentsAsync(taskId);
-                var commentsHtml = await this.RenderViewToStringAsync("_TaskCommentsPartial", comments);
-
+                // ⭐⭐⭐ بازگشت نتیجه (HTML از قبل دریافت شده)
                 return Json(new 
                 { 
                     success = true, 
                     message = "پیام با موفقیت ارسال شد",
                     html = commentsHtml,
-                    commentCount = comments?.Count ?? 0
+                    commentCount = commentCount
                 });
             }
             catch (Exception ex)
