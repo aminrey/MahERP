@@ -1,0 +1,37 @@
+﻿@model TaskViewModel
+@{
+    var isAssignedToCurrentUser = ViewBag.IsAssignedToCurrentUser ?? false;
+    var isCreator = ViewBag.IsCreator ?? false;
+    var isManager = ViewBag.IsManager ?? false;
+}
+
+<div class="tab-pane fade" id="tab-operations" role="tabpanel">
+    <div class="block block-rounded block-fx-shadow">
+        <div class="block-header bg-primary text-white">
+            <h3 class="block-title text-white mb-0">
+                <i class="fa fa-cogs me-2"></i>مدیریت عملیات تسک
+            </h3>
+            <div class="block-options">
+                @if ((isAssignedToCurrentUser || isCreator || isManager) && !Model.CompletionDate.HasValue)
+                {
+                    <button type="button" class="btn btn-sm btn-light"
+                            onclick="$('#newOperationTitleInput').focus()">
+                        <i class="fa fa-plus me-1"></i>افزودن سریع
+                    </button>
+                }
+                else if (Model.CompletionDate.HasValue)
+                {
+                    <span class="badge bg-light text-dark">
+                        <i class="fa fa-lock me-1"></i>قفل شده
+                    </span>
+                }
+            </div>
+        </div>
+
+        <div class="block-content">
+            <div id="pending-operations-container">
+                <partial name="/Areas/TaskingArea/Views/TaskOperations/_OperationListPartialView.cshtml" model="Model.Operations" />
+            </div>
+        </div>
+    </div>
+</div>

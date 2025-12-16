@@ -2,6 +2,7 @@
 using MahERP.DataModelLayer.Services;
 using MahERP.DataModelLayer.Services.BackgroundServices;
 using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewModels;
+using MahERP.Extentions;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -108,10 +109,42 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     recordId: model.TaskId.ToString(),
                     entityType: "Tasks");
 
+                // ⭐⭐⭐ دریافت لیست به‌روز Work Logs
+                var workLogs = await _taskRepository.GetTaskWorkLogsAsync(model.TaskId);
+                
+                // ⭐⭐⭐ بررسی اینکه آیا کاربر هنوز عضو تسک است
+                var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
+                var isStillAssigned = task?.TaskAssignments?.Any(a => a.AssignedUserId == currentUserId) ?? false;
+
+                // ⭐⭐⭐ رندر Partial View
+                var partialHtml = await this.RenderViewToStringAsync(
+                    "_WorkLogsList",
+                    workLogs,
+                    viewBag: new
+                    {
+                        TaskId = model.TaskId,
+                        IsAssignedToCurrentUser = isStillAssigned
+                    });
+
+                // ⭐⭐⭐ بروزرسانی badge count در tab
+                var workLogsCount = workLogs?.Count ?? 0;
+
                 return Json(new
                 {
-                    success = true,
-                    status = "success",
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                        new
+                        {
+                            elementId = "work-logs-container",
+                            view = new { result = partialHtml }
+                        }
+                    },
+                    updateBadge = new
+                    {
+                        tabId = "work-logs-tab",
+                        count = workLogsCount
+                    },
                     message = new[]
                     {
                         new

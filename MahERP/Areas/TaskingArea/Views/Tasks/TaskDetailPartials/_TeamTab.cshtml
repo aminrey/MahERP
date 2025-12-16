@@ -1,0 +1,22 @@
+﻿@model TaskViewModel
+@{
+    var isCreator = ViewBag.IsCreator ?? false;
+    var isManager = ViewBag.IsManager ?? false;
+    var canAddMembers = ViewBag.CanAddMembers ?? false;
+    var canRemoveMembers = ViewBag.CanRemoveMembers ?? false;
+}
+
+<div class="tab-pane fade" id="tab-team" role="tabpanel">
+    <div id="task-members-full-container">
+        @{
+            ViewBag.Assignments = Model.AssignmentsTaskUser;
+            ViewBag.TaskId = Model.Id;
+            ViewBag.IsCreator = isCreator;
+            ViewBag.IsManager = isManager;
+            ViewBag.IsTaskCompleted = Model.CompletionDate.HasValue;
+            ViewBag.CanAddMembers = canAddMembers;
+            ViewBag.CanRemoveMembers = canRemoveMembers;
+        }
+        @await Html.PartialAsync("_TaskMembersBlock")
+    </div>
+</div>

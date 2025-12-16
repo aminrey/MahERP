@@ -1,0 +1,46 @@
+﻿@model TaskViewModel
+@{
+    var isCompletedByMe = ViewBag.IsCompletedByMe ?? false;
+}
+
+<div class="tab-pane fade" id="tab-reminders" role="tabpanel">
+    <div class="block block-rounded block-fx-shadow">
+        <div class="block-header bg-warning text-white">
+            <h3 class="block-title text-white mb-0">
+                <i class="fa fa-bell me-2"></i>یادآوری‌های تسک
+            </h3>
+            <div class="block-options">
+                @if (!isCompletedByMe)
+                {
+                    <button type="button"
+                            class="btn btn-sm btn-light"
+                            data-toggle="modal-ajax"
+                            href="@Url.Action("AddReminderModal", "Tasks", new { taskId = Model.Id })">
+                        <i class="fa fa-plus me-1"></i>افزودن یادآوری
+                    </button>
+                }
+                else
+                {
+                    <span class="badge bg-light text-dark">
+                        <i class="fa fa-lock me-1"></i>قفل شده
+                    </span>
+                }
+            </div>
+        </div>
+        <div class="block-content">
+            @if (isCompletedByMe)
+            {
+                <div class="alert alert-info mb-3">
+                    <i class="fa fa-info-circle me-2"></i>
+                    <strong>توجه:</strong> این تسک تکمیل شده است. یادآوری‌ها فقط قابل مشاهده هستند و امکان ویرایش یا حذف آن‌ها وجود ندارد.
+                </div>
+            }
+            <div id="reminders-list-container">
+                <div class="text-center py-4">
+                    <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="text-muted mt-2">در حال بارگذاری...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

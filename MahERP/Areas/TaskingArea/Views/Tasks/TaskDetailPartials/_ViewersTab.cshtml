@@ -1,0 +1,127 @@
+﻿@model TaskViewModel
+@{
+    var isCreator = ViewBag.IsCreator ?? false;
+    var isManager = ViewBag.IsManager ?? false;
+    var isCompletedByMe = ViewBag.IsCompletedByMe ?? false;
+}
+
+<div class="tab-pane fade" id="tab-viewers" role="tabpanel">
+    <div class="row">
+        <!-- ⭐ بخش 1: ناظرین خودکار سیستمی -->
+        <div class="col-lg-6">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header bg-primary text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-robot me-2"></i>ناظرین خودکار (سیستمی)
+                    </h3>
+                    <div class="block-options">
+                        <span class="badge bg-white text-primary" id="system-viewers-count">0</span>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="alert alert-info mb-3">
+                        <h6 class="mb-2">
+                            <i class="fa fa-info-circle me-1"></i>ناظرین خودکار شامل:
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li>سازنده تسک</li>
+                            <li>کاربران منتصب به تسک</li>
+                            <li>مدیر تیم (اگر تیم مشخص باشد)</li>
+                            <li>سرپرستان بر اساس سلسله مراتب</li>
+                        </ul>
+                    </div>
+
+                    <div id="system-viewers-list">
+                        <div class="text-center py-4">
+                            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                            <p class="text-muted mt-2">در حال بارگذاری...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⭐ بخش 2: ناظرین رونوشت (دستی) -->
+        <div class="col-lg-6">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header bg-success text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-user-plus me-2"></i>ناظرین رونوشت (دستی)
+                    </h3>
+                    <div class="block-options d-flex align-items-center gap-2">
+                        <span class="badge bg-white text-success" id="carbon-copy-viewers-count">0</span>
+                        @if ((isCreator || isManager) && !isCompletedByMe)
+                        {
+                            <button type="button" 
+                                    class="btn btn-sm btn-light"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("AddCarbonCopyModal", "TaskViewers", new { taskId = Model.Id })">
+                                <i class="fa fa-plus me-1"></i>افزودن ناظر
+                            </button>
+                        }
+                        else if (isCompletedByMe)
+                        {
+                            <span class="badge bg-light text-dark">
+                                <i class="fa fa-lock me-1"></i>قفل شده
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="alert alert-success mb-3">
+                        <h6 class="mb-2">
+                            <i class="fa fa-info-circle me-1"></i>درباره ناظرین رونوشت:
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li>افرادی که به صورت دستی اضافه می‌شوند</li>
+                            <li>می‌توانند تسک را مشاهده کنند</li>
+                            <li>نمی‌توانند تسک را تکمیل یا ویرایش کنند</li>
+                            <li>فقط سازنده یا مدیر می‌تواند آن‌ها را حذف کند</li>
+                        </ul>
+                    </div>
+
+                    @if (isCompletedByMe)
+                    {
+                        <div class="alert alert-warning mb-3">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            <strong>توجه:</strong> این تسک تکمیل شده است. امکان افزودن یا حذف ناظر رونوشتی وجود ندارد.
+                        </div>
+                    }
+
+                    <div id="carbon-copy-viewers-list">
+                        <div class="text-center py-4">
+                            <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                            <p class="text-muted mt-2">در حال بارگذاری...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⭐ آمار کل ناظران -->
+    <div class="block block-rounded block-fx-shadow mt-3">
+        <div class="block-content">
+            <div class="row text-center g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-body-light rounded-3">
+                        <div class="fs-2 fw-bold text-primary" id="total-viewers-count">0</div>
+                        <small class="text-muted">کل ناظران</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-body-light rounded-3">
+                        <div class="fs-2 fw-bold text-primary" id="system-viewers-stat">0</div>
+                        <small class="text-muted">ناظرین خودکار</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-body-light rounded-3">
+                        <div class="fs-2 fw-bold text-success" id="carbon-copy-viewers-stat">0</div>
+                        <small class="text-muted">ناظرین رونوشت</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

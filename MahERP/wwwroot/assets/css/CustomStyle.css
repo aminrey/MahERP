@@ -1366,3 +1366,31 @@ body {
 .badge.bg-success {
     box-shadow: 0 2px 8px rgba(25, 135, 84, 0.3);
 }
+.chat-message-right .message-bubble {
+    border-top-right-radius: 0.25rem;
+}
+
+.message-bubble {
+    padding: 1rem;
+    border-radius: 1rem;
+    border-top-right-radius: 1rem;
+    position: relative;
+    animation: messageSlideIn 0.3s ease-out;
+}
+.chat-message-right .message-bubble::before {
+    right: -8px;
+    border-width: 0 0 12px 12px;
+    border-color: transparent transparent transparent var(--bs-primary);
+}
+
+.message-bubble::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+#chat-messages-container {
+    scroll-behavior: smooth;
+}

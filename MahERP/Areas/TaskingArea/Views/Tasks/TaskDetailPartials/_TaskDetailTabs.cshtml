@@ -1,0 +1,97 @@
+﻿@model TaskViewModel
+
+<ul class="nav nav-tabs nav-tabs-alt nav-justified push task-detail-tabs sticky-tabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button" role="tab">
+            <i class="fa fa-info-circle d-block mb-1"></i>
+            <span class="tab-title">نگاه کلی</span>
+        </button>
+    </li>
+    
+    @if (Model.Attachments?.Any() == true)
+    {
+        <li class="nav-item">
+            <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#tab-attachments" type="button" role="tab">
+                <i class="fa fa-paperclip d-block mb-1"></i>
+                <span class="tab-title">پیوست‌ها</span>
+                <span class="badge bg-success rounded-pill ms-1">@Model.Attachments.Count()</span>
+            </button>
+        </li>
+    }
+    
+    <li class="nav-item">
+        <button class="nav-link" id="work-logs-tab" data-bs-toggle="tab" data-bs-target="#tab-work-logs" type="button" role="tab">
+            <i class="fa fa-clipboard-list d-block mb-1"></i>
+            <span class="tab-title">گزارش‌ها</span>
+            @if (Model.WorkLogs?.Any() == true)
+            {
+                <span class="badge bg-info rounded-pill ms-1">@Model.WorkLogs.Count</span>
+            }
+        </button>
+    </li>
+    
+    <li class="nav-item">
+        <button class="nav-link" id="operations-tab" data-bs-toggle="tab" data-bs-target="#tab-operations" type="button" role="tab">
+            <i class="fa fa-cogs d-block mb-1"></i>
+            <span class="tab-title">عملیات</span>
+            @if (Model.Operations?.Any() == true)
+            {
+                <span class="badge bg-primary rounded-pill ms-1" id="operations-badge-count">@Model.Operations.Count</span>
+            }
+            else
+            {
+                <span class="badge bg-primary rounded-pill ms-1" id="operations-badge-count" style="display: none;">0</span>
+            }
+        </button>
+    </li>
+    
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-team" type="button" role="tab">
+            <i class="fa fa-users d-block mb-1"></i>
+            <span class="tab-title">اعضا</span>
+            @if (Model.AssignmentsTaskUser?.Any() == true)
+            {
+                <span class="badge bg-info rounded-pill ms-1">@Model.AssignmentsTaskUser.Count</span>
+            }
+        </button>
+    </li>
+    
+    <li class="nav-item">
+        <button class="nav-link" id="chat-tab" data-bs-toggle="tab" data-bs-target="#tab-chat" type="button" role="tab">
+            <i class="fa fa-comments d-block mb-1"></i>
+            <span class="tab-title">گفتگو</span>
+            <span class="badge bg-primary rounded-pill ms-1" id="chat-badge-count">
+                @(Model.Comments?.Count ?? 0)
+            </span>
+        </button>
+    </li>
+    
+    <li class="nav-item">
+        <button class="nav-link" id="reminders-tab" data-bs-toggle="tab" data-bs-target="#tab-reminders" type="button" role="tab">
+            <i class="fa fa-bell d-block mb-1"></i>
+            <span class="tab-title">یادآوری</span>
+        </button>
+    </li>
+    
+    <li class="nav-item">
+        <button class="nav-link" id="viewers-tab" data-bs-toggle="tab" data-bs-target="#tab-viewers" type="button" role="tab">
+            <i class="fa fa-eye d-block mb-1"></i>
+            <span class="tab-title">ناظرین</span>
+            <span class="badge bg-info rounded-pill ms-1" id="viewers-badge-count">0</span>
+        </button>
+    </li>
+    
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-timeline" type="button" role="tab">
+            <i class="fa fa-history d-block mb-1"></i>
+            <span class="tab-title">تاریخچه</span>
+        </button>
+    </li>
+    
+    <li class="nav-item">
+        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab">
+            <i class="fa fa-cog d-block mb-1"></i>
+            <span class="tab-title">تنظیمات</span>
+        </button>
+    </li>
+</ul>

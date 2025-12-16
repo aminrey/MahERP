@@ -1126,6 +1126,11 @@ $(document).on('click', '[data-save="modal-ajax-save"]', function (event) {
                         }
                     });
 
+                    // ⭐⭐⭐ بروزرسانی badge count اگر در response وجود داشته باشد
+                    if (response.updateBadge && typeof updateTabBadge === 'function') {
+                        updateTabBadge(response.updateBadge.tabId, response.updateBadge.count);
+                    }
+
                     // ⭐⭐⭐ بروزرسانی کل صفحه تسک
                     if (typeof TaskDetailsRefreshManager !== 'undefined' && TaskDetailsRefreshManager.isEnabled) {
                         TaskDetailsRefreshManager.triggerRefresh();

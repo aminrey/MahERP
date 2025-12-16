@@ -1,0 +1,77 @@
+﻿@model List<TaskWorkLogViewModel>
+@{
+    var taskId = ViewBag.TaskId ?? 0;
+    var isAssignedToCurrentUser = ViewBag.IsAssignedToCurrentUser ?? false;
+}
+
+@if (Model?.Any() == true)
+{
+    <div class="timeline timeline-alt py-0">
+        @foreach (var log in Model.OrderByDescending(w => w.WorkDate))
+        {
+            <div class="timeline-event">
+                <div class="timeline-event-icon bg-info">
+                    <i class="fa fa-clipboard-check"></i>
+                </div>
+                <div class="timeline-event-block block block-rounded block-fx-shadow">
+                    <div class="block-header">
+                        <div class="d-flex align-items-center w-100">
+                            <div class="flex-shrink-0 me-3">
+                                <img src="@(log.UserProfileImage ?? "/images/default-avatar.png")"
+                                     class="rounded-circle"
+                                     style="width: 48px; height: 48px; object-fit: cover;"
+                                     alt="@log.UserName">
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">@log.UserName</h6>
+                                <small class="text-muted">
+                                    <i class="fa fa-calendar me-1"></i>
+                                    @ConvertDateTime.ConvertMiladiToShamsi(log.WorkDate, "yyyy/MM/dd")
+                                    <i class="fa fa-clock me-1 ms-2"></i>
+                                    @log.WorkDate.ToString("HH:mm")
+                                </small>
+                            </div>
+                            @if (log.DurationMinutes.HasValue)
+                            {
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-primary rounded-pill">
+                                        <i class="fa fa-hourglass-half me-1"></i>
+                                        @log.DurationMinutes دقیقه
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <p class="mb-2">@Html.Raw(log.WorkDescription.Replace("\n", "<br/>"))</p>
+                        
+                        @if (log.ProgressPercentage.HasValue)
+                        {
+                            <div class="mt-3">
+                                <small class="text-muted">پیشرفت پس از این کار:</small>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-success" 
+                                         style="width: @log.ProgressPercentage%" 
+                                         role="progressbar">
+                                    </div>
+                                </div>
+                                <small class="text-success fw-bold">@log.ProgressPercentage%</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-5 text-muted">
+        <i class="fa fa-clipboard-list fa-4x opacity-25 mb-3"></i>
+        <h5>هیچ گزارشی ثبت نشده است</h5>
+        @if (isAssignedToCurrentUser)
+        {
+            <p class="mb-3">برای ثبت اولین گزارش کاری، از دکمه بالا استفاده کنید</p>
+        }
+    </div>
+}

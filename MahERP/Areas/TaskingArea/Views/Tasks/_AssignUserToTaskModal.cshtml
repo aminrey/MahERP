@@ -6,12 +6,12 @@
               id="assignUserForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="TaskId" />
-            <input type="hidden" asp-for="BranchId" />
+            <input type="hidden" asp-for="BranchId" id="BranchIdSelected" />
             
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title text-white">
                     <i class="fa fa-user-plus me-2"></i>
-                    افزودن کاربر به تسک
+                    افزودن کاربران به تسک
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -28,79 +28,49 @@
                     </div>
                 </div>
 
-                <!-- انتخاب کاربر -->
-                <div class="mb-4">
-                    <label class="form-label" for="SelectedUserId">
-                        انتخاب کاربر <span class="text-danger">*</span>
-                    </label>
-                    <select asp-for="SelectedUserId"
-                            class="js-select2 form-select @(ViewData.ModelState["SelectedUserId"]?.Errors.Count > 0 ? "is-invalid" : "")"
-                            id="SelectedUserId"
-                            data-placeholder="کاربر را انتخاب کنید"
-                            data-url="@Url.Action("GetUserTeamsForAssignment", "Tasks")"
-                            data-toggle="multiplepartialview"
-                            data-target-divs="TeamSelectDiv"
-                            data-param-name="userId"
-                            data-branch-param="BranchId"
-                            required>
-                        <option value="">انتخاب کاربر...</option>
-                        @if (Model.AvailableUsers != null)
-                        {
-                            foreach (var user in Model.AvailableUsers)
-                            {
-                                <option value="@user.UserId">@user.UserFullName</option>
-                            }
-                        }
-                    </select>
-                    @if (ViewData.ModelState["SelectedUserId"]?.Errors.Count > 0)
+                <!-- بخش انتخاب کاربران (مشابه CreateNewTask) -->
+                <div class="task-section task-section-required">
+                    <div class="task-section-title">
+                        <i class="fa fa-users"></i>
+                        <h5>کاربران برای اختصاص</h5>
+                        <span class="badge bg-danger ms-2">الزامی</span>
+                    </div>
+                    
+                    <div class="alert alert-info mb-3">
+                        <i class="fa fa-info-circle me-1"></i>
+                        برای هر کاربر باید تیم مربوطه را مشخص کنید
+                    </div>
+                    
+                    <div id="user-assignments-container">
+                        <!-- ردیف‌های تخصیص کاربر-تیم به صورت دینامیک اضافه می‌شوند -->
+                    </div>
+                    
+                    <!-- دکمه اضافه کردن کاربر جدید -->
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add-user-assignment">
+                        <i class="fa fa-plus me-1"></i> اضافه کردن کاربر
+                    </button>
+                    
+                    <!-- Hidden inputs برای ارسال داده‌ها -->
+                    <input type="hidden" id="AssignmentsSelectedTaskUserArraysString" name="AssignmentsSelectedTaskUserArraysString" />
+                    <input type="hidden" id="UserTeamAssignmentsJson" asp-for="UserTeamAssignmentsJson" />
+                    
+                    @if (ViewData.ModelState["AssignmentsSelectedTaskUserArraysString"]?.Errors.Count > 0)
                     {
                         <div class="invalid-feedback d-block">
-                            <span asp-validation-for="SelectedUserId"></span>
+                            <span asp-validation-for="AssignmentsSelectedTaskUserArraysString"></span>
                         </div>
                     }
-                    <small class="form-text text-muted">
-                        <i class="fa fa-user me-1"></i>
-                        کاربری که می‌خواهید به این تسک اختصاص دهید
-                    </small>
-                </div>
-
-                <!-- انتخاب تیم -->
-                <div class="mb-4">
-                    <label class="form-label">
-                        تیم <span class="text-danger">*</span>
-                    </label>
-                    <div id="TeamSelectDiv">
-                        <select class="form-select team-select" 
-                                name="SelectedTeamId" 
-                                required 
-                                disabled>
-                            <option value="">ابتدا کاربر را انتخاب کنید</option>
-                        </select>
-                        <small class="form-text text-muted mt-1">
-                            <i class="fa fa-info-circle me-1"></i>
-                            بعد از انتخاب کاربر، تیم مربوطه را انتخاب کنید
-                        </small>
-                    </div>
-                </div>
-
-                <!-- توضیحات -->
-                <div class="mb-3">
-                    <label class="form-label" for="Description">توضیحات (اختیاری)</label>
-                    <textarea asp-for="Description"
-                              class="form-control"
-                              rows="3"
-                              placeholder="توضیحات اضافی درباره این تخصیص..."
-                              maxlength="500"></textarea>
-                    <small class="form-text text-muted">
-                        <i class="fa fa-sticky-note me-1"></i>
-                        توضیحات کمکی برای کاربر منتصب شده
+                    
+                    <small class="form-text text-muted mt-2">
+                        <i class="fa fa-users me-1"></i>
+                        کاربرانی که این تسک به آن‌ها اختصاص داده می‌شود و تیم مربوطه
                     </small>
                 </div>
 
                 <!-- نمایش خطاها -->
                 @if (!ViewData.ModelState.IsValid)
                 {
-                    <div class="alert alert-danger">
+                    <div class="alert alert-danger mt-3">
                         <i class="fa fa-exclamation-triangle me-2"></i>
                         <strong>خطاهای اعتبارسنجی:</strong>
                         <ul class="mb-0 mt-2">
@@ -121,7 +91,7 @@
                         class="btn btn-primary" 
                         id="submitAssignBtn"
                         data-save="modal-ajax-save">
-                    <i class="fa fa-user-plus me-1"></i>تخصیص کاربر
+                    <i class="fa fa-user-plus me-1"></i>تخصیص کاربران
                 </button>
             </div>
         </form>
@@ -129,21 +99,332 @@
 </div>
 
 <script>
+// ⭐⭐⭐ متغیرهای سراسری برای مدیریت تخصیص‌ها
+let assignmentCounter = 0;
+let availableUsers = [];
+
 $(document).ready(function() {
-    // راه‌اندازی Select2
-    $('#SelectedUserId').select2({
-        width: '100%',
-        dropdownParent: $('.modal-content'),
-        placeholder: 'کاربر را انتخاب کنید'
+    console.log('🎯 AssignUserToTaskModal initialized');
+
+    // ⭐ بارگذاری لیست کاربران
+    @if (Model.AvailableUsers != null && Model.AvailableUsers.Any())
+    {
+        <text>
+        availableUsers = @Html.Raw(Json.Serialize(Model.AvailableUsers.Select(u => new { id = u.UserId, name = u.UserFullName })));
+        </text>
+    }
+    else
+    {
+        <text>
+        availableUsers = [];
+        </text>
+    }
+    
+    console.log('👥 Available users:', availableUsers.length);
+
+    // ⭐⭐⭐ اضافه کردن اولین ردیف با تأخیر برای اطمینان از آمادگی DOM
+    setTimeout(function() {
+        addUserAssignmentRow();
+    }, 100);
+
+    // ⭐ رویداد کلیک برای افزودن کاربر جدید
+    $('#add-user-assignment').off('click').on('click', function() {
+        addUserAssignmentRow();
     });
 
-    // مدیریت موفقیت
+    // ⭐ مدیریت موفقیت
     $('#submitAssignBtn').on('ajaxSuccess', function(event, response) {
-        if (response.success && response.refreshPage) {
+        if (response.success || response.status === 'update-view') {
             setTimeout(function() {
                 location.reload();
             }, 1000);
         }
     });
 });
+
+// ⭐⭐⭐ تابع اضافه کردن ردیف تخصیص کاربر
+function addUserAssignmentRow(userId = '', teamId = '') {
+    assignmentCounter++;
+    const rowId = `assignment-row-${assignmentCounter}`;
+    const teamContainerId = `team-select-container-${assignmentCounter}`;
+
+    const userOptions = availableUsers.map(u =>
+        `<option value="${u.id}" ${u.id === userId ? 'selected' : ''}>${u.name}</option>`
+    ).join('');
+
+    const rowHtml = `
+        <div class="card mb-2 user-assignment-row" id="${rowId}" data-row-id="${assignmentCounter}">
+            <div class="card-body p-3">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <label class="form-label small mb-1">کاربر: <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-sm user-select js-select2"
+                                data-row-id="${assignmentCounter}"
+                                data-container-id="${teamContainerId}"
+                                required>
+                            <option value="">انتخاب کاربر...</option>
+                            ${userOptions}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small mb-1">تیم: <span class="text-danger">*</span></label>
+                        <div id="${teamContainerId}">
+                            <select class="form-select form-select-sm team-select js-select2"
+                                    data-row-id="${assignmentCounter}"
+                                    disabled>
+                                <option value="">ابتدا کاربر را انتخاب کنید</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex justify-content-center align-items-center">
+                        <button type="button"
+                                class="btn btn-sm btn-danger w-100 remove-assignment"
+                                data-row-id="${assignmentCounter}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $('#user-assignments-container').append(rowHtml);
+
+    const $row = $(`#${rowId}`);
+    const $userSelect = $row.find('.user-select');
+
+    // ⭐⭐⭐ راه‌اندازی Select2 با تأخیر برای اطمینان از render شدن کامل
+    setTimeout(function() {
+        initializeUserSelect($userSelect);
+
+        // ⭐⭐⭐ رویداد change کاربر
+        $userSelect.on('change', function() {
+            const selectedUserId = $(this).val();
+            const teamContainerId = $(this).data('container-id');
+            const branchId = $('#BranchIdSelected').val();
+
+            if (!selectedUserId || !branchId) {
+                $(`#${teamContainerId}`).html(`
+                    <select class="form-select form-select-sm team-select" disabled>
+                        <option value="">ابتدا کاربر را انتخاب کنید</option>
+                    </select>
+                `);
+                updateUserAssignmentsData();
+                return;
+            }
+
+            // نمایش loading
+            $(`#${teamContainerId}`).html(`
+                <div class="text-center p-2">
+                    <i class="fa fa-spinner fa-spin"></i> در حال بارگذاری...
+                </div>
+            `);
+
+            // ⭐⭐⭐ AJAX برای دریافت تیم‌های کاربر
+            $.ajax({
+                url: '@Url.Action("GetUserTeams", "Tasks")',
+                type: 'POST',
+                data: {
+                    userId: selectedUserId,
+                    branchId: branchId,
+                    __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'update-view' && response.viewList) {
+                        response.viewList.forEach(function(item) {
+                            $(`#${teamContainerId}`).html(item.view.result);
+
+                            // راه‌اندازی Select2 برای تیم
+                            const $teamSelect = $(`#${teamContainerId} .team-select`);
+                            
+                            // ⭐⭐⭐ تأخیر برای اطمینان از render شدن
+                            setTimeout(function() {
+                                $teamSelect.select2({
+                                    width: '100%',
+                                    dropdownParent: $row,
+                                    placeholder: 'انتخاب تیم...'
+                                });
+
+                                // رویداد change برای تیم
+                                $teamSelect.on('change', updateUserAssignmentsData);
+
+                                // مدیریت انتخاب خودکار
+                                if (response.hasNoTeam === true) {
+                                    $teamSelect.val('0').trigger('change');
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.warning('این کاربر در هیچ تیمی عضو نیست', '', {timeOut: 3000});
+                                    }
+                                } else {
+                                    const options = $teamSelect.find('option[value!=""][value!="0"]');
+                                    if (options.length === 1) {
+                                        $teamSelect.val(options.first().val()).trigger('change');
+                                        if (typeof toastr !== 'undefined') {
+                                            toastr.info(`تیم "${options.first().text()}" خودکار انتخاب شد`, '', {timeOut: 2000});
+                                        }
+                                    }
+                                }
+                            }, 50);
+                        });
+
+                        updateUserAssignmentsData();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    $(`#${teamContainerId}`).html(`
+                        <select class="form-select form-select-sm team-select">
+                            <option value="0">بدون تیم (خطا در بارگذاری)</option>
+                        </select>
+                    `);
+
+                    setTimeout(function() {
+                        $(`#${teamContainerId} .team-select`).select2({
+                            width: '100%',
+                            dropdownParent: $row
+                        }).val('0').trigger('change');
+
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('خطا در بارگذاری تیم‌ها - گزینه "بدون تیم" انتخاب شد');
+                        }
+
+                        updateUserAssignmentsData();
+                    }, 50);
+                }
+            });
+        });
+
+        // رویداد حذف
+        $row.find('.remove-assignment').on('click', function() {
+            removeUserAssignmentRow($(this).data('row-id'));
+        });
+
+        // trigger اولیه
+        if (userId) {
+            $userSelect.val(userId).trigger('change');
+        }
+
+        updateUserAssignmentsData();
+        
+        console.log('✅ User assignment row added:', assignmentCounter);
+    }, 50);
+}
+
+// ⭐ راه‌اندازی Select2 برای کاربر
+function initializeUserSelect($select) {
+    if (!$select || $select.length === 0) {
+        console.warn('⚠️ Select element not found for initialization');
+        return;
+    }
+
+    // ⭐ حذف Select2 قبلی اگر وجود دارد
+    if ($select.hasClass('select2-hidden-accessible')) {
+        $select.select2('destroy');
+    }
+
+    // ⭐⭐⭐ راه‌اندازی Select2 با تنظیمات مناسب برای modal
+    $select.select2({
+        width: '100%',
+        dropdownParent: $select.closest('.card'),
+        placeholder: 'انتخاب کاربر...',
+        allowClear: false,
+        language: {
+            noResults: function() {
+                return "کاربری یافت نشد";
+            }
+        }
+    });
+    
+    console.log('✅ Select2 initialized for user select');
+}
+
+// ⭐ حذف ردیف تخصیص
+function removeUserAssignmentRow(rowId) {
+    const $row = $(`#assignment-row-${rowId}`);
+    
+    // ⭐ destroy Select2 قبل از حذف
+    $row.find('.select2-hidden-accessible').each(function() {
+        $(this).select2('destroy');
+    });
+    
+    $row.remove();
+    updateUserAssignmentsData();
+    
+    console.log('🗑️ User assignment row removed:', rowId);
+}
+
+// ⭐⭐⭐ بروزرسانی داده‌های تخصیص
+function updateUserAssignmentsData() {
+    const assignments = [];
+    const userTeamMap = {};
+
+    $('.user-assignment-row').each(function() {
+        let userId = $(this).find('.user-select').val();
+        const teamId = $(this).find('.team-select').val();
+
+        // پاکسازی کامل userId
+        if (userId) {
+            userId = String(userId)
+                .replace(/[\[\]\/\s"'`]/g, '')
+                .trim();
+
+            console.log('🔍 Cleaned userId:', userId, 'Length:', userId.length);
+
+            // بررسی معتبر بودن GUID
+            const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!guidRegex.test(userId)) {
+                console.warn('⚠️ Invalid GUID format:', userId);
+                return;
+            }
+        }
+
+        if (userId && teamId !== null && teamId !== undefined) {
+            if (!assignments.includes(userId)) {
+                assignments.push(userId);
+            }
+            userTeamMap[userId] = teamId === "" ? 0 : parseInt(teamId);
+        }
+    });
+
+    const assignmentsJson = JSON.stringify(assignments);
+    const userTeamMapJson = JSON.stringify(userTeamMap);
+
+    console.log('📤 Assignments JSON:', assignmentsJson);
+    console.log('📤 UserTeamMap JSON:', userTeamMapJson);
+
+    // بررسی نهایی: آیا JSON معتبر است؟
+    if (assignmentsJson.includes('[[')) {
+        console.error('❌ NESTED ARRAY DETECTED! Fixing...');
+        const fixed = JSON.parse(assignmentsJson).flat();
+        $('#AssignmentsSelectedTaskUserArraysString').val(JSON.stringify(fixed));
+    } else {
+        $('#AssignmentsSelectedTaskUserArraysString').val(assignmentsJson);
+    }
+
+    $('#UserTeamAssignmentsJson').val(userTeamMapJson);
+}
 </script>
+
+<style>
+.task-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.task-section-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.task-section-title i {
+    margin-left: 0.5rem;
+    color: #0d6efd;
+}
+
+.task-section-title h5 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+</style>

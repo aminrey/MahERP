@@ -68,7 +68,7 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
         }
 
         /// <summary>
-        /// ثبت تخصیص کاربر جدید به تسک
+        /// ثبت تخصیص کاربران جدید به تسک (پشتیبانی از چندین کاربر)
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -108,37 +108,91 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         message = new[] { new { status = "error", text = "شما این تسک را تکمیل کرده‌اید و نمی‌توانید کاربر جدید اضافه کنید" } }
                     });
 
-                var existingAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(
-                    model.SelectedUserId,
-                    model.TaskId);
+                // ⭐⭐⭐ پردازش JSON برای دریافت لیست کاربران و تیم‌ها
+                List<string> userIds;
+                Dictionary<string, int> userTeamMap;
 
-                if (existingAssignment != null)
+                try
+                {
+                    userIds = string.IsNullOrWhiteSpace(model.AssignmentsSelectedTaskUserArraysString)
+                        ? new List<string>()
+                        : System.Text.Json.JsonSerializer.Deserialize<List<string>>(model.AssignmentsSelectedTaskUserArraysString);
+
+                    userTeamMap = string.IsNullOrWhiteSpace(model.UserTeamAssignmentsJson)
+                        ? new Dictionary<string, int>()
+                        : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int>>(model.UserTeamAssignmentsJson);
+                }
+                catch (Exception ex)
+                {
+                    await _activityLogger.LogErrorAsync("Tasks", "AssignUserToTask", "خطا در پارس JSON", ex);
                     return Json(new
                     {
-                        status = "error",
-                        message = new[] { new { status = "error", text = "این کاربر قبلاً به تسک اختصاص داده شده است" } }
+                        status = "validation-error",
+                        message = new[] { new { status = "error", text = "فرمت داده‌های ورودی نامعتبر است" } }
                     });
+                }
 
-                var result = await _taskRepository.AssignUserToTaskAsync(
-                    model.TaskId,
-                    model.SelectedUserId,
-                    userId,
-                    model.SelectedTeamId,
-                    model.Description);
-
-                if (result)
+                if (userIds == null || !userIds.Any())
                 {
-                    var assignedUser = await _userManager.FindByIdAsync(model.SelectedUserId);
-                    var assignedUserName = assignedUser != null ? $"{assignedUser.FirstName} {assignedUser.LastName}" : "نامشخص";
+                    return Json(new
+                    {
+                        status = "validation-error",
+                        message = new[] { new { status = "error", text = "حداقل یک کاربر باید انتخاب شود" } }
+                    });
+                }
 
-                    await _taskHistoryRepository.LogUserAssignedAsync(model.TaskId, userId, assignedUserName);
+                // ⭐⭐⭐ بررسی کاربران تکراری و اضافه کردن کاربران جدید
+                var successCount = 0;
+                var skippedCount = 0;
+                var errorCount = 0;
+                var addedUserNames = new List<string>();
 
-                    // ⭐⭐⭐ ارسال اعلان فقط به کاربر جدید اضافه شده
+                foreach (var newUserId in userIds)
+                {
+                    // بررسی وجود قبلی
+                    var existingAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(newUserId, model.TaskId);
+                    
+                    if (existingAssignment != null)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // دریافت teamId برای این کاربر
+                    var teamId = userTeamMap.ContainsKey(newUserId) ? userTeamMap[newUserId] : 0;
+
+                    // تخصیص کاربر
+                    var result = await _taskRepository.AssignUserToTaskAsync(
+                        model.TaskId,
+                        newUserId,
+                        userId,
+                        teamId,
+                        null); // description را null می‌گذاریم برای حالت چندتایی
+
+                    if (result)
+                    {
+                        successCount++;
+                        
+                        var assignedUser = await _userManager.FindByIdAsync(newUserId);
+                        var assignedUserName = assignedUser != null ? $"{assignedUser.FirstName} {assignedUser.LastName}" : "نامشخص";
+                        addedUserNames.Add(assignedUserName);
+
+                        await _taskHistoryRepository.LogUserAssignedAsync(model.TaskId, userId, assignedUserName);
+                    }
+                    else
+                    {
+                        errorCount++;
+                    }
+                }
+
+                // ⭐⭐⭐ ارسال اعلان به کاربران جدید اضافه شده
+                if (successCount > 0)
+                {
                     NotificationProcessingBackgroundService.EnqueueTaskNotificationForUsers(
                         model.TaskId,
                         userId,
                         NotificationEventType.TaskAssigned,
-                        new List<string> { model.SelectedUserId },
+                        userIds,
                         priority: 1
                     );
 
@@ -146,69 +200,75 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         ActivityTypeEnum.Create,
                         "Tasks",
                         "AssignUserToTask",
-                        $"تخصیص کاربر {assignedUserName} به تسک {task.Title}",
+                        $"تخصیص {successCount} کاربر به تسک {task.Title}: {string.Join(", ", addedUserNames)}",
                         recordId: model.TaskId.ToString());
-
-                    var updatedTask = _taskRepository.GetTaskById(model.TaskId, includeAssignments: true);
-
-                    var assignments = updatedTask.TaskAssignments
-                        .Select(a => new TaskAssignmentViewModel
-                        {
-                            Id = a.Id,
-                            TaskId = a.TaskId,
-                            AssignedUserId = a.AssignedUserId,
-                            AssignedUserName = a.AssignedUser != null
-                                ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
-                                : "نامشخص",
-                            AssignDate = a.AssignmentDate,
-                            CompletionDate = a.CompletionDate,
-                            Description = a.Description
-                        })
-                        .ToList();
-
-                    // ⭐⭐⭐ دریافت دسترسی‌های مبتنی بر تنظیمات
-                    var canAddMembersForView = await _taskRepository.CanUserPerformActionAsync(model.TaskId, userId, TaskAction.AddMember);
-                    var canRemoveMembersForView = await _taskRepository.CanUserPerformActionAsync(model.TaskId, userId, TaskAction.RemoveMember);
-                    var isCreator = task.CreatorUserId == userId;
-
-                    var partialHtml = await this.RenderViewToStringAsync(
-                        "_TaskMembersList",
-                        (object)null,
-                        viewBag: new
-                        {
-                            Assignments = assignments,
-                            TaskId = task.Id,
-                            IsCreator = isCreator,
-                            IsManager = isAdmin,
-                            IsTaskCompleted = isTaskCompletedForCurrentUser,
-                            CanAddMembers = canAddMembersForView,
-                            CanRemoveMembers = canRemoveMembersForView
-                        });
-
-                    return Json(new
-                    {
-                        status = "update-view",
-                        viewList = new[]
-                        {
-                            new
-                            {
-                                elementId = "task-members-container",
-                                view = new { result = partialHtml }
-                            }
-                        },
-                        message = new[] { new { status = "success", text = "کاربر با موفقیت به تسک اختصاص داده شد" } }
-                    });
                 }
+
+                // ⭐⭐⭐ بروزرسانی لیست اعضا
+                var updatedTask = _taskRepository.GetTaskById(model.TaskId, includeAssignments: true);
+
+                var assignments = updatedTask.TaskAssignments
+                    .Select(a => new TaskAssignmentViewModel
+                    {
+                        Id = a.Id,
+                        TaskId = a.TaskId,
+                        AssignedUserId = a.AssignedUserId,
+                        AssignedUserName = a.AssignedUser != null
+                            ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}"
+                            : "نامشخص",
+                        AssignDate = a.AssignmentDate,
+                        CompletionDate = a.CompletionDate,
+                        Description = a.Description
+                    })
+                    .ToList();
+
+                // ⭐⭐⭐ دریافت دسترسی‌های مبتنی بر تنظیمات
+                var canAddMembersForView = await _taskRepository.CanUserPerformActionAsync(model.TaskId, userId, TaskAction.AddMember);
+                var canRemoveMembersForView = await _taskRepository.CanUserPerformActionAsync(model.TaskId, userId, TaskAction.RemoveMember);
+                var isCreator = task.CreatorUserId == userId;
+
+                var partialHtml = await this.RenderViewToStringAsync(
+                    "_TaskMembersBlock",
+                    (object)null,
+                    viewBag: new
+                    {
+                        Assignments = assignments,
+                        TaskId = task.Id,
+                        IsCreator = isCreator,
+                        IsManager = isAdmin,
+                        IsTaskCompleted = isTaskCompletedForCurrentUser,
+                        CanAddMembers = canAddMembersForView,
+                        CanRemoveMembers = canRemoveMembersForView
+                    });
+
+                // ⭐⭐⭐ ساخت پیام نتیجه
+                var messageText = successCount > 0
+                    ? $"{successCount} کاربر با موفقیت اضافه شد"
+                    : "هیچ کاربر جدیدی اضافه نشد";
+
+                if (skippedCount > 0)
+                    messageText += $" ({skippedCount} کاربر تکراری نادیده گرفته شد)";
+
+                if (errorCount > 0)
+                    messageText += $" ({errorCount} کاربر با خطا مواجه شد)";
 
                 return Json(new
                 {
-                    status = "error",
-                    message = new[] { new { status = "error", text = "خطا در تخصیص کاربر" } }
+                    status = "update-view",
+                    viewList = new[]
+                    {
+                        new
+                        {
+                            elementId = "task-members-full-container",
+                            view = new { result = partialHtml }
+                        }
+                    },
+                    message = new[] { new { status = successCount > 0 ? "success" : "warning", text = messageText } }
                 });
             }
             catch (Exception ex)
             {
-                await _activityLogger.LogErrorAsync("Tasks", "AssignUserToTask", "خطا در تخصیص کاربر", ex);
+                await _activityLogger.LogErrorAsync("Tasks", "AssignUserToTask", "خطا در تخصیص کاربران", ex);
                 return Json(new
                 {
                     status = "error",
@@ -353,9 +413,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     var canRemoveMembersForView = await _taskRepository.CanUserPerformActionAsync(task.Id, userId, TaskAction.RemoveMember);
                     var isCreator = task.CreatorUserId == userId;
 
-                    // ⭐⭐⭐ رندر Partial View
+                    // ⭐⭐⭐ رندر Partial View کامل (شامل header)
                     var partialHtml = await this.RenderViewToStringAsync(
-                        "_TaskMembersList",
+                        "_TaskMembersBlock",
                         (object)null,
                         viewBag: new
                         {
@@ -374,12 +434,12 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         status = "update-view",
                         viewList = new[]
                         {
-                    new
-                    {
-                        elementId = "task-members-container",
-                        view = new { result = partialHtml }
-                    }
-                },
+                            new
+                            {
+                                elementId = "task-members-full-container",
+                                view = new { result = partialHtml }
+                            }
+                        },
                         message = new[] { new { status = "success", text = $"{removedUserName} با موفقیت از تسک حذف شد" } }
                     });
                 }

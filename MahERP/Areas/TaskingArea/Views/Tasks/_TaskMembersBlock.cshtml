@@ -1,0 +1,39 @@
+﻿@{
+    var assignments = ViewBag.Assignments as List<TaskAssignmentViewModel> ?? new List<TaskAssignmentViewModel>();
+    var taskId = ViewBag.TaskId ?? 0;
+    var isCreator = ViewBag.IsCreator ?? false;
+    var isManager = ViewBag.IsManager ?? false;
+    var isTaskCompleted = ViewBag.IsTaskCompleted ?? false;
+    // ⭐⭐⭐ دسترسی‌های مبتنی بر تنظیمات تسک
+    var canAddMembers = ViewBag.CanAddMembers ?? (isCreator || isManager);
+    var canRemoveMembers = ViewBag.CanRemoveMembers ?? (isCreator || isManager);
+}
+
+<div class="block block-rounded block-fx-shadow">
+    <div class="block-header bg-info text-white">
+        <h3 class="block-title text-white mb-0">
+            <i class="fa fa-users me-2"></i>اعضای تسک
+        </h3>
+        <div class="block-options">
+            @* ⭐⭐⭐ استفاده از canAddMembers که از تنظیمات تسک می‌آید *@
+            @if (canAddMembers && !isTaskCompleted)
+            {
+                <button type="button" 
+                        class="btn btn-sm btn-light" 
+                        data-toggle="modal-ajax" 
+                        href="@Url.Action("AssignUserToTaskModal", "Tasks", new { taskId = taskId })">
+                    <i class="fa fa-user-plus me-1"></i>افزودن کاربر
+                </button>
+            }
+            else if (isTaskCompleted)
+            {
+                <span class="badge bg-light text-dark">
+                    <i class="fa fa-lock me-1"></i>قفل شده
+                </span>
+            }
+        </div>
+    </div>
+    <div class="block-content">
+        @await Html.PartialAsync("_TaskMembersList")
+    </div>
+</div>

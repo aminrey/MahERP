@@ -1,0 +1,21 @@
+﻿@model TaskViewModel
+
+<div class="tab-pane fade" id="tab-timeline" role="tabpanel">
+    <div class="block block-rounded block-fx-shadow">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-history text-warning me-2"></i>تاریخچه کامل تسک
+            </h3>
+            <div class="block-options">
+                <button type="button" class="btn btn-sm btn-primary" onclick="loadTaskHistory()">
+                    <i class="fa fa-sync me-1"></i>بروزرسانی
+                </button>
+            </div>
+        </div>
+        <div class="block-content">
+            <div id="task-timeline-container" class="timeline">
+                <!-- محتوا از AJAX بارگذاری می‌شود -->
+            </div>
+        </div>
+    </div>
+</div>
